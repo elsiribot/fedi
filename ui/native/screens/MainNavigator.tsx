@@ -107,6 +107,7 @@ import FederationGreeting from './FederationGreeting'
 import FederationInvite from './FederationInvite'
 import FediModBrowser from './FediModBrowser'
 import FediModSettings from './FediModSettings'
+import GlobalCurrency from './GlobalCurrency'
 import HelpCentre from './HelpCentre'
 import Initializing from './Initializing'
 import JoinFederation from './JoinFederation'
@@ -852,6 +853,20 @@ export const MainNavigator = () => {
                                             backButton
                                             title={t(
                                                 'phrases.select-local-currency',
+                                            )}
+                                        />
+                                    ),
+                                })}
+                            />
+                            <Stack.Screen
+                                name="GlobalCurrency"
+                                component={GlobalCurrency}
+                                options={() => ({
+                                    header: () => (
+                                        <CenteredHeader
+                                            backButton
+                                            title={t(
+                                                'phrases.select-global-currency',
                                             )}
                                         />
                                     ),

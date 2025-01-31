@@ -35,7 +35,7 @@ export function transformStateToStorage(state: CommonState): LatestStoredState {
         amountInputType: state.environment.amountInputType,
         showFiatTxnAmounts: state.environment.showFiatTxnAmounts,
         deviceId: state.environment.deviceId,
-        currency: state.currency.selectedFiatCurrency,
+        currency: state.currency.overrideCurrency,
         btcUsdRate: state.currency.btcUsdRate,
         fiatUsdRates: state.currency.fiatUsdRates,
         customFederationCurrencies: state.currency.customFederationCurrencies,

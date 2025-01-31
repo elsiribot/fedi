@@ -69,6 +69,7 @@ export type RootStackParamList = {
     ChooseBackupMethod: undefined
     ChooseRecoveryMethod: undefined
     FederationCurrency: { federationId: string }
+    GlobalCurrency: undefined
     CompleteRecoveryAssist: { videoPath: string; recoveryId: string }
     CompleteSocialBackup: undefined
     CompleteSocialRecovery: undefined

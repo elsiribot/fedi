@@ -22,7 +22,7 @@ const log = makeLog('redux/currency')
 const initialState = {
     btcUsdRate: 0 as number,
     fiatUsdRates: {} as Record<string, number | undefined>,
-    selectedFiatCurrency: null as SupportedCurrency | null,
+    overrideCurrency: null as SupportedCurrency | null,
     currencyLocale: undefined as string | undefined,
     customFederationCurrencies: {} as Record<string, SupportedCurrency>,
 }
@@ -35,11 +35,11 @@ export const currencySlice = createSlice({
     name: 'currency',
     initialState,
     reducers: {
-        changeSelectedFiatCurrency(
+        changeOverrideCurrency(
             state,
-            action: PayloadAction<SupportedCurrency>,
+            action: PayloadAction<SupportedCurrency | null>,
         ) {
-            state.selectedFiatCurrency = action.payload
+            state.overrideCurrency = action.payload
         },
         setCurrencyLocale(state, action: PayloadAction<string>) {
             state.currencyLocale = action.payload
@@ -71,7 +71,7 @@ export const currencySlice = createSlice({
 
         builder.addCase(loadFromStorage.fulfilled, (state, action) => {
             if (!action.payload) return
-            state.selectedFiatCurrency = action.payload.currency
+            state.overrideCurrency = action.payload.currency
             state.btcUsdRate = action.payload.btcUsdRate
             state.fiatUsdRates = action.payload.fiatUsdRates
             state.customFederationCurrencies =
@@ -83,7 +83,7 @@ export const currencySlice = createSlice({
 /*** Basic actions ***/
 
 export const {
-    changeSelectedFiatCurrency,
+    changeOverrideCurrency,
     setCurrencyLocale,
     resetCurrencyState,
     setFederationCurrency,
@@ -126,6 +126,9 @@ export const fetchCurrencyPrices = createAsyncThunk<
 export const selectCurrencyLocale = (s: CommonState) =>
     s.currency.currencyLocale
 
+export const selectOverrideCurrency = (s: CommonState) =>
+    s.currency.overrideCurrency
+
 export const selectCurrency = (s: CommonState) => {
     const federationId = selectActiveFederationId(s)
 
@@ -155,11 +158,24 @@ export const selectFederationCurrency = (
     s: CommonState,
     federationId: string,
 ) => {
-    const defaultCurrency = selectFederationDefaultCurrency(s, federationId)
-
-    return (
-        s.currency.customFederationCurrencies[federationId] ?? defaultCurrency
+    const overrideCurrency = selectOverrideCurrency(s)
+    const federationDefaultCurrency = selectFederationDefaultCurrency(
+        s,
+        federationId,
     )
+    const selectedFederationCurrency =
+        s.currency.customFederationCurrencies[federationId] ??
+        SupportedCurrency.USD
+
+    // Setting a custom currency that is NOT the federation default is the highest priority
+    if (selectedFederationCurrency !== federationDefaultCurrency)
+        return selectedFederationCurrency
+
+    // The overrideCurrency overrides the federation default currency
+    if (overrideCurrency && overrideCurrency !== federationDefaultCurrency)
+        return overrideCurrency
+
+    return federationDefaultCurrency
 }
 
 export const selectFederationCurrencies = (
@@ -187,11 +203,11 @@ export const selectBtcUsdExchangeRate = (
 }
 
 export const selectBtcExchangeRate = (s: CommonState) => {
-    const selectedFiatCurrency = selectCurrency(s)
+    const currency = selectCurrency(s)
     const metadata = selectFederationMetadata(s)
     const btcUsdRate = selectBtcUsdExchangeRate(s)
 
-    let fiatUsdRate = s.currency.fiatUsdRates[selectedFiatCurrency] || 0
+    let fiatUsdRate = s.currency.fiatUsdRates[currency] || 0
 
     // Special case for Togo farmers using CFA, where a metadata override
     // provides the exchange rate directly if the default_currency
@@ -199,7 +215,7 @@ export const selectBtcExchangeRate = (s: CommonState) => {
     // TODO: Remove me? Do we want to keep supporting this feature?
     if (metadata) {
         const defaultCurrency = getFederationDefaultCurrency(metadata)
-        if (defaultCurrency && defaultCurrency === selectedFiatCurrency) {
+        if (defaultCurrency && defaultCurrency === currency) {
             const federationFixedExchangeRate =
                 getFederationFixedExchangeRate(metadata)
             if (federationFixedExchangeRate) {
@@ -210,11 +226,11 @@ export const selectBtcExchangeRate = (s: CommonState) => {
 
     // Special case for the CFA franc which is a fixed rate to the dollar
     // TODO: Remove me when CFA is added to price oracle.
-    if (selectedFiatCurrency === SupportedCurrency.CFA && !fiatUsdRate) {
+    if (currency === SupportedCurrency.CFA && !fiatUsdRate) {
         fiatUsdRate = 0.0016
     }
 
-    return selectedFiatCurrency === SupportedCurrency.USD
+    return currency === SupportedCurrency.USD
         ? btcUsdRate
         : btcUsdRate / fiatUsdRate
 }

@@ -163,6 +163,7 @@
         "save-changes": "Save changes",
         "select-federation": "Select Community",
         "select-local-currency": "Select local currency",
+        "select-global-currency": "Select currency",
         "sent-bitcoin": "Sent bitcoin",
         "spend-limit": "Spend limit: {{limit}} sats",
         "start-over": "Start over",
