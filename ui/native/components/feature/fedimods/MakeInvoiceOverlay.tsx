@@ -5,7 +5,6 @@ import { View } from 'react-native'
 import { RejectionError } from 'webln'
 
 import { useRequestForm } from '@fedi/common/hooks/amount'
-import { useToast } from '@fedi/common/hooks/toast'
 import { useUpdatingRef } from '@fedi/common/hooks/util'
 import {
     generateInvoice,
@@ -15,6 +14,7 @@ import {
     selectSiteInfo,
 } from '@fedi/common/redux'
 import amountUtils from '@fedi/common/utils/AmountUtils'
+import { formatErrorMessage } from '@fedi/common/utils/format'
 import { lnurlWithdraw } from '@fedi/common/utils/lnurl'
 import { makeLog } from '@fedi/common/utils/log'
 
@@ -33,7 +33,6 @@ interface Props {
 export const MakeInvoiceOverlay: React.FC<Props> = ({ onReject, onAccept }) => {
     const { t } = useTranslation()
     const { theme } = useTheme()
-    const toast = useToast()
     const federationId = useAppSelector(selectActiveFederationId)
     const dispatch = useAppDispatch()
     const lnurlWithdrawal = useAppSelector(selectLnurlWithdrawal)
@@ -44,6 +43,7 @@ export const MakeInvoiceOverlay: React.FC<Props> = ({ onReject, onAccept }) => {
     const [submitAttempts, setSubmitAttempts] = useState(0)
     const [amountInputKey, setAmountInputKey] = useState(0)
     const [isLoading, setIsLoading] = useState(false)
+    const [error, setError] = useState<string | null>(null)
     const {
         inputAmount,
         setInputAmount,
@@ -92,10 +92,10 @@ export const MakeInvoiceOverlay: React.FC<Props> = ({ onReject, onAccept }) => {
                       }),
                   ).unwrap()
             onAcceptRef.current({ paymentRequest })
-        } catch (error) {
-            log.error('Failed to generate invoice', error, lnurlWithdrawal)
-            toast.error(t, error)
-            onRejectRef.current(error as Error)
+        } catch (err) {
+            log.error('Failed to generate invoice', err, lnurlWithdrawal)
+
+            setError(formatErrorMessage(t, err, 'errors.unknown-error'))
         }
     }
 
@@ -136,6 +136,7 @@ export const MakeInvoiceOverlay: React.FC<Props> = ({ onReject, onAccept }) => {
                                 setSubmitAttempts(0)
                                 setInputAmount(amount)
                             }}
+                            error={error}
                         />
                     </View>
                 ),

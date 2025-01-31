@@ -1,10 +1,11 @@
-import { Text, useTheme } from '@rneui/themed'
+import { Text, Theme, useTheme } from '@rneui/themed'
 import React, { useState } from 'react'
 import { Trans, useTranslation } from 'react-i18next'
+import { StyleSheet, View } from 'react-native'
 import { RejectionError } from 'webln'
 
-import { useToast } from '@fedi/common/hooks/toast'
 import { selectNostrUnsignedEvent, selectSiteInfo } from '@fedi/common/redux'
+import { formatErrorMessage } from '@fedi/common/utils/format'
 import { makeLog } from '@fedi/common/utils/log'
 import { getNostrEventDisplay } from '@fedi/common/utils/nostr'
 import { SignedNostrEvent } from '@fedi/injections/src/injectables/nostr/types'
@@ -23,11 +24,11 @@ interface Props {
 
 export const NostrSignOverlay: React.FC<Props> = ({ onReject, onAccept }) => {
     const { t } = useTranslation()
-    const toast = useToast()
     const unsignedNostrEvent = useAppSelector(selectNostrUnsignedEvent)
     const siteInfo = useAppSelector(selectSiteInfo)
     const { theme } = useTheme()
     const [isLoading, setIsLoading] = useState(false)
+    const [error, setError] = useState<string | null>(null)
 
     const handleAccept = async () => {
         log.info('Signature approved')
@@ -48,10 +49,8 @@ export const NostrSignOverlay: React.FC<Props> = ({ onReject, onAccept }) => {
             })
         } catch (e) {
             log.error('Failed to sign Nostr event', e)
-            toast.show({
-                content: t('feature.fedimods.login-failed'),
-                status: 'error',
-            })
+
+            setError(formatErrorMessage(t, e, 'errors.unknown-error'))
         }
         setIsLoading(false)
     }
@@ -66,6 +65,8 @@ export const NostrSignOverlay: React.FC<Props> = ({ onReject, onAccept }) => {
 
     // 22242 specifies that the nostr event is an authentication challenge
     const isAuthEvent = unsignedNostrEvent?.kind === 22242
+
+    const style = styles(theme)
 
     return (
         <CustomOverlay
@@ -82,32 +83,41 @@ export const NostrSignOverlay: React.FC<Props> = ({ onReject, onAccept }) => {
                           fediMod: siteInfo?.title,
                       }),
                 message: display?.kind && !isAuthEvent ? display.kind : '',
-                body: isAuthEvent ? (
-                    <Text>
-                        <Trans
-                            t={t}
-                            i18nKey="feature.nostr.log-in-to-mod"
-                            values={{
-                                fediMod: siteInfo?.title,
-                                method: t('words.nostr'),
-                            }}
-                            components={{ bold: <Text caption bold /> }}
-                        />
-                    </Text>
-                ) : display?.content ? (
-                    <Text
-                        caption
-                        style={{
-                            paddingTop: theme.spacing.lg,
-                            paddingBottom: theme.spacing.sm,
-                            paddingHorizontal: theme.spacing.sm,
-                            color: theme.colors.grey,
-                            textAlign: 'center',
-                        }}
-                        numberOfLines={3}>
-                        "{display.content}"
-                    </Text>
-                ) : undefined,
+                body: (
+                    <View style={style.body}>
+                        {isAuthEvent ? (
+                            <Text>
+                                <Trans
+                                    t={t}
+                                    i18nKey="feature.nostr.log-in-to-mod"
+                                    values={{
+                                        fediMod: siteInfo?.title,
+                                        method: t('words.nostr'),
+                                    }}
+                                    components={{ bold: <Text caption bold /> }}
+                                />
+                            </Text>
+                        ) : display?.content ? (
+                            <Text
+                                caption
+                                style={{
+                                    paddingTop: theme.spacing.lg,
+                                    paddingBottom: theme.spacing.sm,
+                                    paddingHorizontal: theme.spacing.sm,
+                                    color: theme.colors.grey,
+                                    textAlign: 'center',
+                                }}
+                                numberOfLines={3}>
+                                "{display.content}"
+                            </Text>
+                        ) : undefined}
+                        {error && (
+                            <Text caption style={style.error}>
+                                {error}
+                            </Text>
+                        )}
+                    </View>
+                ),
                 buttons: [
                     {
                         text: t(isAuthEvent ? 'phrases.go-back' : 'words.no'),
@@ -123,3 +133,14 @@ export const NostrSignOverlay: React.FC<Props> = ({ onReject, onAccept }) => {
         />
     )
 }
+
+const styles = (theme: Theme) =>
+    StyleSheet.create({
+        body: {
+            gap: theme.spacing.lg,
+        },
+        error: {
+            color: theme.colors.red,
+            textAlign: 'center',
+        },
+    })
