@@ -4,19 +4,20 @@ import { Platform } from 'react-native'
 import * as Zendesk from 'react-native-zendesk-messaging'
 
 import { INVALID_NAME_PLACEHOLDER } from '@fedi/common/constants/matrix'
-import {
-    CHANNEL_KEY_ANDROID,
-    CHANNEL_KEY_IOS,
-    ZENDESK_SECRET_KEY,
-    ZENDESK_KID,
-    ZENDESK_USER_SCOPE,
-} from '@fedi/common/constants/support'
 import { useCommonSelector } from '@fedi/common/hooks/redux'
 import { ToastHandler } from '@fedi/common/hooks/toast'
 import { CommonDispatch, selectMatrixAuth } from '@fedi/common/redux'
 import { setZendeskPushNotificationToken } from '@fedi/common/redux/support'
 import { RpcNostrPubkey } from '@fedi/common/types/bindings'
 import { makeLog } from '@fedi/common/utils/log'
+
+import {
+    CHANNEL_KEY_ANDROID,
+    CHANNEL_KEY_IOS,
+    ZENDESK_SECRET_KEY,
+    ZENDESK_KID,
+    ZENDESK_USER_SCOPE,
+} from '../constants'
 
 const log = makeLog('native/utils/support')
 

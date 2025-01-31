@@ -5,13 +5,13 @@ import { useTranslation } from 'react-i18next'
 import { StyleSheet, View, Linking } from 'react-native'
 import * as Zendesk from 'react-native-zendesk-messaging'
 
-import { HELP_URL, PRIVACY_POLICY_URL } from '@fedi/common/constants/support'
 import { usePushNotificationToken } from '@fedi/common/hooks/matrix'
-import { useSupportPermission, useNpub } from '@fedi/common/hooks/support'
 import { ToastHandler, useToast } from '@fedi/common/hooks/toast'
 import { makeLog } from '@fedi/common/utils/log'
 import SvgImage from '@fedi/native/components/ui/SvgImage'
 
+import { HELP_URL, PRIVACY_POLICY_URL } from '../../../constants'
+import { useSupportPermission, useNpub } from '../../../utils/hooks/support'
 import { zendeskInitialize, useDisplayName } from '../../../utils/support'
 import HoloGuidance from '../../ui/HoloGuidance'
 

@@ -1,9 +1,8 @@
 import { Theme, useTheme } from '@rneui/themed'
 import { StyleSheet, View } from 'react-native'
 
-import { useZendeskInitialization } from '@fedi/common/hooks/support'
-
 import SupportChat from '../components/feature/support/SupportChat'
+import { useZendeskInitialization } from '../utils/hooks/support'
 
 const HelpCentre: React.FC = () => {
     const { theme } = useTheme()

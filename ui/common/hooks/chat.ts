@@ -4,7 +4,6 @@ import { useCallback, useEffect, useMemo, useState } from 'react'
 import type { Sats } from '@fedi/common/types'
 
 import { INVALID_NAME_PLACEHOLDER } from '../constants/matrix'
-import { emptyToken } from '../constants/support'
 import {
     CommonDispatch,
     configureMatrixPushNotifications,
@@ -62,7 +61,7 @@ export function usePublishNotificationToken(
             }
 
             // Skip publishing if the token hasn't changed or is empty
-            if (!newToken || newToken === emptyToken) {
+            if (!newToken || newToken === '') {
                 log.error('Token is empty or invalid. Skipping publish.')
                 return
             }

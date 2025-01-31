@@ -11,7 +11,7 @@ import {
     setZendeskInitialized,
 } from '@fedi/common/redux/support'
 
-import { useCommonDispatch } from './redux'
+import { useAppDispatch } from '../../state/hooks'
 
 export function useNpub() {
     const nostrPublic = useSelector(selectNostrNpub) // Retrieve nostrPublic
@@ -19,7 +19,7 @@ export function useNpub() {
 }
 
 export function useSupportPermission() {
-    const dispatch = useCommonDispatch()
+    const dispatch = useAppDispatch()
     const supportPermissionGranted = useSelector(selectSupportPermissionGranted)
     const zendeskPushNotificationToken = useSelector(
         selectZendeskPushNotificationToken,
@@ -53,7 +53,7 @@ export function useSupportPermission() {
 
 // Hook to manage Zendesk initialization
 export function useZendeskInitialization() {
-    const dispatch = useCommonDispatch()
+    const dispatch = useAppDispatch()
     const zendeskInitialized = useSelector(selectZendeskInitialized)
 
     const handleZendeskInitialization = useCallback(

@@ -13,11 +13,6 @@ import {
     useWindowDimensions,
 } from 'react-native'
 
-import {
-    useNpub,
-    useSupportPermission,
-    useZendeskInitialization,
-} from '@fedi/common/hooks/support'
 import { ToastHandler, useToast } from '@fedi/common/hooks/toast'
 import { selectAllVisibleMods, setModVisibility } from '@fedi/common/redux/mod'
 
@@ -27,6 +22,11 @@ import SvgImage from '../components/ui/SvgImage'
 import { useAppDispatch, useAppSelector } from '../state/hooks'
 import { FediMod, Shortcut } from '../types'
 import { NavigationHook } from '../types/navigation'
+import {
+    useNpub,
+    useSupportPermission,
+    useZendeskInitialization,
+} from '../utils/hooks/support'
 import {
     useDisplayName,
     zendeskInitialize,
