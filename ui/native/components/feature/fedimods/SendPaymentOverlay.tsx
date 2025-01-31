@@ -121,6 +121,12 @@ export const SendPaymentOverlay: React.FC<Props> = ({ onReject, onAccept }) => {
         })
     }, [handleOmniInput, invoice])
 
+    useEffect(() => {
+        if (maximumAmount === 0) {
+            setError(t('errors.please-select-balance-federation'))
+        }
+    }, [maximumAmount, t])
+
     const handleAccept = async () => {
         setSubmitAttempts(attempts => attempts + 1)
         if (inputAmount > maximumAmount || inputAmount < minimumAmount) {

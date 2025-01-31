@@ -224,6 +224,7 @@
         "please-grant-permission": "Please grant permission to download this file",
         "please-join-a-federation": "Please join a community before making chat payments",
         "please-join-wallet-community": "Please join a wallet community before making payments",
+        "please-select-balance-federation": "Please select a federation with a balance to pay from.",
         "receive-ecash-failed": "Failed to receive ecash",
         "receive-ecash-failed-claimed": "Failed to receive ecash. This has already been claimed.",
         "receives-have-been-disabled": "Receives have been disabled for this community",

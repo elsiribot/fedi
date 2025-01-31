@@ -521,10 +521,13 @@ export function useMinMaxSendAmount(
     const { minSendable, maxSendable } = lnurlPayment || {}
 
     return useMemo(() => {
-        // If balance is less than 1000 msat (rounded down to 0 sats), don't allow send at all
         if (balance < 1000)
             return {
-                minimumAmount: 1 as Sats,
+                // If balance is less than 1000 msat, set the minimum to invoiceAmount, if not undefined
+                // Otherwise, set minimum to 1 sat
+                minimumAmount: invoiceAmount
+                    ? amountUtils.msatToSat(invoiceAmount)
+                    : (1 as Sats),
                 maximumAmount: 0 as Sats,
             }
 
