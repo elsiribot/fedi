@@ -99,6 +99,16 @@ const contentSchemas = {
         msgtype: z.literal('m.emote'),
         body: z.string(),
     }),
+    /* This event is defined by Matrix, but we extend it with the `msgtype` for simpler parsing */
+    'm.room.encrypted': z.object({
+        msgtype: z.literal('m.room.encrypted'),
+        body: z.string(),
+        algorithm: z.string(),
+        ciphertext: z.string(),
+        device_id: z.string(),
+        sender_key: z.string(),
+        session_id: z.string(),
+    }),
     /**
      * Fedi custom events
      *
@@ -562,6 +572,12 @@ export function isVideoEvent(
     event: MatrixEvent,
 ): event is MatrixEvent<MatrixEventContentType<'m.video'>> {
     return event.content.msgtype === 'm.video'
+}
+
+export function isEncryptedEvent(
+    event: MatrixEvent,
+): event is MatrixEvent<MatrixEventContentType<'m.room.encrypted'>> {
+    return event.content.msgtype === 'm.room.encrypted'
 }
 
 /**

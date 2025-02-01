@@ -933,6 +933,12 @@ export class MatrixChatClient {
                 body: '',
                 ...eventContent.value.unsigned.redacted_because.content,
             }
+        } else if (eventContent.value.type === 'm.room.encrypted') {
+            content = {
+                msgtype: 'm.room.encrypted',
+                body: '',
+                ...eventContent.value.content,
+            }
         }
 
         if (!content) return null
