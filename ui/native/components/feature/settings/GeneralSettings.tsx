@@ -69,7 +69,7 @@ export const GeneralSettings = () => {
                 t,
             )
         }
-        if (supportPermissionGranted && zendeskInitialized) {
+        if (supportPermissionGranted) {
             zendeskOpenMessagingView()
         } else {
             navigation.navigate('HelpCentre')

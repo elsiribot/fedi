@@ -1547,7 +1547,7 @@ PODS:
     - ReactCommon/turbomodule/bridging
     - ReactCommon/turbomodule/core
     - Yoga
-  - react-native-zendesk-messaging (0.2.1):
+  - react-native-zendesk-messaging (0.3.2):
     - React-Core
     - ZendeskSDKMessaging (= 2.13.0)
   - React-nativeconfig (0.75.4)
@@ -2198,6 +2198,7 @@ DEPENDENCIES:
   - VisionCamera (from `../../node_modules/react-native-vision-camera`)
   - "VisionCameraCodeScanner (from `../../node_modules/@mgcrea/vision-camera-barcode-scanner`)"
   - Yoga (from `../../node_modules/react-native/ReactCommon/yoga`)
+  - ZendeskSDKMessaging
 
 SPEC REPOS:
   trunk:
@@ -2491,7 +2492,7 @@ SPEC CHECKSUMS:
   react-native-video: b687b8d0a8576535185adf78f0eeb27c7dc46b86
   react-native-webview: db71683cdc313a490afaee486a6efeb9d5a15b59
   react-native-worklets-core: 13837e78b876fb75154ff3594efef190befebcf9
-  react-native-zendesk-messaging: e4418f96cb02c6741cce7059972f01312eac8e0f
+  react-native-zendesk-messaging: 0675e18625620ec63ac09fc1b9cc2ff71b9a180d
   React-nativeconfig: 8c83d992b9cc7d75b5abe262069eaeea4349f794
   React-NativeModulesApple: 9f7920224a3b0c7d04d77990067ded14cee3c614
   React-perflogger: 59e1a3182dca2cee7b9f1f7aab204018d46d1914
@@ -2550,6 +2551,6 @@ SPEC CHECKSUMS:
   ZendeskSDKStorage: 00d6f78a39a42b71c3730b1c39cc0a5c12690685
   ZendeskSDKUIComponents: 59fab9ac52f3ac5ef3136188da8dc38b06d100f7
 
-PODFILE CHECKSUM: f873d4ac970be20fe5569e1212b5a2ba91b59d25
+PODFILE CHECKSUM: 788892584a6fde97518a4175481200b2a9d4e9fd
 
 COCOAPODS: 1.16.2

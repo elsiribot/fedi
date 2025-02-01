@@ -84,7 +84,11 @@ export async function zendeskLogout(): Promise<void> {
 }
 
 export async function zendeskOpenMessagingView(): Promise<void> {
-    return await Zendesk.openMessagingView()
+    try {
+        return await Zendesk.openMessagingView()
+    } catch (error) {
+        log.error('Zendesk opening messageview failed', error)
+    }
 }
 
 // Zendesk initialization logic

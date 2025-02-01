@@ -58,6 +58,7 @@ target 'FediReactNative' do
   pod 'FirebaseCore', :modular_headers => true
   pod 'GoogleUtilities', :modular_headers => true
   pod 'react-native-worklets-core', :path => '../../node_modules/react-native-worklets-core', :modular_headers => true
+  pod 'ZendeskSDKMessaging'
   $RNFirebaseAsStaticFramework = true
   $ZendeskSDKVersion = '2.13.0'
 
