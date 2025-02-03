@@ -1,11 +1,9 @@
 import { createHmac } from 'crypto'
-import { TFunction } from 'i18next'
 import { Platform } from 'react-native'
 import * as Zendesk from 'react-native-zendesk-messaging'
 
 import { INVALID_NAME_PLACEHOLDER } from '@fedi/common/constants/matrix'
 import { useCommonSelector } from '@fedi/common/hooks/redux'
-import { ToastHandler } from '@fedi/common/hooks/toast'
 import { CommonDispatch, selectMatrixAuth } from '@fedi/common/redux'
 import { setZendeskPushNotificationToken } from '@fedi/common/redux/support'
 import { RpcNostrPubkey } from '@fedi/common/types/bindings'
@@ -83,11 +81,17 @@ export async function zendeskLogout(): Promise<void> {
     return await Zendesk.logout()
 }
 
-export async function zendeskOpenMessagingView(): Promise<void> {
+export async function zendeskOpenMessagingView({
+    onError,
+}: {
+    onError?: (error: Error) => void
+} = {}): Promise<void> {
     try {
-        return await Zendesk.openMessagingView()
+        await Zendesk.openMessagingView()
+        log.debug('Zendesk messaging shown successfully')
     } catch (error) {
-        log.error('Zendesk opening messageview failed', error)
+        log.error('Failed to open Zendesk messaging view:', error)
+        onError?.(error as Error)
     }
 }
 
@@ -96,8 +100,7 @@ export async function zendeskInitialize(
     userID: RpcNostrPubkey | null,
     displayName: string,
     setZendeskInitialized: (state: boolean) => void,
-    toast: ToastHandler,
-    t: TFunction,
+    onError?: (error: Error) => void,
 ): Promise<void> {
     try {
         log.info('Initializing Zendesk with values:', userID, displayName)
@@ -128,12 +131,9 @@ export async function zendeskInitialize(
             log.info('Zendesk login successful')
         }
     } catch (error) {
-        log.error('Zendesk initialization failed', error)
         setZendeskInitialized(false)
-        toast.show({
-            content: t('feature.support.zendesk-initialization-failed'),
-            status: 'error',
-        })
+        log.error('Zendesk initialization failed', error)
+        onError?.(error as Error)
     }
 }
 

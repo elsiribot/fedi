@@ -30,7 +30,9 @@ const log = makeLog('Notifications')
 export const NOTIFICATION_TYPES = ['chat', 'payment'] as const
 export type NOTIFICATION_TYPE = (typeof NOTIFICATION_TYPES)[number]
 
-export const manuallyPublishNotificationToken = async () => {
+export const manuallyPublishNotificationToken = async (
+    supportPermissionGranted: boolean,
+) => {
     log.info('Manually publishing push notification token...')
 
     try {
@@ -68,11 +70,18 @@ export const manuallyPublishNotificationToken = async () => {
         }
 
         // 2. **Publish to Zendesk**
-        try {
-            await Zendesk.updatePushNotificationToken(fcmToken)
-            log.info('Successfully published Zendesk push notification token.')
-        } catch (err) {
-            log.error('Failed to publish Zendesk push notification token:', err)
+        if (supportPermissionGranted) {
+            try {
+                await Zendesk.updatePushNotificationToken(fcmToken)
+                log.info(
+                    'Successfully published Zendesk push notification token.',
+                )
+            } catch (err) {
+                log.error(
+                    'Failed to publish Zendesk push notification token:',
+                    err,
+                )
+            }
         }
     } catch (error) {
         log.error('Failed to manually publish notification token:', error)
