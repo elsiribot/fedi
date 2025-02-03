@@ -340,7 +340,6 @@
             "leave-group-confirmation": "Are you sure you want to leave the group? All group message history will be lost.",
             "member-not-found": "Could not find a member with the username '{{username}}'",
             "message-deleted": "This message was deleted",
-            "message-private": "This message is private",
             "need-registration-description": "Set your display name to be able to send and receive with other users.",
             "need-registration-title": "Get ready to chat",
             "new-chat": "New chat",

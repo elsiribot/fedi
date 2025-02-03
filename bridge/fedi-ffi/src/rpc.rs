@@ -22,6 +22,7 @@ use matrix_sdk::ruma::directory::PublicRoomsChunk;
 use matrix_sdk::ruma::events::room::power_levels::RoomPowerLevelsEventContent;
 use matrix_sdk::ruma::events::room::MediaSource;
 use matrix_sdk::ruma::OwnedEventId;
+use matrix_sdk::sliding_sync::Ranges;
 use matrix_sdk::RoomInfo;
 use mime::Mime;
 use serde::de::DeserializeOwned;
@@ -39,7 +40,7 @@ use super::types::{
 };
 use crate::api::IFediApi;
 use crate::bridge::{BridgeFull, BridgeRuntime};
-use crate::constants::GLOBAL_MATRIX_SERVER;
+use crate::constants::{GLOBAL_MATRIX_SERVER, GLOBAL_MATRIX_SLIDING_SYNC_PROXY};
 use crate::error::RpcError;
 use crate::event::{Event, EventSink, IEventSink, PanicEvent, SocialRecoveryEvent, TypedEventExt};
 use crate::features::FeatureCatalog;
@@ -48,8 +49,8 @@ use crate::federation::federation_v2::{BackupServiceStatus, FederationV2};
 use crate::federation::Federations;
 use crate::matrix::{
     self, Matrix, RpcBackPaginationStatus, RpcMatrixAccountSession, RpcMatrixUploadResult,
-    RpcMatrixUserDirectorySearchResponse, RpcRoomId, RpcRoomMember, RpcRoomNotificationMode,
-    RpcSyncIndicator, RpcTimelineEventItemId, RpcTimelineItem, RpcUserId,
+    RpcMatrixUserDirectorySearchResponse, RpcRoomId, RpcRoomListEntry, RpcRoomMember,
+    RpcRoomNotificationMode, RpcSyncIndicator, RpcTimelineItem, RpcUserId,
 };
 use crate::observable::{Observable, ObservableVec};
 use crate::storage::{DeviceIdentifier, FiatFXInfo};
@@ -808,6 +809,7 @@ async fn matrixInit(bridge: &BridgeFull) -> anyhow::Result<()> {
                 &matrix_secret,
                 &nostr_pubkey,
                 GLOBAL_MATRIX_SERVER.to_owned(),
+                GLOBAL_MATRIX_SLIDING_SYNC_PROXY.to_owned(),
             )
             .await?,
         )
@@ -955,7 +957,7 @@ async fn generateReusedEcashProofs(
 
 // we are really binding generator pushing to its limits.
 ts_type_ser!(
-    ObservableRoomList: ObservableVec<RpcRoomId> = "ObservableVec<RpcRoomId>"
+    ObservableRoomList: ObservableVec<RpcRoomListEntry> = "ObservableVec<RpcRoomListEntry>"
 );
 
 #[macro_rules_derive(rpc_method!)]
@@ -970,16 +972,17 @@ async fn matrixGetAccountSession(
 
 #[macro_rules_derive(rpc_method!)]
 async fn matrixRoomList(matrix: &Matrix, observable_id: u32) -> anyhow::Result<ObservableRoomList> {
-    #[cfg(not(target_family = "wasm"))]
-    {
-        Ok(ObservableRoomList(
-            matrix.room_list(observable_id.into()).await?,
-        ))
-    }
-    #[cfg(target_family = "wasm")]
-    {
-        anyhow::bail!("matrix is not supported on wasm")
-    }
+    Ok(ObservableRoomList(
+        matrix.room_list(observable_id.into()).await?,
+    ))
+}
+
+// inclusive on both sides
+ts_type_de!(RpcRanges: Ranges = "Array<{start: number, end: number}>");
+#[macro_rules_derive(rpc_method!)]
+async fn matrixRoomListUpdateRanges(matrix: &Matrix, ranges: RpcRanges) -> anyhow::Result<()> {
+    matrix.room_list_update_ranges(ranges.0).await?;
+    Ok(())
 }
 
 ts_type_ser!(
@@ -1380,11 +1383,15 @@ async fn matrixSetPusher(matrix: &Matrix, pusher: RpcPusher) -> anyhow::Result<(
 async fn matrixEditMessage(
     matrix: &Matrix,
     room_id: RpcRoomId,
-    event_id: RpcTimelineEventItemId,
+    event_id: String,
     new_content: String,
 ) -> anyhow::Result<()> {
     matrix
-        .edit_message(&room_id.into_typed()?, &event_id.try_into()?, new_content)
+        .edit_message(
+            &room_id.into_typed()?,
+            &event_id.parse::<OwnedEventId>()?,
+            new_content,
+        )
         .await
 }
 
@@ -1392,11 +1399,15 @@ async fn matrixEditMessage(
 async fn matrixDeleteMessage(
     matrix: &Matrix,
     room_id: RpcRoomId,
-    event_id: RpcTimelineEventItemId,
+    event_id: String,
     reason: Option<String>,
 ) -> anyhow::Result<()> {
     matrix
-        .delete_message(&room_id.into_typed()?, &event_id.try_into()?, reason)
+        .delete_message(
+            &room_id.into_typed()?,
+            &event_id.parse::<OwnedEventId>()?,
+            reason,
+        )
         .await
 }
 
@@ -1584,6 +1595,7 @@ rpc_methods!(RpcMethods {
     matrixGetAccountSession,
     matrixObserveSyncIndicator,
     matrixRoomList,
+    matrixRoomListUpdateRanges,
     matrixRoomTimelineItems,
     matrixRoomTimelineItemsPaginateBackwards,
     matrixRoomObserveTimelineItemsPaginateBackwards,

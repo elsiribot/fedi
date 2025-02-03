@@ -17,7 +17,7 @@ import {
 } from '@fedi/common/redux'
 import { MatrixEvent } from '@fedi/common/types'
 import { makeLog } from '@fedi/common/utils/log'
-import { getEventId, MatrixEventContentType } from '@fedi/common/utils/matrix'
+import { MatrixEventContentType } from '@fedi/common/utils/matrix'
 
 import { fedimint } from '../../../bridge'
 import { useAppDispatch, useAppSelector } from '../../../state/hooks'
@@ -58,10 +58,9 @@ const SelectedMessageOverlay: React.FC<{ isPublic?: boolean }> = ({
         setIsDeleting(true)
 
         try {
-            const event = getEventId(selectedMessage)
             await fedimint.matrixDeleteMessage(
                 selectedMessage.roomId,
-                event,
+                selectedMessage.eventId,
                 null,
             )
 

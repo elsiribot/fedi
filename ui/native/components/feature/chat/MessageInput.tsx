@@ -44,7 +44,6 @@ import {
 } from '@fedi/common/redux'
 import { InputAttachment, InputMedia } from '@fedi/common/types'
 import { makeLog } from '@fedi/common/utils/log'
-import { getEventId } from '@fedi/common/utils/matrix'
 
 import { fedimint } from '../../../bridge'
 import { useAppDispatch, useAppSelector } from '../../../state/hooks'
@@ -253,10 +252,9 @@ const MessageInput: React.FC<MessageInputProps> = ({
         if (!isEditingMessage || !messageText || !editingMessage.eventId) return
 
         try {
-            const event = getEventId(editingMessage)
             await fedimint.matrixEditMessage(
                 editingMessage.roomId,
-                event,
+                editingMessage.eventId,
                 messageText,
             )
             setMessageText('')

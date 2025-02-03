@@ -274,20 +274,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "aquamarine"
-version = "0.6.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "0f50776554130342de4836ba542aa85a4ddb361690d7e8df13774d7284c3d5c2"
-dependencies = [
- "include_dir",
- "itertools 0.10.5",
- "proc-macro-error2",
- "proc-macro2",
- "quote",
- "syn 2.0.90",
-]
-
-[[package]]
 name = "argon2"
 version = "0.5.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1849,17 +1835,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "decancer"
-version = "3.2.8"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "1a41401dd84c9335e2f5aec7f64057e243585d62622260d41c245919a601ccc9"
-dependencies = [
- "lazy_static",
- "paste",
- "regex",
-]
-
-[[package]]
 name = "delegate-display"
 version = "2.1.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1878,8 +1853,21 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "f55bf8e7b65898637379c1b74eb1551107c8294ed26d855ceb9fd1a09cfc9bc0"
 dependencies = [
  "const-oid",
+ "der_derive",
+ "flagset",
  "pem-rfc7468",
  "zeroize",
+]
+
+[[package]]
+name = "der_derive"
+version = "0.7.3"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "8034092389675178f570469e6c3b0465d3d30b4505c294a6550db47f3c17ad18"
+dependencies = [
+ "proc-macro2",
+ "quote",
+ "syn 2.0.90",
 ]
 
 [[package]]
@@ -2252,15 +2240,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "emojis"
-version = "0.6.4"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "99e1f1df1f181f2539bac8bf027d31ca5ffbf9e559e3f2d09413b9107b5c02f4"
-dependencies = [
- "phf",
-]
-
-[[package]]
 name = "encoding_rs"
 version = "0.8.35"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2370,34 +2349,32 @@ checksum = "d93bd0ebf93d61d6332d3c09a96e97975968a44e19a64c947bde06e6baff383f"
 dependencies = [
  "futures-core",
  "readlock",
- "readlock-tokio",
+ "tracing",
+]
+
+[[package]]
+name = "eyeball-im"
+version = "0.4.3"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "9326c8d9f6d59d18935412608b4514cc661e4e068011bb2f523f6c8b1cfa3bd4"
+dependencies = [
+ "futures-core",
+ "imbl 2.0.3",
  "tokio",
  "tokio-util",
  "tracing",
 ]
 
 [[package]]
-name = "eyeball-im"
-version = "0.6.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "ad276eb017655257443d34f27455f60e8b02b839c6ebcaa8d6f06cc498784e8f"
-dependencies = [
- "futures-core",
- "imbl 4.0.1",
- "tokio",
- "tracing",
-]
-
-[[package]]
 name = "eyeball-im-util"
-version = "0.8.0"
+version = "0.5.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "eac7f06ce388e4f64876ad3836b275d0972ab64ae8bd8456862d5ebdb7bec4f5"
+checksum = "c0fea22ab33f31f2fac1a3a81b9024b461e28518f3262fecb6156943221e9960"
 dependencies = [
  "arrayvec",
  "eyeball-im",
  "futures-core",
- "imbl 4.0.1",
+ "imbl 2.0.3",
  "pin-project-lite",
  "smallvec",
 ]
@@ -2537,7 +2514,7 @@ dependencies = [
  "fedimint-wallet-client",
  "futures",
  "hex",
- "imbl 4.0.1",
+ "imbl 2.0.3",
  "lazy_static",
  "lightning-invoice",
  "macro_rules_attribute 0.1.3",
@@ -2556,7 +2533,7 @@ dependencies = [
  "slab",
  "stability-pool-client-old",
  "tempfile",
- "thiserror 2.0.11",
+ "thiserror 2.0.8",
  "tokio",
  "tokio-stream",
  "tokio-util",
@@ -2606,7 +2583,7 @@ dependencies = [
  "serde_json",
  "strum 0.24.1",
  "strum_macros 0.24.3",
- "thiserror 2.0.11",
+ "thiserror 2.0.8",
  "tracing",
 ]
 
@@ -2631,7 +2608,7 @@ dependencies = [
  "serde",
  "strum 0.24.1",
  "strum_macros 0.24.3",
- "thiserror 2.0.11",
+ "thiserror 2.0.8",
  "tracing",
  "tracing-subscriber",
 ]
@@ -2660,7 +2637,7 @@ dependencies = [
  "strum 0.24.1",
  "strum_macros 0.24.3",
  "subtle",
- "thiserror 2.0.11",
+ "thiserror 2.0.8",
  "tracing",
  "tracing-subscriber",
 ]
@@ -2676,7 +2653,7 @@ dependencies = [
  "fedimint-core",
  "futures",
  "gloo-file",
- "imbl 4.0.1",
+ "imbl 2.0.3",
  "js-sys",
  "rexie",
  "serde",
@@ -2878,7 +2855,7 @@ version = "0.5.0-rc.4"
 source = "git+https://github.com/fedibtc/fedimint?tag=v0.5.0-rc.4-fed2#d8183beede9d8eab5ca8d777a14cc39e36cdede6"
 dependencies = [
  "anyhow",
- "aquamarine 0.5.0",
+ "aquamarine",
  "async-stream",
  "async-trait",
  "bitcoin",
@@ -3011,7 +2988,7 @@ version = "0.5.0-rc.4"
 source = "git+https://github.com/fedibtc/fedimint?tag=v0.5.0-rc.4-fed2#d8183beede9d8eab5ca8d777a14cc39e36cdede6"
 dependencies = [
  "anyhow",
- "aquamarine 0.5.0",
+ "aquamarine",
  "async-stream",
  "async-trait",
  "bitcoin",
@@ -3062,7 +3039,7 @@ version = "0.5.0-rc.4"
 source = "git+https://github.com/fedibtc/fedimint?tag=v0.5.0-rc.4-fed2#d8183beede9d8eab5ca8d777a14cc39e36cdede6"
 dependencies = [
  "anyhow",
- "aquamarine 0.5.0",
+ "aquamarine",
  "async-stream",
  "async-trait",
  "axum 0.7.9",
@@ -3142,7 +3119,7 @@ version = "0.5.0-rc.4"
 source = "git+https://github.com/fedibtc/fedimint?tag=v0.5.0-rc.4-fed2#d8183beede9d8eab5ca8d777a14cc39e36cdede6"
 dependencies = [
  "anyhow",
- "aquamarine 0.5.0",
+ "aquamarine",
  "async-stream",
  "async-trait",
  "bitcoin",
@@ -3294,7 +3271,7 @@ version = "0.5.0-rc.4"
 source = "git+https://github.com/fedibtc/fedimint?tag=v0.5.0-rc.4-fed2#d8183beede9d8eab5ca8d777a14cc39e36cdede6"
 dependencies = [
  "anyhow",
- "aquamarine 0.5.0",
+ "aquamarine",
  "async-stream",
  "async-trait",
  "base64 0.22.1",
@@ -3644,7 +3621,7 @@ version = "0.5.0-rc.4"
 source = "git+https://github.com/fedibtc/fedimint?tag=v0.5.0-rc.4-fed2#d8183beede9d8eab5ca8d777a14cc39e36cdede6"
 dependencies = [
  "anyhow",
- "aquamarine 0.5.0",
+ "aquamarine",
  "async-stream",
  "async-trait",
  "bitcoin",
@@ -3793,6 +3770,12 @@ name = "fixedbitset"
 version = "0.4.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "0ce7134b9999ecaf8bcd65542e436736ef32ddca1b3e06094cb6ec5755203b80"
+
+[[package]]
+name = "flagset"
+version = "0.4.6"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "b3ea1ec5f8307826a5b71094dd91fc04d4ae75d5709b20ad351c7fb4815c86ec"
 
 [[package]]
 name = "flate2"
@@ -4391,9 +4374,9 @@ checksum = "f558a64ac9af88b5ba400d99b579451af0d39c6d360980045b91aac966d705e2"
 
 [[package]]
 name = "html5ever"
-version = "0.29.0"
+version = "0.27.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "2e15626aaf9c351bc696217cbe29cb9b5e86c43f8a46b5e2f5c6c5cf7cb904ce"
+checksum = "c13771afe0e6e846f1e67d038d4cb29998a6779f93c809212e4e9c32efd244d4"
 dependencies = [
  "log",
  "mac",
@@ -4778,6 +4761,20 @@ dependencies = [
 
 [[package]]
 name = "imbl"
+version = "2.0.3"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "978d142c8028edf52095703af2fad11d6f611af1246685725d6b850634647085"
+dependencies = [
+ "bitmaps",
+ "imbl-sized-chunks",
+ "rand_core",
+ "rand_xoshiro",
+ "serde",
+ "version_check",
+]
+
+[[package]]
+name = "imbl"
 version = "3.0.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "bc3be8d8cd36f33a46b1849f31f837c44d9fa87223baee3b4bd96b8f11df81eb"
@@ -4790,24 +4787,10 @@ dependencies = [
 ]
 
 [[package]]
-name = "imbl"
-version = "4.0.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "5ae128b3bc67ed43ec0a7bb1c337a9f026717628b3c4033f07ded1da3e854951"
-dependencies = [
- "bitmaps",
- "imbl-sized-chunks",
- "rand_core",
- "rand_xoshiro",
- "serde",
- "version_check",
-]
-
-[[package]]
 name = "imbl-sized-chunks"
-version = "0.1.3"
+version = "0.1.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "8f4241005618a62f8d57b2febd02510fb96e0137304728543dfc5fd6f052c22d"
+checksum = "144006fb58ed787dcae3f54575ff4349755b00ccc99f4b4873860b654be1ed63"
 dependencies = [
  "bitmaps",
 ]
@@ -4868,9 +4851,9 @@ dependencies = [
 
 [[package]]
 name = "indexed_db_futures"
-version = "0.5.0"
+version = "0.4.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "43315957678a70eb21fb0d2384fe86dde0d6c859a01e24ce127eb65a0143d28c"
+checksum = "0704b71f13f81b5933d791abf2de26b33c40935143985220299a357721166706"
 dependencies = [
  "accessory",
  "cfg-if",
@@ -4922,6 +4905,9 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "e0242819d153cba4b4b05a5a8f2a7e9bbf97b6055b2a002b395c96b5ff3c0222"
 dependencies = [
  "cfg-if",
+ "js-sys",
+ "wasm-bindgen",
+ "web-sys",
 ]
 
 [[package]]
@@ -5629,9 +5615,9 @@ checksum = "3e2e65a1a2e43cfcb47a895c4c8b10d1f4a61097f9f254f183aee60cad9c651d"
 
 [[package]]
 name = "markup5ever"
-version = "0.14.0"
+version = "0.12.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "82c88c6129bd24319e62a0359cb6b958fa7e8be6e19bb1663bc396b90883aca5"
+checksum = "16ce3abbeba692c8b8441d036ef91aea6df8da2c6b6e21c7e14d3c18e526be45"
 dependencies = [
  "log",
  "phf",
@@ -5681,11 +5667,11 @@ dependencies = [
 
 [[package]]
 name = "matrix-sdk"
-version = "0.9.0"
-source = "git+https://github.com/fedibtc/matrix-rust-sdk?tag=fedi-0.3.2#7d9f0e6c3d09a0da77796d3b6c36fb5de6ccde32"
+version = "0.7.1"
+source = "git+https://github.com/fedibtc/matrix-rust-sdk?tag=fedi-0.1#0caa17f8e6ac60b896811d9d056d82d6fd0d7a2b"
 dependencies = [
  "anymap2",
- "aquamarine 0.6.0",
+ "aquamarine",
  "as_variant",
  "async-channel 2.3.1",
  "async-stream",
@@ -5699,9 +5685,8 @@ dependencies = [
  "futures-core",
  "futures-util",
  "gloo-timers 0.3.0",
- "growable-bloom-filter",
  "http 1.2.0",
- "imbl 4.0.1",
+ "imbl 2.0.3",
  "indexmap 2.7.0",
  "js_int",
  "matrix-sdk-base",
@@ -5710,16 +5695,13 @@ dependencies = [
  "matrix-sdk-sqlite",
  "mime",
  "mime2ext",
- "once_cell",
- "percent-encoding",
- "pin-project-lite",
  "reqwest 0.12.9",
  "ruma",
  "serde",
  "serde_html_form",
  "serde_json",
  "tempfile",
- "thiserror 2.0.11",
+ "thiserror 1.0.69",
  "tokio",
  "tokio-stream",
  "tokio-util",
@@ -5732,13 +5714,12 @@ dependencies = [
 
 [[package]]
 name = "matrix-sdk-base"
-version = "0.9.0"
-source = "git+https://github.com/fedibtc/matrix-rust-sdk?tag=fedi-0.3.2#7d9f0e6c3d09a0da77796d3b6c36fb5de6ccde32"
+version = "0.7.0"
+source = "git+https://github.com/fedibtc/matrix-rust-sdk?tag=fedi-0.1#0caa17f8e6ac60b896811d9d056d82d6fd0d7a2b"
 dependencies = [
  "as_variant",
  "async-trait",
  "bitflags 2.6.0",
- "decancer",
  "eyeball",
  "eyeball-im",
  "futures-util",
@@ -5747,31 +5728,28 @@ dependencies = [
  "matrix-sdk-crypto",
  "matrix-sdk-store-encryption",
  "once_cell",
- "regex",
  "ruma",
  "serde",
  "serde_json",
- "thiserror 2.0.11",
+ "thiserror 1.0.69",
  "tokio",
  "tracing",
- "unicode-normalization",
 ]
 
 [[package]]
 name = "matrix-sdk-common"
-version = "0.9.0"
-source = "git+https://github.com/fedibtc/matrix-rust-sdk?tag=fedi-0.3.2#7d9f0e6c3d09a0da77796d3b6c36fb5de6ccde32"
+version = "0.7.0"
+source = "git+https://github.com/fedibtc/matrix-rust-sdk?tag=fedi-0.1#0caa17f8e6ac60b896811d9d056d82d6fd0d7a2b"
 dependencies = [
  "async-trait",
- "eyeball-im",
  "futures-core",
  "futures-util",
  "gloo-timers 0.3.0",
- "imbl 4.0.1",
+ "instant",
  "ruma",
  "serde",
  "serde_json",
- "thiserror 2.0.11",
+ "thiserror 1.0.69",
  "tokio",
  "tracing",
  "tracing-subscriber",
@@ -5782,15 +5760,15 @@ dependencies = [
 
 [[package]]
 name = "matrix-sdk-crypto"
-version = "0.9.0"
-source = "git+https://github.com/fedibtc/matrix-rust-sdk?tag=fedi-0.3.2#7d9f0e6c3d09a0da77796d3b6c36fb5de6ccde32"
+version = "0.7.1"
+source = "git+https://github.com/fedibtc/matrix-rust-sdk?tag=fedi-0.1#0caa17f8e6ac60b896811d9d056d82d6fd0d7a2b"
 dependencies = [
  "aes",
- "aquamarine 0.6.0",
  "as_variant",
  "async-trait",
  "bs58",
  "byteorder",
+ "cbc",
  "cfg-if",
  "ctr",
  "eyeball",
@@ -5798,7 +5776,7 @@ dependencies = [
  "futures-util",
  "hkdf",
  "hmac",
- "itertools 0.13.0",
+ "itertools 0.12.1",
  "js_option",
  "matrix-sdk-common",
  "pbkdf2",
@@ -5809,7 +5787,7 @@ dependencies = [
  "serde_json",
  "sha2",
  "subtle",
- "thiserror 2.0.11",
+ "thiserror 1.0.69",
  "time",
  "tokio",
  "tokio-stream",
@@ -5822,8 +5800,8 @@ dependencies = [
 
 [[package]]
 name = "matrix-sdk-indexeddb"
-version = "0.9.0"
-source = "git+https://github.com/fedibtc/matrix-rust-sdk?tag=fedi-0.3.2#7d9f0e6c3d09a0da77796d3b6c36fb5de6ccde32"
+version = "0.7.0"
+source = "git+https://github.com/fedibtc/matrix-rust-sdk?tag=fedi-0.1#0caa17f8e6ac60b896811d9d056d82d6fd0d7a2b"
 dependencies = [
  "anyhow",
  "async-trait",
@@ -5842,7 +5820,7 @@ dependencies = [
  "serde-wasm-bindgen",
  "serde_json",
  "sha2",
- "thiserror 2.0.11",
+ "thiserror 1.0.69",
  "tokio",
  "tracing",
  "wasm-bindgen",
@@ -5852,12 +5830,12 @@ dependencies = [
 
 [[package]]
 name = "matrix-sdk-sqlite"
-version = "0.9.0"
-source = "git+https://github.com/fedibtc/matrix-rust-sdk?tag=fedi-0.3.2#7d9f0e6c3d09a0da77796d3b6c36fb5de6ccde32"
+version = "0.7.0"
+source = "git+https://github.com/fedibtc/matrix-rust-sdk?tag=fedi-0.1#0caa17f8e6ac60b896811d9d056d82d6fd0d7a2b"
 dependencies = [
  "async-trait",
  "deadpool-sqlite",
- "itertools 0.13.0",
+ "itertools 0.12.1",
  "matrix-sdk-base",
  "matrix-sdk-crypto",
  "matrix-sdk-store-encryption",
@@ -5866,7 +5844,7 @@ dependencies = [
  "rusqlite",
  "serde",
  "serde_json",
- "thiserror 2.0.11",
+ "thiserror 1.0.69",
  "tokio",
  "tracing",
  "vodozemac",
@@ -5874,8 +5852,8 @@ dependencies = [
 
 [[package]]
 name = "matrix-sdk-store-encryption"
-version = "0.9.0"
-source = "git+https://github.com/fedibtc/matrix-rust-sdk?tag=fedi-0.3.2#7d9f0e6c3d09a0da77796d3b6c36fb5de6ccde32"
+version = "0.7.0"
+source = "git+https://github.com/fedibtc/matrix-rust-sdk?tag=fedi-0.1#0caa17f8e6ac60b896811d9d056d82d6fd0d7a2b"
 dependencies = [
  "base64 0.22.1",
  "blake3",
@@ -5888,32 +5866,33 @@ dependencies = [
  "serde",
  "serde_json",
  "sha2",
- "thiserror 2.0.11",
+ "thiserror 1.0.69",
  "zeroize",
 ]
 
 [[package]]
 name = "matrix-sdk-ui"
-version = "0.9.0"
-source = "git+https://github.com/fedibtc/matrix-rust-sdk?tag=fedi-0.3.2#7d9f0e6c3d09a0da77796d3b6c36fb5de6ccde32"
+version = "0.7.0"
+source = "git+https://github.com/fedibtc/matrix-rust-sdk?tag=fedi-0.1#0caa17f8e6ac60b896811d9d056d82d6fd0d7a2b"
 dependencies = [
  "as_variant",
  "async-once-cell",
  "async-rx",
  "async-stream",
+ "async-trait",
  "async_cell",
  "chrono",
- "emojis",
  "eyeball",
  "eyeball-im",
  "eyeball-im-util",
  "futures-core",
  "futures-util",
  "fuzzy-matcher",
+ "gloo-timers 0.3.0",
  "growable-bloom-filter",
- "imbl 4.0.1",
+ "imbl 2.0.3",
  "indexmap 2.7.0",
- "itertools 0.13.0",
+ "itertools 0.12.1",
  "matrix-sdk",
  "matrix-sdk-base",
  "mime",
@@ -5922,12 +5901,10 @@ dependencies = [
  "ruma",
  "serde",
  "serde_json",
- "thiserror 2.0.11",
+ "thiserror 1.0.69",
  "tokio",
- "tokio-stream",
  "tracing",
  "unicode-normalization",
- "unicode-segmentation",
 ]
 
 [[package]]
@@ -6627,6 +6604,17 @@ dependencies = [
 ]
 
 [[package]]
+name = "pkcs7"
+version = "0.4.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "d79178be066405e0602bf3035946edef6b11b3f9dde46dfe5f8bfd7dea4b77e7"
+dependencies = [
+ "der",
+ "spki",
+ "x509-cert",
+]
+
+[[package]]
 name = "pkcs8"
 version = "0.10.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -7008,7 +6996,7 @@ dependencies = [
  "rustc-hash 2.1.0",
  "rustls 0.23.20",
  "socket2",
- "thiserror 2.0.11",
+ "thiserror 2.0.8",
  "tokio",
  "tracing",
 ]
@@ -7027,7 +7015,7 @@ dependencies = [
  "rustls 0.23.20",
  "rustls-pki-types",
  "slab",
- "thiserror 2.0.11",
+ "thiserror 2.0.8",
  "tinyvec",
  "tracing",
  "web-time",
@@ -7139,15 +7127,6 @@ name = "readlock"
 version = "0.1.8"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "072cfe5b1d2dcd38d20e18f85e9c9978b6cc08f0b373e9f1fff1541335622974"
-
-[[package]]
-name = "readlock-tokio"
-version = "0.1.3"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "867fac64d07214a87e5cf4e88b4ce855844a1cea243534392377d1ac2c911653"
-dependencies = [
- "tokio",
-]
 
 [[package]]
 name = "redox_syscall"
@@ -7440,8 +7419,8 @@ dependencies = [
 
 [[package]]
 name = "ruma"
-version = "0.12.0"
-source = "git+https://github.com/fedibtc/ruma?tag=ruma-0.12.0-fedi#dc4587f7272b1b583e4ed4a647d72f0a503b5f18"
+version = "0.10.1"
+source = "git+https://github.com/fedibtc/ruma?tag=ruma-fedi-0.1#4c3b29be87d412ef25dd1148dac014d09fa3b1e0"
 dependencies = [
  "assign",
  "js_int",
@@ -7456,8 +7435,8 @@ dependencies = [
 
 [[package]]
 name = "ruma-client-api"
-version = "0.20.0"
-source = "git+https://github.com/fedibtc/ruma?tag=ruma-0.12.0-fedi#dc4587f7272b1b583e4ed4a647d72f0a503b5f18"
+version = "0.18.0"
+source = "git+https://github.com/fedibtc/ruma?tag=ruma-fedi-0.1#4c3b29be87d412ef25dd1148dac014d09fa3b1e0"
 dependencies = [
  "as_variant",
  "assign",
@@ -7472,15 +7451,15 @@ dependencies = [
  "serde",
  "serde_html_form",
  "serde_json",
- "thiserror 2.0.11",
+ "thiserror 1.0.69",
  "url",
  "web-time",
 ]
 
 [[package]]
 name = "ruma-common"
-version = "0.15.0"
-source = "git+https://github.com/fedibtc/ruma?tag=ruma-0.12.0-fedi#dc4587f7272b1b583e4ed4a647d72f0a503b5f18"
+version = "0.13.0"
+source = "git+https://github.com/fedibtc/ruma?tag=ruma-fedi-0.1#4c3b29be87d412ef25dd1148dac014d09fa3b1e0"
 dependencies = [
  "as_variant",
  "base64 0.22.1",
@@ -7500,7 +7479,7 @@ dependencies = [
  "serde",
  "serde_html_form",
  "serde_json",
- "thiserror 2.0.11",
+ "thiserror 1.0.69",
  "time",
  "tracing",
  "url",
@@ -7511,8 +7490,8 @@ dependencies = [
 
 [[package]]
 name = "ruma-events"
-version = "0.30.0"
-source = "git+https://github.com/fedibtc/ruma?tag=ruma-0.12.0-fedi#dc4587f7272b1b583e4ed4a647d72f0a503b5f18"
+version = "0.28.1"
+source = "git+https://github.com/fedibtc/ruma?tag=ruma-fedi-0.1#4c3b29be87d412ef25dd1148dac014d09fa3b1e0"
 dependencies = [
  "as_variant",
  "indexmap 2.7.0",
@@ -7526,21 +7505,18 @@ dependencies = [
  "ruma-macros",
  "serde",
  "serde_json",
- "thiserror 2.0.11",
+ "thiserror 1.0.69",
  "tracing",
  "url",
- "web-time",
  "wildmatch",
 ]
 
 [[package]]
 name = "ruma-federation-api"
-version = "0.11.0"
-source = "git+https://github.com/fedibtc/ruma?tag=ruma-0.12.0-fedi#dc4587f7272b1b583e4ed4a647d72f0a503b5f18"
+version = "0.9.0"
+source = "git+https://github.com/fedibtc/ruma?tag=ruma-fedi-0.1#4c3b29be87d412ef25dd1148dac014d09fa3b1e0"
 dependencies = [
- "http 1.2.0",
  "js_int",
- "mime",
  "ruma-common",
  "ruma-events",
  "serde",
@@ -7549,8 +7525,8 @@ dependencies = [
 
 [[package]]
 name = "ruma-html"
-version = "0.4.0"
-source = "git+https://github.com/fedibtc/ruma?tag=ruma-0.12.0-fedi#dc4587f7272b1b583e4ed4a647d72f0a503b5f18"
+version = "0.2.0"
+source = "git+https://github.com/fedibtc/ruma?tag=ruma-fedi-0.1#4c3b29be87d412ef25dd1148dac014d09fa3b1e0"
 dependencies = [
  "as_variant",
  "html5ever",
@@ -7561,19 +7537,19 @@ dependencies = [
 
 [[package]]
 name = "ruma-identifiers-validation"
-version = "0.10.1"
-source = "git+https://github.com/fedibtc/ruma?tag=ruma-0.12.0-fedi#dc4587f7272b1b583e4ed4a647d72f0a503b5f18"
+version = "0.9.5"
+source = "git+https://github.com/fedibtc/ruma?tag=ruma-fedi-0.1#4c3b29be87d412ef25dd1148dac014d09fa3b1e0"
 dependencies = [
  "js_int",
- "thiserror 2.0.11",
+ "thiserror 1.0.69",
 ]
 
 [[package]]
 name = "ruma-macros"
-version = "0.15.0"
-source = "git+https://github.com/fedibtc/ruma?tag=ruma-0.12.0-fedi#dc4587f7272b1b583e4ed4a647d72f0a503b5f18"
+version = "0.13.0"
+source = "git+https://github.com/fedibtc/ruma?tag=ruma-fedi-0.1#4c3b29be87d412ef25dd1148dac014d09fa3b1e0"
 dependencies = [
- "cfg-if",
+ "once_cell",
  "proc-macro-crate 3.2.0",
  "proc-macro2",
  "quote",
@@ -7851,9 +7827,9 @@ checksum = "f638d531eccd6e23b980caf34876660d38e265409d8e99b397ab71eb3612fad0"
 
 [[package]]
 name = "serde"
-version = "1.0.217"
+version = "1.0.216"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "02fc4265df13d6fa1d00ecff087228cc0a2b5f3c0e87e258d8b94a156e984c70"
+checksum = "0b9781016e935a97e8beecf0c933758c97a5520d32930e460142b4cd80c6338e"
 dependencies = [
  "serde_derive",
 ]
@@ -7899,9 +7875,9 @@ dependencies = [
 
 [[package]]
 name = "serde_derive"
-version = "1.0.217"
+version = "1.0.216"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "5a9bf7cf98d04a2b28aead066b7496853d4779c9cc183c440dbac457641e19a0"
+checksum = "46f859dbbf73865c6627ed570e78961cd3ac92407a2d117204c49232485da55e"
 dependencies = [
  "proc-macro2",
  "quote",
@@ -7932,9 +7908,9 @@ dependencies = [
 
 [[package]]
 name = "serde_json"
-version = "1.0.137"
+version = "1.0.134"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "930cfb6e6abf99298aaad7d29abbef7a9999a9a8806a40088f55f0dcec03146b"
+checksum = "d00f4175c42ee48b15416f6193a959ba3a0d67fc699a0db9ad12df9f83991c7d"
 dependencies = [
  "itoa",
  "memchr",
@@ -8287,7 +8263,7 @@ dependencies = [
  "secp256k1",
  "serde",
  "serde_json",
- "thiserror 2.0.11",
+ "thiserror 2.0.8",
  "tracing",
 ]
 
@@ -8301,7 +8277,7 @@ dependencies = [
  "secp256k1",
  "serde",
  "serde_json",
- "thiserror 2.0.11",
+ "thiserror 2.0.8",
  "tracing",
 ]
 
@@ -8614,11 +8590,11 @@ dependencies = [
 
 [[package]]
 name = "thiserror"
-version = "2.0.11"
+version = "2.0.8"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "d452f284b73e6d76dd36758a0c8684b1d5be31f92b89d07fd5822175732206fc"
+checksum = "08f5383f3e0071702bf93ab5ee99b52d26936be9dedd9413067cbdcddcb6141a"
 dependencies = [
- "thiserror-impl 2.0.11",
+ "thiserror-impl 2.0.8",
 ]
 
 [[package]]
@@ -8634,9 +8610,9 @@ dependencies = [
 
 [[package]]
 name = "thiserror-impl"
-version = "2.0.11"
+version = "2.0.8"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "26afc1baea8a989337eeb52b6e72a039780ce45c3edfcc9c5b9d112feeb173c2"
+checksum = "f2f357fcec90b3caef6623a099691be676d033b40a058ac95d2a6ade6fa0c943"
 dependencies = [
  "proc-macro2",
  "quote",
@@ -9905,7 +9881,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "e640d9b0964e9d39df633548591090ab92f7a4567bc31d3891af23471a3365c6"
 dependencies = [
  "lazy_static",
- "thiserror 2.0.11",
+ "thiserror 2.0.8",
  "ts-rs-macros",
 ]
 
@@ -10255,13 +10231,12 @@ dependencies = [
 
 [[package]]
 name = "vodozemac"
-version = "0.8.1"
-source = "git+https://github.com/matrix-org/vodozemac?rev=3d655add09992d17fdb2b55c60f532658090487d#3d655add09992d17fdb2b55c60f532658090487d"
+version = "0.6.0"
+source = "git+https://github.com/matrix-org/vodozemac/?rev=4ef989c6a8eba0bc809e285a081c56320a9bbf1e#4ef989c6a8eba0bc809e285a081c56320a9bbf1e"
 dependencies = [
  "aes",
  "arrayvec",
  "base64 0.22.1",
- "base64ct",
  "cbc",
  "chacha20poly1305",
  "curve25519-dalek",
@@ -10270,14 +10245,15 @@ dependencies = [
  "hkdf",
  "hmac",
  "matrix-pickle",
- "prost 0.13.4",
+ "pkcs7",
+ "prost 0.12.6",
  "rand",
  "serde",
  "serde_bytes",
  "serde_json",
  "sha2",
  "subtle",
- "thiserror 2.0.11",
+ "thiserror 1.0.69",
  "x25519-dalek",
  "zeroize",
 ]
@@ -10791,6 +10767,17 @@ dependencies = [
  "rand_core",
  "serde",
  "zeroize",
+]
+
+[[package]]
+name = "x509-cert"
+version = "0.2.5"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "1301e935010a701ae5f8655edc0ad17c44bad3ac5ce8c39185f75453b720ae94"
+dependencies = [
+ "const-oid",
+ "der",
+ "spki",
 ]
 
 [[package]]

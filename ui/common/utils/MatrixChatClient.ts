@@ -27,7 +27,7 @@ import {
     RpcBackPaginationStatus,
     RpcMatrixAccountSession,
     RpcMatrixUserDirectorySearchResponse,
-    RpcRoomId,
+    RpcRoomListEntry,
     RpcRoomMember,
     RpcRoomNotificationMode,
     RpcSyncIndicator,
@@ -555,8 +555,8 @@ export class MatrixChatClient {
         if (this.roomListUnsubscribe !== undefined) return
         // Listen and emit on observable updates
         const unsubscribe = this.fedimint.subscribeObservable<
-            RpcRoomId[],
-            ObservableVecUpdate<RpcRoomId>['update']
+            RpcRoomListEntry[],
+            ObservableVecUpdate<RpcRoomListEntry>['update']
         >(
             id => {
                 return this.fedimint.matrixRoomList({ observableId: id })
@@ -572,9 +572,11 @@ export class MatrixChatClient {
 
                 // Observe all of the rooms
                 rooms.map(async room => {
-                    await this.observeRoomInfo(room)
-                    await this.observeRoomPowerLevels(room)
-                    await this.observeRoomNotificationMode(room)
+                    if ('value' in room) {
+                        await this.observeRoomInfo(room.value)
+                        await this.observeRoomPowerLevels(room.value)
+                        await this.observeRoomNotificationMode(room.value)
+                    }
                 })
             },
             update => {
@@ -583,7 +585,9 @@ export class MatrixChatClient {
                     mapObservableUpdates(update, this.serializeRoomListItem),
                 )
                 getNewObservableIds(update, room => {
-                    return room
+                    return room.kind !== 'empty' && room.kind !== 'invalidated'
+                        ? room.value
+                        : false
                 }).forEach(roomId => {
                     this.observeRoomInfo(roomId).catch(err =>
                         log.warn('Failed to observe room info', {
@@ -731,8 +735,15 @@ export class MatrixChatClient {
         })
     }
 
-    private serializeRoomListItem(room: RpcRoomId): MatrixRoomListItem {
-        return { status: MatrixRoomListItemStatus.ready, id: room }
+    private serializeRoomListItem(room: RpcRoomListEntry): MatrixRoomListItem {
+        if (room.kind === 'empty' || room.kind === 'invalidated') {
+            return { status: MatrixRoomListItemStatus.loading }
+        } else {
+            return {
+                status: MatrixRoomListItemStatus.ready,
+                id: room.value,
+            }
+        }
     }
 
     // TODO: get type for this from bridge?
@@ -763,32 +774,23 @@ export class MatrixChatClient {
         let preview: MatrixRoom['preview']
         if (room.latest_event) {
             const { event, sender_profile } = room.latest_event
-            if ('kind' in event && 'Decrypted' in event.kind) {
-                const { event: decryptedEvent } = event.kind.Decrypted
-                let timestamp = decryptedEvent.origin_server_ts
-                let isDeleted = false
-                // Deleted/redacted messages have the redaction timestamp in the unsigned field
-                if (
-                    'unsigned' in decryptedEvent &&
-                    'redacted_because' in decryptedEvent.unsigned &&
-                    !!decryptedEvent.unsigned?.redacted_because
-                ) {
-                    isDeleted = true
-                    timestamp =
-                        decryptedEvent.unsigned.redacted_because
-                            .origin_server_ts
-                }
-                preview = {
-                    eventId: decryptedEvent.event_id,
-                    senderId: sender_profile.Original.content.id,
-                    displayName: this.ensureDisplayName(
-                        sender_profile.Original.content.displayname,
-                    ),
-                    avatarUrl: sender_profile.Original.content.avatar_url,
-                    body: decryptedEvent.content.body,
-                    isDeleted,
-                    timestamp,
-                }
+            const isDeleted = !!event.event.unsigned?.redacted_because
+            // Try to use the redaction timestamp if found, fallback to event timestamp
+            const timestamp = isDeleted
+                ? event.event.unsigned?.redacted_because.origin_server_ts ||
+                  event.event.origin_server_ts
+                : event.event.origin_server_ts
+            preview = {
+                eventId: event.event.event_id,
+                senderId: sender_profile.Original.content.id,
+                displayName: this.ensureDisplayName(
+                    sender_profile.Original.content.displayname,
+                ),
+                avatarUrl: sender_profile.Original.content.avatar_url,
+                body: event.event.content.body,
+                // Deleted/redacted messages have this in the unsigned field
+                isDeleted,
+                timestamp,
             }
         }
 
@@ -932,12 +934,6 @@ export class MatrixChatClient {
                 msgtype: 'xyz.fedi.deleted',
                 body: '',
                 ...eventContent.value.unsigned.redacted_because.content,
-            }
-        } else if (eventContent.value.type === 'm.room.encrypted') {
-            content = {
-                msgtype: 'm.room.encrypted',
-                body: '',
-                ...eventContent.value.content,
             }
         }
 

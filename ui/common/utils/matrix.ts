@@ -19,7 +19,6 @@ import {
     MatrixTimelineItem,
     MatrixUser,
 } from '../types'
-import { RpcTimelineEventItemId } from '../types/bindings'
 import { makeLog } from './log'
 
 const log = makeLog('common/utils/matrix')
@@ -98,16 +97,6 @@ const contentSchemas = {
     'm.emote': z.object({
         msgtype: z.literal('m.emote'),
         body: z.string(),
-    }),
-    /* This event is defined by Matrix, but we extend it with the `msgtype` for simpler parsing */
-    'm.room.encrypted': z.object({
-        msgtype: z.literal('m.room.encrypted'),
-        body: z.string(),
-        algorithm: z.string(),
-        ciphertext: z.string(),
-        device_id: z.string(),
-        sender_key: z.string(),
-        session_id: z.string(),
     }),
     /**
      * Fedi custom events
@@ -195,12 +184,6 @@ export type MatrixEventContentType<T extends keyof typeof contentSchemas> =
 export type MatrixEventContent =
     | z.infer<(typeof contentSchemas)[keyof typeof contentSchemas]>
     | MatrixEventUnknownContent
-
-export function getEventId(event: MatrixEvent): RpcTimelineEventItemId {
-    return event.eventId
-        ? { eventId: event.eventId }
-        : { transactionId: event.txnId || '' }
-}
 
 export function formatMatrixEventContent(
     content: MatrixEventContent,
@@ -572,12 +555,6 @@ export function isVideoEvent(
     event: MatrixEvent,
 ): event is MatrixEvent<MatrixEventContentType<'m.video'>> {
     return event.content.msgtype === 'm.video'
-}
-
-export function isEncryptedEvent(
-    event: MatrixEvent,
-): event is MatrixEvent<MatrixEventContentType<'m.room.encrypted'>> {
-    return event.content.msgtype === 'm.room.encrypted'
 }
 
 /**

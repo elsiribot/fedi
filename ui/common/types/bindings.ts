@@ -144,7 +144,7 @@ export type ObservableBackPaginationStatus =
 
 export type ObservableRoomInfo = Observable<JSONObject>;
 
-export type ObservableRoomList = ObservableVec<RpcRoomId>;
+export type ObservableRoomList = ObservableVec<RpcRoomListEntry>;
 
 export type ObservableRpcSyncIndicator = Observable<RpcSyncIndicator>;
 
@@ -497,6 +497,7 @@ export type RpcMethods = {
     ObservableRpcSyncIndicator,
   ];
   matrixRoomList: [matrixRoomList, ObservableRoomList];
+  matrixRoomListUpdateRanges: [matrixRoomListUpdateRanges, null];
   matrixRoomTimelineItems: [matrixRoomTimelineItems, ObservableTimelineItems];
   matrixRoomTimelineItemsPaginateBackwards: [
     matrixRoomTimelineItemsPaginateBackwards,
@@ -621,6 +622,8 @@ export type RpcPublicRoomChunk = JSONObject;
 
 export type RpcPusher = JSONObject;
 
+export type RpcRanges = Array<{ start: number; end: number }>;
+
 export type RpcRecoveryId = string;
 
 export type RpcRegisteredDevice = {
@@ -637,6 +640,11 @@ export type RpcReturningMemberStatus =
 export type RpcReusedEcashProofs = JSONObject;
 
 export type RpcRoomId = string;
+
+export type RpcRoomListEntry =
+  | { kind: "empty" }
+  | { kind: "invalidated"; value: string }
+  | { kind: "filled"; value: string };
 
 export type RpcRoomMember = {
   userId: RpcUserId;
@@ -688,10 +696,6 @@ export type RpcStabilityPoolTransactionState =
 
 export type RpcSyncIndicator = "hide" | "show";
 
-export type RpcTimelineEventItemId =
-  | { transactionId: string }
-  | { eventId: string };
-
 /**
  * This type represents the "send state" of a local event timeline item.
  */
@@ -715,7 +719,7 @@ export type RpcTimelineEventSendState =
 
 export type RpcTimelineItem =
   | { kind: "event"; value: RpcTimelineItemEvent }
-  | { kind: "dateDivider"; value: number }
+  | { kind: "dayDivider"; value: number }
   | { kind: "readMarker" }
   | { kind: "unknown" };
 
@@ -1003,7 +1007,7 @@ export type locateRecoveryFile = {};
 
 export type matrixDeleteMessage = {
   roomId: RpcRoomId;
-  eventId: RpcTimelineEventItemId;
+  eventId: string;
   reason: string | null;
 };
 
@@ -1011,7 +1015,7 @@ export type matrixDownloadFile = { path: string; mediaSource: RpcMediaSource };
 
 export type matrixEditMessage = {
   roomId: RpcRoomId;
-  eventId: RpcTimelineEventItemId;
+  eventId: string;
   newContent: string;
 };
 
@@ -1068,6 +1072,8 @@ export type matrixRoomKickUser = {
 export type matrixRoomLeave = { roomId: RpcRoomId };
 
 export type matrixRoomList = { observableId: number };
+
+export type matrixRoomListUpdateRanges = { ranges: RpcRanges };
 
 export type matrixRoomMarkAsUnread = { roomId: RpcRoomId; unread: boolean };
 

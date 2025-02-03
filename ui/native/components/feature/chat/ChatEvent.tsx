@@ -7,7 +7,6 @@ import { selectMatrixAuth } from '@fedi/common/redux'
 import { MatrixEvent } from '@fedi/common/types'
 import {
     isDeletedEvent,
-    isEncryptedEvent,
     isFileEvent,
     isImageEvent,
     isPaymentEvent,
@@ -18,7 +17,6 @@ import {
 
 import { useAppSelector } from '../../../state/hooks'
 import ChatDeletedEvent from './ChatDeletedEvent'
-import ChatEncryptedEvent from './ChatEncryptedEvent'
 import ChatFileEvent from './ChatFileEvent'
 import ChatImageEvent from './ChatImageEvent'
 import ChatPaymentEvent from './ChatPaymentEvent'
@@ -90,8 +88,6 @@ const ChatEvent: React.FC<Props> = ({
                         <View style={bubbleContainerStyles}>
                             {isText ? (
                                 <ChatTextEvent event={event} />
-                            ) : isEncryptedEvent(event) ? (
-                                <ChatEncryptedEvent event={event} />
                             ) : isPaymentEvent(event) ? (
                                 <ChatPaymentEvent event={event} />
                             ) : isImageEvent(event) ? (
