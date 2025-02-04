@@ -40,7 +40,7 @@ use fedimint_core::module::{
 };
 use fedimint_core::server::DynServerModule;
 use fedimint_core::task::{MaybeSend, MaybeSync};
-use fedimint_core::{Amount, NumPeersExt, OutPoint, PeerId, ServerModule};
+use fedimint_core::{Amount, InPoint, NumPeersExt, OutPoint, PeerId, ServerModule};
 use futures::{stream, StreamExt};
 use itertools::Itertools;
 use oracle::{AggregateOracle, MockOracle, Oracle};
@@ -454,6 +454,7 @@ impl ServerModule for StabilityPool {
         &'a self,
         dbtx: &mut DatabaseTransaction<'c>,
         input: &'b StabilityPoolInput,
+        _in_point: InPoint,
     ) -> Result<InputMeta, StabilityPoolInputError> {
         let v0 = input
             .ensure_v0_ref()
