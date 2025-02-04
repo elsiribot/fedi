@@ -5,7 +5,7 @@ use std::time::SystemTime;
 use anyhow::ensure;
 use fedimint_core::db::{DatabaseTransaction, IDatabaseTransactionOpsCoreTyped as _};
 use fedimint_core::encoding::{Decodable, Encodable};
-use fedimint_core::{impl_db_lookup, impl_db_record, Amount, PeerId};
+use fedimint_core::{impl_db_lookup, impl_db_record, Amount, PeerId, TransactionId};
 use futures::StreamExt;
 use stability_pool_common::{
     AccountHistoryItem, AccountId, CycleInfo, FeeRate, FiatAmount, FiatOrAll, Provide, Seek,
@@ -113,9 +113,23 @@ pub struct UnlockRequestKey(pub AccountId);
 #[derive(Debug, Encodable, Decodable)]
 pub struct UnlockRequestsKeyPrefix;
 
+/// An `UnlockRequest` is stored in the DB when staged deposits are not enough
+/// to satisfy a user's unlock request. At the next cycle turnover, we used the
+/// just-settled locked deposits to unlock any additional funds needed, and then
+/// delete the `UnlockRequest` from the DB.
+#[derive(Debug, Encodable, Decodable)]
+pub struct UnlockRequest {
+    /// ID of the TX representing the user's request to unlock funds
+    pub txid: TransactionId,
+
+    /// The remaining amount needed to be unlocked from locked deposits at the
+    /// next cycle turnover.
+    pub unlock_amount: FiatOrAll,
+}
+
 impl_db_record!(
     key = UnlockRequestKey,
-    value = FiatOrAll,
+    value = UnlockRequest,
     db_prefix = DbKeyPrefix::UnlockRequests,
 );
 

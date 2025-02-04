@@ -23,7 +23,7 @@ use common::{
 use db::{
     CurrentCycleKey, CurrentCycleKeyPrefix, Cycle, CycleChangeVoteIndexPrefix, CycleChangeVoteKey,
     IdleBalanceKey, IdleBalanceKeyPrefix, PastCycleKey, StagedProvidesKey, StagedProvidesKeyPrefix,
-    StagedSeeksKey, StagedSeeksKeyPrefix, UnlockRequestKey, UnlockRequestsKeyPrefix,
+    StagedSeeksKey, StagedSeeksKeyPrefix, UnlockRequest, UnlockRequestKey, UnlockRequestsKeyPrefix,
 };
 use fedimint_core::config::{
     ConfigGenModuleParams, DkgResult, ServerModuleConfig, ServerModuleConsensusConfig,
@@ -40,7 +40,7 @@ use fedimint_core::module::{
 };
 use fedimint_core::server::DynServerModule;
 use fedimint_core::task::{MaybeSend, MaybeSync};
-use fedimint_core::{Amount, InPoint, NumPeersExt, OutPoint, PeerId, ServerModule};
+use fedimint_core::{Amount, InPoint, NumPeersExt, OutPoint, PeerId, ServerModule, TransactionId};
 use futures::{stream, StreamExt};
 use itertools::Itertools;
 use oracle::{AggregateOracle, MockOracle, Oracle};
@@ -454,7 +454,7 @@ impl ServerModule for StabilityPool {
         &'a self,
         dbtx: &mut DatabaseTransaction<'c>,
         input: &'b StabilityPoolInput,
-        _in_point: InPoint,
+        in_point: InPoint,
     ) -> Result<InputMeta, StabilityPoolInputError> {
         let v0 = input
             .ensure_v0_ref()
@@ -467,7 +467,7 @@ impl ServerModule for StabilityPool {
 
         match v0 {
             StabilityPoolInputV0::UnlockForWithdrawal(unlock) => {
-                process_unlock_input(dbtx, unlock).await
+                process_unlock_input(dbtx, in_point.txid, unlock).await
             }
             StabilityPoolInputV0::Withdrawal(withdrawal) => {
                 process_withdrawal_input(dbtx, withdrawal).await
@@ -479,7 +479,7 @@ impl ServerModule for StabilityPool {
         &'a self,
         dbtx: &mut DatabaseTransaction<'b>,
         output: &'a StabilityPoolOutput,
-        _outpoint: OutPoint,
+        outpoint: OutPoint,
     ) -> Result<TransactionItemAmount, StabilityPoolOutputError> {
         let v0 = output
             .ensure_v0_ref()
@@ -503,15 +503,27 @@ impl ServerModule for StabilityPool {
             StabilityPoolOutputV0::DepositToSeek(deposit_to_seek)
                 if account_id.acc_type() == AccountType::Seeker =>
             {
-                process_deposit_to_seek_output(self.cfg.clone(), dbtx, deposit_to_seek).await
+                process_deposit_to_seek_output(
+                    self.cfg.clone(),
+                    dbtx,
+                    outpoint.txid,
+                    deposit_to_seek,
+                )
+                .await
             }
             StabilityPoolOutputV0::DepositToProvide(deposit_to_provide)
                 if account_id.acc_type() == AccountType::Provider =>
             {
-                process_deposit_to_provide_output(self.cfg.clone(), dbtx, deposit_to_provide).await
+                process_deposit_to_provide_output(
+                    self.cfg.clone(),
+                    dbtx,
+                    outpoint.txid,
+                    deposit_to_provide,
+                )
+                .await
             }
             StabilityPoolOutputV0::Transfer(transfer) => {
-                process_transfer_output(self.cfg.clone(), dbtx, transfer).await
+                process_transfer_output(self.cfg.clone(), dbtx, outpoint.txid, transfer).await
             }
             _ => Err(StabilityPoolOutputError::InvalidAccountTypeForOperation),
         }
@@ -599,6 +611,7 @@ impl ServerModule for StabilityPool {
 
 async fn process_unlock_input_inner<K, M>(
     dbtx: &mut DatabaseTransaction<'_>,
+    txid: TransactionId,
     input: &UnlockForWithdrawalInput,
     staged_key: &K,
     locked_deposits: &[Deposit<M>],
@@ -643,8 +656,14 @@ where
             if amount_needed != Amount::ZERO {
                 let leftover_fiat = FiatAmount::from_btc_amount(amount_needed, btc_price)
                     .map_err(|_| StabilityPoolInputError::TemporaryError)?;
-                dbtx.insert_entry(&unlock_key, &FiatOrAll::Fiat(leftover_fiat))
-                    .await;
+                dbtx.insert_entry(
+                    &unlock_key,
+                    &UnlockRequest {
+                        txid,
+                        unlock_amount: FiatOrAll::Fiat(leftover_fiat),
+                    },
+                )
+                .await;
             }
         }
         FiatOrAll::All => {
@@ -661,7 +680,14 @@ where
 
             // If there are locked deposits present, register an unlock request for ALL
             if locked_deposits_sum != Amount::ZERO {
-                dbtx.insert_entry(&unlock_key, &FiatOrAll::All).await;
+                dbtx.insert_entry(
+                    &unlock_key,
+                    &UnlockRequest {
+                        txid,
+                        unlock_amount: FiatOrAll::All,
+                    },
+                )
+                .await;
             }
         }
     }
@@ -681,10 +707,10 @@ where
             .into_iter()
             .map(|drained| AccountHistoryItem {
                 cycle: current_cycle.into(),
-                kind: AccountHistoryItemKind::StagedToIdle {
-                    amount_withdrawn: drained.amount,
-                    desposit_sequence: drained.sequence,
-                },
+                kind: AccountHistoryItemKind::StagedToIdle,
+                txid,
+                deposit_sequence: drained.sequence,
+                amount: drained.amount,
             }),
     )
     .await;
@@ -703,6 +729,7 @@ where
 
 async fn process_unlock_input(
     dbtx: &mut DatabaseTransaction<'_>,
+    txid: TransactionId,
     input: &UnlockForWithdrawalInput,
 ) -> Result<InputMeta, StabilityPoolInputError> {
     let current_cycle = dbtx
@@ -715,6 +742,7 @@ async fn process_unlock_input(
             let staged_key = StagedSeeksKey(input.account.id());
             process_unlock_input_inner(
                 dbtx,
+                txid,
                 input,
                 &staged_key,
                 current_cycle
@@ -729,6 +757,7 @@ async fn process_unlock_input(
             let staged_key = StagedProvidesKey(input.account.id());
             process_unlock_input_inner(
                 dbtx,
+                txid,
                 input,
                 &staged_key,
                 current_cycle
@@ -778,6 +807,7 @@ async fn process_withdrawal_input(
 async fn process_deposit_to_seek_output(
     config: StabilityPoolConfig,
     dbtx: &mut DatabaseTransaction<'_>,
+    txid: TransactionId,
     output: &DepositToSeekOutput,
 ) -> Result<TransactionItemAmount, StabilityPoolOutputError> {
     if output.seek_request.0 < config.consensus.min_allowed_seek {
@@ -797,6 +827,7 @@ async fn process_deposit_to_seek_output(
         sequence,
         amount: output.seek_request.0,
         meta: (),
+        txid,
     });
 
     dbtx.insert_entry(&StagedSeeksKey(output.account_id), &user_staged_seeks)
@@ -806,10 +837,10 @@ async fn process_deposit_to_seek_output(
         output.account_id,
         [AccountHistoryItem {
             cycle: current_cycle.into(),
-            kind: AccountHistoryItemKind::DepositToStaged {
-                deposit_sequence: sequence,
-                amount: output.seek_request.0,
-            },
+            kind: AccountHistoryItemKind::DepositToStaged,
+            txid,
+            deposit_sequence: sequence,
+            amount: output.seek_request.0,
         }],
     )
     .await;
@@ -822,6 +853,7 @@ async fn process_deposit_to_seek_output(
 async fn process_deposit_to_provide_output(
     config: StabilityPoolConfig,
     dbtx: &mut DatabaseTransaction<'_>,
+    txid: TransactionId,
     output: &DepositToProvideOutput,
 ) -> Result<TransactionItemAmount, StabilityPoolOutputError> {
     if output.provide_request.amount < config.consensus.min_allowed_provide {
@@ -846,6 +878,7 @@ async fn process_deposit_to_provide_output(
         sequence,
         amount: output.provide_request.amount,
         meta: output.provide_request.min_fee_rate,
+        txid,
     });
 
     dbtx.insert_entry(&StagedProvidesKey(output.account_id), &user_staged_provides)
@@ -855,10 +888,10 @@ async fn process_deposit_to_provide_output(
         output.account_id,
         [AccountHistoryItem {
             cycle: current_cycle.into(),
-            kind: AccountHistoryItemKind::DepositToStaged {
-                deposit_sequence: sequence,
-                amount: output.provide_request.amount,
-            },
+            kind: AccountHistoryItemKind::DepositToStaged,
+            txid,
+            deposit_sequence: sequence,
+            amount: output.provide_request.amount,
         }],
     )
     .await;
@@ -870,6 +903,7 @@ async fn process_deposit_to_provide_output(
 
 async fn process_transfer_output_inner<M, K>(
     dbtx: &mut DatabaseTransaction<'_>,
+    txid: TransactionId,
     signed_request: &SignedTransferRequest,
     cycle_info: CycleInfo,
     locked_deposits_map: &mut BTreeMap<AccountId, Vec<Deposit<M>>>,
@@ -961,6 +995,7 @@ where
             sequence: next_sequence,
             amount: drained_staged_deposits.iter().map(|d| d.amount).sum(),
             meta: new_deposit_meta.clone(),
+            txid,
         };
         to_staged_deposits.push(new_to_staged_deposit.clone());
         dbtx.insert_entry(&to_staged_deposits_key, &to_staged_deposits)
@@ -971,21 +1006,23 @@ where
             AccountHistoryItem {
                 cycle: cycle_info,
                 kind: AccountHistoryItemKind::StagedTransferOut {
-                    desposit_sequence: d.sequence,
-                    amount: d.amount,
                     to: *signed_request.details().to(),
                     meta: signed_request.details().meta().to_vec(),
                 },
+                txid,
+                deposit_sequence: d.sequence,
+                amount: d.amount,
             }
         }));
         to_account_history_items.push(AccountHistoryItem {
             cycle: cycle_info,
             kind: AccountHistoryItemKind::StagedTransferIn {
-                desposit_sequence: new_to_staged_deposit.sequence,
-                amount: new_to_staged_deposit.amount,
                 from: signed_request.details().from().id(),
                 meta: signed_request.details().meta().to_vec(),
             },
+            txid,
+            deposit_sequence: new_to_staged_deposit.sequence,
+            amount: new_to_staged_deposit.amount,
         });
     }
 
@@ -1003,6 +1040,7 @@ where
             sequence: next_sequence,
             amount,
             meta: new_deposit_meta,
+            txid,
         };
         locked_deposits_map
             .entry(*signed_request.details().to())
@@ -1014,21 +1052,23 @@ where
             AccountHistoryItem {
                 cycle: cycle_info,
                 kind: AccountHistoryItemKind::LockedTransferOut {
-                    desposit_sequence: d.sequence,
-                    amount: d.amount,
                     to: *signed_request.details().to(),
                     meta: signed_request.details().meta().to_vec(),
                 },
+                txid,
+                deposit_sequence: d.sequence,
+                amount: d.amount,
             }
         }));
         to_account_history_items.push(AccountHistoryItem {
             cycle: cycle_info,
             kind: AccountHistoryItemKind::LockedTransferIn {
-                desposit_sequence: new_to_locked_deposit.sequence,
-                amount: new_to_locked_deposit.amount,
                 from: signed_request.details().from().id(),
                 meta: signed_request.details().meta().to_vec(),
             },
+            txid,
+            deposit_sequence: new_to_locked_deposit.sequence,
+            amount: new_to_locked_deposit.amount,
         });
     }
 
@@ -1051,6 +1091,7 @@ where
 async fn process_transfer_output(
     config: StabilityPoolConfig,
     dbtx: &mut DatabaseTransaction<'_>,
+    txid: TransactionId,
     output: &TransferOutput,
 ) -> Result<TransactionItemAmount, StabilityPoolOutputError> {
     let TransferOutput { signed_request } = output;
@@ -1084,6 +1125,7 @@ async fn process_transfer_output(
         AccountType::Seeker => {
             process_transfer_output_inner(
                 dbtx,
+                txid,
                 signed_request,
                 cycle_info,
                 &mut current_cycle.locked_seeks,
@@ -1100,6 +1142,7 @@ async fn process_transfer_output(
                 }
                 process_transfer_output_inner(
                     dbtx,
+                    txid,
                     signed_request,
                     cycle_info,
                     &mut current_cycle.locked_provides,
@@ -1212,14 +1255,14 @@ fn settle_locks(
 async fn process_unlock_requests_inner<M>(
     dbtx: &mut DatabaseTransaction<'_>,
     account_id: AccountId,
-    unlock_amount: FiatOrAll,
+    unlock_request: UnlockRequest,
     locked_deposits: &mut Vec<Deposit<M>>,
     new_cycle_info: &CycleInfo,
 ) -> anyhow::Result<()>
 where
     M: MaybeSend + MaybeSync + Clone,
 {
-    let drained_locked_deposits = match unlock_amount {
+    let drained_locked_deposits = match unlock_request.unlock_amount {
         FiatOrAll::Fiat(fiat_amount) => {
             let amount_to_unlock = fiat_amount.to_btc_amount(new_cycle_info.start_price)?;
             drain_in_reverse(locked_deposits, amount_to_unlock)
@@ -1247,10 +1290,10 @@ where
             .into_iter()
             .map(|drained| AccountHistoryItem {
                 cycle: *new_cycle_info,
-                kind: AccountHistoryItemKind::LockedToIdle {
-                    amount_withdrawn: drained.amount,
-                    deposit_sequence: drained.sequence,
-                },
+                kind: AccountHistoryItemKind::LockedToIdle,
+                txid: unlock_request.txid,
+                deposit_sequence: drained.sequence,
+                amount: drained.amount,
             }),
     )
     .await;
@@ -1270,13 +1313,13 @@ async fn process_unlock_requests(
         .collect::<Vec<_>>()
         .await;
 
-    for (UnlockRequestKey(account_id), unlock_amount) in unlock_requests {
+    for (UnlockRequestKey(account_id), unlock_request) in unlock_requests {
         match account_id.acc_type() {
             AccountType::Seeker => {
                 process_unlock_requests_inner(
                     dbtx,
                     account_id,
-                    unlock_amount,
+                    unlock_request,
                     locked_seeks.get_mut(&account_id).unwrap_or(&mut vec![]),
                     &new_cycle_info,
                 )
@@ -1286,7 +1329,7 @@ async fn process_unlock_requests(
                 process_unlock_requests_inner(
                     dbtx,
                     account_id,
-                    unlock_amount,
+                    unlock_request,
                     locked_provides.get_mut(&account_id).unwrap_or(&mut vec![]),
                     &new_cycle_info,
                 )
@@ -1322,6 +1365,7 @@ async fn restage_remaining_locks_inner<K, M>(
                     sequence: prev.sequence,
                     amount: prev.amount + curr.amount,
                     meta: prev.meta,
+                    txid: prev.txid,
                 })
             } else {
                 Err((prev, curr))
@@ -1479,6 +1523,7 @@ fn calculate_locked_provides_and_fee_rate(
                 sequence,
                 amount,
                 meta: min_fee_rate,
+                txid,
             },
         ) = &mut staged_provides[0];
 
@@ -1515,6 +1560,7 @@ fn calculate_locked_provides_and_fee_rate(
                 sequence: *sequence,
                 amount: Amount::from_msats(amount_used.try_into().unwrap()),
                 meta: *min_fee_rate,
+                txid: *txid,
             },
         ));
 
@@ -1554,7 +1600,10 @@ fn calculate_locked_seeks(
         let (
             account,
             Seek {
-                sequence, amount, ..
+                sequence,
+                amount,
+                txid,
+                ..
             },
         ) = &mut staged_seeks[0];
 
@@ -1566,6 +1615,7 @@ fn calculate_locked_seeks(
                 sequence: *sequence,
                 amount: Amount::from_msats(amount_used.try_into().unwrap()),
                 meta: (),
+                txid: *txid,
             },
         ));
 
@@ -1601,41 +1651,46 @@ async fn update_history_for_locks<M>(
     new_locks: &[(AccountId, Deposit<M>)],
     cycle_info: &CycleInfo,
 ) -> anyhow::Result<()> {
-    // Build a unified map of (account_id, sequence) -> (old_amount, new_amount)
-    let amount_map = {
-        let mut amount_map: BTreeMap<(AccountId, u64), (Option<Amount>, Option<Amount>)> =
-            BTreeMap::new();
+    // Build a unified map of (account_id, sequence) -> (old_lock_state,
+    // new_lock_state)
+    let state_diff_map = {
+        let mut state_diff_map: BTreeMap<
+            (AccountId, u64),
+            (Option<&Deposit<M>>, Option<&Deposit<M>>),
+        > = BTreeMap::new();
 
         // First populate old amounts
         for (account_id, old_items) in old_cycle_locks {
             for old_item in old_items {
-                amount_map.insert(
-                    (*account_id, old_item.sequence),
-                    (Some(old_item.amount), None),
-                );
+                state_diff_map.insert((*account_id, old_item.sequence), (Some(old_item), None));
             }
         }
 
         // Then populate new amounts
         for (account_id, item) in new_locks {
             let key = (*account_id, item.sequence);
-            if let Some((_, new_amount)) = amount_map.get_mut(&key) {
-                *new_amount = Some(item.amount);
+            if let Some((_, new_state)) = state_diff_map.get_mut(&key) {
+                *new_state = Some(item);
             } else {
-                amount_map.insert(key, (None, Some(item.amount)));
+                state_diff_map.insert(key, (None, Some(item)));
             }
         }
-        amount_map
+        state_diff_map
     };
 
     // Process all entries to determine changes
-    for ((account_id, sequence), (old_amount, new_amount)) in amount_map {
+    for ((account_id, sequence), (old_state, new_state)) in state_diff_map {
         assert!(
-            old_amount.is_some() || new_amount.is_some(),
+            old_state.is_some() || new_state.is_some(),
             "invariant: atleast one must be set"
         );
-        let old_amount = old_amount.unwrap_or(Amount::ZERO);
-        let new_amount = new_amount.unwrap_or(Amount::ZERO);
+        let old_amount = old_state.map(|o| o.amount).unwrap_or(Amount::ZERO);
+        let new_amount = new_state.map(|n| n.amount).unwrap_or(Amount::ZERO);
+        let txid = old_state.map(|o| o.txid).unwrap_or_else(|| {
+            new_state
+                .map(|n| n.txid)
+                .expect("invariant: atleast one must be set")
+        });
 
         match new_amount.cmp(&old_amount) {
             Ordering::Less => {
@@ -1645,10 +1700,10 @@ async fn update_history_for_locks<M>(
                     account_id,
                     [AccountHistoryItem {
                         cycle: *cycle_info,
-                        kind: AccountHistoryItemKind::LockedToStaged {
-                            deposit_sequence: sequence,
-                            amount_moved: old_amount - new_amount,
-                        },
+                        kind: AccountHistoryItemKind::LockedToStaged,
+                        txid,
+                        deposit_sequence: sequence,
+                        amount: old_amount - new_amount,
                     }],
                 )
                 .await;
@@ -1662,10 +1717,10 @@ async fn update_history_for_locks<M>(
                     account_id,
                     [AccountHistoryItem {
                         cycle: *cycle_info,
-                        kind: AccountHistoryItemKind::StagedToLocked {
-                            deposit_sequence: sequence,
-                            amount_moved: new_amount - old_amount,
-                        },
+                        kind: AccountHistoryItemKind::StagedToLocked,
+                        txid,
+                        deposit_sequence: sequence,
+                        amount: new_amount - old_amount,
                     }],
                 )
                 .await;
@@ -1947,6 +2002,8 @@ where
 
 #[cfg(test)]
 mod tests {
+    use fedimint_core::BitcoinHash;
+
     use super::*;
 
     fn seek(sequence: u64, msats: u64) -> Seek {
@@ -1954,6 +2011,7 @@ mod tests {
             sequence,
             amount: Amount::from_msats(msats),
             meta: (),
+            txid: TransactionId::all_zeros(),
         }
     }
 

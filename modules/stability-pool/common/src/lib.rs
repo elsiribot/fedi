@@ -14,6 +14,7 @@ use fedimint_core::module::registry::ModuleDecoderRegistry;
 use fedimint_core::module::{CommonModuleInit, ModuleCommon, ModuleConsensusVersion};
 use fedimint_core::{
     extensible_associated_module_type, plugin_types_trait_impl_common, Amount, BitcoinHash,
+    TransactionId,
 };
 use secp256k1::{schnorr, PublicKey};
 use serde::de::Error as _;
@@ -252,6 +253,10 @@ impl FromStr for AccountId {
 /// of positions.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct Deposit<M> {
+    /// ID of TX that birthed this deposit.
+    pub txid: TransactionId,
+
+    /// Incrementing nonce (server-assigned) for priority
     pub sequence: u64,
     pub amount: Amount,
     pub meta: M,
@@ -262,7 +267,7 @@ where
     M: Encodable,
 {
     fn consensus_encode<W: std::io::Write>(&self, writer: &mut W) -> Result<usize, std::io::Error> {
-        (self.sequence, self.amount, &self.meta).consensus_encode(writer)
+        (self.txid, self.sequence, self.amount, &self.meta).consensus_encode(writer)
     }
 }
 
@@ -274,8 +279,10 @@ where
         r: &mut R,
         modules: &ModuleDecoderRegistry,
     ) -> Result<Self, DecodeError> {
-        let (sequence, amount, meta) = <(u64, Amount, M)>::consensus_decode(r, modules)?;
+        let (txid, sequence, amount, meta) =
+            <(TransactionId, u64, Amount, M)>::consensus_decode(r, modules)?;
         Ok(Self {
+            txid,
             sequence,
             amount,
             meta,
@@ -824,33 +831,6 @@ impl Display for StabilityPoolConsensusItemV0 {
     }
 }
 
-#[derive(Debug, Clone, PartialEq, Eq, Encodable, Decodable, Serialize, Deserialize)]
-pub struct SeekMetadata {
-    pub staged_sequence: u64,
-    pub initial_amount: Amount,
-    pub initial_fiat_amount: FiatAmount,
-    pub withdrawn_amount: Amount,
-    pub withdrawn_fiat_amount: FiatAmount,
-    pub fees_paid_so_far: Amount,
-    pub first_lock_start_time: SystemTime,
-    pub fully_withdrawn: bool,
-}
-
-impl Default for SeekMetadata {
-    fn default() -> Self {
-        SeekMetadata {
-            staged_sequence: 0,
-            initial_amount: Amount::ZERO,
-            initial_fiat_amount: FiatAmount(0),
-            withdrawn_amount: Amount::ZERO,
-            withdrawn_fiat_amount: FiatAmount(0),
-            fees_paid_so_far: Amount::ZERO,
-            first_lock_start_time: fedimint_core::time::now(),
-            fully_withdrawn: false,
-        }
-    }
-}
-
 /// After submitting the TX to unlock funds, clients will query the server for
 /// the status of the unlock request. Since we have decided that there can only
 /// be one at most 1 active unlock request at a time, there are two possible
@@ -917,62 +897,74 @@ pub struct CycleInfo {
     pub start_time: SystemTime,
 }
 
-/// - History is at account level
-/// - Every state transaction of deposit is tracked.
+/// - History is stored per account
+/// - Every state transition of each deposit is tracked.
 /// - We don't keep history of idle balance.
 /// - Amounts are sent as msats and we also send the cycle price.
 #[derive(Serialize, Deserialize, Encodable, Decodable, Debug, Clone, PartialEq, Eq)]
 pub struct AccountHistoryItem {
     /// Cycle in which the transaction happened
     pub cycle: CycleInfo,
+    /// ID of transaction that gave birth to this account history item. For
+    /// user-initiated operations, this will be the ID of the user-submitted FM
+    /// TX. For automatic operations, like auto-renewal, this will be the ID of
+    /// the TX that birthed the deposit.
+    pub txid: TransactionId,
+    /// Sequence of the particular deposit whose state is being changed
+    pub deposit_sequence: u64,
+    /// The amount that is being effected within this particular deposit. The
+    /// exact "effect" on the amount is determined by the "kind".
+    pub amount: Amount,
     /// Kind of transaction
     pub kind: AccountHistoryItemKind,
 }
 
 #[derive(Debug, Serialize, Deserialize, Encodable, Decodable, Clone, PartialEq, Eq)]
 pub enum AccountHistoryItemKind {
-    DepositToStaged {
-        deposit_sequence: u64,
-        amount: Amount,
-    },
-    StagedToLocked {
-        deposit_sequence: u64,
-        amount_moved: Amount,
-    },
-    LockedToStaged {
-        deposit_sequence: u64,
-        amount_moved: Amount,
-    },
-    LockedToIdle {
-        deposit_sequence: u64,
-        amount_withdrawn: Amount,
-    },
-    StagedToIdle {
-        desposit_sequence: u64,
-        amount_withdrawn: Amount,
-    },
-    LockedTransferIn {
-        desposit_sequence: u64,
-        amount: Amount,
-        from: AccountId,
-        meta: Vec<u8>,
-    },
-    LockedTransferOut {
-        desposit_sequence: u64,
-        amount: Amount,
-        to: AccountId,
-        meta: Vec<u8>,
-    },
-    StagedTransferIn {
-        desposit_sequence: u64,
-        amount: Amount,
-        from: AccountId,
-        meta: Vec<u8>,
-    },
-    StagedTransferOut {
-        desposit_sequence: u64,
-        amount: Amount,
-        to: AccountId,
-        meta: Vec<u8>,
-    },
+    /// Fresh deposit into the stability pool (starts out as staged)
+    DepositToStaged,
+
+    /// A staged deposit is locked EXCEPT during auto-renewal. Note that at the
+    /// end of each cycle, locked deposits are first moved to staged, and
+    /// then they are considered again for locking together with other
+    /// staged deposits. This is called an "auto-renewal". Auto-renewals DO
+    /// NOT log in the account history.
+    StagedToLocked,
+
+    /// A locked deposit is kicked out to staged EXCEPT during auto-renewal. So
+    /// a deposit was locked, and then couldn't be relocked due to lack of
+    /// liquidity. Note that at the end of each cycle, locked deposits are
+    /// first moved to staged, and then they are considered again for
+    /// locking together with other staged deposits. This is called an
+    /// "auto-renewal". Auto-renewals DO NOT log in the account history.
+    LockedToStaged,
+
+    /// A withdrawal request was received, and couldn't be fulfilled using
+    /// staged deposits at the time. So an unlock request was registered, and
+    /// the next cycle turnover, part of the locked funds were removed from the
+    /// contract-formation process and sent to idle balance for the user to
+    /// claim.
+    LockedToIdle,
+
+    /// A withdrawal request was received, and for the funds that could be
+    /// drained from the staged deposits immediately, idle balance was credited.
+    StagedToIdle,
+
+    /// A transfer request was received and processed and as a result the
+    /// recipient of the funds has a new locked deposit.
+    LockedTransferIn { from: AccountId, meta: Vec<u8> },
+
+    /// A transfer request was received and processed and as a result the sender
+    /// of the funds gave up some locked deposits that were immediately given to
+    /// the recipient.
+    LockedTransferOut { to: AccountId, meta: Vec<u8> },
+
+    /// A transfer request was received and processed and as a result the
+    /// recipient of the funds has a new staged deposit.
+    StagedTransferIn { from: AccountId, meta: Vec<u8> },
+
+    /// A transfer request was received and processed and as a result the sender
+    /// of the funds gave up some staged deposits that were immediately given to
+    /// the recipient.
+    StagedTransferOut { to: AccountId, meta: Vec<u8> },
 }
