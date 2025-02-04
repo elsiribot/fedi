@@ -26,6 +26,14 @@ use crate::constants::{
     DEVICE_IDENTIFIER_FIXED_LENGTH, DEVICE_REGISTRATION_CHILD_ID, FEDI_FILE_PATH,
 };
 
+// Within the global DB, each federation's DB uses a prefix assigned using an
+// incrementing nonce.
+const FIRST_FEDERATION_DB_PREFIX: u64 = 1;
+
+// Prefix 0 is reserved for the bridge itself to store information independent
+// of any federation's DB.
+pub const BRIDGE_DB_PREFIX: u8 = 0;
+
 #[apply(async_trait_maybe_send!)]
 pub trait IStorage: 'static + MaybeSend + MaybeSync {
     async fn federation_database_v2(
@@ -228,8 +236,7 @@ fn default_device_index() -> Option<u8> {
 }
 
 fn default_next_federation_prefix() -> u64 {
-    // zero is reserved for future
-    1
+    FIRST_FEDERATION_DB_PREFIX
 }
 
 #[derive(Clone, Serialize, Deserialize)]
