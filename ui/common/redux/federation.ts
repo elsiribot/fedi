@@ -743,6 +743,15 @@ export const selectIsAnyFederationRecovering = createSelector(
     },
 )
 
+export const selectIsFederationRecovering = (
+    s: CommonState,
+    federationId: Federation['id'],
+) => {
+    const federation = selectLoadedFederation(s, federationId)
+
+    return federation && federation.hasWallet ? federation.recovering : false
+}
+
 export const selectFederationCustomFediMods = (
     s: CommonState,
     federationId: Federation['id'],

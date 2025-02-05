@@ -171,11 +171,19 @@ export const generateAddress = createAsyncThunk<
 
 export const generateEcash = createAsyncThunk<
     { ecash: string; cancelAt: number },
-    { fedimint: FedimintBridge; federationId: string; amount: MSats },
+    {
+        fedimint: FedimintBridge
+        federationId: string
+        amount: MSats
+        includeInvite: boolean
+    },
     { state: CommonState }
->('wallet/generateEcash', async ({ fedimint, federationId, amount }) => {
-    return fedimint.generateEcash(amount, federationId)
-})
+>(
+    'wallet/generateEcash',
+    async ({ fedimint, federationId, amount, includeInvite }) => {
+        return fedimint.generateEcash(amount, federationId, includeInvite)
+    },
+)
 
 export const generateInvoice = createAsyncThunk<
     string,

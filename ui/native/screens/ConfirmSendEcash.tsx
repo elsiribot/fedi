@@ -9,6 +9,7 @@ import {
     useAmountFormatter,
     useBalanceDisplay,
 } from '@fedi/common/hooks/amount'
+import { useToast } from '@fedi/common/hooks/toast'
 import { useFeeDisplayUtils } from '@fedi/common/hooks/transactions'
 import { generateEcash, selectPaymentFederation } from '@fedi/common/redux'
 import { Sats } from '@fedi/common/types'
@@ -49,6 +50,7 @@ const ConfirmSendEcash: React.FC<Props> = ({ route, navigation }) => {
     const { makeFormattedAmountsFromSats } = useAmountFormatter()
     const { formattedPrimaryAmount, formattedSecondaryAmount } =
         makeFormattedAmountsFromSats(amount)
+    const toast = useToast()
 
     const handleSend = useCallback(async () => {
         Keyboard.dismiss()
@@ -61,6 +63,7 @@ const ConfirmSendEcash: React.FC<Props> = ({ route, navigation }) => {
                     fedimint,
                     federationId: paymentFederation?.id,
                     amount: millis,
+                    includeInvite: true,
                 }),
             ).unwrap()
             navigation.dispatch(
@@ -68,9 +71,12 @@ const ConfirmSendEcash: React.FC<Props> = ({ route, navigation }) => {
             )
         } catch (error) {
             log.error('onGenerateEcash', error)
+            // Now that we have fees when sending ecash
+            // We need to notify the user if they have an insufficient balance to send the desired amount
+            toast.error(t, error)
         }
         setIsLoading(false)
-    }, [amount, navigation, paymentFederation, dispatch])
+    }, [amount, navigation, paymentFederation, t, toast, dispatch])
 
     const handleConfirm = useCallback(() => {
         Alert.alert(
