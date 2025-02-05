@@ -5,7 +5,7 @@ import { useTranslation } from 'react-i18next'
 import { ActivityIndicator, StyleSheet, View } from 'react-native'
 
 import { useIsOnchainDepositSupported } from '@fedi/common/hooks/federation'
-import { selectActiveFederationId } from '@fedi/common/redux'
+import { generateAddress, selectActiveFederationId } from '@fedi/common/redux'
 import amountUtils from '@fedi/common/utils/AmountUtils'
 import { makeLog } from '@fedi/common/utils/log'
 
@@ -105,8 +105,12 @@ const BitcoinRequest: React.FC<Props> = ({ route }: Props) => {
                     setIsLoading(true)
                     if (!federationId) throw new Error('No active federation')
 
-                    const newAddress =
-                        await fedimint.generateAddress(federationId)
+                    const newAddress = await dispatch(
+                        generateAddress({
+                            fedimint,
+                            federationId,
+                        }),
+                    ).unwrap()
 
                     setOnchainAddress(newAddress)
                 } catch (error) {

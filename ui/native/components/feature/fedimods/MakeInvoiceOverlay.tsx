@@ -7,6 +7,7 @@ import { RejectionError } from 'webln'
 import { useRequestForm } from '@fedi/common/hooks/amount'
 import { useUpdatingRef } from '@fedi/common/hooks/util'
 import {
+    generateInvoice,
     selectActiveFederationId,
     selectLnurlWithdrawal,
     selectRequestInvoiceArgs,
@@ -18,7 +19,7 @@ import { lnurlWithdraw } from '@fedi/common/utils/lnurl'
 import { makeLog } from '@fedi/common/utils/log'
 
 import { fedimint } from '../../../bridge'
-import { useAppSelector } from '../../../state/hooks'
+import { useAppDispatch, useAppSelector } from '../../../state/hooks'
 import AmountInput from '../../ui/AmountInput'
 import CustomOverlay from '../../ui/CustomOverlay'
 
@@ -33,6 +34,7 @@ export const MakeInvoiceOverlay: React.FC<Props> = ({ onReject, onAccept }) => {
     const { t } = useTranslation()
     const { theme } = useTheme()
     const federationId = useAppSelector(selectActiveFederationId)
+    const dispatch = useAppDispatch()
     const lnurlWithdrawal = useAppSelector(selectLnurlWithdrawal)
     const requestInvoiceArgs = useAppSelector(selectRequestInvoiceArgs)
     const siteInfo = useAppSelector(selectSiteInfo)
@@ -81,7 +83,14 @@ export const MakeInvoiceOverlay: React.FC<Props> = ({ onReject, onAccept }) => {
                       msats,
                       memo,
                   )
-                : await fedimint.generateInvoice(msats, memo, federationId)
+                : await dispatch(
+                      generateInvoice({
+                          fedimint,
+                          federationId,
+                          amount: msats,
+                          description: memo,
+                      }),
+                  ).unwrap()
             onAcceptRef.current({ paymentRequest })
         } catch (err) {
             log.error('Failed to generate invoice', err, lnurlWithdrawal)

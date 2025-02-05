@@ -10,6 +10,7 @@ import {
     selectFederation,
     selectIsFederationRecovering,
     selectIsInternetUnreachable,
+    validateEcash,
 } from '@fedi/common/redux'
 import type { MSats } from '@fedi/common/types'
 import { RpcEcashInfo } from '@fedi/common/types/bindings'
@@ -102,8 +103,13 @@ const ConfirmReceiveOffline: React.FC<Props> = ({
     }, [ecash, dispatch, navigation, receiving, toast, t, validatedEcash])
 
     useEffect(() => {
-        fedimint
-            .validateEcash(ecash)
+        dispatch(
+            validateEcash({
+                fedimint,
+                ecash,
+            }),
+        )
+            .unwrap()
             .then(setValidatedEcash)
             .catch(() => {
                 // Should never happen since validateEcash is called in OmniInput,
@@ -111,7 +117,7 @@ const ConfirmReceiveOffline: React.FC<Props> = ({
                 log.error('PANIC: ecash validation failed')
                 toast.error(t, 'errors.invalid-ecash-token')
             })
-    }, [ecash, dispatch])
+    }, [ecash, dispatch, toast, t])
 
     if (validatedEcash && validatedEcash.federation_type !== 'joined') {
         // Should never happen since you are required to go through the join flow

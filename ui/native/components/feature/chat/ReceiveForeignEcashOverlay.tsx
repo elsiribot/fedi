@@ -6,9 +6,11 @@ import { ActivityIndicator, Pressable, StyleSheet, View } from 'react-native'
 import { useFederationPreview } from '@fedi/common/hooks/federation'
 import { useMatrixPaymentEvent } from '@fedi/common/hooks/matrix'
 import { useToast } from '@fedi/common/hooks/toast'
+import { validateEcash } from '@fedi/common/redux'
 import { makeLog } from '@fedi/common/utils/log'
 
 import { fedimint } from '../../../bridge'
+import { useAppDispatch } from '../../../state/hooks'
 import { MatrixPaymentEvent } from '../../../types'
 import CustomOverlay from '../../ui/CustomOverlay'
 import SvgImage, { SvgImageSize } from '../../ui/SvgImage'
@@ -38,6 +40,7 @@ const ReceiveForeignEcashOverlay: React.FC<Props> = ({
     const [hideOtherMethods, setHideOtherMethods] = useState<boolean>(true)
     const [inviteCode, setInviteCode] = useState<string | null>(null)
     const style = styles(theme)
+    const dispatch = useAppDispatch()
 
     const {
         federationInviteCode,
@@ -54,17 +57,24 @@ const ReceiveForeignEcashOverlay: React.FC<Props> = ({
     useEffect(() => {
         if (!paymentEvent.content.ecash) return
 
-        fedimint.validateEcash(paymentEvent.content.ecash).then(validated => {
-            if (validated.federation_type === 'joined') {
-                log.error('federation should not be joined')
-                return
-            }
+        dispatch(
+            validateEcash({
+                fedimint,
+                ecash: paymentEvent.content.ecash,
+            }),
+        )
+            .unwrap()
+            .then(validated => {
+                if (validated.federation_type === 'joined') {
+                    log.error('federation should not be joined')
+                    return
+                }
 
-            setInviteCode(
-                validated.federation_invite || federationInviteCode || '',
-            )
-        })
-    }, [paymentEvent.content.ecash, federationInviteCode])
+                setInviteCode(
+                    validated.federation_invite || federationInviteCode || '',
+                )
+            })
+    }, [paymentEvent.content.ecash, federationInviteCode, dispatch])
 
     useEffect(() => {
         if (!inviteCode) return

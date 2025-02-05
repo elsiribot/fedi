@@ -6,7 +6,11 @@ import { ActivityIndicator, Keyboard, StyleSheet, View } from 'react-native'
 import { useRequestForm } from '@fedi/common/hooks/amount'
 import { useIsOnchainDepositSupported } from '@fedi/common/hooks/federation'
 import { useToast } from '@fedi/common/hooks/toast'
-import { selectActiveFederation } from '@fedi/common/redux'
+import {
+    generateAddress,
+    generateInvoice,
+    selectActiveFederation,
+} from '@fedi/common/redux'
 import amountUtils from '@fedi/common/utils/AmountUtils'
 import { lnurlWithdraw } from '@fedi/common/utils/lnurl'
 import { makeLog } from '@fedi/common/utils/log'
@@ -58,11 +62,14 @@ const ReceiveLightning: React.FC<Props> = ({ navigation, route }: Props) => {
         const createNewInvoice = async () => {
             if (!activeFederationId) return
             try {
-                const newInvoice = await fedimint.generateInvoice(
-                    amountUtils.satToMsat(amount),
-                    memo,
-                    activeFederationId,
-                )
+                const newInvoice = await dispatch(
+                    generateInvoice({
+                        fedimint,
+                        federationId: activeFederationId,
+                        amount: amountUtils.satToMsat(amount),
+                        description: memo,
+                    }),
+                ).unwrap()
                 setInvoice(newInvoice)
             } catch (error) {
                 toast.show({
@@ -100,8 +107,12 @@ const ReceiveLightning: React.FC<Props> = ({ navigation, route }: Props) => {
                 if (!activeFederationId) return
                 try {
                     setIsLoading(true)
-                    const newAddress =
-                        await fedimint.generateAddress(activeFederationId)
+                    const newAddress = await dispatch(
+                        generateAddress({
+                            fedimint,
+                            federationId: activeFederationId,
+                        }),
+                    ).unwrap()
 
                     setOnchainAddress(newAddress)
                 } catch (error) {

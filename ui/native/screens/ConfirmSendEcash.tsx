@@ -11,7 +11,7 @@ import {
 } from '@fedi/common/hooks/amount'
 import { useToast } from '@fedi/common/hooks/toast'
 import { useFeeDisplayUtils } from '@fedi/common/hooks/transactions'
-import { selectPaymentFederation } from '@fedi/common/redux'
+import { generateEcash, selectPaymentFederation } from '@fedi/common/redux'
 import { Sats } from '@fedi/common/types'
 import amountUtils from '@fedi/common/utils/AmountUtils'
 import { hexToRgba } from '@fedi/common/utils/color'
@@ -22,7 +22,7 @@ import FederationWalletSelector from '../components/feature/send/FederationWalle
 import FeeOverlay from '../components/feature/send/FeeOverlay'
 import SendAmounts from '../components/feature/send/SendAmounts'
 import SendPreviewDetails from '../components/feature/send/SendPreviewDetails'
-import { useAppSelector } from '../state/hooks'
+import { useAppDispatch, useAppSelector } from '../state/hooks'
 import { reset } from '../state/navigation'
 import type { RootStackParamList } from '../types/navigation'
 
@@ -37,6 +37,7 @@ const ConfirmSendEcash: React.FC<Props> = ({ route, navigation }) => {
     const { theme } = useTheme()
     const { t } = useTranslation()
     const { amount } = route.params
+    const dispatch = useAppDispatch()
     const [showFeeBreakdown, setShowFeeBreakdown] = useState<boolean>(false)
     const [isLoading, setIsLoading] = useState<boolean>(false)
     const paymentFederation = useAppSelector(selectPaymentFederation)
@@ -57,11 +58,14 @@ const ConfirmSendEcash: React.FC<Props> = ({ route, navigation }) => {
         try {
             if (!paymentFederation?.id) throw new Error('No payment federation')
             const millis = amountUtils.satToMsat(Number(amount) as Sats)
-            const { ecash } = await fedimint.generateEcash(
-                millis,
-                paymentFederation.id,
-                true,
-            )
+            const { ecash } = await dispatch(
+                generateEcash({
+                    fedimint,
+                    federationId: paymentFederation?.id,
+                    amount: millis,
+                    includeInvite: true,
+                }),
+            ).unwrap()
             navigation.dispatch(
                 reset('SendOfflineQr', { ecash, amount: millis }),
             )
@@ -72,7 +76,7 @@ const ConfirmSendEcash: React.FC<Props> = ({ route, navigation }) => {
             toast.error(t, error)
         }
         setIsLoading(false)
-    }, [amount, navigation, paymentFederation, t, toast])
+    }, [amount, navigation, paymentFederation, t, toast, dispatch])
 
     const handleConfirm = useCallback(() => {
         Alert.alert(
