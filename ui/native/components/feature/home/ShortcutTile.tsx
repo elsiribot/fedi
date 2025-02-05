@@ -7,6 +7,7 @@ import {
     View,
     useWindowDimensions,
 } from 'react-native'
+import { SvgUri } from 'react-native-svg'
 
 import { selectIsActiveFederationRecovering } from '@fedi/common/redux'
 import { fetchMetadataFromUrl } from '@fedi/common/utils/fedimods'
@@ -70,6 +71,38 @@ const ShortcutTile = ({ shortcut, onHold, onSelect }: ShortcutTileProps) => {
 
     const renderIcon = () => {
         if (isMod(shortcut) && imageSrc) {
+            const isSvg =
+                // imageSrc can be an array of ImageUriSource
+                // see https://reactnative.dev/docs/image#source
+                !Array.isArray(imageSrc) &&
+                // ImageRequireSource can be a number, so rule that out too
+                typeof imageSrc !== 'number' &&
+                imageSrc.uri?.endsWith('svg')
+
+            if (isSvg) {
+                return (
+                    <SvgUri
+                        uri={imageSrc.uri ?? null}
+                        onError={() => {
+                            setImageSrc(FediModImages.default)
+                        }}
+                        width={48}
+                        height={48}
+                        style={style.iconImage}
+                        fallback={
+                            <Image
+                                style={style.iconImage}
+                                source={FediModImages.default}
+                                resizeMode="contain"
+                            />
+                        }
+                        // Ensure the SVG is always contained and centered
+                        // Does the equivalent of resizeMode="contain" for SVGs
+                        preserveAspectRatio="xMidYMid meet"
+                    />
+                )
+            }
+
             return (
                 <Image
                     style={style.iconImage}
