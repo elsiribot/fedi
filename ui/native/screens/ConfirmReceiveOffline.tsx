@@ -129,7 +129,9 @@ const ConfirmReceiveOffline: React.FC<Props> = ({
         <SafeAreaContainer edges="notop" style={style.container}>
             <View style={style.content}>
                 <View style={style.receiveIndicator}>
-                    <Text>{t('feature.receive.receive-ecash-from')}</Text>
+                    <Text maxFontSizeMultiplier={1.5}>
+                        {t('feature.receive.receive-ecash-from')}
+                    </Text>
                     {ecashFederation &&
                     ecashFederation.init_state === 'ready' ? (
                         <View style={style.federationIndicator}>
@@ -137,7 +139,11 @@ const ConfirmReceiveOffline: React.FC<Props> = ({
                                 federation={ecashFederation}
                                 size={24}
                             />
-                            <Text caption bold numberOfLines={1}>
+                            <Text
+                                caption
+                                bold
+                                numberOfLines={1}
+                                maxFontSizeMultiplier={1.5}>
                                 {ecashFederation.name || ''}
                             </Text>
                         </View>
