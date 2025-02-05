@@ -42,7 +42,9 @@ use crate::features::FeatureCatalog;
 use crate::federation::{federation_v2, Federations};
 use crate::fedi_fee::FediFeeHelper;
 use crate::matrix::Matrix;
-use crate::storage::{AppState, DeviceIdentifier, FiatFXInfo, ModuleFediFeeSchedule};
+use crate::storage::{
+    AppState, DeviceIdentifier, FiatFXInfo, ModuleFediFeeSchedule, BRIDGE_DB_PREFIX,
+};
 use crate::types::{
     RpcAmount, RpcBridgeStatus, RpcDeviceIndexAssignmentStatus, RpcEcashInfo, RpcNostrPubkey,
     RpcNostrSecret, RpcRegisteredDevice,
@@ -88,6 +90,10 @@ impl BridgeRuntime {
             global_db,
             feature_catalog,
         })
+    }
+
+    pub fn bridge_db(&self) -> Database {
+        self.global_db.with_prefix(vec![BRIDGE_DB_PREFIX])
     }
 
     pub async fn device_index_assignment_status(
