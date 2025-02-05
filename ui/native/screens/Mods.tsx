@@ -80,14 +80,6 @@ const Mods: React.FC = () => {
         })
         // Method to render the popover or return null
         const renderPopover = (mod: FediMod) => {
-            const isNonHideable =
-                mod.title.toLowerCase() === 'support' ||
-                mod.title.toLowerCase() === 'ask fedi'
-
-            if (isNonHideable) {
-                return undefined // Don't render the popover for non-hideable mods
-            }
-
             return (
                 <Pressable
                     style={style.tooltipAction}
