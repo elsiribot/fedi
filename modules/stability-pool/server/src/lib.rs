@@ -18,12 +18,12 @@ use common::{
     Provide, Seek, StabilityPoolCommonGen, StabilityPoolConsensusItem, StabilityPoolInput,
     StabilityPoolInputError, StabilityPoolModuleTypes, StabilityPoolOutput,
     StabilityPoolOutputError, StabilityPoolOutputOutcome, StabilityPoolOutputOutcomeV0,
-    CONSENSUS_VERSION,
+    UnlockRequest, CONSENSUS_VERSION,
 };
 use db::{
     CurrentCycleKey, CurrentCycleKeyPrefix, Cycle, CycleChangeVoteIndexPrefix, CycleChangeVoteKey,
     IdleBalanceKey, IdleBalanceKeyPrefix, PastCycleKey, StagedProvidesKey, StagedProvidesKeyPrefix,
-    StagedSeeksKey, StagedSeeksKeyPrefix, UnlockRequest, UnlockRequestKey, UnlockRequestsKeyPrefix,
+    StagedSeeksKey, StagedSeeksKeyPrefix, UnlockRequestKey, UnlockRequestsKeyPrefix,
 };
 use fedimint_core::config::{
     ConfigGenModuleParams, DkgResult, ServerModuleConfig, ServerModuleConsensusConfig,
@@ -901,6 +901,7 @@ async fn process_deposit_to_provide_output(
     })
 }
 
+#[allow(clippy::too_many_arguments)]
 async fn process_transfer_output_inner<M, K>(
     dbtx: &mut DatabaseTransaction<'_>,
     txid: TransactionId,
@@ -1653,6 +1654,7 @@ async fn update_history_for_locks<M>(
 ) -> anyhow::Result<()> {
     // Build a unified map of (account_id, sequence) -> (old_lock_state,
     // new_lock_state)
+    #[allow(clippy::type_complexity)]
     let state_diff_map = {
         let mut state_diff_map: BTreeMap<
             (AccountId, u64),

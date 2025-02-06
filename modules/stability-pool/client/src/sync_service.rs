@@ -11,7 +11,7 @@ use stability_pool_common::{AccountId, SyncResponse};
 use tokio::sync::watch;
 use tokio_stream::wrappers::WatchStream;
 
-use crate::db::{CacheSyncResponseValue, CachedSyncResponseKey};
+use crate::db::{CachedSyncResponseKey, CachedSyncResponseValue};
 
 /// Service that syncs account state from server in the background
 #[derive(Debug)]
@@ -75,7 +75,7 @@ impl StabilityPoolSyncService {
             &CachedSyncResponseKey {
                 account_id: self.account_id,
             },
-            &CacheSyncResponseValue {
+            &CachedSyncResponseValue {
                 fetch_time: fedimint_core::time::now(),
                 value: sync_response.clone(),
             },

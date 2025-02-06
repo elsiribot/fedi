@@ -36,6 +36,7 @@ pub const MSATS_PER_BTC: u128 = 100_000_000_000;
 /// interactions and the oracle, everything should "just work".
 #[derive(
     Copy,
+    Default,
     Clone,
     Debug,
     Hash,
@@ -831,6 +832,20 @@ impl Display for StabilityPoolConsensusItemV0 {
     }
 }
 
+/// An `UnlockRequest` is stored on the server when staged deposits are not
+/// enough to satisfy a user's unlock request. At the next cycle turnover, we
+/// used the just-settled locked deposits to unlock any additional funds needed,
+/// and then delete the `UnlockRequest` from the DB.
+#[derive(Serialize, Deserialize, Encodable, Decodable, Debug, Clone, PartialEq, Eq)]
+pub struct UnlockRequest {
+    /// ID of the TX representing the user's request to unlock funds
+    pub txid: TransactionId,
+
+    /// The remaining amount needed to be unlocked from locked deposits at the
+    /// next cycle turnover.
+    pub unlock_amount: FiatOrAll,
+}
+
 /// After submitting the TX to unlock funds, clients will query the server for
 /// the status of the unlock request. Since we have decided that there can only
 /// be one at most 1 active unlock request at a time, there are two possible
@@ -876,10 +891,29 @@ pub struct SyncResponse {
     pub staged_balance: Amount,
     pub locked_balance: Amount,
     pub idle_balance: Amount,
+    pub unlock_request: Option<UnlockRequest>,
     /// Number of history items for this account.
     ///
     /// Client can use this if they have any new history item.
     pub account_history_count: u64,
+}
+
+impl SyncResponse {
+    pub fn amount_from_unlock_request(&self) -> Option<(Amount, FiatAmount)> {
+        match self.unlock_request.as_ref()?.unlock_amount {
+            FiatOrAll::Fiat(fiat_amount) => Some((
+                fiat_amount
+                    .to_btc_amount(self.current_cycle.start_price)
+                    .ok()?,
+                fiat_amount,
+            )),
+            FiatOrAll::All => Some((
+                self.locked_balance,
+                FiatAmount::from_btc_amount(self.locked_balance, self.current_cycle.start_price)
+                    .ok()?,
+            )),
+        }
+    }
 }
 
 #[derive(Debug, Clone, Eq, PartialEq, Serialize, Deserialize)]

@@ -109,6 +109,7 @@ pub async fn sync(
             .unwrap_or(Amount::ZERO),
         staged_balance,
         locked_balance,
+        unlock_request: dbtx.get_value(&UnlockRequestKey(account)).await,
         account_history_count: account_history_count(dbtx, account).await,
     })
 }

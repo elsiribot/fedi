@@ -19,7 +19,7 @@ pub struct CachedSyncResponseKey {
 }
 
 #[derive(Debug, Encodable, Decodable)]
-pub struct CacheSyncResponseValue {
+pub struct CachedSyncResponseValue {
     pub fetch_time: SystemTime,
     pub value: SyncResponse,
 }
@@ -37,7 +37,7 @@ pub struct AccountHistoryItemKeyPrefix {
 
 impl_db_record!(
     key = CachedSyncResponseKey,
-    value = CacheSyncResponseValue,
+    value = CachedSyncResponseValue,
     db_prefix = DbKeyPrefix::SyncResponse
 );
 

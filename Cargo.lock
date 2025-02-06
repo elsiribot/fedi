@@ -8221,6 +8221,7 @@ dependencies = [
  "fedimint-client",
  "fedimint-core",
  "futures",
+ "itertools 0.12.1",
  "rand",
  "secp256k1",
  "serde",
