@@ -17,11 +17,15 @@ import { selectAllVisibleMods, setModVisibility } from '@fedi/common/redux/mod'
 
 import ModsHeader from '../components/feature/fedimods/ModsHeader'
 import ShortcutTile from '../components/feature/home/ShortcutTile'
+import ZendeskBadge from '../components/feature/support/ZendeskBadge'
 import SvgImage from '../components/ui/SvgImage'
 import { useAppDispatch, useAppSelector } from '../state/hooks'
 import { FediMod, Shortcut } from '../types'
 import { NavigationHook } from '../types/navigation'
-import { useLaunchZendesk } from '../utils/hooks/support'
+import {
+    useLaunchZendesk,
+    useUpdateZendeskNotificationCount,
+} from '../utils/hooks/support'
 
 const Mods: React.FC = () => {
     const { theme } = useTheme()
@@ -38,6 +42,8 @@ const Mods: React.FC = () => {
     const [actionsMod, setActionsMod] = useState<FediMod>()
 
     const { launchZendesk } = useLaunchZendesk()
+
+    useUpdateZendeskNotificationCount()
 
     const onSelectFediMod = (shortcut: Shortcut) => {
         setActionsMod(undefined)
@@ -108,6 +114,7 @@ const Mods: React.FC = () => {
                             onSelect={onSelectFediMod}
                             onHold={handleModHold}
                         />
+                        <ZendeskBadge title={s.title} />
                     </Tooltip>
                 </View>
             )
@@ -174,6 +181,7 @@ const styles = (theme: Theme, columns: number) =>
         },
         listContainer: {
             flexDirection: 'row',
+            marginTop: 4,
             flexWrap: 'wrap',
             justifyContent: 'space-between',
             paddingHorizontal: theme.spacing.sm,

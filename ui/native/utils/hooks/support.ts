@@ -1,6 +1,7 @@
 import { useNavigation } from '@react-navigation/native'
-import { useCallback } from 'react'
+import { useCallback, useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
+import * as Zendesk from 'react-native-zendesk-messaging'
 import { useSelector } from 'react-redux'
 
 import { useToast } from '@fedi/common/hooks/toast'
@@ -9,7 +10,9 @@ import {
     selectSupportPermissionGranted,
     selectZendeskInitialized,
     setZendeskInitialized,
+    updateZendeskUnreadMessageCount,
 } from '@fedi/common/redux/support'
+import { makeLog } from '@fedi/common/utils/log'
 
 import { useAppDispatch } from '../../state/hooks'
 import { NavigationHook } from '../../types/navigation'
@@ -18,6 +21,63 @@ import {
     zendeskInitialize,
     zendeskOpenMessagingView,
 } from '../support'
+
+const log = makeLog('native/utils/hooks/support')
+
+/**
+ * Hook to update the unread message count from Zendesk and Redux.
+ * Runs every 20 seconds.
+ */
+export const useUpdateZendeskNotificationCount = () => {
+    const dispatch = useAppDispatch()
+    const supportPermissionGranted = useSelector(selectSupportPermissionGranted)
+    const zendeskInitialized = useSelector(selectZendeskInitialized)
+    const nostrNpub = useSelector(selectNostrNpub)
+    const displayName = useDisplayName()
+    const toast = useToast()
+    const { t } = useTranslation()
+    const zendeskRefreshTime = 20_000 // 20 seconds
+
+    const fetchUnreadMessageCount = useCallback(async () => {
+        if (!zendeskInitialized) {
+            await zendeskInitialize(
+                nostrNpub ?? null,
+                displayName,
+                isInitialized => dispatch(setZendeskInitialized(isInitialized)),
+                error =>
+                    toast.error(
+                        t,
+                        error,
+                        'feature.support.zendesk-initialization-failed',
+                    ),
+            )
+            log.info('Zendesk successfully initialized.')
+        }
+
+        try {
+            const count = await Zendesk.getUnreadMessageCount()
+            dispatch(updateZendeskUnreadMessageCount(count))
+            log.info(`Updated unread Zendesk messages count: ${count}`)
+        } catch (error) {
+            log.error('Failed to fetch unread Zendesk messages:', error)
+        }
+    }, [dispatch, zendeskInitialized, nostrNpub, displayName, toast, t])
+
+    useEffect(() => {
+        if (!supportPermissionGranted) {
+            log.info(
+                'Support permission not granted. Will not fetch unread messages.',
+            )
+            return
+        }
+
+        const interval = setInterval(() => {
+            fetchUnreadMessageCount()
+        }, zendeskRefreshTime)
+
+        return () => clearInterval(interval)
+    }, [fetchUnreadMessageCount, supportPermissionGranted])
+}
 
 export function useLaunchZendesk() {
     const dispatch = useAppDispatch()
@@ -41,15 +101,6 @@ export function useLaunchZendesk() {
         [toast, t],
     )
 
-    const handleZendeskInitialization = useCallback(
-        (isInitialized: boolean) => {
-            dispatch(setZendeskInitialized(isInitialized))
-        },
-        [dispatch],
-    )
-
-    // If permission isn't granted, navigate to HelpCentre to request it.
-    // Otherwise, initialize Zendesk and open the messaging view.
     const launchZendesk = useCallback(
         async (newlyGranted = false) => {
             if (!supportPermissionGranted && !newlyGranted) {
@@ -60,7 +111,8 @@ export function useLaunchZendesk() {
                 await zendeskInitialize(
                     nostrNpub ?? null,
                     displayName,
-                    handleZendeskInitialization,
+                    (isInitialized: boolean) =>
+                        dispatch(setZendeskInitialized(isInitialized)),
                     onError,
                 )
             }
@@ -72,7 +124,7 @@ export function useLaunchZendesk() {
             supportPermissionGranted,
             nostrNpub,
             displayName,
-            handleZendeskInitialization,
+            dispatch,
             navigation,
             onError,
         ],
