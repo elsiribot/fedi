@@ -8,6 +8,7 @@ import { ErrorFallbackProps } from '@fedi/common/components/ErrorBoundary'
 import { formatErrorMessage } from '@fedi/common/utils/format'
 import { makeLog } from '@fedi/common/utils/log'
 
+import { RevealSeed } from '../components/feature/recovery/RevealSeed'
 import SvgImage, { SvgImageSize } from '../components/ui/SvgImage'
 import { version } from '../package.json'
 import { shareLogsExport } from '../utils/log'
@@ -54,6 +55,7 @@ export const ErrorScreen: React.FC<Props> = ({ error }) => {
                 title={t('feature.developer.share-logs')}
                 loading={isSharingLogs}
             />
+            <RevealSeed />
             <Text caption style={style.version}>
                 Version {version}
             </Text>
