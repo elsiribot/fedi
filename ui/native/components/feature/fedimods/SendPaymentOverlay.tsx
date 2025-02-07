@@ -9,6 +9,7 @@ import { useOmniPaymentState } from '@fedi/common/hooks/pay'
 import { useFeeDisplayUtils } from '@fedi/common/hooks/transactions'
 import { useUpdatingRef } from '@fedi/common/hooks/util'
 import {
+    listGateways,
     payInvoice,
     selectInvoiceToPay,
     selectLnurlPayment,
@@ -136,6 +137,15 @@ export const SendPaymentOverlay: React.FC<Props> = ({ onReject, onAccept }) => {
         setIsLoading(true)
         try {
             if (!paymentFederation) throw new Error()
+
+            const gateways = await dispatch(
+                listGateways({ fedimint, federationId: paymentFederation.id }),
+            ).unwrap()
+
+            if (!gateways.length) {
+                throw new Error('No available lightning gateways')
+            }
+
             if (invoice) {
                 if (paymentFederation.balance < invoice.amount) {
                     throw new Error(

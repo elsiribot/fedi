@@ -27,7 +27,11 @@ import {
     PublicFederation,
     Sats,
 } from '../types'
-import { RpcJsonClientConfig, RpcStabilityPoolConfig } from '../types/bindings'
+import {
+    RpcJsonClientConfig,
+    RpcLightningGateway,
+    RpcStabilityPoolConfig,
+} from '../types/bindings'
 import amountUtils from '../utils/AmountUtils'
 import {
     coerceFederationListItem,
@@ -66,6 +70,7 @@ const initialState = {
     >,
     customFediMods: {} as Record<Federation['id'], FediMod[] | undefined>,
     defaultCommunityChats: {} as Record<Federation['id'], MatrixRoom[]>,
+    gatewaysByFederation: {} as Record<Federation['id'], RpcLightningGateway[]>,
 }
 
 export type FederationState = typeof initialState
@@ -227,6 +232,16 @@ export const federationSlice = createSlice({
                 f => f.id !== fediModId,
             )
         },
+        addFederationGateways(
+            state,
+            action: PayloadAction<{
+                federationId: string
+                gateways: RpcLightningGateway[]
+            }>,
+        ) {
+            state.gatewaysByFederation[action.payload.federationId] =
+                action.payload.gateways
+        },
     },
     extraReducers: builder => {
         builder.addCase(leaveFederation.fulfilled, (state, action) => {
@@ -289,6 +304,7 @@ export const {
     setFederationExternalMeta,
     changeAuthenticatedGuardian,
     removeCustomFediMod,
+    addFederationGateways,
 } = federationSlice.actions
 
 /*** Async thunk actions */
@@ -503,9 +519,23 @@ export const listGateways = createAsyncThunk<
     }[],
     { fedimint: FedimintBridge; federationId: string },
     { state: CommonState }
->('federation/listGateways', async ({ fedimint, federationId }) => {
-    return fedimint.listGateways(federationId)
-})
+>(
+    'federation/listGateways',
+    async ({ fedimint, federationId }, { dispatch, getState }) => {
+        const gatewaysByFederation = selectGatewaysByFederation(getState())
+        const federationGateway = gatewaysByFederation[federationId]
+
+        if (federationGateway) {
+            return federationGateway
+        }
+
+        const gateways = await fedimint.listGateways(federationId)
+
+        dispatch(addFederationGateways({ federationId, gateways }))
+
+        return gateways
+    },
+)
 
 /*** Selectors ***/
 
@@ -880,3 +910,6 @@ export const selectFederationPinnedMessage = createSelector(
     selectFederationMetadata,
     getFederationPinnedMessage,
 )
+
+export const selectGatewaysByFederation = (state: CommonState) =>
+    state.federation.gatewaysByFederation
