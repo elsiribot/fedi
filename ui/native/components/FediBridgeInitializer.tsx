@@ -160,7 +160,9 @@ export const FediBridgeInitializer: React.FC<Props> = ({ children }) => {
             'log',
             (event: LogEvent) => {
                 const formattedLog = formatBridgeFfiLog(event)
-                ffiLog.info(formattedLog)
+                if (formattedLog) {
+                    ffiLog.info(formattedLog)
+                }
             },
         )
 

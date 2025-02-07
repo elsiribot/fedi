@@ -171,8 +171,8 @@ export function formatBridgeFfiLog(event: LogEvent): string {
         stringToLog += `[OS: ${Platform.OS}]\n------ |  `
         const parsed = JSON.parse(event.log)
         if (parsed?.message === 'rpc call') {
-            // TODO: would be nice to get the name of the rpc called here
-            stringToLog += `> rpc call: received by bridge\n`
+            return '' // This is noisy and not helpful. We already log rpc calls in `native/bridge.ts`
+            // stringToLog += `> rpc call: received by bridge\n`
         } else if (parsed?.message === 'rpc_error' && parsed?.error) {
             stringToLog += `> rpc error: ${parsed.error}\n`
         } else if (parsed?.name && parsed?.duration_ms) {
