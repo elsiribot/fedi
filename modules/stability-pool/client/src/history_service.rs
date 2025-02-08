@@ -7,19 +7,18 @@ use fedimint_core::db::{Database, DatabaseTransaction, IDatabaseTransactionOpsCo
 use fedimint_core::module::ApiRequestErased;
 use fedimint_core::util::backoff_util::{self};
 use fedimint_core::util::retry;
-use fedimint_core::{Amount, TransactionId};
+use fedimint_core::Amount;
 use futures::{Stream, StreamExt};
-use itertools::Itertools;
 use stability_pool_common::{
     AccountHistoryItem, AccountHistoryItemKind, AccountHistoryRequest, AccountId, FiatAmount,
-    SyncResponse,
+    SyncResponse, UnlockRequest,
 };
 use tokio::sync::watch;
 use tokio_stream::wrappers::WatchStream;
 
 use crate::db::{
-    AccountHistoryItemKey, AccountHistoryItemKeyPrefix, CachedSyncResponseKey,
-    CachedSyncResponseValue,
+    self, AccountHistoryItemKey, AccountHistoryItemKeyPrefix, UserOperationHistoryItem,
+    UserOperationHistoryItemKey, UserOperationHistoryItemKind,
 };
 use crate::StabilityPoolSyncService;
 
@@ -30,78 +29,6 @@ pub struct StabilityPoolHistoryService {
     module_api: DynModuleApi,
     db: Database,
     account_id: AccountId,
-}
-
-/// While each [`AccountHistoryItem`] represents a state transition for an
-/// individual deposit, each [`UserOperationHistoryItem`] represents an action
-/// initiated by the user. The list of [`UserOperationHistoryItem`] can be built
-/// by taking the list of [`AccountHistoryItem`] and grouping by TX ID, and then
-/// applying certain rules to each group based on the
-/// [`AccountHistoryItemKind`]s noticed within the group. See
-/// [`UserOperationHistoryItemKind`] for these rules.
-pub struct UserOperationHistoryItem {
-    /// ID of TX submitted by the user. This can be used as a unique key to
-    /// reconcile with the operation log for example.
-    pub txid: TransactionId,
-
-    /// Index of the cycle in which the user operation was initiated.
-    pub cycle_idx: u64,
-
-    /// Amount of bitcoin involved in this transaction in msats
-    pub amount: Amount,
-
-    /// Amount of fiat involved in this transaction using the price of bitcoin
-    /// from the start of the cycle in which the transaction took place.
-    pub fiat_amount: FiatAmount,
-
-    /// The kind of operation (deposit, withdrawal, or transfer)
-    pub kind: UserOperationHistoryItemKind,
-}
-
-/// Once we group the [`AccountHistoryItem`]s by TX ID, we can derive the nature
-/// of the user operation using the rules mentioned in each of the variants
-/// below.
-pub enum UserOperationHistoryItemKind {
-    /// Group of [`AccountHistoryItem`]s contains only one item of kind
-    /// DepositToStaged
-    PendingDeposit,
-
-    /// Group of [`AccountHistoryItem`]s contains > 1 item with the first being
-    /// of kind DepositToStaged. For now, we do not consider any subsequent
-    /// state transitions such as deposit getting kicked out due to lack of
-    /// liquidity and then being relocked later if more liquidity is available.
-    CompletedDeposit,
-
-    /// To determine the status of a withdrawal we also need to know if there
-    /// is an active unlock request. This information is found from the cached
-    /// [`SyncResponse`]. If there is no active unlock request, we do not have a
-    /// pending withdrawal. But if there is an active unlock request, then we do
-    /// have a pending withdrawal.
-    ///
-    /// Now if we have a pending withdrawal, it is possible that the latest
-    /// [`AccountHistoryItem`] might be of kind StagedToIdle with a
-    /// TX ID matching the TX ID of the unlock request.
-    PendingWithdrawal,
-
-    /// Group of [`AccountHistoryItem`]s looks like one of the below:
-    /// - [LockedToIdle]
-    /// - [StagedToIdle, LockedToIdle]
-    /// - [StagedToIdle] with NO active unlock request
-    CompletedWithdrawal,
-
-    /// Group of [`AccountHistoryItem`]s looks like one of the below:
-    /// - [StagedTransferIn]
-    /// - [StagedTransferIn, LockedTransferIn]
-    /// - [LockedTransferIn]
-    TransferIn { from: AccountId, meta: Vec<u8> },
-
-    /// Group of [`AccountHistoryItem`]s looks like one of the below:
-    /// - [(StagedTransferOut)+]
-    /// - [(StagedTransferOut)+, (LockedTransferOut)+]
-    /// - [(LockedTransferOut)+]
-    ///
-    /// (X)+ means 1 or more of X
-    TransferOut { to: AccountId, meta: Vec<u8> },
 }
 
 impl StabilityPoolHistoryService {
@@ -166,6 +93,39 @@ impl StabilityPoolHistoryService {
                     index: local_count + i as u64,
                 };
                 dbtx.insert_entry(&key, &item).await;
+                update_user_operation_history(
+                    &mut dbtx.to_ref_nc(),
+                    self.account_id,
+                    sync_response,
+                    &item,
+                )
+                .await;
+            }
+
+            // If we see a pending unlock request that we are not already tracking, add a
+            // user operation history item for it
+            if let Some(unlock_request) = sync_response.unlock_request.as_ref() {
+                let user_op_key = UserOperationHistoryItemKey {
+                    account_id: self.account_id,
+                    txid: unlock_request.txid,
+                };
+                if dbtx.get_value(&user_op_key).await.is_none() {
+                    let (amount, fiat_amount) = sync_response
+                        .amount_from_unlock_request()
+                        .unwrap_or((Amount::ZERO, Default::default()));
+                    db::insert_user_operation_history_item(
+                        &mut dbtx.to_ref_nc(),
+                        &user_op_key,
+                        &UserOperationHistoryItem {
+                            txid: unlock_request.txid,
+                            cycle: sync_response.current_cycle,
+                            amount,
+                            fiat_amount,
+                            kind: UserOperationHistoryItemKind::PendingWithdrawal,
+                        },
+                    )
+                    .await;
+                }
             }
 
             dbtx.commit_tx().await;
@@ -214,249 +174,185 @@ impl StabilityPoolHistoryService {
         WatchStream::new(self.is_fetching.subscribe())
     }
 
-    /// Build a list of [`UserOperationHistoryItem`] by transforming the on-disk
-    /// [`AccountHistoryItem`] list.
-    // TODO shaurya: how to paginate?
-    pub async fn list_user_operations(&self) -> anyhow::Result<Vec<UserOperationHistoryItem>> {
-        let mut dbtx = self.db.begin_transaction_nc().await;
-        let Some(CachedSyncResponseValue {
-            value: sync_response,
-            ..
-        }) = dbtx
-            .get_value(&CachedSyncResponseKey {
-                account_id: self.account_id,
-            })
-            .await
-        else {
-            bail!("Need cached sync response to produce user operations list");
-        };
+    // TODO shaurya add list_user_operations function with pagination
+}
 
-        let local_count = Self::get_account_history_count(&mut dbtx, self.account_id).await;
-        let acc_history_items = self.get_account_history(0..local_count).await?;
-        let mut pending_withdrawal_found = false;
-        let mut user_operations = vec![];
+// Given the [`AccountHistoryItem`] just received from the server, update the
+// on-disk user operation history.
+async fn update_user_operation_history(
+    dbtx: &mut DatabaseTransaction<'_>,
+    account_id: AccountId,
+    sync_response: &SyncResponse,
+    acc_history_item: &AccountHistoryItem,
+) {
+    let user_op_key = UserOperationHistoryItemKey {
+        account_id,
+        txid: acc_history_item.txid,
+    };
+    let current_user_op_history_item = dbtx.get_value(&user_op_key).await;
 
-        // The chain below starts with the list of all account history items
-        // 1. Group into map using TX ID whilst preserving index from original list
-        // 2. Sort groups using lowest index, i.e., TX ID that produced earliest account
-        //    history item goes first
-        // 3. Transform sorted groups into iterator over tuple of (TXID,
-        //    Vec<Acc_history_item>)
-        for (txid, items) in acc_history_items
-            .into_iter()
-            .enumerate()
-            .into_group_map_by(|(_, AccountHistoryItem { txid, .. })| *txid)
-            .into_iter()
-            .sorted_unstable_by_key(|(_, indexed_items)| {
-                indexed_items.iter().map(|(idx, _)| *idx).min()
-            })
-            .map(|(txid, indexed_items)| {
-                (
-                    txid,
-                    indexed_items
-                        .into_iter()
-                        .map(|(_, item)| item)
-                        .collect_vec(),
-                )
-            })
+    // Initialize the new msat and fiat amounts using the account history item's
+    // data
+    let mut new_amount = acc_history_item.amount;
+    let mut new_fiat_amount =
+        FiatAmount::from_btc_amount(acc_history_item.amount, acc_history_item.cycle.start_price)
+            .unwrap_or_default();
+
+    let mut add_current_state_amounts = || {
+        new_amount += current_user_op_history_item
+            .as_ref()
+            .map_or(Amount::ZERO, |c| c.amount);
+        new_fiat_amount = FiatAmount(
+            new_fiat_amount.0
+                + current_user_op_history_item
+                    .as_ref()
+                    .map_or(FiatAmount(0), |c| c.fiat_amount)
+                    .0,
+        );
+    };
+
+    let new_user_op_state = match (
+        &acc_history_item.kind,
+        current_user_op_history_item.as_ref().map(|c| &c.kind),
+        sync_response.unlock_request.as_ref(),
+    ) {
+        // Deposit-related account history items. We only care about the initial deposit and
+        // locking. We don't care about deposits getting kicked out (due to low liquidity) and then
+        // getting relocked -- for now.
+        (AccountHistoryItemKind::DepositToStaged, None, _) => {
+            UserOperationHistoryItemKind::PendingDeposit
+        }
+        (AccountHistoryItemKind::DepositToStaged, Some(_), _) => {
+            panic!("DepositToStaged must create new user op history item")
+        }
+        (AccountHistoryItemKind::StagedToLocked, None, _) => {
+            panic!("StagedToLocked cannot create new user op history item")
+        }
+        (AccountHistoryItemKind::StagedToLocked, Some(state), _) => match state {
+            UserOperationHistoryItemKind::PendingDeposit => {
+                UserOperationHistoryItemKind::CompletedDeposit
+            }
+            UserOperationHistoryItemKind::CompletedDeposit => return,
+            _ => panic!("StagedToLocked can only override existing PendingWithdrawal"),
+        },
+        (AccountHistoryItemKind::LockedToStaged, _, _) => return,
+
+        // Withdrawal-related account history items that pertain to staged deposits. If StagedToIdle
+        // matches existing unlock request, we add the amounts from the unlock request. Otherwise,
+        // it is a completed withdrawal.
+        (AccountHistoryItemKind::StagedToIdle, None, Some(UnlockRequest { txid, .. }))
+            if *txid == acc_history_item.txid =>
         {
-            match &items[..] {
-                // Group of [`AccountHistoryItem`]s contains only one item of kind DepositToStaged
-                [AccountHistoryItem {
-                    cycle,
-                    amount,
-                    kind: AccountHistoryItemKind::DepositToStaged,
-                    ..
-                }] => {
-                    user_operations.push(UserOperationHistoryItem {
-                        txid,
-                        cycle_idx: cycle.idx,
-                        amount: *amount,
-                        fiat_amount: FiatAmount::from_btc_amount(*amount, cycle.start_price)?,
-                        kind: UserOperationHistoryItemKind::PendingDeposit,
-                    });
-                }
-                // Group of [`AccountHistoryItem`]s contains > 1 item with the first being
-                // of kind DepositToStaged. For now, we do not consider any subsequent
-                // state transitions such as deposit getting kicked out due to lack of
-                // liquidity and then being relocked later if more liquidity is available.
-                [AccountHistoryItem {
-                    cycle,
-                    amount,
-                    kind: AccountHistoryItemKind::DepositToStaged,
-                    ..
-                }, second, ..] => {
-                    assert!(matches!(
-                        second.kind,
-                        AccountHistoryItemKind::StagedToLocked
-                    ));
-                    user_operations.push(UserOperationHistoryItem {
-                        txid,
-                        cycle_idx: cycle.idx,
-                        amount: *amount,
-                        fiat_amount: FiatAmount::from_btc_amount(*amount, cycle.start_price)?,
-                        kind: UserOperationHistoryItemKind::CompletedDeposit,
-                    });
-                }
-                // Group of [`AccountHistoryItem`]s contains only one element of type StagedToIdle
-                [AccountHistoryItem {
-                    cycle,
-                    amount,
-                    kind: AccountHistoryItemKind::StagedToIdle,
-                    ..
-                }] => {
-                    // If we have an unlock request with matching TXID, it is a
-                    // pending withdrawal. Otherwise it is a completed withdrawal with only staged
-                    // funds that were moved.
-                    if sync_response
-                        .unlock_request
-                        .as_ref()
-                        .is_some_and(|request| request.txid == txid)
-                    {
-                        assert!(cycle.idx == sync_response.current_cycle.idx);
-                        pending_withdrawal_found = true;
-                        let (amount, fiat_amount) = sync_response
-                            .amount_from_unlock_request()
-                            .unwrap_or((Amount::ZERO, Default::default()));
-                        user_operations.push(UserOperationHistoryItem {
-                            txid,
-                            cycle_idx: cycle.idx,
-                            amount,
-                            fiat_amount,
-                            kind: UserOperationHistoryItemKind::PendingWithdrawal,
-                        });
-                    } else {
-                        user_operations.push(UserOperationHistoryItem {
-                            txid,
-                            cycle_idx: cycle.idx,
-                            amount: *amount,
-                            fiat_amount: FiatAmount::from_btc_amount(*amount, cycle.start_price)?,
-                            kind: UserOperationHistoryItemKind::CompletedWithdrawal,
-                        });
-                    }
-                }
-                // Group of [`AccountHistoryItem`]s looks like one of the below:
-                // - [LockedToIdle]
-                // - [StagedToIdle, LockedToIdle]
-                [AccountHistoryItem {
-                    cycle,
-                    kind: AccountHistoryItemKind::LockedToIdle,
-                    ..
-                }]
-                | [AccountHistoryItem {
-                    kind: AccountHistoryItemKind::StagedToIdle,
-                    ..
-                }, AccountHistoryItem {
-                    cycle,
-                    kind: AccountHistoryItemKind::LockedToIdle,
-                    ..
-                }] => {
-                    user_operations.push(UserOperationHistoryItem {
-                        txid,
-                        cycle_idx: cycle.idx,
-                        amount: items.iter().map(|i| i.amount).sum(),
-                        fiat_amount: FiatAmount(
-                            items
-                                .iter()
-                                .map(|i| FiatAmount::from_btc_amount(i.amount, i.cycle.start_price))
-                                .collect::<anyhow::Result<Vec<_>>>()?
-                                .iter()
-                                .map(|fa| fa.0)
-                                .sum(),
-                        ),
-                        kind: UserOperationHistoryItemKind::CompletedWithdrawal,
-                    });
-                }
-                // Group of [`AccountHistoryItem`]s looks like one of the below:
-                // - [StagedTransferIn]
-                // - [LockedTransferIn]
-                // - [StagedTransferIn, LockedTransferIn]
-                [AccountHistoryItem {
-                    cycle,
-                    kind: AccountHistoryItemKind::StagedTransferIn { from, meta },
-                    ..
-                }, ..]
-                | [.., AccountHistoryItem {
-                    cycle,
-                    kind: AccountHistoryItemKind::LockedTransferIn { from, meta },
-                    ..
-                }] => {
-                    user_operations.push(UserOperationHistoryItem {
-                        txid,
-                        cycle_idx: cycle.idx,
-                        amount: items.iter().map(|i| i.amount).sum(),
-                        fiat_amount: FiatAmount(
-                            items
-                                .iter()
-                                .map(|i| FiatAmount::from_btc_amount(i.amount, i.cycle.start_price))
-                                .collect::<anyhow::Result<Vec<_>>>()?
-                                .iter()
-                                .map(|fa| fa.0)
-                                .sum(),
-                        ),
-                        kind: UserOperationHistoryItemKind::TransferIn {
-                            from: *from,
-                            meta: meta.to_vec(),
-                        },
-                    });
-                }
-                // Group of [`AccountHistoryItem`]s looks like one of the below:
-                // - [+(StagedTransferOut)]
-                // - [+(StagedTransferOut), +(LockedTransferOut)]
-                // - [+(LockedTransferOut)]
-                //
-                // +(X) means 1 or more of X
-                [AccountHistoryItem {
-                    cycle,
-                    kind: AccountHistoryItemKind::StagedTransferOut { to, meta },
-                    ..
-                }, ..]
-                | [.., AccountHistoryItem {
-                    cycle,
-                    kind: AccountHistoryItemKind::LockedTransferOut { to, meta },
-                    ..
-                }] => {
-                    user_operations.push(UserOperationHistoryItem {
-                        txid,
-                        cycle_idx: cycle.idx,
-                        amount: items.iter().map(|i| i.amount).sum(),
-                        fiat_amount: FiatAmount(
-                            items
-                                .iter()
-                                .map(|i| FiatAmount::from_btc_amount(i.amount, i.cycle.start_price))
-                                .collect::<anyhow::Result<Vec<_>>>()?
-                                .iter()
-                                .map(|fa| fa.0)
-                                .sum(),
-                        ),
-                        kind: UserOperationHistoryItemKind::TransferOut {
-                            to: *to,
-                            meta: meta.to_vec(),
-                        },
-                    });
-                }
-                _ => (),
-            }
+            let (msat, fiat) = sync_response
+                .amount_from_unlock_request()
+                .unwrap_or((Amount::ZERO, Default::default()));
+            new_amount += msat;
+            new_fiat_amount = FiatAmount(new_fiat_amount.0 + fiat.0);
+            UserOperationHistoryItemKind::PendingWithdrawal
+        }
+        (AccountHistoryItemKind::StagedToIdle, None, _) => {
+            // (still possible to see a follow-up LockedToIdle)
+            UserOperationHistoryItemKind::CompletedWithdrawal
+        }
+        (AccountHistoryItemKind::StagedToIdle, Some(_), _) => {
+            panic!("StagedToIdle must create new user op history item")
         }
 
-        // At the end, it is possible that a pending withdrawal exists but there was no
-        // StagedToIdle transition logged. So we manually add a pending withdrawal as
-        // the last operation.
-        if !pending_withdrawal_found {
-            if let Some(request) = sync_response.unlock_request.as_ref() {
-                let (amount, fiat_amount) = sync_response
-                    .amount_from_unlock_request()
-                    .unwrap_or((Amount::ZERO, Default::default()));
-                user_operations.push(UserOperationHistoryItem {
-                    txid: request.txid,
-                    cycle_idx: sync_response.current_cycle.idx,
-                    amount,
-                    fiat_amount,
-                    kind: UserOperationHistoryItemKind::PendingWithdrawal,
-                });
+        // Withdrawal-related account history items that pertain to locked deposits.
+        // - If starting state is None, it was a locked-deposits-only withdrawal that we didn't
+        //   track in-flight and we can just use the amounts from the new account history item.
+        // - If starting state is Some(PendingWithdrawal), we were tracking the withdrawal in-flight
+        //   and the OLD state already has the FULL withdrawal amounts (across both locked and
+        //   staged).
+        // - If starting state is Some(CompletedWithdrawal), this is a follow-up LockedToIdle after
+        //   a previous StagedToIdle. Only in this case do we need to add amounts.
+        (AccountHistoryItemKind::LockedToIdle, None, _) => {
+            UserOperationHistoryItemKind::CompletedWithdrawal
+        }
+        (
+            AccountHistoryItemKind::LockedToIdle,
+            Some(UserOperationHistoryItemKind::PendingWithdrawal),
+            _,
+        ) => {
+            new_amount = current_user_op_history_item
+                .as_ref()
+                .map_or(Amount::ZERO, |c| c.amount);
+            new_fiat_amount = current_user_op_history_item
+                .as_ref()
+                .map_or(Default::default(), |c| c.fiat_amount);
+            UserOperationHistoryItemKind::CompletedWithdrawal
+        }
+        (
+            AccountHistoryItemKind::LockedToIdle,
+            Some(UserOperationHistoryItemKind::CompletedWithdrawal),
+            _,
+        ) => {
+            add_current_state_amounts();
+            UserOperationHistoryItemKind::CompletedWithdrawal
+        }
+        (AccountHistoryItemKind::LockedToIdle, Some(_), _) => panic!(
+            "LockedToIdle can only override existing PendingWithdrawal or CompletedWithdrawal"
+        ),
+
+        // Transfer-in related account history items. For a staged or locked transfer in item,
+        // existing state must either be None, or "Transfer In". Amounts across items must be added
+        // up to get the total transfer-in amount.
+        (
+            AccountHistoryItemKind::StagedTransferIn { from, meta }
+            | AccountHistoryItemKind::LockedTransferIn { from, meta },
+            None | Some(UserOperationHistoryItemKind::TransferIn { .. }),
+            _,
+        ) => {
+            add_current_state_amounts();
+            UserOperationHistoryItemKind::TransferIn {
+                from: *from,
+                meta: meta.to_vec(),
             }
         }
+        (
+            AccountHistoryItemKind::StagedTransferIn { .. }
+            | AccountHistoryItemKind::LockedTransferIn { .. },
+            Some(_),
+            _,
+        ) => {
+            panic!("StagedTransferIn/LockedTransferIn can only override TransferIn");
+        }
 
-        Ok(user_operations)
-    }
+        // Transfer-out related account history items. For a staged or locked transfer out item,
+        // existing state must either be None, or "Transfer Out". Amounts across items must be added
+        // up to get the total transfer-out amount.
+        (
+            AccountHistoryItemKind::StagedTransferOut { to, meta }
+            | AccountHistoryItemKind::LockedTransferOut { to, meta },
+            None | Some(UserOperationHistoryItemKind::TransferOut { .. }),
+            _,
+        ) => {
+            add_current_state_amounts();
+            UserOperationHistoryItemKind::TransferOut {
+                to: *to,
+                meta: meta.to_vec(),
+            }
+        }
+        (
+            AccountHistoryItemKind::StagedTransferOut { .. }
+            | AccountHistoryItemKind::LockedTransferOut { .. },
+            Some(_),
+            _,
+        ) => {
+            panic!("StagedTransferOut/LockedTransferOut can only override TransferOut")
+        }
+    };
+
+    db::insert_user_operation_history_item(
+        dbtx,
+        &user_op_key,
+        &UserOperationHistoryItem {
+            txid: acc_history_item.txid,
+            cycle: acc_history_item.cycle,
+            amount: new_amount,
+            fiat_amount: new_fiat_amount,
+            kind: new_user_op_state,
+        },
+    )
+    .await;
 }

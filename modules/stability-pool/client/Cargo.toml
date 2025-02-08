@@ -12,7 +12,6 @@ fedimint-core = { workspace = true }
 fedimint-client = { workspace = true }
 fedimint-api-client = { workspace = true }
 futures = { workspace = true }
-itertools = { workspace = true }
 serde = { workspace = true, features = ["derive"] }
 bitcoin = { workspace = true, features = ["rand", "serde"] }
 tracing = { workspace = true }

@@ -954,6 +954,7 @@ pub struct AccountHistoryItem {
 }
 
 #[derive(Debug, Serialize, Deserialize, Encodable, Decodable, Clone, PartialEq, Eq)]
+#[serde(tag = "kind")]
 pub enum AccountHistoryItemKind {
     /// Fresh deposit into the stability pool (starts out as staged)
     DepositToStaged,
@@ -973,6 +974,10 @@ pub enum AccountHistoryItemKind {
     /// "auto-renewal". Auto-renewals DO NOT log in the account history.
     LockedToStaged,
 
+    /// A withdrawal request was received, and for the funds that could be
+    /// drained from the staged deposits immediately, idle balance was credited.
+    StagedToIdle,
+
     /// A withdrawal request was received, and couldn't be fulfilled using
     /// staged deposits at the time. So an unlock request was registered, and
     /// the next cycle turnover, part of the locked funds were removed from the
@@ -980,25 +985,21 @@ pub enum AccountHistoryItemKind {
     /// claim.
     LockedToIdle,
 
-    /// A withdrawal request was received, and for the funds that could be
-    /// drained from the staged deposits immediately, idle balance was credited.
-    StagedToIdle,
+    /// A transfer request was received and processed and as a result the
+    /// recipient of the funds has a new staged deposit.
+    StagedTransferIn { from: AccountId, meta: Vec<u8> },
 
     /// A transfer request was received and processed and as a result the
     /// recipient of the funds has a new locked deposit.
     LockedTransferIn { from: AccountId, meta: Vec<u8> },
 
     /// A transfer request was received and processed and as a result the sender
-    /// of the funds gave up some locked deposits that were immediately given to
-    /// the recipient.
-    LockedTransferOut { to: AccountId, meta: Vec<u8> },
-
-    /// A transfer request was received and processed and as a result the
-    /// recipient of the funds has a new staged deposit.
-    StagedTransferIn { from: AccountId, meta: Vec<u8> },
-
-    /// A transfer request was received and processed and as a result the sender
     /// of the funds gave up some staged deposits that were immediately given to
     /// the recipient.
     StagedTransferOut { to: AccountId, meta: Vec<u8> },
+
+    /// A transfer request was received and processed and as a result the sender
+    /// of the funds gave up some locked deposits that were immediately given to
+    /// the recipient.
+    LockedTransferOut { to: AccountId, meta: Vec<u8> },
 }
