@@ -2,62 +2,81 @@
 import fs from 'fs'
 import path from 'path'
 
-import { flattenObject, getLangJson, localizationPath } from './i18n-utils'
+import { i18nLanguages } from '../localization'
+import {
+    flattenObject,
+    getLangJson,
+    LanguageJson,
+    localizationPath,
+} from './i18n-utils'
 
-const languages = {
-    en: 'English',
-    es: 'Spanish',
-    fr: 'French',
-    id: 'Indonesian',
-    pt: 'Portugese',
-}
-
-const modes = ['default', 'translate', 'correct']
+const modes = ['default', 'missing', 'full']
 
 async function run() {
-    const lang = process.argv[2] ?? 'en'
+    const lang = process.argv[2]
     const mode = process.argv[3] ?? 'default'
+    const includeEnglish = process.argv[4] ?? 'false'
 
-    if (!Object.keys(languages).includes(lang)) {
+    if (!Object.keys(i18nLanguages).includes(lang)) {
         console.error(
-            `Error: Language must be one of (${Object.keys(languages).join(
+            `Error: Language must be one of (${Object.keys(i18nLanguages).join(
                 '/',
-            )})`,
+            )}), got ${lang}`,
         )
         return
     }
 
     if (!modes.includes(mode)) {
-        console.error(`Error: Mode must be one of (${modes.join('/')})`)
+        console.error(
+            `Error: Mode must be one of (${modes.join('/')}), got ${mode}`,
+        )
         return
     }
 
-    // Read in english JSON
+    const shouldIncludeEnglish =
+        includeEnglish === 'true' || includeEnglish === 'yes'
+
     const langJson = getLangJson(lang)
     const enJson = getLangJson('en')
 
-    const originalLang = `Translation (${
-        languages[lang as keyof typeof languages]
-    })`
-
     const keys = ['Key']
 
-    if (mode !== 'default') keys.push('Original (English)')
+    if (shouldIncludeEnglish) keys.push('Original (en)')
 
-    keys.push(originalLang)
+    keys.push(`Translation (${lang})`)
 
     // Convert JSON to CSV
     let csv = keys.join(',')
-    const translation = flattenObject(langJson)
+    const targetTranslation = flattenObject(langJson)
     const englishTranslation = flattenObject(enJson)
 
-    Object.entries(translation).forEach(([key, value]) => {
+    let languageJson: LanguageJson = {}
+
+    // Only export keys from the target translation that are not present in English
+    if (mode === 'missing') {
+        for (const [key] of Object.entries(englishTranslation)) {
+            if (!targetTranslation[key]) {
+                languageJson[key] = ''
+            }
+        }
+    }
+    // Export all keys including keys not present in the target translation (set to an empty string)
+    else if (mode === 'full') {
+        for (const [key] of Object.entries(englishTranslation)) {
+            languageJson[key] = targetTranslation[key] ?? ''
+        }
+    } else {
+        languageJson = targetTranslation
+    }
+
+    Object.entries(languageJson).forEach(([key, value]) => {
         if (typeof value !== 'string') return
 
         const row = [key]
-        const escapeValue = (v: string) => `"${v.replace(/"/g, '""')}"`
+        const escapeValue = (v: string) =>
+            `"${v.replace(/"/g, '""').replace(/\n/g, '\\n')}"`
 
-        if (mode !== 'default')
+        if (shouldIncludeEnglish)
             row.push(
                 escapeValue(
                     englishTranslation[
@@ -66,8 +85,7 @@ async function run() {
                 ),
             )
 
-        if (mode === 'translate') row.push('')
-        else row.push(escapeValue(value))
+        row.push(value ? escapeValue(value) : '')
 
         csv += `\r\n${row.join(',')}`
     })
