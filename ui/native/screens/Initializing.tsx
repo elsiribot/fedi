@@ -34,10 +34,13 @@ const Initializing: React.FC<Props> = () => {
 
         let destination: NavigationArgs = ['TabsNavigator']
 
-        // make sure there is a display name before navigating to Home
+        // make sure we have a display name before proceeding.
+        // return early here to avoid navigating anywhere else
+        // if the Splash screen is where we need to be, especially
+        // because the PIN reset logic happens on the Splash screen
         if (!hasSetDisplayName) {
-            // Otherwise, go Home
             destination = ['Splash']
+            return navigation.replace(...destination)
         }
 
         // If PIN-protected, navigate to the Lock Screen
