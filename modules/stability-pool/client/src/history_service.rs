@@ -7,7 +7,7 @@ use fedimint_core::db::{Database, DatabaseTransaction, IDatabaseTransactionOpsCo
 use fedimint_core::module::ApiRequestErased;
 use fedimint_core::util::backoff_util::{self};
 use fedimint_core::util::retry;
-use fedimint_core::Amount;
+use fedimint_core::{Amount, TransactionId};
 use futures::{Stream, StreamExt};
 use stability_pool_common::{
     AccountHistoryItem, AccountHistoryItemKind, AccountHistoryRequest, AccountId, FiatAmount,
@@ -18,7 +18,7 @@ use tokio_stream::wrappers::WatchStream;
 
 use crate::db::{
     self, AccountHistoryItemKey, AccountHistoryItemKeyPrefix, UserOperationHistoryItem,
-    UserOperationHistoryItemKey, UserOperationHistoryItemKind,
+    UserOperationHistoryItemKey, UserOperationHistoryItemKind, UserOperationIndexAccountPrefix,
 };
 use crate::StabilityPoolSyncService;
 
@@ -58,11 +58,9 @@ impl StabilityPoolHistoryService {
     }
 
     async fn update_once(&self, sync_response: &SyncResponse) -> anyhow::Result<()> {
-        let local_count = Self::get_account_history_count(
-            &mut self.db.begin_transaction_nc().await,
-            self.account_id,
-        )
-        .await;
+        let local_count =
+            get_account_history_count(&mut self.db.begin_transaction_nc().await, self.account_id)
+                .await;
 
         if sync_response.account_history_count == local_count {
             return Ok(());
@@ -136,17 +134,6 @@ impl StabilityPoolHistoryService {
         result
     }
 
-    pub async fn get_account_history_count(
-        dbtx: &mut DatabaseTransaction<'_>,
-        account_id: AccountId,
-    ) -> u64 {
-        dbtx.find_by_prefix_sorted_descending(&AccountHistoryItemKeyPrefix { account_id })
-            .await
-            .next()
-            .await
-            .map_or(0, |k| k.0.index)
-    }
-
     /// Get all history items for the given account, ordered by index
     pub async fn get_account_history(
         &self,
@@ -174,7 +161,59 @@ impl StabilityPoolHistoryService {
         WatchStream::new(self.is_fetching.subscribe())
     }
 
-    // TODO shaurya add list_user_operations function with pagination
+    /// Returns the last `limit` user operations as tuples of (index, item). To
+    /// fetch the next page, pass the last operation's index as
+    /// `start_after`.
+    pub async fn list_user_operations(
+        &self,
+        limit: usize,
+        start_after: Option<u64>,
+    ) -> Vec<(u64, UserOperationHistoryItem)> {
+        let mut dbtx = self.db.begin_transaction_nc().await;
+        let operations: Vec<(u64, TransactionId)> = dbtx
+            .find_by_prefix_sorted_descending(&UserOperationIndexAccountPrefix {
+                account_id: self.account_id,
+            })
+            .await
+            .skip_while(|(key, _)| {
+                let skip = if let Some(start_after) = start_after {
+                    key.tx_idx >= start_after
+                } else {
+                    false
+                };
+
+                std::future::ready(skip)
+            })
+            .map(|(key, txid)| (key.tx_idx, txid))
+            .take(limit)
+            .collect::<Vec<_>>()
+            .await;
+
+        let mut operation_entries = Vec::with_capacity(operations.len());
+        for operation in operations {
+            let entry = dbtx
+                .get_value(&UserOperationHistoryItemKey {
+                    account_id: self.account_id,
+                    txid: operation.1,
+                })
+                .await
+                .expect("Inconsistent DB");
+            operation_entries.push((operation.0, entry));
+        }
+
+        operation_entries
+    }
+}
+
+async fn get_account_history_count(
+    dbtx: &mut DatabaseTransaction<'_>,
+    account_id: AccountId,
+) -> u64 {
+    dbtx.find_by_prefix_sorted_descending(&AccountHistoryItemKeyPrefix { account_id })
+        .await
+        .next()
+        .await
+        .map_or(0, |k| k.0.index)
 }
 
 // Given the [`AccountHistoryItem`] just received from the server, update the
