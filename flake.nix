@@ -380,6 +380,14 @@
               # this is where we publish the android bridge package so the react native app
               # can find it as a local maven dependency
               export ANDROID_BRIDGE_ARTIFACTS="''${REPO_ROOT}/bridge/fedi-android/artifacts"
+
+              # Disavle turbo telemetry, see https://turbo.build/repo/docs/telemetry#how-do-i-opt-out
+              export TURBO_TELEMETRY_DISABLED=1
+
+              # Make gradle build work on NixOS, otherwise it will try to run a downloaded
+              # generic Linux version of aapt2, which doesn't work on NixOS due to dynamic
+              # linking idiosyncrasies
+              export GRADLE_OPTS="-Dorg.gradle.project.android.aapt2FromMavenOverride=$ANDROID_SDK_ROOT/build-tools/34.0.0/aapt2"
             '';
           }
         );
