@@ -25,7 +25,7 @@ const Initializing: React.FC<Props> = () => {
     const hasSetDisplayName = useAppSelector(selectHasSetMatrixDisplayName)
     const hasStorageLoaded = useAppSelector(selectHasLoadedFromStorage || false)
     const isAppUnlocked = useIsFeatureUnlocked('app')
-
+    const shouldMigrateSeed = useAppSelector(s => s.recovery.shouldMigrateSeed)
     const hasLoaded = hasStorageLoaded
 
     // once everything has loaded, determine where to navigate
@@ -33,6 +33,13 @@ const Initializing: React.FC<Props> = () => {
         if (!hasLoaded || isAppUnlocked === undefined) return
 
         let destination: NavigationArgs = ['TabsNavigator']
+
+        // if FediBridgeInitializer detects a device id mismatch,
+        // we need to force the user to the migrated device screen
+        if (shouldMigrateSeed) {
+            destination = ['MigratedDevice']
+            return navigation.replace(...destination)
+        }
 
         // make sure we have a display name before proceeding.
         // return early here to avoid navigating anywhere else
@@ -51,7 +58,13 @@ const Initializing: React.FC<Props> = () => {
         }
 
         navigation.replace(...destination)
-    }, [hasLoaded, hasSetDisplayName, navigation, isAppUnlocked])
+    }, [
+        hasLoaded,
+        hasSetDisplayName,
+        navigation,
+        isAppUnlocked,
+        shouldMigrateSeed,
+    ])
 
     return (
         <View style={styles(theme).container}>

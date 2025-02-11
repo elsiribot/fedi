@@ -17,6 +17,7 @@ import {
     selectMatrixStarted,
     setDeviceIndexRequired,
     setShouldLockDevice,
+    setShouldMigrateSeed,
     startMatrixClient,
 } from '@fedi/common/redux'
 import { selectHasLoadedFromStorage } from '@fedi/common/redux/storage'
@@ -59,23 +60,23 @@ export const FediBridgeInitializer: React.FC<Props> = ({ children }) => {
     // Initialize redux store and bridge
     useEffect(() => {
         if (!hasLoadedStorage) return
-        const start = Date.now()
-        // Get the device ID, guaranteed to be unique and consistent on the same device
-        generateDeviceId()
-            .then(deviceId => {
+
+        const initialize = async () => {
+            const start = Date.now()
+            try {
+                // Get the device ID, guaranteed to be unique and consistent on the same device
+                const deviceId = await generateDeviceId()
                 log.info('initializing bridge with deviceId', deviceId)
-                return initializeBridge(deviceId)
-            })
-            .then(() => {
+                await initializeBridge(deviceId)
+
                 const stop = Date.now()
                 log.info('initialized:', stop - start, 'ms OS:', Platform.OS)
-                return fedimint.bridgeStatus()
-            })
-            .then(status => {
+
+                const status = await fedimint.bridgeStatus()
                 log.info('bridgeStatus', status)
+
                 // These all happen in parallel after bridge is initialized
-                // Only throw (via unwrap) for refreshFederations.
-                return Promise.all([
+                await Promise.all([
                     dispatchRef.current(fetchSocialRecovery(fedimint)),
                     dispatchRef.current(initializeNostrKeys({ fedimint })),
                     // this happens when the user entered seed words but quit the app
@@ -97,33 +98,42 @@ export const FediBridgeInitializer: React.FC<Props> = ({ children }) => {
                         ? [dispatchRef.current(startMatrixClient({ fedimint }))]
                         : []),
                 ])
-            })
-            .then(() => {
+
+                // This means the user has migrated their seed to a new device via device/app
+                // cloning so we need to prompt them to reinstall and do a device transfer
+                // so exit early without proceeding with further initialization
+                if (
+                    status?.bridgeFullInitError &&
+                    status.bridgeFullInitError.type === 'v2IdentifierMismatch'
+                ) {
+                    dispatchRef.current(setShouldMigrateSeed(true))
+                    setBridgeIsReady(true)
+                    return
+                }
+
                 // wait until after the matrix client is started to refresh federations because
                 // the latest metadata may include new default chats that require
                 // matrix to fetch the room previews
-                return dispatchRef
-                    .current(refreshFederations(fedimint))
-                    .unwrap()
-            })
-            .then(() => {
+                await dispatchRef.current(refreshFederations(fedimint)).unwrap()
+
                 setBridgeIsReady(true)
                 // preview chats after matrix client has finished initializing
                 dispatchRef.current(previewAllDefaultChats())
                 dispatchRef.current(initializeFedimintVersion({ fedimint }))
-            })
-            .catch(err => {
+            } catch (err) {
                 log.error(
                     `bridge failed to initialize after ${Date.now() - start}ms`,
                     err,
                 )
                 setBridgeError(err)
-            })
-            .finally(() => {
+            } finally {
                 // Hide splash screen once we're ready
                 // to show a screen
                 SplashScreen.hide()
-            })
+            }
+        }
+
+        initialize()
     }, [hasLoadedStorage, dispatchRef])
 
     useEffect(() => {

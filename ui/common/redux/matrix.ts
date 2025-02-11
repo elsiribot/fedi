@@ -974,6 +974,8 @@ export const configureMatrixPushNotifications = createAsyncThunk<
     'matrix/configureMatrixPushNotifications',
     async ({ token, appId, appName }) => {
         const client = getMatrixClient()
+        if (!client.hasStarted) return token
+
         await client.configureNotificationsPusher(token, appId, appName)
         return token
     },

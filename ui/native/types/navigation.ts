@@ -68,6 +68,8 @@ export type RootStackParamList = {
     ChatWallet: { recipientId: string }
     ChooseBackupMethod: undefined
     ChooseRecoveryMethod: undefined
+    MigratedDevice: undefined
+    MigratedDeviceSuccess: undefined
     FederationCurrency: { federationId: string }
     GlobalCurrency: undefined
     CompleteRecoveryAssist: { videoPath: string; recoveryId: string }
@@ -118,7 +120,11 @@ export type RootStackParamList = {
         status?: ReceiveSuccessStatus
     }
     ReceiveOffline: undefined
-    RecoveryWords: undefined
+    RecoveryWords:
+        | {
+              nextScreenParams: NavigationArgs
+          }
+        | undefined
     RecoveryAssistSuccess: undefined
     RecoveryWalletOptions: undefined
     RecoveryWalletTransfer: undefined

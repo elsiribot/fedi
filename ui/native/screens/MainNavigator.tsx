@@ -115,6 +115,8 @@ import LanguageSettings from './LanguageSettings'
 import LocateSocialRecovery from './LocateSocialRecovery'
 import LockScreen from './LockScreen'
 import LockedDevice from './LockedDevice'
+import MigratedDevice from './MigratedDevice'
+import MigratedDeviceSuccess from './MigratedDeviceSuccess'
 import NewMessage from './NewMessage'
 import NostrSettings from './NostrSettings'
 import PersonalRecovery from './PersonalRecovery'
@@ -298,6 +300,18 @@ export const MainNavigator = () => {
                         name="LockedDevice"
                         component={LockedDevice}
                         options={{ headerShown: false }}
+                    />
+                    <Stack.Screen
+                        name="MigratedDevice"
+                        component={MigratedDevice}
+                        options={{ headerShown: false }}
+                    />
+                    <Stack.Screen
+                        name="MigratedDeviceSuccess"
+                        component={MigratedDeviceSuccess}
+                        options={() => ({
+                            header: () => <Header backButton />,
+                        })}
                     />
                     <Stack.Screen
                         name="CompleteSocialRecovery"
