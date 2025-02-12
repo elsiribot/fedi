@@ -431,7 +431,7 @@ export function getReceivablePaymentEvents(
  * @param deep set to true to encode as a deep link
  */
 export function encodeFediMatrixUserUri(id: string, deep = false) {
-    if (deep) return `fedi://user:${id}`
+    if (deep) return `fedi://user/${encodeURIComponent(id)}`
     return `fedi:user:${id}`
 }
 
@@ -439,7 +439,7 @@ export function encodeFediMatrixUserUri(id: string, deep = false) {
  * @param deep set to true to encode as a deep link
  */
 export function encodeFediMatrixRoomUri(id: MatrixRoom['id'], deep = false) {
-    if (deep) return `fedi://room:${id}`
+    if (deep) return `fedi://room/${encodeURIComponent(id)}`
     return `fedi:room:${id}:::`
 }
 
@@ -451,11 +451,11 @@ export function decodeFediMatrixRoomUri(uri: string) {
     // Regex breakdown:
     // ^fedi           - Ensures the string starts with "fedi".
     // (?::|:\/\/)     - Matches either ":" or "://" for both `fedi:room:` and `fedi://room:`
-    // room:           - Matches the "room:" part of the string
+    // room[:/]           - Matches the "room:" or "room/" part of the string
     // (.+?)           - Non-greedy capture of the room ID (which contains a single colon)
     // (?:::|$)        - Ensures the room ID is followed either by ":::” or the end of the string
     // /i              - Case-insensitive matching.
-    const match = cleaned.match(/^fedi(?::|:\/\/)room:(.+?)(?:::|$)/i)
+    const match = cleaned.match(/^fedi(?::|:\/\/)room[:/](.+?)(?:::|$)/i)
     if (!match) throw new Error('feature.chat.invalid-room')
 
     const decodedId = match[1]
@@ -470,8 +470,9 @@ export function decodeFediMatrixUserUri(uri: string) {
     const cleaned = uri.replace(/https?:\/\//g, '')
 
     // Decode both fedi:user:{id} and fedi://user:{id}
+    // Also matches fedi:user/{id} and fedi://user/{id}
     // const match = uri.match(FEDI_USER)
-    const match = cleaned.match(/^fedi(?::|:\/\/)user:(.+)$/i)
+    const match = cleaned.match(/^fedi(?::|:\/\/)user[:/](.+)$/i)
     if (!match) throw new Error('feature.chat.invalid-member')
 
     // Validate that it's a valid matrix user id
