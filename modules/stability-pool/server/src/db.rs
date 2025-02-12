@@ -8,8 +8,8 @@ use fedimint_core::encoding::{Decodable, Encodable};
 use fedimint_core::{impl_db_lookup, impl_db_record, Amount, PeerId};
 use futures::StreamExt;
 use stability_pool_common::{
-    AccountHistoryItem, AccountId, CycleInfo, FeeRate, FiatAmount, FiatOrAll, Provide, Seek,
-    StabilityPoolConsensusItem, TransferRequestId,
+    AccountHistoryItem, AccountId, CycleInfo, FeeRate, FiatAmount, Provide, Seek,
+    StabilityPoolConsensusItem, TransferRequestId, UnlockRequest,
 };
 
 #[repr(u8)]
@@ -115,7 +115,7 @@ pub struct UnlockRequestsKeyPrefix;
 
 impl_db_record!(
     key = UnlockRequestKey,
-    value = FiatOrAll,
+    value = UnlockRequest,
     db_prefix = DbKeyPrefix::UnlockRequests,
 );
 
