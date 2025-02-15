@@ -1,5 +1,5 @@
 import { useNavigation } from '@react-navigation/native'
-import { useCallback, useEffect } from 'react'
+import { useCallback, useEffect, useRef } from 'react'
 import { useTranslation } from 'react-i18next'
 import * as Zendesk from 'react-native-zendesk-messaging'
 import { useSelector } from 'react-redux'
@@ -36,7 +36,8 @@ export const useUpdateZendeskNotificationCount = () => {
     const displayName = useDisplayName()
     const toast = useToast()
     const { t } = useTranslation()
-    const zendeskRefreshTime = 20_000 // 20 seconds
+    const zendeskRefreshTime = 8_000 // 8 seconds
+    const intervalRef = useRef<NodeJS.Timeout | null>(null) // Stores interval reference
 
     const fetchUnreadMessageCount = useCallback(async () => {
         if (!zendeskInitialized) {
@@ -71,12 +72,23 @@ export const useUpdateZendeskNotificationCount = () => {
             return
         }
 
-        const interval = setInterval(() => {
+        if (intervalRef.current) {
+            clearInterval(intervalRef.current) // Ensure no duplicate timers
+        }
+
+        intervalRef.current = setInterval(() => {
             fetchUnreadMessageCount()
         }, zendeskRefreshTime)
 
-        return () => clearInterval(interval)
+        return () => {
+            if (intervalRef.current) {
+                clearInterval(intervalRef.current)
+                intervalRef.current = null
+            }
+        }
     }, [fetchUnreadMessageCount, supportPermissionGranted])
+
+    return null // Hook does not return anything
 }
 
 export function useLaunchZendesk() {

@@ -4,6 +4,8 @@ import { Linking } from 'react-native'
 import { makeLog } from '@fedi/common/utils/log'
 
 import { NavigationLinkingConfig } from '../types/navigation'
+import { isZendeskNotification } from './notifications'
+import { launchZendeskSupport } from './support'
 
 const log = makeLog('utils/linking')
 
@@ -142,8 +144,20 @@ export const getLinkingConfig = (
                 },
             )
 
-            const unsubscribe = notifee.onForegroundEvent(e => {
+            const unsubscribe = notifee.onForegroundEvent(async e => {
                 if (e.type !== EventType.PRESS) return
+
+                //test for zendesk
+                const isZendesk = await isZendeskNotification(
+                    e.detail?.notification?.data,
+                )
+                if (isZendesk) {
+                    log.info('Zendesk foreground notification was pressed')
+                    await launchZendeskSupport(error =>
+                        log.error('Zendesk error:', error),
+                    )
+                    return
+                }
 
                 // Notifications should have a string `link` property
                 const uri = e.detail?.notification?.data?.link

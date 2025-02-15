@@ -22,10 +22,7 @@ import SvgImage from '../components/ui/SvgImage'
 import { useAppDispatch, useAppSelector } from '../state/hooks'
 import { FediMod, Shortcut } from '../types'
 import { NavigationHook } from '../types/navigation'
-import {
-    useLaunchZendesk,
-    useUpdateZendeskNotificationCount,
-} from '../utils/hooks/support'
+import { useLaunchZendesk } from '../utils/hooks/support'
 
 const Mods: React.FC = () => {
     const { theme } = useTheme()
@@ -42,8 +39,6 @@ const Mods: React.FC = () => {
     const [actionsMod, setActionsMod] = useState<FediMod>()
 
     const { launchZendesk } = useLaunchZendesk()
-
-    useUpdateZendeskNotificationCount()
 
     const onSelectFediMod = (shortcut: Shortcut) => {
         setActionsMod(undefined)

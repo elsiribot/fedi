@@ -5,6 +5,7 @@ import { selectSupportPermissionGranted } from '@fedi/common/redux/support'
 import { makeLog } from '@fedi/common/utils/log'
 
 import { useNotificationsPermission } from '../../utils/hooks'
+import { useUpdateZendeskNotificationCount } from '../../utils/hooks/support'
 import { manuallyPublishNotificationToken } from '../../utils/notifications'
 import { useMatrixPushNotifications } from '../hooks'
 
@@ -26,6 +27,7 @@ export const NotificationContextProvider: React.FC<{
 
     // Automatically run the push notification setup on app startup
     useMatrixPushNotifications() // Triggers automatically if permissions are granted
+    useUpdateZendeskNotificationCount() //initalise zendesk on startup and start polling for notifcation count. This also takes care of intialising the SDK
 
     // Manual trigger for publishing the notification token
     const triggerPushNotificationSetup = useCallback(async () => {

@@ -24,6 +24,7 @@ import { encodeFediMatrixRoomUri } from '@fedi/common/utils/matrix'
 
 import { store, AppDispatch } from '../state/store'
 import { TransactionDirection, TransactionEvent } from '../types'
+import { launchZendeskSupport } from './support'
 
 const log = makeLog('Notifications')
 
@@ -195,6 +196,7 @@ export const displayMessageReceivedNotification = async (
         {
             android: {
                 groupSummary: true,
+                smallIcon: 'ic_stat_notification',
                 // TODO: group notifications by chat room? for now it will confuse users since room name is not included but we should be able to fetch the name and group by room ID
                 // groupId: data.room_id,
             },
@@ -312,6 +314,23 @@ const dispatchNotification = async (
     }
 }
 
+export async function isZendeskNotification(data: any): Promise<boolean> {
+    if (!data) return false
+
+    try {
+        const responsibility = await Zendesk.handleNotification(data)
+        log.info('ZendeskResponsibility:', responsibility)
+
+        return (
+            responsibility === 'MESSAGING_SHOULD_DISPLAY' ||
+            responsibility === 'MESSAGING_SHOULD_NOT_DISPLAY'
+        )
+    } catch (error) {
+        log.error('Error checking Zendesk notification:', error)
+        return false
+    }
+}
+
 // Handles user interaction with notifications
 // TODO: when we add quick actions, incorporate deep linking here
 export const handleBackgroundNotificationUpdate = async ({
@@ -329,6 +348,17 @@ export const handleBackgroundNotificationUpdate = async ({
         // TODO: dismiss unread indicator?
     } else if (type === EventType.PRESS) {
         log.info('notification event (pressed)', JSON.stringify(detail))
+
+        //handle zendesk notifications
+        const isZendesk = await isZendeskNotification(
+            detail?.notification?.data,
+        )
+        if (isZendesk) {
+            await launchZendeskSupport(error =>
+                log.error('Zendesk error:', error),
+            )
+            return
+        }
         const link = detail?.notification?.data?.link
         if (typeof link === 'string') Linking.openURL(link)
     }
