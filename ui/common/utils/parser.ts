@@ -21,6 +21,7 @@ import {
     ParsedLnurlAuth,
     ParsedLnurlPay,
     ParsedLnurlWithdraw,
+    ParsedOfflineError,
     ParsedUnknownData,
     ParsedWebsite,
     ParserDataType,
@@ -70,48 +71,117 @@ export function parseUserInput<T extends TFunction>(
     fedimint: FedimintBridge,
     t: T,
     federationId: string | undefined = undefined,
+    isInternetUnreachable: boolean,
 ): Promise<AnyParsedData> {
     raw = raw.trim()
+
     return new Promise(resolve => {
-        // Run all parsers simultaneously.
-        const parserPromises = [
-            parseBolt11(raw, fedimint, t, federationId),
-            parseBolt12(raw),
-            parseLnurl(raw, t),
-            parseBitcoinAddress(raw),
-            parseBip21(raw, fedimint, federationId),
-            parseFediUri(raw, fedimint),
-            parseFedimintInvite(raw),
-            parseCommunityInvite(raw),
-            parseFedimintEcash(raw, fedimint),
-            parseCashuEcash(raw),
+        let resolved = false
+
+        // Offline parsers (do not require network)
+        const offlineParsers: (() => Promise<AnyParsedData | undefined>)[] = [
+            async () => {
+                log.debug('Running offline parser: parseBitcoinAddress')
+                return Promise.resolve(parseBitcoinAddress(raw))
+            },
+            async () => {
+                log.debug('Running offline parser: parseBip21')
+                return parseBip21(raw, fedimint, federationId)
+            },
+            async () => {
+                log.debug('Running offline parser: parseFedimintEcash')
+                return parseFedimintEcash(raw, fedimint)
+            },
+            async () => {
+                log.debug('Running offline parser: parseCashuEcash')
+                return parseCashuEcash(raw)
+            },
         ]
 
-        // Return the first parser to come back with a non-falsy value.
-        let resolved = false
-        for (const parserPromise of parserPromises) {
-            Promise.resolve(parserPromise)
-                .then(result => {
-                    if (result && !resolved) {
-                        resolved = true
-                        resolve(result)
-                    }
-                })
-                .catch(err => {
-                    log.warn(
-                        'Encountered an error running a QR parser, ignoring',
-                        err,
-                    )
-                })
+        // Online parsers (require internet access)
+        const onlineParsers: (() => Promise<AnyParsedData | undefined>)[] = [
+            async () => {
+                log.debug('Running online parser: parseBolt11')
+                return parseBolt11(raw, fedimint, t, federationId)
+            },
+            async () => {
+                log.debug('Running online parser: parseBolt12')
+                return Promise.resolve(parseBolt12(raw))
+            },
+            async () => {
+                log.debug('Running online parser: parseLnurl')
+                return parseLnurl(raw, t)
+            },
+            async () => {
+                log.debug('Running online parser: parseFediUri')
+                return parseFediUri(raw, fedimint)
+            },
+            async () => {
+                log.debug('Running online parser: parseFedimintInvite')
+                return Promise.resolve(parseFedimintInvite(raw))
+            },
+            async () => {
+                log.debug('Running online parser: parseCommunityInvite')
+                return Promise.resolve(parseCommunityInvite(raw))
+            },
+        ]
+
+        /**
+         * Runs parsers in parallel and resolves as soon as one succeeds.
+         */
+        const runParsers = async (
+            parsers: (() => Promise<AnyParsedData | undefined>)[],
+            type: 'offline' | 'online',
+        ) => {
+            log.info(`Running ${type} parsers...`)
+
+            const parserPromises = parsers.map(parser =>
+                parser()
+                    .then(result => {
+                        if (result) {
+                            log.info(
+                                `${type.toUpperCase()} parser succeeded! Type:`,
+                                result.type,
+                            )
+                        } else {
+                            log.info(
+                                `${type.toUpperCase()} parser returned undefined.`,
+                            )
+                        }
+                        if (result && !resolved) {
+                            resolved = true
+                            resolve(result)
+                        }
+                    })
+                    .catch(err => {
+                        log.error(`${type.toUpperCase()} parser error:`, err)
+                    }),
+            )
+
+            // Wait for all parsers to finish
+            return Promise.all(parserPromises).then(() => {
+                if (!resolved) {
+                    log.warn(`All ${type} parsers failed.`)
+                }
+            })
         }
 
-        // If all parsers return nothing, return unknown.
-        Promise.all(parserPromises).then(() => {
-            if (!resolved) {
+        // Step 1: Run **offline parsers** immediately
+        runParsers(offlineParsers, 'offline').then(() => {
+            // Step 2: If online, run **online parsers**
+            if (!isInternetUnreachable) {
+                runParsers(onlineParsers, 'online')
+            } else if (!resolved) {
+                // Step 3: If offline, return "OfflineError"
                 resolve({
-                    type: ParserDataType.Unknown,
-                    data: {},
-                })
+                    type: ParserDataType.OfflineError,
+                    data: {
+                        title: t('feature.omni.error-network-offline-title'),
+                        message: t(
+                            'feature.omni.error-network-offline-message',
+                        ),
+                    },
+                } as ParsedOfflineError)
             }
         })
     })

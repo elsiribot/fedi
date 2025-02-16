@@ -135,6 +135,13 @@ export const OmniConfirmation = <T extends AnyParsedData>({
         }
 
         switch (parsedData.type) {
+            case ParserDataType.OfflineError:
+                return {
+                    contents: {
+                        icon: 'Warning',
+                        title: parsedData.data.title,
+                    },
+                }
             case ParserDataType.Bolt11:
             case ParserDataType.LnurlPay:
                 return {
