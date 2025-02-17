@@ -212,6 +212,8 @@
         "history-render-error": "Encountered an error rendering this item",
         "insufficient-balance": "Insufficient balance. You only have {{balance}} in your wallet",
         "insufficient-balance-send": "Insufficient balance for spend plus fees. You can send a maximum of {{sats}} sats",
+        "internet-offline": "Network is offline",
+        "internet-connecting": "Connecting..",
         "invalid-amount-max": "The max you can {{verb}} is <suggestion>{{amount}}</suggestion>",
         "invalid-amount-min": "The minimum you can {{verb}} is <suggestion>{{amount}}</suggestion>",
         "invalid-ecash-token": "Invalid ecash token",

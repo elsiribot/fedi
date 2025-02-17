@@ -9,10 +9,11 @@ import {
     ViewStyle,
 } from 'react-native'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
+import { useDispatch } from 'react-redux'
 
 import {
-    selectIsMatrixReady,
-    selectInternetUnreachableBadgeShown,
+    selectIsInternetUnreachable,
+    setInternetUnreachableBadgeVisibility,
 } from '@fedi/common/redux'
 
 import { useAppSelector } from '../../../state/hooks'
@@ -23,7 +24,7 @@ interface Props {
     hide?: boolean
 }
 
-export const ChatConnectionBadge: React.FC<Props> = ({
+export const InternetIsUnreachableBadge: React.FC<Props> = ({
     offset = 0,
     noSafeArea,
     hide,
@@ -31,45 +32,35 @@ export const ChatConnectionBadge: React.FC<Props> = ({
     const { t } = useTranslation()
     const { theme } = useTheme()
     const insets = useSafeAreaInsets()
-    const isReady = useAppSelector(s => selectIsMatrixReady(s))
-    const isInternetUnreachableBadgeShown = useAppSelector(
-        selectInternetUnreachableBadgeShown,
-    )
-    const [isStillLoading, setIsStillLoading] = useState(false)
+    const dispatch = useDispatch()
+    const isInternetUnreachable = useAppSelector(selectIsInternetUnreachable)
 
-    let isVisible = !isReady
-    if (hide) {
-        isVisible = false
-    }
-    // Set isStillLoading to true after 30 seconds to change
-    // from 'Loading...' to 'Waiting for network...'
-    // reset the loading state if needed
+    const [isDelayedOffline, setIsDelayedOffline] = useState(false)
+
     useEffect(() => {
-        if (isVisible) {
+        if (isInternetUnreachable) {
+            dispatch(setInternetUnreachableBadgeVisibility(true))
             const timer = setTimeout(() => {
-                setIsStillLoading(true)
-            }, 30000)
+                setIsDelayedOffline(true)
+            }, 1200)
 
-            // Cleanup the timer when the effect is cleaned up
             return () => clearTimeout(timer)
         } else {
-            setIsStillLoading(false)
+            setIsDelayedOffline(false)
+            dispatch(setInternetUnreachableBadgeVisibility(false))
         }
-    }, [isVisible])
+    }, [isInternetUnreachable, dispatch])
 
-    const visibleAnimation = useRef(
-        new Animated.Value(isVisible ? 1 : 0),
-    ).current
+    const visibleAnimation = useRef(new Animated.Value(0)).current
 
-    // Animate container in and out when visible
     useEffect(() => {
         Animated.timing(visibleAnimation, {
-            toValue: isVisible ? 1 : 0,
+            toValue: isInternetUnreachable && !hide ? 1 : 0,
             duration: 150,
             useNativeDriver: false,
             easing: Easing.ease,
         }).start()
-    }, [visibleAnimation, isVisible])
+    }, [visibleAnimation, isInternetUnreachable, hide])
 
     const containerStyle: ViewStyle = {
         display: 'flex',
@@ -92,26 +83,21 @@ export const ChatConnectionBadge: React.FC<Props> = ({
                 }),
             },
         ],
-        backgroundColor: isStillLoading
-            ? '#FCDDEC' // TODO: Replace with fuschia from theme when new colors are added
-            : theme.colors.lightGrey,
+        backgroundColor: theme.colors.lightGrey,
     }
-    const badgeText = isStillLoading
-        ? t('feature.chat.waiting-for-network')
-        : t('words.loading')
-    const style = styles(theme)
 
-    if (isInternetUnreachableBadgeShown) return null
+    const badgeText = isDelayedOffline
+        ? t('errors.internet-offline') // Show "Internet is unreachable" after timeout
+        : t('errors.internet-connecting') // Show "Connecting..." immediately
+
+    const style = styles(theme)
 
     return (
         <Animated.View
             style={[
                 style.container,
                 containerStyle,
-                // When the badge is invisible, it should be
-                // rendered behind the other components... otherwise,
-                // it will swallow press events
-                isVisible ? { zIndex: 3 } : { zIndex: -1 },
+                isInternetUnreachable && !hide ? { zIndex: 3 } : { zIndex: -1 },
             ]}>
             <Animated.View style={[style.badge, badgeStyle]}>
                 <ActivityIndicator size={16} color={theme.colors.primary} />
