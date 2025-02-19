@@ -146,7 +146,7 @@ export type RootStackParamList = {
     SendOnChainAmount: { parsedData: ParsedBip21 | ParsedBitcoinAddress }
     SendSuccess: { amount: MSats; unit: string }
     Settings: undefined
-    ShareLogs: undefined
+    ShareLogs: { ticketNumber: string } | undefined
     FediModBrowser: { url: string }
     Splash: undefined
     StabilityConfirmDeposit: { amount: Sats }

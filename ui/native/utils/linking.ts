@@ -75,6 +75,7 @@ const deepLinksConfig: NavigationLinkingConfig['config'] = {
                     path: 'room/:roomId',
                 },
                 ChatUserConversation: 'user/:userId',
+                ShareLogs: 'share-logs/:ticketNumber',
             },
         },
     },

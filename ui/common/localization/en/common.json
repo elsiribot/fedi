@@ -291,14 +291,13 @@
             "description-placeholder": "What did you expect and what happened instead?",
             "email-label": "Email (optional)",
             "info-label": "Send Community and Username with bug report",
-            "log-disclaimer": "Do not use this form unless explicitly directed to by the Fedi Council. Please first report any issues to our team <anchor>here</anchor>.",
             "report-a-bug": "Report a Bug",
             "screenshot-label": "Upload screenshots or recordings",
             "submit-generating-data": "Generating report data...",
             "submit-submitting-report": "Submitting report...",
             "submit-uploading-data": "Uploading report data...",
-            "success-subtitle": "We will get to work",
-            "success-title": "Thank you for your bug report!"
+            "success-subtitle": "We will get to work 🤝",
+            "success-title": "Thanks for sharing your logs!"
         },
         "chat": {
             "add-a-photo": "Add a photo",
@@ -830,17 +829,22 @@
             "you-withdrew": "You withdrew"
         },
         "support": {
+            "title": "Ask Fedi",
+            "log-disclaimer": "Do not use this form unless directed by the Fedi Council. Please first report any issues to us <anchor>here</anchor>.",
+            "enter-ticket-number": "Enter the ticket number given by our team.",
+            "support-ticket-number": "Your Support Ticket Number",
+            "invalid-ticket-number": "Invalid support ticket number. (e.g. #1234)",
+            "privacy-policy": "Privacy policy",
+            "friendly-request": "A Quick Note",
             "effective-support-1a": "By proceeding, you agree that Fedi may collect some ",
             "effective-support-1b": " solely to provide you the best support possible.",
+            "effective-support-info": "information",
+            "effective-support-help-center": "Help Center",
             "effective-support-2a": "Prefer not to share? No problem! You\ncan always explore our ",
             "effective-support-2b": " for a wealth of Fedi knowledge.",
-            "effective-support-help-center": "Help Center",
-            "effective-support-info": "information",
-            "enter-ticket-number": "Enter the support ticket number given to you by our team.",
-            "friendly-request": "A Quick Note",
-            "invalid-ticket-number": "Invalid support ticket number. (e.g. #1234)",
-            "support-ticket-number": "Support Ticket Number (e.g. #1234)",
-            "title": "Ask Fedi",
+            "open-chat": "Open chat",
+            "permssion-granted": "Support Center",
+            "how-to-launch": "If you need help, you may launch the support chat by clicking the button below.",
             "zendesk-initialization-failed": "We couldn't reach the support chat. Please check your internet connection and try again."
         },
         "wallet": {
