@@ -83,10 +83,11 @@ pub async fn sync(
             .get(&account)
             .map(|v| v.iter().map(|locked| locked.amount).sum())
             .unwrap_or(Amount::ZERO),
+        AccountType::BtcDepositor => Amount::ZERO,
     };
 
     let staged_balance = match account.acc_type() {
-        AccountType::Seeker => dbtx
+        AccountType::Seeker | AccountType::BtcDepositor => dbtx
             .get_value(&StagedSeeksKey(account))
             .await
             .unwrap_or_default()

@@ -3,6 +3,7 @@ pub mod db;
 pub mod oracle;
 use std::cmp::Ordering;
 use std::collections::{BTreeMap, VecDeque};
+use std::future;
 use std::ops::Not;
 use std::sync::Arc;
 use std::time::{Duration, SystemTime, UNIX_EPOCH};
@@ -501,7 +502,10 @@ impl ServerModule for StabilityPool {
 
         match v0 {
             StabilityPoolOutputV0::DepositToSeek(deposit_to_seek)
-                if account_id.acc_type() == AccountType::Seeker =>
+                if matches!(
+                    account_id.acc_type(),
+                    AccountType::Seeker | AccountType::BtcDepositor
+                ) =>
             {
                 process_deposit_to_seek_output(
                     self.cfg.clone(),
@@ -738,7 +742,7 @@ async fn process_unlock_input(
         .ok_or(StabilityPoolInputError::TemporaryError)?;
 
     match input.account.acc_type() {
-        AccountType::Seeker => {
+        AccountType::Seeker | AccountType::BtcDepositor => {
             let staged_key = StagedSeeksKey(input.account.id());
             process_unlock_input_inner(
                 dbtx,
@@ -1123,7 +1127,7 @@ async fn process_transfer_output(
 
     // Handle provider and seeker separately
     match signed_request.details().from().acc_type() {
-        AccountType::Seeker => {
+        AccountType::Seeker | AccountType::BtcDepositor => {
             process_transfer_output_inner(
                 dbtx,
                 txid,
@@ -1336,6 +1340,7 @@ async fn process_unlock_requests(
                 )
                 .await?
             }
+            AccountType::BtcDepositor => bail!("Invalid operation for BtcDepositor account"),
         }
     }
 
@@ -1442,17 +1447,22 @@ async fn calculate_locks_and_write_cycle(
 async fn extract_sorted_staged_seeks_and_provides(
     dbtx: &mut DatabaseTransaction<'_>,
 ) -> (VecDeque<(AccountId, Seek)>, VecDeque<(AccountId, Provide)>) {
-    // Sort all staged seeks by sequence
-    let staged_seeks = dbtx
+    // Sort all staged seeks by sequence. Do not consider deposits from accounts of
+    // type BtcDepositor.
+    let filtered_staged_seeks = dbtx
         .find_by_prefix(&StagedSeeksKeyPrefix)
         .await
-        .flat_map(|(key, list)| stream::iter(list.into_iter().map(move |seek| (key.0, seek))))
+        .filter(|(key, _)| future::ready(key.0.acc_type() != AccountType::BtcDepositor))
         .collect::<Vec<_>>()
-        .await
+        .await;
+    for (key, _) in filtered_staged_seeks.iter() {
+        dbtx.remove_entry(key).await;
+    }
+    let staged_seeks = filtered_staged_seeks
         .into_iter()
+        .flat_map(|(key, list)| list.into_iter().map(move |seek| (key.0, seek)))
         .sorted_unstable_by_key(|(_, seek)| seek.sequence)
         .collect::<VecDeque<_>>();
-    dbtx.remove_by_prefix(&StagedSeeksKeyPrefix).await;
 
     // Sort all staged provides by fee rate, and then by sequence
     let staged_provides = dbtx
