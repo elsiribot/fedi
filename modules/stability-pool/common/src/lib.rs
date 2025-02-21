@@ -100,6 +100,18 @@ impl FiatAmount {
 pub enum AccountType {
     Seeker,
     Provider,
+    /// A BtcDepositor only wants to hold Bitcoin in the stability pool module
+    /// (typically in a multisig) without any sort of fiat-value stabilization.
+    /// To avoid creating new balance buckets and module input/output types, we
+    /// can represent this account type as a staged-only seeker. This is
+    /// hacky, yes. But one might argue that it is a lot less hacky compared
+    /// to writing new data types for a bitcoin-only multisig within a
+    /// stability pool module; less hacky than stuffing two different
+    /// modules into one. Plus it allows for a ton of code reuse because the
+    /// staging area is a well-defined state for deposits that are
+    /// unstabilized, and we have already handled deposits, withdrawals and
+    /// transfers associated with the staging area.
+    BtcDepositor,
 }
 
 /// `Account` within the stability pool is represented as a naive multi-sig of
@@ -217,12 +229,14 @@ impl AccountId {
 
 pub const SEEKER_HRP: Hrp = Hrp::parse_unchecked("sps");
 pub const PROVIDER_HRP: Hrp = Hrp::parse_unchecked("spp");
+pub const BTC_DEPOSITOR_HRP: Hrp = Hrp::parse_unchecked("spd");
 
 impl Display for AccountId {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         let hrp = match self.acc_type {
             AccountType::Seeker => SEEKER_HRP,
             AccountType::Provider => PROVIDER_HRP,
+            AccountType::BtcDepositor => BTC_DEPOSITOR_HRP,
         };
         let encoded = bech32::encode::<Bech32m>(hrp, self.hash.as_ref()).map_err(|_| fmt::Error)?;
         write!(f, "{}", encoded)
@@ -483,7 +497,7 @@ impl TransferRequest {
 
         // Fee rate must only be set for a provider-to-provider transfer
         match from.acc_type {
-            AccountType::Seeker => ensure!(
+            AccountType::Seeker | AccountType::BtcDepositor => ensure!(
                 new_fee_rate.is_none(),
                 "Fee rate only applies to provider-to-provider transfer"
             ),
