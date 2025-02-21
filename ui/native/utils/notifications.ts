@@ -200,6 +200,9 @@ export const displayMessageReceivedNotification = async (
                 // TODO: group notifications by chat room? for now it will confuse users since room name is not included but we should be able to fetch the name and group by room ID
                 // groupId: data.room_id,
             },
+            ios: {
+                sound: 'default',
+            },
         },
     )
 }
