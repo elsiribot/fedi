@@ -8,12 +8,11 @@ use matrix_sdk::ruma::events::room::member::MembershipState;
 use matrix_sdk::ruma::events::room::message::RoomMessageEventContent;
 use matrix_sdk::ruma::events::AnyTimelineEvent;
 use matrix_sdk::ruma::serde::Raw;
-use matrix_sdk::ruma::MilliSecondsSinceUnixEpoch;
-use matrix_sdk::RoomListEntry;
+use matrix_sdk::ruma::{MilliSecondsSinceUnixEpoch, OwnedTransactionId};
 use matrix_sdk_ui::room_list_service::SyncIndicator;
 use matrix_sdk_ui::timeline::{
-    EventSendState, LiveBackPaginationStatus, TimelineItem, TimelineItemContent, TimelineItemKind,
-    VirtualTimelineItem,
+    EventSendState, LiveBackPaginationStatus, TimelineEventItemId, TimelineItem,
+    TimelineItemContent, TimelineItemKind, VirtualTimelineItem,
 };
 use serde::{Deserialize, Serialize};
 use tracing::warn;
@@ -30,10 +29,31 @@ pub enum RpcTimelineItem {
     ///
     /// The value is a timestamp in milliseconds since Unix Epoch on the given
     /// day in local time.
-    DayDivider(#[ts(type = "number")] MilliSecondsSinceUnixEpoch),
+    DateDivider(#[ts(type = "number")] MilliSecondsSinceUnixEpoch),
     /// The user's own read marker.
     ReadMarker,
     Unknown,
+}
+
+#[derive(Debug, Deserialize, Clone, ts_rs::TS)]
+#[serde(rename_all = "camelCase")]
+#[ts(export)]
+pub enum RpcTimelineEventItemId {
+    TransactionId(String),
+    EventId(String),
+}
+
+impl TryFrom<RpcTimelineEventItemId> for TimelineEventItemId {
+    type Error = anyhow::Error;
+
+    fn try_from(value: RpcTimelineEventItemId) -> std::result::Result<Self, Self::Error> {
+        match value {
+            RpcTimelineEventItemId::TransactionId(t) => Ok(TimelineEventItemId::TransactionId(
+                OwnedTransactionId::from(t),
+            )),
+            RpcTimelineEventItemId::EventId(e) => Ok(TimelineEventItemId::EventId(e.parse()?)),
+        }
+    }
 }
 
 /// This type represents the "send state" of a local event timeline item.
@@ -182,7 +202,7 @@ impl From<Arc<TimelineItem>> for RpcTimelineItem {
                     },
                 });
                 Self::Event(RpcTimelineItemEvent {
-                    id: item.unique_id().to_string(),
+                    id: item.unique_id().0.clone(),
                     txn_id: e.transaction_id().map(|s| s.to_string()),
                     event_id: e.event_id().map(|s| s.to_string()),
                     content,
@@ -193,7 +213,7 @@ impl From<Arc<TimelineItem>> for RpcTimelineItem {
                 })
             }
             TimelineItemKind::Virtual(ref v) => match v {
-                VirtualTimelineItem::DayDivider(t) => Self::DayDivider(*t),
+                VirtualTimelineItem::DateDivider(t) => Self::DateDivider(*t),
                 VirtualTimelineItem::ReadMarker => Self::ReadMarker,
             },
         }
@@ -258,33 +278,6 @@ impl RpcUserId {
 impl From<matrix_sdk::ruma::OwnedUserId> for RpcUserId {
     fn from(value: matrix_sdk::ruma::OwnedUserId) -> Self {
         RpcUserId(value.to_string())
-    }
-}
-
-#[derive(Clone, Debug, Default, Serialize, Deserialize, ts_rs::TS)]
-#[serde(tag = "kind", content = "value")]
-#[serde(rename_all = "camelCase")]
-#[ts(export)]
-pub enum RpcRoomListEntry {
-    /// The list knows there is an entry but this entry has not been loaded yet,
-    /// thus it's marked as empty.
-    #[default]
-    Empty,
-    /// The list has loaded this entry in the past, but the entry is now out of
-    /// range and may no longer be synced, thus it's marked as invalidated (to
-    /// use the spec's term).
-    Invalidated(String),
-    /// The list has loaded this entry, and it's up-to-date.
-    Filled(String),
-}
-
-impl From<RoomListEntry> for RpcRoomListEntry {
-    fn from(value: RoomListEntry) -> Self {
-        match value {
-            RoomListEntry::Empty => Self::Empty,
-            RoomListEntry::Invalidated(r) => Self::Invalidated(r.into()),
-            RoomListEntry::Filled(r) => Self::Filled(r.into()),
-        }
     }
 }
 

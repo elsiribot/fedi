@@ -5,12 +5,14 @@ use std::time::Duration;
 use anyhow::{bail, Context, Result};
 use fedimint_derive_secret::DerivableSecret;
 use futures::StreamExt;
+use imbl::Vector;
 use matrix_sdk::attachment::{
     AttachmentConfig, AttachmentInfo, BaseFileInfo, BaseImageInfo, BaseVideoInfo,
 };
 use matrix_sdk::encryption::BackupDownloadStrategy;
-use matrix_sdk::media::{MediaFormat, MediaRequest};
+use matrix_sdk::media::{MediaFormat, MediaRequestParameters};
 use matrix_sdk::notification_settings::NotificationSettings;
+use matrix_sdk::room::edit::EditedContent;
 pub use matrix_sdk::ruma::api::client::account::register::v3 as register;
 use matrix_sdk::ruma::api::client::directory::get_public_rooms_filtered::v3 as get_public_rooms_filtered;
 use matrix_sdk::ruma::api::client::message::get_message_events;
@@ -37,17 +39,16 @@ use matrix_sdk::ruma::events::room::power_levels::RoomPowerLevelsEventContent;
 use matrix_sdk::ruma::events::room::MediaSource;
 use matrix_sdk::ruma::events::{AnySyncTimelineEvent, InitialStateEvent};
 use matrix_sdk::ruma::{assign, EventId, OwnedMxcUri, RoomId, UInt, UserId};
-use matrix_sdk::sliding_sync::Ranges;
 use matrix_sdk::{Client, RoomInfo, RoomMemberships};
 use matrix_sdk_ui::sync_service::{self, SyncService};
-use matrix_sdk_ui::timeline::default_event_filter;
+use matrix_sdk_ui::timeline::{default_event_filter, TimelineEventItemId};
 use matrix_sdk_ui::{room_list_service, RoomListService};
 use mime::Mime;
 use tracing::{error, info, warn};
 
 use crate::bridge::BridgeRuntime;
 use crate::error::ErrorCode;
-use crate::observable::{Observable, ObservablePool, ObservableVec};
+use crate::observable::{Observable, ObservablePool, ObservableVec, ObservableVecUpdate};
 use crate::storage::AppState;
 use crate::types::RpcMediaUploadParams;
 
@@ -71,9 +72,13 @@ impl Matrix {
     async fn build_client(
         base_dir: &Path,
         home_server: String,
+        sliding_sync_proxy: String,
         passphrase: &str,
     ) -> Result<Client> {
         let builder = Client::builder()
+            .sliding_sync_version_builder(matrix_sdk::sliding_sync::VersionBuilder::Proxy {
+                url: url::Url::parse(&sliding_sync_proxy)?,
+            })
             .homeserver_url(home_server)
             // make backup and recovery automagically work.
             .with_encryption_settings(matrix_sdk::encryption::EncryptionSettings {
@@ -121,7 +126,13 @@ impl Matrix {
             .await;
         let user_password = &Self::home_server_password(matrix_secret, &home_server);
         let encryption_passphrase = Self::encryption_passphrase(matrix_secret);
-        let client = Self::build_client(base_dir, home_server, &encryption_passphrase).await?;
+        let client = Self::build_client(
+            base_dir,
+            home_server,
+            sliding_sync_proxy,
+            &encryption_passphrase,
+        )
+        .await?;
 
         if let Some(session) = matrix_session {
             client.restore_session(session).await?;
@@ -141,8 +152,10 @@ impl Matrix {
             "username must stay same"
         );
 
-        client.set_sliding_sync_proxy(Some(url::Url::parse(&sliding_sync_proxy)?));
-        let sync_service = SyncService::builder(client.clone()).build().await?;
+        let sync_service = SyncService::builder(client.clone())
+            .with_offline_mode()
+            .build()
+            .await?;
         let matrix = Self {
             notification_settings: client.notification_settings().await,
             client,
@@ -171,7 +184,9 @@ impl Matrix {
                         sync_service::State::Terminated | sync_service::State::Error => {
                             this.sync_service.start().await;
                         }
-                        sync_service::State::Idle | sync_service::State::Running => {}
+                        sync_service::State::Offline
+                        | sync_service::State::Idle
+                        | sync_service::State::Running => {}
                     }
                     fedimint_core::task::sleep(Duration::from_millis(500)).await;
                 }
@@ -343,27 +358,33 @@ impl Matrix {
     }
 
     /// All chats in matrix are rooms, whether DM or group chats.
-    pub async fn room_list(&self, observable_id: u64) -> Result<ObservableVec<RpcRoomListEntry>> {
-        self.room_list_to_observable(observable_id, self.room_list_service.all_rooms().await?)
-            .await
-    }
-
-    async fn room_list_to_observable(
-        &self,
-        observable_id: u64,
-        list: room_list_service::RoomList,
-    ) -> Result<Observable<imbl::Vector<RpcRoomListEntry>>> {
-        let (initial, stream) = list.entries();
+    pub async fn room_list(&self, observable_id: u64) -> Result<ObservableVec<RpcRoomId>> {
+        const PAGE_SIZE: usize = 1000;
+        // manual construction required to to have correct lifetimes
+        let room_list_service = self.room_list_service.clone();
         self.observable_pool
-            .make_observable_from_vec_diff_stream(observable_id, initial, stream)
+            .make_observable(observable_id, Vector::new(), move |this, id| async move {
+                let list = room_list_service.all_rooms().await?;
+                let (stream, controller) = list.entries_with_dynamic_adapters(PAGE_SIZE);
+                // setting filter is required to start the controller - so we use no op filter
+                controller.set_filter(Box::new(|_| true));
+                let mut update_index = 0;
+                let mut stream = std::pin::pin!(stream);
+                while let Some(diffs) = stream.next().await {
+                    this.send_observable_update(ObservableVecUpdate::new_diffs(
+                        id,
+                        update_index,
+                        diffs
+                            .into_iter()
+                            .map(|diff| diff.map(|x| RpcRoomId::from(x.room_id().to_owned())))
+                            .collect(),
+                    ))
+                    .await;
+                    update_index += 1;
+                }
+                Ok(())
+            })
             .await
-    }
-
-    pub async fn room_list_update_ranges(&self, ranges: Ranges) -> Result<()> {
-        self.room_list_service
-            .apply_input(room_list_service::Input::Viewport(ranges))
-            .await?;
-        Ok(())
     }
 
     /// Sync status is used to display "Waiting for network" indicator on
@@ -424,7 +445,7 @@ impl Matrix {
         room_id: &RoomId,
     ) -> Result<ObservableVec<RpcTimelineItem>> {
         let timeline = self.timeline(room_id).await?;
-        let (initial, stream) = timeline.subscribe_batched().await;
+        let (initial, stream) = timeline.subscribe().await;
         self.observable_pool
             .make_observable_from_vec_diff_stream(observable_id, initial, stream)
             .await
@@ -573,7 +594,7 @@ impl Matrix {
             .room(room_id)
             .await?
             .inner_room()
-            .room_power_levels()
+            .power_levels()
             .await?
             .into())
     }
@@ -745,7 +766,7 @@ impl Matrix {
     }
 
     pub async fn upload_file(&self, mime: Mime, file: Vec<u8>) -> Result<RpcMatrixUploadResult> {
-        let result = self.client.media().upload(&mime, file).await?;
+        let result = self.client.media().upload(&mime, file, None).await?;
         Ok(RpcMatrixUploadResult {
             content_uri: result.content_uri.to_string(),
         })
@@ -792,16 +813,13 @@ impl Matrix {
     pub async fn preview_room_content(&self, room_id: &RoomId) -> Result<Vec<RpcTimelineItem>> {
         let response: get_message_events::v3::Response = self
             .client
-            .send(
-                assign!(
-                    get_message_events::v3::Request::new(
-                        room_id.into(),
-                        matrix_sdk::ruma::api::Direction::Forward,
-                    ),
-                    { limit: 50000u32.into() }
+            .send(assign!(
+                get_message_events::v3::Request::new(
+                    room_id.into(),
+                    matrix_sdk::ruma::api::Direction::Forward,
                 ),
-                None,
-            )
+                { limit: 50000u32.into() }
+            ))
             .await?;
 
         Ok(response
@@ -835,6 +853,7 @@ impl Matrix {
                 height,
                 size,
                 blurhash: None,
+                is_animated: None,
             }),
             mime::VIDEO => AttachmentInfo::Video(BaseVideoInfo {
                 width,
@@ -858,18 +877,15 @@ impl Matrix {
     pub async fn edit_message(
         &self,
         room_id: &RoomId,
-        event_id: &EventId,
+        item_id: &TimelineEventItemId,
         new_content: String,
     ) -> Result<()> {
         let timeline = self.timeline(room_id).await?;
-        let edit_info = timeline
-            .edit_info_from_event_id(event_id)
-            .await
-            .context("failed to get edit info")?;
-
         let new_content = RoomMessageEventContentWithoutRelation::text_plain(new_content);
 
-        timeline.edit(new_content, edit_info).await?;
+        timeline
+            .edit(item_id, EditedContent::RoomMessage(new_content))
+            .await?;
 
         Ok(())
     }
@@ -877,22 +893,17 @@ impl Matrix {
     pub async fn delete_message(
         &self,
         room_id: &RoomId,
-        event_id: &EventId,
+        item_id: &TimelineEventItemId,
         reason: Option<String>,
     ) -> Result<()> {
         let timeline = self.timeline(room_id).await?;
-        let event = timeline
-            .item_by_event_id(event_id)
-            .await
-            .ok_or_else(|| anyhow::anyhow!("Event not found"))?;
-
-        timeline.redact(&event, reason.as_deref()).await?;
+        timeline.redact(item_id, reason.as_deref()).await?;
 
         Ok(())
     }
 
     pub async fn download_file(&self, source: MediaSource) -> Result<Vec<u8>> {
-        let request = MediaRequest {
+        let request = MediaRequestParameters {
             source,
             format: MediaFormat::File,
         };
