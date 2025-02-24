@@ -6,6 +6,7 @@ import {
 } from '@reduxjs/toolkit'
 import { CurriedGetDefaultMiddleware } from '@reduxjs/toolkit/dist/getDefaultMiddleware'
 import type { i18n as I18n } from 'i18next'
+import debounce from 'lodash/debounce'
 import type { AnyAction } from 'redux'
 import type { ThunkDispatch } from 'redux-thunk'
 
@@ -178,10 +179,14 @@ export function initializeCommonStore({
         },
     )
 
+    const debouncedUpdate = debounce(event => {
+        log.debug('Debounced Balance update', event)
+        dispatch(updateFederationBalance(event))
+    }, 100) // 100ms delay to maintain trickle effect
+
     // Update balance on bridge events
     const unsubscribeBalance = fedimint.addListener('balance', event => {
-        log.debug('Balance update', event)
-        dispatch(updateFederationBalance(event))
+        debouncedUpdate(event)
     })
 
     // Add or update transactions on bridge events
