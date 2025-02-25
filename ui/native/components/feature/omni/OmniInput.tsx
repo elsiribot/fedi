@@ -86,8 +86,8 @@ export function OmniInput<
             const errorData: ParsedOfflineError = {
                 type: ParserDataType.OfflineError,
                 data: {
-                    title: t('feature.omni.error-network-title'),
-                    message: t('feature.omni.error-network-message'),
+                    title: omniError,
+                    message: omniError,
                     goBackText: 'Retry',
                 },
             }
@@ -138,17 +138,30 @@ export function OmniInput<
         [propsRef, isParsingRef, t, activeFederationId, isInternetUnreachable],
     )
 
+    const checkForEmptyInput = useCallback(
+        (input: string) => {
+            if (!input || input.trim() === '') {
+                setOmniError(t('feature.omni.error-paste-empty'))
+                return true
+            }
+            return false
+        },
+        [t],
+    )
+
     const handlePaste = useCallback(async () => {
         try {
             setShowActivityIndicator(true)
             const input = await Clipboard.getString()
-            await parseInput(input)
+            if (!checkForEmptyInput(input)) {
+                await parseInput(input)
+            }
         } catch (err) {
             toast.error(t, err)
         } finally {
             setShowActivityIndicator(false)
         }
-    }, [parseInput, toast, t])
+    }, [parseInput, toast, t, checkForEmptyInput])
 
     const actions: OmniInputAction[] = useMemo(() => {
         const contextualActions: OmniInputAction[] = []
