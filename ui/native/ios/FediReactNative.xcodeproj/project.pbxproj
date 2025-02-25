@@ -54,6 +54,8 @@
 		9951E94F79E74B61B89E0A50 /* AlbertSans-Thin.ttf in Resources */ = {isa = PBXBuildFile; fileRef = 0665FD33D8CC4EE5B91F83C7 /* AlbertSans-Thin.ttf */; };
 		A1E81D9B2D4A9F92009B406B /* InfoPlist.strings in Resources */ = {isa = PBXBuildFile; fileRef = A1E81D992D4A9F92009B406B /* InfoPlist.strings */; };
 		A1E81D9C2D4A9F92009B406B /* InfoPlist.strings in Resources */ = {isa = PBXBuildFile; fileRef = A1E81D992D4A9F92009B406B /* InfoPlist.strings */; };
+		A4DA7E1B2D63EB770074B08E /* PushNotificationEmitter.m in Sources */ = {isa = PBXBuildFile; fileRef = A4DA7E1A2D63EB6A0074B08E /* PushNotificationEmitter.m */; };
+		A4DA7E1C2D63EB770074B08E /* PushNotificationEmitter.m in Sources */ = {isa = PBXBuildFile; fileRef = A4DA7E1A2D63EB6A0074B08E /* PushNotificationEmitter.m */; };
 		A6B11B2AA56E44BAB94CF63D /* AlbertSans-Light.ttf in Resources */ = {isa = PBXBuildFile; fileRef = EE31B700324A4A70BB91B5F7 /* AlbertSans-Light.ttf */; };
 		B64E6B120C7D4BF89894DF2A /* AlbertSans-ThinItalic.ttf in Resources */ = {isa = PBXBuildFile; fileRef = 2CA9C347DB3A4A33A044ADBB /* AlbertSans-ThinItalic.ttf */; };
 		BB56AE9D1B46C7DB7914AC82 /* libPods-FediReactNative-FediReactNativeTests.a in Frameworks */ = {isa = PBXBuildFile; fileRef = A78793F22F20F868C5729FCD /* libPods-FediReactNative-FediReactNativeTests.a */; };
@@ -126,6 +128,8 @@
 		A1E81DA02D4AA087009B406B /* es-419 */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = "es-419"; path = "es-419.lproj/InfoPlist.strings"; sourceTree = "<group>"; };
 		A1E81DA12D4AA08D009B406B /* id */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = id; path = id.lproj/InfoPlist.strings; sourceTree = "<group>"; };
 		A2718C7E398D4E6D944B3C10 /* AlbertSans-Italic.ttf */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = 9; includeInIndex = 0; lastKnownFileType = unknown; name = "AlbertSans-Italic.ttf"; path = "../assets/fonts/AlbertSans-Italic.ttf"; sourceTree = "<group>"; };
+		A4DA7E192D63EB330074B08E /* PushNotificationEmitter.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = PushNotificationEmitter.h; sourceTree = "<group>"; };
+		A4DA7E1A2D63EB6A0074B08E /* PushNotificationEmitter.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = PushNotificationEmitter.m; sourceTree = "<group>"; };
 		A78793F22F20F868C5729FCD /* libPods-FediReactNative-FediReactNativeTests.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = "libPods-FediReactNative-FediReactNativeTests.a"; sourceTree = BUILT_PRODUCTS_DIR; };
 		B629B376C532DB5BE64CF38D /* Pods-FediReactNative-FediReactNativeTests.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-FediReactNative-FediReactNativeTests.release.xcconfig"; path = "Target Support Files/Pods-FediReactNative-FediReactNativeTests/Pods-FediReactNative-FediReactNativeTests.release.xcconfig"; sourceTree = "<group>"; };
 		C017C3C90B14478883674F23 /* AlbertSans-Black.ttf */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = 9; includeInIndex = 0; lastKnownFileType = unknown; name = "AlbertSans-Black.ttf"; path = "../assets/fonts/AlbertSans-Black.ttf"; sourceTree = "<group>"; };
@@ -198,6 +202,8 @@
 		13B07FAE1A68108700A75B9A /* FediReactNative */ = {
 			isa = PBXGroup;
 			children = (
+				A4DA7E1A2D63EB6A0074B08E /* PushNotificationEmitter.m */,
+				A4DA7E192D63EB330074B08E /* PushNotificationEmitter.h */,
 				FA38AC8D2BFE793B007C7E9E /* GoogleService-Info.plist */,
 				FA38AC8F2BFE7945007C7E9E /* GoogleService-Info.plist */,
 				FAB825F92BAD160D00B7EFD0 /* SimpleLaunch.storyboard */,
@@ -754,6 +760,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				A4DA7E1C2D63EB770074B08E /* PushNotificationEmitter.m in Sources */,
 				13B07FBC1A68108700A75B9A /* AppDelegate.mm in Sources */,
 				D0D73EFF2921E5480059F06F /* FedimintFfi.swift in Sources */,
 				13B07FC11A68108700A75B9A /* main.m in Sources */,
@@ -765,6 +772,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				A4DA7E1B2D63EB770074B08E /* PushNotificationEmitter.m in Sources */,
 				51BDE89B2AD5FFDF006CF72B /* AppDelegate.mm in Sources */,
 				51BDE89C2AD5FFDF006CF72B /* FedimintFfi.swift in Sources */,
 				51BDE89D2AD5FFDF006CF72B /* main.m in Sources */,

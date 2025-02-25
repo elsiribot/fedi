@@ -24,7 +24,7 @@ import { encodeFediMatrixRoomUri } from '@fedi/common/utils/matrix'
 
 import { store, AppDispatch } from '../state/store'
 import { TransactionDirection, TransactionEvent } from '../types'
-import { launchZendeskSupport } from './support'
+import { launchZendeskSupport, zendeskCloseMessagingView } from './support'
 
 const log = makeLog('Notifications')
 
@@ -357,6 +357,7 @@ export const handleBackgroundNotificationUpdate = async ({
             detail?.notification?.data,
         )
         if (isZendesk) {
+            await zendeskCloseMessagingView()
             await launchZendeskSupport(error =>
                 log.error('Zendesk error:', error),
             )

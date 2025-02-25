@@ -7,6 +7,7 @@
 #import <React/RCTBundleURLProvider.h>
 #import <React/RCTLinkingManager.h>
 #import "RNSplashScreen.h"
+#import "PushNotificationEmitter.h"
 
 @interface AppDelegate () <UNUserNotificationCenterDelegate>
 @end
@@ -54,6 +55,20 @@
          withCompletionHandler:(void (^)(UNNotificationPresentationOptions options))completionHandler {
   NSLog(@"Received push notification while app is in foreground: %@", notification.request.content.userInfo);
   completionHandler(UNNotificationPresentationOptionNone);
+}
+
+// Handle when the user taps the push notification
+- (void)userNotificationCenter:(UNUserNotificationCenter *)center
+didReceiveNotificationResponse:(UNNotificationResponse *)response
+         withCompletionHandler:(void (^)(void))completionHandler
+{
+    NSDictionary *userInfo = response.notification.request.content.userInfo;
+    NSLog(@"🔔 User tapped notification: %@", userInfo);
+
+    // Send event to React Native
+    [PushNotificationEmitter sendPushNotificationEvent:userInfo];
+
+    completionHandler();
 }
 
 // Provide the JS bundle URL for React Native
