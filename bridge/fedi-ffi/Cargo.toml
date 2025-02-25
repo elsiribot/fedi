@@ -67,7 +67,7 @@ matrix-sdk = {  git = "https://github.com/fedibtc/matrix-rust-sdk", tag = "fedi-
 imbl = { version = "4", features = ["serde"] }
 serde_with = "3.6.0"
 eyeball-im = "0.6"
-tempfile = "3.3.0"
+tempfile = "3.17.1"
 slab = "0.4.9"
 eyeball = "0.8.7"
 async-recursion = "1.1.0"
@@ -96,7 +96,7 @@ uniffi = { version = "0.25.3", features = ["build"] }
 fedimint-build = { workspace = true }
 
 [dev-dependencies]
-tempfile = "3.3.0"
+tempfile = "3.17.1"
 mockito = "1.4.0"
 clap = { workspace = true }
 
