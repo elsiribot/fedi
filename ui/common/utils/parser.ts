@@ -65,8 +65,7 @@ export const LEGACY_CODE_TYPES = [
  * Parses any data that would the user would input via QR code, copy / paste etc.
  * Returns a structured object that identifies the type of data, and formatted
  * keys for the data where available.
- */
-export function parseUserInput<T extends TFunction>(
+ */ export function parseUserInput<T extends TFunction>(
     raw: string,
     fedimint: FedimintBridge,
     t: T,
@@ -170,9 +169,18 @@ export function parseUserInput<T extends TFunction>(
         runParsers(offlineParsers, 'offline').then(() => {
             // Step 2: If online, run **online parsers**
             if (!isInternetUnreachable) {
-                runParsers(onlineParsers, 'online')
+                runParsers(onlineParsers, 'online').then(() => {
+                    // Step 3: If still unresolved, return UNKNOWN
+                    if (!resolved) {
+                        log.warn('All parsers failed. Returning Unknown type.')
+                        resolve({
+                            type: ParserDataType.Unknown,
+                            data: {},
+                        })
+                    }
+                })
             } else if (!resolved) {
-                // Step 3: If offline, return "OfflineError"
+                // Step 4: If offline, return "OfflineError"
                 resolve({
                     type: ParserDataType.OfflineError,
                     data: {
