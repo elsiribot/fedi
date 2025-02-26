@@ -29,6 +29,7 @@ import {
     handleBackgroundFCMReceived,
     handleBackgroundNotificationUpdate,
     handleForegroundFCMReceived,
+    getNotificationBackgroundColor,
 } from './utils/notifications'
 import { storage } from './utils/storage'
 import {
@@ -160,6 +161,7 @@ async function handleFCMNotification(m, isForeground = true) {
                         autoCancel: true,
                         onlyAlertOnce: true,
                         smallIcon: 'ic_stat_notification',
+                        color: getNotificationBackgroundColor(),
                     },
                     ios: {
                         foregroundPresentationOptions: {
@@ -187,12 +189,13 @@ async function handleFCMNotification(m, isForeground = true) {
                     'Notification not handled by Zendesk, forwarding to custom handler.',
                 )
                 // Handle non-Zendesk notifications or additional actions
-                if (isForeground) {
-                    handleForegroundFCMReceived(m)
-                } else {
-                    handleBackgroundFCMReceived(m, i18next.t)
-                }
             }
+        }
+
+        if (isForeground) {
+            handleForegroundFCMReceived(m)
+        } else {
+            handleBackgroundFCMReceived(m, i18next.t)
         }
     } catch (error) {
         log.error(

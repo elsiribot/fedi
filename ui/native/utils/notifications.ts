@@ -10,10 +10,11 @@ import messaging, {
     FirebaseMessagingTypes,
 } from '@react-native-firebase/messaging'
 import { TFunction } from 'i18next'
-import { Linking } from 'react-native'
+import { Appearance, Linking } from 'react-native'
 import DeviceInfo from 'react-native-device-info'
 import * as Zendesk from 'react-native-zendesk-messaging'
 
+import { theme } from '@fedi/common/constants/theme'
 import {
     selectFederations,
     configureMatrixPushNotifications,
@@ -199,6 +200,7 @@ export const displayMessageReceivedNotification = async (
                 smallIcon: 'ic_stat_notification',
                 // TODO: group notifications by chat room? for now it will confuse users since room name is not included but we should be able to fetch the name and group by room ID
                 // groupId: data.room_id,
+                color: getNotificationBackgroundColor(),
             },
             ios: {
                 sound: 'default',
@@ -217,7 +219,11 @@ type NotificationData = {
     // todo: type inner data?
     data?: any
 }
+export const getNotificationBackgroundColor = () => {
+    const colorScheme = Appearance.getColorScheme() // 'light' | 'dark' | null
 
+    return colorScheme === 'dark' ? theme.colors.white : theme.colors.black
+}
 /**
  * Handles Bespoke Firebase Messaging Campaigns
  */
