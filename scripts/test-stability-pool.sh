@@ -13,6 +13,8 @@ export FEDI_STABILITY_POOL_MODULE_ENABLE=1
 export USE_STABILITY_POOL_TEST_PARAMS=1
 export FEDI_STABILITY_POOL_MODULE_TEST_PARAMS=1
 
+build_workspace
+
 # needs the compiled binaries in the PATH
 PATH="$CARGO_BIN_DIR:$PATH"
 which fedimintd
