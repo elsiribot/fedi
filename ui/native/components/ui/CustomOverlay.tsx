@@ -195,7 +195,7 @@ const styles = (theme: Theme, insets: Insets) =>
             shadowColor: 'transparent',
         },
         overlayContents: {
-            position: 'absolute',
+            position: 'relative', // Rollback to relative positioning for Appium testing
             bottom: 0,
             left: 0,
             width: '100%',
