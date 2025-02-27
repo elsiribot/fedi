@@ -5,8 +5,8 @@ use fedimint_core::module::{api_endpoint, ApiEndpoint, ApiEndpointContext, ApiEr
 use fedimint_core::Amount;
 use futures::{stream, StreamExt};
 use stability_pool_common::{
-    AccountHistoryItem, AccountHistoryRequest, AccountId, AccountType, FeeRate, LiquidityStats,
-    SyncResponse, UnlockRequestStatus,
+    AccountHistoryItem, AccountHistoryRequest, AccountId, AccountType, ActiveDeposits, FeeRate,
+    LiquidityStats, SyncResponse, UnlockRequestStatus,
 };
 
 use crate::db::{
@@ -33,10 +33,10 @@ pub fn endpoints() -> Vec<ApiEndpoint<StabilityPool>> {
             }
         },
         api_endpoint! {
-            "next_cycle_start_time",
+            "active_deposits",
             ApiVersion::new(0, 0),
-            async |module: &StabilityPool, context, _request: ()| -> SystemTime {
-                Ok(next_cycle_start_time(&mut context.dbtx().into_nc(), module).await?)
+            async |_module: &StabilityPool, context, request: AccountId| -> ActiveDeposits {
+                active_deposits(&mut context.dbtx().into_nc(), request).await
             }
         },
         api_endpoint! {
@@ -115,7 +115,42 @@ pub async fn sync(
     })
 }
 
-pub async fn next_cycle_start_time(
+/// See [`ActiveDeposits`]
+pub async fn active_deposits(
+    dbtx: &mut DatabaseTransaction<'_>,
+    account: AccountId,
+) -> Result<ActiveDeposits, ApiError> {
+    let current_cycle = dbtx
+        .get_value(&CurrentCycleKey)
+        .await
+        .ok_or_else(|| ApiError::bad_request("disallowed before first cycle".to_owned()))?;
+    Ok(match account.acc_type() {
+        AccountType::Seeker | AccountType::BtcDepositor => ActiveDeposits::Seeker {
+            staged: dbtx
+                .get_value(&StagedSeeksKey(account))
+                .await
+                .unwrap_or_default(),
+            locked: current_cycle
+                .locked_seeks
+                .get(&account)
+                .cloned()
+                .unwrap_or_default(),
+        },
+        AccountType::Provider => ActiveDeposits::Provider {
+            staged: dbtx
+                .get_value(&StagedProvidesKey(account))
+                .await
+                .unwrap_or_default(),
+            locked: current_cycle
+                .locked_provides
+                .get(&account)
+                .cloned()
+                .unwrap_or_default(),
+        },
+    })
+}
+
+async fn next_cycle_start_time(
     dbtx: &mut DatabaseTransaction<'_>,
     stability_pool: &StabilityPool,
 ) -> anyhow::Result<SystemTime, ApiError> {

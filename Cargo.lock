@@ -2481,6 +2481,7 @@ dependencies = [
  "fedi-social-client",
  "fedimint-build",
  "fedimint-cli",
+ "stability-pool-client",
  "stability-pool-client-old",
  "tokio",
 ]
@@ -2496,6 +2497,7 @@ dependencies = [
  "fedimint-build",
  "fedimint-core",
  "fedimintd",
+ "stability-pool-server",
  "stability-pool-server-old",
  "tokio",
  "tracing",
@@ -8379,6 +8381,7 @@ dependencies = [
  "devimint",
  "fedimint-core",
  "fedimint-logging",
+ "stability-pool-common",
  "tokio",
  "tracing",
 ]

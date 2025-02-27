@@ -24,7 +24,7 @@ pub mod config;
 use config::StabilityPoolClientConfig;
 
 pub const KIND: ModuleKind = ModuleKind::from_static_str("multi_sig_stability_pool");
-pub const CONSENSUS_VERSION: ModuleConsensusVersion = ModuleConsensusVersion::new(0, 0);
+pub const CONSENSUS_VERSION: ModuleConsensusVersion = ModuleConsensusVersion::new(2, 0);
 
 pub const MSATS_PER_BTC: u128 = 100_000_000_000;
 
@@ -253,6 +253,8 @@ impl FromStr for AccountId {
             AccountType::Seeker
         } else if hrp.as_str() == PROVIDER_HRP.as_str() {
             AccountType::Provider
+        } else if hrp.as_str() == BTC_DEPOSITOR_HRP.as_str() {
+            AccountType::BtcDepositor
         } else {
             bail!("Invalid account type");
         };
@@ -894,6 +896,21 @@ pub struct LiquidityStats {
     pub locked_provides_sum_msat: u64,
     pub staged_seeks_sum_msat: u64,
     pub staged_provides_sum_msat: u64,
+}
+
+/// Client calls /active_deposits endpoint to determine:
+/// - Staged and locked seeks for a seeker account OR
+/// - Staged and locked provides for a provider account
+#[derive(Serialize, Deserialize, Encodable, Decodable, Debug, Clone, PartialEq, Eq)]
+pub enum ActiveDeposits {
+    Seeker {
+        staged: Vec<Seek>,
+        locked: Vec<Seek>,
+    },
+    Provider {
+        staged: Vec<Provide>,
+        locked: Vec<Provide>,
+    },
 }
 
 /// Client calls /sync endpoint to sync client state from server.
