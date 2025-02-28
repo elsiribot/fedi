@@ -103,12 +103,7 @@ const ConfirmReceiveOffline: React.FC<Props> = ({
     }, [ecash, dispatch, navigation, receiving, toast, t, validatedEcash])
 
     useEffect(() => {
-        dispatch(
-            validateEcash({
-                fedimint,
-                ecash,
-            }),
-        )
+        dispatch(validateEcash({ fedimint, ecash }))
             .unwrap()
             .then(setValidatedEcash)
             .catch(() => {

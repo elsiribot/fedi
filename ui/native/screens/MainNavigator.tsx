@@ -97,6 +97,7 @@ import CreateGroup from './CreateGroup'
 import CreatePinInstructions from './CreatePinInstructions'
 import CreatedPin from './CreatedPin'
 import DeveloperSettings from './DeveloperSettings'
+import EcashSendCancelled from './EcashSendCancelled'
 import EditGroup from './EditGroup'
 import EditProfileSettings from './EditProfileSettings'
 import EnterDisplayName from './EnterDisplayName'
@@ -535,6 +536,11 @@ export const MainNavigator = () => {
                                     amount: 0 as MSats,
                                     unit: 'sats',
                                 }}
+                                options={{ headerShown: false }}
+                            />
+                            <Stack.Screen
+                                name="EcashSendCancelled"
+                                component={EcashSendCancelled}
                                 options={{ headerShown: false }}
                             />
                             {/* Wallet (Send Offline) */}

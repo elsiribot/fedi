@@ -260,6 +260,21 @@ export const validateEcash = createAsyncThunk<
     return fedimint.validateEcash(ecash)
 })
 
+export const cancelEcash = createAsyncThunk<
+    void,
+    { fedimint: FedimintBridge; ecash: string },
+    { state: CommonState }
+>('wallet/cancelEcash', async ({ fedimint, ecash }) => {
+    const decoded = await fedimint.validateEcash(ecash)
+
+    // Should never happen since the user is the one who minted the ecash notes
+    if (decoded.federation_type !== 'joined') {
+        throw new Error('errors.unknown-ecash-issuer')
+    }
+
+    await fedimint.cancelEcash(ecash, decoded.federation_id)
+})
+
 export const generateReusedEcashProofs = createAsyncThunk<
     JSONObject[],
     { fedimint: FedimintBridge },

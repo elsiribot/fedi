@@ -88,6 +88,7 @@ export type RootStackParamList = {
     ConfirmSendOnChain: { parsedData: ParsedBip21 }
     ConnectedFederationsDrawer: undefined
     CreateGroup: { defaultGroup?: boolean }
+    EcashSendCancelled: undefined
     EnterDisplayName: undefined
     DirectChat: { memberId: string }
     EditGroup: { roomId: string }
