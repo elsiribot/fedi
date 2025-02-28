@@ -554,7 +554,7 @@ export const makeTxnFeeDetails = (
         const { formattedPrimaryAmount, formattedSecondaryAmount } =
             makeFormattedAmountsFromMSats(onchainFee as MSats)
         items.push({
-            label: t('phrases.lightning-network'),
+            label: t('phrases.network-fee'),
             formattedAmount: `${formattedPrimaryAmount} (${formattedSecondaryAmount})`,
         })
         totalFee += onchainFee

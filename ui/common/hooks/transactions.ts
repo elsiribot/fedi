@@ -397,7 +397,7 @@ export function useFeeDisplayUtils(t: TFunction) {
         const { formattedPrimaryAmount: formattedTotalFee } =
             makeFormattedAmountsFromMSats(onchainSendTotalFeeMsats)
 
-        const lightningFeeItems: FeeItem[] = [
+        const onchainFeeItems: FeeItem[] = [
             {
                 label: t('phrases.fedi-fee'),
                 formattedAmount: `${formattedFediFee} (${formattedFediFeeSecondary})`,
@@ -409,7 +409,7 @@ export function useFeeDisplayUtils(t: TFunction) {
         ]
 
         return {
-            feeItemsBreakdown: lightningFeeItems,
+            feeItemsBreakdown: onchainFeeItems,
             formattedTotalFee: `${
                 onchainSendTotalFeeMsats > 0 ? '+' : ''
             }${formattedTotalFee}`,
