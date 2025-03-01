@@ -471,8 +471,8 @@
                 # https://github.com/NixOS/nixpkgs/blob/f426a494337f326b99f14dcc20ea1b2dc4b3904f/pkgs/development/mobile/xcodeenv/build-app.nix#L122
                 export LD=/usr/bin/clang
                 export LD_FOR_TARGET=/usr/bin/clang
-                export MACOSX_DEPLOYMENT_TARGET="17.0"
-                export IPHONEOS_DEPLOYMENT_TARGET="17.0"
+                export MACOSX_DEPLOYMENT_TARGET="18.0"
+                export IPHONEOS_DEPLOYMENT_TARGET="18.0"
 
                 # overwrite what stdenv from nixpkgs 24.11 seems to set
                 export DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer/
