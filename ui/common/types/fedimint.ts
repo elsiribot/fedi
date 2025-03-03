@@ -262,7 +262,7 @@ export type ReceiveSuccessStatus = 'success' | 'pending'
 
 export type ReceiveSuccessData = {
     amount: Transaction['amount']
-    bitcoin?: Transaction['bitcoin']
+    onchain_address?: string
 }
 
 export type ReceiveEcashResult =

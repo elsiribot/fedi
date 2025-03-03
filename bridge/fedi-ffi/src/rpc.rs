@@ -1719,8 +1719,8 @@ pub mod tests {
     use crate::ffi::PathBasedStorage;
     use crate::storage::{DeviceIdentifier, FediFeeSchedule, IStorage};
     use crate::types::{
-        RpcLnReceiveState, RpcLnState, RpcOOBReissueState, RpcOOBState, RpcOnchainDepositState,
-        RpcReturningMemberStatus, RpcTransactionDirection,
+        RpcLnReceiveState, RpcOOBReissueState, RpcOnchainDepositState, RpcReturningMemberStatus,
+        RpcTransactionDirection, RpcTransactionKind,
     };
 
     struct FakeEventSink {
@@ -2486,14 +2486,12 @@ pub mod tests {
             {
                 let ev_body = serde_json::from_str::<TransactionEvent>(ev_body).unwrap();
                 let transaction = ev_body.transaction;
-                if transaction
-                    .lightning
-                    .is_some_and(|ln| ln.invoice == invoice_string)
-                    && matches!(
-                        transaction.ln_state,
-                        Some(RpcLnState::RecvState(RpcLnReceiveState::Claimed))
-                    )
-                {
+                if matches!(transaction
+                    .kind,
+                    RpcTransactionKind::LnReceive {
+                        ln_invoice, state: Some(RpcLnReceiveState::Claimed), ..
+                    } if ln_invoice == invoice_string
+                ) {
                     break 'check;
                 }
             }
@@ -2591,28 +2589,22 @@ pub mod tests {
 
     async fn wait_for_ecash_reissue(federation: &FederationV2) -> Result<(), anyhow::Error> {
         devimint::util::poll("waiting for ecash reissue", || async {
-            let oob_state = federation
-                .list_transactions(usize::MAX, None)
-                .await
+            let txns = federation.list_transactions(usize::MAX, None).await;
+            let RpcTransactionKind::OobReceive { state: Some(state) } = txns
                 .first()
                 .context("transaction not found")
                 .map_err(ControlFlow::Continue)?
-                .oob_state
-                .clone();
-            match oob_state {
-                None => Err(ControlFlow::Continue(anyhow!(
+                .kind
+                .clone()
+            else {
+                return Err(ControlFlow::Continue(anyhow!(
                     "oob state must be present on ecash reissue"
-                ))),
-                Some(RpcOOBState::Reissue(RpcOOBReissueState::Done)) => Ok(()),
-                Some(RpcOOBState::Reissue(RpcOOBReissueState::Failed { error })) => {
-                    Err(ControlFlow::Break(anyhow!(error)))
-                }
-                Some(RpcOOBState::Reissue(_)) => {
-                    Err(ControlFlow::Continue(anyhow!("not done yet")))
-                }
-                Some(_) => Err(ControlFlow::Break(anyhow!(
-                    "oob state must have reissue state present on ecash reissue"
-                ))),
+                )));
+            };
+            match state {
+                RpcOOBReissueState::Done => Ok(()),
+                RpcOOBReissueState::Failed { error } => Err(ControlFlow::Break(anyhow!(error))),
+                _ => Err(ControlFlow::Continue(anyhow!("not done yet"))),
             }
         })
         .await
@@ -2686,11 +2678,12 @@ pub mod tests {
         bitcoin_cli_send_to_address(&address, "0.1").await?;
 
         assert!(matches!(
-            listTransactions(federation.clone(), None, None).await?[0].onchain_state,
-            Some(crate::types::RpcOnchainState::DepositState(
-                RpcOnchainDepositState::WaitingForTransaction
-            ))
-        ),);
+            listTransactions(federation.clone(), None, None).await?[0].kind,
+            RpcTransactionKind::OnchainDeposit {
+                state: Some(RpcOnchainDepositState::WaitingForTransaction),
+                ..
+            }
+        ));
         // check for event of type transaction that has onchain_state of
         // DepositState::Claimed
         'check: loop {
@@ -2702,16 +2695,14 @@ pub mod tests {
             {
                 let ev_body = serde_json::from_str::<TransactionEvent>(ev_body).unwrap();
                 let transaction = ev_body.transaction;
-                if transaction
-                    .bitcoin
-                    .is_some_and(|btc| btc.address == address)
-                    && matches!(
-                        transaction.onchain_state,
-                        Some(crate::types::RpcOnchainState::DepositState(
-                            RpcOnchainDepositState::Claimed(_)
-                        ))
-                    )
-                {
+                if matches!(
+                    transaction.kind,
+                    RpcTransactionKind::OnchainDeposit {
+                        onchain_address,
+                        state: Some(RpcOnchainDepositState::Claimed(_)),
+                        ..
+                    } if onchain_address == address
+                ) {
                     break 'check;
                 }
             }
@@ -2722,10 +2713,11 @@ pub mod tests {
             .await;
         }
         assert!(matches!(
-            listTransactions(federation.clone(), None, None).await?[0].onchain_state,
-            Some(crate::types::RpcOnchainState::DepositState(
-                RpcOnchainDepositState::Claimed(_)
-            ))
+            listTransactions(federation.clone(), None, None).await?[0].kind,
+            RpcTransactionKind::OnchainDeposit {
+                state: Some(RpcOnchainDepositState::Claimed(_)),
+                ..
+            }
         ),);
 
         let btc_amount = Amount::from_sats(10_000_000);

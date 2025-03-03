@@ -57,7 +57,7 @@ const TransactionsList: React.FC<TransactionsListProps> = ({
                 title: makeTxnDetailTitleText(t, txn),
                 items: makeTxnDetailItems(txn),
                 amount: makeTxnDetailAmountText(txn),
-                notes: txn.notes,
+                notes: txn.txnNotes,
                 onSaveNotes: async (notes: string) => {
                     if (isUpdating) return // Prevent multiple simultaneous updates
 

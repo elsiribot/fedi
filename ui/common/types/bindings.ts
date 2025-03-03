@@ -214,8 +214,6 @@ export type RpcBackPaginationStatus =
   | "paginating"
   | "timelineStartReached";
 
-export type RpcBitcoinDetails = { address: string };
-
 export type RpcBitcoinNetwork =
   | "bitcoin"
   | "testnet"
@@ -329,8 +327,6 @@ export type RpcJsonClientConfig = {
   modules: Record<string, unknown>;
 };
 
-export type RpcLightningDetails = { invoice: string; fee: RpcAmount | null };
-
 export type RpcLightningGateway = {
   nodePubKey: RpcPublicKey;
   gatewayId: RpcPublicKey;
@@ -355,8 +351,6 @@ export type RpcLnReceiveState =
   | { type: "funded" }
   | { type: "awaitingFunds" }
   | { type: "claimed" };
-
-export type RpcLnState = RpcLnPayState | RpcLnReceiveState;
 
 export type RpcLockedSeek = {
   currCycleBeginningLockedAmount: RpcAmount;
@@ -593,8 +587,6 @@ export type RpcOnchainDepositState =
 
 export type RpcOnchainDepositTransactionData = { txid: string };
 
-export type RpcOnchainState = RpcOnchainDepositState | RpcOnchainWithdrawState;
-
 export type RpcOnchainWithdrawState =
   | { type: "created" }
   | { type: "succeeded" }
@@ -657,6 +649,19 @@ export type RpcRoomNotificationMode =
 
 export type RpcRoomPowerLevelsEventContent = JSONObject;
 
+export type RpcSPDepositState =
+  | { type: "pendingDeposit" }
+  | {
+      type: "completeDeposit";
+      initial_amount_cents: number;
+      fees_paid_so_far: RpcAmount;
+    }
+  | { type: "dataNotInCache" };
+
+export type RpcSPWithdrawState =
+  | { type: "pendingWithdrawal"; estimated_withdrawal_cents: number }
+  | { type: "completeWithdrawal"; estimated_withdrawal_cents: number };
+
 export type RpcSignedLnurlMessage = { signature: string; pubkey: RpcPublicKey };
 
 export type RpcStabilityPoolAccountInfo = {
@@ -675,16 +680,6 @@ export type RpcStabilityPoolConfig = {
   min_allowed_cancellation_bps: number | null;
   cycle_duration: RpcDuration;
 };
-
-export type RpcStabilityPoolTransactionState =
-  | { type: "pendingDeposit" }
-  | {
-      type: "completeDeposit";
-      initial_amount_cents: number;
-      fees_paid_so_far: RpcAmount;
-    }
-  | { type: "pendingWithdrawal"; estimated_withdrawal_cents: number }
-  | { type: "completeWithdrawal"; estimated_withdrawal_cents: number };
 
 export type RpcSyncIndicator = "hide" | "show";
 
@@ -741,23 +736,66 @@ export type RpcTransaction = {
   createdAt: number;
   amount: RpcAmount;
   fediFeeStatus: RpcOperationFediFeeStatus | null;
-  direction: RpcTransactionDirection;
-  notes: string;
+  txnNotes: string;
+  txDateFiatInfo: FiatFXInfo | null;
   /**
    * time when this operation was settled.
    */
   outcomeTime: number | null;
-  onchainState: RpcOnchainState | null;
-  bitcoin: RpcBitcoinDetails | null;
-  lnState: RpcLnState | null;
-  lightning: RpcLightningDetails | null;
-  oobState: RpcOOBState | null;
-  onchainWithdrawalDetails: WithdrawalDetails | null;
-  stabilityPoolState: RpcStabilityPoolTransactionState | null;
-  txDateFiatInfo: FiatFXInfo | null;
-};
+} & (
+  | {
+      kind: "lnPay";
+      ln_invoice: string;
+      lightning_fees: RpcAmount;
+      state: RpcLnPayState | null;
+    }
+  | { kind: "lnReceive"; ln_invoice: string; state: RpcLnReceiveState | null }
+  | {
+      kind: "onchainWithdraw";
+      onchain_address: string;
+      onchain_txid: string;
+      onchain_fees: RpcAmount;
+      onchain_fee_rate: number;
+      state: RpcOnchainWithdrawState | null;
+    }
+  | {
+      kind: "onchainDeposit";
+      onchain_address: string;
+      state: RpcOnchainDepositState | null;
+    }
+  | { kind: "oobSend"; state: RpcOOBSpendState | null }
+  | { kind: "oobReceive"; state: RpcOOBReissueState | null }
+  | { kind: "spDeposit"; state: RpcSPDepositState }
+  | { kind: "spWithdraw"; state: RpcSPWithdrawState | null }
+);
 
 export type RpcTransactionDirection = "receive" | "send";
+
+export type RpcTransactionKind =
+  | {
+      kind: "lnPay";
+      ln_invoice: string;
+      lightning_fees: RpcAmount;
+      state: RpcLnPayState | null;
+    }
+  | { kind: "lnReceive"; ln_invoice: string; state: RpcLnReceiveState | null }
+  | {
+      kind: "onchainWithdraw";
+      onchain_address: string;
+      onchain_txid: string;
+      onchain_fees: RpcAmount;
+      onchain_fee_rate: number;
+      state: RpcOnchainWithdrawState | null;
+    }
+  | {
+      kind: "onchainDeposit";
+      onchain_address: string;
+      state: RpcOnchainDepositState | null;
+    }
+  | { kind: "oobSend"; state: RpcOOBSpendState | null }
+  | { kind: "oobReceive"; state: RpcOOBReissueState | null }
+  | { kind: "spDeposit"; state: RpcSPDepositState }
+  | { kind: "spWithdraw"; state: RpcSPWithdrawState | null };
 
 export type RpcUserId = string;
 
@@ -891,13 +929,6 @@ export type TransactionEvent = {
 };
 
 export type UserProfile = JSONObject;
-
-export type WithdrawalDetails = {
-  address: string;
-  txid: string;
-  fee: RpcAmount;
-  feeRate: number;
-};
 
 export type approveSocialRecoveryRequest = {
   federationId: RpcFederationId;

@@ -7,6 +7,7 @@ import { selectActiveFederationId } from '@fedi/common/redux'
 import { updateTransactionNotes } from '@fedi/common/redux/transactions'
 import { Transaction } from '@fedi/common/types'
 import {
+    getTxnDirection,
     makeTxnDetailTitleText,
     makeTxnStatusText,
 } from '@fedi/common/utils/wallet'
@@ -42,19 +43,20 @@ const TransactionsList: React.FC<TransactionsListProps> = ({
                 status: makeTxnStatusText(t, txn),
                 amount: txn.amount,
                 direction:
-                    txn.lnState?.type === 'canceled'
+                    (txn.kind === 'lnReceive' || txn.kind === 'lnPay') &&
+                    txn.state?.type === 'canceled'
                         ? undefined
-                        : txn.direction === 'receive'
+                        : getTxnDirection(txn) === 'receive'
                           ? 'incoming'
                           : 'outgoing',
                 timestamp: txn.createdAt,
-                notes: txn.notes,
+                notes: txn.txnNotes,
             })}
             makeDetailProps={txn => ({
                 title: makeTxnDetailTitleText(t, txn),
                 items: makeTxnDetailItems(txn),
                 amount: makeTxnDetailAmountText(txn),
-                notes: txn.notes,
+                notes: txn.txnNotes,
                 onSaveNotes: async (notes: string) => {
                     if (isUpdating) return // Prevent multiple updates
 

@@ -2,17 +2,13 @@ import { TFunction } from 'i18next'
 
 import { AmountSymbolPosition, FormattedAmounts } from '../hooks/amount'
 import { MSats, Transaction } from '../types'
-import { makeTxnDetailStatusText } from './wallet'
+import {
+    getTxnDirection,
+    makeTxnDetailStatusText,
+    makeTxnTypeText,
+} from './wallet'
 
 type CSVColumns<T> = { name: string; getValue: (item: T) => string | number }[]
-
-const getTxType = (tx: Transaction) => {
-    if (tx.bitcoin) return 'on-chain'
-    if (tx.lightning) return 'lightning'
-    if (tx.stabilityPoolState) return 'stability-pool'
-    if (tx.oobState) return 'ecash'
-    return 'unknown'
-}
 
 export function makeTransactionHistoryCSV(
     txs: Transaction[],
@@ -35,11 +31,11 @@ export function makeTransactionHistoryCSV(
         },
         {
             name: 'Direction',
-            getValue: tx => tx.direction,
+            getValue: tx => getTxnDirection(tx),
         },
         {
             name: 'Type',
-            getValue: tx => getTxType(tx),
+            getValue: tx => makeTxnTypeText(tx, t),
         },
         {
             name: 'Amount (fiat)',
@@ -52,7 +48,7 @@ export function makeTransactionHistoryCSV(
         },
         {
             name: 'Notes',
-            getValue: tx => tx.notes,
+            getValue: tx => tx.txnNotes,
         },
         {
             name: 'Status',

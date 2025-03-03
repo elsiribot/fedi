@@ -111,7 +111,7 @@ export const transactionsSlice = createSlice({
             if (!existingTransaction) return
             // Otherwise, update the notes field on the transaction
             const transactions = updateTransactions(
-                [{ ...existingTransaction, notes }],
+                [{ ...existingTransaction, txnNotes: notes }],
                 fedTxState.transactions,
             )
             return {
@@ -193,7 +193,7 @@ export const selectStabilityTransactionHistory = createSelector(
     selectTransactions,
     transactions =>
         transactions.filter(txn => {
-            if (txn.stabilityPoolState) {
+            if (txn.kind === 'spDeposit' || txn.kind === 'spWithdraw') {
                 return true
             }
         }),

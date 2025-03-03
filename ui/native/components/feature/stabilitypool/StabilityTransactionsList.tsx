@@ -62,7 +62,7 @@ const StabilityTransactionsList = ({
                 title: makeStabilityTxnDetailTitleText(t, txn),
                 items: makeStabilityTxnDetailItems(txn),
                 amount: makeStabilityTxnDetailAmountText(txn),
-                notes: txn.notes,
+                notes: txn.txnNotes,
                 onSaveNotes: async (notes: string) => {
                     try {
                         if (!activeFederationId)

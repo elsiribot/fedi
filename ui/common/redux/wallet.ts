@@ -233,20 +233,22 @@ export const receiveEcash = createAsyncThunk<
 
         const unsubscribe = fedimint.addListener('transaction', event => {
             if (event.transaction.id !== operationId) return
+            const txn = event.transaction
 
-            if (event.transaction.oobState?.type === 'done') {
-                clearTimeout(timeout)
-                unsubscribe()
-                resolve({ amount, status: 'success' })
-            } else if (event.transaction.oobState?.type === 'failed') {
-                clearTimeout(timeout)
-                unsubscribe()
-                resolve({
-                    amount,
-                    status: 'failed',
-                    // Is the ONLY error case that it's 'already claimed?'
-                    error: event.transaction.oobState?.error,
-                })
+            if (txn.kind === 'oobReceive') {
+                if (txn.state?.type === 'done') {
+                    clearTimeout(timeout)
+                    unsubscribe()
+                    resolve({ amount, status: 'success' })
+                } else if (txn.state?.type === 'failed') {
+                    clearTimeout(timeout)
+                    unsubscribe()
+                    resolve({
+                        amount,
+                        status: 'failed',
+                        error: txn.state?.error,
+                    })
+                }
             }
         })
     })
