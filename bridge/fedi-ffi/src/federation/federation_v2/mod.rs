@@ -3199,7 +3199,7 @@ fn get_max_spendable_amount(
     // start, we can just deduct the on-chain fee from the virtual balance and
     // reassign the difference to virtual balance.
     let virtual_balance =
-        virtual_balance - on_chain_fee.map_or(Amount::ZERO, |f| f.amount().into());
+        virtual_balance.saturating_sub(on_chain_fee.map_or(Amount::ZERO, |f| f.amount().into()));
 
     let gateway_base = gateway_fee.map_or(0, |f| f.base_msat as u64);
     let gateway_ppm = gateway_fee.map_or(0, |f| f.proportional_millionths as u64);
@@ -3216,7 +3216,7 @@ fn get_max_spendable_amount(
     //
     // Finally:
     // x = [(V - base) * M]/(M + ppm_F + ppm_G)
-    let numerator_msats = (virtual_balance.msats - gateway_base) * MILLION;
+    let numerator_msats = (virtual_balance.msats.saturating_sub(gateway_base)) * MILLION;
     let denominator_msats = MILLION + fedi_fee_ppm + gateway_ppm;
     Amount::from_msats(numerator_msats / denominator_msats)
 }
