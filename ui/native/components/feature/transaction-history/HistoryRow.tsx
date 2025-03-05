@@ -1,5 +1,5 @@
 import { Text, Theme, useTheme } from '@rneui/themed'
-import React from 'react'
+import React, { memo } from 'react'
 import { StyleSheet, TouchableOpacity, View } from 'react-native'
 
 import { MSats } from '@fedi/common/types'
@@ -15,63 +15,66 @@ export interface HistoryRowProps {
     onSelect: () => void
 }
 
-export const HistoryRow: React.FC<HistoryRowProps> = ({
-    icon,
-    status,
-    notes,
-    amount,
-    currencyText,
-    timestamp,
-    onSelect,
-}) => {
-    const { theme } = useTheme()
+export const HistoryRow: React.FC<HistoryRowProps> = memo(
+    ({ icon, status, notes, amount, currencyText, timestamp, onSelect }) => {
+        const { theme } = useTheme()
 
-    const style = styles(theme)
+        const style = styles(theme)
 
-    const amountNode: React.ReactNode = (
-        <View style={style.amountContainer}>
-            <Text caption medium>
-                {amount}
-            </Text>
-            {currencyText && (
-                <Text tiny medium style={style.amountSuffix}>
-                    {currencyText}
-                </Text>
-            )}
-        </View>
-    )
-
-    return (
-        <TouchableOpacity
-            onPress={() => onSelect()}
-            style={[style.container]}
-            hitSlop={4}>
-            {icon}
-            <View style={style.centerContainer}>
+        const amountNode: React.ReactNode = (
+            <View style={style.amountContainer}>
                 <Text caption medium>
-                    {status}
+                    {amount}
                 </Text>
-                {notes && (
-                    <Text small numberOfLines={1} style={style.subText}>
-                        {notes}
+                {currencyText && (
+                    <Text tiny medium style={style.amountSuffix}>
+                        {currencyText}
                     </Text>
                 )}
             </View>
+        )
 
-            <View style={style.rightContainer}>
-                {amountNode}
-                {timestamp && (
-                    <Text
-                        small
-                        style={[style.rightAlignedText, style.subText]}
-                        maxFontSizeMultiplier={1.4}>
-                        {dateUtils.formatTxnTileTimestamp(timestamp)}
+        return (
+            <TouchableOpacity
+                onPress={() => onSelect()}
+                style={[style.container]}
+                hitSlop={4}>
+                {icon}
+                <View style={style.centerContainer}>
+                    <Text caption medium>
+                        {status}
                     </Text>
-                )}
-            </View>
-        </TouchableOpacity>
-    )
-}
+                    {notes && (
+                        <Text small numberOfLines={1} style={style.subText}>
+                            {notes}
+                        </Text>
+                    )}
+                </View>
+
+                <View style={style.rightContainer}>
+                    {amountNode}
+                    {timestamp && (
+                        <Text
+                            small
+                            style={[style.rightAlignedText, style.subText]}
+                            maxFontSizeMultiplier={1.4}>
+                            {dateUtils.formatTxnTileTimestamp(timestamp)}
+                        </Text>
+                    )}
+                </View>
+            </TouchableOpacity>
+        )
+    },
+    (prevProps, nextProps) => {
+        return (
+            prevProps.status === nextProps.status &&
+            prevProps.notes === nextProps.notes &&
+            prevProps.amount === nextProps.amount &&
+            prevProps.currencyText === nextProps.currencyText &&
+            prevProps.timestamp === nextProps.timestamp
+        )
+    },
+)
 
 const styles = (theme: Theme) =>
     StyleSheet.create({

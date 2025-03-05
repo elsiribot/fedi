@@ -47,13 +47,22 @@ const updateTransactions = (
     newTransactions: Transaction[],
     oldTransactions: Transaction[] = [],
 ) => {
-    // Combine lists with new transactions in the front
-    let transactions = [...newTransactions, ...oldTransactions]
+    // Use a Map for O(1) lookups during deduplication
+    // The Map preserves insertion order, with newer transactions added first
+    const transactionMap = new Map<string, Transaction>()
 
-    // Deduplicate list, preferring newer transactions
-    transactions = transactions.filter(
-        (tx, i) => transactions.findIndex(t => t.id === tx.id) === i,
-    )
+    for (const tx of newTransactions) {
+        transactionMap.set(tx.id, tx)
+    }
+
+    // Add old transactions only if they don't already exist in the map
+    for (const tx of oldTransactions) {
+        if (!transactionMap.has(tx.id)) {
+            transactionMap.set(tx.id, tx)
+        }
+    }
+
+    const transactions = Array.from(transactionMap.values())
 
     // Sort list in descending order of when the transaction was created
     return orderBy(transactions, 'createdAt', 'desc')
