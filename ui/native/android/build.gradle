@@ -8,7 +8,7 @@ buildscript {
         compileSdkVersion = 34
         targetSdkVersion = 34
         ndkVersion = "26.1.10909125"
-        zendeskSdkVersion = "2.13.0"
+        zendeskSdkVersion = "2.21.0"
 
         //todo: for VisionCameraCodeScanner configurations, if required - Can remove these now - Nadav!
         VisionCameraCodeScanner_minSdkVersion = 23
