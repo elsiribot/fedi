@@ -144,9 +144,11 @@ const ShortcutTile = ({ shortcut, onHold, onSelect }: ShortcutTileProps) => {
             onPress={() => onSelect(shortcut)}
             onLongPress={() => onHold?.(shortcut)}
             disabled={recoveryInProgress}>
-            <BubbleView containerStyle={style.iconContainer}>
-                {renderIcon()}
-            </BubbleView>
+            <View style={style.iconContainer}>
+                <BubbleView containerStyle={style.bubbleContainer}>
+                    {renderIcon()}
+                </BubbleView>
+            </View>
             <View style={style.title}>
                 <Text
                     caption
@@ -174,19 +176,21 @@ const styles = (theme: Theme, fontScale: number) => {
             opacity: 0.5,
         },
         iconContainer: {
-            width: iconSize,
-            height: iconSize,
-            overflow: 'hidden',
-            borderRadius: theme.borders.fediModTileRadius,
             shadowColor: '#000',
             shadowOffset: {
                 width: 0,
                 height: 1,
             },
-            shadowOpacity: 0.18,
+            shadowOpacity: 0.3,
             shadowRadius: 1.0,
 
             elevation: 1,
+        },
+        bubbleContainer: {
+            width: iconSize,
+            height: iconSize,
+            overflow: 'hidden',
+            borderRadius: theme.borders.fediModTileRadius,
             backgroundColor: theme.colors.white,
         },
         iconImage: {
