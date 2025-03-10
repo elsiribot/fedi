@@ -7,6 +7,7 @@ import { useUpdatingRef } from '@fedi/common/hooks/util'
 import {
     fetchSocialRecovery,
     initializeDeviceIdWeb,
+    initializeFedimintVersion,
     previewAllDefaultChats,
     refreshFederations,
     selectHasSetMatrixDisplayName,
@@ -63,6 +64,9 @@ export const FediBridgeInitializer: React.FC<Props> = ({ children }) => {
                 return Promise.all([
                     dispatchRef.current(refreshFederations(fedimint)).unwrap(),
                     dispatchRef.current(fetchSocialRecovery(fedimint)),
+                    dispatchRef.current(
+                        initializeFedimintVersion({ fedimint }),
+                    ),
                     // if there is no matrix session yet we will start the matrix
                     // client either during recovery or during onboarding after a
                     // display name is entered

@@ -40,6 +40,7 @@ import {
     SettingsMenu,
     SettingsMenuProps,
 } from '../../components/SettingsMenu'
+import { VersionContainer } from '../../components/VersionContainer'
 import { useAppDispatch, useAppSelector } from '../../hooks'
 import { fedimint } from '../../lib/bridge'
 import { styled } from '../../styles'
@@ -237,6 +238,7 @@ function AdminPage() {
                             </Content>
                         )}
                         <SettingsMenu menu={menu} />
+                        <VersionContainer />
                     </div>
                 </Layout.Content>
             </Layout.Root>
