@@ -2,13 +2,16 @@ import { TFunction } from 'i18next'
 import { useCallback } from 'react'
 
 import {
-    makeStabilityTxnAmountText as makeStabilityTxnAmountTextUtil,
     makeStabilityTxnDetailItems as makeStabilityTxnDetailItemsUtil,
     makeStabilityTxnFeeDetails as makeStabilityTxnFeeDetailsUtil,
     makeTxnAmountText as makeTxnAmountTextUtil,
     makeTxnDetailItems as makeTxnDetailItemsUtil,
     makeTxnFeeDetails as makeTxnFeeDetailsUtil,
     makeTxnNotesText as makeTxnNotesTextUtil,
+    makeTxnStatusText as makeTxnStatusTextUtil,
+    makeTxnTypeText as makeTxnTypeTextUtil,
+    makeTxnDetailTitleText as makeTxnDetailTitleTextUtil,
+    makeStabilityTxnDetailTitleText as makeStabilityTxnDetailTitleTextUtil,
 } from '@fedi/common/utils/wallet'
 
 import {
@@ -72,7 +75,7 @@ export function useTransactionHistory(fedimint: FedimintBridge) {
     }
 }
 
-export function useTxnDisplayUtils(t: TFunction) {
+export function useTxnDisplayUtils(t: TFunction, isStabilityPool = false) {
     const { convertCentsToFormattedFiat } = useBtcFiatPrice()
     const selectedCurrency = useCommonSelector(selectCurrency)
     const showFiatTxnAmounts = useCommonSelector(selectShowFiatTxnAmounts)
@@ -86,23 +89,6 @@ export function useTxnDisplayUtils(t: TFunction) {
             return makeTxnFeeDetailsUtil(t, txn, makeFormattedAmountsFromMSats)
         },
         [makeFormattedAmountsFromMSats, t],
-    )
-
-    const makeTxnDetailAmountText = useCallback(
-        (txn: Transaction) => {
-            return `${makeTxnAmountTextUtil(
-                txn,
-                showFiatTxnAmounts,
-                makeFormattedAmountsFromMSats,
-                convertCentsToFormattedFiat,
-            )} ${preferredCurrency}`
-        },
-        [
-            convertCentsToFormattedFiat,
-            makeFormattedAmountsFromMSats,
-            preferredCurrency,
-            showFiatTxnAmounts,
-        ],
     )
 
     const makeTxnDetailItems = useCallback(
@@ -126,58 +112,27 @@ export function useTxnDisplayUtils(t: TFunction) {
     )
 
     const makeTxnAmountText = useCallback(
-        (txn: Transaction) => {
-            return makeTxnAmountTextUtil(
+        (txn: Transaction, includeCurrency = false) => {
+            return `${makeTxnAmountTextUtil(
                 txn,
                 showFiatTxnAmounts,
+                isStabilityPool,
                 makeFormattedAmountsFromMSats,
                 convertCentsToFormattedFiat,
-            )
+            )}${includeCurrency ? ` ${preferredCurrency}` : ''}`
         },
         [
             convertCentsToFormattedFiat,
+            isStabilityPool,
             makeFormattedAmountsFromMSats,
+            preferredCurrency,
             showFiatTxnAmounts,
         ],
     )
 
-    const makeTxnNotesText = useCallback(
-        (txn: Transaction) => {
-            return makeTxnNotesTextUtil(t, txn, selectedCurrency)
-        },
-        [selectedCurrency, t],
-    )
-
-    const makeStabilityTxnAmountText = useCallback(
-        (txn: Transaction) => {
-            return makeStabilityTxnAmountTextUtil(
-                t,
-                txn,
-                true,
-                makeFormattedAmountsFromMSats,
-                convertCentsToFormattedFiat,
-            )
-        },
-        [convertCentsToFormattedFiat, makeFormattedAmountsFromMSats, t],
-    )
-
-    const makeStabilityTxnDetailAmountText = useCallback(
-        (txn: Transaction) => {
-            return `${makeStabilityTxnAmountTextUtil(
-                t,
-                txn,
-                true,
-                makeFormattedAmountsFromMSats,
-                convertCentsToFormattedFiat,
-            )} ${selectedCurrency}`
-        },
-        [
-            convertCentsToFormattedFiat,
-            makeFormattedAmountsFromMSats,
-            selectedCurrency,
-            t,
-        ],
-    )
+    const makeTxnNotesText = useCallback((txn: Transaction) => {
+        return makeTxnNotesTextUtil(txn)
+    }, [])
 
     const makeStabilityTxnFeeDetailItems = useCallback(
         (txn: Transaction) => {
@@ -201,17 +156,46 @@ export function useTxnDisplayUtils(t: TFunction) {
         [makeFormattedAmountsFromMSats, t],
     )
 
+    const makeTxnTypeText = useCallback(
+        (txn: Transaction) => {
+            return makeTxnTypeTextUtil(txn, t)
+        },
+        [t],
+    )
+
+    const makeTxnStatusText = useCallback(
+        (txn: Transaction) => {
+            return makeTxnStatusTextUtil(t, txn)
+        },
+        [t],
+    )
+
+    const makeTxnDetailTitleText = useCallback(
+        (txn: Transaction) => {
+            return makeTxnDetailTitleTextUtil(t, txn)
+        },
+        [t],
+    )
+
+    const makeStabilityTxnDetailTitleText = useCallback(
+        (txn: Transaction) => {
+            return makeStabilityTxnDetailTitleTextUtil(t, txn)
+        },
+        [t],
+    )
+
     return {
         preferredCurrency,
-        makeTxnDetailAmountText,
         makeTxnDetailItems,
         makeTxnFeeDetailItems,
         makeTxnAmountText,
         makeTxnNotesText,
-        makeStabilityTxnAmountText,
-        makeStabilityTxnDetailAmountText,
         makeStabilityTxnFeeDetailItems,
         makeStabilityTxnDetailItems,
+        makeTxnTypeText,
+        makeTxnStatusText,
+        makeTxnDetailTitleText,
+        makeStabilityTxnDetailTitleText,
     }
 }
 

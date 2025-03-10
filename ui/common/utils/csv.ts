@@ -2,11 +2,7 @@ import { TFunction } from 'i18next'
 
 import { AmountSymbolPosition, FormattedAmounts } from '../hooks/amount'
 import { MSats, Transaction } from '../types'
-import {
-    getTxnDirection,
-    makeTxnDetailStatusText,
-    makeTxnTypeText,
-} from './wallet'
+import { getTxnDirection, makeTxnStatusText, makeTxnTypeText } from './wallet'
 
 type CSVColumns<T> = { name: string; getValue: (item: T) => string | number }[]
 
@@ -52,7 +48,7 @@ export function makeTransactionHistoryCSV(
         },
         {
             name: 'Status',
-            getValue: tx => makeTxnDetailStatusText(t, tx),
+            getValue: tx => makeTxnStatusText(t, tx),
         },
     ])
 }

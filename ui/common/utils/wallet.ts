@@ -10,6 +10,7 @@ import {
     TransactionDirection,
     UsdCents,
     ReceiveSuccessData,
+    TransactionAmountState,
 } from '../types'
 import dateUtils from './DateUtils'
 
@@ -73,131 +74,6 @@ export const makePendingBalanceText = (
     }
 }
 
-export const makeTxnDetailStatusText = (
-    t: TFunction,
-    txn: Transaction,
-): string => {
-    // there should always be a state, but return unknown just in case
-    if (!txn.state) return t('words.unknown')
-
-    const direction = getTxnDirection(txn)
-    switch (direction) {
-        case TransactionDirection.send:
-            if (txn.kind === 'lnPay') {
-                switch (txn.state?.type) {
-                    case 'waitingForRefund':
-                        return t('feature.send.waiting-for-refund')
-                    case 'canceled':
-                    case 'failed':
-                    case 'refunded':
-                        return t('words.failed')
-                    case 'success':
-                        return t('phrases.sent-bitcoin')
-                    case 'created':
-                    case 'funded':
-                    case 'awaitingChange':
-                    default:
-                        return t('words.pending')
-                }
-            } else if (txn.kind === 'onchainWithdraw') {
-                switch (txn.state?.type) {
-                    case 'succeeded':
-                        return t('phrases.sent-bitcoin')
-                    case 'failed':
-                        return t('words.failed')
-                    case 'created':
-                    default:
-                        return t('words.pending')
-                }
-            } else if (txn.kind === 'spDeposit') {
-                switch (txn.state?.type) {
-                    case 'completeDeposit':
-                        return t('words.complete')
-                    case 'dataNotInCache':
-                    case 'pendingDeposit':
-                    default:
-                        return t('words.pending')
-                }
-            } else if (txn.kind === 'oobSend') {
-                switch (txn.state?.type) {
-                    // TODO: created txns can still be canceled or refunded within 3 days
-                    // ... figure out how to communicate this to user
-                    case 'created':
-                    case 'success':
-                        return t('phrases.sent-bitcoin')
-                    // if a cancel fails it must have been claimed by recipient aka sent successfully
-                    case 'userCanceledFailure':
-                        return t('phrases.sent-bitcoin')
-                    case 'refunded':
-                        return t('words.refunded')
-                    case 'userCanceledSuccess':
-                        return t('words.canceled')
-                    case 'userCanceledProcessing':
-                        return t('words.pending')
-                    default:
-                        return t('words.unknown')
-                }
-            } else {
-                return t('words.unknown')
-            }
-        case TransactionDirection.receive:
-            if (txn.kind === 'lnReceive') {
-                switch (txn.state?.type) {
-                    case 'created':
-                    case 'waitingForPayment':
-                    case 'funded':
-                    case 'awaitingFunds':
-                        return t('words.pending')
-                    case 'canceled':
-                        return t('words.expired')
-                    case 'claimed':
-                        return t('words.complete')
-                    default:
-                        return t('words.unknown')
-                }
-            } else if (txn.kind === 'onchainDeposit') {
-                switch (txn.state?.type) {
-                    case 'waitingForTransaction':
-                        return t('feature.receive.waiting-for-deposit')
-                    case 'waitingForConfirmation':
-                    case 'confirmed':
-                        return t('words.seen')
-                    case 'claimed':
-                        return t('words.complete')
-                    case 'failed':
-                        return t('words.failed')
-                    default:
-                        return t('words.pending')
-                }
-            } else if (txn.kind === 'spWithdraw') {
-                switch (txn.state?.type) {
-                    case 'pendingWithdrawal':
-                        return t('words.pending')
-                    case 'completeWithdrawal':
-                        return t('words.complete')
-                    default:
-                        return t('words.unknown')
-                }
-            } else if (txn.kind === 'oobReceive') {
-                switch (txn.state?.type) {
-                    case 'created':
-                    case 'issuing':
-                        return t('words.pending')
-                    case 'done':
-                        return t('words.complete')
-                    case 'failed':
-                        return t('words.failed')
-                    default:
-                        return t('words.unknown')
-                }
-            } else {
-                return t('words.unknown')
-            }
-        default:
-            return t('words.unknown')
-    }
-}
-
 export const makeTxnDetailTitleText = (
     t: TFunction,
     txn: Transaction,
@@ -223,7 +99,7 @@ export const makeTxnDetailTitleText = (
     } else if (txn.kind === 'onchainDeposit') {
         switch (txn.state?.type) {
             case 'waitingForTransaction':
-                return t('phrases.bitcoin-address-created')
+                return t('phrases.address-created')
             case 'claimed':
                 return t('feature.receive.you-received')
             default:
@@ -243,41 +119,17 @@ export const makeTxnDetailTitleText = (
     }
 }
 
-export const makeTxnNotesText = (
-    t: TFunction,
-    txn: Transaction,
-    currency: SupportedCurrency | undefined = SupportedCurrency.USD,
-): string => {
-    // always render user-submitted notes first
+export const makeTxnNotesText = (txn: Transaction): string => {
     if (txn.txnNotes) return txn.txnNotes
 
-    // if notes is empty, some txn types can render placeholder text here
-    if (txn.kind === 'spDeposit') {
-        // indicate stabilitypool deposits
-        return t('feature.stabilitypool.deposit-to-balance', {
-            currency,
-        })
-    } else if (txn.kind === 'spWithdraw') {
-        // indicate stabilitypool withdrawals
-        return t('feature.stabilitypool.withdrawal-from-balance', {
-            currency,
-        })
-    }
-    // indicate bitcoin addresses that do not yet have an onchain txid
-    const direction = getTxnDirection(txn)
-    if (
-        direction === TransactionDirection.receive &&
-        txn.kind === 'onchainDeposit' &&
-        txn.state?.type === 'waitingForTransaction'
-    ) {
-        return t('phrases.bitcoin-address-created')
-    }
     return ''
 }
 
 export const makeTxnAmountText = (
     txn: Transaction,
     showFiatTxnAmounts: boolean,
+    // we use the opposite signs on the stabilitypool txn list
+    flipSign: boolean,
     makeFormattedAmountsFromMSats: (
         amt: MSats,
         symbolPosition?: AmountSymbolPosition,
@@ -290,7 +142,8 @@ export const makeTxnAmountText = (
     const { amount } = txn
     const direction = getTxnDirection(txn)
 
-    let sign = direction ? (direction === 'receive' ? `+` : `-`) : ''
+    const isPlus = !flipSign ? direction === 'receive' : direction === 'send'
+    let sign = direction ? (isPlus ? `+` : `-`) : ''
 
     const { formattedPrimaryAmount } = makeFormattedAmountsFromMSats(
         amount,
@@ -364,12 +217,12 @@ export const makeTxnStatusText = (t: TFunction, txn: Transaction): string => {
                         return t('words.refunded')
                     case 'success':
                     default:
-                        return t('phrases.sent-bitcoin')
+                        return t('words.sent')
                 }
             } else if (txn.kind === 'onchainWithdraw') {
                 switch (txn.state?.type) {
                     case 'succeeded':
-                        return t('phrases.sent-bitcoin')
+                        return t('words.sent')
                     case 'failed':
                         return t('words.failed')
                     default:
@@ -381,10 +234,10 @@ export const makeTxnStatusText = (t: TFunction, txn: Transaction): string => {
                     // ... figure out how to communicate this to user
                     case 'created':
                     case 'success':
-                        return t('phrases.sent-bitcoin')
+                        return t('words.sent')
                     // if a cancel fails it must have been claimed by recipient aka sent successfully
                     case 'userCanceledFailure':
-                        return t('phrases.sent-bitcoin')
+                        return t('words.sent')
                     case 'refunded':
                         return t('words.refunded')
                     case 'userCanceledSuccess':
@@ -394,8 +247,17 @@ export const makeTxnStatusText = (t: TFunction, txn: Transaction): string => {
                     default:
                         return ''
                 }
+            } else if (txn.kind === 'spDeposit') {
+                switch (txn.state?.type) {
+                    case 'pendingDeposit':
+                        return t('words.pending')
+                    case 'completeDeposit':
+                        return t('words.deposit')
+                    default:
+                        return t('words.deposit')
+                }
             } else {
-                return t('phrases.sent-bitcoin')
+                return t('words.sent')
             }
         case TransactionDirection.receive:
             if (txn.kind === 'lnReceive') {
@@ -404,33 +266,34 @@ export const makeTxnStatusText = (t: TFunction, txn: Transaction): string => {
                     case 'waitingForPayment':
                     case 'funded':
                     case 'awaitingFunds':
-                        return t('phrases.receive-pending')
+                        return t('words.pending')
                     case 'canceled':
                         return t('words.expired')
                     case 'claimed':
-                        return t('phrases.received-bitcoin')
+                        return t('words.received')
                     default:
-                        return t('phrases.receive-pending')
+                        return t('words.pending')
                 }
             } else if (txn.kind === 'onchainDeposit') {
                 switch (txn.state?.type) {
                     case 'waitingForTransaction':
+                        return t('phrases.address-created')
                     case 'waitingForConfirmation':
                     case 'confirmed':
-                        return t('phrases.receive-pending')
+                        return t('words.pending')
                     case 'claimed':
                         return t('phrases.received-bitcoin')
                     case 'failed':
                         return t('words.failed')
                     default:
-                        return t('phrases.receive-pending')
+                        return t('words.pending')
                 }
             } else if (txn.kind === 'spWithdraw') {
                 switch (txn.state?.type) {
                     case 'pendingWithdrawal':
-                        return t('phrases.receive-pending')
+                        return t('words.pending')
                     default:
-                        return t('words.received')
+                        return t('words.withdrawal')
                 }
             } else if (txn.kind === 'oobReceive') {
                 switch (txn.state?.type) {
@@ -464,8 +327,9 @@ export const makeTxnStatusBadge = (
             if (txn.kind === 'lnPay') {
                 switch (txn.state?.type) {
                     case 'created':
-                    case 'waitingForRefund':
                     case 'funded':
+                    case 'awaitingChange':
+                    case 'waitingForRefund':
                         badge = 'pending'
                         break
                     case 'canceled':
@@ -498,10 +362,21 @@ export const makeTxnStatusBadge = (
                         badge = 'failed'
                         break
                     case 'refunded':
-                        badge = 'incoming'
+                        badge = 'failed'
                         break
                     case 'userCanceledProcessing':
                         badge = 'pending'
+                        break
+                    default:
+                        break
+                }
+            } else if (txn.kind === 'spDeposit') {
+                switch (txn.state?.type) {
+                    case 'pendingDeposit':
+                        badge = 'pending'
+                        break
+                    case 'completeDeposit':
+                        badge = 'outgoing'
                         break
                     default:
                         break
@@ -659,7 +534,7 @@ export const makeTxnDetailItems = (
     })
     items.push({
         label: t('words.status'),
-        value: makeTxnDetailStatusText(t, txn),
+        value: makeTxnStatusText(t, txn),
     })
     items.push({
         label: t('words.time'),
@@ -787,30 +662,6 @@ export const makeTxnDetailItems = (
     return items
 }
 
-export const makeStabilityTxnStatusText = (t: TFunction, txn: Transaction) => {
-    return txn.kind === 'spDeposit' ? t('words.deposit') : t('words.withdrawal')
-}
-
-export const makeStabilityTxnStatusSubtext = (
-    t: TFunction,
-    txn: Transaction,
-) => {
-    if ((txn.kind === 'spDeposit' || txn.kind === 'spWithdraw') && txn.state) {
-        if (
-            txn.state.type === 'completeDeposit' ||
-            txn.state.type === 'completeWithdrawal'
-        ) {
-            return t('words.complete')
-        } else if (
-            txn.state.type === 'pendingWithdrawal' ||
-            txn.state.type === 'pendingDeposit'
-        ) {
-            return t('words.pending')
-        }
-    }
-    return ''
-}
-
 export const makeStabilityTxnDetailTitleText = (
     t: TFunction,
     txn: Transaction,
@@ -841,7 +692,7 @@ export const makeStabilityTxnDetailItems = (
 
     items.push({
         label: t('words.status'),
-        value: makeTxnDetailStatusText(t, txn),
+        value: makeTxnStatusText(t, txn),
     })
 
     items.push({
@@ -905,56 +756,6 @@ export const makeStabilityTxnFeeDetails = (
     return items
 }
 
-export const makeStabilityTxnAmountText = (
-    t: TFunction,
-    txn: Transaction,
-    showFiatTxnAmounts: boolean,
-    makeFormattedAmountsFromMSats: (
-        amt: MSats,
-        symbolPosition?: AmountSymbolPosition,
-    ) => FormattedAmounts,
-    convertCentsToFormattedFiat: (
-        amt: UsdCents,
-        symbolPosition?: AmountSymbolPosition,
-    ) => string,
-): string => {
-    const { amount } = txn
-
-    const sign = txn.kind === 'spDeposit' ? `+` : `-`
-
-    const { formattedPrimaryAmount } = makeFormattedAmountsFromMSats(
-        amount,
-        'none',
-    )
-    let formattedAmount: string = formattedPrimaryAmount
-
-    if (showFiatTxnAmounts) {
-        if (txn.kind === 'spWithdraw') {
-            if (txn.state && 'estimated_withdrawal_cents' in txn.state) {
-                const estimatedWithdrawalCents = Number(
-                    txn.state.estimated_withdrawal_cents,
-                ) as UsdCents
-                formattedAmount = convertCentsToFormattedFiat(
-                    estimatedWithdrawalCents,
-                    'none',
-                )
-            }
-        } else if (txn.kind === 'spDeposit') {
-            if (txn.state && 'initial_amount_cents' in txn.state) {
-                const initialAmountCents = Number(
-                    txn.state.initial_amount_cents,
-                ) as UsdCents
-                formattedAmount = convertCentsToFormattedFiat(
-                    initialAmountCents,
-                    'none',
-                )
-            }
-        }
-    }
-
-    return `${sign}${formattedAmount}`
-}
-
 export const makeReceiveSuccessMessage = (
     t: TFunction,
     tx: ReceiveSuccessData,
@@ -972,4 +773,18 @@ export const makeReceiveSuccessMessage = (
             message: t('feature.receive.you-received'),
         }
     }
+}
+
+// Maps status badges to amount states
+export const TransactionAmountStateMap = {
+    incoming: 'settled',
+    outgoing: 'settled',
+    pending: 'pending',
+    expired: 'failed',
+    failed: 'failed',
+} satisfies Record<TransactionStatusBadge, TransactionAmountState>
+
+export const makeTransactionAmountState = (txn: Transaction) => {
+    const badge = makeTxnStatusBadge(txn)
+    return TransactionAmountStateMap[badge] satisfies TransactionAmountState
 }

@@ -1,33 +1,63 @@
 import { Text, Theme, useTheme } from '@rneui/themed'
-import React, { memo } from 'react'
+import React, { memo, useMemo } from 'react'
 import { StyleSheet, TouchableOpacity, View } from 'react-native'
 
-import { MSats } from '@fedi/common/types'
+import { MSats, TransactionAmountState } from '@fedi/common/types'
 import dateUtils from '@fedi/common/utils/DateUtils'
 
 export interface HistoryRowProps {
+    type: string
     icon: React.ReactNode
     status: React.ReactNode
-    notes: React.ReactNode
+    notes: string | undefined
     amount: MSats | string
     currencyText?: string | undefined
     timestamp: number | undefined | null
+    amountState: TransactionAmountState
     onSelect: () => void
 }
 
 export const HistoryRow: React.FC<HistoryRowProps> = memo(
-    ({ icon, status, notes, amount, currencyText, timestamp, onSelect }) => {
+    ({
+        type,
+        icon,
+        status,
+        notes,
+        amount,
+        currencyText,
+        timestamp,
+        amountState,
+        onSelect,
+    }) => {
         const { theme } = useTheme()
 
         const style = styles(theme)
 
+        const amountColor = useMemo(() => {
+            switch (amountState) {
+                case 'pending':
+                case 'failed':
+                    return theme.colors.darkGrey
+                case 'settled':
+                    return theme.colors.night
+            }
+        }, [amountState, theme])
+
         const amountNode: React.ReactNode = (
             <View style={style.amountContainer}>
-                <Text caption medium>
+                <Text
+                    medium
+                    caption
+                    color={amountColor}
+                    style={amountState === 'failed' ? style.strikeThrough : {}}>
                     {amount}
                 </Text>
                 {currencyText && (
-                    <Text tiny medium style={style.amountSuffix}>
+                    <Text
+                        tiny
+                        medium
+                        style={style.amountSuffix}
+                        color={amountColor}>
                         {currencyText}
                     </Text>
                 )}
@@ -44,11 +74,9 @@ export const HistoryRow: React.FC<HistoryRowProps> = memo(
                     <Text caption medium>
                         {status}
                     </Text>
-                    {notes && (
-                        <Text small numberOfLines={1} style={style.subText}>
-                            {notes}
-                        </Text>
-                    )}
+                    <Text small numberOfLines={1} style={style.subText}>
+                        {type} {notes ? `(${notes})` : ''}
+                    </Text>
                 </View>
 
                 <View style={style.rightContainer}>
@@ -116,5 +144,10 @@ const styles = (theme: Theme) =>
         },
         amountSuffix: {
             paddingBottom: 1,
+        },
+        strikeThrough: {
+            textDecorationLine: 'line-through',
+            textDecorationColor: theme.colors.grey,
+            textDecorationStyle: 'solid',
         },
     })

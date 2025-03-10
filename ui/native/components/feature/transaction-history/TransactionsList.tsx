@@ -6,10 +6,7 @@ import { useTxnDisplayUtils } from '@fedi/common/hooks/transactions'
 import { selectActiveFederationId } from '@fedi/common/redux'
 import { updateTransactionNotes } from '@fedi/common/redux/transactions'
 import { Transaction } from '@fedi/common/types'
-import {
-    makeTxnDetailTitleText,
-    makeTxnStatusText,
-} from '@fedi/common/utils/wallet'
+import { makeTransactionAmountState } from '@fedi/common/utils/wallet'
 
 import { fedimint } from '../../../bridge'
 import { useAppDispatch, useAppSelector } from '../../../state/hooks'
@@ -36,9 +33,11 @@ const TransactionsList: React.FC<TransactionsListProps> = ({
         preferredCurrency,
         makeTxnNotesText,
         makeTxnAmountText,
-        makeTxnDetailAmountText,
         makeTxnFeeDetailItems,
         makeTxnDetailItems,
+        makeTxnTypeText,
+        makeTxnStatusText,
+        makeTxnDetailTitleText,
     } = useTxnDisplayUtils(t)
 
     return (
@@ -47,16 +46,18 @@ const TransactionsList: React.FC<TransactionsListProps> = ({
             loading={loading}
             makeIcon={txn => <TransactionIcon txn={txn} />}
             makeRowProps={txn => ({
-                status: makeTxnStatusText(t, txn),
+                status: makeTxnStatusText(txn),
                 amount: makeTxnAmountText(txn),
                 currencyText: preferredCurrency,
                 timestamp: txn.createdAt,
                 notes: makeTxnNotesText(txn),
+                type: makeTxnTypeText(txn),
+                amountState: makeTransactionAmountState(txn),
             })}
             makeDetailProps={txn => ({
-                title: makeTxnDetailTitleText(t, txn),
+                title: makeTxnDetailTitleText(txn),
                 items: makeTxnDetailItems(txn),
-                amount: makeTxnDetailAmountText(txn),
+                amount: makeTxnAmountText(txn, true),
                 notes: txn.txnNotes,
                 onSaveNotes: async (notes: string) => {
                     if (isUpdating) return // Prevent multiple simultaneous updates

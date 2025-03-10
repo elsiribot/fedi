@@ -111,6 +111,7 @@
     "phrases": {
         "add-community": "Add community",
         "add-note": "Add note",
+        "address-created": "Address Created",
         "allow-camera-access": "Allow camera access",
         "app-version": "Fedi Version: {{version}}",
         "back-to-app": "Back to app",
@@ -143,6 +144,7 @@
         "hide-details": "Hide details",
         "hold-to-confirm": "Hold to confirm",
         "i-understand": "I understand",
+        "invoice-created": "Invoice created",
         "join-another-federation": "Join another community",
         "last-seen": "Last seen",
         "lets-go": "Let's go",

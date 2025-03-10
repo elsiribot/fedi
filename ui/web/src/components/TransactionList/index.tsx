@@ -31,8 +31,7 @@ const TransactionsList: React.FC<TransactionsListProps> = ({
     const { t } = useTranslation()
     const toast = useToast()
     const activeFederationId = useAppSelector(selectActiveFederationId)
-    const { makeTxnDetailAmountText, makeTxnDetailItems } =
-        useTxnDisplayUtils(t)
+    const { makeTxnAmountText, makeTxnDetailItems } = useTxnDisplayUtils(t)
 
     return (
         <HistoryList
@@ -55,7 +54,7 @@ const TransactionsList: React.FC<TransactionsListProps> = ({
             makeDetailProps={txn => ({
                 title: makeTxnDetailTitleText(t, txn),
                 items: makeTxnDetailItems(txn),
-                amount: makeTxnDetailAmountText(txn),
+                amount: makeTxnAmountText(txn),
                 notes: txn.txnNotes,
                 onSaveNotes: async (notes: string) => {
                     if (isUpdating) return // Prevent multiple updates

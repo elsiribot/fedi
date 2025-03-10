@@ -282,3 +282,5 @@ export type TransactionStatusBadge =
     | 'pending'
     | 'expired'
     | 'failed'
+
+export type TransactionAmountState = 'settled' | 'pending' | 'failed'
