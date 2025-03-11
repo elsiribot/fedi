@@ -65,6 +65,8 @@ export type DeviceRegistrationState =
   | "success"
   | "overdue";
 
+export type EncryptedSyncFeatureConfig = { server_url: string };
+
 export type ErrorCode =
   | "initializationFailed"
   | "notInialized"
@@ -105,6 +107,46 @@ export type Event =
   | { communityMetadataUpdated: CommunityMetadataUpdatedEvent }
   | { nonceReuseCheckFailed: NonceReuseCheckFailedEvent };
 
+/**
+ * We represent the catalog of all the features for a given runtime as a
+ * struct. The struct has one field for each of the features, named after the
+ * feature itself, and the field is of type Option<_FeatureName_FeatureConfig>.
+ *
+ * The idea is that when a developer starts working on a new feature, the
+ * developer will add a field to this struct using the convention specified
+ * above. This will force the developer to add a configuration for that feature
+ * for each of the runtimes. Initially the developer might just return None for
+ * each of the runtimes to make the feature always unavailable as it is still
+ * being developed. But over time the developer might start enabling the
+ * feature for increasingly stricter runtimes by returning an appropriate
+ * Some(_FeatureName_FeatureConfig).
+ *
+ * PLEASE ADD DOCUMENTATION FOR EACH FEATURE/FIELD BELOW
+ */
+export type FeatureCatalog = {
+  /**
+   * "Encrypted sync" feature is the Fedi app using a remote server to store,
+   * retrieve, and manipulate data that's necessary for a smooth user
+   * experience. This data can be seed-level, such as matrix server URL,
+   * which is to be shared across all devices using the same seed. Or it
+   * could be device-level, meaning it differs across devices using the same
+   * seed. Furthermore, we use e2e encryption.
+   */
+  encrypted_sync: EncryptedSyncFeatureConfig | null;
+  override_localhost: OverrideLocalhostFeatureConfig | null;
+  /**
+   * Enables multispend v2, powered by the multi-sig stability pool (v2)
+   * module. This is a global, bridge-level configuration. Actual
+   * availability of the feature is on a per-federation basis,
+   * depending on whether or not the new module is available in the
+   * federation. Note however, that the feature flag takes precedence. If
+   * the feature flag is disabled, the feature is never available. If the
+   * feature flag is enabled, then the federation's module availability
+   * determines the availability of the feature.
+   */
+  multispend: MultispendFeatureConfig | null;
+};
+
 export type FiatFXInfo = {
   /**
    * Code of the currency that's set as display currency in the app.
@@ -123,6 +165,8 @@ export type GuardianStatus =
   | { timeout: { guardian: string; elapsed: string } };
 
 export type LogEvent = { log: string };
+
+export type MultispendFeatureConfig = Record<string, never>;
 
 /**
  * Notify front-end that given federation has failed the e-cash blind nonce
@@ -185,6 +229,8 @@ export type ObservableVec<T> = Observable<Array<T>>;
 export type ObservableVecUpdate<T> = ObservableUpdate<
   Array<SerdeVectorDiff<T>>
 >;
+
+export type OverrideLocalhostFeatureConfig = Record<string, never>;
 
 export type PanicEvent = { message: string };
 
@@ -398,6 +444,8 @@ export type RpcMatrixUserDirectorySearchUser = {
   avatarUrl: string | null;
 };
 
+export type RpcMediaPreviewResponse = JSONObject;
+
 export type RpcMediaSource = JSONObject;
 
 export type RpcMediaUploadParams = {
@@ -410,6 +458,7 @@ export type RpcMethods = {
   bridgeStatus: [bridgeStatus, RpcBridgeStatus];
   onAppForeground: [onAppForeground, null];
   fedimintVersion: [fedimintVersion, string];
+  featureCatalog: [featureCatalog, FeatureCatalog];
   joinFederation: [joinFederation, RpcFederation];
   federationPreview: [federationPreview, RpcFederationPreview];
   leaveFederation: [leaveFederation, null];
@@ -560,6 +609,7 @@ export type RpcMethods = {
   matrixStartPoll: [matrixStartPoll, null];
   matrixEndPoll: [matrixEndPoll, null];
   matrixRespondToPoll: [matrixRespondToPoll, null];
+  matrixGetMediaPreview: [matrixGetMediaPreview, RpcMediaPreviewResponse];
   communityPreview: [communityPreview, RpcCommunity];
   joinCommunity: [joinCommunity, RpcCommunity];
   leaveCommunity: [leaveCommunity, null];
@@ -978,6 +1028,8 @@ export type evilSpamAddress = { federationId: RpcFederationId };
 
 export type evilSpamInvoices = { federationId: RpcFederationId };
 
+export type featureCatalog = {};
+
 export type federationPreview = { inviteCode: string };
 
 export type fedimintVersion = {};
@@ -1063,6 +1115,8 @@ export type matrixEditMessage = {
 export type matrixEndPoll = { roomId: RpcRoomId; pollStartId: string };
 
 export type matrixGetAccountSession = { cached: boolean };
+
+export type matrixGetMediaPreview = { url: string };
 
 export type matrixIgnoreUser = { userId: RpcUserId };
 

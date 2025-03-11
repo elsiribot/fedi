@@ -1462,6 +1462,11 @@ async fn matrixGetMediaPreview(
     ))
 }
 
+#[macro_rules_derive(rpc_method!)]
+async fn featureCatalog(runtime: Arc<BridgeRuntime>) -> anyhow::Result<Arc<FeatureCatalog>> {
+    Ok(runtime.feature_catalog.clone())
+}
+
 // converts from a typed handler into untyped handler
 async fn handle_wrapper<Args, F, Fut, R>(
     f: F,
@@ -1516,6 +1521,7 @@ rpc_methods!(RpcMethods {
     bridgeStatus,
     onAppForeground,
     fedimintVersion,
+    featureCatalog,
     // Federations
     joinFederation,
     federationPreview,
