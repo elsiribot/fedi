@@ -656,6 +656,8 @@
             "choose-method-instructions": "Choose the method you used to back up your wallet when you first joined {{federation}}",
             "choose-wallet-option": "Choose a wallet option",
             "complete-social-recovery": "Complete social recovery",
+            "continue-recovery": "Continue recovery",
+            "continue-recovery-description": "Recovery will take a little longer than we expected. Thank you for your patience.",
             "create-a-new-wallet": "Create a new wallet",
             "create-a-new-wallet-instead": "Create a new wallet instead",
             "create-new-wallet": "Create new wallet",
