@@ -43,7 +43,7 @@ import { securitySlice } from './security'
 import { loadFromStorage, saveToStorage, storageSlice } from './storage'
 import { supportSlice } from './support'
 import { toastSlice } from './toast'
-import { addTransaction, transactionsSlice } from './transactions'
+import { transactionsSlice, updateTransaction } from './transactions'
 import { walletSlice } from './wallet'
 
 const log = makeLog('common/redux/index')
@@ -194,7 +194,7 @@ export function initializeCommonStore({
         'transaction',
         event => {
             log.debug('Transaction update', event)
-            dispatch(addTransaction(event))
+            dispatch(updateTransaction(event))
         },
     )
 

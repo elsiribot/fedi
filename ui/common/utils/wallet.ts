@@ -5,12 +5,12 @@ import { FeeItem } from '../hooks/transactions'
 import {
     MSats,
     SupportedCurrency,
-    Transaction,
     TransactionStatusBadge,
     TransactionDirection,
     UsdCents,
     ReceiveSuccessData,
     TransactionAmountState,
+    TransactionListEntry,
 } from '../types'
 import dateUtils from './DateUtils'
 
@@ -22,7 +22,7 @@ export interface DetailItem {
     copiedMessage?: string
 }
 
-export const getTxnDirection = (txn: Transaction): string => {
+export const getTxnDirection = (txn: TransactionListEntry): string => {
     switch (txn.kind) {
         case 'lnPay':
         case 'onchainWithdraw':
@@ -39,7 +39,10 @@ export const getTxnDirection = (txn: Transaction): string => {
     }
 }
 
-export const makeTxnTypeText = (txn: Transaction, t: TFunction): string => {
+export const makeTxnTypeText = (
+    txn: TransactionListEntry,
+    t: TFunction,
+): string => {
     switch (txn.kind) {
         case 'onchainDeposit':
         case 'onchainWithdraw':
@@ -76,7 +79,7 @@ export const makePendingBalanceText = (
 
 export const makeTxnDetailTitleText = (
     t: TFunction,
-    txn: Transaction,
+    txn: TransactionListEntry,
 ): string => {
     // there should always be a state, but return unknown just in case
     if (!txn.state) return t('words.unknown')
@@ -119,14 +122,15 @@ export const makeTxnDetailTitleText = (
     }
 }
 
-export const makeTxnNotesText = (txn: Transaction): string => {
+export const makeTxnNotesText = (txn: TransactionListEntry): string => {
+    // always render user-submitted notes first
     if (txn.txnNotes) return txn.txnNotes
 
     return ''
 }
 
 export const makeTxnAmountText = (
-    txn: Transaction,
+    txn: TransactionListEntry,
     showFiatTxnAmounts: boolean,
     // we use the opposite signs on the stabilitypool txn list
     flipSign: boolean,
@@ -195,7 +199,10 @@ export const makeTxnAmountText = (
     return `${sign}${formattedAmount}`
 }
 
-export const makeTxnStatusText = (t: TFunction, txn: Transaction): string => {
+export const makeTxnStatusText = (
+    t: TFunction,
+    txn: TransactionListEntry,
+): string => {
     // there should always be a state, but return unknown just in case
     if (!txn.state) return t('words.unknown')
 
@@ -316,7 +323,7 @@ export const makeTxnStatusText = (t: TFunction, txn: Transaction): string => {
 }
 
 export const makeTxnStatusBadge = (
-    txn: Transaction,
+    txn: TransactionListEntry,
 ): TransactionStatusBadge => {
     let badge: TransactionStatusBadge
 
@@ -453,7 +460,7 @@ export const makeTxnStatusBadge = (
 
 export const makeTxnFeeDetails = (
     t: TFunction,
-    txn: Transaction,
+    txn: TransactionListEntry,
     makeFormattedAmountsFromMSats: (amt: MSats) => FormattedAmounts,
 ): FeeItem[] => {
     const items: FeeItem[] = []
@@ -515,7 +522,7 @@ export const makeTxnFeeDetails = (
 
 export const makeTxnDetailItems = (
     t: TFunction,
-    txn: Transaction,
+    txn: TransactionListEntry,
     currency: SupportedCurrency | undefined = SupportedCurrency.USD,
     showFiatTxnAmounts: boolean,
     makeFormattedAmountsFromMSats: (amt: MSats) => FormattedAmounts,
@@ -664,7 +671,7 @@ export const makeTxnDetailItems = (
 
 export const makeStabilityTxnDetailTitleText = (
     t: TFunction,
-    txn: Transaction,
+    txn: TransactionListEntry,
 ) => {
     return txn.kind === 'spDeposit'
         ? t('feature.stabilitypool.you-deposited')
@@ -673,7 +680,7 @@ export const makeStabilityTxnDetailTitleText = (
 
 export const makeStabilityTxnDetailItems = (
     t: TFunction,
-    txn: Transaction,
+    txn: TransactionListEntry,
     makeFormattedAmountsFromMSats: (amt: MSats) => FormattedAmounts,
 ) => {
     const items: DetailItem[] = []
@@ -705,7 +712,7 @@ export const makeStabilityTxnDetailItems = (
 
 export const makeStabilityTxnFeeDetails = (
     t: TFunction,
-    txn: Transaction,
+    txn: TransactionListEntry,
     makeFormattedAmountsFromMSats: (amt: MSats) => FormattedAmounts,
 ): FeeItem[] => {
     const items: FeeItem[] = []
@@ -784,7 +791,7 @@ export const TransactionAmountStateMap = {
     failed: 'failed',
 } satisfies Record<TransactionStatusBadge, TransactionAmountState>
 
-export const makeTransactionAmountState = (txn: Transaction) => {
+export const makeTransactionAmountState = (txn: TransactionListEntry) => {
     const badge = makeTxnStatusBadge(txn)
     return TransactionAmountStateMap[badge] satisfies TransactionAmountState
 }

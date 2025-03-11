@@ -4,11 +4,12 @@ import type {
     FedimintBridgeEventMap,
     MSats,
     Sats,
-    Transaction,
+    TransactionListEntry,
     bindings,
 } from '../types'
 import {
     ErrorCode,
+    FrontendMetadata,
     GuardianStatus,
     Observable,
     ObservableVec,
@@ -113,7 +114,7 @@ export class FedimintBridge {
         startTime?: number,
         limit?: number,
     ) {
-        return this.rpcTyped<'listTransactions', Transaction[]>(
+        return this.rpcTyped<'listTransactions', TransactionListEntry[]>(
             'listTransactions',
             {
                 federationId,
@@ -166,12 +167,18 @@ export class FedimintBridge {
         description: string,
         federationId: string,
         expiry: number | null = null,
+        frontendMetadata: FrontendMetadata = {
+            initialNotes: null,
+            recipientMatrixId: null,
+            senderMatrixId: null,
+        },
     ) {
         return this.rpcTyped('generateInvoice', {
             amount,
             description,
             federationId,
             expiry,
+            frontendMetadata,
         })
     }
 
@@ -179,15 +186,34 @@ export class FedimintBridge {
         return this.rpcTyped('decodeInvoice', { invoice, federationId })
     }
 
-    async payInvoice(invoice: string, federationId: string) {
+    async payInvoice(
+        invoice: string,
+        federationId: string,
+        frontendMetadata: FrontendMetadata = {
+            initialNotes: null,
+            recipientMatrixId: null,
+            senderMatrixId: null,
+        },
+    ) {
         return this.rpcTyped('payInvoice', {
             invoice,
             federationId,
+            frontendMetadata,
         })
     }
 
-    async generateAddress(federationId: string) {
-        return this.rpcTyped('generateAddress', { federationId })
+    async generateAddress(
+        federationId: string,
+        frontendMetadata: FrontendMetadata = {
+            initialNotes: null,
+            recipientMatrixId: null,
+            senderMatrixId: null,
+        },
+    ) {
+        return this.rpcTyped('generateAddress', {
+            federationId,
+            frontendMetadata,
+        })
     }
 
     async previewPayAddress(address: string, sats: Sats, federationId: string) {
@@ -199,12 +225,22 @@ export class FedimintBridge {
         })
     }
 
-    async payAddress(address: string, sats: Sats, federationId: string) {
+    async payAddress(
+        address: string,
+        sats: Sats,
+        federationId: string,
+        frontendMetadata: FrontendMetadata = {
+            initialNotes: null,
+            recipientMatrixId: null,
+            senderMatrixId: null,
+        },
+    ) {
         // FIXME: sats must be bigint to use this.rpcTyped
         return this.rpc<RpcPayAddressResponse>('payAddress', {
             address,
             sats,
             federationId,
+            frontendMetadata,
         })
     }
 
@@ -212,21 +248,36 @@ export class FedimintBridge {
         amount: MSats,
         federationId: string,
         includeInvite = false,
+        frontendMetadata: FrontendMetadata = {
+            initialNotes: null,
+            recipientMatrixId: null,
+            senderMatrixId: null,
+        },
     ) {
         return this.rpcTyped('generateEcash', {
             federationId,
             amount,
             includeInvite,
+            frontendMetadata,
         })
     }
 
     // Attempts to reissues ecash, can be started offline but requires
     // a connection to guardians to actually redeem the ecash.
     // Will retry in the background.
-    async receiveEcash(ecash: string, federationId: string) {
+    async receiveEcash(
+        ecash: string,
+        federationId: string,
+        frontendMetadata: FrontendMetadata = {
+            initialNotes: null,
+            recipientMatrixId: null,
+            senderMatrixId: null,
+        },
+    ) {
         return await this.rpcTyped('receiveEcash', {
             federationId,
             ecash,
+            frontendMetadata,
         })
     }
 

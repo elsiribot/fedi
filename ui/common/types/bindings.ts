@@ -159,6 +159,12 @@ export type FiatFXInfo = {
   btcToFiatHundredths: number;
 };
 
+export type FrontendMetadata = {
+  initialNotes: string | null;
+  recipientMatrixId: string | null;
+  senderMatrixId: string | null;
+};
+
 export type GuardianStatus =
   | { online: { guardian: string; latency_ms: number } }
   | { error: { guardian: string; error: string } }
@@ -795,6 +801,7 @@ export type RpcTransaction = {
   fediFeeStatus: RpcOperationFediFeeStatus | null;
   txnNotes: string;
   txDateFiatInfo: FiatFXInfo | null;
+  frontendMetadata: FrontendMetadata;
   /**
    * time when this operation was settled.
    */
@@ -861,6 +868,7 @@ export type RpcTransactionListEntry = {
   fediFeeStatus: RpcOperationFediFeeStatus | null;
   txnNotes: string;
   txDateFiatInfo: FiatFXInfo | null;
+  frontendMetadata: FrontendMetadata;
   /**
    * time when this operation was settled.
    */
@@ -1069,12 +1077,16 @@ export type fedimintVersion = {};
 
 export type fetchRegisteredDevices = {};
 
-export type generateAddress = { federationId: RpcFederationId };
+export type generateAddress = {
+  federationId: RpcFederationId;
+  frontendMetadata: FrontendMetadata;
+};
 
 export type generateEcash = {
   federationId: RpcFederationId;
   amount: RpcAmount;
   includeInvite: boolean;
+  frontendMetadata: FrontendMetadata;
 };
 
 export type generateInvoice = {
@@ -1082,6 +1094,7 @@ export type generateInvoice = {
   amount: RpcAmount;
   description: string;
   expiry: number | null;
+  frontendMetadata: FrontendMetadata;
 };
 
 export type generateReusedEcashProofs = { federationId: RpcFederationId };
@@ -1291,9 +1304,14 @@ export type payAddress = {
   federationId: RpcFederationId;
   address: string;
   sats: bigint;
+  frontendMetadata: FrontendMetadata;
 };
 
-export type payInvoice = { federationId: RpcFederationId; invoice: string };
+export type payInvoice = {
+  federationId: RpcFederationId;
+  invoice: string;
+  frontendMetadata: FrontendMetadata;
+};
 
 export type previewPayAddress = {
   federationId: RpcFederationId;
@@ -1301,7 +1319,11 @@ export type previewPayAddress = {
   sats: bigint;
 };
 
-export type receiveEcash = { federationId: RpcFederationId; ecash: string };
+export type receiveEcash = {
+  federationId: RpcFederationId;
+  ecash: string;
+  frontendMetadata: FrontendMetadata;
+};
 
 export type recheckPeginAddress = {
   federationId: RpcFederationId;
