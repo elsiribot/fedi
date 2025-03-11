@@ -14,6 +14,7 @@ use matrix_sdk::media::{MediaFormat, MediaRequestParameters};
 use matrix_sdk::notification_settings::NotificationSettings;
 use matrix_sdk::room::edit::EditedContent;
 pub use matrix_sdk::ruma::api::client::account::register::v3 as register;
+use matrix_sdk::ruma::api::client::authenticated_media::get_media_preview;
 use matrix_sdk::ruma::api::client::directory::get_public_rooms_filtered::v3 as get_public_rooms_filtered;
 use matrix_sdk::ruma::api::client::message::get_message_events;
 use matrix_sdk::ruma::api::client::profile::get_profile;
@@ -968,6 +969,16 @@ impl Matrix {
 
         timeline.send(content.into()).await?;
         Ok(())
+    }
+
+    pub async fn get_media_preview(
+        &self,
+        url: String,
+    ) -> anyhow::Result<get_media_preview::v1::Response> {
+        Ok(self
+            .client
+            .send(get_media_preview::v1::Request::new(url))
+            .await?)
     }
 }
 
