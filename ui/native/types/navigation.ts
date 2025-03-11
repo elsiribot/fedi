@@ -141,6 +141,7 @@ export type RootStackParamList = {
     GroupChat: { groupId: string }
     RoomSettings: { roomId: string }
     GroupInvite: { groupId: string }
+    RecoverFromNonceReuse: { federationInvites: Array<string> }
     ScanMemberCode: { inviteToRoomId?: string } | undefined
     ScanSocialRecoveryCode: undefined
     SelectRecoveryFileSuccess: { fileName: string }
