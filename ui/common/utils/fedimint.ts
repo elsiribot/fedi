@@ -15,12 +15,15 @@ import {
     ObservableVec,
     ObservableVecUpdate,
     RpcAmount,
+    RpcFederationId,
     RpcFeeDetails,
     RpcMediaSource,
+    RpcOperationId,
     RpcPayAddressResponse,
     RpcRoomId,
     RpcStabilityPoolAccountInfo,
     RpcTimelineEventItemId,
+    RpcTransaction,
 } from '../types/bindings'
 import { isDev } from './environment'
 import { formatBridgeError } from './error'
@@ -120,6 +123,19 @@ export class FedimintBridge {
                 federationId,
                 startTime: startTime || null,
                 limit: limit || null,
+            },
+        )
+    }
+
+    async getTransaction(
+        federationId: RpcFederationId,
+        operationId: RpcOperationId,
+    ) {
+        return this.rpcTyped<'getTransaction', RpcTransaction>(
+            'getTransaction',
+            {
+                federationId,
+                operationId,
             },
         )
     }

@@ -894,6 +894,8 @@ impl FederationV2 {
             let mut updates = updates.into_stream();
             while let Some(update) = updates.next().await {
                 info!("Update: {:?}", update);
+                fed.update_operation_state(operation_id, update.clone())
+                    .await;
                 match update {
                     LnReceiveState::Claimed => {
                         let amount = Amount {
