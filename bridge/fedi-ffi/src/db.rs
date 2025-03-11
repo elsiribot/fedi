@@ -3,9 +3,8 @@ use fedimint_core::{impl_db_lookup, impl_db_record};
 
 #[repr(u8)]
 pub enum BridgeDbPrefix {
-    // Prefix for storing multispend group data
-    MultispendGroup = 0x01,
-
+    // Prefix for multispend db namespace
+    MultispendPrefix = 0x01,
     // When a returning user rejoins a federation using a backup, we perform a check to
     // ensure that the backup wasn't corrupted. We do this by checking all the blind nonces for
     // each e-cash denomination with the servers. If we detect that any blind nonce is subject
