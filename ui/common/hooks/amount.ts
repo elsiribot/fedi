@@ -9,7 +9,6 @@ import {
     selectCurrency,
     selectCurrencyLocale,
     selectFederationBalance,
-    selectFederationMetadata,
     selectMaxInvoiceAmount,
     selectMaxStableBalanceSats,
     selectMinimumDepositAmount,
@@ -35,7 +34,6 @@ import {
     UsdCents,
 } from '../types'
 import amountUtils from '../utils/AmountUtils'
-import { getFederationDefaultCurrency } from '../utils/FederationUtils'
 import stringUtils from '../utils/StringUtils'
 import { MeltSummary } from '../utils/cashu'
 import { useCommonDispatch, useCommonSelector } from './redux'
@@ -223,16 +221,11 @@ export function useAmountInput(
     const btcToFiatRateRef = useUpdatingRef(btcToFiatRate)
     const currency = useCommonSelector(selectCurrency)
     const currencyLocale = useCommonSelector(selectCurrencyLocale)
-    const federationMetadata = useCommonSelector(selectFederationMetadata)
     const defaultAmountInputType = useCommonSelector(selectAmountInputType)
 
-    // If the user has changed amount input type before, default to that.
-    // Otherwise default to whether or not the federation dictates a currency type.
-    const shouldDefaultToFiat = defaultAmountInputType
-        ? defaultAmountInputType === 'fiat'
-        : !!getFederationDefaultCurrency(federationMetadata)
-
-    const [isFiat, _setIsFiat] = useState<boolean>(shouldDefaultToFiat)
+    const [isFiat, _setIsFiat] = useState<boolean>(
+        defaultAmountInputType !== 'sats',
+    )
 
     const [satsValue, setSatsValue] = useState<string>(
         amountUtils.formatSats(amount),
