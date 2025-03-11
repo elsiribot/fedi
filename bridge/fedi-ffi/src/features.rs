@@ -55,6 +55,16 @@ pub struct FeatureCatalog {
     // (Android/iOS/web). This is typically a dev-only feature needed for testing on Android and
     // iOS emulators.
     pub override_localhost: Option<OverrideLocalhostFeatureConfig>,
+
+    /// Enables multispend v2, powered by the multi-sig stability pool (v2)
+    /// module. This is a global, bridge-level configuration. Actual
+    /// availability of the feature is on a per-federation basis,
+    /// depending on whether or not the new module is available in the
+    /// federation. Note however, that the feature flag takes precedence. If
+    /// the feature flag is disabled, the feature is never available. If the
+    /// feature flag is enabled, then the federation's module availability
+    /// determines the availability of the feature.
+    pub multispend: Option<MultispendFeatureConfig>,
 }
 
 #[derive(Debug, Clone, TS, Serialize)]
@@ -66,6 +76,10 @@ pub struct EncryptedSyncFeatureConfig {
 #[derive(Debug, Clone, TS, Serialize)]
 #[ts(export)]
 pub struct OverrideLocalhostFeatureConfig {}
+
+#[derive(Debug, Clone, TS, Serialize)]
+#[ts(export)]
+pub struct MultispendFeatureConfig {}
 
 impl FeatureCatalog {
     pub fn new(runtime_env: RuntimeEnvironment) -> Self {
@@ -82,6 +96,7 @@ impl FeatureCatalog {
                 server_url: "https://prod-kv-store.dev.fedibtc.com/".to_string(),
             }),
             override_localhost: Some(OverrideLocalhostFeatureConfig {}),
+            multispend: Some(MultispendFeatureConfig {}),
         }
     }
 
@@ -89,6 +104,7 @@ impl FeatureCatalog {
         Self {
             encrypted_sync: None,
             override_localhost: None,
+            multispend: None,
         }
     }
 
@@ -96,6 +112,7 @@ impl FeatureCatalog {
         Self {
             encrypted_sync: None,
             override_localhost: None,
+            multispend: None,
         }
     }
 }
