@@ -1,3 +1,6 @@
+use serde::Serialize;
+use ts_rs::TS;
+
 /// Enum representing the environment in whose context the bridge is
 /// instantiated. For the Fedi app, this translates to the app flavors:
 /// - Dev = a locally-built developer build of the Fedi app
@@ -36,7 +39,8 @@ pub enum RuntimeEnvironment {
 /// Some(_FeatureName_FeatureConfig).
 ///
 /// PLEASE ADD DOCUMENTATION FOR EACH FEATURE/FIELD BELOW
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, TS, Serialize)]
+#[ts(export)]
 pub struct FeatureCatalog {
     /// "Encrypted sync" feature is the Fedi app using a remote server to store,
     /// retrieve, and manipulate data that's necessary for a smooth user
@@ -53,12 +57,14 @@ pub struct FeatureCatalog {
     pub override_localhost: Option<OverrideLocalhostFeatureConfig>,
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, TS, Serialize)]
+#[ts(export)]
 pub struct EncryptedSyncFeatureConfig {
     pub server_url: String,
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, TS, Serialize)]
+#[ts(export)]
 pub struct OverrideLocalhostFeatureConfig {}
 
 impl FeatureCatalog {
