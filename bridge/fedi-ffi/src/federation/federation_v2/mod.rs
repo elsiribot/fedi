@@ -30,7 +30,7 @@ use fedimint_api_client::api::{
     DynGlobalApi, DynModuleApi, FederationApiExt as _, StatusResponse, WsFederationApi,
 };
 use fedimint_bip39::Bip39RootSecretStrategy;
-use fedimint_client::db::ChronologicalOperationLogKey;
+use fedimint_client::db::{CachedApiVersionSetKey, ChronologicalOperationLogKey};
 use fedimint_client::meta::{FetchKind, MetaService, MetaSource};
 use fedimint_client::module::recovery::RecoveryProgress;
 use fedimint_client::module::ClientModule;
@@ -44,10 +44,11 @@ use fedimint_core::db::{
 };
 use fedimint_core::invite_code::InviteCode;
 use fedimint_core::module::registry::ModuleDecoderRegistry;
-use fedimint_core::module::ApiRequestErased;
+use fedimint_core::module::{ApiRequestErased, ApiVersion};
 use fedimint_core::task::{timeout, MaybeSend, MaybeSync, TaskGroup};
 use fedimint_core::timing::TimeReporter;
-use fedimint_core::util::backoff_util::aggressive_backoff;
+use fedimint_core::util::backoff_util::{aggressive_backoff, background_backoff};
+use fedimint_core::util::retry;
 use fedimint_core::{maybe_add_send_sync, Amount, PeerId};
 use fedimint_derive_secret::{ChildId, DerivableSecret};
 use fedimint_ln_client::{
@@ -58,6 +59,8 @@ use fedimint_ln_client::{
 use fedimint_ln_common::config::FeeToAmount;
 use fedimint_ln_common::LightningGateway;
 use fedimint_meta_client::MetaModuleMetaSourceWithFallback;
+use fedimint_mint_client::api::MintFederationApi;
+use fedimint_mint_client::config::MintClientConfig;
 use fedimint_mint_client::{
     spendable_notes_to_operation_id, MintClientInit, MintClientModule, MintOperationMeta,
     MintOperationMetaVariant, OOBNotes, ReissueExternalNotesState, SelectNotesWithAtleastAmount,
@@ -96,6 +99,7 @@ use crate::constants::{
     PAY_INVOICE_TIMEOUT, REISSUE_ECASH_TIMEOUT, STABILITY_POOL_OPERATION_TYPE,
     WALLET_OPERATION_TYPE,
 };
+use crate::db::FederationPendingRejoinFromScratchKey;
 use crate::error::ErrorCode;
 use crate::event::{Event, EventSink, RecoveryProgressEvent, TypedEventExt};
 use crate::features::FeatureCatalog;
@@ -425,7 +429,8 @@ impl FederationV2 {
         guard: FederationLockGuard,
         event_sink: EventSink,
         task_group: TaskGroup,
-        db: Database,
+        bridge_db: Database,
+        federation_db: Database,
         root_mnemonic: &bip39::Mnemonic,
         device_index: u8,
         recover_from_scratch: bool,
@@ -444,7 +449,7 @@ impl FederationV2 {
         }
 
         // fedimint-client will add decoders
-        let mut dbtx = db.begin_transaction().await;
+        let mut dbtx = federation_db.begin_transaction().await;
         let fedi_config = FediConfig {
             client_config: client_config.clone(),
         };
@@ -456,7 +461,7 @@ impl FederationV2 {
         dbtx.insert_entry(&InviteCodeKey, &invite_code_string).await;
         dbtx.commit_tx().await;
 
-        let client_builder = Self::build_client_builder(db).await?;
+        let client_builder = Self::build_client_builder(federation_db.clone()).await?;
         let federation_id = client_config.calculate_federation_id();
         let client_secret = Self::client_root_secret_from_root_mnemonic(
             root_mnemonic,
@@ -476,6 +481,21 @@ impl FederationV2 {
                 .recover(client_secret, client_config, None, None)
                 .await?
         } else if let Some(client_backup) = client_backup {
+            // Ensure that rejoin attempt after nonce reuse check failure can never enter
+            // this branch
+            if bridge_db
+                .begin_transaction_nc()
+                .await
+                .get_value(&FederationPendingRejoinFromScratchKey {
+                    invite_code_str: invite_code_string.clone(),
+                })
+                .await
+                .is_some()
+            {
+                return Err(
+                    ErrorCode::FederationPendingRejoinFromScratch(invite_code_string).into(),
+                );
+            }
             info!("backup found {:?}", client_backup);
             client_builder
                 .recover(client_secret, client_config, None, Some(client_backup))
@@ -1504,6 +1524,74 @@ impl FederationV2 {
 
     pub fn recovering(&self) -> bool {
         self.recovering
+    }
+
+    // Ensure that after recovering from backup, the e-cash nonces will not be
+    // reused, which could lead to loss of funds. Note that we do this on a
+    // best-effort basis. The user would have just joined the federation, and
+    // recovery would have just completed, so very likely the user is online. But if
+    // we timeout after a reasonably long duration, we just skip this check.
+    pub async fn perform_nonce_reuse_check(&self) -> bool {
+        assert!(!self.recovering());
+
+        let client_config = self.client.config().await;
+        let (mint_instance, cfg) = client_config
+            .get_first_module_by_kind::<MintClientConfig>(fedimint_mint_client::KIND)
+            .expect("mint module must be present in config");
+
+        let mut dbtx = self.client.db().begin_transaction().await;
+        let Some(version_set) = dbtx.get_value(&CachedApiVersionSetKey).await else {
+            info!("Skipping nonce check due to absent cache api versions");
+            // no caching here so we will retry on next startup
+            return true;
+        };
+
+        const VERSION_THAT_INTRODUCED_BLIND_NONCE_USED: ApiVersion = ApiVersion::new(0, 1);
+
+        let api_version = version_set
+            .0
+            .modules
+            .get(&mint_instance)
+            .copied()
+            .unwrap_or(ApiVersion::new(0, 0));
+
+        if api_version < VERSION_THAT_INTRODUCED_BLIND_NONCE_USED {
+            info!("Skipping nonce check due to low api version");
+            return true;
+        }
+
+        let mint = self
+            .client
+            .mint()
+            .expect("recovery has completed so mint module must be present");
+        let blind_nonces = {
+            let mut dbtx = mint.db.begin_transaction_nc().await;
+            let mut blind_nonces = vec![];
+            for amt in cfg.tbs_pks.tiers().copied() {
+                let blind_nonce = mint.new_ecash_note(amt, &mut dbtx).await.1;
+                blind_nonces.push(blind_nonce);
+            }
+            blind_nonces
+        };
+
+        // what is a good timeout here?
+        let Ok(all_results) = fedimint_core::task::timeout(
+            Duration::from_secs(120),
+            futures::future::join_all(blind_nonces.iter().map(|blind_nonce| async {
+                retry("check blind nonce", background_backoff(), || async {
+                    let nonce_used = mint.api.check_blind_nonce_used(*blind_nonce).await?;
+                    Ok(!nonce_used)
+                })
+                .await
+                .expect("infinite retry")
+            })),
+        )
+        .await
+        else {
+            info!("Skipping nonce check due to timeout");
+            return true;
+        };
+        all_results.into_iter().all(|nonce_ok| nonce_ok)
     }
 
     pub async fn wait_for_recovery(&self) -> Result<()> {

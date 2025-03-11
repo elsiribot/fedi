@@ -15,7 +15,7 @@ use fedimint_api_client::api::net::Connector;
 use fedimint_api_client::api::DynGlobalApi;
 use fedimint_core::config::ClientConfig;
 use fedimint_core::core::ModuleKind;
-use fedimint_core::db::Database;
+use fedimint_core::db::{Database, IDatabaseTransactionOpsCoreTyped};
 use fedimint_core::encoding::Decodable;
 use fedimint_core::module::registry::ModuleDecoderRegistry;
 use fedimint_core::module::CommonModuleInit;
@@ -23,6 +23,7 @@ use fedimint_core::task::TaskGroup;
 use fedimint_core::PeerId;
 use fedimint_derive_secret::{ChildId, DerivableSecret};
 use fedimint_mint_client::OOBNotes;
+use futures::StreamExt;
 use tokio::sync::{Mutex, OnceCell};
 use tracing::debug;
 
@@ -35,6 +36,7 @@ use super::types::{
 use crate::api::IFediApi;
 use crate::community::Communities;
 use crate::constants::{LNURL_CHILD_ID, MATRIX_CHILD_ID, NOSTR_CHILD_ID};
+use crate::db::FederationPendingRejoinFromScratchKeyPrefix;
 use crate::device_registration::{self, DeviceRegistrationService};
 use crate::error::ErrorCode;
 use crate::event::SocialRecoveryEvent;
@@ -222,6 +224,17 @@ impl BridgeRuntime {
             .await?
             .ok_or(anyhow!("media file not found"))?;
         Ok(media_file)
+    }
+
+    pub async fn list_federations_pending_rejoin_from_scratch(&self) -> Vec<String> {
+        self.bridge_db()
+            .begin_transaction_nc()
+            .await
+            .find_by_prefix(&FederationPendingRejoinFromScratchKeyPrefix)
+            .await
+            .map(|(key, _)| key.invite_code_str)
+            .collect::<Vec<_>>()
+            .await
     }
 }
 
