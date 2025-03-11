@@ -1,3 +1,4 @@
+import { useNavigation } from '@react-navigation/native'
 import { Text, Theme, useTheme } from '@rneui/themed'
 import React, { useEffect, useState } from 'react'
 import { StyleSheet, View } from 'react-native'
@@ -25,6 +26,7 @@ const RecoveryInProgress: React.FC<Props> = ({
     const { theme } = useTheme()
     const activeFederationId = useAppSelector(selectActiveFederationId)
     const [progress, setProgress] = useState<number | undefined>(undefined)
+    const navigation = useNavigation()
 
     const federationIdToUse = federationId || activeFederationId
 
@@ -40,6 +42,22 @@ const RecoveryInProgress: React.FC<Props> = ({
             }
         })
     }, [federationIdToUse])
+
+    useEffect(() => {
+        return fedimint.addListener('recoveryComplete', async event => {
+            log.info('recovery complete', event)
+            const federationsFailed =
+                await fedimint.listFederationsPendingRejoinFromScratch()
+
+            if (event.federationId === federationIdToUse) {
+                if (federationsFailed.length > 0) {
+                    navigation.navigate('RecoverFromNonceReuse', {
+                        federationInvites: federationsFailed,
+                    })
+                }
+            }
+        })
+    }, [federationIdToUse, navigation])
 
     const style = styles(theme)
     return (
