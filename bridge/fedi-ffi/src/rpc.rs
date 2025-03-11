@@ -16,6 +16,7 @@ use fedimint_core::timing::TimeReporter;
 use futures::Future;
 use lightning_invoice::Bolt11Invoice;
 use macro_rules_attribute::macro_rules_derive;
+use matrix_sdk::ruma::api::client::authenticated_media::get_media_preview;
 use matrix_sdk::ruma::api::client::profile::get_profile;
 use matrix_sdk::ruma::api::client::push::Pusher;
 use matrix_sdk::ruma::directory::PublicRoomsChunk;
@@ -1449,6 +1450,18 @@ async fn matrixRespondToPoll(
         .respond_to_poll(&room_id.into_typed()?, &poll_start_event_id, selections)
         .await
 }
+ts_type_ser!(RpcMediaPreviewResponse: get_media_preview::v1::Response = "JSONObject");
+
+#[macro_rules_derive(rpc_method!)]
+async fn matrixGetMediaPreview(
+    matrix: &Matrix,
+    url: String,
+) -> anyhow::Result<RpcMediaPreviewResponse> {
+    Ok(RpcMediaPreviewResponse(
+        matrix.get_media_preview(url).await?,
+    ))
+}
+
 // converts from a typed handler into untyped handler
 async fn handle_wrapper<Args, F, Fut, R>(
     f: F,
@@ -1628,6 +1641,7 @@ rpc_methods!(RpcMethods {
     matrixStartPoll,
     matrixEndPoll,
     matrixRespondToPoll,
+    matrixGetMediaPreview,
 
     // Communities
     communityPreview,
