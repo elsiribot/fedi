@@ -1041,25 +1041,18 @@ async fn matrixRoomTimelineItemsPaginateBackwards(
     Ok(())
 }
 
-ts_type_ser!(
-    ObservableBackPaginationStatus: Observable<RpcBackPaginationStatus> =
-        "Observable<RpcBackPaginationStatus>"
-);
-
 #[macro_rules_derive(rpc_method!)]
 async fn matrixRoomObserveTimelineItemsPaginateBackwards(
     matrix: &Matrix,
     observable_id: u32,
     room_id: RpcRoomId,
-) -> anyhow::Result<ObservableBackPaginationStatus> {
-    Ok(ObservableBackPaginationStatus(
-        matrix
-            .room_observe_timeline_items_paginate_backwards_status(
-                observable_id.into(),
-                &room_id.into_typed()?,
-            )
-            .await?,
-    ))
+) -> anyhow::Result<Observable<RpcBackPaginationStatus>> {
+    matrix
+        .room_observe_timeline_items_paginate_backwards_status(
+            observable_id.into(),
+            &room_id.into_typed()?,
+        )
+        .await
 }
 
 #[macro_rules_derive(rpc_method!)]
@@ -1141,16 +1134,12 @@ async fn matrixRoomObserveInfo(
     ))
 }
 
-ts_type_ser!(ObservableRpcSyncIndicator: Observable<RpcSyncIndicator> = "Observable<RpcSyncIndicator>");
-
 #[macro_rules_derive(rpc_method!)]
 async fn matrixObserveSyncIndicator(
     matrix: &Matrix,
     observable_id: u32,
-) -> anyhow::Result<ObservableRpcSyncIndicator> {
-    Ok(ObservableRpcSyncIndicator(
-        matrix.observe_sync_status(observable_id.into()).await?,
-    ))
+) -> anyhow::Result<Observable<RpcSyncIndicator>> {
+    matrix.observe_sync_status(observable_id.into()).await
 }
 
 #[macro_rules_derive(rpc_method!)]

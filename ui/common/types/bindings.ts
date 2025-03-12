@@ -191,14 +191,9 @@ export type Observable<T> = {
   initial: T;
 };
 
-export type ObservableBackPaginationStatus =
-  Observable<RpcBackPaginationStatus>;
-
 export type ObservableRoomInfo = Observable<JSONObject>;
 
 export type ObservableRoomList = ObservableVec<RpcRoomId>;
-
-export type ObservableRpcSyncIndicator = Observable<RpcSyncIndicator>;
 
 export type ObservableTimelineItems = ObservableVec<RpcTimelineItem>;
 
@@ -549,7 +544,7 @@ export type RpcMethods = {
   matrixGetAccountSession: [matrixGetAccountSession, RpcMatrixAccountSession];
   matrixObserveSyncIndicator: [
     matrixObserveSyncIndicator,
-    ObservableRpcSyncIndicator,
+    Observable<RpcSyncIndicator>,
   ];
   matrixRoomList: [matrixRoomList, ObservableRoomList];
   matrixRoomTimelineItems: [matrixRoomTimelineItems, ObservableTimelineItems];
@@ -559,7 +554,7 @@ export type RpcMethods = {
   ];
   matrixRoomObserveTimelineItemsPaginateBackwards: [
     matrixRoomObserveTimelineItemsPaginateBackwards,
-    ObservableBackPaginationStatus,
+    Observable<RpcBackPaginationStatus>,
   ];
   matrixSendMessage: [matrixSendMessage, null];
   matrixSendMessageJson: [matrixSendMessageJson, null];
