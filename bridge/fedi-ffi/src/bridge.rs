@@ -44,6 +44,7 @@ use crate::features::FeatureCatalog;
 use crate::federation::{federation_v2, Federations};
 use crate::fedi_fee::FediFeeHelper;
 use crate::matrix::Matrix;
+use crate::observable::ObservablePool;
 use crate::storage::{
     AppState, DeviceIdentifier, FiatFXInfo, ModuleFediFeeSchedule, BRIDGE_DB_PREFIX,
 };
@@ -69,6 +70,7 @@ pub struct BridgeRuntime {
     pub fedi_api: Arc<dyn IFediApi>,
     pub global_db: Database,
     pub feature_catalog: Arc<FeatureCatalog>,
+    pub observable_pool: Arc<ObservablePool>,
 }
 
 impl BridgeRuntime {
@@ -82,6 +84,7 @@ impl BridgeRuntime {
         let task_group = TaskGroup::new();
         let app_state = Arc::new(AppState::load(storage.clone(), device_identifier).await?);
         let global_db = storage.federation_database_v2("global").await?;
+        let observable_pool = Arc::new(ObservablePool::new(event_sink.clone(), task_group.clone()));
 
         Ok(Self {
             storage,
@@ -91,6 +94,7 @@ impl BridgeRuntime {
             fedi_api,
             global_db,
             feature_catalog,
+            observable_pool,
         })
     }
 

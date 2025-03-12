@@ -1,4 +1,5 @@
 use serde::Serialize;
+use tokio::sync::watch;
 use ts_rs::TS;
 
 /// Enum representing the environment in whose context the bridge is
@@ -41,7 +42,7 @@ pub enum RuntimeEnvironment {
 /// PLEASE ADD DOCUMENTATION FOR EACH FEATURE/FIELD BELOW
 #[derive(Debug, Clone, TS, Serialize)]
 #[ts(export)]
-pub struct FeatureCatalog {
+pub struct FeatureCatalogValue {
     /// "Encrypted sync" feature is the Fedi app using a remote server to store,
     /// retrieve, and manipulate data that's necessary for a smooth user
     /// experience. This data can be seed-level, such as matrix server URL,
@@ -81,15 +82,40 @@ pub struct OverrideLocalhostFeatureConfig {}
 #[ts(export)]
 pub struct MultispendFeatureConfig {}
 
+/// FeatureCatalog allows to read current FeatureCatalogValue and subscribe
+/// for changes.
+pub struct FeatureCatalog {
+    // an updating value that can be updated by background task and can be subscribed/observed by
+    // frontend
+    //
+    // background task would call sender.send_replace() to update the value.
+    sender: watch::Sender<FeatureCatalogValue>,
+}
+
 impl FeatureCatalog {
     pub fn new(runtime_env: RuntimeEnvironment) -> Self {
-        match runtime_env {
-            RuntimeEnvironment::Dev => Self::new_dev(),
-            RuntimeEnvironment::Staging => Self::new_staging(),
-            RuntimeEnvironment::Prod => Self::new_prod(),
+        let value = match runtime_env {
+            RuntimeEnvironment::Dev => FeatureCatalogValue::new_dev(),
+            RuntimeEnvironment::Staging => FeatureCatalogValue::new_staging(),
+            RuntimeEnvironment::Prod => FeatureCatalogValue::new_prod(),
+        };
+        Self {
+            sender: watch::Sender::new(value),
         }
     }
 
+    /// Read the current value of feature catalog.
+    pub fn read<R>(&self, f: impl FnOnce(&FeatureCatalogValue) -> R) -> R {
+        f(&self.sender.borrow())
+    }
+
+    /// Subscribe to changing values of feature catalog.
+    pub fn subscribe(&self) -> watch::Receiver<FeatureCatalogValue> {
+        self.sender.subscribe()
+    }
+}
+
+impl FeatureCatalogValue {
     fn new_dev() -> Self {
         Self {
             encrypted_sync: Some(EncryptedSyncFeatureConfig {

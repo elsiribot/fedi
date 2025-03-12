@@ -123,7 +123,7 @@ export type Event =
  *
  * PLEASE ADD DOCUMENTATION FOR EACH FEATURE/FIELD BELOW
  */
-export type FeatureCatalog = {
+export type FeatureCatalogValue = {
   /**
    * "Encrypted sync" feature is the Fedi app using a remote server to store,
    * retrieve, and manipulate data that's necessary for a smooth user
@@ -453,7 +453,7 @@ export type RpcMethods = {
   bridgeStatus: [bridgeStatus, RpcBridgeStatus];
   onAppForeground: [onAppForeground, null];
   fedimintVersion: [fedimintVersion, string];
-  featureCatalog: [featureCatalog, FeatureCatalog];
+  featureCatalog: [featureCatalog, Observable<FeatureCatalogValue>];
   joinFederation: [joinFederation, RpcFederation];
   federationPreview: [federationPreview, RpcFederationPreview];
   leaveFederation: [leaveFederation, null];
@@ -1023,7 +1023,7 @@ export type evilSpamAddress = { federationId: RpcFederationId };
 
 export type evilSpamInvoices = { federationId: RpcFederationId };
 
-export type featureCatalog = {};
+export type featureCatalog = { observableId: number };
 
 export type federationPreview = { inviteCode: string };
 
