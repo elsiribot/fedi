@@ -49,7 +49,7 @@ use tracing::{error, info, warn};
 
 use crate::bridge::BridgeRuntime;
 use crate::error::ErrorCode;
-use crate::observable::{Observable, ObservablePool, ObservableVec, ObservableVecUpdate};
+use crate::observable::{Observable, ObservableVec, ObservableVecUpdate};
 use crate::storage::AppState;
 use crate::types::RpcMediaUploadParams;
 
@@ -66,7 +66,6 @@ pub struct Matrix {
     room_list_service: Arc<RoomListService>,
     pub runtime: Arc<BridgeRuntime>,
     notification_settings: NotificationSettings,
-    pub observable_pool: ObservablePool,
 }
 
 impl Matrix {
@@ -162,10 +161,6 @@ impl Matrix {
             client,
             room_list_service: sync_service.room_list_service(),
             sync_service: Arc::new(sync_service),
-            observable_pool: ObservablePool::new(
-                runtime.event_sink.clone(),
-                runtime.task_group.clone(),
-            ),
             runtime,
         };
         let encryption_passphrase = Self::encryption_passphrase(matrix_secret);
@@ -355,7 +350,7 @@ impl Matrix {
     }
 
     pub async fn observable_cancel(&self, id: u64) -> Result<()> {
-        self.observable_pool.observable_cancel(id).await
+        self.runtime.observable_pool.observable_cancel(id).await
     }
 
     /// All chats in matrix are rooms, whether DM or group chats.
@@ -363,7 +358,8 @@ impl Matrix {
         const PAGE_SIZE: usize = 1000;
         // manual construction required to to have correct lifetimes
         let room_list_service = self.room_list_service.clone();
-        self.observable_pool
+        self.runtime
+            .observable_pool
             .make_observable(observable_id, Vector::new(), move |this, id| async move {
                 let list = room_list_service.all_rooms().await?;
                 let (stream, controller) = list.entries_with_dynamic_adapters(PAGE_SIZE);
@@ -396,7 +392,8 @@ impl Matrix {
         &self,
         observable_id: u64,
     ) -> Result<Observable<RpcSyncIndicator>> {
-        self.observable_pool
+        self.runtime
+            .observable_pool
             .make_observable_from_stream(
                 observable_id,
                 None,
@@ -447,7 +444,8 @@ impl Matrix {
     ) -> Result<ObservableVec<RpcTimelineItem>> {
         let timeline = self.timeline(room_id).await?;
         let (initial, stream) = timeline.subscribe().await;
-        self.observable_pool
+        self.runtime
+            .observable_pool
             .make_observable_from_vec_diff_stream(observable_id, initial, stream)
             .await
     }
@@ -472,7 +470,8 @@ impl Matrix {
             .live_back_pagination_status()
             .await
             .context("we only have live rooms")?;
-        self.observable_pool
+        self.runtime
+            .observable_pool
             .make_observable_from_stream(observable_id, Some(current), stream)
             .await
     }
@@ -573,7 +572,8 @@ impl Matrix {
         room_id: &RoomId,
     ) -> Result<Observable<RoomInfo>> {
         let sub = self.room(room_id).await?.inner_room().subscribe_info();
-        self.observable_pool
+        self.runtime
+            .observable_pool
             .make_observable_from_subscriber(observable_id, sub)
             .await
     }
