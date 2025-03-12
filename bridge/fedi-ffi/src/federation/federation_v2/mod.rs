@@ -2138,7 +2138,13 @@ impl FederationV2 {
             return Some(outcome);
         }
 
-        None
+        let ln = self.client.ln().ok()?;
+
+        match ln.subscribe_ln_pay(operation_id).await {
+            Ok(UpdateStreamOrOutcome::Outcome(outcome)) => Some(outcome),
+            Ok(UpdateStreamOrOutcome::UpdateStream(mut stream)) => stream.next().await,
+            Err(_) => None,
+        }
     }
 
     pub async fn get_deposit_outcome(&self, operation_id: OperationId) -> Option<DepositStateV2> {
@@ -2162,11 +2168,17 @@ impl FederationV2 {
         }
     }
 
-    pub async fn get_client_operation_outcome<O: Clone + DeserializeOwned + 'static>(
+    pub async fn get_client_operation_outcome<O, F, Fut>(
         &self,
         operation_id: OperationId,
         log_entry: OperationLogEntry,
-    ) -> Option<O> {
+        subscribe_fn: F,
+    ) -> Option<O>
+    where
+        O: Clone + DeserializeOwned + 'static,
+        F: Fn(OperationId) -> Fut,
+        Fut: Future<Output = anyhow::Result<UpdateStreamOrOutcome<O>>>,
+    {
         let outcome = log_entry.outcome::<O>();
 
         // Return client's cached outcome if we find it
@@ -2178,7 +2190,11 @@ impl FederationV2 {
             return Some(outcome);
         }
 
-        None
+        match subscribe_fn(operation_id).await {
+            Ok(UpdateStreamOrOutcome::Outcome(outcome)) => Some(outcome),
+            Ok(UpdateStreamOrOutcome::UpdateStream(mut stream)) => stream.next().await,
+            Err(_) => None,
+        }
     }
 
     /// Return all transactions via operation log
@@ -2262,7 +2278,14 @@ impl FederationV2 {
                                     });
                                     transaction_kind = RpcTransactionKind::LnReceive {
                                         ln_invoice: invoice.to_string(),
-                                        state: entry.outcome::<LnReceiveState>().map(Into::into),
+                                        state: self
+                                            .get_client_operation_outcome(
+                                                op_key.operation_id,
+                                                entry,
+                                                |op_id| async move { self.client.ln()?.subscribe_ln_receive(op_id).await }
+                                            )
+                                            .await
+                                            .map(Into::into),
                                     };
                                 }
                                 LightningOperationMetaVariant::Claim { .. } => unreachable!("claims are not supported"),
@@ -2298,8 +2321,11 @@ impl FederationV2 {
                                 ..
                             } => {
                                 let outcome = self
-                                    .get_client_operation_outcome(op_key.operation_id, entry)
-                                    .await;
+                                    .get_client_operation_outcome(
+                                        op_key.operation_id,
+                                        entry,
+                                        |op_id| async move { self.client.sp()?.subscribe_withdraw(op_id).await }
+                                    ).await;
 
                                 transaction_amount = match outcome {
                                     Some(
@@ -2348,7 +2374,11 @@ impl FederationV2 {
                                     transaction_amount = RpcAmount(mint_meta.amount);
                                     transaction_kind = RpcTransactionKind::OobReceive {
                                         state: self
-                                            .get_client_operation_outcome(op_key.operation_id, entry)
+                                            .get_client_operation_outcome(
+                                                op_key.operation_id,
+                                                entry,
+                                                |op_id| async move { self.client.mint()?.subscribe_reissue_external_notes(op_id).await }
+                                            )
                                             .await
                                             .map(ReissueExternalNotesState::into),
                                     };
@@ -2367,7 +2397,11 @@ impl FederationV2 {
                                         RpcAmount(requested_amount + Amount::from_msats(fedi_fee_msats));
                                     transaction_kind = RpcTransactionKind::OobSend {
                                         state: self
-                                            .get_client_operation_outcome(op_key.operation_id, entry)
+                                            .get_client_operation_outcome(
+                                                op_key.operation_id,
+                                                entry,
+                                                |op_id| async move { self.client.mint()?.subscribe_spend_notes(op_id).await }
+                                            )
                                             .await
                                             .map(SpendOOBState::into),
                                     };
