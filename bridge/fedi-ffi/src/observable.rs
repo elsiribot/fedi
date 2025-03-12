@@ -8,7 +8,8 @@ use fedimint_core::task::{MaybeSend, MaybeSync, TaskGroup};
 use futures::{Future, Stream, StreamExt};
 use imbl::Vector;
 use serde::Serialize;
-use tokio::sync::Mutex;
+use tokio::sync::{watch, Mutex};
+use tokio_stream::wrappers::WatchStream;
 use tracing::warn;
 
 use crate::error::ErrorCode;
@@ -259,6 +260,18 @@ impl ObservablePool {
             Ok(())
         })
         .await
+    }
+
+    pub async fn make_observable_from_watch_reciever<T>(
+        &self,
+        id: u64,
+        rx: watch::Receiver<T>,
+    ) -> Result<Observable<T>>
+    where
+        T: std::fmt::Debug + Clone + Serialize + Send + Sync + 'static,
+    {
+        let stream = WatchStream::new(rx);
+        self.make_observable_from_stream(id, None, stream).await
     }
 
     pub async fn observable_cancel(&self, id: u64) -> Result<()> {

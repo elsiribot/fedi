@@ -82,11 +82,15 @@ impl Federations {
         let invite_code = invite_code.to_lowercase();
         let root_mnemonic = self.runtime.app_state.root_mnemonic().await;
         let device_index = self.runtime.app_state.ensure_device_index().await?;
+        let should_override_localhost = self
+            .runtime
+            .feature_catalog
+            .read(|f| f.override_localhost.is_some());
         FederationV2::federation_preview(
             &invite_code,
             &root_mnemonic,
             device_index,
-            self.runtime.feature_catalog.override_localhost.is_some(),
+            should_override_localhost,
         )
         .await
     }
