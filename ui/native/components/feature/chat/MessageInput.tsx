@@ -1,4 +1,5 @@
 import { Input, Theme, useTheme } from '@rneui/themed'
+import { ResourceKey } from 'i18next'
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import {
@@ -45,8 +46,10 @@ import {
 import { InputAttachment, InputMedia } from '@fedi/common/types'
 import { makeLog } from '@fedi/common/utils/log'
 import { getEventId } from '@fedi/common/utils/matrix'
+import { formatFileSize } from '@fedi/common/utils/media'
 
 import { fedimint } from '../../../bridge'
+import { MAX_VIDEO_SIZE, MAX_FILE_SIZE } from '../../../constants'
 import { useAppDispatch, useAppSelector } from '../../../state/hooks'
 import {
     getUriFromAttachment,
@@ -118,21 +121,58 @@ const MessageInput: React.FC<MessageInputProps> = ({
     const [attachments, setAttachments] = useState<DocumentPickerResponse[]>([])
     const [images, setImages] = useState<Asset[]>([])
 
+    const anyAssetExceedsSize = useCallback(
+        (assets: Asset[] | DocumentPickerResponse[], size: number) => {
+            let exceeds = false
+            let message: ResourceKey = 'errors.files-may-not-exceed-size'
+
+            for (const asset of assets) {
+                if ('size' in asset && asset.size && asset.size > size) {
+                    exceeds = true
+                }
+                if (
+                    'fileSize' in asset &&
+                    asset.fileSize &&
+                    asset.fileSize > size
+                ) {
+                    if (asset.type?.includes('image'))
+                        message = 'errors.images-may-not-exceed-size'
+                    else if (asset.type?.includes('video'))
+                        message = 'errors.videos-may-not-exceed-size'
+
+                    exceeds = true
+                }
+            }
+
+            if (exceeds) {
+                toast.show({
+                    content: t(message, formatFileSize(size)),
+                    status: 'error',
+                })
+            }
+
+            return exceeds
+        },
+        [t, toast],
+    )
+
     const handleUploadImage = useCallback(async () => {
         try {
             const res = await launchImageLibrary(imageOptions)
 
             if (res.assets) {
+                const assetImages = res.assets.filter(asset =>
+                    asset.type?.includes('image'),
+                )
+                const assetVideos = res.assets.filter(asset =>
+                    asset.type?.includes('video'),
+                )
+
                 if (
-                    // Not 20M because images/videos are often in binary format
-                    res.assets.some(asset => (asset.fileSize ?? 0) > 20971520)
-                ) {
-                    toast.show({
-                        content: t('errors.files-may-not-exceed-20mb'),
-                        status: 'error',
-                    })
+                    anyAssetExceedsSize(assetImages, MAX_FILE_SIZE) ||
+                    anyAssetExceedsSize(assetVideos, MAX_VIDEO_SIZE)
+                )
                     return
-                }
 
                 const assets: Array<Asset> = []
 
@@ -200,7 +240,7 @@ const MessageInput: React.FC<MessageInputProps> = ({
         } catch (err) {
             toast.error(t, err)
         }
-    }, [t, toast, images])
+    }, [t, toast, images, anyAssetExceedsSize])
 
     const handleUploadAttachment = useCallback(async () => {
         try {
@@ -222,16 +262,7 @@ const MessageInput: React.FC<MessageInputProps> = ({
             })
 
             if (response) {
-                if (
-                    // Not 20M because images/videos are often in binary format
-                    response.some(asset => (asset.size ?? 0) > 20971520)
-                ) {
-                    toast.show({
-                        content: t('errors.files-may-not-exceed-20mb'),
-                        status: 'error',
-                    })
-                    return
-                }
+                if (anyAssetExceedsSize(response, MAX_FILE_SIZE)) return
 
                 // Exclude duplicates
                 setAttachments(
@@ -247,7 +278,7 @@ const MessageInput: React.FC<MessageInputProps> = ({
             // Hiding this because it shows the toast when user closes the dialogue ...
             // toast?.show(typedError?.message, 3000)
         }
-    }, [attachments, t, toast])
+    }, [attachments, anyAssetExceedsSize])
 
     const handleEdit = useCallback(async () => {
         if (!isEditingMessage || !messageText || !editingMessage.eventId) return
@@ -400,12 +431,6 @@ const MessageInput: React.FC<MessageInputProps> = ({
         [inputHeight, theme],
     )
 
-    const formatSize = (bytes: number) => {
-        if (bytes < 1024) return `${bytes} bytes`
-        else if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} kb`
-        else return `${(bytes / 1024 / 1024).toFixed(1)} mb`
-    }
-
     return (
         <View
             style={[
@@ -425,7 +450,7 @@ const MessageInput: React.FC<MessageInputProps> = ({
                             <View style={style.attachmentContent}>
                                 <Text>{att.name}</Text>
                                 <Text style={style.attachmentSize}>
-                                    {formatSize(att.size ?? 0)}
+                                    {formatFileSize(att.size ?? 0)}
                                 </Text>
                             </View>
                             <Pressable

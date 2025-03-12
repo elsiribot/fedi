@@ -63,3 +63,11 @@ export const ZENDESK_USER_SCOPE = 'user'
 */
 
 export const ZENDESK_PUSH_NOTIFICATION_CHANNEL = 'zendesk-channel'
+
+/*
+    -----
+    File Sizes
+    -----
+ */
+export const MAX_FILE_SIZE = 100 * 1024 * 1024 // 100MB for images & files
+export const MAX_VIDEO_SIZE = 500 * 1024 * 1024 // 500MB for videos
