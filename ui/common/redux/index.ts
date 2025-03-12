@@ -139,14 +139,20 @@ export function initializeCommonStore({
                     break
                 // For ready states we prepare the full loaded federation with meta + status updates
                 case 'ready': {
-                    const loadedFederation = coerceLoadedFederation(event)
+                    let loadedFederation = coerceLoadedFederation(event)
                     dispatch(upsertFederation(loadedFederation))
+
                     if ('meta' in loadedFederation) {
                         // if the federation_name is found in the meta, overwrite top-level name field
+
                         if (loadedFederation.meta.federation_name) {
-                            loadedFederation.name =
-                                loadedFederation.meta.federation_name
+                            // Make copy to avoid permission errors assigning value to read-only property
+                            loadedFederation = {
+                                ...loadedFederation,
+                                name: loadedFederation.meta.federation_name,
+                            }
                         }
+
                         dispatch(
                             processFederationMeta({
                                 federation: loadedFederation,
