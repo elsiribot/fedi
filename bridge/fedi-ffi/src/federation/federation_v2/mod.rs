@@ -667,8 +667,8 @@ impl FederationV2 {
                         info!("Raw status response: {:?}", status_response);
                         GuardianStatus::Online {
                             guardian: guardian.to_string(),
-                            latency_ms: start
-                                .elapsed()
+                            latency_ms: fedimint_core::time::now()
+                                .duration_since(start)
                                 .unwrap_or_default()
                                 .as_millis()
                                 .try_into()
