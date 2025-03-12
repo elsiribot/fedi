@@ -74,7 +74,7 @@ async-recursion = "1.1.0"
 tokio-stream = { version = "0.1.17", features = ["sync"] }
 
 [target.'cfg(target_family = "wasm")'.dependencies]
-ring = { version = "0.17.5", features = ["wasm32_unknown_unknown_js"] }
+ring = { version = "0.17.14", features = ["wasm32_unknown_unknown_js"] }
 
 [target.'cfg(not(target_family = "wasm"))'.dependencies]
 fedimint-rocksdb = { workspace = true }
