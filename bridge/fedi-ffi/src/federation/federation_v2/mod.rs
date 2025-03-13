@@ -442,12 +442,11 @@ impl FederationV2 {
     ) -> Result<Arc<Self>> {
         let mut invite_code =
             InviteCode::from_str(&invite_code_string).context("invalid invite code")?;
-        let override_localhost = feature_catalog.read(|f| f.override_localhost.is_some());
-        if override_localhost {
+        if feature_catalog.override_localhost.is_some() {
             override_localhost_invite_code(&mut invite_code);
         }
         let mut client_config: ClientConfig = download_from_invite_code(&invite_code).await?;
-        if override_localhost {
+        if feature_catalog.override_localhost.is_some() {
             override_localhost_client_config(&mut client_config);
         }
 
@@ -597,10 +596,7 @@ impl FederationV2 {
 
     pub async fn select_gateway(&self) -> anyhow::Result<Option<LightningGateway>> {
         let gateway = self.gateway_service()?.select_gateway(&self.client).await?;
-        if self
-            .feature_catalog
-            .read(|f| f.override_localhost.is_none())
-        {
+        if self.feature_catalog.override_localhost.is_none() {
             return Ok(gateway);
         }
 

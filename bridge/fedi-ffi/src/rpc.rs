@@ -43,7 +43,7 @@ use crate::bridge::{BridgeFull, BridgeRuntime};
 use crate::constants::{GLOBAL_MATRIX_SERVER, GLOBAL_MATRIX_SLIDING_SYNC_PROXY};
 use crate::error::RpcError;
 use crate::event::{Event, EventSink, IEventSink, PanicEvent, SocialRecoveryEvent, TypedEventExt};
-use crate::features::{FeatureCatalog, FeatureCatalogValue};
+use crate::features::FeatureCatalog;
 use crate::federation::federation_sm::FederationState;
 use crate::federation::federation_v2::{BackupServiceStatus, FederationV2};
 use crate::federation::Federations;
@@ -1460,17 +1460,8 @@ async fn matrixGetMediaPreview(
 }
 
 #[macro_rules_derive(rpc_method!)]
-async fn featureCatalog(
-    runtime: Arc<BridgeRuntime>,
-    observable_id: u32,
-) -> anyhow::Result<Observable<FeatureCatalogValue>> {
-    runtime
-        .observable_pool
-        .make_observable_from_watch_reciever(
-            observable_id.into(),
-            runtime.feature_catalog.subscribe(),
-        )
-        .await
+async fn featureCatalog(runtime: Arc<BridgeRuntime>) -> anyhow::Result<Arc<FeatureCatalog>> {
+    Ok(runtime.feature_catalog.clone())
 }
 
 // converts from a typed handler into untyped handler
