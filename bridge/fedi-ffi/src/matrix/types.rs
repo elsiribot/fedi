@@ -1,9 +1,11 @@
+use std::collections::HashMap;
 use std::sync::Arc;
 
 use anyhow::{Context, Result};
 use matrix_sdk::notification_settings::RoomNotificationMode;
 use matrix_sdk::room::RoomMember;
 use matrix_sdk::ruma::api::client::user_directory::search_users::v3 as search_user_directory;
+use matrix_sdk::ruma::events::poll::start::PollKind;
 use matrix_sdk::ruma::events::room::member::MembershipState;
 use matrix_sdk::ruma::events::room::message::RoomMessageEventContent;
 use matrix_sdk::ruma::events::AnyTimelineEvent;
@@ -11,7 +13,7 @@ use matrix_sdk::ruma::serde::Raw;
 use matrix_sdk::ruma::{MilliSecondsSinceUnixEpoch, OwnedTransactionId};
 use matrix_sdk_ui::room_list_service::SyncIndicator;
 use matrix_sdk_ui::timeline::{
-    EventSendState, LiveBackPaginationStatus, TimelineEventItemId, TimelineItem,
+    EventSendState, LiveBackPaginationStatus, PollResult, TimelineEventItemId, TimelineItem,
     TimelineItemContent, TimelineItemKind, VirtualTimelineItem,
 };
 use serde::{Deserialize, Serialize};
@@ -102,6 +104,7 @@ pub enum RpcTimelineItemContent {
     Message(#[ts(type = "JSONObject")] RoomMessageEventContent),
     Json(#[ts(type = "JSONValue")] serde_json::Value),
     RedactedMessage,
+    Poll(RpcPollResult),
     Unknown,
 }
 
@@ -123,6 +126,76 @@ pub struct RpcMatrixUserDirectorySearchUser {
     pub avatar_url: Option<String>,
 }
 
+#[derive(Clone, Debug, PartialEq, Eq, serde::Serialize, ts_rs::TS)]
+#[serde(rename_all = "camelCase")]
+#[ts(export)]
+pub enum RpcPollKind {
+    Undisclosed,
+    Disclosed,
+}
+
+#[derive(Debug, Serialize, Clone, ts_rs::TS)]
+#[serde(rename_all = "camelCase")]
+#[ts(export)]
+pub struct RpcPollResult {
+    pub body: String,
+    pub kind: RpcPollKind,
+    pub max_selections: u64,
+    pub answers: Vec<RpcPollResultAnswer>,
+    pub votes: HashMap<String, Vec<String>>,
+    pub end_time: Option<u64>,
+    pub has_been_edited: bool,
+    pub msgtype: String,
+}
+
+impl From<PollResult> for RpcPollResult {
+    fn from(value: PollResult) -> Self {
+        let end_time: Option<u64> = value.end_time.map(|t| t.get().into());
+
+        Self {
+            msgtype: String::from("m.poll"),
+            body: value.question,
+            kind: match value.kind {
+                PollKind::Undisclosed => RpcPollKind::Undisclosed,
+                _ => RpcPollKind::Disclosed,
+            },
+            max_selections: value.max_selections,
+            answers: value
+                .answers
+                .iter()
+                .map(|a| RpcPollResultAnswer {
+                    id: a.id.to_string(),
+                    text: a.text.to_string(),
+                })
+                .collect(),
+            votes: value
+                .votes
+                .into_iter()
+                .map(|(k, v)| (k, v.into_iter().map(|s| s.to_string()).collect()))
+                .collect(),
+            end_time,
+            has_been_edited: value.has_been_edited,
+        }
+    }
+}
+
+#[derive(Debug, Serialize, Clone, ts_rs::TS)]
+#[serde(rename_all = "camelCase")]
+#[ts(export)]
+pub struct RpcPollResultAnswer {
+    pub id: String,
+    pub text: String,
+}
+
+#[derive(Debug, Serialize, Clone, ts_rs::TS)]
+#[serde(rename_all = "camelCase")]
+#[ts(export)]
+pub struct RpcPollResponseData {
+    pub sender: RpcUserId,
+    #[ts(type = "number")]
+    pub timestamp: MilliSecondsSinceUnixEpoch,
+    pub answers: Vec<String>,
+}
 impl RpcMatrixUserDirectorySearchUser {
     pub fn from_user(user: search_user_directory::User) -> Self {
         let avatar_url = user.avatar_url.map(|url| url.to_string());
@@ -172,13 +245,16 @@ impl From<Arc<TimelineItem>> for RpcTimelineItem {
     fn from(item: Arc<TimelineItem>) -> Self {
         match **item {
             TimelineItemKind::Event(ref e) => {
-                let content = if let Some(json) = e.latest_json() {
+                let content = e.content();
+                let content = if let TimelineItemContent::Poll(m) = content {
+                    RpcTimelineItemContent::Poll(RpcPollResult::from(m.results()))
+                } else if let Some(json) = e.latest_json() {
                     RpcTimelineItemContent::Json(
                         json.deserialize_as::<serde_json::Value>()
                             .expect("failed to deserialize event"),
                     )
                 } else {
-                    match e.content() {
+                    match content {
                         TimelineItemContent::Message(m) => RpcTimelineItemContent::Message(
                             RoomMessageEventContent::from(m.clone()),
                         ),

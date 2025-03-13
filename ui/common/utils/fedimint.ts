@@ -424,8 +424,16 @@ export class FedimintBridge {
         roomId: RpcRoomId,
         question: string,
         answers: Array<string>,
+        isMultipleChoice: boolean,
+        isDisclosed: boolean,
     ) {
-        return this.rpcTyped('matrixStartPoll', { roomId, question, answers })
+        return this.rpcTyped('matrixStartPoll', {
+            roomId,
+            question,
+            answers,
+            isMultipleChoice,
+            isDisclosed,
+        })
     }
 
     async matrixEndPoll(roomId: RpcRoomId, pollStartId: string) {
@@ -435,12 +443,12 @@ export class FedimintBridge {
     async matrixRespondToPoll(
         roomId: RpcRoomId,
         pollStartId: string,
-        selections: Array<string>,
+        answerIds: Array<string>,
     ) {
         return this.rpcTyped('matrixRespondToPoll', {
             roomId,
             pollStartId,
-            selections,
+            answerIds,
         })
     }
 

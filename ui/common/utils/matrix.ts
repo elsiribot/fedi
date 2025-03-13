@@ -109,6 +109,16 @@ const contentSchemas = {
         sender_key: z.string(),
         session_id: z.string(),
     }),
+    'm.poll': z.object({
+        msgtype: z.literal('m.poll'),
+        body: z.string(),
+        answers: z.array(z.object({ id: z.string(), text: z.string() })),
+        endTime: z.nullable(z.number()),
+        hasBeenEdited: z.boolean(),
+        kind: z.enum(['disclosed', 'undisclosed']),
+        maxSelections: z.number(),
+        votes: z.record(z.array(z.string())),
+    }),
     /**
      * Fedi custom events
      *
@@ -581,6 +591,12 @@ export function isEncryptedEvent(
     return event.content.msgtype === 'm.room.encrypted'
 }
 
+export function isPollEvent(
+    event: MatrixEvent,
+): event is MatrixEvent<MatrixEventContentType<'m.poll'>> {
+    return event.content.msgtype === 'm.poll'
+}
+
 /**
  * Checks to see if a chat video/image event's content matches the `media` argument
  */
@@ -592,3 +608,22 @@ export const doesEventContentMatchPreviewMedia = (
     content.info.w === media.width &&
     content.info.h === media.height &&
     content.body === media.fileName
+
+export const arePollEventsEqual = (
+    prev: MatrixEvent<MatrixEventContentType<'m.poll'>>,
+    curr: MatrixEvent<MatrixEventContentType<'m.poll'>>,
+) => {
+    if (
+        prev.id !== curr.id ||
+        prev.content.endTime !== curr.content.endTime ||
+        prev.content.answers.length !== curr.content.answers.length ||
+        prev.content.votes.length !== curr.content.votes.length
+    )
+        return false
+
+    for (const [key, value] of Object.entries(prev.content.votes)) {
+        if (curr.content.votes[key] !== value) return false
+    }
+
+    return true
+}

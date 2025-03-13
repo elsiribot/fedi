@@ -25,11 +25,12 @@ use matrix_sdk::ruma::api::client::room::Visibility;
 use matrix_sdk::ruma::api::client::state::send_state_event;
 use matrix_sdk::ruma::api::client::uiaa;
 use matrix_sdk::ruma::directory::PublicRoomsChunk;
-use matrix_sdk::ruma::events::message::TextContentBlock;
-use matrix_sdk::ruma::events::poll::end::PollEndEventContent;
-use matrix_sdk::ruma::events::poll::response::{PollResponseEventContent, SelectionsContentBlock};
-use matrix_sdk::ruma::events::poll::start::{
-    PollAnswer, PollAnswers, PollContentBlock, PollStartEventContent,
+use matrix_sdk::ruma::events::poll::start::PollKind;
+use matrix_sdk::ruma::events::poll::unstable_end::UnstablePollEndEventContent;
+use matrix_sdk::ruma::events::poll::unstable_response::UnstablePollResponseEventContent;
+use matrix_sdk::ruma::events::poll::unstable_start::{
+    NewUnstablePollStartEventContent, UnstablePollAnswer, UnstablePollAnswers,
+    UnstablePollStartContentBlock,
 };
 use matrix_sdk::ruma::events::receipt::ReceiptThread;
 use matrix_sdk::ruma::events::room::encryption::RoomEncryptionEventContent;
@@ -38,7 +39,9 @@ use matrix_sdk::ruma::events::room::message::{
 };
 use matrix_sdk::ruma::events::room::power_levels::RoomPowerLevelsEventContent;
 use matrix_sdk::ruma::events::room::MediaSource;
-use matrix_sdk::ruma::events::{AnySyncTimelineEvent, InitialStateEvent};
+use matrix_sdk::ruma::events::{
+    AnyMessageLikeEventContent, AnySyncTimelineEvent, InitialStateEvent,
+};
 use matrix_sdk::ruma::{assign, EventId, OwnedMxcUri, RoomId, UInt, UserId};
 use matrix_sdk::{Client, RoomInfo, RoomMemberships};
 use matrix_sdk_ui::sync_service::{self, SyncService};
@@ -922,36 +925,50 @@ impl Matrix {
         room_id: &RoomId,
         question: String,
         answers: Vec<String>,
+        is_multiple_choice: bool,
+        is_disclosed: bool,
     ) -> Result<()> {
         let timeline = self.timeline(room_id).await?;
 
-        let poll_answers: PollAnswers = answers
+        let poll_answers: UnstablePollAnswers = answers
             .into_iter()
             .enumerate()
-            .map(|(i, text)| PollAnswer::new(i.to_string(), TextContentBlock::plain(text)))
+            .map(|(i, text)| UnstablePollAnswer::new(i.to_string(), text))
             .collect::<Vec<_>>()
             .try_into()
-            .map_err(|_| anyhow::anyhow!("Invalid number of poll answers"))?;
+            .context(ErrorCode::BadRequest)?;
 
-        let poll_content =
-            PollContentBlock::new(TextContentBlock::plain(question.clone()), poll_answers);
+        let mut poll_content =
+            UnstablePollStartContentBlock::new(question.clone(), poll_answers.clone());
 
-        let content = PollStartEventContent::new(
-            TextContentBlock::plain(format!("Poll: {}", question)),
-            poll_content,
-        );
+        if is_multiple_choice {
+            poll_content.max_selections = UInt::try_from(poll_answers.len())?;
+        }
 
-        timeline.send(content.into()).await?;
+        if is_disclosed {
+            poll_content.kind = PollKind::Disclosed
+        } else {
+            poll_content.kind = PollKind::Undisclosed
+        }
+
+        let poll_start_event_content =
+            NewUnstablePollStartEventContent::plain_text(question, poll_content);
+
+        let event_content =
+            AnyMessageLikeEventContent::UnstablePollStart(poll_start_event_content.into());
+
+        timeline.send(event_content).await?;
         Ok(())
     }
 
     pub async fn end_poll(&self, room_id: &RoomId, poll_start_id: &EventId) -> Result<()> {
         let timeline = self.timeline(room_id).await?;
 
-        let content =
-            PollEndEventContent::with_plain_text("This poll has ended", poll_start_id.to_owned());
+        let poll_end_event_content =
+            UnstablePollEndEventContent::new("This poll has ended", poll_start_id.to_owned());
+        let event_content = AnyMessageLikeEventContent::UnstablePollEnd(poll_end_event_content);
 
-        timeline.send(content.into()).await?;
+        timeline.send(event_content).await?;
         Ok(())
     }
 
@@ -959,15 +976,16 @@ impl Matrix {
         &self,
         room_id: &RoomId,
         poll_start_id: &EventId,
-        selections: Vec<String>,
+        answer_ids: Vec<String>,
     ) -> Result<()> {
         let timeline = self.timeline(room_id).await?;
 
-        let selections_content = SelectionsContentBlock::from(selections);
+        let poll_response_event_content =
+            UnstablePollResponseEventContent::new(answer_ids, poll_start_id.into());
+        let event_content =
+            AnyMessageLikeEventContent::UnstablePollResponse(poll_response_event_content);
 
-        let content = PollResponseEventContent::new(selections_content, poll_start_id.to_owned());
-
-        timeline.send(content.into()).await?;
+        timeline.send(event_content).await?;
         Ok(())
     }
 

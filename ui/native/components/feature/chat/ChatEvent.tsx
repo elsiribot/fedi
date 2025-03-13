@@ -6,11 +6,13 @@ import { ErrorBoundary } from '@fedi/common/components/ErrorBoundary'
 import { selectMatrixAuth } from '@fedi/common/redux'
 import { MatrixEvent } from '@fedi/common/types'
 import {
+    arePollEventsEqual,
     isDeletedEvent,
     isEncryptedEvent,
     isFileEvent,
     isImageEvent,
     isPaymentEvent,
+    isPollEvent,
     isPreviewMediaEvent,
     isTextEvent,
     isVideoEvent,
@@ -22,6 +24,7 @@ import ChatEncryptedEvent from './ChatEncryptedEvent'
 import ChatFileEvent from './ChatFileEvent'
 import ChatImageEvent from './ChatImageEvent'
 import ChatPaymentEvent from './ChatPaymentEvent'
+import ChatPollEvent from './ChatPollEvent'
 import ChatPreviewMediaEvent from './ChatPreviewMediaEvent'
 import ChatTextEvent from './ChatTextEvent'
 import ChatVideoEvent from './ChatVideoEvent'
@@ -104,6 +107,8 @@ const ChatEvent: React.FC<Props> = ({
                                 <ChatDeletedEvent event={event} />
                             ) : isPreviewMediaEvent(event) ? (
                                 <ChatPreviewMediaEvent event={event} />
+                            ) : isPollEvent(event) ? (
+                                <ChatPollEvent event={event} />
                             ) : null}
                         </View>
                     </View>
@@ -151,21 +156,18 @@ const styles = (theme: Theme) =>
         },
     })
 
-const areEqual = (prev: Props, curr: Props) => {
-    if (
-        isPaymentEvent(curr.event) &&
-        // TODO: make better TS types to avoid this ick
-        'status' in prev.event.content &&
-        'status' in curr.event.content
-    ) {
+const areEqual = ({ event: prevEvent }: Props, { event: currEvent }: Props) => {
+    if (isPaymentEvent(currEvent) && isPaymentEvent(prevEvent)) {
         return (
-            prev.event.id === curr.event.id &&
-            prev.event.content.status === curr.event.content.status
+            prevEvent.id === currEvent.id &&
+            prevEvent.content.status === currEvent.content.status
         )
+    } else if (isPollEvent(currEvent) && isPollEvent(prevEvent)) {
+        return arePollEventsEqual(prevEvent, currEvent)
     } else {
         return (
-            prev.event.eventId === curr.event.eventId &&
-            prev.event.content.body === curr.event.content.body
+            prevEvent.eventId === currEvent.eventId &&
+            prevEvent.content.body === currEvent.content.body
         )
     }
 }

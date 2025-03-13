@@ -664,6 +664,27 @@ export type RpcPayInvoiceResponse = { preimage: string };
 
 export type RpcPeerId = number;
 
+export type RpcPollKind = "undisclosed" | "disclosed";
+
+export type RpcPollResponseData = {
+  sender: RpcUserId;
+  timestamp: number;
+  answers: Array<string>;
+};
+
+export type RpcPollResult = {
+  body: string;
+  kind: RpcPollKind;
+  maxSelections: bigint;
+  answers: Array<RpcPollResultAnswer>;
+  votes: { [key in string]?: Array<string> };
+  endTime: bigint | null;
+  hasBeenEdited: boolean;
+  msgtype: string;
+};
+
+export type RpcPollResultAnswer = { id: string; text: string };
+
 export type RpcPublicKey = string;
 
 export type RpcPublicRoomChunk = JSONObject;
@@ -775,6 +796,7 @@ export type RpcTimelineItemContent =
   | { kind: "message"; value: JSONObject }
   | { kind: "json"; value: JSONValue }
   | { kind: "redactedMessage" }
+  | { kind: "poll"; value: RpcPollResult }
   | { kind: "unknown" };
 
 export type RpcTimelineItemEvent = {
@@ -1128,7 +1150,7 @@ export type matrixPublicRoomInfo = { roomId: string };
 export type matrixRespondToPoll = {
   roomId: RpcRoomId;
   pollStartId: string;
-  selections: Array<string>;
+  answerIds: Array<string>;
 };
 
 export type matrixRoomBanUser = {
@@ -1232,6 +1254,8 @@ export type matrixStartPoll = {
   roomId: RpcRoomId;
   question: string;
   answers: Array<string>;
+  isMultipleChoice: boolean;
+  isDisclosed: boolean;
 };
 
 export type matrixUnignoreUser = { userId: RpcUserId };

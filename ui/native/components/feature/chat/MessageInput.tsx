@@ -1,3 +1,4 @@
+import { useNavigation } from '@react-navigation/native'
 import { Input, Theme, useTheme } from '@rneui/themed'
 import { ResourceKey } from 'i18next'
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
@@ -91,6 +92,7 @@ const MessageInput: React.FC<MessageInputProps> = ({
     const { theme } = useTheme()
     const insets = useSafeAreaInsets()
     const existingRoom = useAppSelector(s => selectMatrixRoom(s, id))
+    const navigation = useNavigation()
     const dispatch = useAppDispatch()
 
     const toast = useToast()
@@ -526,6 +528,15 @@ const MessageInput: React.FC<MessageInputProps> = ({
                         {/* uploading media only available in DMs and private groups to prevent unencrypted media uploads, also hide if we can't send messages (readonly) */}
                         {!isPublic && !isReadOnly && (
                             <>
+                                <Pressable
+                                    onPress={() => {
+                                        navigation.navigate('CreatePoll', {
+                                            roomId: id,
+                                        })
+                                    }}
+                                    hitSlop={10}>
+                                    <SvgImage name="Poll" />
+                                </Pressable>
                                 <Pressable
                                     onPress={handleUploadImage}
                                     hitSlop={10}>

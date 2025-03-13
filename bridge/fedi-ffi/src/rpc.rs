@@ -1409,9 +1409,17 @@ async fn matrixStartPoll(
     room_id: RpcRoomId,
     question: String,
     answers: Vec<String>,
+    is_multiple_choice: bool,
+    is_disclosed: bool,
 ) -> anyhow::Result<()> {
     matrix
-        .start_poll(&room_id.into_typed()?, question, answers)
+        .start_poll(
+            &room_id.into_typed()?,
+            question,
+            answers,
+            is_multiple_choice,
+            is_disclosed,
+        )
         .await
 }
 
@@ -1432,11 +1440,11 @@ async fn matrixRespondToPoll(
     matrix: &Matrix,
     room_id: RpcRoomId,
     poll_start_id: String,
-    selections: Vec<String>,
+    answer_ids: Vec<String>,
 ) -> anyhow::Result<()> {
     let poll_start_event_id = OwnedEventId::try_from(poll_start_id)?;
     matrix
-        .respond_to_poll(&room_id.into_typed()?, &poll_start_event_id, selections)
+        .respond_to_poll(&room_id.into_typed()?, &poll_start_event_id, answer_ids)
         .await
 }
 ts_type_ser!(RpcMediaPreviewResponse: get_media_preview::v1::Response = "JSONObject");
