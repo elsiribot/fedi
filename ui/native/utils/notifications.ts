@@ -22,9 +22,10 @@ import {
 import amountUtils from '@fedi/common/utils/AmountUtils'
 import { makeLog } from '@fedi/common/utils/log'
 import { encodeFediMatrixRoomUri } from '@fedi/common/utils/matrix'
+import { getTxnDirection } from '@fedi/common/utils/wallet'
 
 import { store, AppDispatch } from '../state/store'
-import { TransactionDirection, TransactionEvent } from '../types'
+import { Transaction, TransactionDirection, TransactionEvent } from '../types'
 import { launchZendeskSupport, zendeskCloseMessagingView } from './support'
 
 const log = makeLog('Notifications')
@@ -126,22 +127,45 @@ export const handleBackgroundFCMReceived = async (
 export const displayPaymentReceivedNotification = async (
     event: TransactionEvent,
     t: TFunction,
-) => {
-    const { direction, amount, onchainState, oobState } = event.transaction
+): Promise<void> => {
+    const transaction: Transaction | undefined =
+        typeof event.transaction === 'object' && event.transaction !== null
+            ? event.transaction
+            : undefined
+
+    if (!transaction) {
+        return
+    }
+
+    const direction = getTxnDirection(transaction)
 
     // Don't show notification for outbound payment
     if (direction !== TransactionDirection.receive) return
 
     // Don't show notification for onchain txn until it is claimed
-    if (onchainState && onchainState.type !== 'claimed') return
+    if (
+        transaction.kind === 'onchainDeposit' &&
+        transaction.state?.type !== 'claimed'
+    ) {
+        return
+    }
+
     // Don't show notification for ecash txn until it is done
-    if (oobState && oobState.type !== 'done') return
+    if (
+        transaction.kind === 'oobReceive' &&
+        transaction.state?.type !== 'done'
+    ) {
+        return
+    }
 
     const federations = selectFederations(store.getState())
     const federation = federations.find(f => f.id === event.federationId)
     const federationName = federation?.name
 
-    const amountText = amountUtils.formatNumber(amountUtils.msatToSat(amount))
+    const amountText = amountUtils.formatNumber(
+        amountUtils.msatToSat(transaction.amount),
+    )
+
     await dispatchNotification(
         'transaction',
         'Transactions Channel',
@@ -152,6 +176,16 @@ export const displayPaymentReceivedNotification = async (
         {
             link: '',
             type: 'payment',
+        },
+        {
+            android: {
+                groupSummary: true,
+                smallIcon: 'ic_stat_notification',
+                color: getNotificationBackgroundColor(),
+            },
+            ios: {
+                sound: 'default',
+            },
         },
     )
 }
