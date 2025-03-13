@@ -8,6 +8,7 @@ import {
     fetchSocialRecovery,
     initializeDeviceIdWeb,
     initializeFedimintVersion,
+    initializeNostrKeys,
     previewAllDefaultChats,
     refreshFederations,
     selectHasSetMatrixDisplayName,
@@ -67,6 +68,7 @@ export const FediBridgeInitializer: React.FC<Props> = ({ children }) => {
                     dispatchRef.current(
                         initializeFedimintVersion({ fedimint }),
                     ),
+                    dispatchRef.current(initializeNostrKeys({ fedimint })),
                     // if there is no matrix session yet we will start the matrix
                     // client either during recovery or during onboarding after a
                     // display name is entered

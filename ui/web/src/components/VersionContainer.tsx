@@ -1,3 +1,4 @@
+import Link from 'next/link'
 import React from 'react'
 import { useTranslation } from 'react-i18next'
 
@@ -16,11 +17,17 @@ export const VersionContainer = () => {
         <Menu>
             <FediIcon width={24} />
 
-            <Text variant="small" css={{ color: theme.colors.darkGrey }}>
-                {t('phrases.fedimint-version', {
-                    version: fedimintVersion,
-                })}
-            </Text>
+            <VersionsWrapper>
+                <Text variant="small" css={{ color: theme.colors.darkGrey }}>
+                    {t('phrases.fedimint-version', {
+                        version: fedimintVersion,
+                    })}
+                </Text>
+            </VersionsWrapper>
+
+            <StyledLink href="/share-logs">
+                {t('feature.developer.share-logs')}
+            </StyledLink>
         </Menu>
     )
 }
@@ -31,7 +38,16 @@ const Menu = styled('div', {
     borderRadius: 16,
     display: 'flex',
     flexDirection: 'column',
-    gap: 12,
+    gap: 4,
     paddingBottom: 12,
     paddingTop: 12,
+})
+
+const VersionsWrapper = styled('div', {
+    display: 'flex',
+    flexDirection: 'column',
+})
+
+const StyledLink = styled(Link, {
+    fontSize: '12px',
 })

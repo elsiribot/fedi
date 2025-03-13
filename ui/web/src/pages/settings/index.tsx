@@ -1,7 +1,6 @@
 import { useCallback, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 
-import BugIcon from '@fedi/common/assets/svgs/bug.svg'
 import InviteMembersIcon from '@fedi/common/assets/svgs/invite-members.svg'
 import LanguageIcon from '@fedi/common/assets/svgs/language.svg'
 import LeaveFederationIcon from '@fedi/common/assets/svgs/leave-federation.svg'
@@ -187,11 +186,6 @@ function AdminPage() {
                     label: t('feature.backup.personal-backup'),
                     icon: NoteIcon,
                     href: `/settings/backup/personal`,
-                },
-                {
-                    label: t('feature.bug.report-a-bug'),
-                    icon: BugIcon,
-                    href: `/bug-report`,
                 },
             ],
         },
