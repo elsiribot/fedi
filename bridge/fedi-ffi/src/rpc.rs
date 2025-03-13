@@ -2152,7 +2152,6 @@ pub mod tests {
         spawn_and_attach_name!(tests_set, tests_names, test_join_and_leave_and_join);
         spawn_and_attach_name!(tests_set, tests_names, test_join_concurrent);
         spawn_and_attach_name!(tests_set, tests_names, test_lightning_send_and_receive);
-        spawn_and_attach_name!(tests_set, tests_names, test_lightning_send_and_receive);
         spawn_and_attach_name!(tests_set, tests_names, test_ecash);
         spawn_and_attach_name!(tests_set, tests_names, test_ecash_overissue);
         spawn_and_attach_name!(tests_set, tests_names, test_on_chain);

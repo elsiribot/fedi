@@ -15,6 +15,7 @@ use std::time::Duration;
 use ::serde::{Deserialize, Serialize};
 use anyhow::{anyhow, bail, Context, Result};
 use bitcoin::address::NetworkUnchecked;
+use bitcoin::hex::DisplayHex;
 use bitcoin::secp256k1::PublicKey;
 use bitcoin::{Address, Network};
 use client::ClientExt;
@@ -51,6 +52,7 @@ use fedimint_core::util::backoff_util::{aggressive_backoff, background_backoff};
 use fedimint_core::util::retry;
 use fedimint_core::{maybe_add_send_sync, Amount, PeerId};
 use fedimint_derive_secret::{ChildId, DerivableSecret};
+use fedimint_ln_client::pay::GatewayPayError;
 use fedimint_ln_client::{
     InternalPayState, LightningClientInit, LightningOperationMeta, LightningOperationMetaPay,
     LightningOperationMetaVariant, LnPayState, LnReceiveState, OutgoingLightningPayment,
@@ -2119,34 +2121,6 @@ impl FederationV2 {
         Ok(())
     }
 
-    pub async fn get_ln_pay_outcome(
-        &self,
-        operation_id: OperationId,
-        log_entry: OperationLogEntry,
-    ) -> Option<LnPayState> {
-        let outcome = log_entry.outcome::<PayState>();
-
-        // Return client's cached outcome if we find it
-        if let Some(PayState::Pay(outcome)) = outcome {
-            return Some(outcome);
-        } else if matches!(outcome, Some(PayState::Internal(_))) {
-            return None;
-        }
-
-        // Return our cached outcome if we find it
-        if let Some(outcome) = self.get_operation_state(&operation_id).await {
-            return Some(outcome);
-        }
-
-        let ln = self.client.ln().ok()?;
-
-        match ln.subscribe_ln_pay(operation_id).await {
-            Ok(UpdateStreamOrOutcome::Outcome(outcome)) => Some(outcome),
-            Ok(UpdateStreamOrOutcome::UpdateStream(mut stream)) => stream.next().await,
-            Err(_) => None,
-        }
-    }
-
     pub async fn get_deposit_outcome(&self, operation_id: OperationId) -> Option<DepositStateV2> {
         // Return our cached outcome if we find it
         if let Some(outcome) = self
@@ -2244,6 +2218,7 @@ impl FederationV2 {
                                 LightningOperationMetaVariant::Pay(LightningOperationMetaPay {
                                     invoice,
                                     fee,
+                                    is_internal_payment,
                                     ..
                                 }) => {
                                     let extra_meta = serde_json::from_value::<LightningSendMetadata>(
@@ -2263,13 +2238,43 @@ impl FederationV2 {
                                             + fedi_fee_msats
                                             + fee.msats,
                                     });
+                                    let state = if is_internal_payment {
+                                        self.get_client_operation_outcome(
+                                            op_key.operation_id,
+                                            entry,
+                                            |op_id| async move { self.client.ln()?.subscribe_internal_pay(op_id).await }
+                                        )
+                                        .await
+                                        .map(|internal_pay_state| match internal_pay_state {
+                                            InternalPayState::Funding => LnPayState::Created,
+                                            InternalPayState::Preimage(preimage) =>  {
+                                                LnPayState::Success {
+                                                    preimage: preimage.0.to_lower_hex_string(),
+                                                }
+                                            }
+                                            InternalPayState::RefundSuccess { error, .. } =>  {
+                                                LnPayState::Refunded {
+                                                    gateway_error: GatewayPayError::GatewayInternalError {
+                                                        error_code: None,
+                                                        error_message: error.to_string()
+                                                    }
+                                                }
+                                            },
+                                            InternalPayState::RefundError { error_message, .. } => LnPayState::UnexpectedError { error_message },
+                                            InternalPayState::FundingFailed { .. } => LnPayState::Canceled,
+                                            InternalPayState::UnexpectedError(error_message) => LnPayState::UnexpectedError { error_message },
+                                        })
+                                    } else {
+                                        self.get_client_operation_outcome(
+                                            op_key.operation_id,
+                                            entry,
+                                            |op_id| async move { self.client.ln()?.subscribe_ln_pay(op_id).await }
+                                        ).await
+                                    };
                                     transaction_kind = RpcTransactionKind::LnPay {
                                         ln_invoice: invoice.to_string(),
                                         lightning_fees: RpcAmount(fee),
-                                        state: self
-                                            .get_ln_pay_outcome(op_key.operation_id, entry)
-                                            .await
-                                            .map(Into::into),
+                                        state: state.map(Into::into),
                                     };
                                 }
                                 LightningOperationMetaVariant::Receive { invoice, .. } => {
