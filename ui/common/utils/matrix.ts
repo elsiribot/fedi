@@ -43,7 +43,7 @@ export const mxcUrlToHttpUrl = (
     return url.toString()
 }
 
-const fileSchema = z
+const encryptedFileSchema = z
     .object({
         hashes: z.object({
             sha256: z.string(),
@@ -53,6 +53,8 @@ const fileSchema = z
     })
     // Don't strip off additional decryption keys from the file object
     .passthrough()
+
+export type MatrixEncryptedFile = z.infer<typeof encryptedFileSchema>
 
 const contentSchemas = {
     /* Matrix standard events, not an exhaustive list */
@@ -73,7 +75,7 @@ const contentSchemas = {
             w: z.number(),
             h: z.number(),
         }),
-        file: fileSchema,
+        file: encryptedFileSchema,
     }),
     'm.video': z.object({
         msgtype: z.literal('m.video'),
@@ -84,7 +86,7 @@ const contentSchemas = {
             w: z.number(),
             h: z.number(),
         }),
-        file: fileSchema,
+        file: encryptedFileSchema,
     }),
     'm.file': z.object({
         msgtype: z.literal('m.file'),
@@ -93,7 +95,7 @@ const contentSchemas = {
             mimetype: z.string(),
             size: z.number(),
         }),
-        file: fileSchema,
+        file: encryptedFileSchema,
     }),
     'm.emote': z.object({
         msgtype: z.literal('m.emote'),
