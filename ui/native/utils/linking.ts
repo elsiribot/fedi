@@ -5,7 +5,7 @@ import { makeLog } from '@fedi/common/utils/log'
 
 import { NavigationLinkingConfig } from '../types/navigation'
 import { isZendeskNotification } from './notifications'
-import { launchZendeskSupport } from './support'
+import { launchZendeskSupport, zendeskCloseMessagingView } from './support'
 
 const log = makeLog('utils/linking')
 
@@ -136,6 +136,9 @@ export const getLinkingConfig = (
                 'url',
                 async ({ url }) => {
                     log.info('URL received', url)
+
+                    // Attempt to close Zendesk Messaging View if it's open
+                    await zendeskCloseMessagingView()
 
                     // If navigation is warranted, it return a link.
                     // Otherwise, it returns "" and calls fallback
