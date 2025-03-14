@@ -50,6 +50,10 @@ const navRoutes: Array<PrefixRoute | AbsoluteRoute> = [
         path: '/settings/currency',
         showWhen: 'desktop',
     },
+    {
+        prefix: '/share-logs',
+        showWhen: 'desktop',
+    },
 ]
 
 /**

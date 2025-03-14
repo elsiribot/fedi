@@ -1,3 +1,4 @@
+import { useRouter } from 'next/router'
 import { useEffect, useState } from 'react'
 import { Trans, useTranslation } from 'react-i18next'
 
@@ -7,6 +8,7 @@ import { Button } from '../components/Button'
 import { ContentBlock } from '../components/ContentBlock'
 import * as Layout from '../components/Layout'
 import ShareLogs from '../components/ShareLogs'
+import Success from '../components/Success'
 import { Text } from '../components/Text'
 import { useShareLogs } from '../hooks/export'
 import { styled, theme } from '../styles'
@@ -18,6 +20,7 @@ const BUG_CLICK_THRESHOLD = 21
 export default function ShareLogsPage() {
     const { t } = useTranslation()
     const { status, collectAttachmentsAndSubmit } = useShareLogs()
+    const { push } = useRouter()
 
     const [ticketNumber, setTicketNumber] = useState('')
     const [error, setError] = useState<string | null>(null)
@@ -43,11 +46,6 @@ export default function ShareLogsPage() {
             setError('Logs could not be submitted')
             return
         }
-
-        if (status === 'success') {
-            setError(null)
-            setTicketNumber('')
-        }
     }, [status])
 
     const handleOnSubmit = async () => {
@@ -63,6 +61,17 @@ export default function ShareLogsPage() {
         if (newBugClicks > BUG_CLICK_THRESHOLD) {
             setSendDb(true)
         }
+    }
+
+    if (status === 'success') {
+        return (
+            <Success
+                title={t('feature.bug.success-title')}
+                description={t('feature.bug.success-subtitle')}
+                buttonText={t('words.done')}
+                onClick={() => push('/settings')}
+            />
+        )
     }
 
     return (
@@ -105,8 +114,7 @@ export default function ShareLogsPage() {
                     <Button
                         width="full"
                         loading={status === 'loading'}
-                        onClick={() => handleOnSubmit()}
-                        disabled={status === 'loading'}>
+                        onClick={() => handleOnSubmit()}>
                         {t('words.submit')}
                     </Button>
                 </Layout.Actions>
