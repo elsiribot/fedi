@@ -125,8 +125,11 @@ const MessageInput: React.FC<MessageInputProps> = ({
 
     const anyAssetExceedsSize = useCallback(
         (assets: Asset[] | DocumentPickerResponse[], size: number) => {
+            const formattedSize = formatFileSize(size)
             let exceeds = false
-            let message: ResourceKey = 'errors.files-may-not-exceed-size'
+            let message: ResourceKey = t('errors.files-may-not-exceed-size', {
+                size: formattedSize,
+            })
 
             for (const asset of assets) {
                 if ('size' in asset && asset.size && asset.size > size) {
@@ -138,9 +141,13 @@ const MessageInput: React.FC<MessageInputProps> = ({
                     asset.fileSize > size
                 ) {
                     if (asset.type?.includes('image'))
-                        message = 'errors.images-may-not-exceed-size'
+                        message = t('errors.images-may-not-exceed-size', {
+                            size: formattedSize,
+                        })
                     else if (asset.type?.includes('video'))
-                        message = 'errors.videos-may-not-exceed-size'
+                        message = t('errors.videos-may-not-exceed-size', {
+                            size: formattedSize,
+                        })
 
                     exceeds = true
                 }
@@ -148,7 +155,7 @@ const MessageInput: React.FC<MessageInputProps> = ({
 
             if (exceeds) {
                 toast.show({
-                    content: t(message, formatFileSize(size)),
+                    content: message,
                     status: 'error',
                 })
             }
