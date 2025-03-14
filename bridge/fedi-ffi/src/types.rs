@@ -519,17 +519,26 @@ pub enum RpcTransactionDirection {
 #[ts(export)]
 pub struct RpcTransaction {
     pub id: String,
-    #[ts(type = "number")]
-    pub created_at: u64,
     pub amount: RpcAmount,
     pub fedi_fee_status: Option<RpcOperationFediFeeStatus>,
     pub txn_notes: String,
     pub tx_date_fiat_info: Option<FiatFXInfo>,
+    pub frontend_metadata: FrontendMetadata,
     #[serde(flatten)]
     pub kind: RpcTransactionKind,
     /// time when this operation was settled.
     #[ts(type = "number | null")]
     pub outcome_time: Option<u64>,
+}
+
+#[derive(Debug, Deserialize, Serialize, TS)]
+#[serde(rename_all = "camelCase")]
+#[ts(export)]
+pub struct RpcTransactionListEntry {
+    #[ts(type = "number")]
+    pub created_at: u64,
+    #[serde(flatten)]
+    pub transaction: RpcTransaction,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, TS)]
@@ -575,20 +584,20 @@ pub enum RpcTransactionKind {
 impl RpcTransaction {
     pub fn new(
         id: String,
-        created_at: u64,
         amount: RpcAmount,
         fedi_fee_status: Option<RpcOperationFediFeeStatus>,
         tx_date_fiat_info: Option<FiatFXInfo>,
         txn_notes: String,
+        frontend_metadata: FrontendMetadata,
         kind: RpcTransactionKind,
     ) -> Self {
         Self {
             id,
-            created_at,
             amount,
             fedi_fee_status,
             txn_notes,
             tx_date_fiat_info,
+            frontend_metadata,
             kind,
             outcome_time: None,
         }
@@ -832,19 +841,68 @@ impl From<ReissueExternalNotesState> for RpcOOBReissueState {
     }
 }
 
+#[derive(Serialize, Deserialize, Default, Debug, TS, Clone)]
+#[serde(rename_all = "camelCase")]
+#[ts(export)]
+pub struct FrontendMetadata {
+    pub initial_notes: Option<String>,
+    pub recipient_matrix_id: Option<String>,
+    pub sender_matrix_id: Option<String>,
+}
+
+#[derive(Serialize, Deserialize, Clone)]
+#[serde(untagged)]
+/// Use this meta unless a specific metadata is defined for that transaction.
+pub enum BaseMetadata {
+    // Maps to null in json
+    Legacy,
+    // Maps to object in json
+    Default {
+        frontend_metadata: Option<FrontendMetadata>,
+    },
+}
+
+impl From<FrontendMetadata> for BaseMetadata {
+    fn from(value: FrontendMetadata) -> Self {
+        Self::Default {
+            frontend_metadata: Some(value),
+        }
+    }
+}
+
+impl From<BaseMetadata> for Option<FrontendMetadata> {
+    fn from(value: BaseMetadata) -> Self {
+        match value {
+            BaseMetadata::Legacy => None,
+            BaseMetadata::Default { frontend_metadata } => frontend_metadata,
+        }
+    }
+}
+
+impl Default for BaseMetadata {
+    fn default() -> Self {
+        BaseMetadata::Default {
+            frontend_metadata: None,
+        }
+    }
+}
+
 #[derive(Debug, Deserialize, Serialize)]
 pub struct EcashReceiveMetadata {
     pub internal: bool,
+    pub frontend_metadata: Option<FrontendMetadata>,
 }
 
 #[derive(Debug, Deserialize, Serialize)]
 pub struct EcashSendMetadata {
     pub internal: bool,
+    pub frontend_metadata: Option<FrontendMetadata>,
 }
 
 #[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct LightningSendMetadata {
     pub is_fedi_fee_remittance: bool,
+    pub frontend_metadata: Option<FrontendMetadata>,
 }
 
 #[derive(Debug, Deserialize, Serialize, TS)]

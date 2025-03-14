@@ -159,6 +159,12 @@ export type FiatFXInfo = {
   btcToFiatHundredths: number;
 };
 
+export type FrontendMetadata = {
+  initialNotes: string | null;
+  recipientMatrixId: string | null;
+  senderMatrixId: string | null;
+};
+
 export type GuardianStatus =
   | { online: { guardian: string; latency_ms: number } }
   | { error: { guardian: string; error: string } }
@@ -477,7 +483,8 @@ export type RpcMethods = {
   validateEcash: [validateEcash, RpcEcashInfo];
   cancelEcash: [cancelEcash, null];
   updateCachedFiatFXInfo: [updateCachedFiatFXInfo, null];
-  listTransactions: [listTransactions, Array<RpcTransaction>];
+  listTransactions: [listTransactions, Array<RpcTransactionListEntry>];
+  getTransaction: [getTransaction, RpcTransaction];
   updateTransactionNotes: [updateTransactionNotes, null];
   backupNow: [backupNow, null];
   getMnemonic: [getMnemonic, Array<string>];
@@ -812,11 +819,11 @@ export type RpcTimelineItemEvent = {
 
 export type RpcTransaction = {
   id: string;
-  createdAt: number;
   amount: RpcAmount;
   fediFeeStatus: RpcOperationFediFeeStatus | null;
   txnNotes: string;
   txDateFiatInfo: FiatFXInfo | null;
+  frontendMetadata: FrontendMetadata;
   /**
    * time when this operation was settled.
    */
@@ -875,6 +882,45 @@ export type RpcTransactionKind =
   | { kind: "oobReceive"; state: RpcOOBReissueState | null }
   | { kind: "spDeposit"; state: RpcSPDepositState }
   | { kind: "spWithdraw"; state: RpcSPWithdrawState | null };
+
+export type RpcTransactionListEntry = {
+  createdAt: number;
+  id: string;
+  amount: RpcAmount;
+  fediFeeStatus: RpcOperationFediFeeStatus | null;
+  txnNotes: string;
+  txDateFiatInfo: FiatFXInfo | null;
+  frontendMetadata: FrontendMetadata;
+  /**
+   * time when this operation was settled.
+   */
+  outcomeTime: number | null;
+} & (
+  | {
+      kind: "lnPay";
+      ln_invoice: string;
+      lightning_fees: RpcAmount;
+      state: RpcLnPayState | null;
+    }
+  | { kind: "lnReceive"; ln_invoice: string; state: RpcLnReceiveState | null }
+  | {
+      kind: "onchainWithdraw";
+      onchain_address: string;
+      onchain_txid: string;
+      onchain_fees: RpcAmount;
+      onchain_fee_rate: number;
+      state: RpcOnchainWithdrawState | null;
+    }
+  | {
+      kind: "onchainDeposit";
+      onchain_address: string;
+      state: RpcOnchainDepositState | null;
+    }
+  | { kind: "oobSend"; state: RpcOOBSpendState | null }
+  | { kind: "oobReceive"; state: RpcOOBReissueState | null }
+  | { kind: "spDeposit"; state: RpcSPDepositState }
+  | { kind: "spWithdraw"; state: RpcSPWithdrawState | null }
+);
 
 export type RpcUserId = string;
 
@@ -1053,12 +1099,16 @@ export type fedimintVersion = {};
 
 export type fetchRegisteredDevices = {};
 
-export type generateAddress = { federationId: RpcFederationId };
+export type generateAddress = {
+  federationId: RpcFederationId;
+  frontendMetadata: FrontendMetadata;
+};
 
 export type generateEcash = {
   federationId: RpcFederationId;
   amount: RpcAmount;
   includeInvite: boolean;
+  frontendMetadata: FrontendMetadata;
 };
 
 export type generateInvoice = {
@@ -1066,6 +1116,7 @@ export type generateInvoice = {
   amount: RpcAmount;
   description: string;
   expiry: number | null;
+  frontendMetadata: FrontendMetadata;
 };
 
 export type generateReusedEcashProofs = { federationId: RpcFederationId };
@@ -1087,6 +1138,11 @@ export type getNostrPubkey = {};
 export type getNostrSecret = {};
 
 export type getSensitiveLog = {};
+
+export type getTransaction = {
+  federationId: RpcFederationId;
+  operationId: RpcOperationId;
+};
 
 export type joinCommunity = { inviteCode: string };
 
@@ -1272,9 +1328,14 @@ export type payAddress = {
   federationId: RpcFederationId;
   address: string;
   sats: bigint;
+  frontendMetadata: FrontendMetadata;
 };
 
-export type payInvoice = { federationId: RpcFederationId; invoice: string };
+export type payInvoice = {
+  federationId: RpcFederationId;
+  invoice: string;
+  frontendMetadata: FrontendMetadata;
+};
 
 export type previewPayAddress = {
   federationId: RpcFederationId;
@@ -1282,7 +1343,11 @@ export type previewPayAddress = {
   sats: bigint;
 };
 
-export type receiveEcash = { federationId: RpcFederationId; ecash: string };
+export type receiveEcash = {
+  federationId: RpcFederationId;
+  ecash: string;
+  frontendMetadata: FrontendMetadata;
+};
 
 export type recheckPeginAddress = {
   federationId: RpcFederationId;

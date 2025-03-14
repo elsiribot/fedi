@@ -36,7 +36,7 @@ use super::storage::Storage;
 use super::types::{
     RpcAmount, RpcFederation, RpcFederationId, RpcInvoice, RpcOperationId, RpcPayInvoiceResponse,
     RpcPeerId, RpcPublicKey, RpcRecoveryId, RpcSignedLnurlMessage, RpcStabilityPoolAccountInfo,
-    RpcTransaction, SocialRecoveryQr,
+    SocialRecoveryQr,
 };
 use crate::api::IFediApi;
 use crate::bridge::{BridgeFull, BridgeRuntime};
@@ -55,11 +55,11 @@ use crate::matrix::{
 use crate::observable::{Observable, ObservableVec};
 use crate::storage::{DeviceIdentifier, FiatFXInfo};
 use crate::types::{
-    federation_v2_to_rpc_federation, GuardianStatus, RpcBridgeStatus, RpcCommunity,
-    RpcDeviceIndexAssignmentStatus, RpcEcashInfo, RpcFederationMaybeLoading, RpcFederationPreview,
-    RpcFeeDetails, RpcGenerateEcashResponse, RpcLightningGateway, RpcMediaUploadParams,
-    RpcNostrPubkey, RpcNostrSecret, RpcPayAddressResponse, RpcRegisteredDevice,
-    RpcTransactionDirection,
+    federation_v2_to_rpc_federation, FrontendMetadata, GuardianStatus, RpcBridgeStatus,
+    RpcCommunity, RpcDeviceIndexAssignmentStatus, RpcEcashInfo, RpcFederationMaybeLoading,
+    RpcFederationPreview, RpcFeeDetails, RpcGenerateEcashResponse, RpcLightningGateway,
+    RpcMediaUploadParams, RpcNostrPubkey, RpcNostrSecret, RpcPayAddressResponse,
+    RpcRegisteredDevice, RpcTransaction, RpcTransactionDirection, RpcTransactionListEntry,
 };
 
 #[derive(Debug, thiserror::Error)]
@@ -328,9 +328,15 @@ async fn generateInvoice(
     amount: RpcAmount,
     description: String,
     expiry: Option<u32>,
+    frontend_metadata: FrontendMetadata,
 ) -> anyhow::Result<String> {
     let rpc_invoice = federation
-        .generate_invoice(amount, description, expiry.map(|x| x.into()))
+        .generate_invoice(
+            amount,
+            description,
+            expiry.map(|x| x.into()),
+            frontend_metadata,
+        )
         .await?;
     Ok(rpc_invoice.invoice)
 }
@@ -357,9 +363,10 @@ async fn decodeInvoice(
 async fn payInvoice(
     federation: Arc<FederationV2>,
     invoice: String,
+    frontend_metadata: FrontendMetadata,
 ) -> anyhow::Result<RpcPayInvoiceResponse> {
     let invoice: Bolt11Invoice = invoice.trim().parse().context(ErrorCode::InvalidInvoice)?;
-    federation.pay_invoice(&invoice).await
+    federation.pay_invoice(&invoice, frontend_metadata).await
 }
 
 #[macro_rules_derive(federation_recovering_rpc_method!)]
@@ -376,8 +383,11 @@ async fn switchGateway(
 }
 
 #[macro_rules_derive(federation_rpc_method!)]
-async fn generateAddress(federation: Arc<FederationV2>) -> anyhow::Result<String> {
-    federation.generate_address().await
+async fn generateAddress(
+    federation: Arc<FederationV2>,
+    frontend_metadata: FrontendMetadata,
+) -> anyhow::Result<String> {
+    federation.generate_address(frontend_metadata).await
 }
 
 #[macro_rules_derive(federation_rpc_method!)]
@@ -406,10 +416,13 @@ async fn payAddress(
     address: String,
     // TODO: parse this as bitcoin::Amount
     sats: u64,
+    frontend_metadata: FrontendMetadata,
 ) -> anyhow::Result<RpcPayAddressResponse> {
     let address = address.trim().parse().context("Invalid Bitcoin Address")?;
     let amount: Amount = Amount::from_sat(sats);
-    federation.pay_address(address, amount).await
+    federation
+        .pay_address(address, amount, frontend_metadata)
+        .await
 }
 
 #[macro_rules_derive(federation_rpc_method!)]
@@ -417,8 +430,11 @@ async fn generateEcash(
     federation: Arc<FederationV2>,
     amount: RpcAmount,
     include_invite: bool,
+    frontend_metadata: FrontendMetadata,
 ) -> anyhow::Result<RpcGenerateEcashResponse> {
-    federation.generate_ecash(amount.0, include_invite).await
+    federation
+        .generate_ecash(amount.0, include_invite, frontend_metadata)
+        .await
 }
 
 #[macro_rules_derive(federation_rpc_method!)]
@@ -426,13 +442,13 @@ async fn receiveEcash(
     federation: Arc<FederationV2>,
     // TODO: better type
     ecash: String,
+    frontend_metadata: FrontendMetadata,
 ) -> anyhow::Result<(RpcAmount, RpcOperationId)> {
     federation
-        .receive_ecash(ecash)
+        .receive_ecash(ecash, frontend_metadata)
         .await
         .map(|(amt, op)| (RpcAmount(amt), RpcOperationId(op)))
 }
-
 #[macro_rules_derive(rpc_method!)]
 async fn validateEcash(bridge: &BridgeFull, ecash: String) -> anyhow::Result<RpcEcashInfo> {
     bridge.validate_ecash(ecash).await
@@ -453,11 +469,19 @@ async fn updateCachedFiatFXInfo(
 }
 
 #[macro_rules_derive(federation_rpc_method!)]
+async fn getTransaction(
+    federation: Arc<FederationV2>,
+    operation_id: RpcOperationId,
+) -> anyhow::Result<RpcTransaction> {
+    federation.get_transaction(operation_id.0).await
+}
+
+#[macro_rules_derive(federation_rpc_method!)]
 async fn listTransactions(
     federation: Arc<FederationV2>,
     start_time: Option<u32>,
     limit: Option<u32>,
-) -> anyhow::Result<Vec<RpcTransaction>> {
+) -> anyhow::Result<Vec<RpcTransactionListEntry>> {
     let txs = federation
         .list_transactions(
             limit.map_or(usize::MAX, |l| l as usize),
@@ -904,6 +928,7 @@ async fn evilSpamInvoices(federation: Arc<FederationV2>) -> anyhow::Result<()> {
             RpcAmount(fedimint_core::Amount::from_sats(100)),
             String::from("evil was here"),
             None,
+            FrontendMetadata::default(),
         ));
     }
     futures::future::try_join_all(futs).await?;
@@ -914,7 +939,10 @@ async fn evilSpamInvoices(federation: Arc<FederationV2>) -> anyhow::Result<()> {
 async fn evilSpamAddress(federation: Arc<FederationV2>) -> anyhow::Result<()> {
     let mut futs = vec![];
     for _ in 0..1000 {
-        futs.push(generateAddress(federation.clone()));
+        futs.push(generateAddress(
+            federation.clone(),
+            FrontendMetadata::default(),
+        ));
     }
     futures::future::try_join_all(futs).await?;
     Ok(())
@@ -1545,6 +1573,7 @@ rpc_methods!(RpcMethods {
     // Transactions
     updateCachedFiatFXInfo,
     listTransactions,
+    getTransaction,
     updateTransactionNotes,
     // Recovery
     backupNow,
@@ -2428,7 +2457,10 @@ pub mod tests {
 
             let federation = bridge.federations.get_federation(&federation_id)?;
             let ecash = cli_generate_ecash(fedimint_core::Amount::from_msats(10_000)).await?;
-            amount = receiveEcash(federation.clone(), ecash).await?.0 .0;
+            amount = receiveEcash(federation.clone(), ecash, FrontendMetadata::default())
+                .await?
+                .0
+                 .0;
             wait_for_ecash_reissue(&federation).await?;
             bridge
                 .runtime
@@ -2495,8 +2527,14 @@ pub mod tests {
             Amount::from_msats((receive_amount.msats * fedi_fees_receive_ppm).div_ceil(MILLION));
         let rpc_receive_amount = RpcAmount(receive_amount);
         let description = "test".to_string();
-        let invoice_string =
-            generateInvoice(federation.clone(), rpc_receive_amount, description, None).await?;
+        let invoice_string = generateInvoice(
+            federation.clone(),
+            rpc_receive_amount,
+            description,
+            None,
+            FrontendMetadata::default(),
+        )
+        .await?;
 
         cln_pay_invoice(&invoice_string).await?;
 
@@ -2534,7 +2572,12 @@ pub mod tests {
         let invoice_string = invoice.to_string();
 
         // check balance
-        payInvoice(federation.clone(), invoice_string).await?;
+        payInvoice(
+            federation.clone(),
+            invoice_string,
+            FrontendMetadata::default(),
+        )
+        .await?;
 
         // check that core-lightning got paid
         cln_wait_invoice(&label).await?;
@@ -2574,7 +2617,7 @@ pub mod tests {
         let receive_fedi_fee = Amount::from_msats(
             (ecash_receive_amount.msats * fedi_fees_receive_ppm).div_ceil(MILLION),
         );
-        receiveEcash(federation.clone(), ecash).await?;
+        receiveEcash(federation.clone(), ecash, FrontendMetadata::default()).await?;
         wait_for_ecash_reissue(&federation).await?;
 
         // check balance (sometimes fedimint-cli gives more than we ask for)
@@ -2587,18 +2630,26 @@ pub mod tests {
         // If fedi_fee != 0, we expect this to fail since we cannot spend all of
         // ecash_receive_amount
         if receive_fedi_fee != Amount::ZERO {
-            assert!(
-                generateEcash(federation.clone(), RpcAmount(ecash_receive_amount), false)
-                    .await
-                    .is_err()
-            );
+            assert!(generateEcash(
+                federation.clone(),
+                RpcAmount(ecash_receive_amount),
+                false,
+                FrontendMetadata::default()
+            )
+            .await
+            .is_err());
         }
         let ecash_send_amount = Amount::from_msats(ecash_receive_amount.msats / 2);
         let send_fedi_fee =
             Amount::from_msats((ecash_send_amount.msats * fedi_fees_send_ppm).div_ceil(MILLION));
-        let send_ecash = generateEcash(federation.clone(), RpcAmount(ecash_send_amount), false)
-            .await?
-            .ecash;
+        let send_ecash = generateEcash(
+            federation.clone(),
+            RpcAmount(ecash_send_amount),
+            false,
+            FrontendMetadata::default(),
+        )
+        .await?
+        .ecash;
 
         assert_eq!(
             ecash_receive_amount - receive_fedi_fee - ecash_send_amount - send_fedi_fee,
@@ -2618,6 +2669,7 @@ pub mod tests {
                 .first()
                 .context("transaction not found")
                 .map_err(ControlFlow::Continue)?
+                .transaction
                 .kind
                 .clone()
             else {
@@ -2641,7 +2693,7 @@ pub mod tests {
         let ecash_requested_amount = fedimint_core::Amount::from_msats(10000);
         let ecash = cli_generate_ecash(ecash_requested_amount).await?;
         let ecash_receive_amount = amount_from_ecash(ecash.clone()).await?;
-        receiveEcash(federation.clone(), ecash).await?;
+        receiveEcash(federation.clone(), ecash, FrontendMetadata::default()).await?;
         wait_for_ecash_reissue(federation.as_ref()).await?;
 
         // check balance
@@ -2661,9 +2713,14 @@ pub mod tests {
             Amount::from_msats((fedi_fee_ppm * iteration_amount.msats).div_ceil(MILLION));
 
         for _ in 0..iterations {
-            generateEcash(federation.clone(), RpcAmount(iteration_amount), false)
-                .await
-                .context("generateEcash")?;
+            generateEcash(
+                federation.clone(),
+                RpcAmount(iteration_amount),
+                false,
+                FrontendMetadata::default(),
+            )
+            .await
+            .context("generateEcash")?;
         }
         // check balance
         assert_eq!(
@@ -2698,11 +2755,13 @@ pub mod tests {
         )
         .await?;
 
-        let address = generateAddress(federation.clone()).await?;
+        let address = generateAddress(federation.clone(), FrontendMetadata::default()).await?;
         bitcoin_cli_send_to_address(&address, "0.1").await?;
 
         assert!(matches!(
-            listTransactions(federation.clone(), None, None).await?[0].kind,
+            listTransactions(federation.clone(), None, None).await?[0]
+                .transaction
+                .kind,
             RpcTransactionKind::OnchainDeposit {
                 state: Some(RpcOnchainDepositState::WaitingForTransaction),
                 ..
@@ -2737,7 +2796,9 @@ pub mod tests {
             .await;
         }
         assert!(matches!(
-            listTransactions(federation.clone(), None, None).await?[0].kind,
+            listTransactions(federation.clone(), None, None).await?[0]
+                .transaction
+                .kind,
             RpcTransactionKind::OnchainDeposit {
                 state: Some(RpcOnchainDepositState::Claimed(_)),
                 ..
@@ -2764,7 +2825,7 @@ pub mod tests {
         let ecash_receive_amount = fedimint_core::Amount::from_msats(100);
         let ecash = cli_generate_ecash(ecash_receive_amount).await?;
         let ecash_receive_amount = amount_from_ecash(ecash.clone()).await?;
-        receiveEcash(federation.clone(), ecash).await?;
+        receiveEcash(federation.clone(), ecash, FrontendMetadata::default()).await?;
         wait_for_ecash_reissue(federation.as_ref()).await?;
 
         // check balance
@@ -2775,6 +2836,7 @@ pub mod tests {
             federation.clone(),
             RpcAmount(Amount::from_msats(ecash_receive_amount.msats / 2)),
             false,
+            FrontendMetadata::default(),
         )
         .await?
         .ecash;
@@ -2804,7 +2866,9 @@ pub mod tests {
         // receive ecash
         let ecash = cli_generate_ecash(Amount::from_msats(200_000)).await?;
         let ecash_receive_amount = amount_from_ecash(ecash.clone()).await?;
-        federation.receive_ecash(ecash).await?;
+        federation
+            .receive_ecash(ecash, FrontendMetadata::default())
+            .await?;
         wait_for_ecash_reissue(&federation).await?;
         assert_eq!(ecash_receive_amount, federation.get_balance().await);
 
@@ -2901,7 +2965,9 @@ pub mod tests {
         // receive ecash
         let ecash = cli_generate_ecash(Amount::from_msats(200_000)).await?;
         let ecash_receive_amount = amount_from_ecash(ecash.clone()).await?;
-        federation.receive_ecash(ecash).await?;
+        federation
+            .receive_ecash(ecash, FrontendMetadata::default())
+            .await?;
         wait_for_ecash_reissue(&federation).await?;
         assert_eq!(ecash_receive_amount, federation.get_balance().await);
 
@@ -3071,7 +3137,9 @@ pub mod tests {
         // Receive some ecash first
         let initial_balance = Amount::from_msats(500_000);
         let ecash = cli_generate_ecash(initial_balance).await?;
-        let (receive_amount, _) = federation.receive_ecash(ecash).await?;
+        let (receive_amount, _) = federation
+            .receive_ecash(ecash, FrontendMetadata::default())
+            .await?;
         wait_for_ecash_reissue(&federation).await?;
 
         // Deposit to seek and verify account info
@@ -3213,7 +3281,9 @@ pub mod tests {
 
         // receive ecash and backup
         let ecash = cli_generate_ecash(fedimint_core::Amount::from_msats(10_000)).await?;
-        federation.receive_ecash(ecash).await?;
+        federation
+            .receive_ecash(ecash, FrontendMetadata::default())
+            .await?;
         wait_for_ecash_reissue(&federation).await?;
         let federation_id = federation.rpc_federation_id();
         backupNow(federation.clone()).await?;
@@ -3385,7 +3455,9 @@ pub mod tests {
         // receive ecash
         let ecash = cli_generate_ecash(Amount::from_msats(200_000)).await?;
         let ecash_receive_amount = amount_from_ecash(ecash.clone()).await?;
-        federation.receive_ecash(ecash).await?;
+        federation
+            .receive_ecash(ecash, FrontendMetadata::default())
+            .await?;
         wait_for_ecash_reissue(&federation).await?;
         assert_eq!(ecash_receive_amount, federation.get_balance().await);
 
@@ -3503,7 +3575,9 @@ pub mod tests {
         // receive ecash
         let ecash = cli_generate_ecash(Amount::from_msats(200_000)).await?;
         let ecash_receive_amount = amount_from_ecash(ecash.clone()).await?;
-        federation.receive_ecash(ecash).await?;
+        federation
+            .receive_ecash(ecash, FrontendMetadata::default())
+            .await?;
         wait_for_ecash_reissue(&federation).await?;
         assert_eq!(ecash_receive_amount, federation.get_balance().await);
 
@@ -3825,7 +3899,9 @@ pub mod tests {
         // Receive ecash, verify no pending or outstanding fees
         let ecash = cli_generate_ecash(Amount::from_msats(2_000_000)).await?;
         let ecash_receive_amount = amount_from_ecash(ecash.clone()).await?;
-        federation.receive_ecash(ecash).await?;
+        federation
+            .receive_ecash(ecash, FrontendMetadata::default())
+            .await?;
         wait_for_ecash_reissue(&federation).await?;
         assert_eq!(ecash_receive_amount, federation.get_balance().await);
         assert_eq!(Amount::ZERO, federation.get_pending_fedi_fees().await);
@@ -3926,7 +4002,9 @@ pub mod tests {
         // Receive ecash, verify no pending or outstanding fees
         let ecash = cli_generate_ecash(Amount::from_msats(2_000_000)).await?;
         let ecash_receive_amount = amount_from_ecash(ecash.clone()).await?;
-        federation.receive_ecash(ecash).await?;
+        federation
+            .receive_ecash(ecash, FrontendMetadata::default())
+            .await?;
         wait_for_ecash_reissue(&federation).await?;
         assert_eq!(ecash_receive_amount, federation.get_balance().await);
         assert_eq!(Amount::ZERO, federation.get_pending_fedi_fees().await);
@@ -4002,12 +4080,12 @@ pub mod tests {
 
             // use some note indices
             let ecash1 = cli_generate_ecash(ecash_receive_amount).await?;
-            receiveEcash(federation_b1.clone(), ecash1).await?;
+            receiveEcash(federation_b1.clone(), ecash1, FrontendMetadata::default()).await?;
             wait_for_ecash_reissue(&federation_b1).await?;
 
             // trigger note index reuse
             let ecash2 = cli_generate_ecash(ecash_receive_amount).await?;
-            receiveEcash(federation_b2.clone(), ecash2).await?;
+            receiveEcash(federation_b2.clone(), ecash2, FrontendMetadata::default()).await?;
             // this will still pass but federation will have unspendable ecash
             wait_for_ecash_reissue(&federation_b2).await?;
 
@@ -4094,7 +4172,7 @@ pub mod tests {
         // receive ecash
         let ecash_receive_amount = fedimint_core::Amount::from_msats(10000);
         let ecash = cli_generate_ecash(ecash_receive_amount).await?;
-        receiveEcash(federation.clone(), ecash).await?;
+        receiveEcash(federation.clone(), ecash, FrontendMetadata::default()).await?;
         wait_for_ecash_reissue(&federation).await?;
         let original_balance = federation.get_balance().await;
         assert!(original_balance.msats != 0);

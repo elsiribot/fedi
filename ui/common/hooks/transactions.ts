@@ -28,7 +28,7 @@ import {
     selectStabilityTransactionHistory,
     selectTransactions,
 } from '../redux/transactions'
-import { LoadedFederation, MSats, Sats, Transaction } from '../types'
+import { LoadedFederation, MSats, Sats, TransactionListEntry } from '../types'
 import { RpcFeeDetails } from '../types/bindings'
 import amountUtils from '../utils/AmountUtils'
 import {
@@ -85,14 +85,14 @@ export function useTxnDisplayUtils(t: TFunction, isStabilityPool = false) {
         : t('words.sats').toUpperCase()
 
     const makeTxnFeeDetailItems = useCallback(
-        (txn: Transaction) => {
+        (txn: TransactionListEntry) => {
             return makeTxnFeeDetailsUtil(t, txn, makeFormattedAmountsFromMSats)
         },
         [makeFormattedAmountsFromMSats, t],
     )
 
     const makeTxnDetailItems = useCallback(
-        (txn: Transaction) => {
+        (txn: TransactionListEntry) => {
             return makeTxnDetailItemsUtil(
                 t,
                 txn,
@@ -112,7 +112,7 @@ export function useTxnDisplayUtils(t: TFunction, isStabilityPool = false) {
     )
 
     const makeTxnAmountText = useCallback(
-        (txn: Transaction, includeCurrency = false) => {
+        (txn: TransactionListEntry, includeCurrency = false) => {
             return `${makeTxnAmountTextUtil(
                 txn,
                 showFiatTxnAmounts,
@@ -130,12 +130,12 @@ export function useTxnDisplayUtils(t: TFunction, isStabilityPool = false) {
         ],
     )
 
-    const makeTxnNotesText = useCallback((txn: Transaction) => {
+    const makeTxnNotesText = useCallback((txn: TransactionListEntry) => {
         return makeTxnNotesTextUtil(txn)
     }, [])
 
     const makeStabilityTxnFeeDetailItems = useCallback(
-        (txn: Transaction) => {
+        (txn: TransactionListEntry) => {
             return makeStabilityTxnFeeDetailsUtil(
                 t,
                 txn,
@@ -146,7 +146,7 @@ export function useTxnDisplayUtils(t: TFunction, isStabilityPool = false) {
     )
 
     const makeStabilityTxnDetailItems = useCallback(
-        (txn: Transaction) => {
+        (txn: TransactionListEntry) => {
             return makeStabilityTxnDetailItemsUtil(
                 t,
                 txn,
@@ -157,28 +157,28 @@ export function useTxnDisplayUtils(t: TFunction, isStabilityPool = false) {
     )
 
     const makeTxnTypeText = useCallback(
-        (txn: Transaction) => {
+        (txn: TransactionListEntry) => {
             return makeTxnTypeTextUtil(txn, t)
         },
         [t],
     )
 
     const makeTxnStatusText = useCallback(
-        (txn: Transaction) => {
+        (txn: TransactionListEntry) => {
             return makeTxnStatusTextUtil(t, txn)
         },
         [t],
     )
 
     const makeTxnDetailTitleText = useCallback(
-        (txn: Transaction) => {
+        (txn: TransactionListEntry) => {
             return makeTxnDetailTitleTextUtil(t, txn)
         },
         [t],
     )
 
     const makeStabilityTxnDetailTitleText = useCallback(
-        (txn: Transaction) => {
+        (txn: TransactionListEntry) => {
             return makeStabilityTxnDetailTitleTextUtil(t, txn)
         },
         [t],
@@ -210,10 +210,8 @@ export function useExportTransactions(fedimint: FedimintBridge, t: TFunction) {
             | { success: true; uri: string; fileName: string }
             | { success: false; message: string }
         > => {
-            let transactions: Array<Transaction> = []
-
             try {
-                transactions = await fetchTransactions({
+                const transactions = await fetchTransactions({
                     // TODO: find a better way than a hardcoded value
                     limit: 10000,
                     federationId: federation.id,

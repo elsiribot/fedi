@@ -7,7 +7,7 @@ import {
 import orderBy from 'lodash/orderBy'
 
 import { CommonState } from '.'
-import { Federation, Transaction } from '../types'
+import { Federation, Transaction, TransactionListEntry } from '../types'
 import { FedimintBridge } from '../utils/fedimint'
 
 type FederationPayloadAction<T = object> = PayloadAction<
@@ -17,7 +17,7 @@ type FederationPayloadAction<T = object> = PayloadAction<
 /*** Initial State ***/
 
 const initialTransactionsState = {
-    transactions: [] as Transaction[],
+    transactions: [] as TransactionListEntry[],
 }
 type FederationTransactionsState = typeof initialTransactionsState
 
@@ -34,22 +34,22 @@ export type TransactionsState = typeof initialState
 const getFederationTxsState = (
     state: TransactionsState,
     federationId: string,
-) =>
-    state[federationId] || {
-        ...initialTransactionsState,
-    }
+) => state[federationId] || { ...initialTransactionsState }
 
 /**
  * Given a list of new transactions and optionally the old ones, return a
  * combined list that has been sorted and deduplicated.
+ *
+ * TODO: maintain createdAt Timestamp for updates... only modify updated fields
+ * for existing transactions
  */
 const updateTransactions = (
-    newTransactions: Transaction[],
-    oldTransactions: Transaction[] = [],
+    newTransactions: TransactionListEntry[],
+    oldTransactions: TransactionListEntry[] = [],
 ) => {
     // Use a Map for O(1) lookups during deduplication
     // The Map preserves insertion order, with newer transactions added first
-    const transactionMap = new Map<string, Transaction>()
+    const transactionMap = new Map<string, TransactionListEntry>()
 
     for (const tx of newTransactions) {
         transactionMap.set(tx.id, tx)
@@ -68,18 +68,29 @@ const updateTransactions = (
     return orderBy(transactions, 'createdAt', 'desc')
 }
 
+const updateSingleTransaction = (
+    transaction: Transaction,
+    oldTransactions: TransactionListEntry[] = [],
+) => {
+    return oldTransactions.map(t =>
+        t.id === transaction.id ? { ...t, ...transaction } : t,
+    )
+}
+
 export const transactionsSlice = createSlice({
     name: 'transactions',
     initialState,
     reducers: {
-        addTransaction(
+        updateTransaction(
             state,
-            action: FederationPayloadAction<{ transaction: Transaction }>,
+            action: FederationPayloadAction<{
+                transaction: Transaction
+            }>,
         ) {
             const { federationId, transaction } = action.payload
             const fedTxState = getFederationTxsState(state, federationId)
-            const transactions = updateTransactions(
-                [transaction],
+            const transactions = updateSingleTransaction(
+                transaction,
                 fedTxState.transactions,
             )
             return {
@@ -109,7 +120,6 @@ export const transactionsSlice = createSlice({
                 },
             }
         })
-
         builder.addCase(updateTransactionNotes.fulfilled, (state, action) => {
             const { federationId, transactionId, notes } = action.meta.arg
             const fedTxState = getFederationTxsState(state, federationId)
@@ -136,12 +146,12 @@ export const transactionsSlice = createSlice({
 
 /*** Basic actions ***/
 
-export const { addTransaction } = transactionsSlice.actions
+export const { updateTransaction } = transactionsSlice.actions
 
 /*** Async thunk actions ***/
 
 export const fetchTransactions = createAsyncThunk<
-    Transaction[],
+    TransactionListEntry[],
     {
         fedimint: FedimintBridge
         federationId: string
@@ -160,7 +170,7 @@ export const fetchTransactions = createAsyncThunk<
         const paginationTimestamp = more
             ? transactions[transactions.length - 1]?.createdAt || undefined
             : undefined
-        return await fedimint.listTransactions(
+        return fedimint.listTransactions(
             federationId,
             paginationTimestamp,
             limit,
