@@ -141,7 +141,7 @@ impl ObservablePool {
     ) -> Result<Observable<T>>
     where
         T: 'static,
-        Fut: Future<Output = Result<()>> + MaybeSend + MaybeSync + 'static,
+        Fut: Future<Output = Result<()>> + MaybeSend + 'static,
     {
         let observable = Observable::new(id, initial);
         let tg = self.task_group.make_subgroup();

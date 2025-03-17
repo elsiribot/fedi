@@ -12,6 +12,7 @@ use bitcoin::Amount;
 use fedi_bug_report::reused_ecash_proofs::SerializedReusedEcashProofs;
 use fedimint_client::db::ChronologicalOperationLogKey;
 use fedimint_core::core::OperationId;
+use fedimint_core::invite_code::InviteCode;
 use fedimint_core::timing::TimeReporter;
 use futures::Future;
 use lightning_invoice::Bolt11Invoice;
@@ -46,8 +47,11 @@ use crate::error::RpcError;
 use crate::event::{Event, EventSink, IEventSink, PanicEvent, SocialRecoveryEvent, TypedEventExt};
 use crate::features::FeatureCatalog;
 use crate::federation::federation_sm::FederationState;
+use crate::federation::federation_v2::client::ClientExt;
 use crate::federation::federation_v2::{BackupServiceStatus, FederationV2};
 use crate::federation::Federations;
+use crate::matrix::multispend::db::MultispendGroupStatus;
+use crate::matrix::multispend::{GroupInvitation, MsEventData, MultispendGroupVoteType};
 use crate::matrix::{
     self, Matrix, RpcBackPaginationStatus, RpcMatrixAccountSession, RpcMatrixUploadResult,
     RpcMatrixUserDirectorySearchResponse, RpcRoomId, RpcRoomMember, RpcRoomNotificationMode,
@@ -57,11 +61,11 @@ use crate::observable::{Observable, ObservableVec};
 use crate::storage::{DeviceIdentifier, FiatFXInfo};
 use crate::types::{
     federation_v2_to_rpc_federation, FrontendMetadata, GuardianStatus, RpcBridgeStatus,
-    RpcCommunity, RpcDeviceIndexAssignmentStatus, RpcEcashInfo, RpcFederationMaybeLoading,
-    RpcFederationPreview, RpcFeeDetails, RpcGenerateEcashResponse, RpcLightningGateway,
-    RpcMediaUploadParams, RpcNostrPubkey, RpcNostrSecret, RpcPayAddressResponse,
-    RpcRegisteredDevice, RpcSPv2CachedSyncResponse, RpcTransaction, RpcTransactionDirection,
-    RpcTransactionListEntry,
+    RpcCommunity, RpcDeviceIndexAssignmentStatus, RpcEcashInfo, RpcEventId,
+    RpcFederationMaybeLoading, RpcFederationPreview, RpcFeeDetails, RpcGenerateEcashResponse,
+    RpcLightningGateway, RpcMediaUploadParams, RpcNostrPubkey, RpcNostrSecret,
+    RpcPayAddressResponse, RpcRegisteredDevice, RpcSPv2CachedSyncResponse, RpcTransaction,
+    RpcTransactionDirection, RpcTransactionListEntry,
 };
 
 #[derive(Debug, thiserror::Error)]
@@ -1546,6 +1550,73 @@ async fn getFeatureCatalog(runtime: Arc<BridgeRuntime>) -> anyhow::Result<Arc<Fe
     Ok(runtime.feature_catalog.clone())
 }
 
+#[macro_rules_derive(rpc_method!)]
+async fn matrixObserveMultispendGroup(
+    matrix: &Matrix,
+    observable_id: u32,
+    room_id: RpcRoomId,
+) -> anyhow::Result<Observable<Option<MultispendGroupStatus>>> {
+    matrix
+        .observe_multispend_group(observable_id.into(), room_id.into_typed()?)
+        .await
+}
+
+#[macro_rules_derive(rpc_method!)]
+async fn matrixSendMultispendGroupInvitation(
+    bridge: &BridgeFull,
+    room_id: RpcRoomId,
+    invitation: GroupInvitation,
+) -> anyhow::Result<()> {
+    let invite_code = InviteCode::from_str(&invitation.federation_invite_code.to_lowercase())?;
+    let federation_id = invite_code.federation_id().to_string();
+    let fed = bridge.federations.get_federation(&federation_id)?;
+    fed.spv2_feature_state()
+        .ok_or(anyhow::anyhow!("SPv2 not enabled"))?;
+    let spv2 = fed.client.spv2()?;
+    let proposer_pubkey = spv2.pub_key_with_passphrase(room_id.0.clone())?;
+    bridge
+        .matrix
+        .get()
+        .ok_or(anyhow::anyhow!("matrix no initialized"))?
+        .send_multispend_group_invitation(
+            &room_id.into_typed()?,
+            invitation,
+            RpcPublicKey(proposer_pubkey),
+        )
+        .await
+}
+
+#[macro_rules_derive(rpc_method!)]
+async fn matrixVoteMultispendGroupInvitation(
+    matrix: &Matrix,
+    room_id: RpcRoomId,
+    invitation: RpcEventId,
+    vote: MultispendGroupVoteType,
+) -> anyhow::Result<()> {
+    matrix
+        .vote_multispend_group_invitation(&room_id.into_typed()?, invitation, vote)
+        .await
+}
+
+#[macro_rules_derive(rpc_method!)]
+async fn matrixCancelMultispendGroupInvitation(
+    matrix: &Matrix,
+    room_id: RpcRoomId,
+) -> anyhow::Result<()> {
+    matrix
+        .cancel_multispend_group_invitation(&room_id.into_typed()?)
+        .await
+}
+
+#[macro_rules_derive(rpc_method!)]
+async fn matrixMultispendEventData(
+    matrix: &Matrix,
+    room_id: RpcRoomId,
+    event_id: RpcEventId,
+) -> anyhow::Result<Option<MsEventData>> {
+    Ok(matrix.get_multispend_event_data(room_id, event_id).await)
+}
+
 // converts from a typed handler into untyped handler
 async fn handle_wrapper<Args, F, Fut, R>(
     f: F,
@@ -1736,6 +1807,12 @@ rpc_methods!(RpcMethods {
     matrixEndPoll,
     matrixRespondToPoll,
     matrixGetMediaPreview,
+    // multispend
+    matrixObserveMultispendGroup,
+    matrixSendMultispendGroupInvitation,
+    matrixVoteMultispendGroupInvitation,
+    matrixCancelMultispendGroupInvitation,
+    matrixMultispendEventData,
 
     // Communities
     communityPreview,

@@ -10,15 +10,16 @@ use std::sync::Arc;
 
 use anyhow::Context;
 use fedimint_core::db::{DatabaseTransaction, IDatabaseTransactionOpsCoreTyped as _};
+use futures::Stream;
 use matrix_sdk::deserialized_responses::TimelineEvent;
-use matrix_sdk::locks::Mutex;
+use matrix_sdk::locks::RwLock;
 use matrix_sdk::ruma::events::{AnySyncTimelineEvent, SyncMessageLikeEvent};
 use matrix_sdk::ruma::{OwnedEventId, OwnedRoomId, RoomId};
 use matrix_sdk::{Client, Room};
-use tokio::sync::watch;
+use tokio::sync::{watch, Notify};
 use tokio_stream::wrappers::WatchStream;
 use tokio_stream::StreamExt;
-use tracing::{debug, error, instrument, warn};
+use tracing::{debug, instrument, warn};
 
 use super::multispend::db::MultispendScannerLastEventKey;
 use super::multispend::{self, MultispendEvent, MULTISPEND_MSGTYPE};
@@ -44,7 +45,8 @@ pub struct RoomRescannerManager {
     client: Client,
     /// Maps room IDs to their state sender channels.
     /// see methods for explaination.
-    rescan_states: Arc<Mutex<HashMap<OwnedRoomId, watch::Sender<RoomRescanState>>>>,
+    rescan_states: Arc<RwLock<HashMap<OwnedRoomId, watch::Sender<RoomRescanState>>>>,
+    new_room_notify: Arc<Notify>,
     /// Reference to the bridge runtime for spawning tasks
     runtime: Arc<BridgeRuntime>,
 }
@@ -54,7 +56,8 @@ impl RoomRescannerManager {
     pub fn new(client: Client, runtime: Arc<BridgeRuntime>) -> Self {
         Self {
             client,
-            rescan_states: Arc::new(Mutex::new(HashMap::new())),
+            rescan_states: Arc::new(RwLock::new(HashMap::new())),
+            new_room_notify: Arc::default(),
             runtime,
         }
     }
@@ -62,13 +65,13 @@ impl RoomRescannerManager {
     /// Wait for any rescan operations to complete for this room
     /// Queues a rescan if this room was not scanned in this run.
     pub async fn wait_for_scanned(&self, room_id: &RoomId) {
-        let never_scanned = { !self.rescan_states.lock().contains_key(room_id) };
+        let never_scanned = { !self.rescan_states.read().contains_key(room_id) };
         if never_scanned {
             self.queue_rescan(room_id);
         }
         let mut rx = {
             self.rescan_states
-                .lock()
+                .read()
                 .get(room_id)
                 .expect("queue inserts the state")
                 .subscribe()
@@ -80,11 +83,26 @@ impl RoomRescannerManager {
             .ok();
     }
 
+    /// A stream that yields items whenever a scan for this room completes.
+    pub async fn scan_complete_stream(&self, room_id: &RoomId) -> impl Stream<Item = ()> {
+        let rx = loop {
+            let notification = self.new_room_notify.notified();
+            if let Some(sender) = self.rescan_states.read().get(room_id) {
+                break sender.subscribe();
+            }
+            // no service running for this room, wait for someone to call queue_rescan
+            notification.await;
+        };
+        WatchStream::new(rx)
+            .filter(|state| matches!(state, RoomRescanState::Idle))
+            .map(drop)
+    }
+
     /// Queues a room for rescanning
     // Just sets the room state to `Queued` and background service will eventually
     // completes.
     pub fn queue_rescan(&self, room_id: &RoomId) {
-        let mut states = self.rescan_states.lock();
+        let mut states = self.rescan_states.write();
         match states.entry(room_id.to_owned()) {
             // if task was running, just update the state, the task will pick this up.
             Entry::Occupied(o) => {
@@ -95,6 +113,8 @@ impl RoomRescannerManager {
                 // if no task is running for this room, we need to start it.
                 let (tx, rx) = watch::channel(RoomRescanState::Queued);
                 v.insert(tx.clone());
+                drop(states);
+                self.new_room_notify.notify_waiters();
 
                 // Start background task using the runtime
                 let room_id = room_id.to_owned();
@@ -234,8 +254,7 @@ impl RoomRescannerManager {
             });
 
         for (sender, event_id, event, event_time) in new_multispend_events {
-            tracing::trace!(?event, "processing event");
-            if let Err(err) = multispend::process_event_db(
+            multispend::process_event_db(
                 dbtx,
                 &RpcRoomId(room_id.to_string()),
                 sender.clone(),
@@ -243,18 +262,7 @@ impl RoomRescannerManager {
                 event.clone(),
                 event_time,
             )
-            .await
-            {
-                // logging the entire event, this might be privacy leaking when you share
-                // the logs.
-                error!(
-                    ?err,
-                    ?sender,
-                    ?event_id,
-                    ?event,
-                    "Error processing multispend event"
-                );
-            }
+            .await;
         }
 
         if let Some(event_id) = new_latest_event_id {

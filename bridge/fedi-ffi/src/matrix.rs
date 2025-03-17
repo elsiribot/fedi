@@ -5,6 +5,7 @@ use std::sync::Arc;
 use std::time::Duration;
 
 use anyhow::{bail, Context, Result};
+use fedimint_core::db::IDatabaseTransactionOpsCoreTyped;
 use fedimint_derive_secret::DerivableSecret;
 use futures::StreamExt;
 use imbl::Vector;
@@ -16,7 +17,7 @@ use matrix_sdk::encryption::BackupDownloadStrategy;
 use matrix_sdk::media::{MediaFormat, MediaRequestParameters};
 use matrix_sdk::notification_settings::NotificationSettings;
 use matrix_sdk::room::edit::EditedContent;
-use matrix_sdk::room::Room;
+use matrix_sdk::room::{Room, RoomMemberRole};
 pub use matrix_sdk::ruma::api::client::account::register::v3 as register;
 use matrix_sdk::ruma::api::client::authenticated_media::get_media_preview;
 use matrix_sdk::ruma::api::client::directory::get_public_rooms_filtered::v3 as get_public_rooms_filtered;
@@ -47,22 +48,27 @@ use matrix_sdk::ruma::events::{
     AnyMessageLikeEventContent, AnySyncMessageLikeEvent, AnySyncTimelineEvent, InitialStateEvent,
     SyncMessageLikeEvent,
 };
-use matrix_sdk::ruma::{assign, EventId, OwnedEventId, OwnedMxcUri, RoomId, UInt, UserId};
+use matrix_sdk::ruma::{
+    assign, EventId, OwnedEventId, OwnedMxcUri, OwnedRoomId, RoomId, UInt, UserId,
+};
 use matrix_sdk::{sliding_sync, Client, RoomInfo, RoomMemberships};
 use matrix_sdk_ui::room_list_service;
 use matrix_sdk_ui::sync_service::{self, SyncService};
 use matrix_sdk_ui::timeline::{default_event_filter, TimelineEventItemId};
 use mime::Mime;
-use multispend::{GroupInvitationWithKeys, MsEventData, MultispendEvent};
+use multispend::db::{MultispendGroupStatus, MultispendMarkedForScanning};
+use multispend::{
+    GroupInvitation, GroupInvitationWithKeys, MsEventData, MultispendEvent, MultispendGroupVoteType,
+};
 use tokio::sync::{mpsc, Mutex};
 use tracing::{error, info, warn};
 
 use crate::bridge::BridgeRuntime;
 use crate::error::ErrorCode;
 use crate::features::StabilityPoolV2FeatureConfigState;
-use crate::observable::{Observable, ObservableVec, ObservableVecUpdate};
+use crate::observable::{Observable, ObservableUpdate, ObservableVec, ObservableVecUpdate};
 use crate::storage::AppState;
-use crate::types::{RpcEventId, RpcMediaUploadParams};
+use crate::types::{RpcEventId, RpcMediaUploadParams, RpcPublicKey};
 use crate::utils::PoisonedLockExt as _;
 
 pub mod multispend;
@@ -285,21 +291,28 @@ impl Matrix {
                 .add_event_handler(move |event: AnySyncMessageLikeEvent, room: Room| {
                     let this = this.clone();
                     async move {
-                        if let AnySyncMessageLikeEvent::RoomMessage(
-                            SyncMessageLikeEvent::Original(m),
-                        ) = event
-                        {
-                            if m.content.msgtype() == multispend::MULTISPEND_MSGTYPE {
-                                let room_id = room.room_id();
+                        let room_id = room.room_id();
+                        let event_id = event.event_id();
+                        let is_multispend = matches!(
+                            &event,
+                            AnySyncMessageLikeEvent::RoomMessage(SyncMessageLikeEvent::Original(m))
+                                if m.content.msgtype() == multispend::MULTISPEND_MSGTYPE
+                        );
 
-                                // anytime we see multispend event, we rescan the room.
-                                this.rescanner.queue_rescan(room_id);
+                        if is_multispend {
+                            this.mark_room_for_scanning(room_id).await;
+                        }
 
-                                // see docs on `send_multispend_server_ack`
-                                let sender = this.send_multispend_server_ack.ensure_lock().clone();
-                                if let Some(sender) = sender {
-                                    sender.send(m.event_id).await.ok();
-                                }
+                        // anytime we see an event in room marked as multispend, we rescan the room.
+                        if this.is_marked_room_for_scanning(room_id).await {
+                            this.rescanner.queue_rescan(room_id);
+                        }
+
+                        if is_multispend {
+                            // see docs on `send_multispend_server_ack`
+                            let sender = this.send_multispend_server_ack.ensure_lock().clone();
+                            if let Some(sender) = sender {
+                                sender.send(event_id.to_owned()).await.ok();
                             }
                         }
                     }
@@ -720,6 +733,34 @@ impl Matrix {
             .event_id)
     }
 
+    pub async fn is_marked_room_for_scanning(&self, room_id: &RoomId) -> bool {
+        let multispend_db = self.runtime.multispend_db();
+        let mut dbtx = multispend_db.begin_transaction_nc().await;
+        dbtx.get_value(&MultispendMarkedForScanning(RpcRoomId(room_id.to_string())))
+            .await
+            .is_some()
+    }
+
+    pub async fn mark_room_for_scanning(&self, room_id: &RoomId) {
+        let multispend_db = self.runtime.multispend_db();
+        multispend_db
+            .autocommit(
+                |dbtx, _| {
+                    Box::pin(async {
+                        dbtx.insert_entry(
+                            &MultispendMarkedForScanning(RpcRoomId(room_id.to_string())),
+                            &(),
+                        )
+                        .await;
+                        anyhow::Ok(())
+                    })
+                },
+                None,
+            )
+            .await
+            .expect("No failure condition")
+    }
+
     pub async fn send_multispend_event(
         &self,
         room_id: &RoomId,
@@ -730,6 +771,8 @@ impl Matrix {
         }
         // Acquire the lock to prevent concurrent sends
         let _lock = self.send_multispend_mutex.lock().await;
+
+        self.mark_room_for_scanning(room_id).await;
 
         let (tx, mut rx) = tokio::sync::mpsc::channel(1);
 
@@ -769,6 +812,12 @@ impl Matrix {
         // wait for this event to be scanned in state.
         self.rescanner.wait_for_scanned(room_id).await;
 
+        if self
+            .is_invalid_multispend_event(RpcEventId(event_id.to_string()))
+            .await
+        {
+            anyhow::bail!(ErrorCode::InvalidMsEvent);
+        }
         Ok(())
     }
 
@@ -1265,6 +1314,92 @@ impl Matrix {
             .await?)
     }
 
+    pub async fn observe_multispend_group(
+        &self,
+        id: u64,
+        room_id: OwnedRoomId,
+    ) -> Result<Observable<Option<MultispendGroupStatus>>> {
+        let this = self.clone();
+        self.runtime
+            .observable_pool
+            .make_observable(
+                id,
+                self.get_multispend_group_status(&room_id).await,
+                move |pool, id| async move {
+                    let mut update_index = 0;
+                    let mut stream = this.rescanner.scan_complete_stream(&room_id).await;
+                    while let Some(()) = stream.next().await {
+                        pool.send_observable_update(ObservableUpdate::new(
+                            id,
+                            update_index,
+                            this.get_multispend_group_status(&room_id).await,
+                        ))
+                        .await;
+                        update_index += 1;
+                    }
+                    Ok(())
+                },
+            )
+            .await
+    }
+
+    async fn get_multispend_group_status(&self, room_id: &RoomId) -> Option<MultispendGroupStatus> {
+        let multispend_db = self.runtime.multispend_db();
+        let mut dbtx = multispend_db.begin_transaction_nc().await;
+        multispend::get_group_status_db(&mut dbtx, &RpcRoomId(room_id.to_string())).await
+    }
+
+    pub async fn send_multispend_group_invitation(
+        &self,
+        room_id: &RoomId,
+        invitation: GroupInvitation,
+        proposer_pubkey: RpcPublicKey,
+    ) -> Result<()> {
+        let room = self.room(room_id).await?;
+        let (own_member, _) = room.own_membership_details().await?;
+        anyhow::ensure!(
+            own_member.suggested_role_for_power_level() == RoomMemberRole::Administrator,
+            ErrorCode::BadRequest
+        );
+        anyhow::ensure!(!room.is_direct().await?, ErrorCode::BadRequest);
+        anyhow::ensure!(
+            room.members(RoomMemberships::ACTIVE).await?.len() > 1,
+            ErrorCode::BadRequest
+        );
+        self.send_multispend_event(
+            room_id,
+            MultispendEvent::GroupInvitation {
+                invitation,
+                proposer_pubkey,
+            },
+        )
+        .await
+    }
+
+    pub async fn cancel_multispend_group_invitation(&self, room_id: &RoomId) -> Result<()> {
+        let room = self.room(room_id).await?;
+        let (own_member, _) = room.own_membership_details().await?;
+        anyhow::ensure!(
+            own_member.suggested_role_for_power_level() == RoomMemberRole::Administrator,
+            ErrorCode::BadRequest
+        );
+        self.send_multispend_event(room_id, MultispendEvent::GroupInvitationCancel {})
+            .await
+    }
+
+    pub async fn vote_multispend_group_invitation(
+        &self,
+        room_id: &RoomId,
+        invitation: RpcEventId,
+        vote: MultispendGroupVoteType,
+    ) -> Result<()> {
+        self.send_multispend_event(
+            room_id,
+            MultispendEvent::GroupInvitationVote { invitation, vote },
+        )
+        .await
+    }
+
     pub async fn get_multispend_finalized_group(
         &self,
         room_id: RpcRoomId,
@@ -1280,11 +1415,17 @@ impl Matrix {
         &self,
         room_id: RpcRoomId,
         event_id: RpcEventId,
-    ) -> anyhow::Result<Option<MsEventData>> {
+    ) -> Option<MsEventData> {
         let multispend_db = self.runtime.multispend_db();
         let mut dbtx = multispend_db.begin_transaction_nc().await;
-        let data = multispend::get_event_data_db(&mut dbtx, &room_id, event_id).await;
-        Ok(data)
+        multispend::get_event_data_db(&mut dbtx, &room_id, event_id).await
+    }
+
+    /// Check if this is an invalid multispend event.
+    pub async fn is_invalid_multispend_event(&self, event_id: RpcEventId) -> bool {
+        let multispend_db = self.runtime.multispend_db();
+        let mut dbtx = multispend_db.begin_transaction_nc().await;
+        multispend::is_invalid_event(&mut dbtx, event_id).await
     }
 
     fn is_multispend_enabled(&self) -> bool {
@@ -1629,7 +1770,7 @@ mod tests {
                 RpcRoomId(room_id.to_string()),
                 RpcEventId(event_id.to_string()),
             )
-            .await?;
+            .await;
         assert!(event_data.is_some());
 
         Ok(())
@@ -1678,7 +1819,7 @@ mod tests {
 
         let event_data1 = matrix1
             .get_multispend_event_data(RpcRoomId(room_id.to_string()), invitation_event_id.clone())
-            .await?;
+            .await;
 
         assert_eq!(
             event_data1,
@@ -1697,7 +1838,7 @@ mod tests {
                         RpcRoomId(room_id.to_string()),
                         invitation_event_id.clone(),
                     )
-                    .await?
+                    .await
                     .context("event not found")
             },
         )
@@ -1790,7 +1931,7 @@ mod tests {
 
         let event_data1 = matrix1
             .get_multispend_event_data(RpcRoomId(room_id.to_string()), invitation_event_id.clone())
-            .await?;
+            .await;
 
         assert_eq!(
             event_data1,
@@ -1810,7 +1951,7 @@ mod tests {
                         RpcRoomId(room_id.to_string()),
                         invitation_event_id.clone(),
                     )
-                    .await?
+                    .await
                     .context("event not found")
             },
         )
@@ -1837,7 +1978,7 @@ mod tests {
                         RpcRoomId(room_id.to_string()),
                         invitation_event_id.clone(),
                     )
-                    .await?
+                    .await
                     .unwrap();
 
                 match &data {
@@ -1862,7 +2003,7 @@ mod tests {
         // Verify matrix2 has the same data
         let event_data2 = matrix2
             .get_multispend_event_data(RpcRoomId(room_id.to_string()), invitation_event_id)
-            .await?;
+            .await;
         assert_eq!(Some(event_data1), event_data2);
 
         // Verify group is not finalized in matrix1
