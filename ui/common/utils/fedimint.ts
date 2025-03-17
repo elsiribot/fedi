@@ -947,16 +947,16 @@ export class FedimintBridge {
 export class BridgeError extends Error {
     public detail: string
     public error: string
-    public code: ErrorCode | null
+    public errorCode: ErrorCode | null
 
     constructor(json: {
         detail: string
         error: string
-        code: ErrorCode | null
+        errorCode: ErrorCode | null
     }) {
         super(json.error)
         this.error = json.error
-        this.code = json.code
+        this.errorCode = json.errorCode
         this.detail = json.detail
     }
 
