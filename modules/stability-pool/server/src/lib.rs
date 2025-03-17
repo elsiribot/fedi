@@ -788,7 +788,7 @@ async fn process_withdrawal_input(
         .await
         .unwrap_or(Amount::ZERO);
 
-    if input.amount < idle_balance {
+    if idle_balance < input.amount {
         return Err(StabilityPoolInputError::InsufficientBalance);
     }
 
