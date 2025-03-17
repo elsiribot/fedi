@@ -319,7 +319,7 @@ export const selectBtcUsdExchangeRate = (
 }
 
 export const selectBtcExchangeRate = (s: CommonState) => {
-    const currency = selectCurrency(s)
+    const currency = selectCurrency(s).split(':')[0]
     const metadata = selectFederationMetadata(s)
     const btcUsdRate = selectBtcUsdExchangeRate(s)
 
@@ -342,7 +342,11 @@ export const selectBtcExchangeRate = (s: CommonState) => {
 
     // Special case for the CFA franc which is a fixed rate to the dollar
     // TODO: Remove me when CFA is added to price oracle.
-    if (currency === SupportedCurrency.CFA && !fiatUsdRate) {
+    if (
+        // XAF and XOF both map to CFA, so just for consistency we need to check for both
+        (currency.startsWith('XAF') || currency.startsWith('XOF')) &&
+        !fiatUsdRate
+    ) {
         fiatUsdRate = 0.0016
     }
 

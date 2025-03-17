@@ -1,6 +1,6 @@
 import { SupportedCurrency } from '../types'
 
-export const currencyFlags = {
+export const currencyFlags: Record<SupportedCurrency, string> = {
     [SupportedCurrency.USD]: '🇺🇸',
     [SupportedCurrency.ARS]: '🇦🇷',
     [SupportedCurrency.AUD]: '🇦🇺',
@@ -10,7 +10,6 @@ export const currencyFlags = {
     [SupportedCurrency.BWP]: '🇧🇼',
     [SupportedCurrency.CAD]: '🇨🇦',
     [SupportedCurrency.CDF]: '🇨🇫',
-    [SupportedCurrency.CFA]: '🇨🇫',
     [SupportedCurrency.CLP]: '🇨🇱',
     [SupportedCurrency.COP]: '🇨🇴',
     [SupportedCurrency.CRC]: '🇨🇷',
@@ -50,7 +49,25 @@ export const currencyFlags = {
     [SupportedCurrency.UYU]: '🇺🇾',
     [SupportedCurrency.VES]: '🇻🇪',
     [SupportedCurrency.VND]: '🇻🇳',
-    [SupportedCurrency.XAF]: '🇨🇫',
     [SupportedCurrency.ZAR]: '🇿🇦',
     [SupportedCurrency.ZMW]: '🇿🇼',
+    [SupportedCurrency.CAMEROON]: '🇨🇲',
+    [SupportedCurrency.CENTRAL_AFRICAN_REPUBLIC]: '🇨🇫',
+    [SupportedCurrency.CHAD]: '🇹🇩',
+    [SupportedCurrency.EQUITORIAL_GUINEA]: '🇬🇶',
+    [SupportedCurrency.GABON]: '🇬🇦',
+    [SupportedCurrency.REPUBLIC_OF_THE_CONGO]: '🇨🇩',
+    [SupportedCurrency.BENIN]: '🇧🇯',
+    [SupportedCurrency.BURKINA_FASO]: '🇧🇫',
+    [SupportedCurrency.COTE_D_IVOIRE]: '🇨🇮',
+    [SupportedCurrency.GUINEA_BISSAU]: '🇬🇼',
+    [SupportedCurrency.MALI]: '🇲🇱',
+    [SupportedCurrency.NIGER]: '🇳🇪',
+    [SupportedCurrency.SENEGAL]: '🇸🇳',
+    [SupportedCurrency.TOGO]: '🇹🇬',
+
+    // XAF and XOF are generic and are shared amongst different African countries
+    // They are not shown in the UI
+    [SupportedCurrency.XAF]: '',
+    [SupportedCurrency.XOF]: '',
 }
