@@ -1,6 +1,4 @@
 import notifee, {
-    AndroidImportance,
-    AndroidVisibility,
     Event,
     EventType,
     NotificationAndroid,
@@ -13,6 +11,7 @@ import { TFunction } from 'i18next'
 import { Appearance, Linking } from 'react-native'
 import DeviceInfo from 'react-native-device-info'
 import * as Zendesk from 'react-native-zendesk-messaging'
+import { v4 as uuidv4 } from 'uuid'
 
 import { theme } from '@fedi/common/constants/theme'
 import {
@@ -25,12 +24,16 @@ import { encodeFediMatrixRoomUri } from '@fedi/common/utils/matrix'
 import { getTxnDirection } from '@fedi/common/utils/wallet'
 
 import { store, AppDispatch } from '../state/store'
-import { Transaction, TransactionDirection, TransactionEvent } from '../types'
+import {
+    TransactionDirection,
+    TransactionEvent,
+    TransactionListEntry,
+} from '../types'
 import { launchZendeskSupport, zendeskCloseMessagingView } from './support'
 
 const log = makeLog('Notifications')
 
-export const NOTIFICATION_TYPES = ['chat', 'payment'] as const
+export const NOTIFICATION_TYPES = ['chat', 'payment', 'announcement'] as const
 export type NOTIFICATION_TYPE = (typeof NOTIFICATION_TYPES)[number]
 
 export const manuallyPublishNotificationToken = async (
@@ -128,35 +131,29 @@ export const displayPaymentReceivedNotification = async (
     event: TransactionEvent,
     t: TFunction,
 ): Promise<void> => {
-    const transaction: Transaction | undefined =
-        typeof event.transaction === 'object' && event.transaction !== null
-            ? event.transaction
-            : undefined
+    let transaction: TransactionListEntry | undefined
 
-    if (!transaction) {
-        return
+    if (typeof event.transaction === 'object' && event.transaction !== null) {
+        transaction = event.transaction as TransactionListEntry
     }
+
+    if (!transaction) return
 
     const direction = getTxnDirection(transaction)
 
-    // Don't show notification for outbound payment
+    // Skip outbound payments
     if (direction !== TransactionDirection.receive) return
 
-    // Don't show notification for onchain txn until it is claimed
+    // Skip on-chain transactions until claimed
     if (
         transaction.kind === 'onchainDeposit' &&
         transaction.state?.type !== 'claimed'
-    ) {
+    )
         return
-    }
 
-    // Don't show notification for ecash txn until it is done
-    if (
-        transaction.kind === 'oobReceive' &&
-        transaction.state?.type !== 'done'
-    ) {
+    // Skip ecash transactions until done
+    if (transaction.kind === 'oobReceive' && transaction.state?.type !== 'done')
         return
-    }
 
     const federations = selectFederations(store.getState())
     const federation = federations.find(f => f.id === event.federationId)
@@ -166,61 +163,70 @@ export const displayPaymentReceivedNotification = async (
         amountUtils.msatToSat(transaction.amount),
     )
 
+    const title = federationName
+        ? `${federationName}: ${t('phrases.payment-received')}`
+        : t('phrases.payment-received')
+
+    const body = `${amountText} ${t('words.sats')}`
+
+    const uniqueId = `payment-${uuidv4()}`
+
     await dispatchNotification(
-        'transaction',
-        'Transactions Channel',
-        federationName
-            ? `${federationName}: ${t('phrases.payment-received')}`
-            : t('phrases.payment-received'),
-        `${amountText} ${t('words.sats')}`,
+        uniqueId,
+        'and-notification-channel',
+        title,
+        body,
         {
             link: '',
             type: 'payment',
         },
         {
             android: {
-                groupSummary: true,
+                pressAction: {
+                    id: uniqueId,
+                    launchActivity: 'default',
+                },
+                autoCancel: true,
+                onlyAlertOnce: false,
                 smallIcon: 'ic_stat_notification',
                 color: getNotificationBackgroundColor(),
             },
             ios: {
-                sound: 'default',
+                foregroundPresentationOptions: {
+                    alert: true,
+                    badge: true,
+                    sound: true,
+                },
             },
         },
     )
 }
 
-/** Displays Chat Notifications */
 export const displayMessageReceivedNotification = async (
-    // data: FirebaseMessagingTypes.RemoteMessage,
-    // todo: get type from bridge
-    data: any, // extends MatrixChatEvent,
+    data: any,
     t: TFunction,
 ) => {
-    if (!data.room_id) return null // throw error?
+    if (!data.room_id) return null
 
     /*
-     * TOOD:
+     * TODO:
      * 1. Get room info
      * 2. Get message info (including sender)
      * 3. Group notification channels by room ID
      */
+
     const title = t('words.chat')
     // TODO: for some reason data.unread is not returning >1 even on subsequent
     // sent messages so it is just confusing to show "You have 1 new message"
     // when really there could be more. Just make it generic for now
     const body = t('feature.notifications.new-messages')
-    // const body = data?.unread
-    //     ? t('feature.notifications.new-messages-count', {
-    //           unread: data.unread,
-    //       })
-    //     : t('feature.notifications.new-messages')
-
     const link = encodeFediMatrixRoomUri(data.room_id, true)
 
+    const uniqueId = `chat-${uuidv4()}`
+
     await dispatchNotification(
-        'chat-message-received',
-        'Chat channel',
+        uniqueId,
+        'and-notification-channel',
         title,
         body,
         {
@@ -230,14 +236,17 @@ export const displayMessageReceivedNotification = async (
         },
         {
             android: {
-                groupSummary: true,
-                smallIcon: 'ic_stat_notification',
-                // TODO: group notifications by chat room? for now it will confuse users since room name is not included but we should be able to fetch the name and group by room ID
-                // groupId: data.room_id,
-                color: getNotificationBackgroundColor(),
+                pressAction: {
+                    id: uniqueId,
+                    launchActivity: 'default',
+                },
             },
             ios: {
-                sound: 'default',
+                foregroundPresentationOptions: {
+                    alert: true,
+                    badge: true,
+                    sound: true,
+                },
             },
         },
     )
@@ -258,62 +267,59 @@ export const getNotificationBackgroundColor = () => {
 
     return colorScheme === 'dark' ? theme.colors.white : theme.colors.black
 }
+
 /**
- * Handles Bespoke Firebase Messaging Campaigns
+ * Displays Announcement Notifications
  */
 export const displayAnnouncement = async (
     message: FirebaseMessagingTypes.RemoteMessage,
 ) => {
-    const id = 'announcement'
-    const channelName = 'Fedi Announcements'
-    const title = message?.notification?.title
-    const body = message?.notification?.body
-
-    // Announcements must have a title & body
-    if (!title || !body)
+    if (!message?.notification?.title || !message?.notification?.body) {
         return log.warn(
-            'Malformed Announcement notification received (no-op)',
+            'Malformed announcement notification received:',
             message,
         )
-
-    const android: NotificationAndroid = {
-        ...message?.notification?.android,
-
-        // override visibility to public
-        visibility: AndroidVisibility.PUBLIC,
-        importance: AndroidImportance.HIGH,
     }
 
-    const ios = {
-        ...message?.notification?.ios,
-        // Fixes type incompatibility between FCM and
-        // notifee for "sound" property
-        // `Type 'NotificationIOSCriticalSound' is not assignable to type 'string'.`
-    } as NotificationIOS
+    const title = message.notification.title
+    const body = message.notification.body
+    const uniqueId = `announcement-${uuidv4()}`
 
     await dispatchNotification(
-        id,
-        channelName,
+        uniqueId,
+        'and-notification-channel',
         title,
         body,
-        {},
-        { android, ios },
+        {
+            type: 'announcement',
+            data: message.data,
+        },
+        {
+            android: {
+                pressAction: {
+                    id: uniqueId,
+                    launchActivity: 'default',
+                },
+                autoCancel: true,
+                onlyAlertOnce: false,
+                smallIcon: 'ic_stat_notification',
+                color: getNotificationBackgroundColor(),
+            },
+            ios: {
+                foregroundPresentationOptions: {
+                    alert: true,
+                    badge: true,
+                    sound: true,
+                },
+                sound: 'default',
+            },
+        },
     )
 }
 
-/**
- * Shows a push notification
- *
- * @param id for Android notification channel
- * @param channelName for Android notification channel
- * @param title Bold notification title
- * @param body Long subtext for notification
- * @param data context for notification
- * @param params platform-specific information for notification
- */
 const dispatchNotification = async (
     id: string,
-    channelName: string,
+    channelId: string,
     title: string,
     body: string,
     data: NotificationData,
@@ -322,36 +328,48 @@ const dispatchNotification = async (
         ios?: NotificationIOS
     } = {},
 ) => {
-    // Request permissions (required for iOS)
-    // await notifee.requestPermission()
-
-    // Create a channel (required for Android)
-    const channelId = await notifee.createChannel({
-        id,
-        name: channelName,
-    })
-    const androidParams = {
-        channelId,
-        // Default open the app when pressed
-        // (required for android)
-        pressAction: {
-            id,
-            launchActivity: 'default',
-            ...params.android?.pressAction,
-        },
-        ...params.android,
-    }
     try {
+        await notifee.incrementBadgeCount()
+        const currentBadgeCount = await notifee.getBadgeCount()
+
+        const androidParams = {
+            channelId,
+            badgeCount: currentBadgeCount,
+            pressAction: {
+                id,
+                launchActivity: 'default',
+                ...params.android?.pressAction,
+            },
+            autoCancel: true,
+            onlyAlertOnce: false,
+            smallIcon: 'ic_stat_notification',
+            color: getNotificationBackgroundColor(),
+            ...params.android,
+        }
+
+        const iosParams = {
+            ...params.ios,
+            badge: currentBadgeCount,
+            sound: 'default',
+            foregroundPresentationOptions: {
+                alert: true,
+                badge: true,
+                sound: true,
+            },
+        }
+
         await notifee.displayNotification({
             id,
             title,
             body,
             data,
             android: androidParams,
-            ios: params.ios,
+            ios: iosParams,
         })
-        // ios
-        await notifee.incrementBadgeCount()
+
+        log.info(
+            `Notification displayed with badge count: ${currentBadgeCount}`,
+        )
     } catch (e) {
         log.error('Failed to display notification', e)
     }
@@ -374,28 +392,40 @@ export async function isZendeskNotification(data: any): Promise<boolean> {
     }
 }
 
+/**
+ * Decrements the badge count by 1, ensuring it doesn't go below zero.
+ */
+const decrementBadgeCountSafely = async () => {
+    try {
+        const currentBadgeCount = await notifee.getBadgeCount()
+
+        if (currentBadgeCount > 0) {
+            const updatedBadgeCount = currentBadgeCount - 1
+            await notifee.setBadgeCount(updatedBadgeCount)
+            log.info(`Badge count decremented to: ${updatedBadgeCount}`)
+        } else {
+            log.info('Badge count is already at zero, no decrement needed.')
+        }
+    } catch (error) {
+        log.error('Failed to decrement badge count:', error)
+    }
+}
+
 // Handles user interaction with notifications
 // TODO: when we add quick actions, incorporate deep linking here
 export const handleBackgroundNotificationUpdate = async ({
     type,
     detail,
 }: Event) => {
-    if (type === EventType.ACTION_PRESS) {
-        log.info('notification event (action pressed)', detail)
-        // TODO: reply? accept/reject? etc?
-    } else if (type === EventType.DELIVERED) {
-        log.info('notification event (delivered)', detail)
-        // TODO: redeem ecash?
-    } else if (type === EventType.DISMISSED) {
-        log.info('notification event (dismissed)', detail)
-        // TODO: dismiss unread indicator?
-    } else if (type === EventType.PRESS) {
-        log.info('notification event (pressed)', JSON.stringify(detail))
+    if (type === EventType.DISMISSED || type === EventType.PRESS) {
+        await decrementBadgeCountSafely()
+    }
 
-        //handle zendesk notifications
+    if (type === EventType.PRESS) {
         const isZendesk = await isZendeskNotification(
             detail?.notification?.data,
         )
+
         if (isZendesk) {
             await zendeskCloseMessagingView()
             await launchZendeskSupport(error =>
@@ -403,7 +433,16 @@ export const handleBackgroundNotificationUpdate = async ({
             )
             return
         }
+
         const link = detail?.notification?.data?.link
-        if (typeof link === 'string') Linking.openURL(link)
+        if (typeof link === 'string') {
+            Linking.openURL(link)
+        }
+    } else if (type === EventType.ACTION_PRESS) {
+        log.info('notification event (action pressed)', detail)
+        // TODO: Handle quick actions if needed
+    } else if (type === EventType.DELIVERED) {
+        log.info('notification event (delivered)', detail)
+        // TODO: Redeem ecash if applicable
     }
 }

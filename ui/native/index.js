@@ -77,10 +77,10 @@ const initializePushNotificationListeners = () => {
     // However, we can make api calls or access offline resources.
     notifee.onBackgroundEvent(e => handleBackgroundNotificationUpdate(e))
 
-    //need this channel for Zendesk deeplinking
+    // Create a channel (required for Android) - for all notifications
     notifee.createChannel({
-        id: 'zendesk-channel',
-        name: 'Zendesk Support Messages',
+        id: 'and-notification-channel',
+        name: 'Android Notification Channel',
         importance: AndroidImportance.HIGH,
         sound: 'default',
     })
@@ -118,7 +118,6 @@ const parseZendeskNotification = async rawMessage => {
     }
 }
 
-// Handles FCM notifications when app is open
 async function handleFCMNotification(m, isForeground = true) {
     log.info(
         `${isForeground ? 'Foreground' : 'Background'} FCM message received:`,
@@ -126,55 +125,51 @@ async function handleFCMNotification(m, isForeground = true) {
     )
 
     try {
-        // Delegate to Zendesk SDK
         const responsibility = await Zendesk.handleNotification(m.data)
         log.info('ZendeskResponsibility', responsibility)
         switch (responsibility) {
             case 'MESSAGING_SHOULD_DISPLAY': {
-                log.info(
-                    'Zendesk message detected. Manually displaying notification.',
-                )
-                const notificationId = m.messageId || 'zendesk-message'
+                log.info('Zendesk notification message detected.')
 
-                //get the data
+                const uniqueId = `zendesk-${uuidv4()}`
+
                 const rawMessage = m.data?.message
-
                 log.debug('Raw Zendesk message:', rawMessage)
 
-                // Parse the raw message into senderName and messageText
                 const { senderName, messageText } =
                     await parseZendeskNotification(rawMessage)
 
-                notifee.cancelNotification(notificationId) // Cancel any existing notification
-
-                const notificationPayload = {
-                    id: notificationId, // Must match for replacement
-                    title: senderName,
-                    body: messageText,
-                    data: m.data,
-                    android: {
-                        channelId: 'zendesk-channel', // Android needs a channel Id which we set up earlier
-                        pressAction: {
-                            id: 'zendesk-message',
-                            launchActivity: 'default',
-                        },
-                        autoCancel: true,
-                        onlyAlertOnce: true,
-                        smallIcon: 'ic_stat_notification',
-                        color: getNotificationBackgroundColor(),
+                await dispatchNotification(
+                    uniqueId,
+                    'and-notification-channel',
+                    senderName,
+                    messageText,
+                    {
+                        type: 'zendesk',
+                        data: m.data,
                     },
-                    ios: {
-                        foregroundPresentationOptions: {
-                            alert: true,
-                            badge: true,
-                            sound: true, // Play sound on iOS
+                    {
+                        android: {
+                            pressAction: {
+                                id: uniqueId,
+                                launchActivity: 'default',
+                            },
+                            autoCancel: true,
+                            onlyAlertOnce: false,
+                            smallIcon: 'ic_stat_notification',
+                            color: getNotificationBackgroundColor(),
                         },
-                        categoryId: 'zendesk-chat', // iOS notification category
+                        ios: {
+                            foregroundPresentationOptions: {
+                                alert: true,
+                                badge: true,
+                                sound: true,
+                            },
+                            sound: 'default',
+                        },
                     },
-                }
+                )
 
-                // Display the notification on both platforms
-                await notifee.displayNotification(notificationPayload)
                 return
             }
             case 'MESSAGING_SHOULD_NOT_DISPLAY': {
@@ -188,7 +183,6 @@ async function handleFCMNotification(m, isForeground = true) {
                 log.info(
                     'Notification not handled by Zendesk, forwarding to custom handler.',
                 )
-                // Handle non-Zendesk notifications or additional actions
             }
         }
 
