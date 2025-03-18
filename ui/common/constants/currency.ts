@@ -65,9 +65,4 @@ export const currencyFlags: Record<SupportedCurrency, string> = {
     [SupportedCurrency.NIGER]: '🇳🇪',
     [SupportedCurrency.SENEGAL]: '🇸🇳',
     [SupportedCurrency.TOGO]: '🇹🇬',
-
-    // XAF and XOF are generic and are shared amongst different African countries
-    // They are not shown in the UI
-    [SupportedCurrency.XAF]: '',
-    [SupportedCurrency.XOF]: '',
 }

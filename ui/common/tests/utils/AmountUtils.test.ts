@@ -202,12 +202,6 @@ describe('AmountUtils', () => {
                 expectedResult: '1.234,57\xa0EUR', // test for non-breaking space char
                 expectedResultNoSymbol: '1.234,57',
             },
-            {
-                currency: SupportedCurrency.CFA,
-                locale: 'fr-TG',
-                expectedResult: '1 234,57 CFA', // careful for non-standard whitespace char
-                expectedResultNoSymbol: '1 234,57', // careful for non-standard whitespace char
-            },
         ]
 
         testCases.forEach(
@@ -245,11 +239,6 @@ describe('AmountUtils', () => {
                 currency: SupportedCurrency.EUR,
                 expectedResult: '€',
             },
-            {
-                locale: 'fr-TG',
-                currency: SupportedCurrency.CFA,
-                expectedResult: 'CFA',
-            },
         ]
 
         testCases.forEach(({ currency, locale, expectedResult }) => {
@@ -265,7 +254,6 @@ describe('AmountUtils', () => {
         const testCases = [
             { currency: SupportedCurrency.USD, expectedResult: 2 },
             { currency: SupportedCurrency.EUR, expectedResult: 2 },
-            { currency: SupportedCurrency.CFA, expectedResult: 2 },
             { currency: 'JPY' as SupportedCurrency, expectedResult: 0 },
         ]
 
