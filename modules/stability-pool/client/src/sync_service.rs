@@ -48,9 +48,14 @@ impl StabilityPoolSyncService {
     /// Caller should run this method in a task.
     pub async fn update_continuously(&self, client_config: &StabilityPoolClientConfig) -> ! {
         loop {
-            if let Some(last_sync) = &*self.sync_response.borrow() {
+            let last_sync_time = self
+                .sync_response
+                .borrow()
+                .as_ref()
+                .map(|x| x.current_cycle.start_time);
+            if let Some(last_sync_time) = last_sync_time {
                 let sleep_time = client_config
-                    .next_cycle_start_time(last_sync.current_cycle.start_time)
+                    .next_cycle_start_time(last_sync_time)
                     .duration_since(fedimint_core::time::now())
                     .map(|x| x + Duration::from_secs(5)) // give server some time
                     .unwrap_or(Duration::ZERO);
