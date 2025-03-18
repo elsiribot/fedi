@@ -385,10 +385,9 @@ export const refreshActiveStabilityPool = createAsyncThunk<
 
         await dispatch(refreshHistoricalCurrencyRates({ fedimint }))
             .unwrap()
-            .catch(error => {
-                log.error(
-                    'Fetching and updating cached currency rates failed',
-                    error,
+            .catch(_error => {
+                log.warn(
+                    'Failed to refresh currency rates during stability pool refresh',
                 )
             })
 

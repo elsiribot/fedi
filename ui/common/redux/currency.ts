@@ -162,9 +162,7 @@ export const updateHistoricalCurrencyRates = createAsyncThunk<
 
 export const refreshHistoricalCurrencyRates = createAsyncThunk<
     void,
-    {
-        fedimint: FedimintBridge
-    },
+    { fedimint: FedimintBridge },
     { state: CommonState }
 >(
     'currency/refreshHistoricalCurrencyRates',
@@ -183,9 +181,9 @@ export const refreshHistoricalCurrencyRates = createAsyncThunk<
                     fiatUsdRates,
                 }),
             ).unwrap()
-        } catch (err) {
-            log.error('Failed to refresh historical currency rates', err)
-            throw err
+        } catch (_err: unknown) {
+            log.warn('Failed to refresh historical currency rates')
+            throw _err
         }
     },
 )
@@ -234,7 +232,7 @@ export const updateCachedFiatFXInfo = createAsyncThunk<
                 `Error updating cached fiat FX info for ${fiatCode}:`,
                 error,
             )
-            throw error // ✅ **Rethrow the error instead of returning `{ success: false }`**
+            throw error
         }
     },
 )

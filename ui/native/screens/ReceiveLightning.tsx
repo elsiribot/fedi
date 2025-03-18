@@ -1,6 +1,6 @@
 import { useFocusEffect } from '@react-navigation/native'
 import type { NativeStackScreenProps } from '@react-navigation/native-stack'
-import React, { useEffect, useState } from 'react'
+import React, { useCallback, useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { ActivityIndicator, Keyboard, StyleSheet, View } from 'react-native'
 
@@ -62,9 +62,11 @@ const ReceiveLightning: React.FC<Props> = ({ navigation, route }: Props) => {
 
     const syncCurrencyRatesAndCache = useSyncCurrencyRatesAndCache(fedimint)
 
-    useFocusEffect(() => {
-        syncCurrencyRatesAndCache()
-    })
+    useFocusEffect(
+        useCallback(() => {
+            syncCurrencyRatesAndCache()
+        }, [syncCurrencyRatesAndCache]),
+    )
 
     useEffect(() => {
         const createNewInvoice = async () => {

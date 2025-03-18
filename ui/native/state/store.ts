@@ -55,10 +55,12 @@ export function initializeNativeStore() {
 
             appDispatch(refreshHistoricalCurrencyRates({ fedimint }))
                 .unwrap()
-                .catch((err: Error) => {
+                .catch((err: unknown) => {
+                    const message =
+                        err instanceof Error ? err.message : String(err)
                     log.warn(
                         'Failed to refresh currency rates on app foreground:',
-                        err,
+                        message,
                     )
                 })
         }

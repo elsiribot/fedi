@@ -114,10 +114,9 @@ export function initializeCommonStore({
 
     dispatch(refreshHistoricalCurrencyRates({ fedimint }))
         .unwrap()
-        .catch(error => {
-            log.error(
+        .catch(_error => {
+            log.warn(
                 'Failed to refresh historical currency rates during store initialization:',
-                error,
             )
         })
 

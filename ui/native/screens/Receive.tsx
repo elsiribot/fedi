@@ -5,7 +5,7 @@
  */
 import { useFocusEffect, useNavigation } from '@react-navigation/native'
 import type { NativeStackScreenProps } from '@react-navigation/native-stack'
-import React from 'react'
+import React, { useCallback } from 'react'
 import { useTranslation } from 'react-i18next'
 import { StyleSheet, View } from 'react-native'
 
@@ -23,10 +23,11 @@ const Receive: React.FC<Props> = () => {
     const navigation = useNavigation<NavigationHook>()
     const syncCurrencyRatesAndCache = useSyncCurrencyRatesAndCache(fedimint)
 
-    useFocusEffect(() => {
-        syncCurrencyRatesAndCache()
-    })
-
+    useFocusEffect(
+        useCallback(() => {
+            syncCurrencyRatesAndCache()
+        }, [syncCurrencyRatesAndCache]),
+    )
     return (
         <View style={styles().container}>
             <OmniInput

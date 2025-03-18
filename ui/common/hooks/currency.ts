@@ -19,9 +19,11 @@ export function useSyncCurrencyRatesAndCache(fedimint: FedimintBridge) {
             await dispatch(
                 refreshHistoricalCurrencyRates({ fedimint }),
             ).unwrap()
+
             log.info('Successfully refreshed historical currency rates.')
-        } catch (err) {
-            log.error('Failed to sync currency rates and update cache:', err)
+        } catch (err: unknown) {
+            const message = err instanceof Error ? err.message : String(err)
+            log.warn('Failed to refresh historical currency rates:', message)
         }
     }, [dispatch, fedimint])
 
