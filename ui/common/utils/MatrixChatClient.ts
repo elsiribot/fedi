@@ -325,7 +325,7 @@ export class MatrixChatClient {
         return this.fedimint
             .matrixUserDirectorySearch({
                 searchTerm,
-                limit: 10,
+                limit: 20,
             })
             .then(this.serializeUserDirectorySearchResponse)
     }

@@ -23,6 +23,7 @@ import {
     sendMatrixReadReceipt,
     unobserveMatrixRoom,
     unsubscribeMatrixSyncStatus,
+    selectMatrixContactsList,
 } from '../redux'
 import {
     MatrixPaymentEvent,
@@ -61,6 +62,9 @@ export function useMatrixUserSearch() {
     const [isSearching, setIsSearching] = useState(false)
     const [searchError, setSearchError] = useState<unknown>()
     const timeoutRef = useRef<ReturnType<typeof setTimeout>>()
+
+    // Grab your recent room members from state (limit 10 for example).
+    const contactsList = useCommonSelector(s => selectMatrixContactsList(s))
 
     const query = searchQuery.trim()
 
@@ -102,11 +106,17 @@ export function useMatrixUserSearch() {
             dispatch(searchMatrixUsers(query))
                 .unwrap()
                 .then(res => {
-                    // HACK: half-measure to prevent users in public groups from appearing
-                    // in these search results. for now we do this UI-only filter until we
-                    // can migrate default groups to use room previews
-                    const filteredUsers = res.results.filter(
-                        r => r.displayName === query,
+                    // Filter by checking which users from DMs are in the search results
+                    const partialMatchedMemberIds = contactsList
+                        .filter(m =>
+                            m.displayName
+                                ?.toLowerCase()
+                                .includes(query.toLowerCase()),
+                        )
+                        .map(m => m.id)
+
+                    const filteredUsers = res.results.filter(r =>
+                        partialMatchedMemberIds.includes(r.id),
                     )
                     setSearchedUsers(filteredUsers)
                 })
@@ -114,7 +124,7 @@ export function useMatrixUserSearch() {
                 .finally(() => setIsSearching(false))
         }, 500)
         return () => clearTimeout(timeoutRef.current)
-    }, [dispatch, query])
+    }, [dispatch, query, contactsList])
 
     return {
         query: searchQuery,

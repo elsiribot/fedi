@@ -1459,6 +1459,27 @@ export const selectMatrixHasNotifications = createSelector(
 )
 
 /**
+ * The contact list is composed of all users we have direct chats with
+ */
+export const selectMatrixContactsList = createSelector(
+    selectMatrixRooms,
+    (s: CommonState) => s.matrix.roomMembers,
+    (rooms, roomMembers) => {
+        const directChatUsers: MatrixRoomMember[] = []
+        for (const room of rooms) {
+            // Only grab users from direct chats
+            const { directUserId } = room
+            if (!directUserId) continue
+            if (directChatUsers.some(u => u.id === directUserId)) continue
+            const user = roomMembers[room.id]?.find(m => m.id === directUserId)
+            if (!user) continue
+            directChatUsers.push(user)
+        }
+        return directChatUsers
+    },
+)
+
+/**
  * Returns users who we have DM'd with most recently. Optionally
  * takes in an argument of the number to return, defaults to 4.
  */
