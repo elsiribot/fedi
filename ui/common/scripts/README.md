@@ -32,30 +32,31 @@ yarn run i18n:autotranslate <languageCode?>
 
 # Export CSV
 
-Exports a CSV file, generated from one of the translation files, to be handed off to translators. The generated file is output at `localization/export.csv`.
+Exports a CSV file containing all user-facing strings, to be handed off to translators. JSON files in the `localization` folder are used as the input and the generated file is output at `localization/export.csv`.
 
 ```bash
-yarn run i18n:export-csv <languageCode> <mode?> <includeEnglish?>
+yarn run i18n:export-csv <targetLanguage?> <mode?> <excludeEnglish?>
 ```
 
 ## Syntax
 
--   `<languageCode>` - a 2-3 letter i18n language code
-    -   For reference, see `ui/common/localization/index.ts`
+-   `<targetLanguage>` - Optional, a 2-3 letter i18n language code
+    -   If not provided, all languages will be included in the exported CSV file
+    -   For reference of all supported languages, see `ui/common/localization/index.ts`
     -   Examples: `en`, `es`, `fr`, etc
 -   `<mode>` - Optional, defaults to `default`
-    -   `default` - exports the translation file in csv format
-    -   `missing` - exports only missing translation keys from the specified translation file that are not present in `en` (English). Keys exported in this mode are set to empty strings
-    -   `full` - inserts additional keys from `en` that are not present in the specified translation file and sets them to empty strings
--   `<includeEnglish>` - Optional
-    -   When provided (`yes` / `true`), includes the original English translations in the exported CSV file BEFORE the foreign translations: `Key, Original (en), Translation (<languageCode>)`
-    -   Otherwise, does not include the original English translations in the exported CSV file: `Key, Translation (<languageCode>)`
+    -   `default` - exports all keys from the translation file in csv format
+    -   `missing` - exports only translation keys missing from the specified translation file matching the `<targetLanguage>`. The values for each key exported in this mode are set to empty strings. Must be used with `<targetLanguage>`
+-   `<excludeEnglish>` - Optional, defaults to `false`
+    -   When provided (`yes` / `true`), excludes the original English translations from the exported CSV file: `Key, Translation (<languageCode>)`
+    -   Otherwise, includes the original English translations in the exported CSV file BEFORE the foreign translations: `Key, Original (en), Translation (<languageCode>)`
 
 ## Example Usage
 
--   `yarn run i18n:export-csv es default`
+-   `yarn run i18n:export-csv`
+-   `yarn run i18n:export-csv es`
 -   `yarn run i18n:export-csv fr missing yes`
--   `yarn run i18n:export-csv id full`
+-   `yarn run i18n:export-csv id default true`
 
 # Import CSV
 
