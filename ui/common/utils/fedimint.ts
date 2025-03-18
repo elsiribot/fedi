@@ -159,6 +159,17 @@ export class FedimintBridge {
         })
     }
 
+    async updateCachedFiatFXInfo(
+        fiatCode: string,
+        btcToFiatHundredths: number,
+    ) {
+        // FIXME: btcToFiatHundredths must be bigint to use this.rpcTyped
+        return this.rpc('updateCachedFiatFXInfo', {
+            fiatCode,
+            btcToFiatHundredths,
+        })
+    }
+
     async joinFederation(inviteCode: string, recoverFromScratch = false) {
         return this.rpcTyped('joinFederation', {
             inviteCode,

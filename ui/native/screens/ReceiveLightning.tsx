@@ -1,9 +1,11 @@
+import { useFocusEffect } from '@react-navigation/native'
 import type { NativeStackScreenProps } from '@react-navigation/native-stack'
 import React, { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { ActivityIndicator, Keyboard, StyleSheet, View } from 'react-native'
 
 import { useRequestForm } from '@fedi/common/hooks/amount'
+import { useSyncCurrencyRatesAndCache } from '@fedi/common/hooks/currency'
 import { useIsOnchainDepositSupported } from '@fedi/common/hooks/federation'
 import { useToast } from '@fedi/common/hooks/toast'
 import {
@@ -57,6 +59,12 @@ const ReceiveLightning: React.FC<Props> = ({ navigation, route }: Props) => {
         BitcoinOrLightning.lightning,
     )
     const showOnchainDeposits = isOnchainSupported
+
+    const syncCurrencyRatesAndCache = useSyncCurrencyRatesAndCache(fedimint)
+
+    useFocusEffect(() => {
+        syncCurrencyRatesAndCache()
+    })
 
     useEffect(() => {
         const createNewInvoice = async () => {

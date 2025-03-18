@@ -20,7 +20,7 @@ import { FedimintBridge } from '../utils/fedimint'
 import { makeLog } from '../utils/log'
 import { hasStorageStateChanged } from '../utils/storage'
 import { browserSlice } from './browser'
-import { currencySlice, fetchCurrencyPrices } from './currency'
+import { currencySlice, refreshHistoricalCurrencyRates } from './currency'
 import { environmentSlice } from './environment'
 import {
     federationSlice,
@@ -112,10 +112,14 @@ export function initializeCommonStore({
 }) {
     const receivedPayments = new Set<string>()
 
-    // Fetch the latest prices immediately.
-    dispatch(fetchCurrencyPrices()).catch(err => {
-        log.warn('Failed initial currency price fetch', err)
-    })
+    dispatch(refreshHistoricalCurrencyRates({ fedimint }))
+        .unwrap()
+        .catch(error => {
+            log.error(
+                'Failed to refresh historical currency rates during store initialization:',
+                error,
+            )
+        })
 
     // Update federation on bridge events
     const unsubscribeFederation = fedimint.addListener(

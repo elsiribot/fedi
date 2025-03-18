@@ -8,7 +8,7 @@ import { TFunction } from 'i18next'
 
 import {
     CommonState,
-    fetchCurrencyPrices,
+    refreshHistoricalCurrencyRates,
     selectActiveFederation,
     selectActiveFederationId,
     selectBtcExchangeRate,
@@ -31,7 +31,7 @@ import amountUtils from '../utils/AmountUtils'
 import { FedimintBridge } from '../utils/fedimint'
 import { makeLog } from '../utils/log'
 
-const log = makeLog('native/redux/wallet')
+const log = makeLog('common/redux/wallet')
 
 type FederationPayloadAction<T = object> = PayloadAction<
     { federationId: string } & T
@@ -382,7 +382,16 @@ export const refreshActiveStabilityPool = createAsyncThunk<
         if (!federationId) throw new Error('errors.unknown-error')
         // Make sure we have the latest exchange rates every time we refresh stabilitypool
         // so deposits/withdrawal amount conversions are as accurate as possible
-        dispatch(fetchCurrencyPrices())
+
+        await dispatch(refreshHistoricalCurrencyRates({ fedimint }))
+            .unwrap()
+            .catch(error => {
+                log.error(
+                    'Fetching and updating cached currency rates failed',
+                    error,
+                )
+            })
+
         dispatch(fetchStabilityPoolCycleStartPrice({ fedimint, federationId }))
 
         dispatch(
