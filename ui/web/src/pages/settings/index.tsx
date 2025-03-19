@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next'
 import InviteMembersIcon from '@fedi/common/assets/svgs/invite-members.svg'
 import LanguageIcon from '@fedi/common/assets/svgs/language.svg'
 import LeaveFederationIcon from '@fedi/common/assets/svgs/leave-federation.svg'
+import NostrIcon from '@fedi/common/assets/svgs/nostr.svg'
 import NoteIcon from '@fedi/common/assets/svgs/note.svg'
 import ScrollIcon from '@fedi/common/assets/svgs/scroll.svg'
 import SocialPeopleIcon from '@fedi/common/assets/svgs/social-people.svg'
@@ -186,6 +187,11 @@ function AdminPage() {
                     label: t('feature.backup.personal-backup'),
                     icon: NoteIcon,
                     href: `/settings/backup/personal`,
+                },
+                {
+                    label: t('feature.nostr.nostr-settings'),
+                    icon: NostrIcon,
+                    href: `/settings/nostr`,
                 },
             ],
         },

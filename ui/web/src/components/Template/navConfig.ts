@@ -47,6 +47,10 @@ const navRoutes: Array<PrefixRoute | AbsoluteRoute> = [
         showWhen: 'desktop',
     },
     {
+        path: '/settings/nostr',
+        showWhen: 'desktop',
+    },
+    {
         path: '/settings/currency',
         showWhen: 'desktop',
     },
