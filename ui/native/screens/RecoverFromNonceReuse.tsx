@@ -4,12 +4,8 @@ import { Button, Text, Theme, useTheme } from '@rneui/themed'
 import { useTranslation } from 'react-i18next'
 import { StyleSheet, View } from 'react-native'
 
-import { joinFederation } from '@fedi/common/redux'
-
-import { fedimint } from '../bridge'
 import { SafeAreaContainer } from '../components/ui/SafeArea'
 import SvgImage from '../components/ui/SvgImage'
-import { useAppDispatch } from '../state/hooks'
 import { RootStackParamList } from '../types/navigation'
 
 export type Props = NativeStackScreenProps<
@@ -17,27 +13,11 @@ export type Props = NativeStackScreenProps<
     'RecoverFromNonceReuse'
 >
 
-const RecoverFromNonceReuse: React.FC<Props> = ({ route }) => {
-    const { federationInvites } = route.params
+const RecoverFromNonceReuse: React.FC<Props> = () => {
     const { theme } = useTheme()
     const { t } = useTranslation()
     const style = styles(theme)
-    const dispatch = useAppDispatch()
     const navigation = useNavigation()
-
-    const handleRecoverFromNonceReuse = () => {
-        for (const invite of federationInvites) {
-            dispatch(
-                joinFederation({
-                    fedimint,
-                    code: invite,
-                    recoverFromScratch: true,
-                }),
-            )
-        }
-
-        navigation.navigate('TabsNavigator')
-    }
 
     return (
         <SafeAreaContainer edges="notop">
@@ -48,7 +28,7 @@ const RecoverFromNonceReuse: React.FC<Props> = ({ route }) => {
                     {t('feature.recovery.continue-recovery-description')}
                 </Text>
             </View>
-            <Button onPress={handleRecoverFromNonceReuse}>
+            <Button onPress={() => navigation.navigate('TabsNavigator')}>
                 {t('words.continue')}
             </Button>
         </SafeAreaContainer>

@@ -43,18 +43,13 @@ const RecoveryInProgress: React.FC<Props> = ({
         })
     }, [federationIdToUse])
 
+    // If the federation is in the progress of recovering and a nonce reuse check fails
+    // notify the user by bringing them to the RecoveryFromNonceReuse screen
     useEffect(() => {
-        return fedimint.addListener('recoveryComplete', async event => {
-            log.info('recovery complete', event)
-            const federationsFailed =
-                await fedimint.listFederationsPendingRejoinFromScratch()
-
+        return fedimint.addListener('nonceReuseCheckFailed', async event => {
+            log.info('nonce reuse check failed', event)
             if (event.federationId === federationIdToUse) {
-                if (federationsFailed.length > 0) {
-                    navigation.navigate('RecoverFromNonceReuse', {
-                        federationInvites: federationsFailed,
-                    })
-                }
+                navigation.navigate('RecoverFromNonceReuse')
             }
         })
     }, [federationIdToUse, navigation])
