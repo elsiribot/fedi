@@ -9,8 +9,8 @@ import { StyleSheet, View } from 'react-native'
 
 import { useToast } from '@fedi/common/hooks/toast'
 import { makeLog } from '@fedi/common/utils/log'
-import { fedimint } from './bridge'
 
+import { fedimint } from './bridge'
 import ConnectedFederationsDrawer from './components/feature/federations/ConnectedFederationsDrawer'
 import { OmniLinkHandler } from './components/feature/omni/OmniLinkHandler'
 import Header from './components/ui/Header'

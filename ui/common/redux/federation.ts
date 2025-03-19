@@ -483,6 +483,25 @@ export const joinFederation = createAsyncThunk<
     },
 )
 
+export const tryRejoinFederationsPendingScratchRejoin = createAsyncThunk<
+    void,
+    { fedimint: FedimintBridge },
+    { state: CommonState }
+>('federation/rejoinFederations', async ({ fedimint }, { dispatch }) => {
+    const federationsFailed =
+        await fedimint.listFederationsPendingRejoinFromScratch()
+
+    for (const federationInvite of federationsFailed) {
+        dispatch(
+            joinFederation({
+                fedimint,
+                code: federationInvite,
+                recoverFromScratch: true,
+            }),
+        )
+    }
+})
+
 export const leaveFederation = createAsyncThunk<
     void,
     { fedimint: FedimintBridge; federationId: string },

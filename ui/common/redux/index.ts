@@ -28,6 +28,7 @@ import {
     processFederationMeta,
     refreshFederations,
     refreshGuardianStatuses,
+    tryRejoinFederationsPendingScratchRejoin,
     updateFederationBalance,
     upsertFederation,
 } from './federation'
@@ -192,18 +193,7 @@ export function initializeCommonStore({
     const unsubscribeNonceReuseCheckFailed = fedimint.addListener(
         'nonceReuseCheckFailed',
         async () => {
-            const federationsFailed =
-                await fedimint.listFederationsPendingRejoinFromScratch()
-
-            for (const federationInvite of federationsFailed) {
-                dispatch(
-                    joinFederation({
-                        fedimint,
-                        code: federationInvite,
-                        recoverFromScratch: true,
-                    }),
-                )
-            }
+            dispatch(tryRejoinFederationsPendingScratchRejoin({ fedimint }))
         },
     )
 

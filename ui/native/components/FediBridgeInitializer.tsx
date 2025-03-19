@@ -19,6 +19,7 @@ import {
     setShouldLockDevice,
     setShouldMigrateSeed,
     startMatrixClient,
+    tryRejoinFederationsPendingScratchRejoin,
 } from '@fedi/common/redux'
 import { selectHasLoadedFromStorage } from '@fedi/common/redux/storage'
 import { TransactionEvent } from '@fedi/common/types'
@@ -79,6 +80,12 @@ export const FediBridgeInitializer: React.FC<Props> = ({ children }) => {
                 await Promise.all([
                     dispatchRef.current(fetchSocialRecovery(fedimint)),
                     dispatchRef.current(initializeNostrKeys({ fedimint })),
+                    // Attempt to rejoin federations that failed a nonce reuse check and require a rejoin from scratch
+                    dispatchRef.current(
+                        tryRejoinFederationsPendingScratchRejoin({
+                            fedimint,
+                        }),
+                    ),
                     // this happens when the user entered seed words but quit the app
                     // before completing device index selection so we fetch devices
                     // again since that typically gets fetched from recoverFromMnemonic
