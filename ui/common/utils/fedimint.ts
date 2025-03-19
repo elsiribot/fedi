@@ -15,6 +15,7 @@ import {
     ObservableVec,
     ObservableVecUpdate,
     RpcAmount,
+    RpcError,
     RpcFederationId,
     RpcFeeDetails,
     RpcMediaSource,
@@ -960,11 +961,7 @@ export class BridgeError extends Error {
     public error: string
     public errorCode: ErrorCode | null
 
-    constructor(json: {
-        detail: string
-        error: string
-        errorCode: ErrorCode | null
-    }) {
+    constructor(json: RpcError) {
         super(json.error)
         this.error = json.error
         this.errorCode = json.errorCode
