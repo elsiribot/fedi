@@ -56,15 +56,21 @@ pub struct FeatureCatalog {
     // iOS emulators.
     pub override_localhost: Option<OverrideLocalhostFeatureConfig>,
 
-    /// Enables multispend v2, powered by the multi-sig stability pool (v2)
-    /// module. This is a global, bridge-level configuration. Actual
-    /// availability of the feature is on a per-federation basis,
-    /// depending on whether or not the new module is available in the
-    /// federation. Note however, that the feature flag takes precedence. If
-    /// the feature flag is disabled, the feature is never available. If the
-    /// feature flag is enabled, then the federation's module availability
-    /// determines the availability of the feature.
-    pub multispend: Option<MultispendFeatureConfig>,
+    /// Enables stability pool v2 module, which also powers the multispend
+    /// feature. This feature is to be thought of as a tri-state enum
+    /// representing 3 scenarios.
+    /// 1. None: both stability pool v2 (and multispend feature) disabled
+    /// 2. Some(SpV2Only): use stability pool v2, but multispend disabled
+    /// 3. Some(Multispend): use stability pool and multispend enabled
+    ///
+    /// This is a global, bridge-level configuration. Actual availability of the
+    /// feature is on a per-federation basis, depending on whether or not
+    /// the new module is available in the federation. Note however, that
+    /// the feature flag takes precedence. If the feature flag is disabled,
+    /// the feature is never available. If the feature flag is enabled, then
+    /// the federation's module availability determines the availability of
+    /// the feature.
+    pub stability_pool_v2: Option<StabilityPoolV2FeatureConfig>,
 }
 
 #[derive(Debug, Clone, TS, Serialize)]
@@ -79,7 +85,16 @@ pub struct OverrideLocalhostFeatureConfig {}
 
 #[derive(Debug, Clone, TS, Serialize)]
 #[ts(export)]
-pub struct MultispendFeatureConfig {}
+pub struct StabilityPoolV2FeatureConfig {
+    pub state: StabilityPoolV2FeatureConfigState,
+}
+
+#[derive(Debug, Clone, TS, Serialize)]
+#[ts(export)]
+pub enum StabilityPoolV2FeatureConfigState {
+    SpV2Only,
+    Multispend,
+}
 
 impl FeatureCatalog {
     pub fn new(runtime_env: RuntimeEnvironment) -> Self {
@@ -96,7 +111,9 @@ impl FeatureCatalog {
                 server_url: "https://prod-kv-store.dev.fedibtc.com/".to_string(),
             }),
             override_localhost: Some(OverrideLocalhostFeatureConfig {}),
-            multispend: Some(MultispendFeatureConfig {}),
+            stability_pool_v2: Some(StabilityPoolV2FeatureConfig {
+                state: StabilityPoolV2FeatureConfigState::Multispend,
+            }),
         }
     }
 
@@ -104,7 +121,9 @@ impl FeatureCatalog {
         Self {
             encrypted_sync: None,
             override_localhost: None,
-            multispend: None,
+            stability_pool_v2: Some(StabilityPoolV2FeatureConfig {
+                state: StabilityPoolV2FeatureConfigState::SpV2Only,
+            }),
         }
     }
 
@@ -112,7 +131,7 @@ impl FeatureCatalog {
         Self {
             encrypted_sync: None,
             override_localhost: None,
-            multispend: None,
+            stability_pool_v2: None,
         }
     }
 }

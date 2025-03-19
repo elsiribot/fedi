@@ -46,7 +46,7 @@ use stability_pool_common::{
 };
 use tracing::info;
 
-mod db;
+pub mod db;
 mod history_service;
 mod sync_service;
 
@@ -161,7 +161,7 @@ impl ClientModule for StabilityPoolClientModule {
                     self.db.clone(),
                     self.our_account(account_type.into()).id(),
                 )
-                .await?;
+                .await;
                 let mut update_stream = sync_service.subscribe_to_updates();
                 sync_service.update_once().await?;
                 let sync_response = update_stream
@@ -510,7 +510,7 @@ pub enum StabilityPoolTransferOperationState {
 }
 
 impl StabilityPoolClientModule {
-    fn our_account(&self, acc_type: AccountType) -> Account {
+    pub fn our_account(&self, acc_type: AccountType) -> Account {
         Account::single(self.client_key_pair.public_key(), acc_type)
     }
 

@@ -4,7 +4,7 @@ mod dev;
 mod meta;
 
 use std::any::Any;
-use std::collections::HashMap;
+use std::collections::{BTreeMap, HashMap};
 use std::fmt::Debug;
 use std::future::Future;
 use std::pin::pin;
@@ -13,13 +13,15 @@ use std::sync::{Arc, Weak};
 use std::time::Duration;
 
 use ::serde::{Deserialize, Serialize};
-use anyhow::{anyhow, bail, Context, Result};
+use anyhow::{anyhow, bail, ensure, Context, Result};
 use bitcoin::address::NetworkUnchecked;
 use bitcoin::hex::DisplayHex;
 use bitcoin::secp256k1::PublicKey;
 use bitcoin::{Address, Network};
 use client::ClientExt;
-use db::{FediRawClientConfigKey, InviteCodeKey, TransactionNotesKey};
+use db::{
+    FediRawClientConfigKey, InviteCodeKey, LastStabilityPoolV2DepositCycleKey, TransactionNotesKey,
+};
 use fedi_bug_report::reused_ecash_proofs::{self, SerializedReusedEcashProofs};
 use fedi_social_client::common::VerificationDocument;
 use fedi_social_client::{
@@ -75,11 +77,17 @@ use fedimint_wallet_client::{
 use futures::{FutureExt, StreamExt};
 use lightning_invoice::{Bolt11Invoice, RoutingFees};
 use meta::{LegacyMetaSourceWithExternalUrl, MetaEntries, MetaServiceExt};
+use rand::Rng;
 use serde::de::DeserializeOwned;
-use stability_pool_client_old::{
-    ClientAccountInfo, StabilityPoolClientInit, StabilityPoolDepositOperationState,
-    StabilityPoolMeta, StabilityPoolWithdrawalOperationState,
+use stability_pool_client::common::{
+    AccountId, AccountType, FiatOrAll, SignedTransferRequest, TransferRequest,
 };
+use stability_pool_client::db::{CachedSyncResponseKey, CachedSyncResponseValue};
+use stability_pool_client::{
+    StabilityPoolDepositOperationState, StabilityPoolHistoryService, StabilityPoolMeta,
+    StabilityPoolSyncService, StabilityPoolWithdrawalOperationState,
+};
+use stability_pool_client_old::{ClientAccountInfo, StabilityPoolClientInit};
 use tokio::sync::{Mutex, OnceCell};
 use tracing::{error, info, instrument, warn, Level};
 
@@ -99,12 +107,12 @@ use super::federations_locker::FederationLockGuard;
 use crate::constants::{
     ECASH_AUTO_CANCEL_DURATION, LIGHTNING_OPERATION_TYPE, MILLION, MINT_OPERATION_TYPE,
     PAY_INVOICE_TIMEOUT, REISSUE_ECASH_TIMEOUT, STABILITY_POOL_OPERATION_TYPE,
-    WALLET_OPERATION_TYPE,
+    STABILITY_POOL_V2_OPERATION_TYPE, WALLET_OPERATION_TYPE,
 };
 use crate::db::FederationPendingRejoinFromScratchKey;
 use crate::error::ErrorCode;
 use crate::event::{Event, EventSink, RecoveryProgressEvent, TypedEventExt};
-use crate::features::FeatureCatalog;
+use crate::features::{FeatureCatalog, StabilityPoolV2FeatureConfig};
 use crate::fedi_fee::{FediFeeHelper, FediFeeRemittanceService};
 use crate::storage::{AppState, FediFeeSchedule};
 use crate::types::{
@@ -180,6 +188,9 @@ pub struct FederationV2 {
     pub app_state: Arc<AppState>,
     pub this_weak: Weak<Self>,
     pub guard: FederationLockGuard,
+    // Stability pool v2 services for syncing accout history between client and server
+    pub spv2_sync_service: OnceCell<Arc<StabilityPoolSyncService>>,
+    pub spv2_history_service: OnceCell<Arc<StabilityPoolHistoryService>>,
 }
 
 impl FederationV2 {
@@ -228,6 +239,8 @@ impl FederationV2 {
             app_state,
             this_weak: weak.clone(),
             guard,
+            spv2_sync_service: Default::default(),
+            spv2_history_service: Default::default(),
         });
         if !recovering {
             federation.start_background_tasks().await;
@@ -290,17 +303,54 @@ impl FederationV2 {
             }
         });
 
-        // We disable the StabilityPoolSweeperService in tests to ensure that staged
-        // seeks don't accidentally disappear if a test takes longer than expected and a
-        // stability pool cycle elapses during the course of the test.
-        #[cfg(not(test))]
-        if self.client.sp().is_ok()
-            && self
-                .stability_pool_sweeper_service
-                .set(StabilityPoolSweeperService::new(self))
+        // If SPv2 is enabled and the module is available, we initialize the sync
+        // service and the history service.
+        if self.spv2_feature_state().is_some() {
+            let spv2 = self.client.spv2().expect("checked above");
+            let account = spv2.our_account(AccountType::Seeker);
+            if self
+                .spv2_sync_service
+                .set(
+                    StabilityPoolSyncService::new(spv2.api.clone(), spv2.db.clone(), account.id())
+                        .await,
+                )
                 .is_err()
-        {
-            error!("stability pool sweeper service already initialized");
+            {
+                error!("spv2 sync service already initialized");
+            }
+
+            if self
+                .spv2_history_service
+                .set(StabilityPoolHistoryService::new(
+                    spv2.api.clone(),
+                    spv2.db.clone(),
+                    account.id(),
+                ))
+                .is_err()
+            {
+                error!("spv2 history service already initialized");
+            }
+
+            self.spawn_cancellable("spv2_sync", |fed| async move {
+                let sync_service = fed.spv2_sync_service.get().expect("init above");
+                let config = &fed.client.spv2().expect("checked above").cfg;
+                sync_service.update_continuously(config).await
+            });
+            self.spawn_cancellable("spv2_history", |fed| async move {
+                let sync_service = fed.spv2_sync_service.get().expect("init above");
+                let history_service = fed.spv2_history_service.get().expect("init above");
+                history_service.update_continuously(sync_service).await
+            });
+        } else {
+            #[cfg(not(test))]
+            if self.client.sp().is_ok()
+                && self
+                    .stability_pool_sweeper_service
+                    .set(StabilityPoolSweeperService::new(self))
+                    .is_err()
+            {
+                error!("stability pool sweeper service already initialized");
+            }
         }
     }
 
@@ -1343,24 +1393,49 @@ impl FederationV2 {
                     }
                 }
             }
-            STABILITY_POOL_OPERATION_TYPE => match operation.meta::<StabilityPoolMeta>() {
+            STABILITY_POOL_OPERATION_TYPE => {
+                match operation.meta::<stability_pool_client_old::StabilityPoolMeta>() {
+                    stability_pool_client_old::StabilityPoolMeta::Deposit { .. } => {
+                        self.spawn_cancellable(
+                            "subscribe_stability_pool_deposit",
+                            move |fed| async move {
+                                fed.subscribe_stability_pool_deposit_to_seek(operation_id)
+                                    .await
+                            },
+                        );
+                    }
+                    stability_pool_client_old::StabilityPoolMeta::CancelRenewal { .. }
+                    | stability_pool_client_old::StabilityPoolMeta::Withdrawal { .. } => {
+                        self.spawn_cancellable(
+                            "subscribe_stability_pool_withdraw",
+                            move |fed| async move {
+                                fed.subscribe_stability_pool_withdraw(operation_id).await
+                            },
+                        );
+                    }
+                }
+            }
+            STABILITY_POOL_V2_OPERATION_TYPE => match operation.meta::<StabilityPoolMeta>() {
                 StabilityPoolMeta::Deposit { .. } => {
-                    self.spawn_cancellable(
-                        "subscribe_stability_pool_deposit",
-                        move |fed| async move {
-                            fed.subscribe_stability_pool_deposit_to_seek(operation_id)
-                                .await
-                        },
-                    );
+                    self.spawn_cancellable("subscribe_spv2_deposit", move |fed| async move {
+                        fed.subscribe_spv2_deposit_to_seek(operation_id).await
+                    });
                 }
-                StabilityPoolMeta::CancelRenewal { .. } | StabilityPoolMeta::Withdrawal { .. } => {
-                    self.spawn_cancellable(
-                        "subscribe_stability_pool_withdraw",
-                        move |fed| async move {
-                            fed.subscribe_stability_pool_withdraw(operation_id).await
-                        },
-                    );
+                StabilityPoolMeta::Withdrawal { .. } => {
+                    self.spawn_cancellable("subscribe_spv2_withdraw", move |fed| async move {
+                        fed.subscribe_spv2_withdraw(operation_id).await
+                    });
                 }
+                StabilityPoolMeta::Transfer { .. } => {
+                    self.spawn_cancellable("subscribe_spv2_transfer", move |fed| async move {
+                        fed.subscribe_spv2_transfer(operation_id).await
+                    });
+                }
+                StabilityPoolMeta::WithdrawIdleBalance {
+                    txid: _,
+                    amount: _,
+                    outpoints: _,
+                } => todo!("Implement with sweeper service for spv2, no FE events required"),
             },
             // FIXME: should I return an error or just log something?
             _ => {
@@ -2319,7 +2394,7 @@ impl FederationV2 {
                 }
             }
             STABILITY_POOL_OPERATION_TYPE => match entry.meta() {
-                StabilityPoolMeta::Deposit { txid, amount, .. } => {
+                stability_pool_client_old::StabilityPoolMeta::Deposit { txid, amount, .. } => {
                     transaction_amount = RpcAmount(amount + Amount::from_msats(fedi_fee_msats));
                     frontend_metadata = None;
                     transaction_kind = RpcTransactionKind::SpDeposit {
@@ -2340,11 +2415,11 @@ impl FederationV2 {
                         },
                     }
                 }
-                StabilityPoolMeta::Withdrawal {
+                stability_pool_client_old::StabilityPoolMeta::Withdrawal {
                     estimated_withdrawal_cents,
                     ..
                 }
-                | StabilityPoolMeta::CancelRenewal {
+                | stability_pool_client_old::StabilityPoolMeta::CancelRenewal {
                     estimated_withdrawal_cents,
                     ..
                 } => {
@@ -2357,26 +2432,26 @@ impl FederationV2 {
                     frontend_metadata = None;
                     transaction_amount = match outcome {
                         Some(
-                            StabilityPoolWithdrawalOperationState::WithdrawUnlockedInitiated(
+                            stability_pool_client_old::StabilityPoolWithdrawalOperationState::WithdrawUnlockedInitiated(
                                 amount,
                             )
-                            | StabilityPoolWithdrawalOperationState::WithdrawUnlockedAccepted(amount)
-                            | StabilityPoolWithdrawalOperationState::Success(amount)
-                            | StabilityPoolWithdrawalOperationState::CancellationInitiated(Some(
+                            | stability_pool_client_old::StabilityPoolWithdrawalOperationState::WithdrawUnlockedAccepted(amount)
+                            | stability_pool_client_old::StabilityPoolWithdrawalOperationState::Success(amount)
+                            | stability_pool_client_old::StabilityPoolWithdrawalOperationState::CancellationInitiated(Some(
                                 amount,
                             ))
-                            | StabilityPoolWithdrawalOperationState::CancellationAccepted(Some(
+                            | stability_pool_client_old::StabilityPoolWithdrawalOperationState::CancellationAccepted(Some(
                                 amount,
                             ))
-                            | StabilityPoolWithdrawalOperationState::WithdrawIdleInitiated(amount)
-                            | StabilityPoolWithdrawalOperationState::WithdrawIdleAccepted(amount),
+                            | stability_pool_client_old::StabilityPoolWithdrawalOperationState::WithdrawIdleInitiated(amount)
+                            | stability_pool_client_old::StabilityPoolWithdrawalOperationState::WithdrawIdleAccepted(amount),
                         ) => RpcAmount(amount),
                         _ => RpcAmount(Amount::ZERO),
                     };
 
                     transaction_kind = RpcTransactionKind::SpWithdraw {
                         state: match outcome {
-                            Some(StabilityPoolWithdrawalOperationState::Success(_)) => {
+                            Some(stability_pool_client_old::StabilityPoolWithdrawalOperationState::Success(_)) => {
                                 Some(RpcSPWithdrawState::CompleteWithdrawal {
                                     estimated_withdrawal_cents,
                                 })
@@ -2578,6 +2653,333 @@ impl FederationV2 {
         )
     }
 
+    /// Reads the SPv2 feature flag and applies the SPv2 module availability on
+    /// top of it. Ideally this function should be used for checking the state
+    /// of the SPv2 feature (instead of reading the feature catalog directly)
+    /// for any federation specific operations. However, for global checks (such
+    /// as showing UX entry points that are not tied to any federation), the
+    /// feature flag should be read directly.
+    pub fn spv2_feature_state(&self) -> Option<StabilityPoolV2FeatureConfig> {
+        // If the module is not available, the feature flag value doesn't matter. It's
+        // always treated as None.
+        match (&self.feature_catalog.stability_pool_v2, self.client.spv2()) {
+            (state, Ok(_)) => state.clone(),
+            _ => None,
+        }
+    }
+
+    /// Returns the latest cached sync response representing the seeker's last
+    /// know SPv2 state. Getting the cached response should be sufficient
+    /// because the value only updates once per cycle, and we already have a
+    /// background service that automatically fetches and caches the state every
+    /// cycle.
+    pub async fn spv2_account_info(&self) -> Result<CachedSyncResponseValue> {
+        ensure!(
+            self.spv2_feature_state().is_some(),
+            ErrorCode::ModuleNotFound(STABILITY_POOL_V2_OPERATION_TYPE.to_string())
+        );
+        let spv2 = self.client.spv2()?;
+        let account_id = spv2.our_account(AccountType::Seeker).id();
+
+        spv2.db
+            .clone()
+            .begin_transaction_nc()
+            .await
+            .get_value(&CachedSyncResponseKey { account_id })
+            .await
+            .ok_or(ErrorCode::BadRequest.into())
+    }
+
+    /// Returns the start time of the next cycle by adding cycle duration to the
+    /// start time of the last known cycle as recorded in the cached sync
+    /// response.
+    pub async fn spv2_next_cycle_start_time(&self) -> Result<u64> {
+        let sync_response = self.spv2_account_info().await?;
+        let config = &self.client.spv2()?.cfg;
+
+        let next_time = sync_response
+            .value
+            .current_cycle
+            .start_time
+            .checked_add(config.cycle_duration)
+            .ok_or(anyhow!(ErrorCode::BadRequest))?;
+        to_unix_time(next_time)
+    }
+
+    /// Returns the average fee rate over the last x cycles. Server enforces a
+    /// cap on x, but perhaps going back 10-50 cycles is good enough.
+    pub async fn spv2_average_fee_rate(&self, num_cycles: u64) -> Result<u64> {
+        ensure!(
+            self.spv2_feature_state().is_some(),
+            ErrorCode::ModuleNotFound(STABILITY_POOL_V2_OPERATION_TYPE.to_string())
+        );
+        let spv2 = self.client.spv2()?;
+        spv2.average_fee_rate(num_cycles)
+            .await
+            .map(|rate| rate.0)
+            .context("Error when fetching average fee rate")
+    }
+
+    /// Returns the staged provider liquidity currently available to satisfy new
+    /// seeks. Allows blocking seeks that we know up-front will not be satisfied
+    /// at this time.
+    pub async fn spv2_available_liquidity(&self) -> Result<RpcAmount> {
+        ensure!(
+            self.spv2_feature_state().is_some(),
+            ErrorCode::ModuleNotFound(STABILITY_POOL_V2_OPERATION_TYPE.to_string())
+        );
+        let spv2 = self.client.spv2()?;
+        let stats = spv2
+            .liquidity_stats()
+            .await
+            .context("Error when fetching liquidity stats")?;
+        Ok(RpcAmount(Amount::from_msats(
+            stats.staged_provides_sum_msat,
+        )))
+    }
+
+    /// Deposit the given amount of msats into the stability pool
+    /// with the intention of seeking. Once the fedimint transaction
+    /// is accepted, the deposit is staged (pending). When the next
+    /// cycle turnover occurs, staged seeks are processed in order
+    /// to produce locks.
+    pub async fn spv2_deposit_to_seek(&self, amount: Amount) -> Result<OperationId> {
+        ensure!(
+            self.spv2_feature_state().is_some(),
+            ErrorCode::ModuleNotFound(STABILITY_POOL_V2_OPERATION_TYPE.to_string())
+        );
+        let spv2 = self.client.spv2()?;
+        let fedi_fee_ppm = self
+            .fedi_fee_helper
+            .get_fedi_fee_ppm(
+                self.federation_id().to_string(),
+                stability_pool_client::common::KIND,
+                RpcTransactionDirection::Send,
+            )
+            .await?;
+        let fedi_fee = Amount::from_msats((amount.msats * fedi_fee_ppm).div_ceil(MILLION));
+        let spend_guard = self.spend_guard.lock().await;
+        let virtual_balance = self.get_balance().await;
+        if amount + fedi_fee > virtual_balance {
+            bail!(ErrorCode::InsufficientBalance(RpcAmount(
+                get_max_spendable_amount(virtual_balance, fedi_fee_ppm, None, None)
+            )));
+        }
+
+        let operation_id = spv2.deposit_to_seek(amount).await?;
+        self.write_pending_send_fedi_fee(operation_id, fedi_fee)
+            .await?;
+        let _ = self
+            .record_tx_date_fiat_info(operation_id, amount + fedi_fee)
+            .await;
+        drop(spend_guard);
+
+        if let Ok(index) = self
+            .spv2_account_info()
+            .await
+            .map(|info| info.value.current_cycle.idx)
+        {
+            // This is not critical so we ignore the result
+            let autocommit_res = self
+                .client
+                .db()
+                .autocommit(
+                    |dbtx, _| {
+                        Box::pin(async move {
+                            dbtx.insert_entry(&LastStabilityPoolV2DepositCycleKey, &index)
+                                .await;
+                            Ok::<(), anyhow::Error>(())
+                        })
+                    },
+                    Some(100),
+                )
+                .await;
+
+            if let Err(e) = autocommit_res {
+                error!(?e, "Error while writing last SP deposit cycle");
+            }
+        }
+
+        self.spawn_cancellable("subscribe_spv2_deposit", move |fed| async move {
+            fed.subscribe_spv2_deposit_to_seek(operation_id).await
+        });
+        Ok(operation_id)
+    }
+
+    async fn subscribe_spv2_deposit_to_seek(&self, operation_id: OperationId) {
+        let Ok(spv2) = self.client.spv2() else {
+            return;
+        };
+
+        let update_stream = spv2.subscribe_deposit_operation(operation_id).await;
+        if let Ok(update_stream) = update_stream {
+            let mut updates = update_stream.into_stream();
+            while let Some(state) = updates.next().await {
+                self.update_operation_state(operation_id, state.clone())
+                    .await;
+                match state {
+                    StabilityPoolDepositOperationState::TxRejected(_)
+                    | StabilityPoolDepositOperationState::PrimaryOutputError(_) => {
+                        let _ = self.write_failed_send_fedi_fee(operation_id).await;
+                    }
+                    StabilityPoolDepositOperationState::Success => {
+                        let _ = self.write_success_send_fedi_fee(operation_id).await;
+                    }
+                    _ => (),
+                }
+                self.event_sink.typed_event(&Event::spv2_deposit(
+                    self.federation_id().to_string(),
+                    operation_id,
+                    state,
+                ));
+            }
+        } else {
+            // TODO shaurya ok to ignore result? Or should bridge panic if error?
+            let _ = self.write_failed_send_fedi_fee(operation_id).await;
+        }
+    }
+
+    /// Starting with staged seeks, withdraw from both staged and locked seeks,
+    /// by implicitly waiting for cycle turnover for the locked seeks to be
+    /// freed up. The overall operation only completes when both parts have
+    /// completed.
+    pub async fn spv2_withdraw(&self, amount: FiatOrAll) -> Result<OperationId> {
+        ensure!(
+            self.spv2_feature_state().is_some(),
+            ErrorCode::ModuleNotFound(STABILITY_POOL_V2_OPERATION_TYPE.to_string())
+        );
+        let spv2 = self.client.spv2()?;
+        let fedi_fee_ppm = self
+            .fedi_fee_helper
+            .get_fedi_fee_ppm(
+                self.federation_id().to_string(),
+                stability_pool_client::common::KIND,
+                RpcTransactionDirection::Receive,
+            )
+            .await?;
+        let (operation_id, _) = spv2.withdraw(AccountType::Seeker, amount).await?;
+        self.write_pending_receive_fedi_fee_ppm(operation_id, fedi_fee_ppm)
+            .await?;
+        self.spawn_cancellable("subscribe_spv2_withdraw", move |fed| async move {
+            fed.subscribe_spv2_withdraw(operation_id).await
+        });
+        Ok(operation_id)
+    }
+
+    async fn subscribe_spv2_withdraw(&self, operation_id: OperationId) {
+        let Ok(spv2) = self.client.spv2() else {
+            return;
+        };
+
+        let update_stream = spv2.subscribe_withdraw(operation_id).await;
+        if let Ok(update_stream) = update_stream {
+            let mut updates = update_stream.into_stream();
+            while let Some(state) = updates.next().await {
+                self.update_operation_state(operation_id, state.clone())
+                    .await;
+                match state {
+                    StabilityPoolWithdrawalOperationState::Success(amount) => {
+                        let _ = self
+                            .write_success_receive_fedi_fee(operation_id, amount)
+                            .await;
+                        let _ = self.record_tx_date_fiat_info(operation_id, amount).await;
+                    }
+                    StabilityPoolWithdrawalOperationState::UnlockTxRejected(_)
+                    | StabilityPoolWithdrawalOperationState::UnlockProcessingError(_)
+                    | StabilityPoolWithdrawalOperationState::WithdrawalTxRejected(_)
+                    | StabilityPoolWithdrawalOperationState::PrimaryOutputError(_) => {
+                        let _ = self.write_failed_receive_fedi_fee(operation_id).await;
+                    }
+                    _ => (),
+                }
+                self.event_sink.typed_event(&Event::spv2_withdrawal(
+                    self.federation_id().to_string(),
+                    operation_id,
+                    state,
+                ))
+            }
+        }
+    }
+
+    /// See [`Self::spv2_transfer`]
+    pub async fn spv2_simple_transfer(
+        &self,
+        to_account: AccountId,
+        amount: FiatOrAll,
+    ) -> Result<OperationId> {
+        ensure!(
+            self.spv2_feature_state().is_some(),
+            ErrorCode::ModuleNotFound(STABILITY_POOL_V2_OPERATION_TYPE.to_string())
+        );
+        let spv2 = self.client.spv2()?;
+
+        let request = TransferRequest::new(
+            rand::thread_rng().gen(),
+            spv2.our_account(AccountType::Seeker),
+            amount,
+            to_account,
+            vec![],
+            u64::MAX,
+            None,
+        )?;
+        let signature = spv2.sign_transfer_request(&request);
+        let mut signatures = BTreeMap::new();
+        signatures.insert(0, signature);
+        self.spv2_transfer(SignedTransferRequest::new(request, signatures)?)
+            .await
+    }
+
+    /// Submit the given [`SignedTransferRequest`] for processing. Like
+    /// withdrawals, transfer first use staged deposits, and then locked
+    /// deposits (if needed). However, unlike withdrawals, transfers are
+    /// "instant" in that they do not need to await any cycle turnover.
+    /// Transfers are considered completed as soon as the initial transaction is
+    /// accepted and processed by the server. For the basic use case of
+    /// transferring to another account ID from this client's seeker
+    /// account, use the helper method [`Self::spv2_simple_transfer`].
+    pub async fn spv2_transfer(
+        &self,
+        signed_request: SignedTransferRequest,
+    ) -> Result<OperationId> {
+        ensure!(
+            self.spv2_feature_state().is_some(),
+            ErrorCode::ModuleNotFound(STABILITY_POOL_V2_OPERATION_TYPE.to_string())
+        );
+        let spv2 = self.client.spv2()?;
+
+        // TODO shaurya skipping fee for now as it's unclear how to charge fee for
+        // transfers. We cannot simply a charge a portion of the amount being
+        // transferred since:
+        // 1. We don't always know the amount (it could be ALL)
+        // 2. The submitter of the TX might not be the sender or the recipient
+
+        let operation_id = spv2.transfer(signed_request).await?;
+        self.spawn_cancellable("subscribe_spv2_transfer", move |fed| async move {
+            fed.subscribe_spv2_transfer(operation_id).await
+        });
+        Ok(operation_id)
+    }
+
+    async fn subscribe_spv2_transfer(&self, operation_id: OperationId) {
+        let Ok(spv2) = self.client.spv2() else {
+            return;
+        };
+
+        let update_stream = spv2.subscribe_transfer_operation(operation_id).await;
+        if let Ok(update_stream) = update_stream {
+            let mut updates = update_stream.into_stream();
+            while let Some(state) = updates.next().await {
+                self.update_operation_state(operation_id, state.clone())
+                    .await;
+                self.event_sink.typed_event(&Event::spv2_transfer(
+                    self.federation_id().to_string(),
+                    operation_id,
+                    state,
+                ));
+            }
+        }
+    }
+
     /// Stability Pool
     ///
     /// Get user's stability pool account info
@@ -2737,11 +3139,11 @@ impl FederationV2 {
                 self.update_operation_state(operation_id, state.clone())
                     .await;
                 match state {
-                    StabilityPoolDepositOperationState::TxRejected(_)
-                    | StabilityPoolDepositOperationState::PrimaryOutputError(_) => {
+                    stability_pool_client_old::StabilityPoolDepositOperationState::TxRejected(_)
+                    | stability_pool_client_old::StabilityPoolDepositOperationState::PrimaryOutputError(_) => {
                         let _ = self.write_failed_send_fedi_fee(operation_id).await;
                     }
-                    StabilityPoolDepositOperationState::Success => {
+                    stability_pool_client_old::StabilityPoolDepositOperationState::Success => {
                         let _ = self.write_success_send_fedi_fee(operation_id).await;
                     }
                     _ => (),
@@ -2770,18 +3172,18 @@ impl FederationV2 {
                 self.update_operation_state(operation_id, state.clone())
                     .await;
                 match state {
-                    StabilityPoolWithdrawalOperationState::Success(amount) => {
+                    stability_pool_client_old::StabilityPoolWithdrawalOperationState::Success(amount) => {
                         let _ = self
                             .write_success_receive_fedi_fee(operation_id, amount)
                             .await;
                         let _ = self.record_tx_date_fiat_info(operation_id, amount).await;
                     }
-                    StabilityPoolWithdrawalOperationState::InvalidOperationType
-                    | StabilityPoolWithdrawalOperationState::TxRejected(_)
-                    | StabilityPoolWithdrawalOperationState::PrimaryOutputError(_)
-                    | StabilityPoolWithdrawalOperationState::CancellationSubmissionFailure(_)
-                    | StabilityPoolWithdrawalOperationState::AwaitCycleTurnoverError(_)
-                    | StabilityPoolWithdrawalOperationState::WithdrawIdleSubmissionFailure(_) => {
+                    stability_pool_client_old::StabilityPoolWithdrawalOperationState::InvalidOperationType
+                    | stability_pool_client_old::StabilityPoolWithdrawalOperationState::TxRejected(_)
+                    | stability_pool_client_old::StabilityPoolWithdrawalOperationState::PrimaryOutputError(_)
+                    | stability_pool_client_old::StabilityPoolWithdrawalOperationState::CancellationSubmissionFailure(_)
+                    | stability_pool_client_old::StabilityPoolWithdrawalOperationState::AwaitCycleTurnoverError(_)
+                    | stability_pool_client_old::StabilityPoolWithdrawalOperationState::WithdrawIdleSubmissionFailure(_) => {
                         let _ = self.write_failed_receive_fedi_fee(operation_id).await;
                     }
                     _ => (),

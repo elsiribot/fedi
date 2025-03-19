@@ -2556,6 +2556,7 @@ dependencies = [
  "serde_json",
  "serde_with",
  "slab",
+ "stability-pool-client",
  "stability-pool-client-old",
  "tempfile",
  "thiserror 2.0.11",
