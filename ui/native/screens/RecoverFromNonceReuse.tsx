@@ -29,7 +29,7 @@ const RecoverFromNonceReuse: React.FC<Props> = () => {
                 </Text>
             </View>
             <Button onPress={() => navigation.navigate('TabsNavigator')}>
-                {t('words.continue')}
+                {t('words.okay')}
             </Button>
         </SafeAreaContainer>
     )
