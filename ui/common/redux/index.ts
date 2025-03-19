@@ -192,7 +192,7 @@ export function initializeCommonStore({
     // Automatically rejoin federations that fail the nonce reuse check and recover from scratch
     const unsubscribeNonceReuseCheckFailed = fedimint.addListener(
         'nonceReuseCheckFailed',
-        async () => {
+        () => {
             dispatch(tryRejoinFederationsPendingScratchRejoin({ fedimint }))
         },
     )

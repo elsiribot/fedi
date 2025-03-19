@@ -14,7 +14,6 @@ import {
     selectHasSetMatrixDisplayName,
     selectSocialRecoveryQr,
     startMatrixClient,
-    tryRejoinFederationsPendingScratchRejoin,
 } from '@fedi/common/redux'
 import { selectHasLoadedFromStorage } from '@fedi/common/redux/storage'
 import { formatErrorMessage } from '@fedi/common/utils/format'
@@ -70,12 +69,6 @@ export const FediBridgeInitializer: React.FC<Props> = ({ children }) => {
                         initializeFedimintVersion({ fedimint }),
                     ),
                     dispatchRef.current(initializeNostrKeys({ fedimint })),
-                    // Attempt to rejoin federations that failed a nonce reuse check and require a rejoin from scratch
-                    dispatchRef.current(
-                        tryRejoinFederationsPendingScratchRejoin({
-                            fedimint,
-                        }),
-                    ),
                     // if there is no matrix session yet we will start the matrix
                     // client either during recovery or during onboarding after a
                     // display name is entered
