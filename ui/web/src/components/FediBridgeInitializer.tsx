@@ -3,6 +3,7 @@ import React, { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 
 import FediLogo from '@fedi/common/assets/svgs/fedi-logo.svg'
+import { useObserveMatrixSyncStatus } from '@fedi/common/hooks/matrix'
 import { useUpdatingRef } from '@fedi/common/hooks/util'
 import {
     fetchSocialRecovery,
@@ -14,6 +15,7 @@ import {
     selectHasSetMatrixDisplayName,
     selectSocialRecoveryQr,
     startMatrixClient,
+    selectMatrixStarted,
 } from '@fedi/common/redux'
 import { selectHasLoadedFromStorage } from '@fedi/common/redux/storage'
 import { formatErrorMessage } from '@fedi/common/utils/format'
@@ -36,6 +38,7 @@ export const FediBridgeInitializer: React.FC<Props> = ({ children }) => {
     const dispatch = useAppDispatch()
     const { t } = useTranslation()
     const { asPath } = useRouter()
+    const started = useAppSelector(selectMatrixStarted)
     const hasLoadedStorage = useAppSelector(selectHasLoadedFromStorage)
     const socialRecoveryId = useAppSelector(selectSocialRecoveryQr)
     const hasSetDisplayName = useAppSelector(selectHasSetMatrixDisplayName)
@@ -44,6 +47,8 @@ export const FediBridgeInitializer: React.FC<Props> = ({ children }) => {
     const [error, setError] = useState<string>()
     const tRef = useUpdatingRef(t)
     const dispatchRef = useUpdatingRef(dispatch)
+
+    useObserveMatrixSyncStatus(started)
 
     useEffect(() => {
         if (!hasLoadedStorage) return
