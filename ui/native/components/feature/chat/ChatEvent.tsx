@@ -1,10 +1,11 @@
 import { Theme, useTheme } from '@rneui/themed'
-import React from 'react'
+import React, { useState } from 'react'
 import { StyleProp, StyleSheet, TextStyle, View, ViewStyle } from 'react-native'
 
 import { ErrorBoundary } from '@fedi/common/components/ErrorBoundary'
 import { selectMatrixAuth } from '@fedi/common/redux'
 import { MatrixEvent } from '@fedi/common/types'
+import { deriveUrlsFromText } from '@fedi/common/utils/chat'
 import {
     arePollEventsEqual,
     isDeletedEvent,
@@ -20,6 +21,7 @@ import {
 
 import { useAppSelector } from '../../../state/hooks'
 import ChatDeletedEvent from './ChatDeletedEvent'
+import ChatEmbeddedLinkPreview from './ChatEmbeddedLinkPreview'
 import ChatEncryptedEvent from './ChatEncryptedEvent'
 import ChatFileEvent from './ChatFileEvent'
 import ChatImageEvent from './ChatImageEvent'
@@ -45,6 +47,7 @@ const ChatEvent: React.FC<Props> = ({
     isPublic = true,
 }: Props) => {
     const { theme } = useTheme()
+    const [hasWidePreview, setHasWidePreview] = useState(false)
     const matrixAuth = useAppSelector(selectMatrixAuth)
 
     const isMe = event.senderId === matrixAuth?.userId
@@ -62,12 +65,19 @@ const ChatEvent: React.FC<Props> = ({
         bubbleContainerStyles.push(styles(theme).leftAlignedMessage)
     }
 
-    if (last && isText) {
+    if (last && isText && !hasWidePreview) {
         bubbleContainerStyles.push(
             isMe
                 ? styles(theme).lastSentMessage
                 : styles(theme).lastReceivedMessage,
         )
+    } else if (isText && hasWidePreview) {
+        bubbleContainerStyles.push({
+            borderBottomRightRadius: 0,
+            width: theme.sizes.maxMessageWidth,
+            borderBottomLeftRadius: 0,
+            justifyContent: 'flex-start',
+        })
     }
 
     if (
@@ -76,6 +86,8 @@ const ChatEvent: React.FC<Props> = ({
     ) {
         return null
     }
+
+    const derivedLinks = isText ? deriveUrlsFromText(event.content.body) : null
 
     return (
         <ErrorBoundary fallback={() => <MessageItemError />}>
@@ -92,7 +104,10 @@ const ChatEvent: React.FC<Props> = ({
                         ]}>
                         <View style={bubbleContainerStyles}>
                             {isText ? (
-                                <ChatTextEvent event={event} />
+                                <ChatTextEvent
+                                    event={event}
+                                    isWide={hasWidePreview}
+                                />
                             ) : isEncryptedEvent(event) ? (
                                 <ChatEncryptedEvent event={event} />
                             ) : isPaymentEvent(event) ? (
@@ -111,6 +126,25 @@ const ChatEvent: React.FC<Props> = ({
                                 <ChatPollEvent event={event} />
                             ) : null}
                         </View>
+                        {derivedLinks && (
+                            <View
+                                style={[
+                                    styles(theme).previewLinkContainer,
+                                    isMe
+                                        ? styles(theme).rightAlignedMessage
+                                        : styles(theme).leftAlignedMessage,
+                                ]}>
+                                {derivedLinks.map((url, i) => (
+                                    <ChatEmbeddedLinkPreview
+                                        url={url}
+                                        key={`l-prev-${url}-${i}`}
+                                        isFirst={i === 0}
+                                        setHasWidePreview={setHasWidePreview}
+                                        hasWidePreview={hasWidePreview}
+                                    />
+                                ))}
+                            </View>
+                        )}
                     </View>
                 </View>
             </View>
@@ -153,6 +187,10 @@ const styles = (theme: Theme) =>
         },
         lastSentMessage: {
             borderBottomRightRadius: 4,
+        },
+        previewLinkContainer: {
+            gap: theme.spacing.xxs,
+            maxWidth: theme.sizes.maxMessageWidth,
         },
     })
 

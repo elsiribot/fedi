@@ -1,3 +1,5 @@
+import { z } from 'zod'
+
 /**
  * Formats a file size in bytes to a human-readable string.
  */
@@ -44,3 +46,19 @@ export const scaleAttachment = (
 
     return { width, height }
 }
+
+export const matrixUrlMetadataSchema = z.object({
+    'matrix:image:size': z.number().nullish(),
+    'og:description': z.string().nullish(),
+    'og:image': z.string().nullish(),
+    'og:image:alt': z.string().nullish(),
+    'og:image:height': z.number().nullish(),
+    'og:image:type': z.string().nullish(),
+    'og:image:width': z.number().nullish(),
+    'og:site_name': z.string().nullish(),
+    'og:title': z.string().nullish(),
+    'og:type': z.string().nullish(),
+    'og:url': z.string().nullish(),
+})
+
+export type MatrixUrlMetadata = z.infer<typeof matrixUrlMetadataSchema>

@@ -752,6 +752,12 @@ export class FedimintBridge {
         return this.rpcTyped('getAccruedPendingFediFeesPerTXType', args)
     }
 
+    async matrixGetMediaPreview(
+        args: bindings.RpcPayload<'matrixGetMediaPreview'>,
+    ) {
+        return this.rpcTyped('matrixGetMediaPreview', args)
+    }
+
     /*** COMMUNITIES RPCs ***/
 
     async communityPreview(args: bindings.RpcPayload<'communityPreview'>) {
