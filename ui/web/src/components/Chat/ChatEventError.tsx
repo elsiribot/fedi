@@ -3,8 +3,8 @@ import { useTranslation } from 'react-i18next'
 
 import ErrorIcon from '@fedi/common/assets/svgs/error.svg'
 
-import { styled, theme } from '../styles'
-import { Icon } from './Icon'
+import { styled, theme } from '../../styles'
+import { Icon } from '../Icon'
 
 export const ChatEventError: React.FC = () => {
     const { t } = useTranslation()

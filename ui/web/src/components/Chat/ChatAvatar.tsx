@@ -6,7 +6,7 @@ import UserIcon from '@fedi/common/assets/svgs/user.svg'
 import { MatrixRoom, MatrixRoomMember, MatrixUser } from '@fedi/common/types'
 import { matrixIdToUsername } from '@fedi/common/utils/matrix'
 
-import { Avatar, AvatarProps } from './Avatar'
+import { Avatar, AvatarProps } from '../Avatar'
 
 type BaseProps = Omit<AvatarProps, 'id' | 'name' | 'icon'>
 type RoomProps = BaseProps & {

@@ -17,17 +17,17 @@ import {
 import { MatrixPowerLevel, MatrixRoomMember } from '@fedi/common/types'
 import { getUserSuffix } from '@fedi/common/utils/matrix'
 
-import { useAppDispatch, useAppSelector } from '../hooks'
-import { styled, theme } from '../styles'
-import { ChatAvatar } from './ChatAvatar'
+import { useAppDispatch, useAppSelector } from '../../hooks'
+import { styled, theme } from '../../styles'
 import {
     DropdownSheet,
     DropdownSheetMenuItem,
     DropdownSheetMenuLabel,
-} from './DropdownSheet'
-import { EmptyState } from './EmptyState'
-import { Icon } from './Icon'
-import { Text } from './Text'
+} from '../DropdownSheet'
+import { EmptyState } from '../EmptyState'
+import { Icon } from '../Icon'
+import { Text } from '../Text'
+import { ChatAvatar } from './ChatAvatar'
 
 interface Props {
     roomId: string

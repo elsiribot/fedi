@@ -1,8 +1,8 @@
 import { useTranslation } from 'react-i18next'
 
-import { styled, theme } from '../styles'
-import { CircularLoader } from './CircularLoader'
-import { Text } from './Text'
+import { styled, theme } from '../../styles'
+import { CircularLoader } from '../CircularLoader'
+import { Text } from '../Text'
 
 const Indicator = styled('div', {
     backgroundColor: '#FCDDEC', // TODO: Replace with fuschia from theme when new colors are added

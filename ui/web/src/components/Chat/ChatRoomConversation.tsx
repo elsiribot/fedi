@@ -14,17 +14,17 @@ import {
 } from '@fedi/common/redux'
 import { ChatType } from '@fedi/common/types'
 
-import { useAppDispatch, useAppSelector } from '../hooks'
-import { fedimint } from '../lib/bridge'
-import { styled } from '../styles'
-import { Button } from './Button'
+import { useAppDispatch, useAppSelector } from '../../hooks'
+import { fedimint } from '../../lib/bridge'
+import { styled } from '../../styles'
+import { Button } from '../Button'
+import { HoloLoader } from '../HoloLoader'
+import { IconButton } from '../IconButton'
+import { Text } from '../Text'
 import { ChatConversation } from './ChatConversation'
 import { ChatEmptyState } from './ChatEmptyState'
 import { ChatPaymentDialog } from './ChatPaymentDialog'
 import { ChatRoomSettingsDialog } from './ChatRoomSettingsDialog'
-import { HoloLoader } from './HoloLoader'
-import { IconButton } from './IconButton'
-import { Text } from './Text'
 
 interface Props {
     roomId: string

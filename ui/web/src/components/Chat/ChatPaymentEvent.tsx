@@ -8,11 +8,11 @@ import { useMatrixPaymentEvent } from '@fedi/common/hooks/matrix'
 import { useToast } from '@fedi/common/hooks/toast'
 import { MatrixPaymentEvent } from '@fedi/common/types'
 
-import { fedimint } from '../lib/bridge'
-import { styled } from '../styles'
-import { Button } from './Button'
-import { CircularLoader } from './CircularLoader'
-import { Icon } from './Icon'
+import { fedimint } from '../../lib/bridge'
+import { styled } from '../../styles'
+import { Button } from '../Button'
+import { CircularLoader } from '../CircularLoader'
+import { Icon } from '../Icon'
 
 interface Props {
     event: MatrixPaymentEvent

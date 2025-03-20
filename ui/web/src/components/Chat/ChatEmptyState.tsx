@@ -1,6 +1,6 @@
 import React from 'react'
 
-import { styled, theme } from '../styles'
+import { styled, theme } from '../../styles'
 
 interface Props {
     children: React.ReactNode

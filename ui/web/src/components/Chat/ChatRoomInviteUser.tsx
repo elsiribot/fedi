@@ -11,14 +11,14 @@ import { MatrixRoom } from '@fedi/common/types'
 import { formatErrorMessage } from '@fedi/common/utils/format'
 import { getUserSuffix } from '@fedi/common/utils/matrix'
 
-import { useAppDispatch, useAppSelector } from '../hooks'
-import { styled, theme } from '../styles'
+import { useAppDispatch, useAppSelector } from '../../hooks'
+import { styled, theme } from '../../styles'
+import { CircularLoader } from '../CircularLoader'
+import { EmptyState } from '../EmptyState'
+import { Input } from '../Input'
+import { ShadowScroller } from '../ShadowScroller'
+import { Text } from '../Text'
 import { ChatAvatar } from './ChatAvatar'
-import { CircularLoader } from './CircularLoader'
-import { EmptyState } from './EmptyState'
-import { Input } from './Input'
-import { ShadowScroller } from './ShadowScroller'
-import { Text } from './Text'
 
 interface Props {
     roomId: MatrixRoom['id']

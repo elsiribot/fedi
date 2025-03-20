@@ -7,15 +7,15 @@ import ChevronLeft from '@fedi/common/assets/svgs/chevron-left.svg'
 import { useToast } from '@fedi/common/hooks/toast'
 import { createMatrixRoom } from '@fedi/common/redux'
 
-import { useAppDispatch, useMediaQuery } from '../hooks'
-import { config, styled } from '../styles'
-import { Button } from './Button'
+import { useAppDispatch, useMediaQuery } from '../../hooks'
+import { config, styled } from '../../styles'
+import { Button } from '../Button'
+import { Icon } from '../Icon'
+import { Input } from '../Input'
+import * as Layout from '../Layout'
+import { Switch } from '../Switch'
+import { Text } from '../Text'
 import { ChatAvatar } from './ChatAvatar'
-import { Icon } from './Icon'
-import { Input } from './Input'
-import * as Layout from './Layout'
-import { Switch } from './Switch'
-import { Text } from './Text'
 
 export const ChatCreateRoom: React.FC = () => {
     const { t } = useTranslation()

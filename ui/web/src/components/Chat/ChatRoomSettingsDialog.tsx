@@ -17,15 +17,15 @@ import {
 } from '@fedi/common/redux'
 import { MatrixPowerLevel, MatrixRoom } from '@fedi/common/types'
 
-import { useAppDispatch, useAppSelector } from '../hooks'
-import { styled } from '../styles'
+import { useAppDispatch, useAppSelector } from '../../hooks'
+import { styled } from '../../styles'
+import { Dialog } from '../Dialog'
+import { SettingsMenu, SettingsMenuProps } from '../SettingsMenu'
+import { Switch } from '../Switch'
+import { Text } from '../Text'
 import { ChatAvatar } from './ChatAvatar'
 import { ChatRoomInviteUser } from './ChatRoomInviteUser'
 import { ChatRoomMembersList } from './ChatRoomMembersList'
-import { Dialog } from './Dialog'
-import { SettingsMenu, SettingsMenuProps } from './SettingsMenu'
-import { Switch } from './Switch'
-import { Text } from './Text'
 
 interface Props {
     room: MatrixRoom

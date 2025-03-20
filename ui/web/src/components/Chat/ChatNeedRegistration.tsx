@@ -4,10 +4,10 @@ import { useTranslation } from 'react-i18next'
 
 import ChatIllustration from '@fedi/common/assets/images/illustration-chat.png'
 
-import { styled } from '../styles'
-import { Button } from './Button'
-import * as Layout from './Layout'
-import { Text } from './Text'
+import { styled } from '../../styles'
+import { Button } from '../Button'
+import * as Layout from '../Layout'
+import { Text } from '../Text'
 
 export const ChatNeedRegistration: React.FC = () => {
     const { t } = useTranslation()

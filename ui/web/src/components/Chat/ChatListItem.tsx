@@ -6,10 +6,10 @@ import { MatrixRoom } from '@fedi/common/types'
 import dateUtils from '@fedi/common/utils/DateUtils'
 import { shouldShowUnreadIndicator } from '@fedi/common/utils/matrix'
 
-import { styled, theme } from '../styles'
+import { styled, theme } from '../../styles'
+import { NotificationDot } from '../NotificationDot'
+import { Text } from '../Text'
 import { ChatAvatar } from './ChatAvatar'
-import { NotificationDot } from './NotificationDot'
-import { Text } from './Text'
 
 interface Props {
     room: MatrixRoom

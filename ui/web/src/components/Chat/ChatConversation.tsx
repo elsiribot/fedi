@@ -13,16 +13,20 @@ import {
 import { ChatType, MatrixEvent } from '@fedi/common/types'
 import { makeMatrixEventGroups } from '@fedi/common/utils/matrix'
 
-import { useAppSelector, useAutosizeTextArea, useIsTouchScreen } from '../hooks'
-import { styled, theme } from '../styles'
-import { Avatar } from './Avatar'
+import {
+    useAppSelector,
+    useAutosizeTextArea,
+    useIsTouchScreen,
+} from '../../hooks'
+import { styled, theme } from '../../styles'
+import { Avatar } from '../Avatar'
+import { CircularLoader } from '../CircularLoader'
+import { Icon } from '../Icon'
+import { IconButton } from '../IconButton'
+import * as Layout from '../Layout'
+import { Text } from '../Text'
 import { ChatAvatar } from './ChatAvatar'
 import { ChatEventCollection } from './ChatEventCollection'
-import { CircularLoader } from './CircularLoader'
-import { Icon } from './Icon'
-import { IconButton } from './IconButton'
-import * as Layout from './Layout'
-import { Text } from './Text'
 
 interface Props {
     type: ChatType

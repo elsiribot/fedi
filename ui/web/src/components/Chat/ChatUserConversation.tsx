@@ -9,7 +9,7 @@ import {
 } from '@fedi/common/redux'
 import { ChatType } from '@fedi/common/types'
 
-import { useAppDispatch, useAppSelector } from '../hooks'
+import { useAppDispatch, useAppSelector } from '../../hooks'
 import { ChatConversation } from './ChatConversation'
 
 interface Props {

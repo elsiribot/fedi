@@ -4,8 +4,8 @@ import { selectMatrixAuth } from '@fedi/common/redux'
 import { MatrixEvent } from '@fedi/common/types'
 import { isPaymentEvent } from '@fedi/common/utils/matrix'
 
-import { useAppSelector } from '../hooks'
-import { styled, theme } from '../styles'
+import { useAppSelector } from '../../hooks'
+import { styled, theme } from '../../styles'
 import { ChatPaymentEvent } from './ChatPaymentEvent'
 
 interface Props {

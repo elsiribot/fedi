@@ -7,14 +7,14 @@ import { useUpdatingRef } from '@fedi/common/hooks/util'
 import { selectMatrixUser } from '@fedi/common/redux'
 import { Sats } from '@fedi/common/types'
 
-import { useAppSelector } from '../hooks'
-import { fedimint } from '../lib/bridge'
-import { styled, theme } from '../styles'
-import { AmountInput } from './AmountInput'
-import { Button } from './Button'
+import { useAppSelector } from '../../hooks'
+import { fedimint } from '../../lib/bridge'
+import { styled, theme } from '../../styles'
+import { AmountInput } from '../AmountInput'
+import { Button } from '../Button'
+import { Dialog } from '../Dialog'
+import { Text } from '../Text'
 import { ChatAvatar } from './ChatAvatar'
-import { Dialog } from './Dialog'
-import { Text } from './Text'
 
 interface Props {
     roomId: string

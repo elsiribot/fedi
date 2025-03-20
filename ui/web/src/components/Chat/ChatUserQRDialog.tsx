@@ -4,8 +4,8 @@ import { useTranslation } from 'react-i18next'
 import { selectMatrixAuth } from '@fedi/common/redux'
 import { encodeFediMatrixUserUri } from '@fedi/common/utils/matrix'
 
-import { useAppSelector } from '../hooks'
-import { QRDialog } from './QRDialog'
+import { useAppSelector } from '../../hooks'
+import { QRDialog } from '../QRDialog'
 
 interface Props {
     open: boolean
