@@ -290,6 +290,10 @@ export class FedimintBridge {
         })
     }
 
+    async listFederationsPendingRejoinFromScratch() {
+        return this.rpcTyped('listFederationsPendingRejoinFromScratch', {})
+    }
+
     // Attempts to reissues ecash, can be started offline but requires
     // a connection to guardians to actually redeem the ecash.
     // Will retry in the background.

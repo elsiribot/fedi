@@ -28,6 +28,7 @@ import {
     processFederationMeta,
     refreshFederations,
     refreshGuardianStatuses,
+    tryRejoinFederationsPendingScratchRejoin,
     updateFederationBalance,
     upsertFederation,
 } from './federation'
@@ -188,6 +189,14 @@ export function initializeCommonStore({
         },
     )
 
+    // Automatically rejoin federations that fail the nonce reuse check and recover from scratch
+    const unsubscribeNonceReuseCheckFailed = fedimint.addListener(
+        'nonceReuseCheckFailed',
+        () => {
+            dispatch(tryRejoinFederationsPendingScratchRejoin({ fedimint }))
+        },
+    )
+
     const debouncedUpdate = debounce(event => {
         log.debug('Debounced Balance update', event)
         dispatch(updateFederationBalance(event))
@@ -272,6 +281,7 @@ export function initializeCommonStore({
 
     return () => {
         unsubscribeFederation()
+        unsubscribeNonceReuseCheckFailed()
         unsubscribeCommunities()
         unsubscribeBalance()
         unsubscribeTransaction()

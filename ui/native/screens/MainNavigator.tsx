@@ -133,6 +133,7 @@ import Receive from './Receive'
 import ReceiveLightning from './ReceiveLightning'
 import ReceiveSuccess from './ReceiveSuccess'
 import RecordBackupVideo from './RecordBackupVideo'
+import RecoverFromNonceReuse from './RecoverFromNonceReuse'
 import RecoveryAssistSuccess from './RecoveryAssistSuccess'
 import RecoveryDeviceSelection from './RecoveryDeviceSelection'
 import RecoveryNewWallet from './RecoveryNewWallet'
@@ -247,6 +248,13 @@ export const MainNavigator = () => {
                         component={JoinFederation}
                         options={() => ({
                             header: () => <JoinFederationHeader />,
+                        })}
+                    />
+                    <Stack.Screen
+                        name="RecoverFromNonceReuse"
+                        component={RecoverFromNonceReuse}
+                        options={() => ({
+                            header: () => <Header backButton />,
                         })}
                     />
                     <Stack.Screen

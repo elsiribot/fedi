@@ -3,6 +3,7 @@ import {
     CommunityMetadataUpdatedEvent,
     DeviceRegistrationEvent,
     LogEvent,
+    NonceReuseCheckFailedEvent,
     ObservableUpdate,
     PanicEvent,
     RecoveryCompleteEvent,
@@ -283,6 +284,7 @@ export type FedimintBridgeEventMap = {
     observableUpdate: ObservableUpdate<unknown>
     deviceRegistration: DeviceRegistrationEvent
     communityMetadataUpdated: CommunityMetadataUpdatedEvent
+    nonceReuseCheckFailed: NonceReuseCheckFailedEvent
 }
 
 export type StabilityPoolTxn = {
