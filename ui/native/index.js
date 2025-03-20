@@ -15,6 +15,7 @@ import { install } from 'react-native-quick-crypto'
 import 'react-native-reanimated'
 import 'react-native-url-polyfill/auto'
 import * as Zendesk from 'react-native-zendesk-messaging'
+import { v4 as uuidv4 } from 'uuid'
 
 import {
     configureLogging,
@@ -30,6 +31,7 @@ import {
     handleBackgroundNotificationUpdate,
     handleForegroundFCMReceived,
     getNotificationBackgroundColor,
+    dispatchNotification,
 } from './utils/notifications'
 import { storage } from './utils/storage'
 import {

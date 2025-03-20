@@ -317,7 +317,7 @@ export const displayAnnouncement = async (
     )
 }
 
-const dispatchNotification = async (
+export const dispatchNotification = async (
     id: string,
     channelId: string,
     title: string,
