@@ -45,12 +45,11 @@ import { useAppDispatch, useAppSelector } from '../../hooks'
 import { fedimint } from '../../lib/bridge'
 import { styled } from '../../styles'
 
-const canLeaveFederation = (federation: FederationListItem | undefined) => {
+const canLeaveFederation = (federation: FederationListItem): boolean => {
     return (
         federation?.hasWallet &&
         'balance' in federation &&
-        federation?.balance &&
-        federation.balance < 100_000
+        federation?.balance < 100_000
     )
 }
 
@@ -86,7 +85,7 @@ function AdminPage() {
                         fedimint,
                         federationId: leavingFederation.id,
                     }),
-                )
+                ).unwrap()
             } catch (err) {
                 toast.error(t, err, 'errors.unknown-error')
             }
@@ -249,19 +248,21 @@ function AdminPage() {
                 onClose={() => setInvitingFederationId('')}
             />
 
-            <ConfirmDialog
-                open={!!leavingFederationId}
-                title={`${t('feature.federations.leave-federation')} - ${
-                    leavingFederation?.name
-                }`}
-                description={t(
-                    canLeaveFederation(leavingFederation)
-                        ? 'feature.federations.leave-federation-confirmation'
-                        : 'feature.federations.leave-federation-withdraw-first',
-                )}
-                onClose={() => setLeavingFederationId('')}
-                onConfirm={handleConfirmLeaveFederation}
-            />
+            {leavingFederation && (
+                <ConfirmDialog
+                    open={!!leavingFederationId}
+                    title={`${t('feature.federations.leave-federation')} - ${
+                        leavingFederation?.name
+                    }`}
+                    description={t(
+                        canLeaveFederation(leavingFederation)
+                            ? 'feature.federations.leave-federation-confirmation'
+                            : 'feature.federations.leave-federation-withdraw-first',
+                    )}
+                    onClose={() => setLeavingFederationId('')}
+                    onConfirm={handleConfirmLeaveFederation}
+                />
+            )}
         </ContentBlock>
     )
 }
