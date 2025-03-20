@@ -70,7 +70,7 @@ impl StabilityPoolHistoryService {
             bail!("server error: incorrect sync response");
         }
 
-        let _ = self.is_fetching.send(true);
+        self.is_fetching.send_replace(true);
         let result = async {
             let new_history_items: Vec<AccountHistoryItem> = self
                 .module_api
@@ -130,7 +130,7 @@ impl StabilityPoolHistoryService {
             Ok(())
         }
         .await;
-        let _ = self.is_fetching.send(false);
+        self.is_fetching.send_replace(false);
         result
     }
 
