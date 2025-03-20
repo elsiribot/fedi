@@ -886,7 +886,7 @@ export class MatrixChatClient {
 
         // Map the status to an enum, include the error if it failed
         let status: MatrixEventStatus
-        let error: Error | null = null
+        let error: string | null = null
         if (!item.value.localEcho) {
             status = MatrixEventStatus.sent
         } else {
@@ -900,9 +900,10 @@ export class MatrixChatClient {
                         ? MatrixEventStatus.failed
                         : MatrixEventStatus.pending
             if (status === MatrixEventStatus.failed) {
-                error = new Error(
-                    item.value.sendState?.error || 'Unknown error',
-                )
+                error =
+                    typeof item.value.sendState?.error === 'string'
+                        ? item.value.sendState?.error
+                        : 'Unknown error'
             }
         }
 
