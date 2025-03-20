@@ -1,5 +1,5 @@
 import { TFunction } from 'i18next'
-import { useCallback, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import { RequestInvoiceArgs } from 'webln'
 
 import {
@@ -13,6 +13,7 @@ import {
     selectMaxStableBalanceSats,
     selectMinimumDepositAmount,
     selectMinimumWithdrawAmountMsats,
+    selectPaymentFederation,
     selectPaymentFederationBalance,
     selectShowFiatTxnAmounts,
     selectStabilityPoolAvailableLiquidity,
@@ -36,6 +37,7 @@ import {
 import amountUtils from '../utils/AmountUtils'
 import stringUtils from '../utils/StringUtils'
 import { MeltSummary } from '../utils/cashu'
+import { BridgeError, FedimintBridge } from '../utils/fedimint'
 import { useCommonDispatch, useCommonSelector } from './redux'
 import { useUpdatingRef } from './util'
 
@@ -500,10 +502,14 @@ export function useMinMaxSendAmount(
         lnurlPayment,
         cashuMeltSummary,
         selectedPaymentFederation,
-    }: SendAmountArgs = {},
+        btcAddress,
+        fedimint,
+    }: SendAmountArgs & { fedimint?: FedimintBridge } = {},
     // TODO: Remove this option in favor of always using payFromFederation once
     // https://github.com/fedibtc/fedi/issues/4070 is finished
 ) {
+    const [maxAmountOnchain, setMaxAmountOnchain] = useState<Sats | null>(null)
+    const paymentFederation = useCommonSelector(selectPaymentFederation)
     const balance = useCommonSelector(s =>
         selectedPaymentFederation
             ? selectPaymentFederationBalance(s)
@@ -512,6 +518,32 @@ export function useMinMaxSendAmount(
 
     const invoiceAmount = invoice?.amount
     const { minSendable, maxSendable } = lnurlPayment || {}
+
+    useEffect(() => {
+        if (!btcAddress || !paymentFederation || !fedimint) return
+
+        // Attempts to preview the payment address with the full user balance
+        // Should always result in an insufficient balance error
+        fedimint
+            .previewPayAddress(
+                btcAddress.address,
+                amountUtils.msatToSat(paymentFederation.balance),
+                paymentFederation.id,
+            )
+            .catch(e => {
+                if (
+                    e instanceof BridgeError &&
+                    e.errorCode &&
+                    typeof e.errorCode === 'object' &&
+                    'insufficientBalance' in e.errorCode &&
+                    typeof e.errorCode.insufficientBalance === 'number'
+                ) {
+                    setMaxAmountOnchain(
+                        amountUtils.msatToSat(e.errorCode.insufficientBalance),
+                    )
+                }
+            })
+    }, [paymentFederation, btcAddress, fedimint])
 
     return useMemo(() => {
         if (balance < 1000)
@@ -541,9 +573,24 @@ export function useMinMaxSendAmount(
                     maximumAmount || Infinity,
                 ) as Sats
             }
+
+            if (btcAddress && maxAmountOnchain !== null) {
+                maximumAmount = Math.min(
+                    maximumAmount,
+                    maxAmountOnchain,
+                ) as Sats
+            }
         }
         return { minimumAmount, maximumAmount }
-    }, [balance, cashuMeltSummary, invoiceAmount, minSendable, maxSendable])
+    }, [
+        balance,
+        cashuMeltSummary,
+        invoiceAmount,
+        minSendable,
+        maxSendable,
+        maxAmountOnchain,
+        btcAddress,
+    ])
 }
 
 /**
@@ -691,15 +738,18 @@ export function useSendForm({
     selectedPaymentFederation,
     cashuMeltSummary,
     t,
-}: SendAmountArgs) {
+    fedimint,
+}: SendAmountArgs & { fedimint?: FedimintBridge }) {
     const [inputAmount, setInputAmount] = useState<Sats>(0 as Sats)
     if (!t) throw new Error('useSendForm requires a t function')
     const { minimumAmount, maximumAmount } = useMinMaxSendAmount({
         invoice,
         lnurlPayment,
+        btcAddress,
         selectedPaymentFederation,
         cashuMeltSummary,
         t,
+        fedimint,
     })
     const minimumAmountRef = useUpdatingRef(minimumAmount)
 

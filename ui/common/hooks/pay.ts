@@ -101,6 +101,7 @@ export function useOmniPaymentState(
         selectedPaymentFederation,
         cashuMeltSummary,
         t,
+        fedimint,
     })
 
     useEffect(() => {
