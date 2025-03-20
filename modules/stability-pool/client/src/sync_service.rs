@@ -89,7 +89,7 @@ impl StabilityPoolSyncService {
         dbtx.commit_tx().await;
 
         // Send the new SyncResponse to all watchers
-        let _ = self.sync_response.send(Some(sync_response));
+        self.sync_response.send_replace(Some(sync_response));
         Ok(())
     }
 
