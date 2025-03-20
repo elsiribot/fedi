@@ -1,6 +1,6 @@
-import { SupportedCurrency } from '../types'
+import { SelectableCurrency, SupportedCurrency } from '../types'
 
-export const currencyFlags: Record<SupportedCurrency, string> = {
+export const currencyFlags: Record<SelectableCurrency, string> = {
     [SupportedCurrency.USD]: '🇺🇸',
     [SupportedCurrency.ARS]: '🇦🇷',
     [SupportedCurrency.AUD]: '🇦🇺',
@@ -51,18 +51,18 @@ export const currencyFlags: Record<SupportedCurrency, string> = {
     [SupportedCurrency.VND]: '🇻🇳',
     [SupportedCurrency.ZAR]: '🇿🇦',
     [SupportedCurrency.ZMW]: '🇿🇼',
-    [SupportedCurrency.CAMEROON]: '🇨🇲',
-    [SupportedCurrency.CENTRAL_AFRICAN_REPUBLIC]: '🇨🇫',
-    [SupportedCurrency.CHAD]: '🇹🇩',
-    [SupportedCurrency.EQUITORIAL_GUINEA]: '🇬🇶',
-    [SupportedCurrency.GABON]: '🇬🇦',
-    [SupportedCurrency.REPUBLIC_OF_THE_CONGO]: '🇨🇩',
-    [SupportedCurrency.BENIN]: '🇧🇯',
-    [SupportedCurrency.BURKINA_FASO]: '🇧🇫',
-    [SupportedCurrency.COTE_D_IVOIRE]: '🇨🇮',
-    [SupportedCurrency.GUINEA_BISSAU]: '🇬🇼',
-    [SupportedCurrency.MALI]: '🇲🇱',
-    [SupportedCurrency.NIGER]: '🇳🇪',
-    [SupportedCurrency.SENEGAL]: '🇸🇳',
-    [SupportedCurrency.TOGO]: '🇹🇬',
+    cameroon: '🇨🇲',
+    central_african_republic: '🇨🇫',
+    chad: '🇹🇩',
+    equatorial_guinea: '🇬🇶',
+    gabon: '🇬🇦',
+    republic_of_the_congo: '🇨🇩',
+    benin: '🇧🇯',
+    burkina_faso: '🇧🇫',
+    cote_d_ivoire: '🇨🇮',
+    guinea_bissau: '🇬🇼',
+    mali: '🇲🇱',
+    niger: '🇳🇪',
+    senegal: '🇸🇳',
+    togo: '🇹🇬',
 }

@@ -156,21 +156,40 @@ export enum SupportedCurrency {
     VND = 'VND',
     ZAR = 'ZAR',
     ZMW = 'ZMW',
-    CAMEROON = 'XAF.CAMEROON',
-    CENTRAL_AFRICAN_REPUBLIC = 'XAF.CENTRAL_AFRICAN_REPUBLIC',
-    CHAD = 'XAF.CHAD',
-    EQUITORIAL_GUINEA = 'XAF.EQUITORIAL_GUINEA',
-    GABON = 'XAF.GABON',
-    REPUBLIC_OF_THE_CONGO = 'XAF.REPUBLIC_OF_THE_CONGO',
-    BENIN = 'XOF.BENIN',
-    BURKINA_FASO = 'XOF.BURKINA_FASO',
-    COTE_D_IVOIRE = 'XOF.COTE_D_IVOIRE',
-    GUINEA_BISSAU = 'XOF.GUINEA_BISSAU',
-    MALI = 'XOF.MALI',
-    NIGER = 'XOF.NIGER',
-    SENEGAL = 'XOF.SENEGAL',
-    TOGO = 'XOF.TOGO',
+    XAF = 'XAF',
+    XOF = 'XOF',
 }
+
+export const CurrencyAliases = {
+    cameroon: SupportedCurrency.XAF,
+    central_african_republic: SupportedCurrency.XAF,
+    chad: SupportedCurrency.XAF,
+    equatorial_guinea: SupportedCurrency.XAF,
+    gabon: SupportedCurrency.XAF,
+    republic_of_the_congo: SupportedCurrency.XAF,
+    benin: SupportedCurrency.XOF,
+    burkina_faso: SupportedCurrency.XOF,
+    cote_d_ivoire: SupportedCurrency.XOF,
+    guinea_bissau: SupportedCurrency.XOF,
+    mali: SupportedCurrency.XOF,
+    niger: SupportedCurrency.XOF,
+    senegal: SupportedCurrency.XOF,
+    togo: SupportedCurrency.XOF,
+} as const satisfies Record<string, SupportedCurrency>
+
+export type CurrencyAlias = keyof typeof CurrencyAliases
+
+// Exclude generic currencies XAF and XOF from currency flags
+export type NonGenericCurrency = Exclude<
+    SupportedCurrency,
+    SupportedCurrency.XAF | SupportedCurrency.XOF
+>
+
+// Currency option that can be selected in the UI
+export type SelectableCurrency = NonGenericCurrency | CurrencyAlias
+
+// Key type for currency options
+export type SelectableCurrencyKey = keyof NonGenericCurrency | CurrencyAlias
 
 export enum SupportedMetaFields {
     default_currency = 'default_currency',

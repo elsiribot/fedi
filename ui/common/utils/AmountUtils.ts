@@ -10,7 +10,7 @@ import {
     MsatsString,
     Sats,
     SatsString,
-    SupportedCurrency,
+    SelectableCurrency,
     Usd,
     UsdCents,
     UsdString,
@@ -140,7 +140,7 @@ class AmountUtils {
      */
     formatFiat = (
         amount: number,
-        currency: SupportedCurrency,
+        currency: SelectableCurrency,
         options: {
             locale?: string | string[]
             symbolPosition?: AmountSymbolPosition
@@ -175,7 +175,7 @@ class AmountUtils {
      * Given a currency, return a symbol for it in the user's default locale.
      */
     getCurrencySymbol = (
-        currency: SupportedCurrency,
+        currency: SelectableCurrency,
         options: { locale?: string | string[] } = {},
     ) => {
         const currencyCode = getCurrencyCode(currency)
@@ -196,7 +196,7 @@ class AmountUtils {
      * If undefined, return 0.
      */
     getCurrencyDecimals = (
-        currency: SupportedCurrency,
+        currency: SelectableCurrency,
         options: { locale?: string | string[] } = {},
     ): number => {
         const currencyCode = getCurrencyCode(currency)

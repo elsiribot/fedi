@@ -846,24 +846,20 @@
                 "vnd": "Vietnam Dong",
                 "zar": "South African Rand",
                 "zmw": "Zambian Kwacha",
-                "xaf": {
-                    "cameroon": "Cameroon",
-                    "central_african_republic": "Central African Republic",
-                    "chad": "Chad",
-                    "equitorial_guinea": "Equitorial Guinea",
-                    "gabon": "Gabon",
-                    "republic_of_the_congo": "Republic of the Congo"
-                },
-                "xof": {
-                    "benin": "Benin",
-                    "burkina_faso": "Burkina Faso",
-                    "cote_d_ivoire": "Côte d'Ivoire",
-                    "guinea_bissau": "Guinea Bissau",
-                    "mali": "Mali",
-                    "niger": "Niger",
-                    "senegal": "Senegal",
-                    "togo": "Togo"
-                }
+                "cameroon": "Cameroon",
+                "central_african_republic": "Central African Republic",
+                "chad": "Chad",
+                "equatorial_guinea": "Equatorial Guinea",
+                "gabon": "Gabon",
+                "republic_of_the_congo": "Republic of the Congo",
+                "benin": "Benin",
+                "burkina_faso": "Burkina Faso",
+                "cote_d_ivoire": "Côte d'Ivoire",
+                "guinea_bissau": "Guinea Bissau",
+                "mali": "Mali",
+                "niger": "Niger",
+                "senegal": "Senegal",
+                "togo": "Togo"
             }
         },
         "stabilitypool": {

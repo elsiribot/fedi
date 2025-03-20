@@ -11,9 +11,11 @@ import {
     ReceiveSuccessData,
     TransactionAmountState,
     TransactionListEntry,
+    SelectableCurrency,
 } from '../types'
 import amountUtils, { FIAT_MAX_DECIMAL_PLACES } from './AmountUtils'
 import dateUtils from './DateUtils'
+import { getCurrencyCode } from './currency'
 
 export interface DetailItem {
     label: string
@@ -536,7 +538,7 @@ export const makeTxnFeeDetails = (
 export const makeTxnDetailItems = (
     t: TFunction,
     txn: TransactionListEntry,
-    currency: SupportedCurrency | undefined = SupportedCurrency.USD,
+    currency: SelectableCurrency | undefined = SupportedCurrency.USD,
     showFiatTxnAmounts: boolean,
     makeFormattedAmountsFromMSats: (amt: MSats) => FormattedAmounts,
     convertCentsToFormattedFiat: (amt: UsdCents) => string,
@@ -659,14 +661,14 @@ export const makeTxnDetailItems = (
         items.push({
             label: t('feature.stabilitypool.deposit-to'),
             value: t('feature.stabilitypool.currency-balance', {
-                currency,
+                currency: getCurrencyCode(currency),
             }),
         })
     } else if (txn.kind === 'spWithdraw') {
         items.push({
             label: t('feature.stabilitypool.withdrawal-from'),
             value: t('feature.stabilitypool.currency-balance', {
-                currency,
+                currency: getCurrencyCode(currency),
             }),
         })
     }

@@ -7,14 +7,8 @@ describe('currency', () => {
             expect(getCurrencyCode(SupportedCurrency.USD)).toBe('USD')
         })
 
-        it('correctly returns the first half of a generic currency code', () => {
-            expect(getCurrencyCode(SupportedCurrency.MALI)).toBe('XOF')
-        })
-
-        it('confirms that all supported currencies return three-letter codes', () => {
-            for (const currency of Object.values(SupportedCurrency)) {
-                expect(getCurrencyCode(currency)).toHaveLength(3)
-            }
+        it('correctly returns a generic currency code for aliases', () => {
+            expect(getCurrencyCode('mali')).toBe('XOF')
         })
     })
 })

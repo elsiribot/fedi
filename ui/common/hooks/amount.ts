@@ -33,6 +33,7 @@ import {
     ParsedLnurlPay,
     ParsedLnurlWithdraw,
     Sats,
+    SelectableCurrency,
     SupportedCurrency,
     TransactionListEntry,
     UsdCents,
@@ -79,7 +80,7 @@ export const numpadButtons = [
 
 export type NumpadButtonValue = (typeof numpadButtons)[number]
 
-export const useBtcFiatPrice = (currency?: SupportedCurrency) => {
+export const useBtcFiatPrice = (currency?: SelectableCurrency) => {
     const selectedFiatCurrency = useCommonSelector(selectCurrency)
     const currencyLocale = useCommonSelector(selectCurrencyLocale)
     const exchangeRate: number = useCommonSelector(selectBtcExchangeRate)
@@ -143,8 +144,7 @@ export const useBtcFiatPrice = (currency?: SupportedCurrency) => {
         ),
     }
 }
-
-export const useAmountFormatter = (currency?: SupportedCurrency) => {
+export const useAmountFormatter = (currency?: SelectableCurrency) => {
     const { convertSatsToFormattedUsd, convertSatsToFormattedFiat } =
         useBtcFiatPrice(currency)
     const showFiatTxnAmounts = useCommonSelector(selectShowFiatTxnAmounts)
