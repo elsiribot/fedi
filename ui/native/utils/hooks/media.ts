@@ -1,6 +1,8 @@
+import crypto from 'crypto'
 import { useEffect, useState } from 'react'
 import { exists, TemporaryDirectoryPath } from 'react-native-fs'
 
+import { JSONObject } from '@fedi/common/types/bindings'
 import { MatrixEncryptedFile } from '@fedi/common/utils/matrix'
 
 import { fedimint } from '../../bridge'
@@ -22,12 +24,11 @@ export const useMatrixFile = (file: MatrixEncryptedFile | string | null) => {
         const loadImage = async () => {
             if (file === null) return
 
-            const imageUrl = typeof file === 'string' ? file : file.url
-            // The last part of an mxc url is a slug-like identifier with the date and image extension
-            // If `undefined`, use a random string
-            const imageUrlEnding =
-                imageUrl.split('/').at(-1) ??
-                Math.random().toString(36).slice(2)
+            // Generate a random hash of the file URL or object to use as the temporary file name
+            const fileHash = crypto
+                .createHash('md5')
+                .update(JSON.stringify(file))
+                .digest('hex')
 
             try {
                 const path = pathJoin(
@@ -35,12 +36,14 @@ export const useMatrixFile = (file: MatrixEncryptedFile | string | null) => {
                     // A file extension is required for a URI to be recognized by the <Image> component from React Native
                     // The file type is determined by the file content, so the extension doesn't matter
                     // Tests have been conducted successfully with multiple file formats including .png, .jpg, .gif, .webp, and .mp4 and they all work fine
-                    `${imageUrlEnding}.png`,
+                    `${fileHash}.png`,
                 )
 
                 const imagePath = await fedimint.matrixDownloadFile(
                     path,
-                    typeof file === 'string' ? { url: file } : { file },
+                    typeof file === 'string'
+                        ? { url: file }
+                        : { file: file as JSONObject },
                 )
 
                 const imageUri = prefixFileUri(imagePath)

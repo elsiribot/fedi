@@ -5,6 +5,7 @@ import { StyleProp, StyleSheet, TextStyle, View, ViewStyle } from 'react-native'
 import { ErrorBoundary } from '@fedi/common/components/ErrorBoundary'
 import { selectMatrixAuth } from '@fedi/common/redux'
 import { MatrixEvent } from '@fedi/common/types'
+import { deriveUrlsFromText } from '@fedi/common/utils/chat'
 import {
     arePollEventsEqual,
     isDeletedEvent,
@@ -86,17 +87,7 @@ const ChatEvent: React.FC<Props> = ({
         return null
     }
 
-    const derivedLinks = isText
-        ? // The "\b" before "https" prevents the regex from matching uwanted content at the beginning (e.g. "asdfhttps://link")
-          event.content.body.match(/\bhttps?:\/\/[^\s]+/gi)?.filter(url => {
-              try {
-                  // There is an eslint rule preventing you from calling `new Class()` without using it
-                  return Boolean(new URL(url))
-              } catch {
-                  return false
-              }
-          })
-        : null
+    const derivedLinks = isText ? deriveUrlsFromText(event.content.body) : null
 
     return (
         <ErrorBoundary fallback={() => <MessageItemError />}>

@@ -38,6 +38,7 @@ import {
     makeMatrixPaymentText,
     matrixIdToUsername,
 } from '../utils/matrix'
+import { MatrixUrlMetadata, matrixUrlMetadataSchema } from '../utils/media'
 import { useAmountFormatter } from './amount'
 import { useCommonDispatch, useCommonSelector } from './redux'
 import { useToast } from './toast'
@@ -434,4 +435,26 @@ export function useObserveMatrixSyncStatus(isMatrixStarted: boolean) {
             dispatch(unsubscribeMatrixSyncStatus())
         }
     }, [isMatrixStarted, dispatch])
+}
+
+export function useMatrixUrlPreview({
+    url,
+    fedimint,
+}: {
+    url: string
+    fedimint: FedimintBridge
+}) {
+    const [urlPreview, setUrlPreview] = useState<MatrixUrlMetadata | null>(null)
+
+    useEffect(() => {
+        fedimint.matrixGetMediaPreview({ url }).then(info => {
+            const parsedPreview = matrixUrlMetadataSchema.safeParse(info.data)
+
+            if (parsedPreview.success) {
+                setUrlPreview(parsedPreview.data)
+            }
+        })
+    }, [url, fedimint])
+
+    return urlPreview
 }

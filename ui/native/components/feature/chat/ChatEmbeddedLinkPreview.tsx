@@ -9,10 +9,7 @@ import {
     View,
 } from 'react-native'
 
-import {
-    MatrixUrlMetadata,
-    matrixUrlMetadataSchema,
-} from '@fedi/common/utils/media'
+import { useMatrixUrlPreview } from '@fedi/common/hooks/matrix'
 
 import { fedimint } from '../../../bridge'
 import { useMatrixFile } from '../../../utils/hooks/media'
@@ -31,12 +28,12 @@ const ChatEmbeddedLinkPreview: React.FC<Props> = ({
     setHasWidePreview,
     hasWidePreview,
 }) => {
-    const [urlPreview, setUrlPreview] = useState<MatrixUrlMetadata | null>(null)
+    const urlPreview = useMatrixUrlPreview({ url, fedimint })
+    const [isPressed, setIsPressed] = useState(false)
     const [mediaDimensions, setMediaDimensions] = useState<{
         width: number
         height: number
     } | null>(null)
-    const [isPressed, setIsPressed] = useState(false)
     const { theme } = useTheme()
     const { uri, isLoading, isError } = useMatrixFile(
         urlPreview?.['og:image'] ?? null,
@@ -45,25 +42,20 @@ const ChatEmbeddedLinkPreview: React.FC<Props> = ({
     const style = styles(theme)
 
     useEffect(() => {
-        fedimint.matrixGetMediaPreview({ url }).then(info => {
-            const parsedPreview = matrixUrlMetadataSchema.safeParse(info.data)
+        if (urlPreview) {
+            setHasWidePreview(Boolean(urlPreview?.['og:title']))
 
-            if (parsedPreview.success) {
-                setUrlPreview(parsedPreview.data)
-
-                const imageWidth = parsedPreview.data['og:image:width']
-                const imageHeight = parsedPreview.data['og:image:height']
-                if (imageWidth && imageHeight) {
-                    // Show wide preview only if the url preview has a title
-                    setHasWidePreview(Boolean(parsedPreview.data['og:title']))
-                    setMediaDimensions({
-                        width: imageWidth,
-                        height: imageHeight,
-                    })
-                }
+            const imageWidth = urlPreview['og:image:width']
+            const imageHeight = urlPreview['og:image:height']
+            if (imageWidth && imageHeight) {
+                // Show wide preview only if the url preview has a title
+                setMediaDimensions({
+                    width: imageWidth,
+                    height: imageHeight,
+                })
             }
-        })
-    }, [url, setHasWidePreview])
+        }
+    }, [urlPreview, setHasWidePreview])
 
     const dimensions = useMemo(() => {
         if (mediaDimensions) {

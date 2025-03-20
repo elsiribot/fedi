@@ -175,3 +175,17 @@ export const parseData = <T extends z.ZodTypeAny>(
         }
     return { success: false, errorMessage: t('errors.invalid-username') }
 }
+
+export const deriveUrlsFromText = (text: string) => {
+    // The "\b" before "https" prevents the regex from matching uwanted content at the beginning (e.g. "asdfhttps://link")
+    return (
+        text.match(/\bhttps?:\/\/[^\s]+/gi)?.filter(url => {
+            try {
+                // There is an eslint rule preventing you from calling `new Class()` without using it
+                return Boolean(new URL(url))
+            } catch {
+                return false
+            }
+        }) ?? []
+    )
+}
