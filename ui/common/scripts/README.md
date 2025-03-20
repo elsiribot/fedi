@@ -115,3 +115,11 @@ If no matches of a key are found, it is automatically removed from the localizat
 
 -   `yarn run i18n:unused`
 -   `yarn run i18n:unused -n`
+
+# Sync InfoPlist.strings
+
+Pulls iOS' purpose strings from localisation files and writes them into appropriate files. Run this whenever we add/update purpose strings.
+
+```bash
+yarn run i18n:sync-plist
+```

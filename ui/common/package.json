@@ -14,7 +14,8 @@
         "i18n:autotranslate": "ts-node ./scripts/autotranslate.ts",
         "i18n:export-csv": "ts-node ./scripts/i18n-export-csv.ts",
         "i18n:import-csv": "ts-node ./scripts/i18n-import-csv.ts",
-        "i18n:unused": "ts-node ./scripts/i18n-unused.ts"
+        "i18n:unused": "ts-node ./scripts/i18n-unused.ts",
+        "i18n:sync-plist": "ts-node ./scripts/i18n-sync-plist.ts"
     },
     "dependencies": {
         "@reduxjs/toolkit": "^1.9.3",

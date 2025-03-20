@@ -1,4 +1,11 @@
 {
+    "purposeStrings": {
+        "NSCameraUsageDescription": "Fedi perlu akses ke kamera untuk scan kode QR",
+        "NSLocationWhenInUseUsageDescription": "Fedi tidak menggunakan lokasimu",
+        "NSMicrophoneUsageDescription": "Fedi perlu akses ke mikrofon kamu untuk merekam video cadangan sosial",
+        "NSPhotoLibraryAddUsageDescription": "Fedi perlu akses untuk menyimpan foto ke dalam perpustakaan fotomu",
+        "NSPhotoLibraryUsageDescription": "Fedi perlu akses ke galeri foto kamu untuk memilih media guna avatarmu dan lampiran chat"
+    },
     "words": {
         "accept": "Terima",
         "account": "Akun",
