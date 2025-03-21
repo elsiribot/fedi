@@ -27,6 +27,7 @@ use matrix_sdk::RoomInfo;
 use mime::Mime;
 use serde::de::DeserializeOwned;
 use serde::{Deserialize, Serialize};
+use stability_pool_client::common::{FiatAmount, FiatOrAll};
 pub use tokio;
 use tracing::{error, info, instrument, Level};
 
@@ -59,7 +60,8 @@ use crate::types::{
     RpcCommunity, RpcDeviceIndexAssignmentStatus, RpcEcashInfo, RpcFederationMaybeLoading,
     RpcFederationPreview, RpcFeeDetails, RpcGenerateEcashResponse, RpcLightningGateway,
     RpcMediaUploadParams, RpcNostrPubkey, RpcNostrSecret, RpcPayAddressResponse,
-    RpcRegisteredDevice, RpcTransaction, RpcTransactionDirection, RpcTransactionListEntry,
+    RpcRegisteredDevice, RpcSPv2CachedSyncResponse, RpcTransaction, RpcTransactionDirection,
+    RpcTransactionListEntry,
 };
 
 #[derive(Debug, thiserror::Error)]
@@ -706,6 +708,50 @@ async fn stabilityPoolWithdraw(
 ) -> anyhow::Result<RpcOperationId> {
     federation
         .stability_pool_withdraw(unlocked_amount.0, locked_bps)
+        .await
+        .map(Into::into)
+}
+
+#[macro_rules_derive(federation_rpc_method!)]
+async fn spv2AccountInfo(
+    federation: Arc<FederationV2>,
+) -> anyhow::Result<RpcSPv2CachedSyncResponse> {
+    federation.spv2_account_info().await.map(Into::into)
+}
+
+#[macro_rules_derive(federation_rpc_method!)]
+async fn spv2NextCycleStartTime(federation: Arc<FederationV2>) -> anyhow::Result<u64> {
+    federation.spv2_next_cycle_start_time().await
+}
+
+#[macro_rules_derive(federation_rpc_method!)]
+async fn spv2AverageFeeRate(federation: Arc<FederationV2>, num_cycles: u32) -> anyhow::Result<u64> {
+    federation.spv2_average_fee_rate(num_cycles.into()).await
+}
+
+#[macro_rules_derive(federation_rpc_method!)]
+async fn spv2AvailableLiquidity(federation: Arc<FederationV2>) -> anyhow::Result<RpcAmount> {
+    federation.spv2_available_liquidity().await
+}
+
+#[macro_rules_derive(federation_rpc_method!)]
+async fn spv2DepositToSeek(
+    federation: Arc<FederationV2>,
+    amount: RpcAmount,
+) -> anyhow::Result<RpcOperationId> {
+    federation
+        .spv2_deposit_to_seek(amount.0)
+        .await
+        .map(Into::into)
+}
+
+#[macro_rules_derive(federation_rpc_method!)]
+async fn spv2Withdraw(
+    federation: Arc<FederationV2>,
+    fiat_amount: u32,
+) -> anyhow::Result<RpcOperationId> {
+    federation
+        .spv2_withdraw(FiatOrAll::Fiat(FiatAmount(fiat_amount.into())))
         .await
         .map(Into::into)
 }
@@ -1488,7 +1534,7 @@ async fn matrixGetMediaPreview(
 }
 
 #[macro_rules_derive(rpc_method!)]
-async fn featureCatalog(runtime: Arc<BridgeRuntime>) -> anyhow::Result<Arc<FeatureCatalog>> {
+async fn getFeatureCatalog(runtime: Arc<BridgeRuntime>) -> anyhow::Result<Arc<FeatureCatalog>> {
     Ok(runtime.feature_catalog.clone())
 }
 
@@ -1546,7 +1592,7 @@ rpc_methods!(RpcMethods {
     bridgeStatus,
     onAppForeground,
     fedimintVersion,
-    featureCatalog,
+    getFeatureCatalog,
     // Federations
     joinFederation,
     federationPreview,
@@ -1607,6 +1653,13 @@ rpc_methods!(RpcMethods {
     stabilityPoolWithdraw,
     stabilityPoolAverageFeeRate,
     stabilityPoolAvailableLiquidity,
+    // Stability Pool v2
+    spv2AccountInfo,
+    spv2NextCycleStartTime,
+    spv2DepositToSeek,
+    spv2Withdraw,
+    spv2AverageFeeRate,
+    spv2AvailableLiquidity,
     // Developer
     getSensitiveLog,
     setSensitiveLog,

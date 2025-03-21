@@ -96,6 +96,9 @@ export type Event =
   | { federation: RpcFederationMaybeLoading }
   | { balance: BalanceEvent }
   | { panic: PanicEvent }
+  | { sPv2Deposit: SPv2DepositEvent }
+  | { sPv2Withdrawal: SPv2WithdrawalEvent }
+  | { sPv2Transfer: SPv2TransferEvent }
   | { stabilityPoolDeposit: StabilityPoolDepositEvent }
   | { stabilityPoolWithdrawal: StabilityPoolWithdrawalEvent }
   | { recoveryComplete: RecoveryCompleteEvent }
@@ -135,16 +138,22 @@ export type FeatureCatalog = {
   encrypted_sync: EncryptedSyncFeatureConfig | null;
   override_localhost: OverrideLocalhostFeatureConfig | null;
   /**
-   * Enables multispend v2, powered by the multi-sig stability pool (v2)
-   * module. This is a global, bridge-level configuration. Actual
-   * availability of the feature is on a per-federation basis,
-   * depending on whether or not the new module is available in the
-   * federation. Note however, that the feature flag takes precedence. If
-   * the feature flag is disabled, the feature is never available. If the
-   * feature flag is enabled, then the federation's module availability
-   * determines the availability of the feature.
+   * Enables stability pool v2 module, which also powers the multispend
+   * feature. This feature is to be thought of as a tri-state enum
+   * representing 3 scenarios.
+   * 1. None: both stability pool v2 (and multispend feature) disabled
+   * 2. Some(SpV2Only): use stability pool v2, but multispend disabled
+   * 3. Some(Multispend): use stability pool and multispend enabled
+   *
+   * This is a global, bridge-level configuration. Actual availability of the
+   * feature is on a per-federation basis, depending on whether or not
+   * the new module is available in the federation. Note however, that
+   * the feature flag takes precedence. If the feature flag is disabled,
+   * the feature is never available. If the feature flag is enabled, then
+   * the federation's module availability determines the availability of
+   * the feature.
    */
-  multispend: MultispendFeatureConfig | null;
+  stability_pool_v2: StabilityPoolV2FeatureConfig | null;
 };
 
 export type FiatFXInfo = {
@@ -171,8 +180,6 @@ export type GuardianStatus =
   | { timeout: { guardian: string; elapsed: string } };
 
 export type LogEvent = { log: string };
-
-export type MultispendFeatureConfig = Record<string, never>;
 
 /**
  * Notify front-end that given federation has failed the e-cash blind nonce
@@ -459,7 +466,7 @@ export type RpcMethods = {
   bridgeStatus: [bridgeStatus, RpcBridgeStatus];
   onAppForeground: [onAppForeground, null];
   fedimintVersion: [fedimintVersion, string];
-  featureCatalog: [featureCatalog, FeatureCatalog];
+  getFeatureCatalog: [getFeatureCatalog, FeatureCatalog];
   joinFederation: [joinFederation, RpcFederation];
   federationPreview: [federationPreview, RpcFederationPreview];
   leaveFederation: [leaveFederation, null];
@@ -518,6 +525,12 @@ export type RpcMethods = {
   stabilityPoolWithdraw: [stabilityPoolWithdraw, RpcOperationId];
   stabilityPoolAverageFeeRate: [stabilityPoolAverageFeeRate, bigint];
   stabilityPoolAvailableLiquidity: [stabilityPoolAvailableLiquidity, RpcAmount];
+  spv2AccountInfo: [spv2AccountInfo, RpcSPv2CachedSyncResponse];
+  spv2NextCycleStartTime: [spv2NextCycleStartTime, bigint];
+  spv2DepositToSeek: [spv2DepositToSeek, RpcOperationId];
+  spv2Withdraw: [spv2Withdraw, RpcOperationId];
+  spv2AverageFeeRate: [spv2AverageFeeRate, bigint];
+  spv2AvailableLiquidity: [spv2AvailableLiquidity, RpcAmount];
   getSensitiveLog: [getSensitiveLog, boolean];
   setSensitiveLog: [setSensitiveLog, null];
   setMintModuleFediFeeSchedule: [setMintModuleFediFeeSchedule, null];
@@ -743,9 +756,53 @@ export type RpcSPDepositState =
     }
   | { type: "dataNotInCache" };
 
+export type RpcSPV2DepositState =
+  | { type: "pendingDeposit"; amount: RpcAmount; fiat_amount: number }
+  | {
+      type: "completedDeposit";
+      amount: RpcAmount;
+      fiat_amount: number;
+      fees_paid_so_far: RpcAmount;
+    }
+  | { type: "dataNotInCache" };
+
+export type RpcSPV2TransferInState =
+  | {
+      type: "completedTransfer";
+      from_account_id: string;
+      amount: RpcAmount;
+      fiat_amount: number;
+    }
+  | { type: "dataNotInCache" };
+
+export type RpcSPV2TransferOutState =
+  | {
+      type: "completedTransfer";
+      to_account_id: string;
+      amount: RpcAmount;
+      fiat_amount: number;
+    }
+  | { type: "dataNotInCache" };
+
+export type RpcSPV2WithdrawalState =
+  | { type: "pendingWithdrawal"; amount: RpcAmount; fiat_amount: number }
+  | { type: "completedWithdrawal"; amount: RpcAmount; fiat_amount: number }
+  | { type: "dataNotInCache" };
+
 export type RpcSPWithdrawState =
   | { type: "pendingWithdrawal"; estimated_withdrawal_cents: number }
   | { type: "completeWithdrawal"; estimated_withdrawal_cents: number };
+
+export type RpcSPv2CachedSyncResponse = {
+  fetchTime: number;
+  currCycleIdx: number;
+  currCycleStartTime: number;
+  currCycleStartPrice: number;
+  stagedBalance: RpcAmount;
+  lockedBalance: RpcAmount;
+  idleBalance: RpcAmount;
+  pendingUnlockRequest: number | null;
+};
 
 export type RpcSignedLnurlMessage = { signature: string; pubkey: RpcPublicKey };
 
@@ -853,6 +910,10 @@ export type RpcTransaction = {
   | { kind: "oobReceive"; state: RpcOOBReissueState | null }
   | { kind: "spDeposit"; state: RpcSPDepositState }
   | { kind: "spWithdraw"; state: RpcSPWithdrawState | null }
+  | { kind: "sPV2Deposit"; state: RpcSPV2DepositState }
+  | { kind: "sPV2Withdrawal"; state: RpcSPV2WithdrawalState }
+  | { kind: "sPV2TransferOut"; state: RpcSPV2TransferOutState }
+  | { kind: "sPV2TransferIn"; state: RpcSPV2TransferInState }
 );
 
 export type RpcTransactionDirection = "receive" | "send";
@@ -881,7 +942,11 @@ export type RpcTransactionKind =
   | { kind: "oobSend"; state: RpcOOBSpendState | null }
   | { kind: "oobReceive"; state: RpcOOBReissueState | null }
   | { kind: "spDeposit"; state: RpcSPDepositState }
-  | { kind: "spWithdraw"; state: RpcSPWithdrawState | null };
+  | { kind: "spWithdraw"; state: RpcSPWithdrawState | null }
+  | { kind: "sPV2Deposit"; state: RpcSPV2DepositState }
+  | { kind: "sPV2Withdrawal"; state: RpcSPV2WithdrawalState }
+  | { kind: "sPV2TransferOut"; state: RpcSPV2TransferOutState }
+  | { kind: "sPV2TransferIn"; state: RpcSPV2TransferInState };
 
 export type RpcTransactionListEntry = {
   createdAt: number;
@@ -920,9 +985,54 @@ export type RpcTransactionListEntry = {
   | { kind: "oobReceive"; state: RpcOOBReissueState | null }
   | { kind: "spDeposit"; state: RpcSPDepositState }
   | { kind: "spWithdraw"; state: RpcSPWithdrawState | null }
+  | { kind: "sPV2Deposit"; state: RpcSPV2DepositState }
+  | { kind: "sPV2Withdrawal"; state: RpcSPV2WithdrawalState }
+  | { kind: "sPV2TransferOut"; state: RpcSPV2TransferOutState }
+  | { kind: "sPV2TransferIn"; state: RpcSPV2TransferInState }
 );
 
 export type RpcUserId = string;
+
+export type SPv2DepositEvent = {
+  federationId: RpcFederationId;
+  operationId: RpcOperationId;
+  state: SPv2DepositState;
+};
+
+export type SPv2DepositState =
+  | "initiated"
+  | "txAccepted"
+  | { txRejected: string }
+  | { primaryOutputError: string }
+  | "success";
+
+export type SPv2TransferEvent = {
+  federationId: RpcFederationId;
+  operationId: RpcOperationId;
+  state: SPv2TransferState;
+};
+
+export type SPv2TransferState =
+  | "initiated"
+  | "success"
+  | { txRejected: string };
+
+export type SPv2WithdrawalEvent = {
+  federationId: RpcFederationId;
+  operationId: RpcOperationId;
+  state: SPv2WithdrawalState;
+};
+
+export type SPv2WithdrawalState =
+  | "initiated"
+  | "unlockTxAccepted"
+  | { unlockTxRejected: string }
+  | { unlockProcessingError: string }
+  | { withdrawalInitiated: RpcAmount }
+  | { withdrawalTxAccepted: RpcAmount }
+  | { withdrawalTxRejected: string }
+  | { primaryOutputError: string }
+  | { success: RpcAmount };
 
 export type SerdeVectorDiff<T> =
   | {
@@ -1027,6 +1137,12 @@ export type StabilityPoolDepositState =
  */
 export type StabilityPoolUnfilledDepositSweptEvent = { amount: RpcAmount };
 
+export type StabilityPoolV2FeatureConfig = {
+  state: StabilityPoolV2FeatureConfigState;
+};
+
+export type StabilityPoolV2FeatureConfigState = "SpV2Only" | "Multispend";
+
 export type StabilityPoolWithdrawalEvent = {
   federationId: RpcFederationId;
   operationId: RpcOperationId;
@@ -1091,8 +1207,6 @@ export type evilSpamAddress = { federationId: RpcFederationId };
 
 export type evilSpamInvoices = { federationId: RpcFederationId };
 
-export type featureCatalog = {};
-
 export type federationPreview = { inviteCode: string };
 
 export type fedimintVersion = {};
@@ -1128,6 +1242,8 @@ export type getAccruedOutstandingFediFeesPerTXType = {
 export type getAccruedPendingFediFeesPerTXType = {
   federationId: RpcFederationId;
 };
+
+export type getFeatureCatalog = {};
 
 export type getGuardianStatus = { federationId: RpcFederationId };
 
@@ -1396,6 +1512,27 @@ export type socialRecoveryDownloadVerificationDoc = {
   federationId: RpcFederationId;
   recoveryId: RpcRecoveryId;
   peerId: RpcPeerId;
+};
+
+export type spv2AccountInfo = { federationId: RpcFederationId };
+
+export type spv2AvailableLiquidity = { federationId: RpcFederationId };
+
+export type spv2AverageFeeRate = {
+  federationId: RpcFederationId;
+  numCycles: number;
+};
+
+export type spv2DepositToSeek = {
+  federationId: RpcFederationId;
+  amount: RpcAmount;
+};
+
+export type spv2NextCycleStartTime = { federationId: RpcFederationId };
+
+export type spv2Withdraw = {
+  federationId: RpcFederationId;
+  fiatAmount: number;
 };
 
 export type stabilityPoolAccountInfo = {

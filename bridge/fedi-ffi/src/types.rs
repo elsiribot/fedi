@@ -15,6 +15,7 @@ use fedimint_mint_client::{ReissueExternalNotesState, SpendOOBState};
 use fedimint_wallet_client::{DepositStateV2, WithdrawState};
 use serde::de::{self, MapAccess, Visitor};
 use serde::{Deserialize, Deserializer, Serialize};
+use stability_pool_client::db::CachedSyncResponseValue;
 use stability_pool_client_old::ClientAccountInfo;
 use ts_rs::TS;
 
@@ -579,6 +580,18 @@ pub enum RpcTransactionKind {
     SpWithdraw {
         state: Option<RpcSPWithdrawState>,
     },
+    SPV2Deposit {
+        state: RpcSPV2DepositState,
+    },
+    SPV2Withdrawal {
+        state: RpcSPV2WithdrawalState,
+    },
+    SPV2TransferOut {
+        state: RpcSPV2TransferOutState,
+    },
+    SPV2TransferIn {
+        state: RpcSPV2TransferInState,
+    },
 }
 
 impl RpcTransaction {
@@ -622,6 +635,25 @@ pub enum RpcSPDepositState {
 #[serde(rename_all = "camelCase")]
 #[serde(tag = "type")]
 #[ts(export)]
+pub enum RpcSPV2DepositState {
+    PendingDeposit {
+        amount: RpcAmount,
+        #[ts(type = "number")]
+        fiat_amount: u64,
+    },
+    CompletedDeposit {
+        amount: RpcAmount,
+        #[ts(type = "number")]
+        fiat_amount: u64,
+        fees_paid_so_far: RpcAmount,
+    },
+    DataNotInCache,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, TS)]
+#[serde(rename_all = "camelCase")]
+#[serde(tag = "type")]
+#[ts(export)]
 pub enum RpcSPWithdrawState {
     PendingWithdrawal {
         #[ts(type = "number")]
@@ -631,6 +663,52 @@ pub enum RpcSPWithdrawState {
         #[ts(type = "number")]
         estimated_withdrawal_cents: u64,
     },
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, TS)]
+#[serde(rename_all = "camelCase")]
+#[serde(tag = "type")]
+#[ts(export)]
+pub enum RpcSPV2WithdrawalState {
+    PendingWithdrawal {
+        amount: RpcAmount,
+        #[ts(type = "number")]
+        fiat_amount: u64,
+    },
+    CompletedWithdrawal {
+        amount: RpcAmount,
+        #[ts(type = "number")]
+        fiat_amount: u64,
+    },
+    DataNotInCache,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, TS)]
+#[serde(rename_all = "camelCase")]
+#[serde(tag = "type")]
+#[ts(export)]
+pub enum RpcSPV2TransferOutState {
+    CompletedTransfer {
+        to_account_id: String,
+        amount: RpcAmount,
+        #[ts(type = "number")]
+        fiat_amount: u64,
+    },
+    DataNotInCache,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, TS)]
+#[serde(rename_all = "camelCase")]
+#[serde(tag = "type")]
+#[ts(export)]
+pub enum RpcSPV2TransferInState {
+    CompletedTransfer {
+        from_account_id: String,
+        amount: RpcAmount,
+        #[ts(type = "number")]
+        fiat_amount: u64,
+    },
+    DataNotInCache,
 }
 
 impl From<DepositStateV2> for RpcOnchainDepositState {
@@ -970,6 +1048,44 @@ impl From<ClientAccountInfo> for RpcStabilityPoolAccountInfo {
                 .collect(),
             timestamp: to_unix_time(value.timestamp).expect("Response timestamp must be valid"),
             is_fetched_from_server: value.is_fetched_from_server,
+        }
+    }
+}
+
+#[derive(Debug, Deserialize, Serialize, TS)]
+#[serde(rename_all = "camelCase")]
+#[ts(export)]
+pub struct RpcSPv2CachedSyncResponse {
+    #[ts(type = "number")]
+    pub fetch_time: u64,
+    #[ts(type = "number")]
+    pub curr_cycle_idx: u64,
+    #[ts(type = "number")]
+    pub curr_cycle_start_time: u64,
+    #[ts(type = "number")]
+    pub curr_cycle_start_price: u64,
+    pub staged_balance: RpcAmount,
+    pub locked_balance: RpcAmount,
+    pub idle_balance: RpcAmount,
+    #[ts(type = "number | null")]
+    pub pending_unlock_request: Option<u64>,
+}
+
+impl From<CachedSyncResponseValue> for RpcSPv2CachedSyncResponse {
+    fn from(value: CachedSyncResponseValue) -> Self {
+        Self {
+            fetch_time: to_unix_time(value.fetch_time).expect("fetch time must be valid"),
+            curr_cycle_idx: value.value.current_cycle.idx,
+            curr_cycle_start_time: to_unix_time(value.value.current_cycle.start_time)
+                .expect("cycle time must be valid"),
+            curr_cycle_start_price: value.value.current_cycle.start_price.0,
+            staged_balance: RpcAmount(value.value.staged_balance),
+            locked_balance: RpcAmount(value.value.locked_balance),
+            idle_balance: RpcAmount(value.value.idle_balance),
+            pending_unlock_request: value
+                .value
+                .amount_from_unlock_request()
+                .map(|(_, fiat)| fiat.0),
         }
     }
 }
