@@ -4,7 +4,7 @@ import { useToast } from '@fedi/common/hooks/toast'
 import { useTxnDisplayUtils } from '@fedi/common/hooks/transactions'
 import { selectActiveFederationId, selectCurrency } from '@fedi/common/redux'
 import { updateTransactionNotes } from '@fedi/common/redux/transactions'
-import type { Transaction } from '@fedi/common/types'
+import type { TransactionListEntry } from '@fedi/common/types'
 import { makeTransactionAmountState } from '@fedi/common/utils/wallet'
 
 import { fedimint } from '../../../bridge'
@@ -13,7 +13,7 @@ import { HistoryList } from '../transaction-history/HistoryList'
 import { TransactionIcon } from '../transaction-history/TransactionIcon'
 
 type StabilityTransactionsListProps = {
-    transactions: Transaction[]
+    transactions: TransactionListEntry[]
     loading?: boolean
     loadMoreTransactions: () => void
 }

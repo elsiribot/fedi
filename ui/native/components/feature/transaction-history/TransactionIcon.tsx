@@ -3,15 +3,18 @@ import React from 'react'
 
 import { makeTxnStatusBadge } from '@fedi/common/utils/wallet'
 
-import { Transaction } from '../../../types'
+import { TransactionListEntry } from '../../../types'
 import SvgImage, { SvgImageName } from '../../ui/SvgImage'
 import { HistoryIcon } from './HistoryIcon'
 
 interface Props {
-    txn: Transaction
+    txn: TransactionListEntry
 }
 
-const getTxnIcon = (txn: Transaction, theme: Theme): React.ReactNode => {
+const getTxnIcon = (
+    txn: TransactionListEntry,
+    theme: Theme,
+): React.ReactNode => {
     let icon: SvgImageName = 'BitcoinCircle'
     let color: string = theme.colors.orange
 

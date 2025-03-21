@@ -41,6 +41,7 @@ import {
     refetchSiteInfo,
     selectSiteInfo,
     listGateways,
+    selectIsInternetUnreachable,
 } from '@fedi/common/redux'
 import { AnyParsedData, Invoice, ParserDataType } from '@fedi/common/types'
 import { makeLog } from '@fedi/common/utils/log'
@@ -119,6 +120,7 @@ const FediModBrowser: React.FC<Props> = ({ route }) => {
     )
     const siteInfo = useAppSelector(selectSiteInfo)
     const walletFederations = useAppSelector(selectWalletFederations)
+    const isInternetUnreachable = useAppSelector(selectIsInternetUnreachable)
     const webview = useRef<WebView>() as MutableRefObject<WebView>
     const overlayResolveRef = useRef<
         FediModResolver<FediModResponse> | undefined
@@ -330,11 +332,11 @@ const FediModBrowser: React.FC<Props> = ({ route }) => {
                 throw new Error('No active federation')
             }
             try {
-                const msats = await fedimint.receiveEcash(
+                const res = await fedimint.receiveEcash(
                     ecash,
                     activeFederation.id,
                 )
-                return { msats }
+                return { msats: res[0] }
             } catch (err) {
                 log.warn('fedi.receiveEcash', err)
                 throw new Error(t('errors.receive-ecash-failed'))
@@ -393,7 +395,13 @@ const FediModBrowser: React.FC<Props> = ({ route }) => {
         // be handled elsewhere in the app, pass it to the OmniLinkContext. If it
         // can't be parsed, pass it on to the OS to decide how to handle it.
         setIsParsingLink(true)
-        parseUserInput(req.url, fedimint, t, activeFederation?.id)
+        parseUserInput(
+            req.url,
+            fedimint,
+            t,
+            activeFederation?.id,
+            isInternetUnreachable,
+        )
             .then(parsed => {
                 const handled = handleParsedLink(parsed)
                 if (handled) return

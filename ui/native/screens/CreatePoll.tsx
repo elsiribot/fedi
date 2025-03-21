@@ -230,6 +230,20 @@ export const styles = (theme: Theme) =>
             alignItems: 'center',
             gap: theme.spacing.sm,
         },
+        endPollPreview: {
+            alignItems: 'center',
+            gap: theme.spacing.xl,
+        },
+        pollPreview: {
+            backgroundColor: theme.colors.extraLightGrey,
+            width: '100%',
+            borderRadius: 8,
+            padding: theme.spacing.lg,
+            alignItems: 'center',
+        },
+        button: {
+            backgroundColor: theme.colors.red,
+        },
     })
 
 export default CreatePoll

@@ -16,6 +16,7 @@ import {
     setSelectedChatMessage,
 } from '@fedi/common/redux'
 import { MatrixEvent } from '@fedi/common/types'
+import { JSONObject } from '@fedi/common/types/bindings'
 import { makeLog } from '@fedi/common/utils/log'
 import { getEventId, MatrixEventContentType } from '@fedi/common/utils/matrix'
 
@@ -119,7 +120,7 @@ const SelectedMessageOverlay: React.FC<{ isPublic?: boolean }> = ({
 
             const downloadedFilePath = await fedimint.matrixDownloadFile(
                 path,
-                selectedMessage.content,
+                selectedMessage.content as JSONObject,
             )
 
             const downloadedFileUri = prefixFileUri(downloadedFilePath)

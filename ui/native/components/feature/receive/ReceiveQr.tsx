@@ -61,8 +61,10 @@ const ReceiveQr: React.FC<ReceiveQrProps> = ({ uri, type }: ReceiveQrProps) => {
     const transactionEventHandler = useCallback(
         (event: TransactionEvent) => {
             if (
-                event.transaction.lightning?.invoice === uri.body ||
-                event.transaction.bitcoin?.address === uri.body
+                (event.transaction.kind === 'lnReceive' &&
+                    event.transaction.ln_invoice === uri.body) ||
+                (event.transaction.kind === 'onchainDeposit' &&
+                    event.transaction.onchain_address === uri.body)
             )
                 navigation.dispatch(
                     reset('ReceiveSuccess', {
