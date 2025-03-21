@@ -26,6 +26,7 @@ import { config, styled, theme } from '../../styles'
 import { Button } from '../Button'
 import { FederationAvatar } from '../FederationAvatar'
 import FederationEndedPreview from '../FederationEndedPreview'
+import { HoloLoader } from '../HoloLoader'
 import { Header, Title } from '../Layout'
 import { OmniInput } from '../OmniInput'
 import { Text } from '../Text'
@@ -109,7 +110,10 @@ export const JoinFederation: React.FC = () => {
 
     let content: React.ReactNode
     let actions: React.ReactNode
-    if (!federationPreview) {
+
+    if (isFetchingPreview) {
+        content = <HoloLoader size={'lg'} />
+    } else if (!federationPreview) {
         content = (
             <ScanWrap>
                 <Text variant="h2" weight="medium">
