@@ -46,6 +46,7 @@ const TransactionsList: React.FC<TransactionsListProps> = ({
             loading={loading}
             makeIcon={txn => <TransactionIcon txn={txn} />}
             makeRowProps={txn => ({
+                id: txn.id,
                 status: makeTxnStatusText(txn),
                 amount: makeTxnAmountText(txn),
                 currencyText: preferredCurrency,
@@ -55,6 +56,7 @@ const TransactionsList: React.FC<TransactionsListProps> = ({
                 amountState: makeTransactionAmountState(txn),
             })}
             makeDetailProps={txn => ({
+                id: txn.id,
                 title: makeTxnDetailTitleText(txn),
                 items: makeTxnDetailItems(txn),
                 amount: makeTxnAmountText(txn, true),

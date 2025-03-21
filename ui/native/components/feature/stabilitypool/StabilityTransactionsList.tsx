@@ -53,6 +53,7 @@ const StabilityTransactionsList = ({
                 amountState: makeTransactionAmountState(txn),
             })}
             makeDetailProps={txn => ({
+                id: txn.id,
                 title: makeStabilityTxnDetailTitleText(txn),
                 items: makeStabilityTxnDetailItems(txn),
                 amount: makeTxnAmountText(txn, true),

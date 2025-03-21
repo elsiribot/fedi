@@ -253,6 +253,12 @@ export class FedimintBridge {
         })
     }
 
+    async recheckPeginAddress(
+        args: bindings.RpcPayload<'recheckPeginAddress'>,
+    ) {
+        return this.rpcTyped('recheckPeginAddress', args)
+    }
+
     async payAddress(
         address: string,
         sats: Sats,
