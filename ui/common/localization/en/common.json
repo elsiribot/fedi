@@ -199,6 +199,7 @@
         "wallet-balance": "Wallet balance: {{balance}} sats",
         "yearly-fee": "Yearly fee",
         "you-are-offline": "You are currently in offline mode",
+        "your-username": "Your username",
         "youre-offline": "You're offline"
     },
     "errors": {
