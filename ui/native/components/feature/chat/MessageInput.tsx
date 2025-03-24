@@ -50,7 +50,7 @@ import { getEventId } from '@fedi/common/utils/matrix'
 import { formatFileSize } from '@fedi/common/utils/media'
 
 import { fedimint } from '../../../bridge'
-import { MAX_VIDEO_SIZE, MAX_FILE_SIZE } from '../../../constants'
+import { MAX_FILE_SIZE, MAX_IMAGE_SIZE } from '../../../constants'
 import { useAppDispatch, useAppSelector } from '../../../state/hooks'
 import {
     getUriFromAttachment,
@@ -178,8 +178,8 @@ const MessageInput: React.FC<MessageInputProps> = ({
                 )
 
                 if (
-                    anyAssetExceedsSize(assetImages, MAX_FILE_SIZE) ||
-                    anyAssetExceedsSize(assetVideos, MAX_VIDEO_SIZE)
+                    anyAssetExceedsSize(assetImages, MAX_IMAGE_SIZE) ||
+                    anyAssetExceedsSize(assetVideos, MAX_FILE_SIZE)
                 )
                     return
 

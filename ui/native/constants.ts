@@ -68,5 +68,5 @@ export const ZENDESK_PUSH_NOTIFICATION_CHANNEL = 'and-notification-channel'
     File Sizes
     -----
  */
-export const MAX_FILE_SIZE = 100 * 1024 * 1024 // 100MB for images & files
-export const MAX_VIDEO_SIZE = 500 * 1024 * 1024 // 500MB for videos
+export const MAX_IMAGE_SIZE = 100 * 1024 * 1024 // 100MB for images
+export const MAX_FILE_SIZE = 500 * 1024 * 1024 // 500MB for other files

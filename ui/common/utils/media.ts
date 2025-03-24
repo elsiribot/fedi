@@ -4,9 +4,9 @@ import { z } from 'zod'
  * Formats a file size in bytes to a human-readable string.
  */
 export const formatFileSize = (bytes: number) => {
-    if (bytes < 1024) return `${bytes} b`
-    else if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} kb`
-    else return `${(bytes / 1024 / 1024).toFixed(1)} mb`
+    if (bytes < 1024) return `${bytes} B`
+    else if (bytes < 1024 * 1024) return `${Math.round(bytes / 1024)} KB`
+    else return `${Math.round(bytes / 1024 / 1024)} MB`
 }
 
 /**
