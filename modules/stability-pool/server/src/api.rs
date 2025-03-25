@@ -1,3 +1,4 @@
+use std::collections::BTreeMap;
 use std::time::SystemTime;
 
 use fedimint_core::db::{DatabaseTransaction, IDatabaseTransactionOpsCoreTyped};
@@ -11,8 +12,8 @@ use stability_pool_common::{
 
 use crate::db::{
     account_history_count, get_account_history_items, CurrentCycleKey, IdleBalanceKey,
-    PastCycleKeyPrefix, StagedProvidesKey, StagedProvidesKeyPrefix, StagedSeeksKey,
-    StagedSeeksKeyPrefix, UnlockRequestKey,
+    PastCycleKeyPrefix, SeekLifetimeFeeKey, StagedProvidesKey, StagedProvidesKeyPrefix,
+    StagedSeeksKey, StagedSeeksKeyPrefix, UnlockRequestKey,
 };
 use crate::StabilityPool;
 
@@ -72,36 +73,64 @@ pub async fn sync(
         .get_value(&CurrentCycleKey)
         .await
         .ok_or_else(|| ApiError::bad_request("disallowed before first cycle".to_owned()))?;
-    let locked_balance: Amount = match account.acc_type() {
-        AccountType::Seeker => current_cycle
-            .locked_seeks
-            .get(&account)
-            .map(|v| v.iter().map(|locked| locked.amount).sum())
-            .unwrap_or(Amount::ZERO),
-        AccountType::Provider => current_cycle
-            .locked_provides
-            .get(&account)
-            .map(|v| v.iter().map(|locked| locked.amount).sum())
-            .unwrap_or(Amount::ZERO),
-        AccountType::BtcDepositor => Amount::ZERO,
-    };
 
-    let staged_balance = match account.acc_type() {
-        AccountType::Seeker | AccountType::BtcDepositor => dbtx
-            .get_value(&StagedSeeksKey(account))
-            .await
-            .unwrap_or_default()
-            .iter()
-            .map(|staged| staged.amount)
-            .sum(),
-        AccountType::Provider => dbtx
-            .get_value(&StagedProvidesKey(account))
-            .await
-            .unwrap_or_default()
-            .iter()
-            .map(|provide| provide.amount)
-            .sum(),
-    };
+    let locked_balance;
+    let staged_balance;
+    let locked_seeks_lifetime_fee;
+    match account.acc_type() {
+        AccountType::Seeker => {
+            let locked_seeks = current_cycle.locked_seeks.get(&account);
+            let staged_seeks = dbtx
+                .get_value(&StagedSeeksKey(account))
+                .await
+                .unwrap_or_default();
+
+            locked_balance = if let Some(locked_seeks) = locked_seeks {
+                locked_seeks.iter().map(|locked| locked.amount).sum()
+            } else {
+                Amount::ZERO
+            };
+            staged_balance = staged_seeks.iter().map(|staged| staged.amount).sum();
+            locked_seeks_lifetime_fee = Some({
+                let mut fee_map = BTreeMap::new();
+                for seek in locked_seeks.unwrap_or(&vec![]) {
+                    fee_map.insert(
+                        seek.txid,
+                        dbtx.get_value(&SeekLifetimeFeeKey(seek.txid))
+                            .await
+                            .unwrap_or(Amount::ZERO),
+                    );
+                }
+                fee_map
+            });
+        }
+        AccountType::Provider => {
+            let locked_provides = current_cycle.locked_provides.get(&account);
+            let staged_provides = dbtx
+                .get_value(&StagedProvidesKey(account))
+                .await
+                .unwrap_or_default();
+
+            locked_balance = if let Some(locked_provides) = locked_provides {
+                locked_provides.iter().map(|locked| locked.amount).sum()
+            } else {
+                Amount::ZERO
+            };
+            staged_balance = staged_provides.iter().map(|staged| staged.amount).sum();
+            locked_seeks_lifetime_fee = None;
+        }
+        AccountType::BtcDepositor => {
+            let staged_seeks = dbtx
+                .get_value(&StagedSeeksKey(account))
+                .await
+                .unwrap_or_default();
+
+            locked_balance = Amount::ZERO;
+            staged_balance = staged_seeks.iter().map(|staged| staged.amount).sum();
+            locked_seeks_lifetime_fee = None;
+        }
+    }
+
     Ok(SyncResponse {
         current_cycle: current_cycle.into(),
         idle_balance: dbtx
@@ -112,6 +141,7 @@ pub async fn sync(
         locked_balance,
         unlock_request: dbtx.get_value(&UnlockRequestKey(account)).await,
         account_history_count: account_history_count(dbtx, account).await,
+        locked_seeks_lifetime_fee,
     })
 }
 

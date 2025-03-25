@@ -5,7 +5,7 @@ use std::time::SystemTime;
 use anyhow::ensure;
 use fedimint_core::db::{DatabaseTransaction, IDatabaseTransactionOpsCoreTyped as _};
 use fedimint_core::encoding::{Decodable, Encodable};
-use fedimint_core::{impl_db_lookup, impl_db_record, Amount, PeerId};
+use fedimint_core::{impl_db_lookup, impl_db_record, Amount, PeerId, TransactionId};
 use futures::StreamExt;
 use stability_pool_common::{
     AccountHistoryItem, AccountId, CycleInfo, FeeRate, FiatAmount, Provide, Seek,
@@ -55,6 +55,12 @@ pub enum DbKeyPrefix {
     /// Provides with lower fees will always have higher priority when matching,
     /// but if two provides have the same fees, lower sequence wins.
     DepositSequence,
+
+    /// TXID => msat amount
+    /// Seeks have to pay fees to providers for each cycle that they are locked.
+    /// This is an accumulating amount for each seek that grows over its
+    /// lifetime for each cycle that it is locked.
+    SeekLifetimeFee,
 
     /// (Cycle index, peer ID) => consensus item.
     /// A mapping where a peer's vote for the next cycle is recorded. When a
@@ -175,6 +181,23 @@ impl_db_record!(
 impl_db_lookup!(
     key = DepositSequenceKey,
     query_prefix = DepositSequenceKeyPrefix,
+);
+
+#[derive(Debug, Encodable, Decodable)]
+pub struct SeekLifetimeFeeKey(pub TransactionId);
+
+#[derive(Debug, Encodable, Decodable)]
+pub struct SeekLifetimeFeeKeyPrefix;
+
+impl_db_record!(
+    key = SeekLifetimeFeeKey,
+    value = Amount,
+    db_prefix = DbKeyPrefix::SeekLifetimeFee,
+);
+
+impl_db_lookup!(
+    key = SeekLifetimeFeeKey,
+    query_prefix = SeekLifetimeFeeKeyPrefix,
 );
 
 #[derive(Debug, Encodable, Decodable)]

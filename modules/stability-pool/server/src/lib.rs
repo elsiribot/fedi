@@ -23,8 +23,9 @@ use common::{
 };
 use db::{
     CurrentCycleKey, CurrentCycleKeyPrefix, Cycle, CycleChangeVoteIndexPrefix, CycleChangeVoteKey,
-    IdleBalanceKey, IdleBalanceKeyPrefix, PastCycleKey, StagedProvidesKey, StagedProvidesKeyPrefix,
-    StagedSeeksKey, StagedSeeksKeyPrefix, UnlockRequestKey, UnlockRequestsKeyPrefix,
+    IdleBalanceKey, IdleBalanceKeyPrefix, PastCycleKey, SeekLifetimeFeeKey, StagedProvidesKey,
+    StagedProvidesKeyPrefix, StagedSeeksKey, StagedSeeksKeyPrefix, UnlockRequestKey,
+    UnlockRequestsKeyPrefix,
 };
 use fedimint_core::config::{
     ConfigGenModuleParams, DkgResult, ServerModuleConfig, ServerModuleConsensusConfig,
@@ -1780,19 +1781,26 @@ async fn distribute_fees_and_write_cycle(
 
     // Reduce each locked seek by fee amount and calculate total fee pool
     let mut fee_pool = 0u128;
-    locked_seeks
-        .iter_mut()
-        .for_each(|(_account_id, Seek { amount, .. })| {
-            // Ceiling division to ensure fee is never undercharged
-            let fee = ceil_division(amount.msats as u128 * fee_rate as u128, B);
-            fee_pool += fee;
+    for (_, seek) in locked_seeks.iter_mut() {
+        // Ceiling division to ensure fee is never undercharged
+        let fee = ceil_division(seek.amount.msats as u128 * fee_rate as u128, B);
+        fee_pool += fee;
 
-            // `fee` is calculated by taking a real msat value (which is guaranteed to fit
-            // within u64) and multiplying it by a fraction smaller than 1. Therefore `fee`
-            // must fit within u64.
-            let fee = Amount::from_msats(fee.try_into().unwrap());
-            *amount -= fee;
-        });
+        // `fee` is calculated by taking a real msat value (which is guaranteed to fit
+        // within u64) and multiplying it by a fraction smaller than 1. Therefore `fee`
+        // must fit within u64.
+        let fee = Amount::from_msats(fee.try_into().unwrap());
+        seek.amount -= fee;
+
+        // Update lifetime fee tracker for seek
+        let lifetime_fee_key = SeekLifetimeFeeKey(seek.txid);
+        let lifetime_fee = dbtx
+            .get_value(&lifetime_fee_key)
+            .await
+            .unwrap_or(Amount::ZERO)
+            + fee;
+        dbtx.insert_entry(&lifetime_fee_key, &lifetime_fee).await;
+    }
 
     let locked_provides_map = locked_provides
         .into_iter()
