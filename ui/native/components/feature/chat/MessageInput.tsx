@@ -33,6 +33,7 @@ import {
 } from 'react-native-image-picker'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 
+import { MAX_FILE_SIZE, MAX_IMAGE_SIZE } from '@fedi/common/constants/matrix'
 import { theme as fediTheme } from '@fedi/common/constants/theme'
 import { useToast } from '@fedi/common/hooks/toast'
 import { useDebouncedEffect } from '@fedi/common/hooks/util'
@@ -50,7 +51,6 @@ import { getEventId } from '@fedi/common/utils/matrix'
 import { formatFileSize } from '@fedi/common/utils/media'
 
 import { fedimint } from '../../../bridge'
-import { MAX_FILE_SIZE, MAX_IMAGE_SIZE } from '../../../constants'
 import { useAppDispatch, useAppSelector } from '../../../state/hooks'
 import {
     getUriFromAttachment,
