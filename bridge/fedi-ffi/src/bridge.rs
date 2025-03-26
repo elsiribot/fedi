@@ -776,7 +776,11 @@ impl Bridge {
         let matrix_setup = self
             .runtime()
             .app_state
-            .with_read_lock(|x| x.matrix_session.is_some())
+            // did we ever setup matrix?
+            .with_read_lock(|x| {
+                x.matrix_session_sliding_sync_proxy.is_some()
+                    || x.matrix_session_native_sync.is_some()
+            })
             .await;
         let device_index_assignment_status =
             self.runtime().device_index_assignment_status().await?;

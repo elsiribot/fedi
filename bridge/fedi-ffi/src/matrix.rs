@@ -1,4 +1,5 @@
-use std::path::Path;
+use std::future::pending;
+use std::path::{Path, PathBuf};
 use std::pin::pin;
 use std::sync::Arc;
 use std::time::Duration;
@@ -45,7 +46,7 @@ use matrix_sdk::ruma::events::{
     AnyMessageLikeEventContent, AnySyncTimelineEvent, InitialStateEvent,
 };
 use matrix_sdk::ruma::{assign, EventId, OwnedMxcUri, RoomId, UInt, UserId};
-use matrix_sdk::{Client, RoomInfo, RoomMemberships};
+use matrix_sdk::{sliding_sync, Client, RoomInfo, RoomMemberships};
 use matrix_sdk_ui::room_list_service;
 use matrix_sdk_ui::sync_service::{self, SyncService};
 use matrix_sdk_ui::timeline::{default_event_filter, TimelineEventItemId};
@@ -71,16 +72,25 @@ pub struct Matrix {
     notification_settings: NotificationSettings,
 }
 
+#[derive(Debug, Clone, PartialEq, Eq)]
+enum ClientKind {
+    SlidingSyncProxy { url: String },
+    NativeSync,
+}
+
 impl Matrix {
     async fn build_client(
         base_dir: &Path,
         home_server: String,
-        sliding_sync_proxy: String,
         passphrase: &str,
+        client_kind: &ClientKind,
     ) -> Result<Client> {
         let builder = Client::builder()
-            .sliding_sync_version_builder(matrix_sdk::sliding_sync::VersionBuilder::Proxy {
-                url: url::Url::parse(&sliding_sync_proxy)?,
+            .sliding_sync_version_builder(match client_kind {
+                ClientKind::SlidingSyncProxy { url } => sliding_sync::VersionBuilder::Proxy {
+                    url: url::Url::parse(url)?,
+                },
+                ClientKind::NativeSync => sliding_sync::VersionBuilder::Native,
             })
             .homeserver_url(home_server)
             // make backup and recovery automagically work.
@@ -90,10 +100,31 @@ impl Matrix {
                 auto_enable_backups: true,
             })
             .handle_refresh_tokens();
+
+        // after migration we changed db names to not delete current database in case we
+        // do something bad, we can always rollback to sliding sync proxy
+        // version
+        let is_sliding_sync_proxy = matches!(client_kind, ClientKind::SlidingSyncProxy { .. });
+
         #[cfg(not(target_family = "wasm"))]
-        let builder = builder.sqlite_store(base_dir.join("db.sqlite"), Some(passphrase));
+        let builder = builder.sqlite_store(
+            base_dir.join(if is_sliding_sync_proxy {
+                "db.sqlite"
+            } else {
+                "db-native-sync.sqlite"
+            }),
+            Some(passphrase),
+        );
+
         #[cfg(target_family = "wasm")]
-        let builder = builder.indexeddb_store("matrix-db", Some(passphrase));
+        let builder = builder.indexeddb_store(
+            if is_sliding_sync_proxy {
+                "matrix-db"
+            } else {
+                "matrix-db-native-sync"
+            },
+            Some(passphrase),
+        );
 
         let client = builder.build().await?;
         Ok(client)
@@ -123,17 +154,25 @@ impl Matrix {
         home_server: String,
         sliding_sync_proxy: String,
     ) -> Result<Self> {
+        Self::run_migration_task(
+            runtime.clone(),
+            base_dir.to_path_buf(),
+            matrix_secret.clone(),
+            home_server.clone(),
+            sliding_sync_proxy.clone(),
+        );
         let matrix_session = runtime
             .app_state
-            .with_read_lock(|r| r.matrix_session.clone())
+            .with_read_lock(|r| r.matrix_session_native_sync.clone())
             .await;
         let user_password = &Self::home_server_password(matrix_secret, &home_server);
         let encryption_passphrase = Self::encryption_passphrase(matrix_secret);
+        // always run the new client
         let client = Self::build_client(
             base_dir,
             home_server,
-            sliding_sync_proxy,
             &encryption_passphrase,
+            &ClientKind::NativeSync,
         )
         .await?;
 
@@ -213,7 +252,7 @@ impl Matrix {
                         .runtime
                         .app_state
                         .with_write_lock(|w| {
-                            if let Some(session) = w.matrix_session.as_mut() {
+                            if let Some(session) = w.matrix_session_native_sync.as_mut() {
                                 session.tokens = token;
                             }
                         })
@@ -277,7 +316,7 @@ impl Matrix {
             Some(matrix_sdk::AuthSession::Matrix(matrix_session)) => {
                 app_state
                     .with_write_lock(|a| {
-                        a.matrix_session = Some(matrix_session);
+                        a.matrix_session_native_sync = Some(matrix_session);
                     })
                     .await?;
             }
@@ -317,6 +356,71 @@ impl Matrix {
                 }
             }
         }
+        Ok(())
+    }
+
+    pub fn run_migration_task(
+        runtime: Arc<BridgeRuntime>,
+        base_dir: PathBuf,
+        matrix_secret: DerivableSecret,
+        home_server: String,
+        sliding_sync_proxy: String,
+    ) {
+        runtime
+            .task_group
+            .clone()
+            .spawn_cancellable("matrix::migration_task", async move {
+                if let Err(err) = Self::migration_task_inner(
+                    runtime,
+                    base_dir,
+                    matrix_secret,
+                    home_server,
+                    sliding_sync_proxy,
+                )
+                .await
+                {
+                    warn!(?err, "migration task failed");
+                }
+            });
+    }
+
+    // run a client that connects to sliding sync proxy in background to get keys
+    // from it.
+    async fn migration_task_inner(
+        runtime: Arc<BridgeRuntime>,
+        base_dir: PathBuf,
+        matrix_secret: DerivableSecret,
+        home_server: String,
+        sliding_sync_proxy: String,
+    ) -> Result<()> {
+        let Some(session) = runtime
+            .app_state
+            .with_read_lock(|r| r.matrix_session_sliding_sync_proxy.clone())
+            .await
+        else {
+            // the user never logged in on old matrix, no migration needed
+            return Ok(());
+        };
+        let encryption_passphrase = Self::encryption_passphrase(&matrix_secret);
+        let client_kind = ClientKind::SlidingSyncProxy {
+            url: sliding_sync_proxy,
+        };
+        let client =
+            Self::build_client(&base_dir, home_server, &encryption_passphrase, &client_kind)
+                .await?;
+        client.restore_session(session).await?;
+        let sync_service = SyncService::builder(client.clone())
+            .with_offline_mode()
+            .build()
+            .await?;
+        // start sync from sliding sync proxy in background
+        sync_service.start().await;
+        // FIXME: also saved refreshed token into disk for old sessions
+        // maybe better to retry in case of error instead of waiting for next startup
+        Self::enable_recovery(&client, encryption_passphrase).await?;
+        // keep this task alive, stuff in happen in background if we don't drop (stop)
+        // sync_service
+        pending::<()>().await;
         Ok(())
     }
 
@@ -1216,6 +1320,23 @@ mod tests {
             home_server,
         );
         info!("password: {password}");
+    }
+
+    #[ignore]
+    #[tokio::test(flavor = "multi_thread")]
+    async fn test_create_room() -> Result<()> {
+        TracingSetup::default().init().unwrap();
+        let (matrix, _event_rx, _temp_dir) = mk_matrix_new_user().await?;
+        let mut request = create_room::Request::default();
+        let room_name = "my name is one".to_string();
+        request.name = Some(room_name.clone());
+        let room_id = matrix.room_create(request).await?;
+        let room = matrix.room(&room_id).await?;
+        while room.name() != Some(room_name.clone()) {
+            warn!("## WAITING");
+            fedimint_core::runtime::sleep(Duration::from_millis(100)).await;
+        }
+        Ok(())
     }
 
     #[ignore]
