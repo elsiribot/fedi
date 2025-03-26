@@ -283,6 +283,7 @@ tasks.configureEach {
         }
 }
 
+//This is for Appium testing - to ensure the APK only installs to the selected device (rather than all devices)
 tasks.withType(com.android.build.gradle.internal.tasks.InstallVariantTask).configureEach { task ->
     task.doLast {
         if (project.hasProperty('deviceId')) {
