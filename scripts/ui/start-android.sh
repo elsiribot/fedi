@@ -29,7 +29,6 @@ device_ids=()
 
 for device_id in "${all_device_ids[@]}"; do
     echo "Getting details for device: $device_id"
-    # Skip if empty for some reason
     if [[ -z "$device_id" ]]; then
         echo "Skipping empty device ID"
         continue
@@ -43,11 +42,9 @@ for device_id in "${all_device_ids[@]}"; do
     elif [[ -n "$model" ]]; then
         devices+=("$model ($device_id)")
     else
-        # Check if this is an emulator
         if [[ "$device_id" == emulator* ]]; then
             devices+=("Emulator ($device_id)")
         else
-            # Generic fallback
             devices+=("Device ($device_id)")
         fi
     fi
@@ -101,7 +98,7 @@ if [[ -z "$selectedDevice" ]]; then
         choice=1
     fi
 
-    selectedDevice=${devices[$((choice-1))]}  # adjust for 0-indexing
+    selectedDevice=${devices[$((choice-1))]}
     FEDI_DEVICE_ID=${device_ids[$((choice-1))]}
 fi
 
@@ -109,14 +106,13 @@ echo "$FEDI_DEVICE_ID" > "$DEVICE_ID_FILE"
 
 echo "You selected device: $selectedDevice with ID: $FEDI_DEVICE_ID"
 
-cd $REPO_ROOT/ui/native
+cd "$REPO_ROOT/ui/native"
 echo "Building & installing android app bundle"
 
-# react-native tries to start metro in a new terminal window if none is detected
-# so wait a few seconds for the mprocs metro terminal to start first
-sleep 2
+# Use Gradle explicitly for reliable single-device targeting
+cd android
 run_android_result=0
-npx react-native run-android --active-arch-only --mode=ProductionDebug --verbose --deviceId $FEDI_DEVICE_ID || {
+./gradlew installProductionDebug -Pandroid.injected.testOnly=false -PdeviceId="$FEDI_DEVICE_ID" || {
     echo "Something went wrong..."
     echo -e "\n\x1B[31;1m"
     echo "If the issue persists, try:"
@@ -125,6 +121,13 @@ npx react-native run-android --active-arch-only --mode=ProductionDebug --verbose
     echo -e "\x1B[0m"
     run_android_result=1
 }
+cd ..
+
+# Explicitly launch app after successful installation
+if [[ "$run_android_result" -eq 0 ]]; then
+    APP_ID=$(grep applicationId android/app/build.gradle | awk '{print $2}' | tr -d '"')
+    adb -s "$FEDI_DEVICE_ID" shell monkey -p "$APP_ID" -c android.intent.category.LAUNCHER 1
+fi
 
 # Start logging only if the previous command was successful
 if [[ "$ENABLE_ANDROID_LOGGING" == "1" && $run_android_result -eq 0 ]]; then
