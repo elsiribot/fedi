@@ -107,26 +107,39 @@ echo "$FEDI_DEVICE_ID" > "$DEVICE_ID_FILE"
 echo "You selected device: $selectedDevice with ID: $FEDI_DEVICE_ID"
 
 cd "$REPO_ROOT/ui/native"
-echo "Building & installing android app bundle"
+echo "Building android app bundle"
 
-# Use Gradle explicitly for reliable single-device targeting
+# Explicitly build APK first
 cd android
 run_android_result=0
-./gradlew installProductionDebug -Pandroid.injected.testOnly=false -PdeviceId="$FEDI_DEVICE_ID" || {
-    echo "Something went wrong..."
-    echo -e "\n\x1B[31;1m"
-    echo "If the issue persists, try:"
-    echo "  1. Checking adb connection with 'adb devices'"
-    echo "  2. Restarting adb with 'adb kill-server && adb start-server'"
-    echo -e "\x1B[0m"
+./gradlew assembleProductionDebug -Pandroid.injected.testOnly=false || {
+    echo "Something went wrong during APK assembly..."
     run_android_result=1
 }
+
+# Find the generated APK explicitly
+APK_PATH=$(find ./app/build/outputs/apk/production/debug -name "*.apk" | head -1)
+
+if [[ $run_android_result -eq 0 && -f "$APK_PATH" ]]; then
+    echo "Installing APK explicitly to the selected device ($FEDI_DEVICE_ID)..."
+    adb -s "$FEDI_DEVICE_ID" install -r "$APK_PATH" || {
+        echo "APK installation failed."
+        run_android_result=1
+    }
+else
+    echo "APK not found or build failed!"
+    run_android_result=1
+fi
 cd ..
 
+# Correct extraction of applicationId from build.gradle
+APP_ID=$(grep applicationId android/app/build.gradle | head -1 | awk -F '\"' '{print $2}')
+
 # Explicitly launch app after successful installation
-if [[ "$run_android_result" -eq 0 ]]; then
-    APP_ID=$(grep applicationId android/app/build.gradle | awk '{print $2}' | tr -d '"')
+if [[ "$run_android_result" -eq 0 && -n "$APP_ID" ]]; then
     adb -s "$FEDI_DEVICE_ID" shell monkey -p "$APP_ID" -c android.intent.category.LAUNCHER 1
+else
+    echo "Could not launch the app, check the APP_ID or installation."
 fi
 
 # Start logging only if the previous command was successful

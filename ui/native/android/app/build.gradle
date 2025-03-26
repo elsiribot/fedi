@@ -282,3 +282,22 @@ tasks.configureEach {
             dependsOn('copyReactNativeVectorIconFonts')
         }
 }
+
+tasks.withType(com.android.build.gradle.internal.tasks.InstallVariantTask).configureEach { task ->
+    task.doLast {
+        if (project.hasProperty('deviceId')) {
+            def deviceId = project.getProperty('deviceId')
+            def apkDir = task.apkDirectory.get().asFile
+            def apkFiles = apkDir.listFiles().findAll { it.name.endsWith('.apk') }
+            if (apkFiles.size() == 0) {
+                throw new GradleException("APK not found in directory: ${apkDir}")
+            }
+            def apkFile = apkFiles[0]
+            println "Installing ${apkFile} on device ${deviceId}"
+            exec {
+                executable 'adb'
+                args '-s', deviceId, 'install', '-r', apkFile.absolutePath
+            }
+        }
+    }
+}
