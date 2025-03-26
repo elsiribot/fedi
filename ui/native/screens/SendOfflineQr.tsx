@@ -91,7 +91,7 @@ const SendOfflineQr: React.FC<Props> = ({ navigation, route }: Props) => {
     const handleCancelSend = () => {
         Alert.alert(
             t('phrases.please-confirm'),
-            t('feature.send.offline-send-warning'),
+            t('feature.send.cancel-notes-warning'),
             [
                 {
                     text: t('phrases.go-back'),
