@@ -927,6 +927,11 @@ pub struct SyncResponse {
     ///
     /// Client can use this if they have any new history item.
     pub account_history_count: u64,
+
+    /// A map of txid => lifetime fee paid
+    /// This only pertains to seekers, that's why it's Optional
+    /// Only currently locked seeks are included
+    pub locked_seeks_lifetime_fee: Option<BTreeMap<TransactionId, Amount>>,
 }
 
 impl SyncResponse {

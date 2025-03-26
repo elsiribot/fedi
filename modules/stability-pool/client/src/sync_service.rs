@@ -11,7 +11,7 @@ use stability_pool_common::{AccountId, SyncResponse};
 use tokio::sync::watch;
 use tokio_stream::wrappers::WatchStream;
 
-use crate::db::{CachedSyncResponseKey, CachedSyncResponseValue};
+use crate::db::{CachedSyncResponseKey, CachedSyncResponseValue, SeekLifetimeFeeKey};
 
 /// Service that syncs account state from server in the background
 #[derive(Debug)]
@@ -86,6 +86,12 @@ impl StabilityPoolSyncService {
             },
         )
         .await;
+
+        if let Some(locked_seeks_lifetime_fee) = sync_response.locked_seeks_lifetime_fee.as_ref() {
+            for (txid, amount) in locked_seeks_lifetime_fee {
+                dbtx.insert_entry(&SeekLifetimeFeeKey(*txid), amount).await;
+            }
+        }
         dbtx.commit_tx().await;
 
         // Send the new SyncResponse to all watchers

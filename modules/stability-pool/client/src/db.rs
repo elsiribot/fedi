@@ -18,6 +18,11 @@ pub enum DbKeyPrefix {
     /// Incrementing index for ordering user operations based on ordering of
     /// account history items
     UserOperationIndex = 0x04,
+    /// TXID => msat amount
+    /// Seeks have to pay fees to providers for each cycle that they are locked.
+    /// This is an accumulating amount for each seek that grows over its
+    /// lifetime for each cycle that it is locked.
+    SeekLifetimeFee = 0x05,
 }
 
 #[derive(Debug, Encodable, Decodable)]
@@ -172,6 +177,23 @@ impl_db_record!(
 impl_db_lookup!(
     key = UserOperationIndexItemKey,
     query_prefix = UserOperationIndexAccountPrefix
+);
+
+#[derive(Debug, Encodable, Decodable)]
+pub struct SeekLifetimeFeeKey(pub TransactionId);
+
+#[derive(Debug, Encodable, Decodable)]
+pub struct SeekLifetimeFeeKeyPrefix;
+
+impl_db_record!(
+    key = SeekLifetimeFeeKey,
+    value = Amount,
+    db_prefix = DbKeyPrefix::SeekLifetimeFee,
+);
+
+impl_db_lookup!(
+    key = SeekLifetimeFeeKey,
+    query_prefix = SeekLifetimeFeeKeyPrefix,
 );
 
 /// Insert the given UserOperationHistoryItem value against the given
