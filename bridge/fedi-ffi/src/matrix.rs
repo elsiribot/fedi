@@ -44,9 +44,9 @@ use matrix_sdk::ruma::events::{
 };
 use matrix_sdk::ruma::{assign, EventId, OwnedMxcUri, RoomId, UInt, UserId};
 use matrix_sdk::{Client, RoomInfo, RoomMemberships};
+use matrix_sdk_ui::room_list_service;
 use matrix_sdk_ui::sync_service::{self, SyncService};
 use matrix_sdk_ui::timeline::{default_event_filter, TimelineEventItemId};
-use matrix_sdk_ui::{room_list_service, RoomListService};
 use mime::Mime;
 use tracing::{error, info, warn};
 
@@ -65,8 +65,6 @@ pub struct Matrix {
     client: Client,
     /// sync service to load new messages
     sync_service: Arc<SyncService>,
-    /// manages list of room visible to user.
-    room_list_service: Arc<RoomListService>,
     pub runtime: Arc<BridgeRuntime>,
     notification_settings: NotificationSettings,
 }
@@ -162,7 +160,6 @@ impl Matrix {
         let matrix = Self {
             notification_settings: client.notification_settings().await,
             client,
-            room_list_service: sync_service.room_list_service(),
             sync_service: Arc::new(sync_service),
             runtime,
         };
@@ -360,7 +357,7 @@ impl Matrix {
     pub async fn room_list(&self, observable_id: u64) -> Result<ObservableVec<RpcRoomId>> {
         const PAGE_SIZE: usize = 1000;
         // manual construction required to to have correct lifetimes
-        let room_list_service = self.room_list_service.clone();
+        let room_list_service = self.sync_service.room_list_service();
         self.runtime
             .observable_pool
             .make_observable(observable_id, Vector::new(), move |this, id| async move {
@@ -400,7 +397,8 @@ impl Matrix {
             .make_observable_from_stream(
                 observable_id,
                 None,
-                self.room_list_service
+                self.sync_service
+                    .room_list_service()
                     .sync_indicator(Duration::from_secs(2), Duration::from_secs(2)),
             )
             .await
@@ -410,7 +408,7 @@ impl Matrix {
         &self,
         room_id: &RoomId,
     ) -> Result<room_list_service::Room, room_list_service::Error> {
-        self.room_list_service.room(room_id)
+        self.sync_service.room_list_service().room(room_id)
     }
 
     /// See [`matrix_sdk_ui::Timeline`].
