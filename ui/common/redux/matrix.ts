@@ -264,7 +264,8 @@ export const matrixSlice = createSlice({
                 >
             >,
         ) {
-            state.previewMedia = state.previewMedia.map(cached => {
+            let hasUpdates = false
+            const updatedPreviewMedia = state.previewMedia.map(cached => {
                 if (
                     action.payload.some(event =>
                         doesEventContentMatchPreviewMedia(
@@ -273,11 +274,17 @@ export const matrixSlice = createSlice({
                         ),
                     )
                 ) {
-                    return { ...cached, visible: false }
+                    if (cached.visible) {
+                        hasUpdates = true
+                        return { ...cached, visible: false }
+                    }
                 }
-
                 return cached
             })
+
+            if (hasUpdates) {
+                state.previewMedia = updatedPreviewMedia
+            }
         },
     },
     extraReducers: builder => {
