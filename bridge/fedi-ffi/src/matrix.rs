@@ -1,4 +1,5 @@
 use std::path::Path;
+use std::pin::pin;
 use std::sync::Arc;
 use std::time::Duration;
 
@@ -9,6 +10,7 @@ use imbl::Vector;
 use matrix_sdk::attachment::{
     AttachmentConfig, AttachmentInfo, BaseFileInfo, BaseImageInfo, BaseVideoInfo,
 };
+use matrix_sdk::encryption::recovery::RecoveryState;
 use matrix_sdk::encryption::BackupDownloadStrategy;
 use matrix_sdk::media::{MediaFormat, MediaRequestParameters};
 use matrix_sdk::notification_settings::NotificationSettings;
@@ -285,25 +287,36 @@ impl Matrix {
         Ok(())
     }
 
+    // backup (set of room keys) is encrypted by (a random) key called backup key
+    // - auto_enable_backups enables backup process automatically.
+    // - enabling recovery means encrypting this backup key with a passphrase
+    // so a future client can recover the backup key and hence the room keys
     async fn enable_recovery(client: &Client, encryption_passphrase: String) -> anyhow::Result<()> {
-        // if there are no backups on server, enable backups
-        if client
-            .encryption()
-            .backups()
-            .exists_on_server()
-            .await
-            .is_ok_and(|x| x)
-        {
-            return Ok(());
+        let mut state_stream = pin!(client.encryption().recovery().state_stream());
+        while let Some(state) = state_stream.next().await {
+            match state {
+                RecoveryState::Unknown => {
+                    // wait for matrix background tasks to fetch the recovery state
+                    continue;
+                }
+                RecoveryState::Enabled => {
+                    // recovery is already on
+                    return Ok(());
+                }
+                RecoveryState::Incomplete | RecoveryState::Disabled => {
+                    // enable auto backups with passphrase for e2e keys.
+                    // TODO: subscribe to backup progress to show something in ui
+                    client
+                        .encryption()
+                        .recovery()
+                        .enable()
+                        .with_passphrase(&encryption_passphrase)
+                        .await?;
+                    // ? means we will not enable recovery in this run, we will
+                    // try again on next startup
+                }
+            }
         }
-        // enable auto backups with passphrase for e2e keys.
-        // TODO: subscribe to backup progress
-        client
-            .encryption()
-            .recovery()
-            .enable()
-            .with_passphrase(&encryption_passphrase)
-            .await?;
         Ok(())
     }
 
