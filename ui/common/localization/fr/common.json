@@ -119,7 +119,7 @@
         "add-community": "Ajouter une communauté",
         "add-note": "Ajouter une note",
         "allow-camera-access": "Autoriser l'accès à la caméra",
-        "app-version": "Version alpha de Fedi : {{version}}",
+        "app-version": "Version de Fedi: {{version}}",
         "back-to-app": "Retour à l'application",
         "bitcoin-address-created": "Adresse Bitcoin créée",
         "bitcoin-equivalent": "Équivalent Bitcoin",
