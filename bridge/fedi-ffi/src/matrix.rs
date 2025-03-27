@@ -191,29 +191,9 @@ impl Matrix {
         let this = self.clone();
         self.runtime
             .task_group
-            .spawn_cancellable("matrix::Recovery::enable", {
-                async move {
-                    // if there are no backups on server, enable backups
-                    if this
-                        .client
-                        .encryption()
-                        .backups()
-                        .exists_on_server()
-                        .await
-                        .is_ok_and(|x| x)
-                    {
-                        return;
-                    }
-                    // enable auto backups with passphrase for e2e keys.
-                    // TODO: subscribe to backup progress
-                    this.client
-                        .encryption()
-                        .recovery()
-                        .enable()
-                        .with_passphrase(&encryption_passphrase)
-                        .await
-                        .inspect_err(|err| error!(%err, "unable to enable recovery (start backup)"))
-                        .ok();
+            .spawn_cancellable("matrix::Recovery::enable", async move {
+                if let Err(err) = Self::enable_recovery(&this.client, encryption_passphrase).await {
+                    warn!(?err, "failed to enable recovery");
                 }
             });
         let this = self.clone();
@@ -302,6 +282,28 @@ impl Matrix {
             Some(_) => warn!("unknown session"),
             None => warn!("session not found after login"),
         }
+        Ok(())
+    }
+
+    async fn enable_recovery(client: &Client, encryption_passphrase: String) -> anyhow::Result<()> {
+        // if there are no backups on server, enable backups
+        if client
+            .encryption()
+            .backups()
+            .exists_on_server()
+            .await
+            .is_ok_and(|x| x)
+        {
+            return Ok(());
+        }
+        // enable auto backups with passphrase for e2e keys.
+        // TODO: subscribe to backup progress
+        client
+            .encryption()
+            .recovery()
+            .enable()
+            .with_passphrase(&encryption_passphrase)
+            .await?;
         Ok(())
     }
 
