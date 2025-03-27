@@ -239,7 +239,11 @@ impl Matrix {
             });
         self.runtime.task_group.spawn_cancellable(
             "matrix::session_token_changed",
-            Self::handle_session_tokens_updated(self.client.clone(), self.runtime.clone()),
+            Self::handle_session_tokens_updated(
+                self.client.clone(),
+                self.runtime.clone(),
+                ClientKind::NativeSync,
+            ),
         );
         Ok(())
     }
@@ -305,7 +309,11 @@ impl Matrix {
         Ok(())
     }
 
-    async fn handle_session_tokens_updated(client: Client, runtime: Arc<BridgeRuntime>) {
+    async fn handle_session_tokens_updated(
+        client: Client,
+        runtime: Arc<BridgeRuntime>,
+        client_kind: ClientKind,
+    ) {
         let Some(mut session_token_changed) = client.matrix_auth().session_tokens_stream() else {
             warn!("handle session tokens updated called on a logged out client");
             return;
@@ -314,7 +322,13 @@ impl Matrix {
             if let Err(err) = runtime
                 .app_state
                 .with_write_lock(|w| {
-                    if let Some(session) = w.matrix_session_native_sync.as_mut() {
+                    let session = match client_kind {
+                        ClientKind::SlidingSyncProxy { .. } => {
+                            w.matrix_session_sliding_sync_proxy.as_mut()
+                        }
+                        ClientKind::NativeSync => w.matrix_session_native_sync.as_mut(),
+                    };
+                    if let Some(session) = session {
                         session.tokens = token;
                     }
                 })
@@ -407,13 +421,19 @@ impl Matrix {
             Self::build_client(&base_dir, home_server, &encryption_passphrase, &client_kind)
                 .await?;
         client.restore_session(session).await?;
+
+        // save refreshed access tokens to disk in case it refreshes.
+        runtime.task_group.spawn_cancellable(
+            "matrix::migration_task::session_token_changed",
+            Self::handle_session_tokens_updated(client.clone(), runtime.clone(), client_kind),
+        );
+
         let sync_service = SyncService::builder(client.clone())
             .with_offline_mode()
             .build()
             .await?;
         // start sync from sliding sync proxy in background
         sync_service.start().await;
-        // FIXME: also saved refreshed token into disk for old sessions
         // maybe better to retry in case of error instead of waiting for next startup
         Self::enable_recovery(&client, encryption_passphrase).await?;
         // keep this task alive, stuff in happen in background if we don't drop (stop)
