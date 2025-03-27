@@ -237,31 +237,10 @@ impl Matrix {
                     warn!(?err, "failed to enable recovery");
                 }
             });
-        let this = self.clone();
-        // use session token changed stream to update the token in app state
-        self.runtime
-            .task_group
-            .spawn_cancellable("matrix::session_token_changed", async move {
-                let Some(mut session_token_changed) =
-                    this.client.matrix_auth().session_tokens_stream()
-                else {
-                    return;
-                };
-                while let Some(token) = session_token_changed.next().await {
-                    if let Err(err) = this
-                        .runtime
-                        .app_state
-                        .with_write_lock(|w| {
-                            if let Some(session) = w.matrix_session_native_sync.as_mut() {
-                                session.tokens = token;
-                            }
-                        })
-                        .await
-                    {
-                        error!(%err, "unable to update session token");
-                    }
-                }
-            });
+        self.runtime.task_group.spawn_cancellable(
+            "matrix::session_token_changed",
+            Self::handle_session_tokens_updated(self.client.clone(), self.runtime.clone()),
+        );
         Ok(())
     }
 
@@ -326,6 +305,25 @@ impl Matrix {
         Ok(())
     }
 
+    async fn handle_session_tokens_updated(client: Client, runtime: Arc<BridgeRuntime>) {
+        let Some(mut session_token_changed) = client.matrix_auth().session_tokens_stream() else {
+            warn!("handle session tokens updated called on a logged out client");
+            return;
+        };
+        while let Some(token) = session_token_changed.next().await {
+            if let Err(err) = runtime
+                .app_state
+                .with_write_lock(|w| {
+                    if let Some(session) = w.matrix_session_native_sync.as_mut() {
+                        session.tokens = token;
+                    }
+                })
+                .await
+            {
+                error!(%err, "unable to update session token");
+            }
+        }
+    }
     // backup (set of room keys) is encrypted by (a random) key called backup key
     // - auto_enable_backups enables backup process automatically.
     // - enabling recovery means encrypting this backup key with a passphrase
