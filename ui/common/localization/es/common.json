@@ -119,7 +119,7 @@
         "add-community": "Agregar comunidad",
         "add-note": "Agrega una nota",
         "allow-camera-access": "Permite acceso a la cámara",
-        "app-version": "Fedi Bravo Versión: {{version}}",
+        "app-version": "Fedi Versión: {{version}}",
         "back-to-app": "Vuelve a la app",
         "bitcoin-address-created": "Dirección de Bitcoin creada",
         "bitcoin-equivalent": "Equivalente en bitcoin",
@@ -559,7 +559,7 @@
             "welcome-instructions-returning": "Como usuario que regresa a la federación, su billetera será restaurada. Esto puede tardar unos minutos.",
             "welcome-instructions-unknown": "Los usuarios nuevos reciben una billetera nueva. A los usuarios que regresen se les pedirá que recuperen su cartera.",
             "welcome-to-federation": "Te damos la bienvenida a {{federation}}",
-            "welcome-to-fedi": "Te damos la bienvenida a Fedi Bravo",
+            "welcome-to-fedi": "Te damos la bienvenida a Fedi",
             "yes-create-account": "Sí, crear una cuenta"
         },
         "parser": {

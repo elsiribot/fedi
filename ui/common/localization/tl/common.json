@@ -90,7 +90,7 @@
     "phrases": {
         "add-note": "Magdagdag ng tala/ magsulat",
         "allow-camera-access": "Pahintulutan ang pag-access sa camera",
-        "app-version": "Fedi Bravo Version: {{version}}",
+        "app-version": "Fedi Version: {{version}}",
         "back-to-app": "Bumalik sa app",
         "bitcoin-address-created": "Nalikha ang Bitcoin address",
         "bitcoin-equivalent": "Katumbas ng Bitcoin",
@@ -378,7 +378,7 @@
             "welcome-back-to-federation": "Maligayang pagbalik sa {{federation}}",
             "welcome-instructions-unknown": "Ang mga bagong miyembro ay makakatanggap ng bagong wallet. Ang mga nagbabalik na miyembro ay awtomatikong mababawi ang kanilang lumang wallet.",
             "welcome-to-federation": "Maligayang pagdating sa {{federation}}",
-            "welcome-to-fedi": "Maligayang pagdating sa Fedi Bravo"
+            "welcome-to-fedi": "Maligayang pagdating sa Fedi"
         },
         "parser": {
             "unsupported-bolt11-zero-amount": "Hindi suportado ang Zero halagang Lightning invoice. Bumuo ng bagong invoice na may halaga at subukan muli.",
