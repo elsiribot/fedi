@@ -100,6 +100,7 @@ const CustomOverlay: React.FC<CustomOverlayProps> = ({
                     key={i}
                     containerStyle={style.buttonContainer}
                     title={button.text}
+                    titleProps={{ numberOfLines: 1 }}
                     titleStyle={{
                         color: button.primary
                             ? theme.colors.secondary

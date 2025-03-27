@@ -82,7 +82,10 @@ const CreatePoll: React.FC<Props> = ({
     }
 
     return (
-        <SafeScrollArea contentContainerStyle={style.container} edges="bottom">
+        <SafeScrollArea
+            contentContainerStyle={style.container}
+            safeAreaContainerStyle={style.content}
+            edges="bottom">
             <View style={style.content}>
                 <FieldInput
                     label={t('words.question')}

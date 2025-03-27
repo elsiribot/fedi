@@ -532,18 +532,25 @@ const MessageInput: React.FC<MessageInputProps> = ({
                         {directUserId && (
                             <ChatWalletButton recipientId={directUserId} />
                         )}
-                        {/* uploading media only available in DMs and private groups to prevent unencrypted media uploads, also hide if we can't send messages (readonly) */}
+                        {/**
+                         * - Polls and media are only available in non-public chats
+                         * - Polls are not available in user-to-user direct chats
+                         * - To prevent users from uploading unencrypted media, media uploads are not available in public chats
+                         * */}
                         {!isPublic && !isReadOnly && (
                             <>
-                                <Pressable
-                                    onPress={() => {
-                                        navigation.navigate('CreatePoll', {
-                                            roomId: id,
-                                        })
-                                    }}
-                                    hitSlop={10}>
-                                    <SvgImage name="Poll" />
-                                </Pressable>
+                                {/* polls are not available for direct chats */}
+                                {!directUserId && (
+                                    <Pressable
+                                        onPress={() => {
+                                            navigation.navigate('CreatePoll', {
+                                                roomId: id,
+                                            })
+                                        }}
+                                        hitSlop={10}>
+                                        <SvgImage name="Poll" />
+                                    </Pressable>
+                                )}
                                 <Pressable
                                     onPress={handleUploadImage}
                                     hitSlop={10}>
