@@ -84,7 +84,7 @@ impl Matrix {
             // make backup and recovery automagically work.
             .with_encryption_settings(matrix_sdk::encryption::EncryptionSettings {
                 auto_enable_cross_signing: true,
-                backup_download_strategy: BackupDownloadStrategy::OneShot,
+                backup_download_strategy: BackupDownloadStrategy::AfterDecryptionFailure,
                 auto_enable_backups: true,
             })
             .handle_refresh_tokens();
