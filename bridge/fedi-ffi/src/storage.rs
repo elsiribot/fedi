@@ -77,7 +77,15 @@ pub struct AppStateRaw {
     pub social_recovery_state: Option<SocialRecoveryState>,
 
     pub sensitive_log: Option<bool>,
-    pub matrix_session: Option<MatrixSession>,
+    /// Matrix tokens for client with sliding sync.
+    ///
+    /// This will never be set on new users, only migrating users will have
+    /// this.
+    #[serde(rename = "matrix_session")]
+    pub matrix_session_sliding_sync_proxy: Option<MatrixSession>,
+
+    /// Matrix tokens for client with native sliding sync
+    pub matrix_session_native_sync: Option<MatrixSession>,
 
     #[allow(dead_code)]
     #[deprecated = "Now we only store encrypted device ID. Do not reuse this field name."]
@@ -448,7 +456,8 @@ impl AppState {
                 joined_communities: BTreeMap::new(),
                 social_recovery_state: None,
                 sensitive_log: None,
-                matrix_session: None,
+                matrix_session_sliding_sync_proxy: None,
+                matrix_session_native_sync: None,
                 device_identifier: (),
                 // When setting up a new AppState (fresh install), set
                 // encrypted_device_identifier_v1 as None which marks the transfer of ownership as
