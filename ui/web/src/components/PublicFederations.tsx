@@ -6,10 +6,8 @@ import { useTranslation } from 'react-i18next'
 import AwesomeFedimint from '@fedi/common/assets/images/awesome-fedimint.png'
 import { useLatestPublicFederations } from '@fedi/common/hooks/federation'
 import { selectFederationIds } from '@fedi/common/redux'
-import { ParserDataType } from '@fedi/common/types'
 import stringUtils from '@fedi/common/utils/StringUtils'
 
-import { useRouteStateContext } from '../context/RouteStateContext'
 import { useAppSelector } from '../hooks'
 import { theme } from '../styles'
 import { Button } from './Button'
@@ -20,7 +18,6 @@ export default function PublicFederations() {
     const { t } = useTranslation()
     const joinedFederationIds = useAppSelector(selectFederationIds)
     const router = useRouter()
-    const { pushWithState } = useRouteStateContext()
     const { publicFederations } = useLatestPublicFederations()
 
     return (
@@ -55,26 +52,22 @@ export default function PublicFederations() {
                                     </Text>
                                 )}
                             </PublicFederationText>
-                            <PublicFederationButtonWrapper>
-                                <Button
-                                    size="sm"
-                                    width="full"
-                                    onClick={() =>
-                                        // TODO: fix public federation type.
-                                        // probably should use/extend Federation
-                                        f.meta.invite_code &&
-                                        pushWithState('/onboarding/join', {
-                                            type: ParserDataType.FedimintInvite,
-                                            data: {
-                                                invite: f.meta.invite_code,
-                                            },
-                                        })
-                                    }>
-                                    {joinedFederationIds.includes(f.id)
-                                        ? t('words.joined')
-                                        : t('words.join')}
-                                </Button>
-                            </PublicFederationButtonWrapper>
+                            {f.meta?.invite_code && (
+                                <PublicFederationButtonWrapper>
+                                    <Button
+                                        size="sm"
+                                        width="full"
+                                        onClick={() =>
+                                            router.push(
+                                                `/onboarding/join?code=${encodeURIComponent(String(f.meta.invite_code))}`,
+                                            )
+                                        }>
+                                        {joinedFederationIds.includes(f.id)
+                                            ? t('words.joined')
+                                            : t('words.join')}
+                                    </Button>
+                                </PublicFederationButtonWrapper>
+                            )}
                         </PublicFederationItem>
                     ))}
                 </FederationContainer>
