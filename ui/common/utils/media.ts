@@ -1,12 +1,21 @@
 import { z } from 'zod'
 
+import { ONE_KB, ONE_MB } from '../constants/matrix'
+
 /**
- * Formats a file size in bytes to a human-readable string.
+ * Formats a file size in bytes
+ *
+ * @param bytes - The file size in bytes
+ * @returns The rounded file size in B, KB, or MB
  */
+const unfixZero = (n: string) => (n.endsWith('.0') ? n.slice(0, -2) : n)
 export const formatFileSize = (bytes: number) => {
-    if (bytes < 1024) return `${bytes} b`
-    else if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} kb`
-    else return `${(bytes / 1024 / 1024).toFixed(1)} mb`
+    const kb = (bytes / ONE_KB).toFixed(1)
+    const mb = (bytes / ONE_MB).toFixed(1)
+
+    if (bytes < ONE_KB) return `${bytes} B`
+    else if (bytes < ONE_MB) return `${unfixZero(kb)} KB`
+    else return `${unfixZero(mb)} MB`
 }
 
 /**
