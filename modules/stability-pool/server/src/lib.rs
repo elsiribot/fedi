@@ -954,31 +954,17 @@ where
         .iter()
         .map(|d| d.amount)
         .sum::<Amount>();
-    let total_to_transfer = match signed_request.details().amount() {
-        FiatOrAll::Fiat(fiat_amount) => {
-            let amount = fiat_amount
-                .to_btc_amount(cycle_info.start_price)
-                .map_err(|e| StabilityPoolOutputError::InvalidTransferRequest(e.to_string()))?;
+    let total_to_transfer = signed_request
+        .details()
+        .amount()
+        .to_btc_amount(cycle_info.start_price)
+        .map_err(|e| StabilityPoolOutputError::InvalidTransferRequest(e.to_string()))?;
 
-            if amount > from_staged_deposits_sum + from_locked_deposits_sum {
-                return Err(StabilityPoolOutputError::InvalidTransferRequest(
-                    "Insufficient from account balance".to_string(),
-                ));
-            }
-
-            amount
-        }
-        FiatOrAll::All => {
-            if from_staged_deposits_sum == Amount::ZERO && from_locked_deposits_sum == Amount::ZERO
-            {
-                return Err(StabilityPoolOutputError::InvalidTransferRequest(
-                    "From account has 0 balance".to_string(),
-                ));
-            }
-
-            from_staged_deposits_sum + from_locked_deposits_sum
-        }
-    };
+    if total_to_transfer > from_staged_deposits_sum + from_locked_deposits_sum {
+        return Err(StabilityPoolOutputError::InvalidTransferRequest(
+            "Insufficient from account balance".to_string(),
+        ));
+    }
 
     // We can use the same sequence for both staged and locked deposit in case both
     // get created for "to" account. This just simulates a split, something we

@@ -1054,6 +1054,13 @@ fn parse_withdrawal_amount(s: &str) -> Result<FiatOrAll, String> {
     }
 }
 
+fn parse_transfer_amount(s: &str) -> Result<FiatAmount, String> {
+    Ok(FiatAmount(
+        s.parse::<u64>()
+            .map_err(|e| format!("Invalid fiat amount: {e}"))?,
+    ))
+}
+
 fn parse_fee_rate(s: &str) -> Result<FeeRate, String> {
     Ok(FeeRate(
         s.parse::<u64>()
@@ -1112,8 +1119,8 @@ pub enum CliCommand {
     /// amount to given account
     SimpleTransfer {
         to_account: AccountId,
-        #[arg(value_parser = parse_withdrawal_amount)]
-        amount: FiatOrAll,
+        #[arg(value_parser = parse_transfer_amount)]
+        amount: FiatAmount,
     },
     /// Submit a signed transfer request
     Transfer {

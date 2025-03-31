@@ -458,7 +458,7 @@ pub struct TransferRequest {
     /// reasonable.
     nonce: u64,
     from: Account,
-    transfer_amount: FiatOrAll,
+    transfer_amount: FiatAmount,
     to: AccountId,
 
     /// This meta field allows embedding additional arbitrary information as
@@ -484,7 +484,7 @@ impl TransferRequest {
     pub fn new(
         nonce: u64,
         from: Account,
-        transfer_amount: FiatOrAll,
+        transfer_amount: FiatAmount,
         to: AccountId,
         meta: Vec<u8>,
         valid_until_cycle: u64,
@@ -496,10 +496,8 @@ impl TransferRequest {
             "From and to account types must match"
         );
 
-        // Transfer amount must be non-zero or All
-        if let FiatOrAll::Fiat(fiat) = transfer_amount {
-            ensure!(fiat.0 != 0, "Transfer amount must not be 0");
-        }
+        // Transfer amount must be non-zero
+        ensure!(transfer_amount.0 != 0, "Transfer amount must not be 0");
 
         // Fee rate must only be set for a provider-to-provider transfer
         match from.acc_type {
@@ -528,7 +526,7 @@ impl TransferRequest {
         &self.from
     }
 
-    pub fn amount(&self) -> FiatOrAll {
+    pub fn amount(&self) -> FiatAmount {
         self.transfer_amount
     }
 
@@ -824,11 +822,12 @@ impl Display for StabilityPoolOutputV0 {
             ),
             StabilityPoolOutputV0::Transfer(transfer_output) => write!(
                 f,
-                "Transfer {} from account {} to account {}",
+                "Transfer {} fiat amount from account {} to account {}",
                 transfer_output
                     .signed_request
                     .transfer_request
-                    .transfer_amount,
+                    .transfer_amount
+                    .0,
                 transfer_output.signed_request.transfer_request.from.id(),
                 transfer_output.signed_request.transfer_request.to,
             ),

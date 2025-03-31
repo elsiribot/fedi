@@ -641,7 +641,7 @@ async fn transfer_tests(
     let signed_request = seeker1
         .simple_transfer(
             seeker2.get_account(AccountType::Seeker).await?.id(),
-            FiatOrAll::Fiat(FiatAmount(8)),
+            FiatAmount(8),
         )
         .await?;
     seeker2.transfer(signed_request).await?;
@@ -870,19 +870,15 @@ impl ForkedClient {
     async fn simple_transfer(
         &self,
         to_account: AccountId,
-        amount: FiatOrAll,
+        amount: FiatAmount,
     ) -> anyhow::Result<SignedTransferRequest> {
-        let amount = match amount {
-            FiatOrAll::Fiat(fiat_amount) => fiat_amount.0.to_string(),
-            FiatOrAll::All => "all".to_owned(),
-        };
         let signed_request_json = cmd!(
             self,
             "module",
             "multi_sig_stability_pool",
             "simple-transfer",
             to_account,
-            amount,
+            amount.0.to_string(),
         )
         .out_json()
         .await?;
