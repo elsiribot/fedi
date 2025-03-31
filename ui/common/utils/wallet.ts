@@ -133,6 +133,7 @@ export const makeTxnNotesText = (txn: TransactionListEntry): string => {
 export const makeTxnAmountText = (
     txn: TransactionListEntry,
     showFiatTxnAmounts: boolean,
+    // we use the opposite signs on the stabilitypool txn list
     flipSign: boolean,
     makeFormattedAmountsFromMSats: (
         amt: MSats,
@@ -148,7 +149,7 @@ export const makeTxnAmountText = (
     const isPlus = !flipSign ? direction === 'receive' : direction === 'send'
     let sign = direction ? (isPlus ? `+` : `-`) : ''
     let formattedAmount: string
-
+    // amount may be zero for onchain pending receives or for pending stabilitypool withdrawals
     // If fiat amounts should be shown and historical info is present, use it:
     if (showFiatTxnAmounts && txn.txDateFiatInfo) {
         const historicalRate = txn.txDateFiatInfo.btcToFiatHundredths / 100
@@ -200,6 +201,7 @@ export const makeTxnAmountText = (
         sign = `~`
         formattedAmount = ''
     }
+    // LN pay and receive states can be canceled and should not show a sign
     if (
         (txn.kind === 'lnPay' || txn.kind === 'lnReceive') &&
         txn.state?.type === 'canceled'
