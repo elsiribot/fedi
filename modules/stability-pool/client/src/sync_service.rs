@@ -1,4 +1,3 @@
-use std::sync::Arc;
 use std::time::Duration;
 
 use fedimint_api_client::api::{DynModuleApi, FederationApiExt as _};
@@ -23,7 +22,7 @@ pub struct StabilityPoolSyncService {
 }
 
 impl StabilityPoolSyncService {
-    pub async fn new(module_api: DynModuleApi, db: Database, account_id: AccountId) -> Arc<Self> {
+    pub async fn new(module_api: DynModuleApi, db: Database, account_id: AccountId) -> Self {
         // Fetch initial sync response from database
         let mut dbtx = db.begin_transaction().await;
         let maybe_sync_response = dbtx.get_value(&CachedSyncResponseKey { account_id }).await;
@@ -31,12 +30,12 @@ impl StabilityPoolSyncService {
         drop(dbtx);
 
         // Create service with initial state
-        Arc::new(Self {
+        Self {
             sync_response: watch::channel(initial_sync).0,
             module_api,
             db,
             account_id,
-        })
+        }
     }
 
     /// Update sync data in background.
