@@ -67,11 +67,20 @@
 	<true/>
 	<key>NSAppTransportSecurity</key>
 	<dict>
+		<key>NSAllowsArbitraryLoadsInWebContent</key>
+    	<false/>
 		<key>NSExceptionDomains</key>
 		<dict>
+			<!-- Allow localhost for local development -->
 			<key>localhost</key>
 			<dict>
 				<key>NSExceptionAllowsInsecureHTTPLoads</key>
+				<true/>
+			</dict>
+			<!-- This is needed for the FediModBrowser to be able to open captive portal URLs used by wireless APs -->
+			<key>internet.fedi.xyz</key>
+			<dict>
+				<key>NSAllowsArbitraryLoadsInWebContent</key>
 				<true/>
 			</dict>
 		</dict>
