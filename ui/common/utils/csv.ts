@@ -1,11 +1,18 @@
+// csv.ts
 import { TFunction } from 'i18next'
 
 import { AmountSymbolPosition, FormattedAmounts } from '../hooks/amount'
 import { MSats, TransactionListEntry } from '../types'
+import amountUtils, { FIAT_MAX_DECIMAL_PLACES } from './AmountUtils'
 import { getTxnDirection, makeTxnStatusText, makeTxnTypeText } from './wallet'
 
 type CSVColumns<T> = { name: string; getValue: (item: T) => string | number }[]
 
+/**
+ * Generate a CSV string from a list of TransactionListEntry items.
+ * If a transaction has txDateFiatInfo, we use the historical rate.
+ * Otherwise, we fall back to the current logic in makeFormattedAmountsFromMSats.
+ */
 export function makeTransactionHistoryCSV(
     txs: TransactionListEntry[],
     makeFormattedAmountsFromMSats: (
@@ -13,7 +20,8 @@ export function makeTransactionHistoryCSV(
         symbolPosition: AmountSymbolPosition,
     ) => FormattedAmounts,
     t: TFunction,
-) {
+): string {
+    // Sort transactions by createdAt ascending
     const sortedTxs = txs.sort((a, b) => a.createdAt - b.createdAt)
 
     return makeCSV(sortedTxs, [
@@ -35,8 +43,23 @@ export function makeTransactionHistoryCSV(
         },
         {
             name: 'Amount (fiat)',
-            getValue: tx =>
-                makeFormattedAmountsFromMSats(tx.amount, 'end').formattedFiat,
+            getValue: tx => {
+                if (tx.txDateFiatInfo) {
+                    const historicalRate = amountUtils.getRateFromFiatFxInfo(
+                        tx.txDateFiatInfo,
+                    )
+                    const btc = amountUtils.msatToBtc(tx.amount)
+                    return (
+                        amountUtils
+                            .btcToFiat(btc, historicalRate)
+                            .toFixed(FIAT_MAX_DECIMAL_PLACES) +
+                        ` ${tx.txDateFiatInfo.fiatCode}`
+                    )
+                } else {
+                    return makeFormattedAmountsFromMSats(tx.amount, 'end')
+                        .formattedFiat
+                }
+            },
         },
         {
             name: 'Amount (sats)',
@@ -57,16 +80,19 @@ export function makeTransactionHistoryCSV(
  * Given a list of items and column definitions, make a multi-line CSV string.
  */
 function makeCSV<T>(items: T[], columns: CSVColumns<T>): string {
+    // Make header row
     let csv = columns.map(column => column.name).join(',')
+
+    // Make data rows
     items.forEach(item => {
         csv += `\r\n`
         columns.forEach((column, idx) => {
             if (idx !== 0) csv += ','
             // Wrap the value in quotes and escape any quotes inside the value.
-            // Otherwise, commas and quotes will break the CSV.
             csv += `"${String(column.getValue(item)).replace(/"/g, '""')}"`
         })
     })
+
     return csv
 }
 
@@ -80,7 +106,7 @@ export function makeBase64CSVUri(csv: string) {
 /**
  * Given a string, convert it to something that can be used as a filename.
  * E.g. "My federation name" -> "my-federation-name.csv"
- */
+ **/
 export function makeCSVFilename(name: string) {
     return `${name
         .toLowerCase()

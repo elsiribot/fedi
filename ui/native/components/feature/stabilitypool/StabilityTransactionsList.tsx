@@ -2,7 +2,7 @@ import { useTranslation } from 'react-i18next'
 
 import { useToast } from '@fedi/common/hooks/toast'
 import { useTxnDisplayUtils } from '@fedi/common/hooks/transactions'
-import { selectActiveFederationId, selectCurrency } from '@fedi/common/redux'
+import { selectActiveFederationId } from '@fedi/common/redux'
 import { updateTransactionNotes } from '@fedi/common/redux/transactions'
 import type { TransactionListEntry } from '@fedi/common/types'
 import { makeTransactionAmountState } from '@fedi/common/utils/wallet'
@@ -26,10 +26,10 @@ const StabilityTransactionsList = ({
     const dispatch = useAppDispatch()
     const { t } = useTranslation()
     const toast = useToast()
-    const selectedCurrency = useAppSelector(selectCurrency)
     const activeFederationId = useAppSelector(selectActiveFederationId)
     const {
         makeStabilityTxnDetailItems,
+        getCurrencyText,
         makeStabilityTxnFeeDetailItems,
         makeTxnAmountText,
         makeTxnTypeText,
@@ -47,7 +47,7 @@ const StabilityTransactionsList = ({
                 status: makeTxnStatusText(txn),
                 notes: makeTxnNotesText(txn),
                 amount: makeTxnAmountText(txn, false),
-                currencyText: selectedCurrency,
+                currencyText: getCurrencyText(txn),
                 timestamp: txn.createdAt,
                 type: makeTxnTypeText(txn),
                 amountState: makeTransactionAmountState(txn),

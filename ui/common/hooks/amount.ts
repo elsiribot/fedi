@@ -2,6 +2,8 @@ import { TFunction } from 'i18next'
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { RequestInvoiceArgs } from 'webln'
 
+import { FiatFXInfo } from '@fedi/common/types/bindings'
+
 import {
     selectAmountInputType,
     selectBtcExchangeRate,
@@ -32,6 +34,7 @@ import {
     ParsedLnurlWithdraw,
     Sats,
     SupportedCurrency,
+    TransactionListEntry,
     UsdCents,
 } from '../types'
 import amountUtils from '../utils/AmountUtils'
@@ -108,15 +111,26 @@ export const useBtcFiatPrice = (currency?: SupportedCurrency) => {
             [exchangeRate],
         ),
         convertSatsToFormattedFiat: useCallback(
-            (sats: Sats, symbolPosition: AmountSymbolPosition = 'end') => {
-                const amount = amountUtils.satToFiat(sats, exchangeRate)
-                return amountUtils.formatFiat(amount, fiatCurrency, {
+            (
+                sats: Sats,
+                symbolPosition: AmountSymbolPosition = 'end',
+                historicalFiatInfo?: FiatFXInfo,
+            ) => {
+                const conversionCurrency: SupportedCurrency = historicalFiatInfo
+                    ? (historicalFiatInfo.fiatCode as SupportedCurrency)
+                    : fiatCurrency
+                const conversionRate = historicalFiatInfo
+                    ? historicalFiatInfo.btcToFiatHundredths / 100
+                    : exchangeRate
+                const amount = amountUtils.satToFiat(sats, conversionRate)
+                return amountUtils.formatFiat(amount, conversionCurrency, {
                     symbolPosition,
                     locale: currencyLocale,
                 })
             },
             [exchangeRate, fiatCurrency, currencyLocale],
         ),
+
         convertSatsToFormattedUsd: useCallback(
             (sats: Sats, symbolPosition: AmountSymbolPosition = 'end') => {
                 const amount = amountUtils.satToFiat(sats, btcUsdExchangeRate)
@@ -129,6 +143,7 @@ export const useBtcFiatPrice = (currency?: SupportedCurrency) => {
         ),
     }
 }
+
 export const useAmountFormatter = (currency?: SupportedCurrency) => {
     const { convertSatsToFormattedUsd, convertSatsToFormattedFiat } =
         useBtcFiatPrice(currency)
@@ -181,9 +196,53 @@ export const useAmountFormatter = (currency?: SupportedCurrency) => {
         [makeFormattedAmountsFromSats],
     )
 
+    const makeFormattedAmountsFromTxn = useCallback(
+        (
+            txn: TransactionListEntry,
+            symbolPosition: AmountSymbolPosition = 'end',
+        ): FormattedAmounts => {
+            if (txn.txDateFiatInfo) {
+                const sats = amountUtils.msatToSat(txn.amount)
+                const formattedFiat = convertSatsToFormattedFiat(
+                    sats,
+                    symbolPosition,
+                    txn.txDateFiatInfo,
+                )
+                const formattedUsd = convertSatsToFormattedUsd(
+                    sats,
+                    symbolPosition,
+                )
+                const formattedSats =
+                    symbolPosition === 'none'
+                        ? amountUtils.formatSats(sats)
+                        : `${amountUtils.formatSats(sats)} SATS`
+                return {
+                    formattedFiat,
+                    formattedSats,
+                    formattedUsd,
+                    formattedPrimaryAmount: showFiatTxnAmounts
+                        ? formattedFiat
+                        : formattedSats,
+                    formattedSecondaryAmount: showFiatTxnAmounts
+                        ? formattedSats
+                        : formattedFiat,
+                }
+            } else {
+                return makeFormattedAmountsFromMSats(txn.amount, symbolPosition)
+            }
+        },
+        [
+            convertSatsToFormattedFiat,
+            convertSatsToFormattedUsd,
+            makeFormattedAmountsFromMSats,
+            showFiatTxnAmounts,
+        ],
+    )
+
     return {
         makeFormattedAmountsFromMSats,
         makeFormattedAmountsFromSats,
+        makeFormattedAmountsFromTxn,
     }
 }
 

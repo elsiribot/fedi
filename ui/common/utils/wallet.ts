@@ -12,6 +12,7 @@ import {
     TransactionAmountState,
     TransactionListEntry,
 } from '../types'
+import amountUtils, { FIAT_MAX_DECIMAL_PLACES } from './AmountUtils'
 import dateUtils from './DateUtils'
 
 export interface DetailItem {
@@ -132,7 +133,6 @@ export const makeTxnNotesText = (txn: TransactionListEntry): string => {
 export const makeTxnAmountText = (
     txn: TransactionListEntry,
     showFiatTxnAmounts: boolean,
-    // we use the opposite signs on the stabilitypool txn list
     flipSign: boolean,
     makeFormattedAmountsFromMSats: (
         amt: MSats,
@@ -145,17 +145,54 @@ export const makeTxnAmountText = (
 ): string => {
     const { amount } = txn
     const direction = getTxnDirection(txn)
-
     const isPlus = !flipSign ? direction === 'receive' : direction === 'send'
     let sign = direction ? (isPlus ? `+` : `-`) : ''
+    let formattedAmount: string
 
-    const { formattedPrimaryAmount } = makeFormattedAmountsFromMSats(
-        amount,
-        'none',
-    )
-    let formattedAmount: string = formattedPrimaryAmount
+    // If fiat amounts should be shown and historical info is present, use it:
+    if (showFiatTxnAmounts && txn.txDateFiatInfo) {
+        const historicalRate = txn.txDateFiatInfo.btcToFiatHundredths / 100
+        const btc = amountUtils.msatToBtc(amount)
+        // Format the fiat value using the historical rate
+        formattedAmount =
+            amountUtils
+                .btcToFiat(btc, historicalRate)
+                .toFixed(FIAT_MAX_DECIMAL_PLACES) +
+            ` ${txn.txDateFiatInfo.fiatCode}`
+    } else {
+        // Fallback: use the default conversion based on MSats
+        const { formattedPrimaryAmount } = makeFormattedAmountsFromMSats(
+            amount,
+            'none',
+        )
+        formattedAmount = formattedPrimaryAmount
 
-    // amount may be zero for onchain pending receives or for pending stabilitypool withdrawals
+        if (showFiatTxnAmounts) {
+            if (txn.kind === 'spWithdraw') {
+                if (txn.state && 'estimated_withdrawal_cents' in txn.state) {
+                    const estimatedWithdrawalCents = Number(
+                        txn.state.estimated_withdrawal_cents,
+                    ) as UsdCents
+                    formattedAmount = convertCentsToFormattedFiat(
+                        estimatedWithdrawalCents,
+                        'none',
+                    )
+                }
+            } else if (txn.kind === 'spDeposit') {
+                if (txn.state && 'initial_amount_cents' in txn.state) {
+                    const initialAmountCents = Number(
+                        txn.state.initial_amount_cents,
+                    ) as UsdCents
+                    formattedAmount = convertCentsToFormattedFiat(
+                        initialAmountCents,
+                        'none',
+                    )
+                }
+            }
+        }
+    }
+
+    // Adjust for special cases
     if (
         txn.kind === 'onchainDeposit' &&
         txn.state?.type === 'waitingForTransaction'
@@ -163,37 +200,11 @@ export const makeTxnAmountText = (
         sign = `~`
         formattedAmount = ''
     }
-
-    // LN pay and receive states can be canceled and should not show a sign
     if (
         (txn.kind === 'lnPay' || txn.kind === 'lnReceive') &&
         txn.state?.type === 'canceled'
     ) {
         sign = ''
-    }
-
-    if (showFiatTxnAmounts) {
-        if (txn.kind === 'spWithdraw') {
-            if (txn.state && 'estimated_withdrawal_cents' in txn.state) {
-                const estimatedWithdrawalCents = Number(
-                    txn.state.estimated_withdrawal_cents,
-                ) as UsdCents
-                formattedAmount = convertCentsToFormattedFiat(
-                    estimatedWithdrawalCents,
-                    'none',
-                )
-            }
-        } else if (txn.kind === 'spDeposit') {
-            if (txn.state && 'initial_amount_cents' in txn.state) {
-                const initialAmountCents = Number(
-                    txn.state.initial_amount_cents,
-                ) as UsdCents
-                formattedAmount = convertCentsToFormattedFiat(
-                    initialAmountCents,
-                    'none',
-                )
-            }
-        }
     }
 
     return `${sign}${formattedAmount}`

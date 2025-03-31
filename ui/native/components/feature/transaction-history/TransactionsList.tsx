@@ -30,7 +30,7 @@ const TransactionsList: React.FC<TransactionsListProps> = ({
     const toast = useToast()
     const activeFederationId = useAppSelector(selectActiveFederationId)
     const {
-        preferredCurrency,
+        getCurrencyText,
         makeTxnNotesText,
         makeTxnAmountText,
         makeTxnFeeDetailItems,
@@ -49,7 +49,7 @@ const TransactionsList: React.FC<TransactionsListProps> = ({
                 id: txn.id,
                 status: makeTxnStatusText(txn),
                 amount: makeTxnAmountText(txn),
-                currencyText: preferredCurrency,
+                currencyText: getCurrencyText(txn),
                 timestamp: txn.createdAt,
                 notes: makeTxnNotesText(txn),
                 type: makeTxnTypeText(txn),
