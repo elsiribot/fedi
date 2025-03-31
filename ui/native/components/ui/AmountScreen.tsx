@@ -1,7 +1,7 @@
 import { Button, ButtonProps, Text, Theme, useTheme } from '@rneui/themed'
 import React from 'react'
 import { useTranslation } from 'react-i18next'
-import { StyleSheet, View, useWindowDimensions } from 'react-native'
+import { StyleSheet, View } from 'react-native'
 
 import { useBalanceDisplay } from '@fedi/common/hooks/amount'
 import { selectActiveFederation } from '@fedi/common/redux'
@@ -32,14 +32,13 @@ export const AmountScreen: React.FC<Props> = ({
 }) => {
     const { t } = useTranslation()
     const { theme } = useTheme()
-    const { height } = useWindowDimensions()
     const activeFederation = useAppSelector(selectActiveFederation)
     const balance = activeFederation?.hasWallet
         ? activeFederation.balance
         : undefined
     const balanceDisplay = useBalanceDisplay(t)
 
-    const style = styles(theme, height)
+    const style = styles(theme)
 
     return (
         <KeyboardAwareWrapper>
@@ -78,14 +77,14 @@ export const AmountScreen: React.FC<Props> = ({
     )
 }
 
-const styles = (theme: Theme, height: number) =>
+const styles = (theme: Theme) =>
     StyleSheet.create({
         container: {
             width: '100%',
-            gap: theme.spacing.xl,
+            gap: theme.spacing.sm,
         },
         subHeader: {
-            paddingTop: height >= 500 ? theme.spacing.xl : theme.spacing.sm,
+            // paddingTop: height >= 500 ? theme.spacing.xl : theme.spacing.sm,
         },
         balance: {
             color: hexToRgba(theme.colors.primary, 0.6),

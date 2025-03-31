@@ -36,7 +36,7 @@ export type Props = NativeStackScreenProps<
 const ConfirmSendEcash: React.FC<Props> = ({ route, navigation }) => {
     const { theme } = useTheme()
     const { t } = useTranslation()
-    const { amount } = route.params
+    const { amount, notes = null } = route.params
     const dispatch = useAppDispatch()
     const [showFeeBreakdown, setShowFeeBreakdown] = useState<boolean>(false)
     const [isLoading, setIsLoading] = useState<boolean>(false)
@@ -64,6 +64,11 @@ const ConfirmSendEcash: React.FC<Props> = ({ route, navigation }) => {
                     federationId: paymentFederation?.id,
                     amount: millis,
                     includeInvite: true,
+                    frontendMetadata: {
+                        initialNotes: notes,
+                        recipientMatrixId: null,
+                        senderMatrixId: null,
+                    },
                 }),
             ).unwrap()
             navigation.dispatch(
@@ -76,7 +81,7 @@ const ConfirmSendEcash: React.FC<Props> = ({ route, navigation }) => {
             toast.error(t, error)
         }
         setIsLoading(false)
-    }, [amount, navigation, paymentFederation, t, toast, dispatch])
+    }, [paymentFederation?.id, amount, dispatch, notes, navigation, toast, t])
 
     const handleConfirm = useCallback(() => {
         Alert.alert(

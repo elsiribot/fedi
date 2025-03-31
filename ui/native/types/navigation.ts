@@ -80,16 +80,20 @@ export type RootStackParamList = {
     CompleteSocialBackup: undefined
     CompleteSocialRecovery: undefined
     ConfirmJoinPublicGroup: { groupId: string }
-    ConfirmSendEcash: { amount: Sats }
+    ConfirmSendEcash: { amount: Sats; notes?: string }
     ConfirmSendChatPayment: {
         amount: Sats
         roomId: string
+        notes?: string
     }
     ConfirmRecoveryAssist: undefined
-    ConfirmReceiveOffline: { ecash: string }
-    ConfirmReceiveCashu: { parsedData: ParsedCashuEcash }
-    ConfirmSendLightning: { parsedData: ParsedBolt11 | ParsedLnurlPay }
-    ConfirmSendOnChain: { parsedData: ParsedBip21 }
+    ConfirmReceiveOffline: { ecash: string; notes?: string }
+    ConfirmReceiveCashu: { parsedData: ParsedCashuEcash; notes?: string }
+    ConfirmSendLightning: {
+        parsedData: ParsedBolt11 | ParsedLnurlPay
+        notes?: string
+    }
+    ConfirmSendOnChain: { parsedData: ParsedBip21; notes?: string }
     ConnectedFederationsDrawer: undefined
     CreateGroup: { defaultGroup?: boolean }
     EcashSendCancelled: undefined

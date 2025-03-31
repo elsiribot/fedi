@@ -78,6 +78,11 @@ export const GenerateEcashOverlay: React.FC<Props> = ({
                     federationId: activeFederation.id,
                     amount: msats,
                     includeInvite: true,
+                    frontendMetadata: {
+                        initialNotes: null,
+                        recipientMatrixId: null,
+                        senderMatrixId: null,
+                    },
                 }),
             ).unwrap()
 

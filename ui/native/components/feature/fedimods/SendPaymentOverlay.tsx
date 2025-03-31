@@ -162,6 +162,8 @@ export const SendPaymentOverlay: React.FC<Props> = ({ onReject, onAccept }) => {
                         fedimint,
                         federationId: paymentFederation.id,
                         invoice: invoice.invoice,
+                        // TODO: add notes?
+                        // Maybe include the fedimod by default?
                     }),
                 ).unwrap()
                 onAcceptRef.current(res)

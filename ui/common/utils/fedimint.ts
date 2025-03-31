@@ -214,19 +214,15 @@ export class FedimintBridge {
         return this.rpcTyped('decodeInvoice', { invoice, federationId })
     }
 
-    async payInvoice(
-        invoice: string,
-        federationId: string,
-        frontendMetadata: FrontendMetadata = {
-            initialNotes: null,
-            recipientMatrixId: null,
-            senderMatrixId: null,
-        },
-    ) {
+    async payInvoice(invoice: string, federationId: string, notes?: string) {
         return this.rpcTyped('payInvoice', {
             invoice,
             federationId,
-            frontendMetadata,
+            frontendMetadata: {
+                initialNotes: notes || null,
+                recipientMatrixId: null,
+                senderMatrixId: null,
+            },
         })
     }
 
@@ -263,18 +259,18 @@ export class FedimintBridge {
         address: string,
         sats: Sats,
         federationId: string,
-        frontendMetadata: FrontendMetadata = {
-            initialNotes: null,
-            recipientMatrixId: null,
-            senderMatrixId: null,
-        },
+        notes?: string,
     ) {
         // FIXME: sats must be bigint to use this.rpcTyped
         return this.rpc<RpcPayAddressResponse>('payAddress', {
             address,
             sats,
             federationId,
-            frontendMetadata,
+            frontendMetadata: {
+                initialNotes: notes || null,
+                recipientMatrixId: null,
+                senderMatrixId: null,
+            },
         })
     }
 

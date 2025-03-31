@@ -28,10 +28,14 @@ const InvisibleInput: React.FC<Props> = ({
                 style={styles(theme).interactionContainer}
                 disabled={readOnly}
                 onPress={() => inputRef.current?.focus()}>
-                <Text h1 numberOfLines={1}>
+                <Text h1 numberOfLines={1} adjustsFontSizeToFit>
                     {value}
                 </Text>
-                <Text h2 numberOfLines={1} style={styles(theme).labelText}>
+                <Text
+                    h2
+                    numberOfLines={1}
+                    h2Style={styles(theme).labelText}
+                    adjustsFontSizeToFit>
                     {label}
                 </Text>
             </Pressable>

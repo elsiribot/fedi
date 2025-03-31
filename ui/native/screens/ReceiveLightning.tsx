@@ -1,6 +1,6 @@
 import { useFocusEffect } from '@react-navigation/native'
 import type { NativeStackScreenProps } from '@react-navigation/native-stack'
-import React, { useCallback, useEffect, useState } from 'react'
+import React, { useCallback, useEffect, useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { ActivityIndicator, Keyboard, StyleSheet, View } from 'react-native'
 
@@ -8,6 +8,7 @@ import { useRequestForm } from '@fedi/common/hooks/amount'
 import { useSyncCurrencyRatesAndCache } from '@fedi/common/hooks/currency'
 import { useIsOnchainDepositSupported } from '@fedi/common/hooks/federation'
 import { useToast } from '@fedi/common/hooks/toast'
+import { useTransactionHistory } from '@fedi/common/hooks/transactions'
 import {
     generateAddress,
     generateInvoice,
@@ -55,6 +56,7 @@ const ReceiveLightning: React.FC<Props> = ({ navigation, route }: Props) => {
     const isOnchainSupported = useIsOnchainDepositSupported()
     const [onchainAddress, setOnchainAddress] = useState<string>('')
     const [isLoading, setIsLoading] = useState<boolean>(false)
+    const [notes, setNotes] = useState<string>('')
     const [requestType, setRequestType] = useState<BitcoinOrLightning>(
         BitcoinOrLightning.lightning,
     )
@@ -68,6 +70,18 @@ const ReceiveLightning: React.FC<Props> = ({ navigation, route }: Props) => {
         }, [syncCurrencyRatesAndCache]),
     )
 
+    const { transactions, fetchTransactions } = useTransactionHistory(fedimint)
+
+    const transactionId = useMemo(() => {
+        const id = transactions.find(
+            tx =>
+                tx.kind === 'onchainDeposit' &&
+                tx.onchain_address === onchainAddress,
+        )?.id
+
+        return id
+    }, [transactions, onchainAddress])
+
     useEffect(() => {
         const createNewInvoice = async () => {
             if (!activeFederationId) return
@@ -78,6 +92,11 @@ const ReceiveLightning: React.FC<Props> = ({ navigation, route }: Props) => {
                         federationId: activeFederationId,
                         amount: amountUtils.satToMsat(amount),
                         description: memo,
+                        frontendMetadata: {
+                            initialNotes: notes || null,
+                            recipientMatrixId: null,
+                            senderMatrixId: null,
+                        },
                     }),
                 ).unwrap()
                 setInvoice(newInvoice)
@@ -99,6 +118,7 @@ const ReceiveLightning: React.FC<Props> = ({ navigation, route }: Props) => {
         memo,
         activeFederationId,
         dispatch,
+        notes,
     ])
 
     useEffect(() => {
@@ -121,10 +141,18 @@ const ReceiveLightning: React.FC<Props> = ({ navigation, route }: Props) => {
                         generateAddress({
                             fedimint,
                             federationId: activeFederationId,
+                            frontendMetadata: {
+                                initialNotes: notes || null,
+                                recipientMatrixId: null,
+                                senderMatrixId: null,
+                            },
                         }),
                     ).unwrap()
 
                     setOnchainAddress(newAddress)
+
+                    // Fetches transactionId of new address, in case the user updates notes
+                    fetchTransactions()
                 } catch (error) {
                     log.error('error generating address', error)
                 }
@@ -133,7 +161,14 @@ const ReceiveLightning: React.FC<Props> = ({ navigation, route }: Props) => {
 
             generateOnchainAddress()
         }
-    }, [onchainAddress, requestType, activeFederationId, dispatch])
+    }, [
+        onchainAddress,
+        requestType,
+        activeFederationId,
+        dispatch,
+        notes,
+        fetchTransactions,
+    ])
 
     const onChangeAmount = (updatedValue: Sats) => {
         setSubmitAttempts(0)
@@ -183,7 +218,7 @@ const ReceiveLightning: React.FC<Props> = ({ navigation, route }: Props) => {
     }
 
     return (
-        <SafeScrollArea edges="all">
+        <SafeScrollArea contentContainerStyle={style.container} edges="notop">
             {showOnchainDeposits && (
                 <RequestTypeSwitcher
                     requestType={requestType}
@@ -207,6 +242,7 @@ const ReceiveLightning: React.FC<Props> = ({ navigation, route }: Props) => {
                                 })
                             }
                             type={requestType}
+                            transactionId={transactionId}
                         />
                     )}
                 </View>
@@ -236,6 +272,8 @@ const ReceiveLightning: React.FC<Props> = ({ navigation, route }: Props) => {
                         },
                     ]}
                     isIndependent={false}
+                    notes={notes}
+                    setNotes={setNotes}
                 />
             )}
         </SafeScrollArea>
@@ -243,9 +281,8 @@ const ReceiveLightning: React.FC<Props> = ({ navigation, route }: Props) => {
 }
 
 const style = StyleSheet.create({
-    qrContainer: {
-        flex: 1,
-    },
+    qrContainer: {},
+    container: {},
 })
 
 export default ReceiveLightning

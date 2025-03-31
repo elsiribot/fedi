@@ -162,19 +162,40 @@ export const fetchTransactions = createAsyncThunk<
     { state: CommonState }
 >(
     'transactions/refreshTransactions',
-    async ({ fedimint, federationId, limit = 100, more }, { getState }) => {
-        const { transactions } = getFederationTxsState(
+    async (
+        { fedimint, federationId, limit = 100, more },
+        { getState, dispatch },
+    ) => {
+        const { transactions: cachedTransactions } = getFederationTxsState(
             getState().transactions,
             federationId,
         )
         const paginationTimestamp = more
-            ? transactions[transactions.length - 1]?.createdAt || undefined
+            ? cachedTransactions[cachedTransactions.length - 1]?.createdAt ||
+              undefined
             : undefined
-        return fedimint.listTransactions(
+
+        const transactions = await fedimint.listTransactions(
             federationId,
             paginationTimestamp,
             limit,
         )
+
+        transactions.forEach(txn => {
+            // TODO: figure out how to determine if someone DELETED their notes.
+            // For now, we'll "reset" the txnNotes to initialNotes if it's missing.
+            if (txn.frontendMetadata.initialNotes && !txn.txnNotes) {
+                dispatch(
+                    updateTransactionNotes({
+                        fedimint,
+                        federationId,
+                        transactionId: txn.id,
+                        notes: txn.frontendMetadata.initialNotes,
+                    }),
+                )
+            }
+        })
+        return transactions
     },
 )
 

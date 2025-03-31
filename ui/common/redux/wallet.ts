@@ -19,6 +19,7 @@ import {
 } from '.'
 import { Federation, MSats, ReceiveEcashResult, Usd, UsdCents } from '../types'
 import {
+    FrontendMetadata,
     JSONObject,
     RpcAmount,
     RpcEcashInfo,
@@ -163,11 +164,18 @@ export const {
 
 export const generateAddress = createAsyncThunk<
     string,
-    { fedimint: FedimintBridge; federationId: string },
+    {
+        fedimint: FedimintBridge
+        federationId: string
+        frontendMetadata: FrontendMetadata
+    },
     { state: CommonState }
->('wallet/generateAddress', async ({ fedimint, federationId }) => {
-    return fedimint.generateAddress(federationId)
-})
+>(
+    'wallet/generateAddress',
+    async ({ fedimint, federationId, frontendMetadata }) => {
+        return fedimint.generateAddress(federationId, frontendMetadata)
+    },
+)
 
 export const generateEcash = createAsyncThunk<
     { ecash: string; cancelAt: number },
@@ -176,12 +184,24 @@ export const generateEcash = createAsyncThunk<
         federationId: string
         amount: MSats
         includeInvite: boolean
+        frontendMetadata: FrontendMetadata
     },
     { state: CommonState }
 >(
     'wallet/generateEcash',
-    async ({ fedimint, federationId, amount, includeInvite }) => {
-        return fedimint.generateEcash(amount, federationId, includeInvite)
+    async ({
+        fedimint,
+        federationId,
+        amount,
+        includeInvite,
+        frontendMetadata,
+    }) => {
+        return fedimint.generateEcash(
+            amount,
+            federationId,
+            includeInvite,
+            frontendMetadata,
+        )
     },
 )
 
@@ -192,21 +212,39 @@ export const generateInvoice = createAsyncThunk<
         federationId: string
         amount: MSats
         description: string
+        frontendMetadata: FrontendMetadata
     },
     { state: CommonState }
 >(
     'wallet/generateInvoice',
-    async ({ fedimint, federationId, amount, description }) => {
-        return fedimint.generateInvoice(amount, description, federationId)
+    async ({
+        fedimint,
+        federationId,
+        amount,
+        description,
+        frontendMetadata,
+    }) => {
+        return fedimint.generateInvoice(
+            amount,
+            description,
+            federationId,
+            null,
+            frontendMetadata,
+        )
     },
 )
 
 export const payInvoice = createAsyncThunk<
     { preimage: string },
-    { fedimint: FedimintBridge; federationId: string; invoice: string },
+    {
+        fedimint: FedimintBridge
+        federationId: string
+        invoice: string
+        notes?: string
+    },
     { state: CommonState }
->('wallet/payInvoice', async ({ fedimint, federationId, invoice }) => {
-    return fedimint.payInvoice(invoice, federationId)
+>('wallet/payInvoice', async ({ fedimint, federationId, invoice, notes }) => {
+    return fedimint.payInvoice(invoice, federationId, notes)
 })
 
 /**

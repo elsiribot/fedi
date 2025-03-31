@@ -100,6 +100,11 @@ export const MakeInvoiceOverlay: React.FC<Props> = ({ onReject, onAccept }) => {
                           federationId: paymentFederation.id,
                           amount: msats,
                           description: memo,
+                          frontendMetadata: {
+                              initialNotes: null,
+                              recipientMatrixId: null,
+                              senderMatrixId: null,
+                          },
                       }),
                   ).unwrap()
             onAcceptRef.current({ paymentRequest })

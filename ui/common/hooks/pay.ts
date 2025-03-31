@@ -54,6 +54,7 @@ interface OmniPaymentState {
     /** Handles sending the payment when the user has confirmed, can throw errors */
     handleOmniSend: (
         amount: Sats,
+        notes?: string,
     ) => Promise<{ preimage: string } | { txid: string } | MeltResult>
     /** For passing to <AmountInput amount /> prop or useAmountInput */
     inputAmount: Sats
@@ -186,30 +187,33 @@ export function useOmniPaymentState(
     )
 
     const handleOmniSend = useCallback(
-        async (amount: Sats) => {
+        async (amount: Sats, notes?: string) => {
             if (!federationId) {
                 throw new Error('Must have a federation ID to send')
             }
             if (invoice) {
-                return fedimint.payInvoice(invoice.invoice, federationId)
+                return fedimint.payInvoice(invoice.invoice, federationId, notes)
             } else if (lnurlPayment) {
                 return lnurlPay(
                     fedimint,
                     federationId,
                     lnurlPayment,
                     amountUtils.satToMsat(amount),
+                    notes,
                 )
             } else if (bip21Payment) {
                 return fedimint.payAddress(
                     bip21Payment.address,
                     amount,
                     federationId,
+                    notes,
                 )
             } else if (btcAddress) {
                 return fedimint.payAddress(
                     btcAddress.address,
                     amount,
                     federationId,
+                    notes,
                 )
             } else if (cashuMeltSummary) {
                 return executeMelts(cashuMeltSummary)

@@ -41,7 +41,11 @@ import {
     MatrixUser,
     Sats,
 } from '../types'
-import { RpcRoomId, RpcRoomNotificationMode } from '../types/bindings'
+import {
+    FrontendMetadata,
+    RpcRoomId,
+    RpcRoomNotificationMode,
+} from '../types/bindings'
 import amountUtils from '../utils/AmountUtils'
 import { getFederationGroupChats } from '../utils/FederationUtils'
 import { MatrixChatClient } from '../utils/MatrixChatClient'
@@ -700,12 +704,13 @@ export const sendMatrixPaymentPush = createAsyncThunk<
         roomId: MatrixRoom['id']
         recipientId: MatrixUser['id']
         amount: Sats
+        notes?: string
     },
     { state: CommonState }
 >(
     'matrix/sendMatrixPaymentPush',
     async (
-        { fedimint, federationId, roomId, recipientId, amount },
+        { fedimint, federationId, roomId, recipientId, amount, notes = null },
         { getState },
     ) => {
         const state = getState()
@@ -717,10 +722,18 @@ export const sendMatrixPaymentPush = createAsyncThunk<
         const msats = amountUtils.satToMsat(amount)
 
         const client = getMatrixClient()
+
+        const frontendMetadata = {
+            recipientMatrixId: recipientId,
+            senderMatrixId: matrixAuth.userId,
+            initialNotes: notes,
+        } satisfies FrontendMetadata
+
         const { ecash } = await fedimint.generateEcash(
             msats,
             federationId,
             true,
+            frontendMetadata,
         )
 
         await client.sendMessage(roomId, {

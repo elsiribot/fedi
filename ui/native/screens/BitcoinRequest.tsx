@@ -109,6 +109,11 @@ const BitcoinRequest: React.FC<Props> = ({ route }: Props) => {
                         generateAddress({
                             fedimint,
                             federationId,
+                            frontendMetadata: {
+                                initialNotes: null,
+                                recipientMatrixId: null,
+                                senderMatrixId: null,
+                            },
                         }),
                     ).unwrap()
 
