@@ -1127,10 +1127,7 @@ impl From<CachedSyncResponseValue> for RpcSPv2CachedSyncResponse {
             staged_balance: RpcAmount(value.value.staged_balance),
             locked_balance: RpcAmount(value.value.locked_balance),
             idle_balance: RpcAmount(value.value.idle_balance),
-            pending_unlock_request: value
-                .value
-                .amount_from_unlock_request()
-                .map(|(_, fiat)| fiat.0),
+            pending_unlock_request: value.value.unlock_request.map(|r| r.total_fiat_requested.0),
         }
     }
 }

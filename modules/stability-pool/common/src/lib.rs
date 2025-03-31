@@ -861,6 +861,10 @@ pub struct UnlockRequest {
     /// ID of the TX representing the user's request to unlock funds
     pub txid: TransactionId,
 
+    /// The total fiat amount that was requested to be unlocked. This includes
+    /// any amount that has already been drained from the staged deposits.
+    pub total_fiat_requested: FiatAmount,
+
     /// The remaining amount needed to be unlocked from locked deposits at the
     /// next cycle turnover.
     pub unlock_amount: FiatOrAll,
@@ -890,8 +894,13 @@ pub struct UnlockRequest {
 /// return it within the status to save the client an extra API call.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub enum UnlockRequestStatus {
-    Pending { next_cycle_start_time: SystemTime },
-    NoActiveRequest { idle_balance: Amount },
+    Pending {
+        request: UnlockRequest,
+        next_cycle_start_time: SystemTime,
+    },
+    NoActiveRequest {
+        idle_balance: Amount,
+    },
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, Encodable, Decodable)]

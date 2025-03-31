@@ -633,7 +633,9 @@ where
     }
 
     let mut staged_deposits = dbtx.get_value(staged_key).await.unwrap_or_default();
+    let staged_deposits_sum = staged_deposits.iter().map(|d| d.amount).sum::<Amount>();
     let locked_deposits_sum = locked_deposits.iter().map(|d| d.amount).sum();
+    let total_deposits_sum = staged_deposits_sum + locked_deposits_sum;
 
     let mut drained_staged_deposits = vec![];
     match input.amount {
@@ -641,8 +643,6 @@ where
             let amount = fiat_amount
                 .to_btc_amount(btc_price)
                 .map_err(|_| StabilityPoolInputError::TemporaryError)?;
-            let staged_deposits_sum = staged_deposits.iter().map(|d| d.amount).sum::<Amount>();
-            let total_deposits_sum = staged_deposits_sum + locked_deposits_sum;
 
             if total_deposits_sum < amount {
                 return Err(StabilityPoolInputError::InsufficientBalance);
@@ -666,6 +666,7 @@ where
                     &UnlockRequest {
                         txid,
                         unlock_amount: FiatOrAll::Fiat(leftover_fiat),
+                        total_fiat_requested: fiat_amount,
                     },
                 )
                 .await;
@@ -685,11 +686,15 @@ where
 
             // If there are locked deposits present, register an unlock request for ALL
             if locked_deposits_sum != Amount::ZERO {
+                let total_fiat_requested =
+                    FiatAmount::from_btc_amount(total_deposits_sum, btc_price)
+                        .map_err(|_| StabilityPoolInputError::TemporaryError)?;
                 dbtx.insert_entry(
                     &unlock_key,
                     &UnlockRequest {
                         txid,
                         unlock_amount: FiatOrAll::All,
+                        total_fiat_requested,
                     },
                 )
                 .await;

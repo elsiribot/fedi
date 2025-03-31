@@ -964,6 +964,7 @@ async fn await_unlock_request_processed(
             Ok(UnlockRequestStatus::NoActiveRequest { idle_balance }) => break Ok(idle_balance),
             Ok(UnlockRequestStatus::Pending {
                 next_cycle_start_time,
+                ..
             }) => {
                 let sleep_duration = next_cycle_start_time
                     .duration_since(fedimint_core::time::now())

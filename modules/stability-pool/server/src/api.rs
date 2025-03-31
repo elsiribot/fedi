@@ -205,7 +205,8 @@ pub async fn unlock_request_status(
 ) -> anyhow::Result<UnlockRequestStatus, ApiError> {
     let mut dbtx = context.dbtx().into_nc();
     Ok(match dbtx.get_value(&UnlockRequestKey(account)).await {
-        Some(_) => UnlockRequestStatus::Pending {
+        Some(request) => UnlockRequestStatus::Pending {
+            request,
             next_cycle_start_time: next_cycle_start_time(&mut dbtx, stability_pool).await?,
         },
         None => UnlockRequestStatus::NoActiveRequest {
