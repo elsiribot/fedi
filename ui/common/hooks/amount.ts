@@ -28,6 +28,7 @@ import {
     EcashRequest,
     Invoice,
     MSats,
+    NonGenericCurrency,
     ParsedBip21,
     ParsedBitcoinAddress,
     ParsedLnurlPay,
@@ -117,9 +118,10 @@ export const useBtcFiatPrice = (currency?: SelectableCurrency) => {
                 symbolPosition: AmountSymbolPosition = 'end',
                 historicalFiatInfo?: FiatFXInfo,
             ) => {
-                const conversionCurrency: SupportedCurrency = historicalFiatInfo
-                    ? (historicalFiatInfo.fiatCode as SupportedCurrency)
-                    : fiatCurrency
+                const conversionCurrency: SelectableCurrency =
+                    historicalFiatInfo
+                        ? (historicalFiatInfo.fiatCode as NonGenericCurrency)
+                        : fiatCurrency
                 const conversionRate = historicalFiatInfo
                     ? historicalFiatInfo.btcToFiatHundredths / 100
                     : exchangeRate
@@ -720,7 +722,7 @@ export function useRequestForm(args: RequestAmountArgs = {}) {
         args.lnurlWithdrawal &&
         args.lnurlWithdrawal.minWithdrawable &&
         args.lnurlWithdrawal.minWithdrawable ===
-            args.lnurlWithdrawal.maxWithdrawable
+        args.lnurlWithdrawal.maxWithdrawable
     ) {
         exactAmount = amountUtils.msatToSat(
             args.lnurlWithdrawal.minWithdrawable,

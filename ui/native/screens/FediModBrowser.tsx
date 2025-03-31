@@ -70,6 +70,7 @@ import {
 } from '../state/contexts/OmniLinkContext'
 import { useAppDispatch, useAppSelector } from '../state/hooks'
 import type { RootStackParamList } from '../types/navigation'
+import { getCurrencyCode } from '@fedi/common/utils/currency'
 
 const log = makeLog('FediModBrowser')
 
@@ -374,7 +375,7 @@ const FediModBrowser: React.FC<Props> = ({ route }) => {
         [InjectionMessageType.fedi_getCurrencyCode]: async () => {
             log.info('fedi.getActiveFederation')
 
-            return currency
+            return getCurrencyCode(currency)
         },
         [InjectionMessageType.fedi_getLanguageCode]: async () => {
             log.info('fedi.getActiveFederation')
