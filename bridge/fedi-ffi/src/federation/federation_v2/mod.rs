@@ -52,7 +52,7 @@ use fedimint_core::task::{timeout, MaybeSend, MaybeSync, TaskGroup};
 use fedimint_core::timing::TimeReporter;
 use fedimint_core::util::backoff_util::{aggressive_backoff, background_backoff};
 use fedimint_core::util::retry;
-use fedimint_core::{maybe_add_send_sync, Amount, PeerId};
+use fedimint_core::{maybe_add_send_sync, Amount, PeerId, TransactionId};
 use fedimint_derive_secret::{ChildId, DerivableSecret};
 use fedimint_ln_client::pay::GatewayPayError;
 use fedimint_ln_client::{
@@ -80,14 +80,17 @@ use meta::{LegacyMetaSourceWithExternalUrl, MetaEntries, MetaServiceExt};
 use rand::Rng;
 use serde::de::DeserializeOwned;
 use stability_pool_client::common::{
-    AccountId, AccountType, FiatOrAll, SignedTransferRequest, TransferRequest,
+    Account, AccountId, AccountType, FiatOrAll, SignedTransferRequest, TransferRequest,
 };
-use stability_pool_client::db::{CachedSyncResponseKey, CachedSyncResponseValue};
+use stability_pool_client::db::{
+    CachedSyncResponseKey, CachedSyncResponseValue, SeekLifetimeFeeKey, UserOperationHistoryItem,
+    UserOperationHistoryItemKey, UserOperationHistoryItemKind,
+};
 use stability_pool_client::{
-    StabilityPoolDepositOperationState, StabilityPoolHistoryService, StabilityPoolMeta,
-    StabilityPoolSyncService, StabilityPoolWithdrawalOperationState,
+    StabilityPoolClientInit, StabilityPoolDepositOperationState, StabilityPoolHistoryService,
+    StabilityPoolMeta, StabilityPoolSyncService, StabilityPoolWithdrawalOperationState,
 };
-use stability_pool_client_old::{ClientAccountInfo, StabilityPoolClientInit};
+use stability_pool_client_old::ClientAccountInfo;
 use tokio::sync::{Mutex, OnceCell};
 use tracing::{error, info, instrument, warn, Level};
 
@@ -121,7 +124,8 @@ use crate::types::{
     RpcFederationId, RpcFederationMaybeLoading, RpcFederationPreview, RpcFeeDetails,
     RpcGenerateEcashResponse, RpcInvoice, RpcLightningGateway, RpcOperationFediFeeStatus,
     RpcPayAddressResponse, RpcPayInvoiceResponse, RpcPublicKey, RpcReturningMemberStatus,
-    RpcSPDepositState, RpcSPWithdrawState, RpcTransaction, RpcTransactionDirection,
+    RpcSPDepositState, RpcSPV2DepositState, RpcSPV2TransferInState, RpcSPV2TransferOutState,
+    RpcSPV2WithdrawalState, RpcSPWithdrawState, RpcTransaction, RpcTransactionDirection,
     RpcTransactionKind, RpcTransactionListEntry,
 };
 use crate::utils::{display_currency, to_unix_time};
@@ -205,6 +209,7 @@ impl FederationV2 {
         client_builder.with_module(WalletClientInit(None));
         client_builder.with_module(FediSocialClientInit);
         client_builder.with_module(StabilityPoolClientInit);
+        client_builder.with_module(stability_pool_client_old::StabilityPoolClientInit);
         client_builder.with_primary_module_kind(fedimint_mint_client::KIND);
         Ok(client_builder)
     }
@@ -2464,6 +2469,127 @@ impl FederationV2 {
                     };
                 }
             },
+            STABILITY_POOL_V2_OPERATION_TYPE => match entry.meta() {
+                StabilityPoolMeta::Deposit { txid, amount, .. } => {
+                    transaction_amount = RpcAmount(amount + Amount::from_msats(fedi_fee_msats));
+                    frontend_metadata = None;
+                    transaction_kind = RpcTransactionKind::SPV2Deposit {
+                        state: if let Some(item) = self.spv2_user_op_history_item(txid).await {
+                            match item.kind {
+                                UserOperationHistoryItemKind::PendingDeposit => {
+                                    RpcSPV2DepositState::PendingDeposit {
+                                        amount: RpcAmount(item.amount),
+                                        fiat_amount: item.fiat_amount.0,
+                                    }
+                                }
+                                UserOperationHistoryItemKind::CompletedDeposit => {
+                                    let fees_paid_so_far = RpcAmount(
+                                        self.spv2_seek_lifetime_fee(txid)
+                                            .await
+                                            .unwrap_or(Amount::ZERO),
+                                    );
+                                    RpcSPV2DepositState::CompletedDeposit {
+                                        amount: RpcAmount(item.amount),
+                                        fiat_amount: item.fiat_amount.0,
+                                        fees_paid_so_far,
+                                    }
+                                }
+                                _ => panic!(
+                                    "SPV2 meta does not match user operation kind for {txid}"
+                                ),
+                            }
+                        } else {
+                            RpcSPV2DepositState::DataNotInCache
+                        },
+                    }
+                }
+                StabilityPoolMeta::Withdrawal { txid, .. } => {
+                    frontend_metadata = None;
+                    transaction_kind = RpcTransactionKind::SPV2Withdrawal {
+                        state: if let Some(item) = self.spv2_user_op_history_item(txid).await {
+                            transaction_amount = RpcAmount(item.amount);
+                            match item.kind {
+                                UserOperationHistoryItemKind::PendingWithdrawal => {
+                                    RpcSPV2WithdrawalState::PendingWithdrawal {
+                                        amount: RpcAmount(item.amount),
+                                        fiat_amount: item.fiat_amount.0,
+                                    }
+                                }
+                                UserOperationHistoryItemKind::CompletedWithdrawal => {
+                                    RpcSPV2WithdrawalState::CompletedWithdrawal {
+                                        amount: RpcAmount(item.amount),
+                                        fiat_amount: item.fiat_amount.0,
+                                    }
+                                }
+                                _ => panic!(
+                                    "SPV2 meta does not match user operation kind for {txid}"
+                                ),
+                            }
+                        } else {
+                            transaction_amount = RpcAmount(Amount::ZERO);
+                            RpcSPV2WithdrawalState::DataNotInCache
+                        },
+                    }
+                }
+                StabilityPoolMeta::Transfer {
+                    txid,
+                    signed_request,
+                } => {
+                    frontend_metadata = None;
+                    // We must either be the sender or the recipient of the
+                    // transfer, otherwise we can ignore it for our own personal
+                    // operation history
+                    if let Some(account) = self.spv2_our_seeker_account() {
+                        if account.id() == signed_request.details().from().id() {
+                            // Case 1: we were the sender
+                            transaction_kind = RpcTransactionKind::SPV2TransferOut {
+                                state: if let Some(item) =
+                                    self.spv2_user_op_history_item(txid).await
+                                {
+                                    transaction_amount = RpcAmount(item.amount);
+                                    RpcSPV2TransferOutState::CompletedTransfer {
+                                        to_account_id: signed_request.details().to().to_string(),
+                                        amount: RpcAmount(item.amount),
+                                        fiat_amount: item.fiat_amount.0,
+                                    }
+                                } else {
+                                    transaction_amount = RpcAmount(Amount::ZERO);
+                                    RpcSPV2TransferOutState::DataNotInCache
+                                },
+                            }
+                        } else if account.id() == *signed_request.details().to() {
+                            // Case 2: we were the recipient
+                            transaction_kind = RpcTransactionKind::SPV2TransferIn {
+                                state: if let Some(item) =
+                                    self.spv2_user_op_history_item(txid).await
+                                {
+                                    transaction_amount = RpcAmount(item.amount);
+                                    RpcSPV2TransferInState::CompletedTransfer {
+                                        from_account_id: signed_request
+                                            .details()
+                                            .from()
+                                            .id()
+                                            .to_string(),
+                                        amount: RpcAmount(item.amount),
+                                        fiat_amount: item.fiat_amount.0,
+                                    }
+                                } else {
+                                    transaction_amount = RpcAmount(Amount::ZERO);
+                                    RpcSPV2TransferInState::DataNotInCache
+                                },
+                            }
+                        } else {
+                            return None;
+                        }
+                    } else {
+                        return None;
+                    }
+                }
+                StabilityPoolMeta::WithdrawIdleBalance { .. } => {
+                    // TXs to sweep idle balance shouldn't log in history
+                    return None;
+                }
+            },
             MINT_OPERATION_TYPE => {
                 let mint_meta: MintOperationMeta = entry.meta();
                 match mint_meta.variant {
@@ -2978,6 +3104,37 @@ impl FederationV2 {
                 ));
             }
         }
+    }
+
+    async fn spv2_user_op_history_item(
+        &self,
+        txid: TransactionId,
+    ) -> Option<UserOperationHistoryItem> {
+        let spv2 = self.client.spv2().ok()?;
+        let account_id = spv2.our_account(AccountType::Seeker).id();
+
+        spv2.db
+            .clone()
+            .begin_transaction_nc()
+            .await
+            .get_value(&UserOperationHistoryItemKey { account_id, txid })
+            .await
+    }
+
+    async fn spv2_seek_lifetime_fee(&self, txid: TransactionId) -> Option<Amount> {
+        let spv2 = self.client.spv2().ok()?;
+
+        spv2.db
+            .clone()
+            .begin_transaction_nc()
+            .await
+            .get_value(&SeekLifetimeFeeKey(txid))
+            .await
+    }
+
+    fn spv2_our_seeker_account(&self) -> Option<Account> {
+        let spv2 = self.client.spv2().ok()?;
+        Some(spv2.our_account(AccountType::Seeker))
     }
 
     /// Stability Pool
