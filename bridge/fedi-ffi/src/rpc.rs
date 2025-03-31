@@ -1156,7 +1156,7 @@ async fn matrixSendMessageJson(
     data: CustomMessageData,
 ) -> anyhow::Result<()> {
     matrix
-        .send_message_json(&room_id.into_typed()?, msgtype, body, data.0)
+        .send_message_json(&room_id.into_typed()?, &msgtype, body, data.0)
         .await
 }
 

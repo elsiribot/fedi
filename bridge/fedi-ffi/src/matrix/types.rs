@@ -2,6 +2,7 @@ use std::collections::HashMap;
 use std::sync::Arc;
 
 use anyhow::{Context, Result};
+use fedimint_core::encoding::{Decodable, Encodable};
 use matrix_sdk::notification_settings::RoomNotificationMode;
 use matrix_sdk::room::RoomMember;
 use matrix_sdk::ruma::api::client::user_directory::search_users::v3 as search_user_directory;
@@ -200,7 +201,7 @@ impl RpcMatrixUserDirectorySearchUser {
     pub fn from_user(user: search_user_directory::User) -> Self {
         let avatar_url = user.avatar_url.map(|url| url.to_string());
         Self {
-            user_id: user.user_id.into(),
+            user_id: RpcUserId(user.user_id.into()),
             display_name: user.display_name,
             avatar_url,
         }
@@ -325,9 +326,9 @@ impl RpcTimelineItem {
     }
 }
 
-#[derive(Clone, Debug, Serialize, Deserialize, ts_rs::TS)]
+#[derive(Clone, Debug, Serialize, Deserialize, Decodable, Encodable, ts_rs::TS)]
 #[ts(export)]
-pub struct RpcRoomId(String);
+pub struct RpcRoomId(pub String);
 
 impl RpcRoomId {
     pub fn into_typed(&self) -> Result<matrix_sdk::ruma::OwnedRoomId> {
@@ -341,7 +342,20 @@ impl From<matrix_sdk::ruma::OwnedRoomId> for RpcRoomId {
     }
 }
 
-#[derive(Clone, Debug, Serialize, Deserialize, ts_rs::TS)]
+#[derive(
+    Clone,
+    Debug,
+    Serialize,
+    Deserialize,
+    Eq,
+    PartialEq,
+    ts_rs::TS,
+    Hash,
+    Encodable,
+    Decodable,
+    PartialOrd,
+    Ord,
+)]
 #[ts(export)]
 pub struct RpcUserId(pub String);
 

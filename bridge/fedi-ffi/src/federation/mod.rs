@@ -13,6 +13,7 @@ use crate::bridge::BridgeRuntime;
 use crate::fedi_fee::FediFeeHelper;
 use crate::storage::FederationInfo;
 use crate::types::RpcFederationPreview;
+use crate::utils::PoisonedLockExt as _;
 
 pub mod federation_sm;
 pub mod federation_v2;
@@ -44,7 +45,7 @@ impl Federations {
             .await;
 
         let mut futures = Vec::new();
-        let mut federations = self.federations.lock().expect("posioned");
+        let mut federations = self.federations.ensure_lock();
         for (federation_id, federation_info) in joined_federations {
             if federation_info.version < 2 {
                 error!(version = federation_info.version, %federation_id, "Invalid federation version");
@@ -148,8 +149,7 @@ impl Federations {
 
     pub fn get_federation_state(&self, federation_id: &str) -> anyhow::Result<FederationState> {
         self.federations
-            .lock()
-            .expect("posioned")
+            .ensure_lock()
             .get(federation_id)
             .context("Federation not found")?
             .get_state()
@@ -158,8 +158,7 @@ impl Federations {
 
     pub fn get_federations_map(&self) -> BTreeMap<String, FederationState> {
         self.federations
-            .lock()
-            .expect("posioned")
+            .ensure_lock()
             .clone()
             .iter()
             .filter_map(|(id, fed_sm)| fed_sm.get_state().map(|state| (id.clone(), state)))
@@ -169,8 +168,7 @@ impl Federations {
     pub async fn leave_federation(&self, federation_id_str: &str) -> anyhow::Result<()> {
         let fed_sm = self
             .federations
-            .lock()
-            .expect("posoined")
+            .ensure_lock()
             .get(federation_id_str)
             .context("Federation not found")?
             .clone();
@@ -185,8 +183,7 @@ impl Federations {
         // state
         let fed_network_map = self
             .federations
-            .lock()
-            .expect("posioned")
+            .ensure_lock()
             .iter()
             .filter_map(|(id, fed_sm)| match fed_sm.get_state() {
                 Some(FederationState::Ready(fed) | FederationState::Recovering(fed)) => {

@@ -174,12 +174,82 @@ export type FrontendMetadata = {
   senderMatrixId: string | null;
 };
 
+export type GroupInvitation = {
+  signers: Array<RpcUserId>;
+  threshold: bigint;
+  federationInviteCode: string;
+  federationName: string;
+};
+
+/**
+ * Group invitation with extra state accumlated over the events.
+ */
+export type GroupInvitationWithKeys = {
+  invitation: GroupInvitation;
+  pubkeys: { [key in RpcUserId]?: RpcPublicKey };
+  rejections: Array<RpcUserId>;
+};
+
 export type GuardianStatus =
   | { online: { guardian: string; latency_ms: number } }
   | { error: { guardian: string; error: string } }
   | { timeout: { guardian: string; elapsed: string } };
 
 export type LogEvent = { log: string };
+
+/**
+ * Collected details for a given event id.
+ */
+export type MsEventData =
+  | { withdrawalRequest: WithdrawRequestWithApprovals }
+  | { groupInvitation: GroupInvitationWithKeys }
+  | { depositNotification: MultispendDepositEventData };
+
+/**
+ * Deposit notification saved to db.
+ */
+export type MultispendDepositEventData = {
+  user: RpcUserId;
+  fiatAmount: RpcFiatAmount;
+  txid: RpcTransactionId;
+};
+
+/**
+ * JSON formatted event that is sent in matrix room.
+ */
+export type MultispendEvent =
+  | {
+      kind: "groupInvitation";
+      invitation: GroupInvitation;
+      proposerPubkey: RpcPublicKey;
+    }
+  | {
+      kind: "groupInvitationVote";
+      invitation: RpcEventId;
+      vote: MultispendGroupVoteType;
+    }
+  | { kind: "groupInvitationCancel" }
+  | {
+      kind: "depositNotification";
+      fiatAmount: RpcFiatAmount;
+      txid: RpcTransactionId;
+    }
+  | { kind: "withdrawalRequest"; request: JSONObject; description: string }
+  | {
+      kind: "withdrawalResponse";
+      request: RpcEventId;
+      response: WithdrawalResponseType;
+    };
+
+export type MultispendGroupVoteType =
+  | { kind: "accept"; memberPubkey: RpcPublicKey }
+  | { kind: "reject" };
+
+export type MultispendListedEvent = {
+  counter: number;
+  time: number;
+  event: MsEventData;
+};
 
 /**
  * Notify front-end that given federation has failed the e-cash blind nonce
@@ -325,6 +395,8 @@ export type RpcError = {
   errorCode: ErrorCode | null;
 };
 
+export type RpcEventId = string;
+
 export type RpcFederation = {
   balance: RpcAmount;
   id: RpcFederationId;
@@ -366,6 +438,8 @@ export type RpcFeeDetails = {
   networkFee: RpcAmount;
   federationFee: RpcAmount;
 };
+
+export type RpcFiatAmount = number;
 
 export type RpcGenerateEcashResponse = { ecash: string; cancelAt: number };
 
@@ -804,6 +878,8 @@ export type RpcSPv2CachedSyncResponse = {
   pendingUnlockRequest: number | null;
 };
 
+export type RpcSignature = string;
+
 export type RpcSignedLnurlMessage = { signature: string; pubkey: RpcPublicKey };
 
 export type RpcStabilityPoolAccountInfo = {
@@ -918,6 +994,8 @@ export type RpcTransaction = {
 
 export type RpcTransactionDirection = "receive" | "send";
 
+export type RpcTransactionId = string;
+
 export type RpcTransactionKind =
   | {
       kind: "lnPay";
@@ -990,6 +1068,8 @@ export type RpcTransactionListEntry = {
   | { kind: "sPV2TransferOut"; state: RpcSPV2TransferOutState }
   | { kind: "sPV2TransferIn"; state: RpcSPV2TransferInState }
 );
+
+export type RpcTransferRequestId = string;
 
 export type RpcUserId = string;
 
@@ -1170,6 +1250,22 @@ export type TransactionEvent = {
 };
 
 export type UserProfile = JSONObject;
+
+/**
+ * Withdrawal request with extra data accumulated over events.
+ */
+export type WithdrawRequestWithApprovals = {
+  request: JSONObject;
+  description: string;
+  signatures: { [key in RpcUserId]?: RpcSignature };
+  rejections: Array<RpcUserId>;
+  completed: RpcTransactionId | null;
+};
+
+export type WithdrawalResponseType =
+  | { kind: "approve"; signature: RpcSignature }
+  | { kind: "reject" }
+  | { kind: "complete"; fiatAmount: RpcFiatAmount; txid: RpcTransactionId };
 
 export type approveSocialRecoveryRequest = {
   federationId: RpcFederationId;

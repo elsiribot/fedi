@@ -36,7 +36,7 @@ use super::types::{
 use crate::api::IFediApi;
 use crate::community::Communities;
 use crate::constants::{LNURL_CHILD_ID, MATRIX_CHILD_ID, NOSTR_CHILD_ID};
-use crate::db::FederationPendingRejoinFromScratchKeyPrefix;
+use crate::db::{BridgeDbPrefix, FederationPendingRejoinFromScratchKeyPrefix};
 use crate::device_registration::{self, DeviceRegistrationService};
 use crate::error::ErrorCode;
 use crate::event::SocialRecoveryEvent;
@@ -100,6 +100,14 @@ impl BridgeRuntime {
 
     pub fn bridge_db(&self) -> Database {
         self.global_db.with_prefix(vec![BRIDGE_DB_PREFIX])
+    }
+
+    /// DB for mulitspend state.
+    pub fn multispend_db(&self) -> Database {
+        self.global_db.with_prefix(vec![
+            BRIDGE_DB_PREFIX,
+            BridgeDbPrefix::MultispendPrefix as u8,
+        ])
     }
 
     pub async fn device_index_assignment_status(

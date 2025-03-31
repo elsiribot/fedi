@@ -5,16 +5,18 @@ use std::time::Duration;
 
 use anyhow::anyhow;
 use bitcoin::secp256k1::ecdsa::Signature;
+use bitcoin::secp256k1::schnorr;
 use bitcoin::Network;
 use fedimint_core::config::{GlobalClientConfig, JsonWithKind, PeerUrl};
 use fedimint_core::encoding::{Decodable, Encodable};
-use fedimint_core::Amount;
+use fedimint_core::{Amount, TransactionId};
 use fedimint_ln_client::pay::GatewayPayError;
 use fedimint_ln_client::{LnPayState, LnReceiveState};
 use fedimint_mint_client::{ReissueExternalNotesState, SpendOOBState};
 use fedimint_wallet_client::{DepositStateV2, WithdrawState};
 use serde::de::{self, MapAccess, Visitor};
 use serde::{Deserialize, Deserializer, Serialize};
+use stability_pool_client::common::TransferRequestId;
 use stability_pool_client::db::CachedSyncResponseValue;
 use stability_pool_client_old::ClientAccountInfo;
 use ts_rs::TS;
@@ -56,6 +58,35 @@ impl std::fmt::Display for RpcAmount {
         write!(f, "{}", self.0)
     }
 }
+
+#[derive(Debug, Clone, Serialize, Deserialize, TS, Encodable, Decodable, PartialEq, Eq)]
+#[ts(export)]
+pub struct RpcFiatAmount(#[ts(type = "number")] pub u64);
+
+#[derive(Debug, Clone, Serialize, Deserialize, TS, Encodable, Decodable, PartialEq, Eq)]
+#[ts(export)]
+pub struct RpcTransactionId(#[ts(type = "string")] pub TransactionId);
+
+#[derive(Debug, Clone, Serialize, Deserialize, TS, Encodable, Decodable, PartialEq, Eq)]
+#[ts(export)]
+pub struct RpcSignature(#[ts(type = "string")] pub schnorr::Signature);
+
+#[derive(
+    Debug,
+    Clone,
+    Serialize,
+    Deserialize,
+    Hash,
+    PartialEq,
+    Eq,
+    TS,
+    Encodable,
+    Decodable,
+    PartialOrd,
+    Ord,
+)]
+#[ts(export)]
+pub struct RpcEventId(#[ts(type = "string")] pub String);
 
 #[derive(Debug, Serialize, Deserialize, TS)]
 #[serde(rename_all = "camelCase")]
@@ -467,7 +498,21 @@ impl fmt::Display for RpcPeerId {
     }
 }
 
-#[derive(Debug, Serialize, Deserialize, Clone, Copy, TS)]
+#[derive(
+    Debug,
+    Serialize,
+    Deserialize,
+    Clone,
+    Copy,
+    TS,
+    PartialEq,
+    Eq,
+    Hash,
+    Encodable,
+    Decodable,
+    Ord,
+    PartialOrd,
+)]
 #[ts(export)]
 pub struct RpcPublicKey(#[ts(type = "string")] pub bitcoin::secp256k1::PublicKey);
 
@@ -1226,3 +1271,7 @@ pub enum RpcDeviceIndexAssignmentStatus {
     Assigned(u8),
     Unassigned,
 }
+
+#[derive(Debug, Clone, Serialize, Deserialize, TS)]
+#[ts(export)]
+pub struct RpcTransferRequestId(#[ts(type = "string")] pub TransferRequestId);

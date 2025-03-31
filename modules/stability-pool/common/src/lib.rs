@@ -130,10 +130,10 @@ pub struct Account {
 
 /// Account without invariants that can be checked using try_into.
 #[derive(Decodable, Deserialize)]
-struct AccountUnchecked {
-    acc_type: AccountType,
-    pub_keys: BTreeSet<PublicKey>,
-    threshold: u64,
+pub struct AccountUnchecked {
+    pub acc_type: AccountType,
+    pub pub_keys: BTreeSet<PublicKey>,
+    pub threshold: u64,
 }
 
 impl TryFrom<AccountUnchecked> for Account {
@@ -218,6 +218,10 @@ impl Account {
 
     pub fn acc_type(&self) -> AccountType {
         self.acc_type
+    }
+
+    pub fn threshold(&self) -> u64 {
+        self.threshold
     }
 }
 
@@ -545,7 +549,7 @@ impl TransferRequest {
     }
 }
 
-#[derive(Debug, Clone, Encodable, Decodable)]
+#[derive(Debug, Clone, Encodable, Decodable, Serialize, Deserialize)]
 pub struct TransferRequestId(pub sha256::Hash);
 
 impl From<&TransferRequest> for TransferRequestId {
