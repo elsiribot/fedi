@@ -193,8 +193,8 @@ pub struct FederationV2 {
     pub this_weak: Weak<Self>,
     pub guard: FederationLockGuard,
     // Stability pool v2 services for syncing accout history between client and server
-    pub spv2_sync_service: OnceCell<Arc<StabilityPoolSyncService>>,
-    pub spv2_history_service: OnceCell<Arc<StabilityPoolHistoryService>>,
+    pub spv2_sync_service: OnceCell<StabilityPoolSyncService>,
+    pub spv2_history_service: OnceCell<StabilityPoolHistoryService>,
 }
 
 impl FederationV2 {

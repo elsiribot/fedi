@@ -1,5 +1,4 @@
 use std::ops::Range;
-use std::sync::Arc;
 
 use anyhow::bail;
 use fedimint_api_client::api::{DynModuleApi, FederationApiExt as _};
@@ -32,13 +31,13 @@ pub struct StabilityPoolHistoryService {
 }
 
 impl StabilityPoolHistoryService {
-    pub fn new(module_api: DynModuleApi, db: Database, account_id: AccountId) -> Arc<Self> {
-        Arc::new(Self {
+    pub fn new(module_api: DynModuleApi, db: Database, account_id: AccountId) -> Self {
+        Self {
             is_fetching: watch::Sender::new(false),
             module_api,
             db,
             account_id,
-        })
+        }
     }
 
     /// Update history data in background.
