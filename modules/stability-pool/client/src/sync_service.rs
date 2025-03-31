@@ -3,6 +3,7 @@ use std::time::Duration;
 use fedimint_api_client::api::{DynModuleApi, FederationApiExt as _};
 use fedimint_core::db::{Database, IDatabaseTransactionOpsCoreTyped};
 use fedimint_core::module::ApiRequestErased;
+use fedimint_core::util::update_merge::UpdateMerge;
 use fedimint_core::util::{backoff_util, retry};
 use futures::Stream;
 use stability_pool_common::config::StabilityPoolClientConfig;
@@ -19,6 +20,7 @@ pub struct StabilityPoolSyncService {
     module_api: DynModuleApi,
     db: Database,
     account_id: AccountId,
+    update_merge: UpdateMerge,
 }
 
 impl StabilityPoolSyncService {
@@ -35,6 +37,7 @@ impl StabilityPoolSyncService {
             module_api,
             db,
             account_id,
+            update_merge: Default::default(),
         }
     }
 
@@ -65,33 +68,42 @@ impl StabilityPoolSyncService {
     }
 
     pub async fn update_once(&self) -> anyhow::Result<()> {
-        let sync_response: SyncResponse = self
-            .module_api
-            .request_current_consensus("sync".to_string(), ApiRequestErased::new(self.account_id))
-            .await?;
+        self.update_merge
+            .merge(async {
+                let sync_response: SyncResponse = self
+                    .module_api
+                    .request_current_consensus(
+                        "sync".to_string(),
+                        ApiRequestErased::new(self.account_id),
+                    )
+                    .await?;
 
-        let mut dbtx = self.db.begin_transaction().await;
-        dbtx.insert_entry(
-            &CachedSyncResponseKey {
-                account_id: self.account_id,
-            },
-            &CachedSyncResponseValue {
-                fetch_time: fedimint_core::time::now(),
-                value: sync_response.clone(),
-            },
-        )
-        .await;
+                let mut dbtx = self.db.begin_transaction().await;
+                dbtx.insert_entry(
+                    &CachedSyncResponseKey {
+                        account_id: self.account_id,
+                    },
+                    &CachedSyncResponseValue {
+                        fetch_time: fedimint_core::time::now(),
+                        value: sync_response.clone(),
+                    },
+                )
+                .await;
 
-        if let Some(locked_seeks_lifetime_fee) = sync_response.locked_seeks_lifetime_fee.as_ref() {
-            for (txid, amount) in locked_seeks_lifetime_fee {
-                dbtx.insert_entry(&SeekLifetimeFeeKey(*txid), amount).await;
-            }
-        }
-        dbtx.commit_tx().await;
+                if let Some(locked_seeks_lifetime_fee) =
+                    sync_response.locked_seeks_lifetime_fee.as_ref()
+                {
+                    for (txid, amount) in locked_seeks_lifetime_fee {
+                        dbtx.insert_entry(&SeekLifetimeFeeKey(*txid), amount).await;
+                    }
+                }
+                dbtx.commit_tx().await;
 
-        // Send the new SyncResponse to all watchers
-        self.sync_response.send_replace(Some(sync_response));
-        Ok(())
+                // Send the new SyncResponse to all watchers
+                self.sync_response.send_replace(Some(sync_response));
+                Ok(())
+            })
+            .await
     }
 
     /// Subscribe to sync data updates
