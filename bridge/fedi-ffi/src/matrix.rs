@@ -58,8 +58,10 @@ use matrix_sdk_ui::timeline::{default_event_filter, TimelineEventItemId};
 use mime::Mime;
 use multispend::db::{MultispendGroupStatus, MultispendMarkedForScanning};
 use multispend::{
-    GroupInvitation, GroupInvitationWithKeys, MsEventData, MultispendEvent, MultispendGroupVoteType,
+    GroupInvitation, GroupInvitationWithKeys, MsEventData, MultispendEvent,
+    MultispendGroupVoteType, WithdrawalResponseType,
 };
+use stability_pool_client::common::TransferRequest;
 use tokio::sync::{mpsc, Mutex};
 use tracing::{error, info, warn};
 
@@ -1342,7 +1344,10 @@ impl Matrix {
             .await
     }
 
-    async fn get_multispend_group_status(&self, room_id: &RoomId) -> Option<MultispendGroupStatus> {
+    pub async fn get_multispend_group_status(
+        &self,
+        room_id: &RoomId,
+    ) -> Option<MultispendGroupStatus> {
         let multispend_db = self.runtime.multispend_db();
         let mut dbtx = multispend_db.begin_transaction_nc().await;
         multispend::get_group_status_db(&mut dbtx, &RpcRoomId(room_id.to_string())).await
@@ -1399,6 +1404,34 @@ impl Matrix {
         .await
     }
 
+    pub async fn send_multispend_withdraw_request(
+        &self,
+        room_id: &RoomId,
+        request: TransferRequest,
+        description: String,
+    ) -> anyhow::Result<()> {
+        self.send_multispend_event(
+            room_id,
+            MultispendEvent::WithdrawalRequest {
+                request,
+                description,
+            },
+        )
+        .await
+    }
+
+    pub async fn respond_multispend_withdraw(
+        &self,
+        room_id: &RoomId,
+        request: RpcEventId,
+        response: WithdrawalResponseType,
+    ) -> anyhow::Result<()> {
+        self.send_multispend_event(
+            room_id,
+            MultispendEvent::WithdrawalResponse { request, response },
+        )
+        .await
+    }
     pub async fn get_multispend_finalized_group(
         &self,
         room_id: RpcRoomId,

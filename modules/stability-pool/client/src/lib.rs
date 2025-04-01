@@ -37,7 +37,7 @@ use fedimint_core::util::backoff_util::background_backoff;
 use fedimint_core::{apply, async_trait_maybe_send, Amount, BitcoinHash, OutPoint, TransactionId};
 use futures::{Stream, StreamExt};
 use rand::Rng;
-use secp256k1::{schnorr, Keypair, PublicKey, Secp256k1, SecretKey};
+use secp256k1::{schnorr, Keypair, Secp256k1, SecretKey};
 use serde::de::DeserializeOwned;
 use serde::{Deserialize, Serialize};
 pub use stability_pool_common as common;
@@ -528,11 +528,12 @@ impl StabilityPoolClientModule {
 
     /// Given a passphrase, derive a new public key by extending the current
     /// module secret key with the passphrase.
-    pub fn pub_key_with_passphrase(&self, passphrase: String) -> anyhow::Result<PublicKey> {
+    pub fn secret_key_with_passphrase(&self, passphrase: String) -> anyhow::Result<SecretKey> {
         let sk_bytes = self.client_key_pair.secret_bytes().to_vec();
         let passphrase_bytes = passphrase.into_bytes();
+        // FIXME: this looks very iffy, please review
         let new_sk_bytes = sha256::Hash::hash(&[sk_bytes, passphrase_bytes].concat());
-        Ok(SecretKey::from_slice(new_sk_bytes.as_ref())?.public_key(secp256k1::SECP256K1))
+        Ok(SecretKey::from_slice(new_sk_bytes.as_ref())?)
     }
 
     /// Returns the average of the provider fee rate over the last #num_cycles

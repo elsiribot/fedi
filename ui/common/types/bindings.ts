@@ -727,6 +727,19 @@ export type RpcMethods = {
     null,
   ];
   matrixMultispendEventData: [matrixMultispendEventData, MsEventData | null];
+  matrixSendMultispendWithdrawalRequest: [
+    matrixSendMultispendWithdrawalRequest,
+    null,
+  ];
+  matrixSendMultispendWithdrawalApprove: [
+    matrixSendMultispendWithdrawalApprove,
+    null,
+  ];
+  matrixSendMultispendWithdrawalReject: [
+    matrixSendMultispendWithdrawalReject,
+    null,
+  ];
+  matrixMultispendDeposit: [matrixMultispendDeposit, null];
   communityPreview: [communityPreview, RpcCommunity];
   joinCommunity: [joinCommunity, RpcCommunity];
   leaveCommunity: [leaveCommunity, null];
@@ -1451,6 +1464,11 @@ export type matrixInit = {};
 
 export type matrixListIgnoredUsers = {};
 
+export type matrixMultispendDeposit = {
+  roomId: RpcRoomId;
+  amount: RpcFiatAmount;
+};
+
 export type matrixMultispendEventData = {
   roomId: RpcRoomId;
   eventId: RpcEventId;
@@ -1567,6 +1585,22 @@ export type matrixSendMessageJson = {
 export type matrixSendMultispendGroupInvitation = {
   roomId: RpcRoomId;
   invitation: GroupInvitation;
+};
+
+export type matrixSendMultispendWithdrawalApprove = {
+  roomId: RpcRoomId;
+  withdrawRequestId: RpcEventId;
+};
+
+export type matrixSendMultispendWithdrawalReject = {
+  roomId: RpcRoomId;
+  withdrawRequestId: RpcEventId;
+};
+
+export type matrixSendMultispendWithdrawalRequest = {
+  roomId: RpcRoomId;
+  amount: RpcFiatAmount;
+  description: string;
 };
 
 export type matrixSetAvatarUrl = { avatarUrl: string };
