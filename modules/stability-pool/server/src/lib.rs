@@ -633,7 +633,9 @@ where
     }
 
     let mut staged_deposits = dbtx.get_value(staged_key).await.unwrap_or_default();
+    let staged_deposits_sum = staged_deposits.iter().map(|d| d.amount).sum::<Amount>();
     let locked_deposits_sum = locked_deposits.iter().map(|d| d.amount).sum();
+    let total_deposits_sum = staged_deposits_sum + locked_deposits_sum;
 
     let mut drained_staged_deposits = vec![];
     match input.amount {
@@ -641,8 +643,6 @@ where
             let amount = fiat_amount
                 .to_btc_amount(btc_price)
                 .map_err(|_| StabilityPoolInputError::TemporaryError)?;
-            let staged_deposits_sum = staged_deposits.iter().map(|d| d.amount).sum::<Amount>();
-            let total_deposits_sum = staged_deposits_sum + locked_deposits_sum;
 
             if total_deposits_sum < amount {
                 return Err(StabilityPoolInputError::InsufficientBalance);
@@ -666,6 +666,7 @@ where
                     &UnlockRequest {
                         txid,
                         unlock_amount: FiatOrAll::Fiat(leftover_fiat),
+                        total_fiat_requested: fiat_amount,
                     },
                 )
                 .await;
@@ -685,11 +686,15 @@ where
 
             // If there are locked deposits present, register an unlock request for ALL
             if locked_deposits_sum != Amount::ZERO {
+                let total_fiat_requested =
+                    FiatAmount::from_btc_amount(total_deposits_sum, btc_price)
+                        .map_err(|_| StabilityPoolInputError::TemporaryError)?;
                 dbtx.insert_entry(
                     &unlock_key,
                     &UnlockRequest {
                         txid,
                         unlock_amount: FiatOrAll::All,
+                        total_fiat_requested,
                     },
                 )
                 .await;
@@ -949,31 +954,17 @@ where
         .iter()
         .map(|d| d.amount)
         .sum::<Amount>();
-    let total_to_transfer = match signed_request.details().amount() {
-        FiatOrAll::Fiat(fiat_amount) => {
-            let amount = fiat_amount
-                .to_btc_amount(cycle_info.start_price)
-                .map_err(|e| StabilityPoolOutputError::InvalidTransferRequest(e.to_string()))?;
+    let total_to_transfer = signed_request
+        .details()
+        .amount()
+        .to_btc_amount(cycle_info.start_price)
+        .map_err(|e| StabilityPoolOutputError::InvalidTransferRequest(e.to_string()))?;
 
-            if amount > from_staged_deposits_sum + from_locked_deposits_sum {
-                return Err(StabilityPoolOutputError::InvalidTransferRequest(
-                    "Insufficient from account balance".to_string(),
-                ));
-            }
-
-            amount
-        }
-        FiatOrAll::All => {
-            if from_staged_deposits_sum == Amount::ZERO && from_locked_deposits_sum == Amount::ZERO
-            {
-                return Err(StabilityPoolOutputError::InvalidTransferRequest(
-                    "From account has 0 balance".to_string(),
-                ));
-            }
-
-            from_staged_deposits_sum + from_locked_deposits_sum
-        }
-    };
+    if total_to_transfer > from_staged_deposits_sum + from_locked_deposits_sum {
+        return Err(StabilityPoolOutputError::InvalidTransferRequest(
+            "Insufficient from account balance".to_string(),
+        ));
+    }
 
     // We can use the same sequence for both staged and locked deposit in case both
     // get created for "to" account. This just simulates a split, something we

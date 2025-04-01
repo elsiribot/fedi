@@ -80,7 +80,7 @@ use meta::{LegacyMetaSourceWithExternalUrl, MetaEntries, MetaServiceExt};
 use rand::Rng;
 use serde::de::DeserializeOwned;
 use stability_pool_client::common::{
-    Account, AccountId, AccountType, FiatOrAll, SignedTransferRequest, TransferRequest,
+    Account, AccountId, AccountType, FiatAmount, FiatOrAll, SignedTransferRequest, TransferRequest,
 };
 use stability_pool_client::db::{
     CachedSyncResponseKey, CachedSyncResponseValue, SeekLifetimeFeeKey, UserOperationHistoryItem,
@@ -3031,7 +3031,7 @@ impl FederationV2 {
     pub async fn spv2_simple_transfer(
         &self,
         to_account: AccountId,
-        amount: FiatOrAll,
+        amount: FiatAmount,
     ) -> Result<OperationId> {
         ensure!(
             self.spv2_feature_state().is_some(),
