@@ -126,7 +126,7 @@ const ChatEvent: React.FC<Props> = ({
                                 <ChatPollEvent event={event} />
                             ) : null}
                         </View>
-                        {derivedLinks && (
+                        {derivedLinks && isPublic && (
                             <View
                                 style={[
                                     styles(theme).previewLinkContainer,
