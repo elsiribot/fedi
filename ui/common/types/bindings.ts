@@ -603,6 +603,7 @@ export type RpcMethods = {
   spv2NextCycleStartTime: [spv2NextCycleStartTime, bigint];
   spv2DepositToSeek: [spv2DepositToSeek, RpcOperationId];
   spv2Withdraw: [spv2Withdraw, RpcOperationId];
+  spv2WithdrawAll: [spv2WithdrawAll, RpcOperationId];
   spv2AverageFeeRate: [spv2AverageFeeRate, bigint];
   spv2AvailableLiquidity: [spv2AvailableLiquidity, RpcAmount];
   getSensitiveLog: [getSensitiveLog, boolean];
@@ -1630,6 +1631,8 @@ export type spv2Withdraw = {
   federationId: RpcFederationId;
   fiatAmount: number;
 };
+
+export type spv2WithdrawAll = { federationId: RpcFederationId };
 
 export type stabilityPoolAccountInfo = {
   federationId: RpcFederationId;

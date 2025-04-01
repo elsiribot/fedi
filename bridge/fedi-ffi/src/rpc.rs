@@ -756,6 +756,14 @@ async fn spv2Withdraw(
         .map(Into::into)
 }
 
+#[macro_rules_derive(federation_rpc_method!)]
+async fn spv2WithdrawAll(federation: Arc<FederationV2>) -> anyhow::Result<RpcOperationId> {
+    federation
+        .spv2_withdraw(FiatOrAll::All)
+        .await
+        .map(Into::into)
+}
+
 #[macro_rules_derive(rpc_method!)]
 async fn getSensitiveLog(runtime: Arc<BridgeRuntime>) -> anyhow::Result<bool> {
     Ok(runtime.sensitive_log().await)
@@ -1658,6 +1666,7 @@ rpc_methods!(RpcMethods {
     spv2NextCycleStartTime,
     spv2DepositToSeek,
     spv2Withdraw,
+    spv2WithdrawAll,
     spv2AverageFeeRate,
     spv2AvailableLiquidity,
     // Developer
