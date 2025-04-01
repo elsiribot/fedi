@@ -4,6 +4,7 @@ import { z } from 'zod'
 
 import { Chat, ChatMessage, ChatType } from '@fedi/common/types'
 
+import { BIP39_WORD_LIST } from '../constants/bip39'
 import { BANNED_DISPLAY_NAME_TERMS } from '../constants/matrix'
 
 /**
@@ -188,4 +189,14 @@ export const deriveUrlsFromText = (text: string) => {
             }
         }) ?? []
     )
+}
+
+export const generateRandomDisplayName = (length: number) => {
+    const words = []
+    for (let i = 0; i < length; i++) {
+        const randomIndex = Math.floor(Math.random() * BIP39_WORD_LIST.length)
+        words.push(BIP39_WORD_LIST[randomIndex])
+    }
+
+    return words.join(' ')
 }
