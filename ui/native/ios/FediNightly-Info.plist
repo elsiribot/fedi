@@ -68,7 +68,7 @@
 	<key>NSAppTransportSecurity</key>
 	<dict>
 		<key>NSAllowsArbitraryLoadsInWebContent</key>
-    	<false/>
+		<false/>
 		<key>NSExceptionDomains</key>
 		<dict>
 			<!-- Allow localhost for local development -->
