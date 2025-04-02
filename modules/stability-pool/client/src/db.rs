@@ -77,7 +77,7 @@ pub struct UserOperationHistoryItem {
 /// Once we group the [`AccountHistoryItem`]s by TX ID, we can derive the nature
 /// of the user operation using the rules mentioned in each of the variants
 /// below.
-#[derive(Debug, Encodable, Decodable)]
+#[derive(Debug, Clone, Encodable, Decodable)]
 pub enum UserOperationHistoryItemKind {
     /// Group of [`AccountHistoryItem`]s contains only one item of kind
     /// DepositToStaged

@@ -212,7 +212,7 @@ async fn get_account_history_count(
         .await
         .next()
         .await
-        .map_or(0, |k| k.0.index)
+        .map_or(0, |k| k.0.index + 1)
 }
 
 // Given the [`AccountHistoryItem`] just received from the server, update the
@@ -292,8 +292,21 @@ async fn update_user_operation_history(
             // (still possible to see a follow-up LockedToIdle)
             UserOperationHistoryItemKind::CompletedWithdrawal
         }
+        (
+            AccountHistoryItemKind::StagedToIdle,
+            Some(
+                state @ UserOperationHistoryItemKind::PendingWithdrawal
+                | state @ UserOperationHistoryItemKind::CompletedWithdrawal,
+            ),
+            _,
+        ) => {
+            add_current_state_amounts();
+            state.to_owned()
+        }
         (AccountHistoryItemKind::StagedToIdle, Some(_), _) => {
-            panic!("StagedToIdle must create new user op history item")
+            panic!(
+                "StagedToIdle can only override existing PendingWithdrawal or CompletedWithdrawal"
+            )
         }
 
         // Withdrawal-related account history items that pertain to locked deposits.
