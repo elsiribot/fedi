@@ -692,6 +692,9 @@ pub enum RpcSPV2DepositState {
         fiat_amount: u64,
         fees_paid_so_far: RpcAmount,
     },
+    FailedDeposit {
+        error: String,
+    },
     DataNotInCache,
 }
 
@@ -724,6 +727,9 @@ pub enum RpcSPV2WithdrawalState {
         amount: RpcAmount,
         #[ts(type = "number")]
         fiat_amount: u64,
+    },
+    FailedWithdrawal {
+        error: String,
     },
     DataNotInCache,
 }
