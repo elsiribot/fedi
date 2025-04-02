@@ -4,6 +4,8 @@ import {
     Animated,
     Easing,
     Insets,
+    Keyboard,
+    KeyboardEvent,
     Platform,
     ScrollView,
     StyleSheet,
@@ -49,10 +51,12 @@ const FullModalOverlay: React.FC<CustomOverlayProps> = ({
     const insets = useSafeAreaInsets()
     const animatedTranslateY = useRef(new Animated.Value(0)).current
     const { height: viewportHeight } = useWindowDimensions()
+    const [keyboardHeight, setKeyboardHeight] = useState<number>(0)
     const [isShowing, setIsShowing] = useState(false)
 
     const overlayHeight = useMemo(
         () =>
+            // Ensure there is double the size of theme.spacing.xl to click on the backdrop to dismiss the overlay
             viewportHeight - insets.top - insets.bottom - theme.spacing.xl * 2,
         [viewportHeight, insets, theme],
     )
@@ -68,6 +72,26 @@ const FullModalOverlay: React.FC<CustomOverlayProps> = ({
         buttons = [],
     } = contents
     const style = styles(theme, insets)
+
+    useEffect(() => {
+        const keyboardShownListener = Keyboard.addListener(
+            'keyboardDidShow',
+            (e: KeyboardEvent) => {
+                setKeyboardHeight(e.endCoordinates.height)
+            },
+        )
+        const keyboardHiddenListener = Keyboard.addListener(
+            'keyboardDidHide',
+            () => {
+                setKeyboardHeight(0)
+            },
+        )
+
+        return () => {
+            keyboardShownListener.remove()
+            keyboardHiddenListener.remove()
+        }
+    }, [])
 
     useEffect(() => {
         if (show) return setIsShowing(true)
@@ -125,12 +149,13 @@ const FullModalOverlay: React.FC<CustomOverlayProps> = ({
                 style={{
                     ...style.overlayContents,
                     transform: [{ translateY: animatedTranslateY }],
-                    // Ensure there is double the size of theme.spacing.xl to click on the backdrop to dismiss the overlay
                     height:
-                        viewportHeight -
-                        insets.top -
-                        insets.bottom -
-                        theme.spacing.xl * 2,
+                        // keyboard awareness is disabled on android so we only want to subtract the keyboard height on android
+                        // since iOS handles the keyboard differently
+                        // TODO: consolidate keyboard awareness logic across platforms to reduce workarounds like this
+                        Platform.OS === 'android'
+                            ? overlayHeight - keyboardHeight
+                            : overlayHeight,
                 }}>
                 {icon && (
                     <SvgImage

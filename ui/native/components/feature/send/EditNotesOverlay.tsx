@@ -96,6 +96,7 @@ const styles = (theme: Theme) =>
             padding: theme.spacing.sm,
             borderWidth: 1.5,
             borderRadius: 8,
+            maxHeight: 120,
         },
         headerContainer: {
             alignSelf: 'stretch',
