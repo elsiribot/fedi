@@ -165,6 +165,7 @@
         "hold-to-confirm": "Hold to confirm",
         "i-understand": "I understand",
         "invoice-created": "Invoice created",
+        "join-a-community": "Join a Community",
         "join-another-federation": "Join another community",
         "last-seen": "Last seen",
         "lets-go": "Let's go",
@@ -570,6 +571,7 @@
             "unsupported-unknown": "Hmm, that's not a format we recognize. Sorry!"
         },
         "onboarding": {
+            "agree-terms-privacy": "By continuing, you agree to our <termsLink>Terms of Use</termsLink> & <privacyLink>Privacy Policy</privacyLink>.",
             "are-you-new": "Are you new to Fedi?",
             "by-clicking-i-accept": "By clicking 'I accept' you agree to the terms of service at {{tos_url}}",
             "by-clicking-you-agree-user-agreement": "By clicking 'Continue' you agree to the <anchor>Fedi Terms of Service</anchor>",
