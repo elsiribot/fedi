@@ -39,6 +39,7 @@ import { useToast } from '@fedi/common/hooks/toast'
 import { useDebouncedEffect } from '@fedi/common/hooks/util'
 import {
     selectChatDrafts,
+    selectDefaultMatrixRoomIds,
     selectMatrixRoom,
     selectMatrixRoomIsReadOnly,
     selectMessageToEdit,
@@ -97,6 +98,10 @@ const MessageInput: React.FC<MessageInputProps> = ({
 
     const toast = useToast()
     const isReadOnly = useAppSelector(s => selectMatrixRoomIsReadOnly(s, id))
+    const isDefaultGroup = useAppSelector(s =>
+        selectDefaultMatrixRoomIds(s).includes(id),
+    )
+
     const drafts = useAppSelector(s => selectChatDrafts(s))
     const [inputHeight, setInputHeight] = useState<number>(
         theme.sizes.minMessageInputHeight,
@@ -533,24 +538,24 @@ const MessageInput: React.FC<MessageInputProps> = ({
                             <ChatWalletButton recipientId={directUserId} />
                         )}
                         {/**
-                         * - Polls and media are only available in non-public chats
+                         * - Polls are available in both public and private chat rooms
                          * - Polls are not available in user-to-user direct chats
-                         * - To prevent users from uploading unencrypted media, media uploads are not available in public chats
+                         * - Polls are not available in **default** public rooms
                          * */}
+                        {!isDefaultGroup && !directUserId && !isReadOnly && (
+                            <Pressable
+                                onPress={() => {
+                                    navigation.navigate('CreatePoll', {
+                                        roomId: id,
+                                    })
+                                }}
+                                hitSlop={10}>
+                                <SvgImage name="Poll" />
+                            </Pressable>
+                        )}
+                        {/* To prevent users from uploading unencrypted media, media uploads are not available in public chats */}
                         {!isPublic && !isReadOnly && (
                             <>
-                                {/* polls are not available for direct chats */}
-                                {!directUserId && (
-                                    <Pressable
-                                        onPress={() => {
-                                            navigation.navigate('CreatePoll', {
-                                                roomId: id,
-                                            })
-                                        }}
-                                        hitSlop={10}>
-                                        <SvgImage name="Poll" />
-                                    </Pressable>
-                                )}
                                 <Pressable
                                     onPress={handleUploadImage}
                                     hitSlop={10}>
