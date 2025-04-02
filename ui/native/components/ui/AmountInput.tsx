@@ -175,8 +175,7 @@ const AmountInput: React.FC<Props> = ({
                             style={style.secondaryAmountText}
                             medium
                             caption
-                            numberOfLines={1}
-                            adjustsFontSizeToFit>
+                            numberOfLines={1}>
                             {secondaryAmountText}
                         </Text>
                         {!readOnly && (
