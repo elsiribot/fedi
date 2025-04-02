@@ -58,8 +58,6 @@ const EditNotesOverlay = ({
                         inputStyle={style.inputStyle}
                         inputContainerStyle={style.innerInputContainer}
                         containerStyle={style.inputContainer}
-                        keyboardType="url"
-                        autoCapitalize="none"
                         returnKeyType="done"
                     />
                 ),
