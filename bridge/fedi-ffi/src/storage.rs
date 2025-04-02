@@ -319,6 +319,13 @@ impl Default for FediFeeSchedule {
                 receive_ppm: 0,
             },
         );
+        modules.insert(
+            stability_pool_client::common::KIND,
+            ModuleFediFeeSchedule {
+                send_ppm: default_send_ppm,
+                receive_ppm: 0,
+            },
+        );
         Self {
             remittance_threshold_msat: 100_000,
             modules,
