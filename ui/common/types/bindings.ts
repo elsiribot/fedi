@@ -839,6 +839,7 @@ export type RpcSPV2DepositState =
       fiat_amount: number;
       fees_paid_so_far: RpcAmount;
     }
+  | { type: "failedDeposit"; error: string }
   | { type: "dataNotInCache" };
 
 export type RpcSPV2TransferInState =
@@ -862,6 +863,7 @@ export type RpcSPV2TransferOutState =
 export type RpcSPV2WithdrawalState =
   | { type: "pendingWithdrawal"; amount: RpcAmount; fiat_amount: number }
   | { type: "completedWithdrawal"; amount: RpcAmount; fiat_amount: number }
+  | { type: "failedWithdrawal"; error: string }
   | { type: "dataNotInCache" };
 
 export type RpcSPWithdrawState =
