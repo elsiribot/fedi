@@ -41,7 +41,11 @@ export const AmountScreen: React.FC<Props> = ({
     const style = styles(theme)
 
     return (
-        <KeyboardAwareWrapper>
+        <KeyboardAwareWrapper
+            // DO NOT CHANGE this behavior prop!
+            // it is a workaround to prevent the app freezing due to a ScrollView being nested inside
+            // see https://github.com/facebook/react-native/issues/42939 for details
+            behavior="position">
             <SafeAreaContainer
                 style={style.container}
                 edges={isIndependent ? 'notop' : 'none'}
