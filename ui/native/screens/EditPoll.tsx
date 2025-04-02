@@ -8,7 +8,7 @@ import { fedimint } from '../bridge'
 import CustomOverlay from '../components/ui/CustomOverlay'
 import { FieldInput } from '../components/ui/FieldInput'
 import { PressableIcon } from '../components/ui/PressableIcon'
-import { SafeAreaContainer } from '../components/ui/SafeArea'
+import { SafeScrollArea } from '../components/ui/SafeArea'
 import SvgImage from '../components/ui/SvgImage'
 import { RootStackParamList } from '../types/navigation'
 import { styles } from './CreatePoll'
@@ -24,64 +24,63 @@ const EditPoll: React.FC<Props> = ({ route, navigation }: Props) => {
     const style = styles(theme)
 
     return (
-        <SafeAreaContainer edges="notop" style={style.container}>
-            <View style={style.content}>
-                <FieldInput
-                    label={t('words.question')}
-                    value={event.content.body}
-                    disabled
-                />
-                <View style={style.options}>
-                    <Text small style={style.optionsLabel}>
-                        {t('words.options')}
-                    </Text>
-                    <View style={style.optionsContainer}>
-                        {event.content.answers.map(answer => (
-                            <View style={style.option} key={answer.id}>
-                                <View style={style.optionInput}>
-                                    <FieldInput value={answer.text} disabled />
-                                </View>
-                                <PressableIcon
-                                    svgName="Trash"
-                                    containerStyle={style.deleteOptionIcon}
-                                    disabled
-                                />
+        <SafeScrollArea
+            contentContainerStyle={style.container}
+            safeAreaContainerStyle={style.content}
+            edges="bottom">
+            <FieldInput
+                label={t('words.question')}
+                value={event.content.body}
+                disabled
+            />
+            <View style={style.options}>
+                <Text small style={style.optionsLabel}>
+                    {t('words.options')}
+                </Text>
+                <View style={style.optionsContainer}>
+                    {event.content.answers.map(answer => (
+                        <View style={style.option} key={answer.id}>
+                            <View style={style.optionInput}>
+                                <FieldInput value={answer.text} disabled />
                             </View>
-                        ))}
-                    </View>
-                    <View style={style.addOptionContainer}>
-                        <View style={style.addOptionButton}>
-                            <Text>{t('words.add')}</Text>
-                            <SvgImage name="PlusCircle" />
+                            <PressableIcon
+                                svgName="Trash"
+                                containerStyle={style.deleteOptionIcon}
+                                disabled
+                            />
                         </View>
+                    ))}
+                </View>
+                <View style={style.addOptionContainer}>
+                    <View style={style.addOptionButton}>
+                        <Text>{t('words.add')}</Text>
+                        <SvgImage name="PlusCircle" />
                     </View>
                 </View>
-                <View style={style.settings}>
-                    <View style={style.setting}>
-                        <View style={style.settingLabel}>
-                            <SvgImage name="List" />
-                            <Text>{t('feature.chat.multiple-choice')}</Text>
-                        </View>
-                        <Switch
-                            value={event.content.maxSelections > 1}
-                            disabled
-                        />
+            </View>
+            <View style={style.settings}>
+                <View style={style.setting}>
+                    <View style={style.settingLabel}>
+                        <SvgImage name="List" />
+                        <Text>{t('feature.chat.multiple-choice')}</Text>
                     </View>
-                    <View style={style.setting}>
-                        <View style={style.settingLabel}>
-                            <SvgImage name="Bolt" />
-                            <Text>{t('feature.chat.show-live-results')}</Text>
-                        </View>
-                        <Switch
-                            value={event.content.kind === 'disclosed'}
-                            disabled
-                        />
+                    <Switch value={event.content.maxSelections > 1} disabled />
+                </View>
+                <View style={style.setting}>
+                    <View style={style.settingLabel}>
+                        <SvgImage name="Bolt" />
+                        <Text>{t('feature.chat.show-live-results')}</Text>
                     </View>
+                    <Switch
+                        value={event.content.kind === 'disclosed'}
+                        disabled
+                    />
                 </View>
             </View>
             <Button
                 title={t('feature.chat.end-poll')}
-                buttonStyle={style.button}
+                buttonStyle={style.endButton}
+                containerStyle={style.submitButton}
                 onPress={() => setIsConfirmingEnd(true)}
             />
             <CustomOverlay
@@ -117,7 +116,7 @@ const EditPoll: React.FC<Props> = ({ route, navigation }: Props) => {
                     ],
                 }}
             />
-        </SafeAreaContainer>
+        </SafeScrollArea>
     )
 }
 

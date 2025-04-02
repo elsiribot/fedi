@@ -86,76 +86,73 @@ const CreatePoll: React.FC<Props> = ({
             contentContainerStyle={style.container}
             safeAreaContainerStyle={style.content}
             edges="bottom">
-            <View style={style.content}>
-                <FieldInput
-                    label={t('words.question')}
-                    value={question}
-                    onChangeText={setQuestion}
-                />
-
-                <View style={style.options}>
-                    <Text small style={style.optionsLabel}>
-                        {t('words.options')}
-                    </Text>
-                    <View style={style.optionsContainer}>
-                        {options.map(option => (
-                            <View style={style.option} key={option.id}>
-                                <View style={style.optionInput}>
-                                    <FieldInput
-                                        value={option.text}
-                                        onChangeText={text =>
-                                            handleOptionChange(option, text)
-                                        }
-                                    />
-                                </View>
-                                <PressableIcon
-                                    svgName="Trash"
-                                    onPress={() => {
-                                        handleRemoveOption(option)
-                                    }}
-                                    containerStyle={style.deleteOptionIcon}
-                                    disabled={options.length < 3}
+            <FieldInput
+                label={t('words.question')}
+                value={question}
+                onChangeText={setQuestion}
+            />
+            <View style={style.options}>
+                <Text small style={style.optionsLabel}>
+                    {t('words.options')}
+                </Text>
+                <View style={style.optionsContainer}>
+                    {options.map(option => (
+                        <View style={style.option} key={option.id}>
+                            <View style={style.optionInput}>
+                                <FieldInput
+                                    value={option.text}
+                                    onChangeText={text =>
+                                        handleOptionChange(option, text)
+                                    }
                                 />
                             </View>
-                        ))}
-                    </View>
-                    <View style={style.addOptionContainer}>
-                        <Pressable onPress={handleAddOption}>
-                            <View style={style.addOptionButton}>
-                                <Text>{t('words.add')}</Text>
-                                <SvgImage name="PlusCircle" />
-                            </View>
-                        </Pressable>
-                    </View>
+                            <PressableIcon
+                                svgName="Trash"
+                                onPress={() => {
+                                    handleRemoveOption(option)
+                                }}
+                                containerStyle={style.deleteOptionIcon}
+                                disabled={options.length < 3}
+                            />
+                        </View>
+                    ))}
                 </View>
-
-                <View style={style.settings}>
-                    <View style={style.setting}>
-                        <View style={style.settingLabel}>
-                            <SvgImage name="List" />
-                            <Text>{t('feature.chat.multiple-choice')}</Text>
+                <View style={style.addOptionContainer}>
+                    <Pressable onPress={handleAddOption}>
+                        <View style={style.addOptionButton}>
+                            <Text>{t('words.add')}</Text>
+                            <SvgImage name="PlusCircle" />
                         </View>
-                        <Switch
-                            value={isMultipleChoice}
-                            onValueChange={setIsMultipleChoice}
-                        />
+                    </Pressable>
+                </View>
+            </View>
+            <View style={style.settings}>
+                <View style={style.setting}>
+                    <View style={style.settingLabel}>
+                        <SvgImage name="List" />
+                        <Text>{t('feature.chat.multiple-choice')}</Text>
                     </View>
-                    <View style={style.setting}>
-                        <View style={style.settingLabel}>
-                            <SvgImage name="Bolt" />
-                            <Text>{t('feature.chat.show-live-results')}</Text>
-                        </View>
-                        <Switch
-                            value={isDisclosed}
-                            onValueChange={setIsDisclosed}
-                        />
+                    <Switch
+                        value={isMultipleChoice}
+                        onValueChange={setIsMultipleChoice}
+                    />
+                </View>
+                <View style={style.setting}>
+                    <View style={style.settingLabel}>
+                        <SvgImage name="Bolt" />
+                        <Text>{t('feature.chat.show-live-results')}</Text>
                     </View>
+                    <Switch
+                        value={isDisclosed}
+                        onValueChange={setIsDisclosed}
+                    />
                 </View>
             </View>
             <Button
                 title={t('feature.chat.create-poll')}
                 onPress={handleCreatePoll}
                 disabled={!canSubmit || isLoading}
+                containerStyle={style.submitButton}
             />
         </SafeScrollArea>
     )
@@ -164,14 +161,11 @@ const CreatePoll: React.FC<Props> = ({
 export const styles = (theme: Theme) =>
     StyleSheet.create({
         container: {
-            flex: 1,
             padding: theme.spacing.lg,
             display: 'flex',
             flexDirection: 'column',
-            gap: theme.spacing.xl,
         },
         content: {
-            flex: 1,
             display: 'flex',
             flexDirection: 'column',
             gap: theme.spacing.xl,
@@ -244,7 +238,10 @@ export const styles = (theme: Theme) =>
             padding: theme.spacing.lg,
             alignItems: 'center',
         },
-        button: {
+        submitButton: {
+            marginTop: 'auto',
+        },
+        endButton: {
             backgroundColor: theme.colors.red,
         },
     })
