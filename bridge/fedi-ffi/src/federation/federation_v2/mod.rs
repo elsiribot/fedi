@@ -88,7 +88,8 @@ use stability_pool_client::db::{
 };
 use stability_pool_client::{
     StabilityPoolClientInit, StabilityPoolDepositOperationState, StabilityPoolHistoryService,
-    StabilityPoolMeta, StabilityPoolSyncService, StabilityPoolWithdrawalOperationState,
+    StabilityPoolMeta, StabilityPoolSyncService, StabilityPoolTransferOperationState,
+    StabilityPoolWithdrawalOperationState,
 };
 use stability_pool_client_old::ClientAccountInfo;
 use tokio::sync::{Mutex, OnceCell};
@@ -2949,6 +2950,8 @@ impl FederationV2 {
                         let _ = self.write_failed_send_fedi_fee(operation_id).await;
                     }
                     StabilityPoolDepositOperationState::Success => {
+                        // Force sync spv2 once deposit op is complete
+                        self.spv2_force_sync();
                         let _ = self.write_success_send_fedi_fee(operation_id).await;
                     }
                     _ => (),
@@ -3005,6 +3008,9 @@ impl FederationV2 {
                     .await;
                 match state {
                     StabilityPoolWithdrawalOperationState::Success(amount) => {
+                        // Force sync spv2 once withdrawal op is complete
+                        self.spv2_force_sync();
+
                         let _ = self
                             .write_success_receive_fedi_fee(operation_id, amount)
                             .await;
@@ -3015,6 +3021,10 @@ impl FederationV2 {
                     | StabilityPoolWithdrawalOperationState::WithdrawalTxRejected(_)
                     | StabilityPoolWithdrawalOperationState::PrimaryOutputError(_) => {
                         let _ = self.write_failed_receive_fedi_fee(operation_id).await;
+                    }
+                    StabilityPoolWithdrawalOperationState::UnlockTxAccepted => {
+                        // Force sync spv2 once unlock TX is accepted
+                        self.spv2_force_sync();
                     }
                     _ => (),
                 }
@@ -3095,6 +3105,10 @@ impl FederationV2 {
         if let Ok(update_stream) = update_stream {
             let mut updates = update_stream.into_stream();
             while let Some(state) = updates.next().await {
+                // Force sync spv2 once TX is accepted
+                if matches!(state, StabilityPoolTransferOperationState::Success) {
+                    self.spv2_force_sync();
+                }
                 self.update_operation_state(operation_id, state.clone())
                     .await;
                 self.event_sink.typed_event(&Event::spv2_transfer(
@@ -3135,6 +3149,17 @@ impl FederationV2 {
     fn spv2_our_seeker_account(&self) -> Option<Account> {
         let spv2 = self.client.spv2().ok()?;
         Some(spv2.our_account(AccountType::Seeker))
+    }
+
+    fn spv2_force_sync(&self) {
+        self.spawn_cancellable("spv2_force_sync", |fed| async move {
+            if let Some(sync_service) = fed.spv2_sync_service.get() {
+                let res = sync_service.update_once().await;
+                if let Err(e) = res {
+                    error!(%e, "Error syncing spv2 state");
+                }
+            }
+        });
     }
 
     /// Stability Pool
