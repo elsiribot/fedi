@@ -375,19 +375,30 @@ export const dispatchNotification = async (
     }
 }
 
+/**
+ * A replacement for the unreliable 'Zendesk.handleNotification(data' that detects whether a notification payload is from zendesk or not, that has stopped working since
+ * we bumped zendeskSdkVersion = "2.18.0" as there was a bug affecting the back button, explained in isssue: #6519 - in build.gradle. 'handleNotification' no longer works in this older version
+ **/
 export async function isZendeskNotification(data: any): Promise<boolean> {
     if (!data) return false
 
     try {
-        const responsibility = await Zendesk.handleNotification(data)
-        log.info('ZendeskResponsibility:', responsibility)
+        // Convert the entire payload to a lowercase string and check for 'smoochnotification' so we can tell if it's from Zendesk or not
+        const dataString = JSON.stringify(data).toLowerCase()
 
-        return (
-            responsibility === 'MESSAGING_SHOULD_DISPLAY' ||
-            responsibility === 'MESSAGING_SHOULD_NOT_DISPLAY'
+        if (dataString.includes('smoochnotification')) {
+            log.debug(
+                'Zendesk notification detected via manual check in isZendeskNotification',
+            )
+            return true
+        }
+
+        log.debug(
+            'isZendeskNotification detected the push notificaiton payload was not a Zendesk notification',
         )
+        return false
     } catch (error) {
-        log.error('Error checking Zendesk notification:', error)
+        log.error('Error checking Zendesk notification payload:', error)
         return false
     }
 }
