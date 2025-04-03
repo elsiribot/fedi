@@ -49,6 +49,8 @@ pub enum ErrorCode {
     ModuleNotFound(String),
     #[error("Federation {0} previously failed nonce reuse check; must recover from scratch")]
     FederationPendingRejoinFromScratch(String),
+    #[error("Invalid Multispend event, likely something changed in multispend state")]
+    InvalidMsEvent,
 }
 
 #[derive(Debug, Serialize, Deserialize, TS)]

@@ -3,6 +3,7 @@ use fedimint_core::encoding::{Decodable, Encodable};
 use fedimint_core::{impl_db_lookup, impl_db_record};
 use futures::StreamExt as _;
 use stability_pool_client::common::Account;
+use ts_rs::TS;
 
 use super::{GroupInvitationWithKeys, MultispendDepositEventData, WithdrawRequestWithApprovals};
 use crate::matrix::RpcRoomId;
@@ -23,13 +24,21 @@ pub enum MultispendDbPrefix {
     /// (room_id, counter) => (eventid, time) to have a paginated view for
     /// withdrawals and deposits in the room.
     MultispendChronologicalEvent = 0x06,
+    /// (room_id) => () to mark room for scanning on any event.
+    MultispendMarkedForScanning = 0x07,
+    /// (event_id) => () to check if a multispend event is invalid.
+    MultispendInvalidEvent = 0x08,
 }
 
 /// Represents the current status of a multispend group in a room
-#[derive(Debug, Clone, serde::Serialize, serde::Deserialize, Encodable, Decodable)]
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize, Encodable, Decodable, TS)]
+#[serde(tag = "status")]
+#[serde(rename_all = "camelCase")]
+#[ts(export)]
 pub enum MultispendGroupStatus {
     Finalized {
         finalized_group: GroupInvitationWithKeys,
+        #[ts(skip)]
         sp_account: Account,
     },
     ActiveInvitation {
@@ -99,6 +108,15 @@ impl_db_record!(
     db_prefix = MultispendDbPrefix::MultispendChronologicalEvent,
 );
 
+#[derive(Debug, Clone, Encodable, Decodable)]
+pub struct MultispendMarkedForScanning(pub RpcRoomId);
+
+impl_db_record!(
+    key = MultispendMarkedForScanning,
+    value = (),
+    db_prefix = MultispendDbPrefix::MultispendMarkedForScanning,
+);
+
 impl_db_lookup!(
     key = MultispendChronologicalEventKey,
     query_prefix = MultispendChronologicalEventKeyPrefix
@@ -149,4 +167,13 @@ impl_db_record!(
     key = MultispendDepositEventKey,
     value = MultispendDepositEventData,
     db_prefix = MultispendDbPrefix::MultispendDepositEvent,
+);
+
+#[derive(Debug, Clone, Encodable, Decodable)]
+pub struct MultispendInvalidEvent(pub RpcEventId);
+
+impl_db_record!(
+    key = MultispendInvalidEvent,
+    value = (),
+    db_prefix = MultispendDbPrefix::MultispendInvalidEvent,
 );

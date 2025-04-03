@@ -1,10 +1,12 @@
 use std::collections::BTreeMap;
+use std::hash::Hash;
 use std::ops::Not;
 use std::sync::Arc;
 use std::{ffi, iter};
 
 use anyhow::bail;
 use async_stream::stream;
+use bitcoin::hashes::sha256;
 use clap::{Parser, ValueEnum};
 use common::config::StabilityPoolClientConfig;
 use common::{
@@ -32,10 +34,10 @@ use fedimint_core::module::{
     ApiRequestErased, ApiVersion, CommonModuleInit, ModuleInit, MultiApiVersion,
 };
 use fedimint_core::util::backoff_util::background_backoff;
-use fedimint_core::{apply, async_trait_maybe_send, Amount, OutPoint, TransactionId};
+use fedimint_core::{apply, async_trait_maybe_send, Amount, BitcoinHash, OutPoint, TransactionId};
 use futures::{Stream, StreamExt};
 use rand::Rng;
-use secp256k1::{schnorr, Keypair, Secp256k1};
+use secp256k1::{schnorr, Keypair, PublicKey, Secp256k1, SecretKey};
 use serde::{Deserialize, Serialize};
 pub use stability_pool_common as common;
 use stability_pool_common::{
@@ -512,6 +514,15 @@ pub enum StabilityPoolTransferOperationState {
 impl StabilityPoolClientModule {
     pub fn our_account(&self, acc_type: AccountType) -> Account {
         Account::single(self.client_key_pair.public_key(), acc_type)
+    }
+
+    /// Given a passphrase, derive a new public key by extending the current
+    /// module secret key with the passphrase.
+    pub fn pub_key_with_passphrase(&self, passphrase: String) -> anyhow::Result<PublicKey> {
+        let sk_bytes = self.client_key_pair.secret_bytes().to_vec();
+        let passphrase_bytes = passphrase.into_bytes();
+        let new_sk_bytes = sha256::Hash::from_slice(&[sk_bytes, passphrase_bytes].concat())?;
+        Ok(SecretKey::from_slice(new_sk_bytes.as_ref())?.public_key(secp256k1::SECP256K1))
     }
 
     /// Returns the average of the provider fee rate over the last #num_cycles
