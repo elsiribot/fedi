@@ -1,0 +1,361 @@
+{
+  "sourceLanguage" : "en",
+  "strings" : {
+    "NSCameraUsageDescription" : {
+      "extractionState" : "migrated",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Fedi needs access to the camera to scan QR codes"
+          }
+        },
+        "es-419" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Fedi necesita acceso a la cámara para escanear códigos QR"
+          }
+        },
+        "fil" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Kailangan ng Fedi ng access sa camera para makapag-scan ng QR code"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Fedi a besoin d'accéder à la caméra pour scanner les codes QR"
+          }
+        },
+        "id" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Fedi perlu akses ke kamera untuk scan kode QR"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "A Fedi precisa de acesso à câmera para escanear códigos QR"
+          }
+        },
+        "pt-PT" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "A Fedi precisa de acesso à câmara para digitalizar códigos QR"
+          }
+        },
+        "rw" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Fedi akeneye kwinjira kuri kamera kugirango asuzume kode ya QR"
+          }
+        },
+        "so" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Fedi wuxuu u baahan yahay gelitaanka kamarada si uu u sawiro koodka QR"
+          }
+        },
+        "sw" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Fedi inahitaji ufikiaji wa kamera ili kuchanganua misimbo ya QR"
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Fedi потрібен доступ до камери, щоб сканувати QR-коди"
+          }
+        }
+      }
+    },
+    "NSLocationWhenInUseUsageDescription" : {
+      "extractionState" : "migrated",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Fedi does not use your location"
+          }
+        },
+        "es-419" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Fedi no utiliza tu ubicación"
+          }
+        },
+        "fil" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hindi ginagamit ng Fedi ang iyong lokasyon"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Fedi n'utilise pas votre localisation"
+          }
+        },
+        "id" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Fedi tidak menggunakan lokasimu"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "A Fedi não usa sua localização"
+          }
+        },
+        "pt-PT" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "A Fedi não usa a sua localização"
+          }
+        },
+        "rw" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Fedi ntabwo ikoresha aho uherereye"
+          }
+        },
+        "so" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Fedi ma isticmaalo goobtaada"
+          }
+        },
+        "sw" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Fedi haitumii eneo lako"
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Fedi не використовує вашу геолокацію"
+          }
+        }
+      }
+    },
+    "NSMicrophoneUsageDescription" : {
+      "extractionState" : "migrated",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Fedi needs access to your microphone to record a social backup video"
+          }
+        },
+        "es-419" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Fedi necesita acceso a tu micrófono para poder grabar el video de respaldo social"
+          }
+        },
+        "fil" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Kailangan ng Fedi ng access sa mikropono para makapag-record ng social backup na video"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Fedi a besoin d'accéder à votre microphone pour enregistrer une vidéo de sauvegarde sociale"
+          }
+        },
+        "id" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Fedi perlu akses ke mikrofon kamu untuk merekam video cadangan sosial"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "A Fedi precisa de acesso ao seu microfone para gravar um vídeo de backup social"
+          }
+        },
+        "pt-PT" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "A Fedi precisa de acesso ao seu microfone para gravar um vídeo de cópia de segurança social"
+          }
+        },
+        "rw" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Fedi akeneye kwinjira kuri mikoro yawe kugirango yandike amashusho yimibereho"
+          }
+        },
+        "so" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Fedi waxa uu u baahan yahay in uu galo makarafoonkaaga si uu muuqaal ugu duubo habka soo kabashada bulshada"
+          }
+        },
+        "sw" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Fedi inahitaji ufikiaji wa kipaza sauti chako ili kurekodi video ya Social Backup"
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Fedi потрібен доступ до мікрофона, щоб записати відео для створення соціальної резервної копії"
+          }
+        }
+      }
+    },
+    "NSPhotoLibraryAddUsageDescription" : {
+      "extractionState" : "migrated",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Fedi needs access to save photos to your photo library"
+          }
+        },
+        "es-419" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Fedi necesita acceso para guardar fotos en tu fototeca"
+          }
+        },
+        "fil" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Kailangan ng Fedi ng access para makapag-save ng mga larawan sa iyong photo library"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Fedi a besoin d'accéder à votre photothèque pour y enregistrer des photos"
+          }
+        },
+        "id" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Fedi perlu akses untuk menyimpan foto ke dalam perpustakaan fotomu"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "A Fedi precisa de acesso para salvar fotos no seu album"
+          }
+        },
+        "pt-PT" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "A Fedi precisa de acesso para guardar fotos na sua fototeca"
+          }
+        },
+        "rw" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Fedi akeneye uburyo bwo kubika amafoto mubitabo byamafoto"
+          }
+        },
+        "so" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Fedi wuxuu u baahan yahay marin u helida si uu u kaydiyo sawirada maktabadaada sawirka"
+          }
+        },
+        "sw" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Fedi inahitaji ufikiaji wa maktaba yako ya picha ili kuhifadhi picha humo"
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Fedi потрібен доступ, щоб зберігати фото у вашу бібліотеку зображень"
+          }
+        }
+      }
+    },
+    "NSPhotoLibraryUsageDescription" : {
+      "extractionState" : "migrated",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Fedi needs access to your photo library to select media for your avatar and chat attachments"
+          }
+        },
+        "es-419" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Fedi necesita acceso a tu fototeca para configurar tu avatar y permitirte enviar archivos adjuntos en el chat"
+          }
+        },
+        "fil" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Kailangan ng Fedi ng access sa iyong photo library para pumili ng media para sa iyong avatar at chat attachments"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Fedi a besoin d'accéder à votre photothèque pour sélectionner des médias pour votre avatar et vos pièces jointes de chat"
+          }
+        },
+        "id" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Fedi perlu akses ke galeri foto kamu untuk memilih media guna avatarmu dan lampiran chat"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "A Fedi precisa de acesso ao seu album para selecionar mídia para o seu avatar e anexos de chat"
+          }
+        },
+        "pt-PT" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "A Fedi precisa de acesso à sua fototeca para selecionar mídia para o seu avatar e anexos de chat"
+          }
+        },
+        "rw" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Fedi akeneye kubona isomero ryamafoto yawe kugirango uhitemo itangazamakuru rya avatar yawe hamwe nu mugereka"
+          }
+        },
+        "so" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Fedi wuxuu u baahan yahay marin u helida maktabadaada sawirka si uu u doorto warbaahinta avatarkaaga iyo lifaaqyada sheekeysiga"
+          }
+        },
+        "sw" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Fedi inahitaji ruhusa kufikia hifadhi yako ya picha ili kuchagua picha ya profaili yako na viambatFedi inahitaji ufikiaji wa maktaba yako ya picha ili kuchagua picha au video kwa ajili ya avatar yako na viambatisho vya gumzoanisho vya gumzo"
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Fedi потрібен доступ до вашої бібліотеки зображень, щоб вибрати аватар або вкладення в чаті"
+          }
+        }
+      }
+    }
+  },
+  "version" : "1.0"
+}
