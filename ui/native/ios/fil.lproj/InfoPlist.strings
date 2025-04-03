@@ -2,7 +2,7 @@
   InfoPlist.strings
   FediReactNative
 
-  Created by Someone on 03/04/2025.
+  Created by Someone on 01/01/2025.
 
 */
 "NSCameraUsageDescription" = "Kailangan ng Fedi ng access sa camera para makapag-scan ng QR code";
