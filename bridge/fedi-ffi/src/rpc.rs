@@ -31,6 +31,7 @@ use mime::Mime;
 use rand::Rng as _;
 use serde::de::DeserializeOwned;
 use serde::{Deserialize, Serialize};
+use stability_pool_client::api::StabilityPoolApiExt;
 use stability_pool_client::common::{
     AccountType, FiatAmount, FiatOrAll, SignedTransferRequest, TransferRequest, TransferRequestId,
 };
@@ -73,7 +74,8 @@ use crate::types::{
     RpcFederationMaybeLoading, RpcFederationPreview, RpcFeeDetails, RpcFiatAmount,
     RpcGenerateEcashResponse, RpcLightningGateway, RpcMediaUploadParams, RpcNostrPubkey,
     RpcNostrSecret, RpcPayAddressResponse, RpcRegisteredDevice, RpcSPv2CachedSyncResponse,
-    RpcSignature, RpcTransaction, RpcTransactionDirection, RpcTransactionListEntry,
+    RpcSPv2SyncResponse, RpcSignature, RpcTransaction, RpcTransactionDirection,
+    RpcTransactionListEntry,
 };
 
 #[derive(Debug, thiserror::Error)]
@@ -1605,6 +1607,37 @@ async fn matrixObserveMultispendGroup(
 }
 
 #[macro_rules_derive(rpc_method!)]
+async fn matrixMultispendAccountInfo(
+    bridge: &BridgeFull,
+    room_id: RpcRoomId,
+) -> anyhow::Result<RpcSPv2SyncResponse> {
+    let matrix = bridge.matrix.get().context("matrix not initialized")?;
+    let Some(MultispendGroupStatus::Finalized {
+        finalized_group,
+        sp_account: group_sp_account,
+    }) = matrix
+        .get_multispend_group_status(&room_id.into_typed()?)
+        .await
+    else {
+        anyhow::bail!("multispend group not finalized yet")
+    };
+    let invite_code = InviteCode::from_str(
+        &finalized_group
+            .invitation
+            .federation_invite_code
+            .to_lowercase(),
+    )?;
+    let federation_id = invite_code.federation_id();
+    let fed = bridge
+        .federations
+        .get_federation(&federation_id.to_string())?;
+    fed.spv2_feature_state()
+        .ok_or(anyhow::anyhow!("SPv2 not enabled"))?;
+    let spv2 = fed.client.spv2()?;
+    Ok(spv2.api.account_sync(group_sp_account.id()).await?.into())
+}
+
+#[macro_rules_derive(rpc_method!)]
 async fn matrixSendMultispendGroupInvitation(
     bridge: &BridgeFull,
     room_id: RpcRoomId,
@@ -2021,6 +2054,7 @@ rpc_methods!(RpcMethods {
     matrixGetMediaPreview,
     // multispend
     matrixObserveMultispendGroup,
+    matrixMultispendAccountInfo,
     matrixSendMultispendGroupInvitation,
     matrixVoteMultispendGroupInvitation,
     matrixCancelMultispendGroupInvitation,

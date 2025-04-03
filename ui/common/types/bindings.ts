@@ -714,6 +714,10 @@ export type RpcMethods = {
     matrixObserveMultispendGroup,
     Observable<MultispendGroupStatus | null>,
   ];
+  matrixMultispendAccountInfo: [
+    matrixMultispendAccountInfo,
+    RpcSPv2SyncResponse,
+  ];
   matrixSendMultispendGroupInvitation: [
     matrixSendMultispendGroupInvitation,
     null,
@@ -1463,6 +1467,8 @@ export type matrixIgnoreUser = { userId: RpcUserId };
 export type matrixInit = {};
 
 export type matrixListIgnoredUsers = {};
+
+export type matrixMultispendAccountInfo = { roomId: RpcRoomId };
 
 export type matrixMultispendDeposit = {
   roomId: RpcRoomId;
