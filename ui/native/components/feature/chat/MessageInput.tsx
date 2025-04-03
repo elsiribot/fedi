@@ -39,7 +39,7 @@ import { useToast } from '@fedi/common/hooks/toast'
 import { useDebouncedEffect } from '@fedi/common/hooks/util'
 import {
     selectChatDrafts,
-    selectDefaultMatrixRoomIds,
+    selectIsDefaultGroup,
     selectMatrixRoom,
     selectMatrixRoomIsReadOnly,
     selectMessageToEdit,
@@ -98,9 +98,7 @@ const MessageInput: React.FC<MessageInputProps> = ({
 
     const toast = useToast()
     const isReadOnly = useAppSelector(s => selectMatrixRoomIsReadOnly(s, id))
-    const isDefaultGroup = useAppSelector(s =>
-        selectDefaultMatrixRoomIds(s).includes(id),
-    )
+    const isDefaultGroup = useAppSelector(s => selectIsDefaultGroup(s, id))
 
     const drafts = useAppSelector(s => selectChatDrafts(s))
     const [inputHeight, setInputHeight] = useState<number>(
