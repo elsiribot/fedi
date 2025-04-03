@@ -3,6 +3,7 @@ import fs from 'fs'
 import path from 'path'
 
 import { i18nLanguages } from '../localization'
+import dateUtils from '../utils/DateUtils'
 
 interface Translations {
     purposeStrings?: {
@@ -10,36 +11,16 @@ interface Translations {
     }
 }
 
-interface StringUnit {
-    state: string
-    value: string
-}
-
-interface Localization {
-    stringUnit: StringUnit
-}
-
-interface StringCatalogEntry {
-    extractionState: string
-    localizations: {
-        [locale: string]: Localization
-    }
-}
-
-interface StringCatalog {
-    sourceLanguage: string
-    strings: {
-        [key: string]: StringCatalogEntry
-    }
-    version: string
-}
-
 interface LanguageMapping {
     [langCode: string]: string | string[]
 }
 
-function generateStringCatalog(localizationsPath?: string): void {
-    console.log('🔍 Starting string catalog generation...')
+/**
+ * Generates InfoPlist.strings files from i18next JSON translations
+ * with special handling for language variants and mismatching language codes
+ */
+function generateInfoPlistStrings(localizationsPath?: string): void {
+    console.log('🔍 Starting InfoPlist.strings generation...')
 
     const languages: string[] = Object.keys(i18nLanguages)
     console.log(
@@ -60,6 +41,7 @@ function generateStringCatalog(localizationsPath?: string): void {
         console.log('📋 Debug: __dirname is', __dirname)
         return
     }
+
     const languageMapping: LanguageMapping = {
         pt: ['pt-BR'], // Map pt to pt-BR.lproj only for now. Change this when we have EU Portuguese
         es: ['es-419'],
@@ -67,19 +49,8 @@ function generateStringCatalog(localizationsPath?: string): void {
         tl: ['fil'],
     }
     console.log('📝 Language mapping:', languageMapping)
-    const stringCatalog: StringCatalog = {
-        sourceLanguage: 'en',
-        strings: {},
-        version: '1.0',
-    }
-    // Purpose string keys found across all languages
-    const allPurposeStringKeys: Set<string> = new Set()
 
-    // First pass: collect all purpose string keys and translations
-    console.log(
-        '🔍 First pass: collecting purpose string keys and translations...',
-    )
-    const purposeStringsByLang: Record<string, Record<string, string>> = {}
+    let processedCount = 0
 
     for (const lang of languages) {
         try {
@@ -104,125 +75,138 @@ function generateStringCatalog(localizationsPath?: string): void {
                 translationFilePath,
                 'utf8',
             )
-            const translations: Translations = JSON.parse(translationsRaw)
-            console.log(`✅ Successfully parsed JSON for ${lang}`)
 
-            // Get purpose strings
-            const purposeStrings = translations.purposeStrings || {}
-            const purposeKeysCount = Object.keys(purposeStrings).length
+            try {
+                const translations: Translations = JSON.parse(translationsRaw)
+                console.log(`✅ Successfully parsed JSON for ${lang}`)
 
-            console.log(
-                `📊 Found ${purposeKeysCount} purpose strings for ${lang}`,
-            )
+                const purposeStrings = translations.purposeStrings || {}
+                const purposeKeysCount = Object.keys(purposeStrings).length
 
-            if (purposeKeysCount === 0) {
-                console.warn(
-                    `⚠️ Warning: No purpose strings found in ${lang}/common.json. Make sure 'purposeStrings' property exists and is not empty.`,
-                )
                 console.log(
-                    `📋 Debug: Available top-level keys: ${Object.keys(translations).join(', ')}`,
+                    `📊 Found ${purposeKeysCount} purpose strings for ${lang}`,
                 )
-                continue
-            }
 
-            // Store purpose strings for this language
-            purposeStringsByLang[lang] = {}
-
-            // Add keys to global set and store translations
-            for (const [key, value] of Object.entries(purposeStrings)) {
-                if (value) {
-                    allPurposeStringKeys.add(key)
-                    purposeStringsByLang[lang][key] = value
+                if (purposeKeysCount === 0) {
+                    console.warn(
+                        `⚠️ Warning: No purpose strings found in ${lang}/common.json. Make sure 'purposeStrings' property exists and is not empty.`,
+                    )
+                    console.log(
+                        `📋 Debug: Available top-level keys: ${Object.keys(translations).join(', ')}`,
+                    )
+                    continue
                 }
+
+                let content =
+                    '/*\n  InfoPlist.strings\n  FediReactNative\n\n  Created by Someone on ' +
+                    dateUtils.formatTimestamp(
+                        Math.round(Date.now() / 1000),
+                        'dd/mm/yyyy',
+                    ) +
+                    '.\n\n*/'
+
+                for (const [key, value] of Object.entries(purposeStrings)) {
+                    if (value) {
+                        content += `\n"${key}" = "${escapePlistString(value)}";`
+                        console.log(`  - Added "${key}" purpose string`)
+                    }
+                }
+
+                if (content.length === 0) {
+                    console.warn(
+                        `⚠️ Warning: No valid purpose strings found for language ${lang}`,
+                    )
+                    continue
+                }
+
+                const targetDirs: string[] = languageMapping[lang]
+                    ? Array.isArray(languageMapping[lang])
+                        ? (languageMapping[lang] as string[])
+                        : [languageMapping[lang] as string]
+                    : [lang === 'en' ? 'en' : lang]
+
+                console.log(
+                    `📂 Will write to ${targetDirs.length} target directories for ${lang}: ${targetDirs.join(', ')}`,
+                )
+
+                for (const targetLang of targetDirs) {
+                    const iosDirName = `${targetLang}.lproj`
+                    const outputDir: string = path.join(
+                        __dirname,
+                        `../../native/ios/${iosDirName}`,
+                    )
+                    console.log(`📂 Target directory: ${outputDir}`)
+
+                    if (!fs.existsSync(outputDir)) {
+                        console.log(`📂 Creating directory: ${outputDir}`)
+                        try {
+                            fs.mkdirSync(outputDir, { recursive: true })
+                            console.log(`✅ Created directory: ${outputDir}`)
+                        } catch (dirError) {
+                            console.error(
+                                `❌ ERROR creating directory ${outputDir}:`,
+                                dirError,
+                            )
+                            continue
+                        }
+                    }
+
+                    const outputPath: string = path.join(
+                        outputDir,
+                        'InfoPlist.strings',
+                    )
+                    console.log(`📄 Writing to file: ${outputPath}`)
+
+                    try {
+                        fs.writeFileSync(outputPath, content)
+                        console.log(
+                            `✅ Successfully wrote InfoPlist.strings for ${targetLang} (${i18nLanguages[lang as keyof typeof i18nLanguages]})`,
+                        )
+                        processedCount++
+                    } catch (writeError) {
+                        console.error(
+                            `❌ ERROR writing to ${outputPath}:`,
+                            writeError,
+                        )
+                    }
+                }
+            } catch (parseError) {
+                console.error(`❌ ERROR parsing JSON for ${lang}:`, parseError)
+                console.log(
+                    `📋 Debug: First 100 characters of file: ${translationsRaw.substring(0, 100)}...`,
+                )
             }
         } catch (error) {
             console.error(`❌ ERROR processing ${lang}:`, error)
             if (error instanceof Error) {
                 console.error(`   ${error.message}`)
+                console.error(`   Stack: ${error.stack}`)
             }
         }
     }
 
     console.log(
-        `📊 Total unique purpose string keys found: ${allPurposeStringKeys.size}`,
+        `🏁 Done! Successfully processed ${processedCount} InfoPlist.strings files.`,
     )
-
-    // Second pass: build the string catalog structure
-    console.log('🔍 Second pass: building string catalog structure...')
-
-    for (const key of Array.from(allPurposeStringKeys)) {
-        // Initialize entry for this purpose string
-        const entry: StringCatalogEntry = {
-            extractionState: 'migrated',
-            localizations: {},
-        }
-
-        // Add translations for each language
-        for (const lang of languages) {
-            if (
-                !purposeStringsByLang[lang] ||
-                !purposeStringsByLang[lang][key]
-            ) {
-                continue // Skip if language doesn't have this purpose string
-            }
-
-            const value = purposeStringsByLang[lang][key]
-
-            // Get the mapped locale identifier(s) for this language
-            if (languageMapping[lang]) {
-                const mappedLocales = Array.isArray(languageMapping[lang])
-                    ? (languageMapping[lang] as string[])
-                    : [languageMapping[lang] as string]
-
-                // Add translation for each mapped locale
-                for (const localeId of mappedLocales) {
-                    entry.localizations[localeId] = {
-                        stringUnit: {
-                            state: 'translated',
-                            value: value,
-                        },
-                    }
-                }
-            } else {
-                // Use language code directly as locale identifier if no special mapping
-                entry.localizations[lang] = {
-                    stringUnit: {
-                        state: 'translated',
-                        value: value,
-                    },
-                }
-            }
-        }
-
-        // Add entry to string catalog
-        stringCatalog.strings[key] = entry
-    }
-
-    // Create directory if needed
-    const outputPath = path.join(
-        __dirname,
-        `../../native/ios`,
-        'InfoPlist.xcstrings',
-    )
-
-    // Write string catalog to file
-    console.log(`📄 Writing string catalog to: ${outputPath}`)
-
-    try {
-        fs.writeFileSync(outputPath, JSON.stringify(stringCatalog, null, 2))
-        console.log(`✅ Successfully generated string catalog at ${outputPath}`)
+    if (processedCount === 0) {
+        console.log('\n📋 TROUBLESHOOTING CHECKLIST:')
         console.log(
-            `📊 The catalog contains ${Object.keys(stringCatalog.strings).length} strings with ${Object.keys(i18nLanguages).length} localizations`,
+            '1. Check if localizations directory exists:',
+            baseLocalizationsPath,
         )
-        console.warn(
-            `⚠️⚠️⚠️ WARNING: If you ran this script, and we don't have a EU Portuguese localisation in the Fedi app, then you have probably erased the EU Portuguese purpose strings. Open Xcode and add them manually from the diff or revert your changes and fix this script`,
+        console.log(
+            '2. Check if your common.json files have a "purposeStrings" property',
         )
-    } catch (error) {
-        console.error(`❌ ERROR writing string catalog:`, error)
-        if (error instanceof Error) {
-            console.error(`   ${error.message}`)
-        }
+        console.log(
+            '3. Check if iOS directory exists:',
+            path.join(__dirname, `../../native/ios/`),
+        )
+        console.log('4. Check file permissions for writing to iOS directory')
     }
 }
 
-generateStringCatalog()
+function escapePlistString(str: string): string {
+    return str.replace(/\\/g, '\\\\').replace(/"/g, '\\"').replace(/\n/g, '\\n')
+}
+
+generateInfoPlistStrings()
