@@ -48,6 +48,7 @@ use stability_pool_common::{
 };
 use tracing::info;
 
+pub mod api;
 pub mod db;
 mod history_service;
 mod sync_service;
