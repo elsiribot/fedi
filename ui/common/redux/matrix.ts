@@ -1610,6 +1610,9 @@ export const selectDefaultMatrixRoomIds = createSelector(
     },
 )
 
+export const selectIsDefaultGroup = (s: CommonState, id: string) =>
+    selectDefaultMatrixRoomIds(s).includes(id)
+
 export const selectChatDrafts = (s: CommonState) => s.matrix.drafts
 export const selectSelectedChatMessage = (s: CommonState) =>
     s.matrix.selectedChatMessage

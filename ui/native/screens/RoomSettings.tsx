@@ -7,7 +7,7 @@ import { Alert, ScrollView, StyleSheet, View } from 'react-native'
 import { useToast } from '@fedi/common/hooks/toast'
 import {
     leaveMatrixRoom,
-    selectDefaultMatrixRoomIds,
+    selectIsDefaultGroup,
     selectMatrixRoom,
     selectMatrixRoomMembersCount,
     selectMatrixRoomSelfPowerLevel,
@@ -41,9 +41,7 @@ const RoomSettings: React.FC<Props> = ({ navigation, route }: Props) => {
         selectMatrixRoomSelfPowerLevel(s, room?.id || ''),
     )
     const isAdmin = myPowerLevel >= MatrixPowerLevel.Admin
-    const isDefaultGroup = useAppSelector(s =>
-        selectDefaultMatrixRoomIds(s).includes(room?.id || ''),
-    )
+    const isDefaultGroup = useAppSelector(s => selectIsDefaultGroup(s, roomId))
     const isGroupChat = room?.directUserId === undefined
     const [isTogglingBroadcastOnly, setIsTogglingBroadcastOnly] =
         useState(false)
