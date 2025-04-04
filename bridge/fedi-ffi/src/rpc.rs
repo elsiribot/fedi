@@ -752,9 +752,10 @@ async fn spv2AvailableLiquidity(federation: Arc<FederationV2>) -> anyhow::Result
 async fn spv2DepositToSeek(
     federation: Arc<FederationV2>,
     amount: RpcAmount,
+    frontend_meta: FrontendMetadata,
 ) -> anyhow::Result<RpcOperationId> {
     federation
-        .spv2_deposit_to_seek(amount.0)
+        .spv2_deposit_to_seek(amount.0, frontend_meta)
         .await
         .map(Into::into)
 }
@@ -763,17 +764,24 @@ async fn spv2DepositToSeek(
 async fn spv2Withdraw(
     federation: Arc<FederationV2>,
     fiat_amount: u32,
+    frontend_meta: FrontendMetadata,
 ) -> anyhow::Result<RpcOperationId> {
     federation
-        .spv2_withdraw(FiatOrAll::Fiat(FiatAmount(fiat_amount.into())))
+        .spv2_withdraw(
+            FiatOrAll::Fiat(FiatAmount(fiat_amount.into())),
+            frontend_meta,
+        )
         .await
         .map(Into::into)
 }
 
 #[macro_rules_derive(federation_rpc_method!)]
-async fn spv2WithdrawAll(federation: Arc<FederationV2>) -> anyhow::Result<RpcOperationId> {
+async fn spv2WithdrawAll(
+    federation: Arc<FederationV2>,
+    frontend_meta: FrontendMetadata,
+) -> anyhow::Result<RpcOperationId> {
     federation
-        .spv2_withdraw(FiatOrAll::All)
+        .spv2_withdraw(FiatOrAll::All, frontend_meta)
         .await
         .map(Into::into)
 }
@@ -3433,7 +3441,12 @@ pub mod tests {
         let amount_to_deposit = Amount::from_msats(receive_amount.msats / 2);
         let deposit_fedi_fee =
             Amount::from_msats((amount_to_deposit.msats * fedi_fees_send_ppm).div_ceil(MILLION));
-        spv2DepositToSeek(federation.clone(), RpcAmount(amount_to_deposit)).await?;
+        spv2DepositToSeek(
+            federation.clone(),
+            RpcAmount(amount_to_deposit),
+            FrontendMetadata::default(),
+        )
+        .await?;
         loop {
             // Wait until deposit operation succeeds
             // Initiated -> TxAccepted -> Success
@@ -3473,6 +3486,7 @@ pub mod tests {
             )?
             .0
             .try_into()?,
+            FrontendMetadata::default(),
         )
         .await?;
         loop {

@@ -970,7 +970,7 @@ impl From<ReissueExternalNotesState> for RpcOOBReissueState {
     }
 }
 
-#[derive(Serialize, Deserialize, Default, Debug, TS, Clone)]
+#[derive(Serialize, Deserialize, Default, Debug, TS, Clone, PartialEq, Eq)]
 #[serde(rename_all = "camelCase")]
 #[ts(export)]
 pub struct FrontendMetadata {
@@ -1032,6 +1032,35 @@ pub struct EcashSendMetadata {
 pub struct LightningSendMetadata {
     pub is_fedi_fee_remittance: bool,
     pub frontend_metadata: Option<FrontendMetadata>,
+}
+
+#[derive(Debug, Serialize, Deserialize, Clone)]
+#[serde(tag = "kind")]
+pub enum SPv2WithdrawMetadata {
+    /// Automatically by sweeping service
+    Sweeper,
+    /// User triggered action in stable balance ui
+    StableBalance {
+        frontend_metadata: Option<FrontendMetadata>,
+    },
+}
+
+#[derive(Debug, Serialize, Deserialize, Clone)]
+#[serde(tag = "kind")]
+pub enum SPv2TransferMetadata {
+    /// User triggered action in stable balance ui
+    StableBalance {
+        frontend_metadata: Option<FrontendMetadata>,
+    },
+}
+
+#[derive(Debug, Serialize, Deserialize, Clone)]
+#[serde(tag = "kind")]
+pub enum SPv2DepositMetadata {
+    /// User triggered action in stable balance ui
+    StableBalance {
+        frontend_metadata: Option<FrontendMetadata>,
+    },
 }
 
 #[derive(Debug, Deserialize, Serialize, TS)]

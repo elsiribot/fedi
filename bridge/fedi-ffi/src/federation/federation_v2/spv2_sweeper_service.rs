@@ -12,7 +12,7 @@ use super::client::ClientExt;
 use super::db::{LastSPv2SweeperWithdrawalKey, LastStabilityPoolV2DepositCycleKey};
 use super::FederationV2;
 use crate::event::{Event, EventSink, TypedEventExt};
-use crate::types::RpcAmount;
+use crate::types::{RpcAmount, SPv2WithdrawMetadata};
 
 // A continously running background service that sweeps unfilled seeker deposits
 // back into e-cash balance. Unfilled deposits could be a result of
@@ -93,6 +93,7 @@ async fn sweep_spv2_inner(fed: &FederationV2, sync_response: SyncResponse) -> an
                 sync_response.staged_balance,
                 sync_response.current_cycle.start_price,
             )?),
+            SPv2WithdrawMetadata::Sweeper,
         )
         .await?;
     record_sweep_op_id(fed.dbtx().await, operation_id).await;

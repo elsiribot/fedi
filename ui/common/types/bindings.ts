@@ -624,6 +624,7 @@ export type RpcMethods = {
     setStabilityPoolModuleFediFeeSchedule,
     null,
   ];
+  setSPv2ModuleFediFeeSchedule: [setSPv2ModuleFediFeeSchedule, null];
   getAccruedOutstandingFediFeesPerTXType: [
     getAccruedOutstandingFediFeesPerTXType,
     Array<[string, RpcTransactionDirection, RpcAmount]>,
@@ -1646,6 +1647,12 @@ export type setMintModuleFediFeeSchedule = {
   receivePpm: bigint;
 };
 
+export type setSPv2ModuleFediFeeSchedule = {
+  federationId: RpcFederationId;
+  sendPpm: bigint;
+  receivePpm: bigint;
+};
+
 export type setSensitiveLog = { enable: boolean };
 
 export type setStabilityPoolModuleFediFeeSchedule = {
@@ -1684,6 +1691,7 @@ export type spv2AverageFeeRate = {
 export type spv2DepositToSeek = {
   federationId: RpcFederationId;
   amount: RpcAmount;
+  frontendMeta: FrontendMetadata;
 };
 
 export type spv2NextCycleStartTime = { federationId: RpcFederationId };
@@ -1691,9 +1699,13 @@ export type spv2NextCycleStartTime = { federationId: RpcFederationId };
 export type spv2Withdraw = {
   federationId: RpcFederationId;
   fiatAmount: number;
+  frontendMeta: FrontendMetadata;
 };
 
-export type spv2WithdrawAll = { federationId: RpcFederationId };
+export type spv2WithdrawAll = {
+  federationId: RpcFederationId;
+  frontendMeta: FrontendMetadata;
+};
 
 export type stabilityPoolAccountInfo = {
   federationId: RpcFederationId;
