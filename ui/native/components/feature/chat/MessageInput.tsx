@@ -539,18 +539,22 @@ const MessageInput: React.FC<MessageInputProps> = ({
                          * - Polls are available in both public and private chat rooms
                          * - Polls are not available in user-to-user direct chats
                          * - Polls are not available in **default** public rooms
+                         * - Polls are not available in broadcast rooms
                          * */}
-                        {!isDefaultGroup && !directUserId && !isReadOnly && (
-                            <Pressable
-                                onPress={() => {
-                                    navigation.navigate('CreatePoll', {
-                                        roomId: id,
-                                    })
-                                }}
-                                hitSlop={10}>
-                                <SvgImage name="Poll" />
-                            </Pressable>
-                        )}
+                        {!isDefaultGroup &&
+                            !directUserId &&
+                            !isReadOnly &&
+                            !existingRoom?.broadcastOnly && (
+                                <Pressable
+                                    onPress={() => {
+                                        navigation.navigate('CreatePoll', {
+                                            roomId: id,
+                                        })
+                                    }}
+                                    hitSlop={10}>
+                                    <SvgImage name="Poll" />
+                                </Pressable>
+                            )}
                         {/* To prevent users from uploading unencrypted media, media uploads are not available in public chats */}
                         {!isPublic && !isReadOnly && (
                             <>
