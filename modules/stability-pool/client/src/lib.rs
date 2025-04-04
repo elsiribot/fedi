@@ -941,11 +941,13 @@ async fn submit_tx_with_output(
             txid,
             signed_request: output.signed_request,
         },
-        _ => StabilityPoolMeta::Deposit {
-            txid,
-            change_outpoints,
-            amount,
-        },
+        StabilityPoolOutputV0::DepositToSeek(..) | StabilityPoolOutputV0::DepositToProvide(..) => {
+            StabilityPoolMeta::Deposit {
+                txid,
+                change_outpoints,
+                amount,
+            }
+        }
     };
     let (transaction_id, _) = client_ctx
         .finalize_and_submit_transaction(
