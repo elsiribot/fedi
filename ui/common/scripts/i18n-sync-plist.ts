@@ -3,7 +3,6 @@ import fs from 'fs'
 import path from 'path'
 
 import { i18nLanguages } from '../localization'
-import dateUtils from '../utils/DateUtils'
 
 interface Translations {
     purposeStrings?: {
@@ -45,6 +44,8 @@ function generateInfoPlistStrings(localizationsPath?: string): void {
     const languageMapping: LanguageMapping = {
         pt: ['pt-BR'], // Map pt to pt-BR.lproj only for now. Change this when we have EU Portuguese
         es: ['es-419'],
+        ara: ['ar-SS'],
+        tl: ['fil'],
     }
     console.log('📝 Language mapping:', languageMapping)
 
@@ -96,12 +97,7 @@ function generateInfoPlistStrings(localizationsPath?: string): void {
                 }
 
                 let content =
-                    '/*\n  InfoPlist.strings\n  FediReactNative\n\n  Created by Someone on ' +
-                    dateUtils.formatTimestamp(
-                        Math.round(Date.now() / 1000),
-                        'dd/mm/yyyy',
-                    ) +
-                    '.\n\n*/'
+                    '/*\n  InfoPlist.strings\n  FediReactNative\n\n  Created by Someone on 01/01/2025.\n\n*/'
 
                 for (const [key, value] of Object.entries(purposeStrings)) {
                     if (value) {
