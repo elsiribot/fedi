@@ -1,10 +1,12 @@
 use std::collections::BTreeMap;
+use std::hash::Hash;
 use std::ops::Not;
 use std::sync::Arc;
 use std::{ffi, iter};
 
 use anyhow::bail;
 use async_stream::stream;
+use bitcoin::hashes::sha256;
 use clap::{Parser, ValueEnum};
 use common::config::StabilityPoolClientConfig;
 use common::{
@@ -32,10 +34,11 @@ use fedimint_core::module::{
     ApiRequestErased, ApiVersion, CommonModuleInit, ModuleInit, MultiApiVersion,
 };
 use fedimint_core::util::backoff_util::background_backoff;
-use fedimint_core::{apply, async_trait_maybe_send, Amount, OutPoint, TransactionId};
+use fedimint_core::{apply, async_trait_maybe_send, Amount, BitcoinHash, OutPoint, TransactionId};
 use futures::{Stream, StreamExt};
 use rand::Rng;
-use secp256k1::{schnorr, Keypair, Secp256k1};
+use secp256k1::{schnorr, Keypair, PublicKey, Secp256k1, SecretKey};
+use serde::de::DeserializeOwned;
 use serde::{Deserialize, Serialize};
 pub use stability_pool_common as common;
 use stability_pool_common::{
@@ -46,6 +49,7 @@ use stability_pool_common::{
 };
 use tracing::info;
 
+pub mod api;
 pub mod db;
 mod history_service;
 mod sync_service;
@@ -514,6 +518,15 @@ impl StabilityPoolClientModule {
         Account::single(self.client_key_pair.public_key(), acc_type)
     }
 
+    /// Given a passphrase, derive a new public key by extending the current
+    /// module secret key with the passphrase.
+    pub fn pub_key_with_passphrase(&self, passphrase: String) -> anyhow::Result<PublicKey> {
+        let sk_bytes = self.client_key_pair.secret_bytes().to_vec();
+        let passphrase_bytes = passphrase.into_bytes();
+        let new_sk_bytes = sha256::Hash::from_slice(&[sk_bytes, passphrase_bytes].concat())?;
+        Ok(SecretKey::from_slice(new_sk_bytes.as_ref())?.public_key(secp256k1::SECP256K1))
+    }
+
     /// Returns the average of the provider fee rate over the last #num_cycles
     /// cycles, including the current ongoing cycle. So if num_cycles is 1, we
     /// return the fee rate of the current ongoing cycle. If num_cycles is 2, we
@@ -929,11 +942,13 @@ async fn submit_tx_with_output(
             txid,
             signed_request: output.signed_request,
         },
-        _ => StabilityPoolMeta::Deposit {
-            txid,
-            change_outpoints,
-            amount,
-        },
+        StabilityPoolOutputV0::DepositToSeek(..) | StabilityPoolOutputV0::DepositToProvide(..) => {
+            StabilityPoolMeta::Deposit {
+                txid,
+                change_outpoints,
+                amount,
+            }
+        }
     };
     let (transaction_id, _) = client_ctx
         .finalize_and_submit_transaction(
@@ -1054,26 +1069,8 @@ fn parse_withdrawal_amount(s: &str) -> Result<FiatOrAll, String> {
     }
 }
 
-fn parse_transfer_amount(s: &str) -> Result<FiatAmount, String> {
-    Ok(FiatAmount(
-        s.parse::<u64>()
-            .map_err(|e| format!("Invalid fiat amount: {e}"))?,
-    ))
-}
-
-fn parse_fee_rate(s: &str) -> Result<FeeRate, String> {
-    Ok(FeeRate(
-        s.parse::<u64>()
-            .map_err(|e| format!("Invalid fee rate: {e}"))?,
-    ))
-}
-
-fn parse_transfer_request(s: &str) -> Result<TransferRequest, String> {
-    serde_json::from_str(s).map_err(|e| e.to_string())
-}
-
-fn parse_signed_transfer_request(s: &str) -> Result<SignedTransferRequest, String> {
-    serde_json::from_str(s).map_err(|e| e.to_string())
+fn parse_json_value<T: DeserializeOwned>(s: &str) -> Result<T, serde_json::Error> {
+    serde_json::from_str(s)
 }
 
 #[derive(Parser, Debug, Serialize)]
@@ -1100,7 +1097,7 @@ pub enum CliCommand {
         /// Amount in msats to deposit
         amount_msats: Amount,
         /// Fee rate in parts per billion
-        #[arg(value_parser = parse_fee_rate)]
+        #[arg(value_parser = parse_json_value::<FeeRate>)]
         fee_rate: FeeRate,
     },
     /// Withdraw from seeker or provider account
@@ -1112,19 +1109,19 @@ pub enum CliCommand {
     },
     /// Sign a transfer request
     SignTransfer {
-        #[arg(value_parser = parse_transfer_request)]
+        #[arg(value_parser = parse_json_value::<TransferRequest>)]
         request: TransferRequest,
     },
     /// Convenience CLI command to get a signed transfer request for sending
     /// amount to given account
     SimpleTransfer {
         to_account: AccountId,
-        #[arg(value_parser = parse_transfer_amount)]
+        #[arg(value_parser = parse_json_value::<FiatAmount>)]
         amount: FiatAmount,
     },
     /// Submit a signed transfer request
     Transfer {
-        #[arg(value_parser = parse_signed_transfer_request)]
+        #[arg(value_parser = parse_json_value::<SignedTransferRequest>)]
         request: SignedTransferRequest,
     },
     /// Withdraw idle balance only. This is meant for a provider to sweep their

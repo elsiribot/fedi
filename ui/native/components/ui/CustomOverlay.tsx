@@ -144,13 +144,7 @@ const CustomOverlay: React.FC<CustomOverlayProps> = ({
                         insets.bottom -
                         theme.spacing.xl * 2,
                 }}>
-                {icon && (
-                    <SvgImage
-                        size={SvgImageSize.md}
-                        name={icon}
-                        containerStyle={style.overlayIcon}
-                    />
-                )}
+                {icon && <SvgImage size={SvgImageSize.md} name={icon} />}
                 {headerElement}
                 {url && (
                     <Text style={style.overlayUrl} numberOfLines={5}>
@@ -172,7 +166,13 @@ const CustomOverlay: React.FC<CustomOverlayProps> = ({
                 {description && (
                     <Text style={style.overlayDescription}>{description}</Text>
                 )}
-                <ScrollView style={style.bodyContainer}>{body}</ScrollView>
+                {body && (
+                    <ScrollView
+                        alwaysBounceVertical={false}
+                        style={style.bodyContainer}>
+                        {body}
+                    </ScrollView>
+                )}
                 {buttons?.length > 0 && (
                     <View style={style.overlayButtonView}>
                         {renderButtons()}
@@ -207,6 +207,7 @@ const styles = (theme: Theme, insets: Insets) =>
             paddingHorizontal: theme.spacing.md,
             paddingBottom: Math.max(theme.spacing.xl, insets.bottom || 0),
             backgroundColor: theme.colors.white,
+            gap: theme.spacing.xl,
             ...Platform.select({
                 android: {
                     elevation: 2,
@@ -224,26 +225,20 @@ const styles = (theme: Theme, insets: Insets) =>
         overlayTitle: {
             textAlign: 'center',
         },
-        overlayIcon: {
-            marginBottom: theme.spacing.md,
-        },
         overlayUrl: {
             textDecorationLine: 'underline',
-            marginBottom: theme.spacing.md,
             textAlign: 'center',
         },
         overlayText: {
-            marginTop: theme.spacing.lg,
             textAlign: 'center',
         },
         overlayDescription: {
-            color: theme.colors.lightGrey,
             textAlign: 'center',
         },
         overlayButtonView: {
             flexDirection: 'row',
             justifyContent: 'space-between',
-            marginTop: theme.spacing.xl,
+            marginTop: theme.spacing.sm,
         },
         buttonContainer: {
             marginHorizontal: theme.spacing.sm,

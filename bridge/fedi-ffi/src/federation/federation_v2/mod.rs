@@ -2693,7 +2693,7 @@ impl FederationV2 {
             WALLET_OPERATION_TYPE => {
                 let wallet_meta: WalletOperationMeta = entry.meta();
                 frontend_metadata = serde_json::from_value::<BaseMetadata>(wallet_meta.extra_meta)
-                    .unwrap()
+                    .unwrap_or_default()
                     .into();
                 match wallet_meta.variant {
                     WalletOperationMetaVariant::Deposit { address, .. } => {

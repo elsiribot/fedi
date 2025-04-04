@@ -3,7 +3,8 @@ use std::collections::{BTreeMap, BTreeSet};
 use db::{
     insert_multispend_chronological_event, MultispendChronologicalEventData,
     MultispendChronologicalEventKeyPrefix, MultispendDepositEventKey, MultispendGroupStatus,
-    MultispendGroupStatusKey, MultispendInvitationKey, MultispendWithdrawRequestKey,
+    MultispendGroupStatusKey, MultispendInvalidEvent, MultispendInvitationKey,
+    MultispendWithdrawRequestKey,
 };
 use fedimint_core::db::{DatabaseTransaction, IDatabaseTransactionOpsCoreTyped as _};
 use fedimint_core::encoding::{Decodable, Encodable};
@@ -256,6 +257,7 @@ pub enum MsEventData {
     WithdrawalRequest(WithdrawRequestWithApprovals),
     GroupInvitation(GroupInvitationWithKeys),
     DepositNotification(MultispendDepositEventData),
+    InvalidEvent,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, TS)]
@@ -271,6 +273,34 @@ pub struct MultispendListedEvent {
 
 /// Process one event from matrix and persist it to database.
 pub async fn process_event_db(
+    dbtx: &mut DatabaseTransaction<'_>,
+    room_id: &RpcRoomId,
+    sender: RpcUserId,
+    event_id: RpcEventId,
+    event: MultispendEvent,
+    event_time: u64,
+) {
+    tracing::trace!(?event, "processing event");
+    if let Err(err) = process_event_db_raw(
+        dbtx,
+        room_id,
+        sender.clone(),
+        event_id.clone(),
+        event.clone(),
+        event_time,
+    )
+    .await
+    {
+        let ProcessEventError::InvalidMessage = err;
+        // logging the entire event, this might be privacy leaking when you share
+        // the logs.
+        error!(?sender, ?event_id, ?event, "Invalid multispend event");
+        dbtx.insert_new_entry(&MultispendInvalidEvent(event_id), &())
+            .await;
+    }
+}
+
+pub async fn process_event_db_raw(
     dbtx: &mut DatabaseTransaction<'_>,
     room_id: &RpcRoomId,
     sender: RpcUserId,
@@ -428,7 +458,17 @@ pub async fn get_event_data_db(
         return Some(MsEventData::WithdrawalRequest(withdraw));
     }
 
+    if is_invalid_event(tx, event_id.clone()).await {
+        return Some(MsEventData::InvalidEvent);
+    }
+
     None
+}
+
+pub async fn is_invalid_event(tx: &mut DatabaseTransaction<'_>, event_id: RpcEventId) -> bool {
+    tx.get_value(&MultispendInvalidEvent(event_id.clone()))
+        .await
+        .is_some()
 }
 
 pub async fn get_group_status_db(
@@ -545,7 +585,7 @@ mod tests {
             invitation: invitation.clone(),
             proposer_pubkey: pk1,
         };
-        assert!(process_event_db(
+        assert!(process_event_db_raw(
             &mut tx.to_ref_nc(),
             &room_id,
             user1.clone(),
@@ -561,7 +601,7 @@ mod tests {
             invitation: event1_id.clone(),
             vote: MultispendGroupVoteType::Accept { member_pubkey: pk2 },
         };
-        assert!(process_event_db(
+        assert!(process_event_db_raw(
             &mut tx.to_ref_nc(),
             &room_id,
             user2.clone(),
@@ -578,7 +618,7 @@ mod tests {
             proposer_pubkey: pk1,
         };
         assert!(matches!(
-            process_event_db(
+            process_event_db_raw(
                 &mut tx.to_ref_nc(),
                 &room_id,
                 user1.clone(),
