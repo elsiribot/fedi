@@ -38,6 +38,7 @@ use fedimint_core::{apply, async_trait_maybe_send, Amount, BitcoinHash, OutPoint
 use futures::{Stream, StreamExt};
 use rand::Rng;
 use secp256k1::{schnorr, Keypair, PublicKey, Secp256k1, SecretKey};
+use serde::de::DeserializeOwned;
 use serde::{Deserialize, Serialize};
 pub use stability_pool_common as common;
 use stability_pool_common::{
@@ -1065,26 +1066,8 @@ fn parse_withdrawal_amount(s: &str) -> Result<FiatOrAll, String> {
     }
 }
 
-fn parse_transfer_amount(s: &str) -> Result<FiatAmount, String> {
-    Ok(FiatAmount(
-        s.parse::<u64>()
-            .map_err(|e| format!("Invalid fiat amount: {e}"))?,
-    ))
-}
-
-fn parse_fee_rate(s: &str) -> Result<FeeRate, String> {
-    Ok(FeeRate(
-        s.parse::<u64>()
-            .map_err(|e| format!("Invalid fee rate: {e}"))?,
-    ))
-}
-
-fn parse_transfer_request(s: &str) -> Result<TransferRequest, String> {
-    serde_json::from_str(s).map_err(|e| e.to_string())
-}
-
-fn parse_signed_transfer_request(s: &str) -> Result<SignedTransferRequest, String> {
-    serde_json::from_str(s).map_err(|e| e.to_string())
+fn parse_json_value<T: DeserializeOwned>(s: &str) -> Result<T, serde_json::Error> {
+    serde_json::from_str(s)
 }
 
 #[derive(Parser, Debug, Serialize)]
@@ -1111,7 +1094,7 @@ pub enum CliCommand {
         /// Amount in msats to deposit
         amount_msats: Amount,
         /// Fee rate in parts per billion
-        #[arg(value_parser = parse_fee_rate)]
+        #[arg(value_parser = parse_json_value::<FeeRate>)]
         fee_rate: FeeRate,
     },
     /// Withdraw from seeker or provider account
@@ -1123,19 +1106,19 @@ pub enum CliCommand {
     },
     /// Sign a transfer request
     SignTransfer {
-        #[arg(value_parser = parse_transfer_request)]
+        #[arg(value_parser = parse_json_value::<TransferRequest>)]
         request: TransferRequest,
     },
     /// Convenience CLI command to get a signed transfer request for sending
     /// amount to given account
     SimpleTransfer {
         to_account: AccountId,
-        #[arg(value_parser = parse_transfer_amount)]
+        #[arg(value_parser = parse_json_value::<FiatAmount>)]
         amount: FiatAmount,
     },
     /// Submit a signed transfer request
     Transfer {
-        #[arg(value_parser = parse_signed_transfer_request)]
+        #[arg(value_parser = parse_json_value::<SignedTransferRequest>)]
         request: SignedTransferRequest,
     },
     /// Withdraw idle balance only. This is meant for a provider to sweep their
