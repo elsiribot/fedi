@@ -1,20 +1,19 @@
 use std::ops::Range;
 
 use anyhow::bail;
-use fedimint_api_client::api::{DynModuleApi, FederationApiExt as _};
+use fedimint_api_client::api::DynModuleApi;
 use fedimint_core::db::{Database, DatabaseTransaction, IDatabaseTransactionOpsCoreTyped};
-use fedimint_core::module::ApiRequestErased;
 use fedimint_core::util::backoff_util::{self};
 use fedimint_core::util::retry;
 use fedimint_core::{Amount, TransactionId};
 use futures::{Stream, StreamExt};
 use stability_pool_common::{
-    AccountHistoryItem, AccountHistoryItemKind, AccountHistoryRequest, AccountId, FiatAmount,
-    SyncResponse, UnlockRequest,
+    AccountHistoryItem, AccountHistoryItemKind, AccountId, FiatAmount, SyncResponse, UnlockRequest,
 };
 use tokio::sync::watch;
 use tokio_stream::wrappers::WatchStream;
 
+use crate::api::StabilityPoolApiExt;
 use crate::db::{
     self, AccountHistoryItemKey, AccountHistoryItemKeyPrefix, UserOperationHistoryItem,
     UserOperationHistoryItemKey, UserOperationHistoryItemKind, UserOperationIndexAccountPrefix,
@@ -71,14 +70,11 @@ impl StabilityPoolHistoryService {
 
         self.is_fetching.send_replace(true);
         let result = async {
-            let new_history_items: Vec<AccountHistoryItem> = self
+            let new_history_items = self
                 .module_api
-                .request_current_consensus(
-                    "account_history".to_string(),
-                    ApiRequestErased::new(AccountHistoryRequest {
-                        account_id: self.account_id,
-                        range: local_count..sync_response.account_history_count,
-                    }),
+                .account_history(
+                    self.account_id,
+                    local_count..sync_response.account_history_count,
                 )
                 .await?;
 
