@@ -16,7 +16,7 @@ use fedimint_mint_client::{ReissueExternalNotesState, SpendOOBState};
 use fedimint_wallet_client::{DepositStateV2, WithdrawState};
 use serde::de::{self, MapAccess, Visitor};
 use serde::{Deserialize, Deserializer, Serialize};
-use stability_pool_client::common::TransferRequestId;
+use stability_pool_client::common::{SyncResponse, TransferRequestId};
 use stability_pool_client::db::CachedSyncResponseValue;
 use stability_pool_client_old::ClientAccountInfo;
 use ts_rs::TS;
@@ -1109,6 +1109,14 @@ impl From<ClientAccountInfo> for RpcStabilityPoolAccountInfo {
 pub struct RpcSPv2CachedSyncResponse {
     #[ts(type = "number")]
     pub fetch_time: u64,
+    #[serde(flatten)]
+    pub sync_response: RpcSPv2SyncResponse,
+}
+
+#[derive(Debug, Deserialize, Serialize, TS)]
+#[serde(rename_all = "camelCase")]
+#[ts(export)]
+pub struct RpcSPv2SyncResponse {
     #[ts(type = "number")]
     pub curr_cycle_idx: u64,
     #[ts(type = "number")]
@@ -1126,14 +1134,22 @@ impl From<CachedSyncResponseValue> for RpcSPv2CachedSyncResponse {
     fn from(value: CachedSyncResponseValue) -> Self {
         Self {
             fetch_time: to_unix_time(value.fetch_time).expect("fetch time must be valid"),
-            curr_cycle_idx: value.value.current_cycle.idx,
-            curr_cycle_start_time: to_unix_time(value.value.current_cycle.start_time)
+            sync_response: value.value.into(),
+        }
+    }
+}
+
+impl From<SyncResponse> for RpcSPv2SyncResponse {
+    fn from(value: SyncResponse) -> Self {
+        Self {
+            curr_cycle_idx: value.current_cycle.idx,
+            curr_cycle_start_time: to_unix_time(value.current_cycle.start_time)
                 .expect("cycle time must be valid"),
-            curr_cycle_start_price: value.value.current_cycle.start_price.0,
-            staged_balance: RpcAmount(value.value.staged_balance),
-            locked_balance: RpcAmount(value.value.locked_balance),
-            idle_balance: RpcAmount(value.value.idle_balance),
-            pending_unlock_request: value.value.unlock_request.map(|r| r.total_fiat_requested.0),
+            curr_cycle_start_price: value.current_cycle.start_price.0,
+            staged_balance: RpcAmount(value.staged_balance),
+            locked_balance: RpcAmount(value.locked_balance),
+            idle_balance: RpcAmount(value.idle_balance),
+            pending_unlock_request: value.unlock_request.map(|r| r.total_fiat_requested.0),
         }
     }
 }

@@ -907,6 +907,16 @@ export type RpcSPv2CachedSyncResponse = {
   pendingUnlockRequest: number | null;
 };
 
+export type RpcSPv2SyncResponse = {
+  currCycleIdx: number;
+  currCycleStartTime: number;
+  currCycleStartPrice: number;
+  stagedBalance: RpcAmount;
+  lockedBalance: RpcAmount;
+  idleBalance: RpcAmount;
+  pendingUnlockRequest: number | null;
+};
+
 export type RpcSignature = string;
 
 export type RpcSignedLnurlMessage = { signature: string; pubkey: RpcPublicKey };
