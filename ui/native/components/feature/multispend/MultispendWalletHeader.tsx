@@ -7,6 +7,7 @@ import { Pressable } from 'react-native-gesture-handler'
 import LinearGradient from 'react-native-linear-gradient'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 
+import { useToast } from '@fedi/common/hooks/toast'
 import { selectMatrixRoomMultispendStatus } from '@fedi/common/redux'
 import { GroupInvitationWithKeys } from '@fedi/common/types/bindings'
 
@@ -34,14 +35,30 @@ const MultispendWalletHeader: React.FC<Props> = ({ roomId }) => {
     const [isConfirmingAbort, setIsConfirmingAbort] = useState(false)
     const [activeInvitation, setActiveInvitation] =
         useState<GroupInvitationWithKeys | null>(null)
+    const [isAborting, setIsAborting] = useState(false)
+    const toast = useToast()
 
     const handleBack = useCallback(() => {
         navigation.dispatch(reset('ChatRoomConversation', { roomId }))
     }, [navigation, roomId])
 
-    const handleAbortMultispend = useCallback(() => {
-        // TODO: abort multispend group
-    }, [])
+    const handleAbortMultispend = useCallback(async () => {
+        setIsAborting(true)
+        try {
+            await fedimint.matrixCancelMultispendGroupInvitation({
+                roomId,
+            })
+            navigation.dispatch(
+                reset('ChatRoomConversation', {
+                    roomId,
+                }),
+            )
+        } catch (e) {
+            toast.error(t, e)
+        } finally {
+            setIsAborting(false)
+        }
+    }, [navigation, roomId, t, toast])
 
     const handleInfoPress = useCallback(() => {
         Linking.openURL(
@@ -154,6 +171,7 @@ const MultispendWalletHeader: React.FC<Props> = ({ roomId }) => {
                         {
                             text: t('feature.multispend.yes-abort'),
                             primary: true,
+                            disabled: isAborting,
                             onPress: handleAbortMultispend,
                         },
                     ],
