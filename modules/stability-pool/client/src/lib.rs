@@ -1,5 +1,4 @@
 use std::collections::BTreeMap;
-use std::hash::Hash;
 use std::ops::Not;
 use std::sync::Arc;
 use std::{ffi, iter};
@@ -523,7 +522,7 @@ impl StabilityPoolClientModule {
     pub fn pub_key_with_passphrase(&self, passphrase: String) -> anyhow::Result<PublicKey> {
         let sk_bytes = self.client_key_pair.secret_bytes().to_vec();
         let passphrase_bytes = passphrase.into_bytes();
-        let new_sk_bytes = sha256::Hash::from_slice(&[sk_bytes, passphrase_bytes].concat())?;
+        let new_sk_bytes = sha256::Hash::hash(&[sk_bytes, passphrase_bytes].concat());
         Ok(SecretKey::from_slice(new_sk_bytes.as_ref())?.public_key(secp256k1::SECP256K1))
     }
 
