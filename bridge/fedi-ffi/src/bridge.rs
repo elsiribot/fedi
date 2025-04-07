@@ -42,7 +42,6 @@ use crate::error::ErrorCode;
 use crate::event::SocialRecoveryEvent;
 use crate::features::FeatureCatalog;
 use crate::federation::{federation_v2, Federations};
-use crate::fedi_fee::FediFeeHelper;
 use crate::matrix::Matrix;
 use crate::observable::ObservablePool;
 use crate::storage::{
@@ -61,16 +60,15 @@ pub const VERIFICATION_FILENAME: &str = "verification.mp4";
 /// This struct encapsulates runtime dependencies like storage, event pipe, task
 /// manager etc. that all the bridge services like Federations or Communities
 /// need to properly function.
-#[derive(Clone)]
 pub struct BridgeRuntime {
     pub storage: Storage,
-    pub app_state: Arc<AppState>,
+    pub app_state: AppState,
     pub event_sink: EventSink,
     pub task_group: TaskGroup,
     pub fedi_api: Arc<dyn IFediApi>,
     pub global_db: Database,
     pub feature_catalog: Arc<FeatureCatalog>,
-    pub observable_pool: Arc<ObservablePool>,
+    pub observable_pool: ObservablePool,
 }
 
 impl BridgeRuntime {
@@ -82,9 +80,9 @@ impl BridgeRuntime {
         feature_catalog: Arc<FeatureCatalog>,
     ) -> anyhow::Result<Self> {
         let task_group = TaskGroup::new();
-        let app_state = Arc::new(AppState::load(storage.clone(), device_identifier).await?);
+        let app_state = AppState::load(storage.clone(), device_identifier).await?;
         let global_db = storage.federation_database_v2("global").await?;
-        let observable_pool = Arc::new(ObservablePool::new(event_sink.clone(), task_group.clone()));
+        let observable_pool = ObservablePool::new(event_sink.clone(), task_group.clone());
 
         Ok(Self {
             storage,
@@ -254,11 +252,10 @@ impl BridgeRuntime {
 /// or Communities etc.
 pub struct BridgeFull {
     pub runtime: Arc<BridgeRuntime>,
-    pub federations: Federations,
+    pub federations: Arc<Federations>,
     pub communities: Arc<Communities>,
-    pub fedi_fee_helper: Arc<FediFeeHelper>,
-    pub matrix: OnceCell<Matrix>,
-    pub device_registration_service: Arc<Mutex<DeviceRegistrationService>>,
+    pub matrix: OnceCell<Arc<Matrix>>,
+    pub device_registration_service: Mutex<DeviceRegistrationService>,
 }
 
 #[derive(Debug)]
@@ -298,20 +295,18 @@ impl BridgeFull {
             });
         }
 
-        let fedi_fee_helper = Arc::new(FediFeeHelper::new(runtime.clone()));
         let device_registration_service =
-            Mutex::new(DeviceRegistrationService::new(runtime.clone()).await).into();
+            Mutex::new(DeviceRegistrationService::new(runtime.clone()).await);
 
         // Load communities and federations services
-        let communities = Communities::init(runtime.clone()).await.into();
-        let federations = Federations::new(runtime.clone(), fedi_fee_helper.clone());
+        let communities = Communities::init(runtime.clone()).await;
+        let federations = Arc::new(Federations::new(runtime.clone()));
         federations.load_joined_federations_in_background().await;
 
         Ok(Self {
             runtime,
             federations,
             communities,
-            fedi_fee_helper,
             matrix: Default::default(),
             device_registration_service,
         })
@@ -716,7 +711,8 @@ impl BridgeFull {
         send_ppm: u64,
         receive_ppm: u64,
     ) -> Result<()> {
-        self.fedi_fee_helper
+        self.federations
+            .fedi_fee_helper
             .set_module_fee_schedule(
                 federation_id.0,
                 module_kind,

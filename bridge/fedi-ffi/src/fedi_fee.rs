@@ -6,7 +6,6 @@ use async_recursion::async_recursion;
 use bitcoin::Network;
 use fedimint_core::core::ModuleKind;
 use fedimint_core::db::IDatabaseTransactionOpsCoreTyped;
-use fedimint_core::task::TaskGroup;
 use fedimint_core::Amount;
 use fedimint_ln_client::OutgoingLightningPayment;
 use futures::StreamExt;
@@ -14,7 +13,6 @@ use lightning_invoice::Bolt11Invoice;
 use tokio::sync::{Mutex, OwnedMutexGuard};
 use tracing::{error, info, instrument, warn};
 
-use crate::api::IFediApi;
 use crate::bridge::BridgeRuntime;
 use crate::constants::MILLION;
 use crate::federation::federation_v2::client::ClientExt;
@@ -22,16 +20,14 @@ use crate::federation::federation_v2::db::{
     OutstandingFediFeesPerTXTypeKey, OutstandingFediFeesPerTXTypeKeyPrefix,
 };
 use crate::federation::federation_v2::{zero_gateway_fees, FederationV2};
-use crate::storage::{AppState, FediFeeSchedule, ModuleFediFeeSchedule};
+use crate::storage::{FediFeeSchedule, ModuleFediFeeSchedule};
 use crate::types::{LightningSendMetadata, RpcTransactionDirection};
 
 /// Helper struct to encapsulate all state and logic related to Fedi fee. This
 /// struct can be consumed by both the bridge and each individual federation
 /// instance. That way we have a single source of truth.
 pub struct FediFeeHelper {
-    fedi_api: Arc<dyn IFediApi>,
-    app_state: Arc<AppState>,
-    task_group: TaskGroup,
+    runtime: Arc<BridgeRuntime>,
 }
 
 #[derive(Debug, thiserror::Error)]
@@ -44,11 +40,7 @@ pub enum FediFeeHelperError {
 
 impl FediFeeHelper {
     pub fn new(runtime: Arc<BridgeRuntime>) -> Self {
-        Self {
-            fedi_api: runtime.fedi_api.clone(),
-            app_state: runtime.app_state.clone(),
-            task_group: runtime.task_group.clone(),
-        }
+        Self { runtime }
     }
 
     /// In a separate task, queries Fedi api to fetch the fee schedule and
@@ -57,24 +49,24 @@ impl FediFeeHelper {
         &self,
         fed_network_map: HashMap<String, Network>,
     ) {
-        let fedi_api = self.fedi_api.clone();
-        let app_state = self.app_state.clone();
-        self.task_group
-            .spawn_cancellable("fetch and update fedi fee schedule", async move {
+        let runtime = self.runtime.clone();
+        self.runtime.task_group.spawn_cancellable(
+            "fetch and update fedi fee schedule",
+            async move {
                 // Fetch fee schedule from Fedi API. Presently the endpoint is different per
                 // network (mainnet, mutinynet etc.). So we iterate through the mapping of
                 // federation => network and collect a set-union of all the networks. Then we
                 // make an API call for each network we need, and finally we update each
                 // federation's FederationInfo within AppState with the correct fee schedule.
                 let networks = fed_network_map.values().cloned().collect::<HashSet<_>>();
-                let api_calls = networks.iter().map(|network| {
-                    let fedi_api = fedi_api.clone();
+                let api_calls = networks.iter().map(|&network| {
+                    let runtime = &runtime;
                     async move {
-                        match fedi_api.fetch_fedi_fee_schedule(*network).await {
-                            Ok(fedi_fee_schedule) => (*network, Some(fedi_fee_schedule)),
+                        match runtime.fedi_api.fetch_fedi_fee_schedule(network).await {
+                            Ok(fedi_fee_schedule) => (network, Some(fedi_fee_schedule)),
                             Err(error) => {
                                 error!(%network, ?error, "Failed to fetch fedi fee schedule");
-                                (*network, None)
+                                (network, None)
                             }
                         }
                     }
@@ -84,7 +76,8 @@ impl FediFeeHelper {
                     .into_iter()
                     .filter_map(|(network, schedule)| Some((network, schedule?)))
                     .collect::<HashMap<_, _>>();
-                let app_state_update_res = app_state
+                let app_state_update_res = runtime
+                    .app_state
                     .with_write_lock(|state| {
                         state.joined_federations.iter_mut().for_each(|(id, info)| {
                             // Only proceed if this federation was provided in the input map
@@ -110,7 +103,8 @@ impl FediFeeHelper {
                         "Failed to update app state with new fedi fee schedule"
                     )
                 }
-            });
+            },
+        );
     }
 
     /// For the given federation ID returns the full Fedi fee schedule. If the
@@ -119,7 +113,8 @@ impl FediFeeHelper {
         &self,
         federation_id_str: String,
     ) -> anyhow::Result<FediFeeSchedule, FediFeeHelperError> {
-        self.app_state
+        self.runtime
+            .app_state
             .with_read_lock(move |state| {
                 state
                     .joined_federations
@@ -138,7 +133,8 @@ impl FediFeeHelper {
         module: ModuleKind,
         direction: RpcTransactionDirection,
     ) -> anyhow::Result<u64, FediFeeHelperError> {
-        self.app_state
+        self.runtime
+            .app_state
             .with_read_lock(move |state| {
                 state
                     .joined_federations
@@ -167,7 +163,8 @@ impl FediFeeHelper {
         module: ModuleKind,
         fee_schedule: ModuleFediFeeSchedule,
     ) -> anyhow::Result<()> {
-        self.app_state
+        self.runtime
+            .app_state
             .with_write_lock(|state| {
                 let Some(fed_info) = state.joined_federations.get_mut(&federation_id_str) else {
                     bail!(FediFeeHelperError::UnknownFederation(federation_id_str));
@@ -193,7 +190,8 @@ impl FediFeeHelper {
         module: ModuleKind,
         tx_direction: RpcTransactionDirection,
     ) -> anyhow::Result<Bolt11Invoice> {
-        self.fedi_api
+        self.runtime
+            .fedi_api
             .fetch_fedi_fee_invoice(amount, network, module, tx_direction)
             .await
     }

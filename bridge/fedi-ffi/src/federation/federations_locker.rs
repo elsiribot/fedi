@@ -10,9 +10,9 @@ use crate::utils::PoisonedLockExt as _;
 ///
 /// A lock guard is meant to be held for entire duration of fedimint client
 /// being open
-#[derive(Default, Clone)]
+#[derive(Default)]
 pub struct FederationsLocker {
-    locks: Arc<std::sync::Mutex<BTreeMap<String, Arc<Mutex<()>>>>>,
+    locks: std::sync::Mutex<BTreeMap<String, Arc<Mutex<()>>>>,
 }
 
 // Guard to prevent concurrent clients for same federation id.

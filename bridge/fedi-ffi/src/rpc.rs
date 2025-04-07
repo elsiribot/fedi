@@ -148,6 +148,16 @@ impl<'a> TryGet<&'a Matrix> for &'a Bridge {
         self.full()?
             .matrix
             .get()
+            .map(|x| x.as_ref())
+            .context(ErrorCode::MatrixNotInitialized)
+    }
+}
+
+impl<'a> TryGet<&'a Arc<Matrix>> for &'a Bridge {
+    fn try_get(self) -> anyhow::Result<&'a Arc<Matrix>> {
+        self.full()?
+            .matrix
+            .get()
             .context(ErrorCode::MatrixNotInitialized)
     }
 }
@@ -1552,7 +1562,7 @@ async fn getFeatureCatalog(runtime: Arc<BridgeRuntime>) -> anyhow::Result<Arc<Fe
 
 #[macro_rules_derive(rpc_method!)]
 async fn matrixObserveMultispendGroup(
-    matrix: &Matrix,
+    matrix: &Arc<Matrix>,
     observable_id: u32,
     room_id: RpcRoomId,
 ) -> anyhow::Result<Observable<Option<MultispendGroupStatus>>> {
@@ -2839,6 +2849,7 @@ pub mod tests {
         assert_eq!(ecash_receive_amount, federation.get_balance().await,);
 
         let fedi_fee_ppm = bridge
+            .federations
             .fedi_fee_helper
             .get_fedi_fee_ppm(
                 federation.rpc_federation_id().0,
@@ -3014,6 +3025,7 @@ pub mod tests {
         // Interact with stability pool
         let amount_to_deposit = Amount::from_msats(110_000);
         let fedi_fee_ppm = backup_bridge
+            .federations
             .fedi_fee_helper
             .get_fedi_fee_ppm(
                 federation.rpc_federation_id().0,
@@ -3113,6 +3125,7 @@ pub mod tests {
         // Interact with stability pool
         let amount_to_deposit = Amount::from_msats(110_000);
         let fedi_fee_ppm = original_bridge
+            .federations
             .fedi_fee_helper
             .get_fedi_fee_ppm(
                 federation.rpc_federation_id().0,
@@ -3603,6 +3616,7 @@ pub mod tests {
         // Interact with stability pool
         let amount_to_deposit = Amount::from_msats(110_000);
         let fedi_fee_ppm = backup_bridge
+            .federations
             .fedi_fee_helper
             .get_fedi_fee_ppm(
                 federation.rpc_federation_id().0,

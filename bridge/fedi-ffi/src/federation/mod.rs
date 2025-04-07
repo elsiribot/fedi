@@ -19,25 +19,24 @@ pub mod federation_sm;
 pub mod federation_v2;
 pub mod federations_locker;
 
-#[derive(Clone)]
 pub struct Federations {
     runtime: Arc<BridgeRuntime>,
-    fedi_fee_helper: Arc<FediFeeHelper>,
-    federations: Arc<Mutex<BTreeMap<String, FederationStateMachine>>>,
+    pub fedi_fee_helper: Arc<FediFeeHelper>,
+    federations: Mutex<BTreeMap<String, FederationStateMachine>>,
     federations_locker: FederationsLocker,
 }
 
 impl Federations {
-    pub fn new(runtime: Arc<BridgeRuntime>, fedi_fee_helper: Arc<FediFeeHelper>) -> Self {
+    pub fn new(runtime: Arc<BridgeRuntime>) -> Self {
         Federations {
+            fedi_fee_helper: Arc::new(FediFeeHelper::new(runtime.clone())),
             runtime,
-            fedi_fee_helper,
             federations: Default::default(),
             federations_locker: Default::default(),
         }
     }
 
-    pub async fn load_joined_federations_in_background(&self) {
+    pub async fn load_joined_federations_in_background(self: &Arc<Self>) {
         let joined_federations = self
             .runtime
             .app_state
@@ -54,14 +53,18 @@ impl Federations {
             let fed_sm = FederationStateMachine::prepare_for_load();
             federations.insert(federation_id.clone(), fed_sm.clone());
 
-            futures.push(load_federation(
-                self.runtime.clone(),
-                self.fedi_fee_helper.clone(),
-                self.federations_locker.clone(),
-                federation_id.clone(),
-                federation_info,
-                fed_sm,
-            ));
+            let this = self.clone();
+            futures.push(async move {
+                load_federation(
+                    this.runtime.clone(),
+                    this.fedi_fee_helper.clone(),
+                    &this.federations_locker,
+                    federation_id.clone(),
+                    federation_info,
+                    fed_sm,
+                )
+                .await
+            });
         }
         drop(federations);
 
@@ -203,7 +206,7 @@ impl Federations {
 async fn load_federation(
     runtime: Arc<BridgeRuntime>,
     fedi_fee_helper: Arc<FediFeeHelper>,
-    federations_locker: FederationsLocker,
+    federations_locker: &FederationsLocker,
     federation_id_str: String,
     federation_info: FederationInfo,
     fed_sm: FederationStateMachine,
@@ -213,7 +216,7 @@ async fn load_federation(
             federation_id_str,
             runtime,
             federation_info,
-            &federations_locker,
+            federations_locker,
             &fedi_fee_helper,
         )
         .await;

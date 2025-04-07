@@ -24,18 +24,17 @@ use crate::types::RpcCommunity;
 /// logic related to the functionality of communities. The Bridge struct
 /// contains a Communities struct and it delegates all communities-related calls
 /// to its Communities struct.
-#[derive(Clone)]
 pub struct Communities {
-    pub communities: Arc<Mutex<BTreeMap<String, Community>>>,
-    pub app_state: Arc<AppState>,
+    pub communities: Mutex<BTreeMap<String, Community>>,
+    pub app_state: AppState,
     pub event_sink: EventSink,
     pub task_group: TaskGroup,
     http_client: reqwest::Client,
-    bg_refresh_lock: Arc<UpdateMerge>,
+    bg_refresh_lock: UpdateMerge,
 }
 
 impl Communities {
-    pub async fn init(runtime: Arc<BridgeRuntime>) -> Self {
+    pub async fn init(runtime: Arc<BridgeRuntime>) -> Arc<Self> {
         let http_client = reqwest::Client::new();
 
         let joined_communities = runtime
@@ -56,21 +55,21 @@ impl Communities {
                 )
             });
 
-        let communities = Arc::new(Mutex::new(
+        let communities = Mutex::new(
             futures::future::join_all(joined_communities)
                 .await
                 .into_iter()
                 .collect::<BTreeMap<_, _>>(),
-        ));
+        );
 
-        let this = Self {
+        let this = Arc::new(Self {
             communities,
             app_state: runtime.app_state.clone(),
             event_sink: runtime.event_sink.clone(),
             task_group: runtime.task_group.clone(),
             http_client: reqwest::Client::new(),
             bg_refresh_lock: Default::default(),
-        };
+        });
 
         this.refresh_metas_in_background();
         this
@@ -155,7 +154,7 @@ impl Communities {
         Ok(futures::future::join_all(read_futs).await)
     }
 
-    pub fn refresh_metas_in_background(&self) {
+    pub fn refresh_metas_in_background(self: &Arc<Self>) {
         let this = self.clone();
         self.task_group
             .spawn_cancellable("Communities::refresh_metas_in_background", async move {
@@ -217,7 +216,7 @@ pub struct Community {
     /// Meta is an RwLock since most of the time we'll be reading it but
     /// occasionally we might update it if the remote data changes.
     pub meta: Arc<RwLock<CommunityJson>>,
-    app_state: Arc<AppState>,
+    app_state: AppState,
     event_sink: EventSink,
     http_client: reqwest::Client,
 }
@@ -248,7 +247,7 @@ impl Community {
     /// constructs a Community object and returns it.
     pub async fn join(
         invite_code: &str,
-        app_state: Arc<AppState>,
+        app_state: AppState,
         event_sink: EventSink,
         http_client: reqwest::Client,
     ) -> anyhow::Result<Self> {
@@ -266,7 +265,7 @@ impl Community {
     pub fn from_local_meta(
         invite_code: String,
         info: CommunityInfo,
-        app_state: Arc<AppState>,
+        app_state: AppState,
         event_sink: EventSink,
         http_client: reqwest::Client,
     ) -> Self {
