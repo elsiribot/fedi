@@ -58,6 +58,8 @@ struct MultispendRoom {
     task_wakeup: Notify,
     /// triggered every time state transitions to idle
     idle_notify: Notify,
+    // notification for refreshing balance of multispend account
+    account_info_refresh: Notify,
 }
 
 impl RoomRescannerManager {
@@ -97,20 +99,40 @@ impl RoomRescannerManager {
         }
     }
 
-    /// A stream that yields items whenever a scan for this room completes.
-    pub async fn scan_complete_stream(&self, room_id: &RoomId) -> impl Stream<Item = ()> {
-        let room_state = loop {
+    async fn wait_for_room(&self, room_id: &RoomId) -> Arc<MultispendRoom> {
+        loop {
             let new_room_notification = self.new_room_notify.notified();
             if let Some(room_state) = self.rescan_states.read().get(room_id) {
                 break room_state.clone();
             }
             // no service running for this room, wait for someone to call queue_rescan
             new_room_notification.await;
-        };
+        }
+    }
+
+    /// A stream that yields items whenever a scan for this room completes.
+    pub fn scan_complete_stream<'a>(&'a self, room_id: &'a RoomId) -> impl Stream<Item = ()> + 'a {
         stream! {
+            let room_state = self.wait_for_room(room_id).await;
             loop {
                 // note: subscribe before yielding
                 let notify = room_state.idle_notify.notified();
+                yield ();
+                notify.await
+            }
+        }
+    }
+
+    /// A stream that yields items whenever a scan for this room completes.
+    pub fn subscribe_to_account_info_refresh<'a>(
+        &'a self,
+        room_id: &'a RoomId,
+    ) -> impl Stream<Item = ()> + 'a {
+        stream! {
+            let room_state = self.wait_for_room(room_id).await;
+            loop {
+                // note: subscribe before yielding
+                let notify = room_state.account_info_refresh.notified();
                 yield ();
                 notify.await
             }
@@ -134,6 +156,7 @@ impl RoomRescannerManager {
                     state: RwLock::new(RoomRescanState::Queued),
                     task_wakeup: Notify::new(),
                     idle_notify: Notify::new(),
+                    account_info_refresh: Notify::new(),
                 });
                 v.insert(room_state.clone());
                 drop(states);
@@ -172,6 +195,7 @@ impl RoomRescannerManager {
 
             let mut context = MultispendContext {
                 check_pending_approved_withdrawal_requests: false,
+                refresh_account_info: false,
                 our_id: RpcUserId(
                     self.client
                         .user_id()
@@ -190,6 +214,9 @@ impl RoomRescannerManager {
             if context.check_pending_approved_withdrawal_requests {
                 self.withdrawal_service
                     .check_pending_approved_withdrawal_requests();
+            }
+            if context.refresh_account_info {
+                room_state.account_info_refresh.notify_waiters();
             }
             debug!("Room rescanning completed");
 

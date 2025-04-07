@@ -337,6 +337,7 @@ pub struct MultispendListedEvent {
 pub struct MultispendContext {
     pub check_pending_approved_withdrawal_requests: bool,
     pub our_id: RpcUserId,
+    pub refresh_account_info: bool,
 }
 
 /// Process one event from matrix and persist it to database.
@@ -515,12 +516,16 @@ pub async fn process_event_db_raw(
                     )
                     .await;
                 }
+                WithdrawalProcessResponseOutcome::Completed => {
+                    context.refresh_account_info = true;
+                }
                 _ => {}
             }
             dbtx.insert_entry(&key, &state).await;
         }
 
         MultispendEvent::DepositNotification { fiat_amount, txid } => {
+            context.refresh_account_info = true;
             get_finalized_group_db(dbtx, room_id)
                 .await
                 .ok_or(ProcessEventError::InvalidMessage)?;
@@ -679,6 +684,7 @@ mod tests {
         let mut context = MultispendContext {
             our_id: user1.clone(),
             check_pending_approved_withdrawal_requests: false,
+            refresh_account_info: false,
         };
 
         let invitation = GroupInvitation {

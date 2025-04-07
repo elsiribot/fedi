@@ -2,6 +2,7 @@
 use std::collections::BTreeSet;
 use std::panic::PanicHookInfo;
 use std::path::PathBuf;
+use std::pin::pin;
 use std::str::FromStr;
 use std::sync::atomic::AtomicU64;
 use std::sync::Arc;
@@ -14,7 +15,7 @@ use fedi_bug_report::reused_ecash_proofs::SerializedReusedEcashProofs;
 use fedimint_client::db::ChronologicalOperationLogKey;
 use fedimint_core::core::OperationId;
 use fedimint_core::timing::TimeReporter;
-use futures::Future;
+use futures::{Future, StreamExt as _};
 use lightning_invoice::Bolt11Invoice;
 use macro_rules_attribute::macro_rules_derive;
 use matrix_sdk::ruma::api::client::authenticated_media::get_media_preview;
@@ -61,7 +62,7 @@ use crate::matrix::{
     RpcMatrixUserDirectorySearchResponse, RpcRoomId, RpcRoomMember, RpcRoomNotificationMode,
     RpcSyncIndicator, RpcTimelineEventItemId, RpcTimelineItem, RpcUserId,
 };
-use crate::observable::{Observable, ObservableVec};
+use crate::observable::{Observable, ObservableUpdate, ObservableVec};
 use crate::storage::{DeviceIdentifier, FiatFXInfo};
 use crate::types::{
     federation_v2_to_rpc_federation, FrontendMetadata, GuardianStatus, RpcBridgeStatus,
@@ -1606,11 +1607,16 @@ async fn matrixObserveMultispendGroup(
         .await
 }
 
+#[derive(Debug, Serialize, Deserialize, TS)]
+#[ts(export)]
+struct NetworkError {}
+
 #[macro_rules_derive(rpc_method!)]
 async fn matrixMultispendAccountInfo(
     bridge: &BridgeFull,
     room_id: RpcRoomId,
-) -> anyhow::Result<RpcSPv2SyncResponse> {
+    observable_id: u32,
+) -> anyhow::Result<Observable<Result<RpcSPv2SyncResponse, NetworkError>>> {
     let matrix = bridge.matrix.get().context("matrix not initialized")?;
     let finalized_group = matrix
         .get_multispend_finalized_group(room_id.clone())
@@ -1620,12 +1626,44 @@ async fn matrixMultispendAccountInfo(
         .federations
         .get_federation(&finalized_group.federation_id.0)?;
     fed.ensure_multispend_feature()?;
-    let spv2 = fed.client.spv2()?;
-    Ok(spv2
-        .api
-        .account_sync(finalized_group.spv2_account.id())
-        .await?
-        .into())
+    fed.client.spv2()?;
+
+    let fetch = move || {
+        let fed = fed.clone();
+        let account_id = finalized_group.spv2_account.id();
+        async move {
+            let spv2 = fed.client.spv2().expect("just checked above");
+            spv2.api
+                .account_sync(account_id)
+                .await
+                .map_err(|_| NetworkError {})
+                .map(RpcSPv2SyncResponse::from)
+        }
+    };
+    let room_id = room_id.into_typed()?;
+    let matrix = matrix.clone();
+    bridge
+        .runtime
+        .observable_pool
+        .make_observable(
+            observable_id.into(),
+            fetch().await,
+            move |pool, id| async move {
+                let mut update_index = 0;
+                let mut stream = pin!(matrix.rescanner.subscribe_to_account_info_refresh(&room_id));
+                while let Some(()) = stream.next().await {
+                    pool.send_observable_update(ObservableUpdate::new(
+                        id,
+                        update_index,
+                        fetch().await,
+                    ))
+                    .await;
+                    update_index += 1;
+                }
+                Ok(())
+            },
+        )
+        .await
 }
 
 #[macro_rules_derive(rpc_method!)]

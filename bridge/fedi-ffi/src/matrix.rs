@@ -91,7 +91,7 @@ pub struct Matrix {
     pub runtime: Arc<BridgeRuntime>,
     notification_settings: NotificationSettings,
     /// Manager for room rescanning operations
-    rescanner: RoomRescannerManager,
+    pub rescanner: RoomRescannerManager,
     /// Mutex to prevent concurrent send_multispend_event
     send_multispend_mutex: Mutex<()>,
     // This is used as a synchronization mechanism between sending multispend
@@ -1334,7 +1334,7 @@ impl Matrix {
                 self.get_multispend_group_status(&room_id).await,
                 move |pool, id| async move {
                     let mut update_index = 0;
-                    let mut stream = pin!(this.rescanner.scan_complete_stream(&room_id).await);
+                    let mut stream = pin!(this.rescanner.scan_complete_stream(&room_id));
                     while let Some(()) = stream.next().await {
                         pool.send_observable_update(ObservableUpdate::new(
                             id,
