@@ -21,7 +21,7 @@ use tokio::sync::Notify;
 use tracing::{debug, instrument, warn};
 
 use super::multispend::db::MultispendScannerLastEventKey;
-use super::multispend::{self, MultispendEvent, MULTISPEND_MSGTYPE};
+use super::multispend::{self, MultispendContext, MultispendEvent, MULTISPEND_MSGTYPE};
 use super::{RpcRoomId, RpcUserId};
 use crate::bridge::BridgeRuntime;
 use crate::matrix::AnySyncMessageLikeEvent;
@@ -163,8 +163,16 @@ impl RoomRescannerManager {
             let db = self.runtime.multispend_db();
             let mut dbtx = db.begin_transaction().await;
 
+            let mut context = MultispendContext {
+                our_id: RpcUserId(
+                    self.client
+                        .user_id()
+                        .expect("must be logged in before processing multispend events")
+                        .to_string(),
+                ),
+            };
             if let Err(err) = self
-                .process_multispend_events(room_id, &mut dbtx.to_ref_nc())
+                .process_multispend_events(room_id, &mut dbtx.to_ref_nc(), &mut context)
                 .await
             {
                 warn!(?err, ?room_id, "Error rescanning room");
@@ -198,6 +206,7 @@ impl RoomRescannerManager {
         &self,
         room_id: &RoomId,
         dbtx: &mut DatabaseTransaction<'_>,
+        context: &mut MultispendContext,
     ) -> anyhow::Result<()> {
         let room = self
             .client
@@ -258,6 +267,7 @@ impl RoomRescannerManager {
                 event_id.clone(),
                 event.clone(),
                 event_time,
+                context,
             )
             .await;
         }

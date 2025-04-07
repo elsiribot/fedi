@@ -308,6 +308,10 @@ pub struct MultispendListedEvent {
     pub event: MsEventData,
 }
 
+pub struct MultispendContext {
+    pub our_id: RpcUserId,
+}
+
 /// Process one event from matrix and persist it to database.
 pub async fn process_event_db(
     dbtx: &mut DatabaseTransaction<'_>,
@@ -316,6 +320,7 @@ pub async fn process_event_db(
     event_id: RpcEventId,
     event: MultispendEvent,
     event_time: u64,
+    context: &mut MultispendContext,
 ) {
     tracing::trace!(?event, "processing event");
     if let Err(err) = process_event_db_raw(
@@ -325,6 +330,7 @@ pub async fn process_event_db(
         event_id.clone(),
         event.clone(),
         event_time,
+        context,
     )
     .await
     {
@@ -344,6 +350,7 @@ pub async fn process_event_db_raw(
     event_id: RpcEventId,
     event: MultispendEvent,
     event_time: u64,
+    context: &mut MultispendContext,
 ) -> Result<(), ProcessEventError> {
     match event {
         MultispendEvent::GroupInvitation {
@@ -608,6 +615,9 @@ mod tests {
         let event1_id = RpcEventId("$CD66HAED5npg6074c6pDtLKalHjVfYb2q4Q3LZgrW6o".to_string());
         let event2_id = RpcEventId("$CE66HAED5npg6074c6pDtLKalHjVfYb2q4Q3LZgrW6o".to_string());
         let event3_id = RpcEventId("$CF66HAED5npg6074c6pDtLKalHjVfYb2q4Q3LZgrW6o".to_string());
+        let mut context = MultispendContext {
+            our_id: user1.clone(),
+        };
 
         let invitation = GroupInvitation {
             signers: BTreeSet::from([user1.clone(), user2.clone()]),
@@ -630,7 +640,8 @@ mod tests {
             user1.clone(),
             event1_id.clone(),
             event,
-            1
+            1,
+            &mut context,
         )
         .await
         .is_ok());
@@ -646,7 +657,8 @@ mod tests {
             user2.clone(),
             event2_id.clone(),
             event,
-            2
+            2,
+            &mut context,
         )
         .await
         .is_ok());
@@ -663,7 +675,8 @@ mod tests {
                 user1.clone(),
                 event3_id.clone(),
                 event,
-                3
+                3,
+                &mut context,
             )
             .await,
             Err(ProcessEventError::InvalidMessage)
