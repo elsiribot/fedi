@@ -59,6 +59,7 @@ use mime::Mime;
 use multispend::db::{
     MultispendGroupStatus, MultispendMarkedForScanning, RpcMultispendGroupStatus,
 };
+use multispend::withdrawal_service::WithdrawalService;
 use multispend::{
     FinalizedGroup, GroupInvitation, MsEventData, MultispendEvent, MultispendGroupVoteType,
     WithdrawalResponseType,
@@ -107,6 +108,7 @@ pub struct Matrix {
     // This ensures multispend events are properly synchronized with the server
     // before returning from the send method.
     send_multispend_server_ack: std::sync::Mutex<Option<mpsc::Sender<OwnedEventId>>>,
+    pub withdrawal_service: Arc<WithdrawalService>,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -235,14 +237,16 @@ impl Matrix {
             .with_offline_mode()
             .build()
             .await?;
+        let withdrawal_service = Arc::new(WithdrawalService::default());
         let matrix = Arc::new(Self {
             notification_settings: client.notification_settings().await,
             client: client.clone(),
             sync_service,
             runtime: runtime.clone(),
-            rescanner: RoomRescannerManager::new(client, runtime),
+            rescanner: RoomRescannerManager::new(client, runtime, withdrawal_service.clone()),
             send_multispend_mutex: Mutex::new(()),
             send_multispend_server_ack: std::sync::Mutex::new(None),
+            withdrawal_service,
         });
 
         let encryption_passphrase = Self::encryption_passphrase(matrix_secret);

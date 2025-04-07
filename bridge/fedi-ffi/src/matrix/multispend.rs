@@ -1,3 +1,4 @@
+use std::cmp::Ordering;
 use std::collections::{BTreeMap, BTreeSet};
 use std::str::FromStr;
 
@@ -5,14 +6,16 @@ use db::{
     insert_multispend_chronological_event, MultispendChronologicalEventData,
     MultispendChronologicalEventKeyPrefix, MultispendDepositEventKey, MultispendGroupStatus,
     MultispendGroupStatusKey, MultispendInvalidEvent, MultispendInvitationKey,
-    MultispendWithdrawRequestKey,
+    MultispendPendingApprovedWithdrawalRequestKey, MultispendWithdrawRequestKey,
 };
-use fedimint_core::db::{DatabaseTransaction, IDatabaseTransactionOpsCoreTyped as _};
+use fedimint_core::db::{DatabaseTransaction, IDatabaseTransactionOpsCoreTyped};
 use fedimint_core::encoding::{Decodable, Encodable};
 use fedimint_core::invite_code::InviteCode;
 use futures::StreamExt as _;
 use serde::{Deserialize, Serialize};
-use stability_pool_client::common::{Account, AccountType, AccountUnchecked, TransferRequest};
+use stability_pool_client::common::{
+    Account, AccountType, AccountUnchecked, SignedTransferRequest, TransferRequest,
+};
 use tracing::error;
 use ts_rs::TS;
 
@@ -22,6 +25,7 @@ use crate::types::{
 };
 
 pub mod db;
+pub mod withdrawal_service;
 
 pub const MULTISPEND_MSGTYPE: &str = "xyz.fedi.multispend";
 
@@ -243,20 +247,29 @@ impl WithdrawRequestWithApprovals {
     }
 
     /// Process a withdrawal response (approve, reject, or complete)
-    pub fn process_response(
+    fn process_response(
         &mut self,
         sender: RpcUserId,
         response: WithdrawalResponseType,
         finalized_group: &FinalizedGroup,
-    ) -> Result<(), ProcessEventError> {
-        match response {
+    ) -> Result<WithdrawalProcessResponseOutcome, ProcessEventError> {
+        let outcome = match response {
             WithdrawalResponseType::Approve { signature } => {
                 self.check_can_vote(&sender, finalized_group)?;
                 self.signatures.insert(sender, signature);
+                match u64::try_from(self.signatures.len())
+                    .unwrap_or(u64::MAX)
+                    .cmp(&finalized_group.invitation.threshold)
+                {
+                    Ordering::Less => WithdrawalProcessResponseOutcome::NeedsMoreApproval,
+                    Ordering::Equal => WithdrawalProcessResponseOutcome::Approved,
+                    Ordering::Greater => WithdrawalProcessResponseOutcome::ExtraApproval,
+                }
             }
             WithdrawalResponseType::Reject => {
                 self.check_can_vote(&sender, finalized_group)?;
                 self.rejections.insert(sender);
+                WithdrawalProcessResponseOutcome::Rejection
             }
             WithdrawalResponseType::Complete {
                 fiat_amount: _,
@@ -270,10 +283,23 @@ impl WithdrawRequestWithApprovals {
                     return Err(ProcessEventError::InvalidMessage);
                 }
                 self.completed = Some(txid);
+                WithdrawalProcessResponseOutcome::Completed
             }
-        }
-        Ok(())
+        };
+        Ok(outcome)
     }
+}
+
+enum WithdrawalProcessResponseOutcome {
+    /// More Approval are need.
+    NeedsMoreApproval,
+    /// Final Approval to reach threshold.
+    Approved,
+    /// Approval even after threshold.
+    ExtraApproval,
+    Rejection,
+    /// The transaction completed
+    Completed,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, TS, Encodable, Decodable, PartialEq, Eq)]
@@ -309,6 +335,7 @@ pub struct MultispendListedEvent {
 }
 
 pub struct MultispendContext {
+    pub check_pending_approved_withdrawal_requests: bool,
     pub our_id: RpcUserId,
 }
 
@@ -442,7 +469,7 @@ pub async fn process_event_db_raw(
         }
 
         MultispendEvent::WithdrawalResponse { request, response } => {
-            let finalized_group = get_finalized_group_db(dbtx, room_id)
+            let finalized_group = get_finalized_group_db(dbtx, &room_id.clone())
                 .await
                 .ok_or(ProcessEventError::InvalidMessage)?;
 
@@ -455,7 +482,41 @@ pub async fn process_event_db_raw(
                 .get_value(&key)
                 .await
                 .ok_or(ProcessEventError::InvalidMessage)?;
-            state.process_response(sender, response, &finalized_group)?;
+            match state.process_response(sender, response.clone(), &finalized_group)? {
+                WithdrawalProcessResponseOutcome::Approved if context.our_id == state.sender => {
+                    context.check_pending_approved_withdrawal_requests = true;
+                    let signatures = state
+                        .signatures
+                        .iter()
+                        .map(|(user_id, signature)| {
+                            let user_pub_key = finalized_group.pubkeys.get(user_id).expect(
+                                "must be validated by WithdrawalRequestWithApprovals::can_vote",
+                            );
+                            let key_index = finalized_group
+                                .spv2_account
+                                .pub_keys()
+                                .position(|pub_key| &user_pub_key.0 == pub_key)
+                                .expect("invariant of finalized group");
+                            (u64::try_from(key_index).expect("must fit"), signature.0)
+                        })
+                        .collect();
+                    dbtx.insert_entry(
+                        &MultispendPendingApprovedWithdrawalRequestKey {
+                            room_id: room_id.clone(),
+                            request_event_id: request,
+                            transfer_request: SignedTransferRequest::new(
+                                state.request.clone(),
+                                signatures,
+                            )
+                            .unwrap(),
+                            federation_id: finalized_group.federation_id.clone(),
+                        },
+                        &(),
+                    )
+                    .await;
+                }
+                _ => {}
+            }
             dbtx.insert_entry(&key, &state).await;
         }
 
@@ -617,6 +678,7 @@ mod tests {
         let event3_id = RpcEventId("$CF66HAED5npg6074c6pDtLKalHjVfYb2q4Q3LZgrW6o".to_string());
         let mut context = MultispendContext {
             our_id: user1.clone(),
+            check_pending_approved_withdrawal_requests: false,
         };
 
         let invitation = GroupInvitation {

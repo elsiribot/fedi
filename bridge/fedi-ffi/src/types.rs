@@ -1055,6 +1055,11 @@ pub enum SPv2TransferMetadata {
     },
     /// Deposit into multispend account
     MultispendDeposit { room: RpcRoomId },
+    /// Withdraw from multispend account
+    MultispendWithdrawal {
+        room: RpcRoomId,
+        request_id: RpcEventId,
+    },
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]

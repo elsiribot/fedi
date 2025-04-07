@@ -2,6 +2,7 @@ use fedimint_core::db::{DatabaseTransaction, IDatabaseTransactionOpsCoreTyped as
 use fedimint_core::encoding::{Decodable, Encodable};
 use fedimint_core::{impl_db_lookup, impl_db_record};
 use futures::StreamExt as _;
+use stability_pool_client::common::SignedTransferRequest;
 use ts_rs::TS;
 
 use super::{
@@ -9,7 +10,7 @@ use super::{
     WithdrawRequestWithApprovals,
 };
 use crate::matrix::RpcRoomId;
-use crate::types::RpcEventId;
+use crate::types::{RpcEventId, RpcFederationId};
 
 pub enum MultispendDbPrefix {
     /// (room_id) => MultispendGroupStatus
@@ -30,6 +31,9 @@ pub enum MultispendDbPrefix {
     MultispendMarkedForScanning = 0x07,
     /// (event_id) => () to check if a multispend event is invalid.
     MultispendInvalidEvent = 0x08,
+    /// (room_id, event_id) => () list of our withdrawal requests that are not
+    /// submited to federation yet
+    MultispendPendingApprovedWithdrawalRequests = 0x09,
 }
 
 /// Represents the current status of a multispend group in a room
@@ -188,4 +192,26 @@ impl_db_record!(
     key = MultispendInvalidEvent,
     value = (),
     db_prefix = MultispendDbPrefix::MultispendInvalidEvent,
+);
+
+#[derive(Debug, Clone, Encodable, Decodable)]
+pub struct MultispendPendingApprovedWithdrawalRequestKey {
+    pub room_id: RpcRoomId,
+    pub request_event_id: RpcEventId,
+    pub federation_id: RpcFederationId,
+    pub transfer_request: SignedTransferRequest,
+}
+
+impl_db_record!(
+    key = MultispendPendingApprovedWithdrawalRequestKey,
+    value = (),
+    db_prefix = MultispendDbPrefix::MultispendPendingApprovedWithdrawalRequests,
+);
+
+#[derive(Debug, Clone, Encodable, Decodable)]
+pub struct MultispendPendingApprovedWithdrawalRequestKeyPrefix;
+
+impl_db_lookup!(
+    key = MultispendPendingApprovedWithdrawalRequestKey,
+    query_prefix = MultispendPendingApprovedWithdrawalRequestKeyPrefix,
 );
