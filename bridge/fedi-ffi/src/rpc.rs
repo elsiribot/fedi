@@ -13,7 +13,6 @@ use bitcoin::Amount;
 use fedi_bug_report::reused_ecash_proofs::SerializedReusedEcashProofs;
 use fedimint_client::db::ChronologicalOperationLogKey;
 use fedimint_core::core::OperationId;
-use fedimint_core::invite_code::InviteCode;
 use fedimint_core::timing::TimeReporter;
 use futures::Future;
 use lightning_invoice::Bolt11Invoice;
@@ -1608,29 +1607,21 @@ async fn matrixMultispendAccountInfo(
     room_id: RpcRoomId,
 ) -> anyhow::Result<RpcSPv2SyncResponse> {
     let matrix = bridge.matrix.get().context("matrix not initialized")?;
-    let Some(MultispendGroupStatus::Finalized {
-        finalized_group,
-        sp_account: group_sp_account,
-    }) = matrix
-        .get_multispend_group_status(&room_id.into_typed()?)
-        .await
-    else {
-        anyhow::bail!("multispend group not finalized yet")
-    };
-    let invite_code = InviteCode::from_str(
-        &finalized_group
-            .invitation
-            .federation_invite_code
-            .to_lowercase(),
-    )?;
-    let federation_id = invite_code.federation_id();
+    let finalized_group = matrix
+        .get_multispend_finalized_group(room_id.clone())
+        .await?
+        .context("multispend group not finalized yet")?;
     let fed = bridge
         .federations
-        .get_federation(&federation_id.to_string())?;
+        .get_federation(&finalized_group.federation_id.0)?;
     fed.spv2_feature_state()
         .ok_or(anyhow::anyhow!("SPv2 not enabled"))?;
     let spv2 = fed.client.spv2()?;
-    Ok(spv2.api.account_sync(group_sp_account.id()).await?.into())
+    Ok(spv2
+        .api
+        .account_sync(finalized_group.spv2_account.id())
+        .await?
+        .into())
 }
 
 #[macro_rules_derive(rpc_method!)]
@@ -1691,26 +1682,16 @@ async fn matrixMultispendDeposit(
     amount: RpcFiatAmount,
 ) -> anyhow::Result<()> {
     let matrix = bridge.matrix.get().context("matrix not initialized")?;
-    let Some(MultispendGroupStatus::Finalized {
-        finalized_group,
-        sp_account: group_sp_account,
-    }) = matrix
-        .get_multispend_group_status(&room_id.into_typed()?)
-        .await
-    else {
-        anyhow::bail!("multispend group not finalized yet")
-    };
-    let invite_code = InviteCode::from_str(
-        &finalized_group
-            .invitation
-            .federation_invite_code
-            .to_lowercase(),
-    )?;
-    let federation_id = invite_code.federation_id();
+    let finalized_group = matrix
+        .get_multispend_finalized_group(room_id.clone())
+        .await?
+        .context("multispend group not finalized yet")?;
     let fed = bridge
         .federations
-        .get_federation(&federation_id.to_string())?;
-    fed.multispend_deposit(FiatAmount(amount.0), group_sp_account.id())
+        .get_federation(&finalized_group.federation_id.0)?;
+    fed.spv2_feature_state()
+        .ok_or(anyhow::anyhow!("SPv2 not enabled"))?;
+    fed.multispend_deposit(FiatAmount(amount.0), finalized_group.spv2_account.id())
         .await?;
     Ok(())
 }
@@ -1722,27 +1703,15 @@ async fn matrixSendMultispendWithdrawalRequest(
     description: String,
 ) -> anyhow::Result<()> {
     let matrix = bridge.matrix.get().context("matrix not initialized")?;
-    let Some(MultispendGroupStatus::Finalized {
-        finalized_group,
-        sp_account: group_sp_account,
-    }) = matrix
-        .get_multispend_group_status(&room_id.into_typed()?)
-        .await
-    else {
-        anyhow::bail!("multispend group not finalized yet")
-    };
-    let invite_code = InviteCode::from_str(
-        &finalized_group
-            .invitation
-            .federation_invite_code
-            .to_lowercase(),
-    )?;
-    let federation_id = invite_code.federation_id();
+    let finalized_group = matrix
+        .get_multispend_finalized_group(room_id.clone())
+        .await?
+        .context("multispend group not finalized yet")?;
     let fed = bridge
         .federations
-        .get_federation(&federation_id.to_string())?;
+        .get_federation(&finalized_group.federation_id.0)?;
     let transfer_request =
-        fed.multispend_create_transfer_request(FiatAmount(amount.0), group_sp_account)?;
+        fed.multispend_create_transfer_request(FiatAmount(amount.0), finalized_group.spv2_account)?;
     matrix
         .send_multispend_withdraw_request(&room_id.into_typed()?, transfer_request, description)
         .await?;
@@ -1756,14 +1725,10 @@ async fn matrixSendMultispendWithdrawalApprove(
     withdraw_request_id: RpcEventId,
 ) -> anyhow::Result<()> {
     let matrix = bridge.matrix.get().context("matrix not initialized")?;
-    let Some(MultispendGroupStatus::Finalized {
-        finalized_group, ..
-    }) = matrix
-        .get_multispend_group_status(&room_id.into_typed()?)
-        .await
-    else {
-        anyhow::bail!("multispend group not finalized yet")
-    };
+    let finalized_group = matrix
+        .get_multispend_finalized_group(room_id.clone())
+        .await?
+        .context("multispend group not finalized yet")?;
     let Some(MsEventData::WithdrawalRequest(WithdrawRequestWithApprovals {
         request: transfer_request,
         ..
@@ -1773,17 +1738,9 @@ async fn matrixSendMultispendWithdrawalApprove(
     else {
         anyhow::bail!("invalid matrix withdraw request id")
     };
-    // FIXME: store federation id somewhere so it is easier to parse
-    let invite_code = InviteCode::from_str(
-        &finalized_group
-            .invitation
-            .federation_invite_code
-            .to_lowercase(),
-    )?;
-    let federation_id = invite_code.federation_id();
     let fed = bridge
         .federations
-        .get_federation(&federation_id.to_string())?;
+        .get_federation(&finalized_group.federation_id.0)?;
     let signature = fed.multispend_approve_withdrawal(room_id.0.clone(), &transfer_request)?;
 
     matrix

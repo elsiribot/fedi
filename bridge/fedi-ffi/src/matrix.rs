@@ -58,8 +58,8 @@ use matrix_sdk_ui::timeline::{default_event_filter, TimelineEventItemId};
 use mime::Mime;
 use multispend::db::{MultispendGroupStatus, MultispendMarkedForScanning};
 use multispend::{
-    GroupInvitation, GroupInvitationWithKeys, MsEventData, MultispendEvent,
-    MultispendGroupVoteType, WithdrawalResponseType,
+    FinalizedGroup, GroupInvitation, MsEventData, MultispendEvent, MultispendGroupVoteType,
+    WithdrawalResponseType,
 };
 use stability_pool_client::common::TransferRequest;
 use tokio::sync::{mpsc, Mutex};
@@ -1435,11 +1435,10 @@ impl Matrix {
     pub async fn get_multispend_finalized_group(
         &self,
         room_id: RpcRoomId,
-    ) -> anyhow::Result<Option<GroupInvitationWithKeys>> {
+    ) -> anyhow::Result<Option<FinalizedGroup>> {
         let multispend_db = self.runtime.multispend_db();
         let mut dbtx = multispend_db.begin_transaction_nc().await;
-        let finalized = multispend::get_finalized_group_db(&mut dbtx, &room_id).await;
-        Ok(finalized.map(|(group, _account)| group))
+        Ok(multispend::get_finalized_group_db(&mut dbtx, &room_id).await)
     }
 
     /// Get all accumulated data for an event id.
@@ -1482,8 +1481,9 @@ mod tests {
     use fedimint_core::util::retry;
     use fedimint_derive_secret::ChildId;
     use fedimint_logging::TracingSetup;
-    use multispend::GroupInvitation;
+    use multispend::{GroupInvitation, GroupInvitationWithKeys};
     use rand::{thread_rng, Rng};
+    use stability_pool_client::common::{AccountType, AccountUnchecked};
     use tempfile::TempDir;
     use tokio::sync::mpsc;
     use tracing::info;
@@ -1495,7 +1495,7 @@ mod tests {
     use crate::ffi::PathBasedStorage;
     use crate::matrix::multispend::MultispendGroupVoteType;
     use crate::rpc::tests::MockFediApi;
-    use crate::types::RpcPublicKey;
+    use crate::types::{RpcFederationId, RpcPublicKey};
 
     const TEST_HOME_SERVER: &str = "staging.m1.8fa.in";
     const TEST_SLIDING_SYNC: &str = "https://staging.sliding.m1.8fa.in";
@@ -1753,6 +1753,9 @@ mod tests {
         Ok(())
     }
 
+    const MOCK_FEDERATION_INVITE_CODE: &str = "fed11qgqrgvnhwden5te0v9k8q6rp9ekh2arfdeukuet595cr2ttpd3jhq6rzve6zuer9wchxvetyd938gcewvdhk6tcqqysptkuvknc7erjgf4em3zfh90kffqf9srujn6q53d6r056e4apze5cw27h75";
+    const MOCK_FEDERATION_ID: &str =
+        "15db8cb4f1ec8e484d73b889372bec94812580f929e8148b7437d359af422cd3";
     #[ignore]
     #[tokio::test(flavor = "multi_thread")]
     async fn test_multispend_minimal() -> Result<()> {
@@ -1781,7 +1784,7 @@ mod tests {
         let invitation = GroupInvitation {
             signers: BTreeSet::from([user1.clone(), user2.clone()]),
             threshold: 2,
-            federation_invite_code: "test".to_string(),
+            federation_invite_code: MOCK_FEDERATION_INVITE_CODE.to_string(),
             federation_name: "test".to_string(),
         };
         let event = MultispendEvent::GroupInvitation {
@@ -1833,7 +1836,7 @@ mod tests {
         let invitation = GroupInvitation {
             signers: BTreeSet::from([user1.clone(), user2.clone()]),
             threshold: 2,
-            federation_invite_code: "test".to_string(),
+            federation_invite_code: MOCK_FEDERATION_INVITE_CODE.to_string(),
             federation_name: "test".to_string(),
         };
 
@@ -1860,6 +1863,7 @@ mod tests {
                 invitation: invitation.clone(),
                 pubkeys: BTreeMap::from_iter([(user1.clone(), RpcPublicKey(pk1))]),
                 rejections: BTreeSet::new(),
+                federation_id: RpcFederationId(MOCK_FEDERATION_ID.into())
             }))
         );
         let event_data2 = retry(
@@ -1903,13 +1907,20 @@ mod tests {
         .await?;
         assert_eq!(
             final_group1,
-            GroupInvitationWithKeys {
-                invitation,
+            FinalizedGroup {
                 pubkeys: BTreeMap::from_iter([
                     (user1.clone(), RpcPublicKey(pk1)),
                     (user2.clone(), RpcPublicKey(pk2))
                 ]),
-                rejections: BTreeSet::new(),
+                spv2_account: AccountUnchecked {
+                    acc_type: AccountType::Seeker,
+                    pub_keys: BTreeSet::from_iter([pk1, pk2]),
+                    threshold: invitation.threshold
+                }
+                .try_into()
+                .unwrap(),
+                invitation,
+                federation_id: RpcFederationId(MOCK_FEDERATION_ID.into()),
             }
         );
 
@@ -1945,7 +1956,7 @@ mod tests {
         let invitation = GroupInvitation {
             signers: BTreeSet::from([user1.clone(), user2.clone()]),
             threshold: 2,
-            federation_invite_code: "test".to_string(),
+            federation_invite_code: MOCK_FEDERATION_INVITE_CODE.to_string(),
             federation_name: "test".to_string(),
         };
 
@@ -1972,6 +1983,7 @@ mod tests {
                 invitation: invitation.clone(),
                 pubkeys: BTreeMap::from_iter([(user1.clone(), RpcPublicKey(pk1))]),
                 rejections: BTreeSet::new(),
+                federation_id: RpcFederationId(MOCK_FEDERATION_ID.into())
             }))
         );
 
@@ -2030,6 +2042,7 @@ mod tests {
                 invitation: invitation.clone(),
                 pubkeys: BTreeMap::from_iter([(user1.clone(), RpcPublicKey(pk1))]),
                 rejections: BTreeSet::from([user2.clone()]),
+                federation_id: RpcFederationId(MOCK_FEDERATION_ID.into())
             })
         );
 

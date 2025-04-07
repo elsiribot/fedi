@@ -291,7 +291,7 @@ pub struct RpcStabilityPoolConfig {
     pub cycle_duration: RpcDuration,
 }
 
-#[derive(Debug, Eq, PartialEq, Hash, Serialize, Deserialize, Clone, TS)]
+#[derive(Debug, Eq, PartialEq, Hash, Serialize, Deserialize, Clone, TS, Encodable, Decodable)]
 #[ts(export)]
 pub struct RpcFederationId(pub String);
 

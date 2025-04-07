@@ -169,6 +169,12 @@ export type FiatFXInfo = {
   btcToFiatHundredths: number;
 };
 
+export type FinalizedGroup = {
+  invitation: GroupInvitation;
+  pubkeys: { [key in RpcUserId]?: RpcPublicKey };
+  federationId: RpcFederationId;
+};
+
 export type FrontendMetadata = {
   initialNotes: string | null;
   recipientMatrixId: string | null;
@@ -189,6 +195,7 @@ export type GroupInvitationWithKeys = {
   invitation: GroupInvitation;
   pubkeys: { [key in RpcUserId]?: RpcPublicKey };
   rejections: Array<RpcUserId>;
+  federationId: RpcFederationId;
 };
 
 export type GuardianStatus =
@@ -247,7 +254,7 @@ export type MultispendEvent =
  * Represents the current status of a multispend group in a room
  */
 export type MultispendGroupStatus =
-  | { status: "finalized"; finalized_group: GroupInvitationWithKeys }
+  | { status: "finalized"; finalized_group: FinalizedGroup }
   | { status: "activeInvitation"; active_invite_id: RpcEventId };
 
 export type MultispendGroupVoteType =
