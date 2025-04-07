@@ -89,7 +89,7 @@ pub struct StabilityPoolV2FeatureConfig {
     pub state: StabilityPoolV2FeatureConfigState,
 }
 
-#[derive(Debug, Clone, TS, Serialize)]
+#[derive(Debug, Clone, TS, Serialize, PartialEq, Eq)]
 #[ts(export)]
 pub enum StabilityPoolV2FeatureConfigState {
     SpV2Only,

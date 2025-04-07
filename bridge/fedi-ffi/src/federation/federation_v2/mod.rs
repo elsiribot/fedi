@@ -16,7 +16,7 @@ use ::serde::{Deserialize, Serialize};
 use anyhow::{anyhow, bail, ensure, Context, Result};
 use bitcoin::address::NetworkUnchecked;
 use bitcoin::hex::DisplayHex;
-use bitcoin::secp256k1::PublicKey;
+use bitcoin::secp256k1::{self, schnorr, Keypair, PublicKey};
 use bitcoin::{Address, Network};
 use client::ClientExt;
 use db::{
@@ -82,6 +82,7 @@ use serde::de::DeserializeOwned;
 use spv2_sweeper_service::SPv2SweeperService;
 use stability_pool_client::common::{
     Account, AccountId, AccountType, FiatAmount, FiatOrAll, SignedTransferRequest, TransferRequest,
+    TransferRequestId,
 };
 use stability_pool_client::db::{
     CachedSyncResponseKey, CachedSyncResponseValue, SeekLifetimeFeeKey, UserOperationHistoryItem,
@@ -117,7 +118,9 @@ use crate::constants::{
 use crate::db::FederationPendingRejoinFromScratchKey;
 use crate::error::ErrorCode;
 use crate::event::{Event, EventSink, RecoveryProgressEvent, TypedEventExt};
-use crate::features::{FeatureCatalog, StabilityPoolV2FeatureConfig};
+use crate::features::{
+    FeatureCatalog, StabilityPoolV2FeatureConfig, StabilityPoolV2FeatureConfigState,
+};
 use crate::fedi_fee::{FediFeeHelper, FediFeeRemittanceService};
 use crate::storage::{AppState, FediFeeSchedule};
 use crate::types::{
@@ -3986,6 +3989,68 @@ impl FederationV2 {
         };
 
         Ok(())
+    }
+
+    pub fn ensure_multispend_feature(&self) -> anyhow::Result<()> {
+        anyhow::ensure!(
+            self.spv2_feature_state().map(|x| x.state)
+                == Some(StabilityPoolV2FeatureConfigState::Multispend),
+            "multispend feature not enabled"
+        );
+        Ok(())
+    }
+    pub fn multispend_public_key(&self, group_id: String) -> anyhow::Result<PublicKey> {
+        self.ensure_multispend_feature()?;
+        let spv2 = self.client.spv2()?;
+        let pubkey = spv2
+            .secret_key_with_passphrase(group_id)?
+            .public_key(secp256k1::SECP256K1);
+        Ok(pubkey)
+    }
+
+    pub async fn multispend_deposit(
+        &self,
+        amount: FiatAmount,
+        group_account: AccountId,
+    ) -> anyhow::Result<()> {
+        self.ensure_multispend_feature()?;
+        self.spv2_simple_transfer(group_account, amount).await?;
+        // FIXME: send post deposit notification
+        Ok(())
+    }
+
+    pub fn multispend_create_transfer_request(
+        &self,
+        amount: FiatAmount,
+        group_account: Account,
+    ) -> anyhow::Result<TransferRequest> {
+        self.ensure_multispend_feature()?;
+        let spv2 = self.client.spv2()?;
+        let transfer_request = TransferRequest::new(
+            rand::thread_rng().gen(),
+            group_account,
+            FiatAmount(amount.0),
+            spv2.our_account(AccountType::Seeker).id(),
+            vec![],
+            u64::MAX,
+            None,
+        )?;
+        Ok(transfer_request)
+    }
+
+    pub fn multispend_approve_withdrawal(
+        &self,
+        group_id: String,
+        transfer_request: &TransferRequest,
+    ) -> anyhow::Result<schnorr::Signature> {
+        self.ensure_multispend_feature()?;
+        let spv2 = self.client.spv2()?;
+        let key = Keypair::from_secret_key(
+            secp256k1::SECP256K1,
+            &spv2.secret_key_with_passphrase(group_id)?,
+        );
+        let message = secp256k1::Message::from(&TransferRequestId::from(transfer_request));
+        Ok(key.sign_schnorr(message))
     }
 }
 

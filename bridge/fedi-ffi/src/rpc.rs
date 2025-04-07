@@ -1,5 +1,5 @@
 #![allow(non_snake_case, non_camel_case_types)]
-use std::collections::BTreeMap;
+use std::collections::BTreeSet;
 use std::panic::PanicHookInfo;
 use std::path::PathBuf;
 use std::str::FromStr;
@@ -8,8 +8,7 @@ use std::sync::Arc;
 use std::time::{Duration, UNIX_EPOCH};
 
 use anyhow::Context;
-use bitcoin::key::Keypair;
-use bitcoin::secp256k1::{self, Message};
+use bitcoin::secp256k1::Message;
 use bitcoin::Amount;
 use fedi_bug_report::reused_ecash_proofs::SerializedReusedEcashProofs;
 use fedimint_client::db::ChronologicalOperationLogKey;
@@ -28,13 +27,10 @@ use matrix_sdk::ruma::events::room::MediaSource;
 use matrix_sdk::ruma::OwnedEventId;
 use matrix_sdk::RoomInfo;
 use mime::Mime;
-use rand::Rng as _;
 use serde::de::DeserializeOwned;
 use serde::{Deserialize, Serialize};
 use stability_pool_client::api::StabilityPoolApiExt;
-use stability_pool_client::common::{
-    AccountType, FiatAmount, FiatOrAll, SignedTransferRequest, TransferRequest, TransferRequestId,
-};
+use stability_pool_client::common::{FiatAmount, FiatOrAll};
 pub use tokio;
 use tracing::{error, info, instrument, Level};
 
@@ -1641,21 +1637,23 @@ async fn matrixMultispendAccountInfo(
 async fn matrixSendMultispendGroupInvitation(
     bridge: &BridgeFull,
     room_id: RpcRoomId,
-    invitation: GroupInvitation,
+    signers: BTreeSet<RpcUserId>,
+    threshold: u32,
+    federation_id: RpcFederationId,
+    federation_name: String,
 ) -> anyhow::Result<()> {
-    let invite_code = InviteCode::from_str(&invitation.federation_invite_code.to_lowercase())?;
-    let federation_id = invite_code.federation_id().to_string();
-    let fed = bridge.federations.get_federation(&federation_id)?;
-    fed.spv2_feature_state()
-        .ok_or(anyhow::anyhow!("SPv2 not enabled"))?;
-    let spv2 = fed.client.spv2()?;
-    let proposer_pubkey = spv2
-        .secret_key_with_passphrase(room_id.0.clone())?
-        .public_key(secp256k1::SECP256K1);
+    let fed = bridge.federations.get_federation(&federation_id.0)?;
+    let proposer_pubkey = fed.multispend_public_key(room_id.0.clone())?;
+    let invitation = GroupInvitation {
+        signers,
+        threshold: threshold.into(),
+        federation_invite_code: fed.get_invite_code().await,
+        federation_name,
+    };
     bridge
         .matrix
         .get()
-        .ok_or(anyhow::anyhow!("matrix no initialized"))?
+        .ok_or(ErrorCode::MatrixNotInitialized)?
         .send_multispend_group_invitation(
             &room_id.into_typed()?,
             invitation,
@@ -1712,23 +1710,8 @@ async fn matrixMultispendDeposit(
     let fed = bridge
         .federations
         .get_federation(&federation_id.to_string())?;
-    fed.spv2_feature_state()
-        .ok_or(anyhow::anyhow!("SPv2 not enabled"))?;
-    let spv2 = fed.client.spv2()?;
-    let transfer_request = TransferRequest::new(
-        rand::thread_rng().gen(),
-        spv2.our_account(AccountType::Seeker),
-        FiatAmount(amount.0),
-        group_sp_account.id(),
-        vec![],
-        u64::MAX,
-        None,
-    )?;
-    let signature = spv2.sign_transfer_request(&transfer_request);
-    let signed_request =
-        SignedTransferRequest::new(transfer_request, BTreeMap::from_iter([(0, signature)]))?;
-    spv2.transfer(signed_request).await?;
-    // FIXME: send post deposit notification
+    fed.multispend_deposit(FiatAmount(amount.0), group_sp_account.id())
+        .await?;
     Ok(())
 }
 #[macro_rules_derive(rpc_method!)]
@@ -1758,19 +1741,8 @@ async fn matrixSendMultispendWithdrawalRequest(
     let fed = bridge
         .federations
         .get_federation(&federation_id.to_string())?;
-    fed.spv2_feature_state()
-        .ok_or(anyhow::anyhow!("SPv2 not enabled"))?;
-    let spv2 = fed.client.spv2()?;
-
-    let transfer_request = TransferRequest::new(
-        rand::thread_rng().gen(),
-        group_sp_account,
-        FiatAmount(amount.0),
-        spv2.our_account(AccountType::Seeker).id(),
-        vec![],
-        u64::MAX,
-        None,
-    )?;
+    let transfer_request =
+        fed.multispend_create_transfer_request(FiatAmount(amount.0), group_sp_account)?;
     matrix
         .send_multispend_withdraw_request(&room_id.into_typed()?, transfer_request, description)
         .await?;
@@ -1812,15 +1784,7 @@ async fn matrixSendMultispendWithdrawalApprove(
     let fed = bridge
         .federations
         .get_federation(&federation_id.to_string())?;
-    fed.spv2_feature_state()
-        .ok_or(anyhow::anyhow!("SPv2 not enabled"))?;
-    let spv2 = fed.client.spv2()?;
-    let key = Keypair::from_secret_key(
-        secp256k1::SECP256K1,
-        &spv2.secret_key_with_passphrase(room_id.0.clone())?,
-    );
-    let message = secp256k1::Message::from(&TransferRequestId::from(&transfer_request));
-    let signature = key.sign_schnorr(message);
+    let signature = fed.multispend_approve_withdrawal(room_id.0.clone(), &transfer_request)?;
 
     matrix
         .respond_multispend_withdraw(

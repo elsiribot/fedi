@@ -1590,7 +1590,10 @@ export type matrixSendMessageJson = {
 
 export type matrixSendMultispendGroupInvitation = {
   roomId: RpcRoomId;
-  invitation: GroupInvitation;
+  signers: Array<RpcUserId>;
+  threshold: number;
+  federationId: RpcFederationId;
+  federationName: string;
 };
 
 export type matrixSendMultispendWithdrawalApprove = {
