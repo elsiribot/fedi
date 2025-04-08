@@ -40,16 +40,15 @@ pub enum RoomRescanState {
 }
 
 /// Manages room rescanning operations
-#[derive(Clone)]
 pub struct RoomRescannerManager {
     client: Client,
     /// Maps room IDs to their state sender channels.
     /// see methods for explaination.
-    rescan_states: Arc<RwLock<HashMap<OwnedRoomId, Arc<MultispendRoom>>>>,
-    new_room_notify: Arc<Notify>,
+    rescan_states: RwLock<HashMap<OwnedRoomId, Arc<MultispendRoom>>>,
+    new_room_notify: Notify,
     /// Reference to the bridge runtime for spawning tasks
     runtime: Arc<BridgeRuntime>,
-    withdrawal_service: Arc<WithdrawalService>,
+    withdrawal_service: WithdrawalService,
 }
 
 struct MultispendRoom {
@@ -67,12 +66,12 @@ impl RoomRescannerManager {
     pub fn new(
         client: Client,
         runtime: Arc<BridgeRuntime>,
-        withdrawal_service: Arc<WithdrawalService>,
+        withdrawal_service: WithdrawalService,
     ) -> Self {
         Self {
             client,
-            rescan_states: Arc::new(RwLock::new(HashMap::new())),
-            new_room_notify: Arc::default(),
+            rescan_states: RwLock::new(HashMap::new()),
+            new_room_notify: Notify::new(),
             runtime,
             withdrawal_service,
         }
@@ -80,7 +79,7 @@ impl RoomRescannerManager {
 
     /// Wait for any rescan operations to complete for this room
     /// Queues a rescan if this room was not scanned in this run.
-    pub async fn wait_for_scanned(&self, room_id: &RoomId) {
+    pub async fn wait_for_scanned(self: &Arc<Self>, room_id: &RoomId) {
         let never_scanned = { !self.rescan_states.read().contains_key(room_id) };
         if never_scanned {
             self.queue_rescan(room_id);
@@ -142,7 +141,7 @@ impl RoomRescannerManager {
     /// Queues a room for rescanning
     // Just sets the room state to `Queued` and background service will eventually
     // completes.
-    pub fn queue_rescan(&self, room_id: &RoomId) {
+    pub fn queue_rescan(self: &Arc<Self>, room_id: &RoomId) {
         let mut states = self.rescan_states.write();
         match states.entry(room_id.to_owned()) {
             // if task was running, just update the state, the task will pick this up.

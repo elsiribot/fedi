@@ -91,7 +91,7 @@ pub struct Matrix {
     pub runtime: Arc<BridgeRuntime>,
     notification_settings: NotificationSettings,
     /// Manager for room rescanning operations
-    pub rescanner: RoomRescannerManager,
+    pub rescanner: Arc<RoomRescannerManager>,
     /// Mutex to prevent concurrent send_multispend_event
     send_multispend_mutex: Mutex<()>,
     // This is used as a synchronization mechanism between sending multispend
@@ -108,7 +108,6 @@ pub struct Matrix {
     // This ensures multispend events are properly synchronized with the server
     // before returning from the send method.
     send_multispend_server_ack: std::sync::Mutex<Option<mpsc::Sender<OwnedEventId>>>,
-    pub withdrawal_service: Arc<WithdrawalService>,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -237,16 +236,19 @@ impl Matrix {
             .with_offline_mode()
             .build()
             .await?;
-        let withdrawal_service = Arc::new(WithdrawalService::default());
+        let withdrawal_service = WithdrawalService::default();
         let matrix = Arc::new(Self {
             notification_settings: client.notification_settings().await,
             client: client.clone(),
             sync_service,
             runtime: runtime.clone(),
-            rescanner: RoomRescannerManager::new(client, runtime, withdrawal_service.clone()),
+            rescanner: Arc::new(RoomRescannerManager::new(
+                client,
+                runtime,
+                withdrawal_service,
+            )),
             send_multispend_mutex: Mutex::new(()),
             send_multispend_server_ack: std::sync::Mutex::new(None),
-            withdrawal_service,
         });
 
         let encryption_passphrase = Self::encryption_passphrase(matrix_secret);
