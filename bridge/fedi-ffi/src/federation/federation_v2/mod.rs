@@ -79,6 +79,7 @@ use lightning_invoice::{Bolt11Invoice, RoutingFees};
 use meta::{LegacyMetaSourceWithExternalUrl, MetaEntries, MetaServiceExt};
 use rand::Rng;
 use serde::de::DeserializeOwned;
+use spv2_sweeper_service::SPv2SweeperService;
 use stability_pool_client::common::{
     Account, AccountId, AccountType, FiatAmount, FiatOrAll, SignedTransferRequest, TransferRequest,
 };
@@ -133,6 +134,7 @@ use crate::utils::{display_currency, to_unix_time};
 
 mod backup_service;
 mod ln_gateway_service;
+mod spv2_sweeper_service;
 mod stability_pool_sweeper_service;
 
 pub const GUARDIAN_STATUS_TIMEOUT: Duration = Duration::from_secs(10);
@@ -196,6 +198,7 @@ pub struct FederationV2 {
     // Stability pool v2 services for syncing accout history between client and server
     pub spv2_sync_service: OnceCell<StabilityPoolSyncService>,
     pub spv2_history_service: OnceCell<StabilityPoolHistoryService>,
+    pub spv2_sweeper_service: OnceCell<SPv2SweeperService>,
 }
 
 impl FederationV2 {
@@ -247,6 +250,7 @@ impl FederationV2 {
             guard,
             spv2_sync_service: Default::default(),
             spv2_history_service: Default::default(),
+            spv2_sweeper_service: Default::default(),
         });
         if !recovering {
             federation.start_background_tasks().await;
@@ -347,6 +351,15 @@ impl FederationV2 {
                 let history_service = fed.spv2_history_service.get().expect("init above");
                 history_service.update_continuously(sync_service).await
             });
+
+            #[cfg(not(test))]
+            if self
+                .spv2_sweeper_service
+                .set(SPv2SweeperService::new(self))
+                .is_err()
+            {
+                error!("spv2 sweeper service already initialized");
+            }
         } else {
             #[cfg(not(test))]
             if self.client.sp().is_ok()
