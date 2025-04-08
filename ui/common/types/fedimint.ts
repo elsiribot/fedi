@@ -115,7 +115,6 @@ export enum SupportedCurrency {
     BWP = 'BWP',
     CAD = 'CAD',
     CDF = 'CDF',
-    CFA = 'CFA',
     CLP = 'CLP',
     COP = 'COP',
     CRC = 'CRC',
@@ -155,10 +154,42 @@ export enum SupportedCurrency {
     UYU = 'UYU',
     VES = 'VES',
     VND = 'VND',
-    XAF = 'XAF',
     ZAR = 'ZAR',
     ZMW = 'ZMW',
+    XAF = 'XAF',
+    XOF = 'XOF',
 }
+
+export const CurrencyAliases = {
+    cameroon: SupportedCurrency.XAF,
+    central_african_republic: SupportedCurrency.XAF,
+    chad: SupportedCurrency.XAF,
+    equatorial_guinea: SupportedCurrency.XAF,
+    gabon: SupportedCurrency.XAF,
+    republic_of_the_congo: SupportedCurrency.XAF,
+    benin: SupportedCurrency.XOF,
+    burkina_faso: SupportedCurrency.XOF,
+    cote_d_ivoire: SupportedCurrency.XOF,
+    guinea_bissau: SupportedCurrency.XOF,
+    mali: SupportedCurrency.XOF,
+    niger: SupportedCurrency.XOF,
+    senegal: SupportedCurrency.XOF,
+    togo: SupportedCurrency.XOF,
+} as const satisfies Record<string, SupportedCurrency>
+
+export type CurrencyAlias = keyof typeof CurrencyAliases
+
+// Exclude generic currencies XAF and XOF from currency flags
+export type NonGenericCurrency = Exclude<
+    SupportedCurrency,
+    SupportedCurrency.XAF | SupportedCurrency.XOF
+>
+
+// Currency option that can be selected in the UI
+export type SelectableCurrency = NonGenericCurrency | CurrencyAlias
+
+// Key type for currency options
+export type SelectableCurrencyKey = keyof NonGenericCurrency | CurrencyAlias
 
 export enum SupportedMetaFields {
     default_currency = 'default_currency',
