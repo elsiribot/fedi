@@ -51,7 +51,7 @@ use crate::federation::federation_sm::FederationState;
 use crate::federation::federation_v2::client::ClientExt;
 use crate::federation::federation_v2::{BackupServiceStatus, FederationV2};
 use crate::federation::Federations;
-use crate::matrix::multispend::db::MultispendGroupStatus;
+use crate::matrix::multispend::db::RpcMultispendGroupStatus;
 use crate::matrix::multispend::{
     GroupInvitation, MsEventData, MultispendGroupVoteType, WithdrawRequestWithApprovals,
     WithdrawalResponseType,
@@ -1595,7 +1595,7 @@ async fn matrixObserveMultispendGroup(
     matrix: &Arc<Matrix>,
     observable_id: u32,
     room_id: RpcRoomId,
-) -> anyhow::Result<Observable<Option<MultispendGroupStatus>>> {
+) -> anyhow::Result<Observable<RpcMultispendGroupStatus>> {
     matrix
         .observe_multispend_group(observable_id.into(), room_id.into_typed()?)
         .await

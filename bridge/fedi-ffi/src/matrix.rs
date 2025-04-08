@@ -56,7 +56,9 @@ use matrix_sdk_ui::room_list_service;
 use matrix_sdk_ui::sync_service::{self, SyncService};
 use matrix_sdk_ui::timeline::{default_event_filter, TimelineEventItemId};
 use mime::Mime;
-use multispend::db::{MultispendGroupStatus, MultispendMarkedForScanning};
+use multispend::db::{
+    MultispendGroupStatus, MultispendMarkedForScanning, RpcMultispendGroupStatus,
+};
 use multispend::{
     FinalizedGroup, GroupInvitation, MsEventData, MultispendEvent, MultispendGroupVoteType,
     WithdrawalResponseType,
@@ -1319,7 +1321,7 @@ impl Matrix {
         self: &Arc<Self>,
         id: u64,
         room_id: OwnedRoomId,
-    ) -> Result<Observable<Option<MultispendGroupStatus>>> {
+    ) -> Result<Observable<RpcMultispendGroupStatus>> {
         let this = self.clone();
         self.runtime
             .observable_pool
@@ -1344,13 +1346,28 @@ impl Matrix {
             .await
     }
 
-    pub async fn get_multispend_group_status(
-        &self,
-        room_id: &RoomId,
-    ) -> Option<MultispendGroupStatus> {
+    pub async fn get_multispend_group_status(&self, room_id: &RoomId) -> RpcMultispendGroupStatus {
         let multispend_db = self.runtime.multispend_db();
         let mut dbtx = multispend_db.begin_transaction_nc().await;
-        multispend::get_group_status_db(&mut dbtx, &RpcRoomId(room_id.to_string())).await
+        let room_id = RpcRoomId(room_id.to_string());
+        match multispend::get_group_status_db(&mut dbtx, &room_id).await {
+            Some(MultispendGroupStatus::ActiveInvitation { active_invite_id }) => {
+                let Some(MsEventData::GroupInvitation(state)) =
+                    multispend::get_event_data_db(&mut dbtx, &room_id, active_invite_id.clone())
+                        .await
+                else {
+                    panic!("inconsistent multispend db")
+                };
+                RpcMultispendGroupStatus::ActiveInvitation {
+                    active_invite_id,
+                    state,
+                }
+            }
+            Some(MultispendGroupStatus::Finalized { finalized_group }) => {
+                RpcMultispendGroupStatus::Finalized { finalized_group }
+            }
+            None => RpcMultispendGroupStatus::Inactive,
+        }
     }
 
     pub async fn send_multispend_group_invitation(

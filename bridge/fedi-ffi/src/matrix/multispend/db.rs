@@ -42,6 +42,22 @@ pub enum MultispendGroupStatus {
     ActiveInvitation { active_invite_id: RpcEventId },
 }
 
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize, Encodable, Decodable, TS)]
+#[serde(tag = "status")]
+#[serde(rename_all = "camelCase")]
+#[ts(export)]
+pub enum RpcMultispendGroupStatus {
+    /// Either no inviations or all invitation got aborted
+    Inactive,
+    /// There is an active invite
+    ActiveInvitation {
+        active_invite_id: RpcEventId,
+        state: GroupInvitationWithKeys,
+    },
+    /// Group is ready.
+    Finalized { finalized_group: FinalizedGroup },
+}
+
 #[derive(Debug, Clone, Encodable, Decodable)]
 pub struct MultispendGroupStatusKey(pub RpcRoomId);
 

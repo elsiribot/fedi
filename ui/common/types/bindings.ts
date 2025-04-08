@@ -719,7 +719,7 @@ export type RpcMethods = {
   matrixGetMediaPreview: [matrixGetMediaPreview, RpcMediaPreviewResponse];
   matrixObserveMultispendGroup: [
     matrixObserveMultispendGroup,
-    Observable<MultispendGroupStatus | null>,
+    Observable<RpcMultispendGroupStatus>,
   ];
   matrixMultispendAccountInfo: [
     matrixMultispendAccountInfo,
@@ -760,6 +760,15 @@ export type RpcMethods = {
 };
 
 export type RpcModuleFediFeeSchedule = { sendPpm: number; receivePpm: number };
+
+export type RpcMultispendGroupStatus =
+  | { status: "inactive" }
+  | {
+      status: "activeInvitation";
+      active_invite_id: RpcEventId;
+      state: GroupInvitationWithKeys;
+    }
+  | { status: "finalized"; finalized_group: FinalizedGroup };
 
 export type RpcNostrPubkey = { hex: string; npub: string };
 
