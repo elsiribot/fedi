@@ -722,7 +722,7 @@ export function useRequestForm(args: RequestAmountArgs = {}) {
         args.lnurlWithdrawal &&
         args.lnurlWithdrawal.minWithdrawable &&
         args.lnurlWithdrawal.minWithdrawable ===
-        args.lnurlWithdrawal.maxWithdrawable
+            args.lnurlWithdrawal.maxWithdrawable
     ) {
         exactAmount = amountUtils.msatToSat(
             args.lnurlWithdrawal.minWithdrawable,

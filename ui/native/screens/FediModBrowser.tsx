@@ -44,6 +44,7 @@ import {
     selectIsInternetUnreachable,
 } from '@fedi/common/redux'
 import { AnyParsedData, Invoice, ParserDataType } from '@fedi/common/types'
+import { getCurrencyCode } from '@fedi/common/utils/currency'
 import { makeLog } from '@fedi/common/utils/log'
 import { parseUserInput } from '@fedi/common/utils/parser'
 import {
@@ -70,7 +71,6 @@ import {
 } from '../state/contexts/OmniLinkContext'
 import { useAppDispatch, useAppSelector } from '../state/hooks'
 import type { RootStackParamList } from '../types/navigation'
-import { getCurrencyCode } from '@fedi/common/utils/currency'
 
 const log = makeLog('FediModBrowser')
 
