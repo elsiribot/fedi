@@ -172,14 +172,13 @@ pub struct FederationV2 {
     pub client: ClientHandle,
     pub event_sink: EventSink,
     pub task_group: TaskGroup,
-    pub operation_states:
-        Arc<Mutex<HashMap<OperationId, Box<maybe_add_send_sync!(dyn Any + 'static)>>>>,
+    pub operation_states: Mutex<HashMap<OperationId, Box<maybe_add_send_sync!(dyn Any + 'static)>>>,
     // DerivableSecret used for non-client usecases like LNURL and Nostr etc
     pub auxiliary_secret: DerivableSecret,
     // Helper object to retrieve the schedule used for charging Fedi's fee for different types of
     // transactions.
     pub fedi_fee_helper: Arc<FediFeeHelper>,
-    pub backup_service: Arc<BackupService>,
+    pub backup_service: BackupService,
     pub fedi_fee_remittance_service: OnceCell<FediFeeRemittanceService>,
     pub recovering: bool,
     pub gateway_service: OnceCell<LnGatewayService>,
@@ -188,11 +187,11 @@ pub struct FederationV2 {
     // negative. That is, two concurrent spends don't accidentally spend more than the virtual
     // balance would allow. We hold the mutex over a span that covers the time of check (recording
     // virtual balance) and the time of use (spending ecash and recording fee).
-    pub spend_guard: Arc<Mutex<()>>,
+    pub spend_guard: Mutex<()>,
     // Mutex to prevent concurrent generate_ecash because logic is very fragile.
-    pub generate_ecash_lock: Arc<Mutex<()>>,
+    pub generate_ecash_lock: Mutex<()>,
     pub feature_catalog: Arc<FeatureCatalog>,
-    pub app_state: Arc<AppState>,
+    pub app_state: AppState,
     pub this_weak: Weak<Self>,
     pub guard: FederationLockGuard,
     // Stability pool v2 services for syncing accout history between client and server
@@ -227,7 +226,7 @@ impl FederationV2 {
         secret: DerivableSecret,
         fedi_fee_helper: Arc<FediFeeHelper>,
         feature_catalog: Arc<FeatureCatalog>,
-        app_state: Arc<AppState>,
+        app_state: AppState,
     ) -> Arc<Self> {
         let recovering = client.has_pending_recoveries();
         let federation = Arc::new_cyclic(|weak| Self {
@@ -236,7 +235,7 @@ impl FederationV2 {
             operation_states: Default::default(),
             auxiliary_secret: secret,
             fedi_fee_helper,
-            backup_service: BackupService::default().into(),
+            backup_service: BackupService::default(),
             fedi_fee_remittance_service: OnceCell::new(),
             recovering,
             gateway_service: OnceCell::new(),
@@ -279,9 +278,8 @@ impl FederationV2 {
     /// saved to db (e.g. after recovery)
     async fn start_background_tasks(&self) {
         self.subscribe_balance_updates().await;
-        let backup_service = self.backup_service.clone();
         self.spawn_cancellable("backup_service", move |fed| async move {
-            backup_service.run_continuously(&fed.client).await;
+            fed.backup_service.run_continuously(&fed.client).await;
         });
         self.subscribe_to_all_operations().await;
 
@@ -402,7 +400,7 @@ impl FederationV2 {
         device_index: u8,
         fedi_fee_helper: Arc<FediFeeHelper>,
         feature_catalog: Arc<FeatureCatalog>,
-        app_state: Arc<AppState>,
+        app_state: AppState,
     ) -> anyhow::Result<Arc<Self>> {
         let client_builder = Self::build_client_builder(db.clone()).await?;
         let config = Client::get_config_from_db(&db)
@@ -508,7 +506,7 @@ impl FederationV2 {
         recover_from_scratch: bool,
         fedi_fee_helper: Arc<FediFeeHelper>,
         feature_catalog: Arc<FeatureCatalog>,
-        app_state: Arc<AppState>,
+        app_state: AppState,
     ) -> Result<Arc<Self>> {
         let mut invite_code =
             InviteCode::from_str(&invite_code_string).context("invalid invite code")?;

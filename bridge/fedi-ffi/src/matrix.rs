@@ -78,18 +78,17 @@ pub use types::*;
 
 use crate::matrix::rescanner::RoomRescannerManager;
 
-#[derive(Clone)]
 pub struct Matrix {
     /// matrix client
     client: Client,
     /// sync service to load new messages
-    sync_service: Arc<SyncService>,
+    sync_service: SyncService,
     pub runtime: Arc<BridgeRuntime>,
     notification_settings: NotificationSettings,
     /// Manager for room rescanning operations
     rescanner: RoomRescannerManager,
     /// Mutex to prevent concurrent send_multispend_event
-    send_multispend_mutex: Arc<Mutex<()>>,
+    send_multispend_mutex: Mutex<()>,
     // This is used as a synchronization mechanism between sending multispend
     // events and receiving server confirmation. When sending a multispend
     // event:
@@ -103,7 +102,7 @@ pub struct Matrix {
     //
     // This ensures multispend events are properly synchronized with the server
     // before returning from the send method.
-    send_multispend_server_ack: Arc<std::sync::Mutex<Option<mpsc::Sender<OwnedEventId>>>>,
+    send_multispend_server_ack: std::sync::Mutex<Option<mpsc::Sender<OwnedEventId>>>,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -187,7 +186,7 @@ impl Matrix {
         user_name: &str,
         home_server: String,
         sliding_sync_proxy: String,
-    ) -> Result<Self> {
+    ) -> Result<Arc<Self>> {
         Self::run_migration_task(
             runtime.clone(),
             base_dir.to_path_buf(),
@@ -232,22 +231,22 @@ impl Matrix {
             .with_offline_mode()
             .build()
             .await?;
-        let matrix = Self {
+        let matrix = Arc::new(Self {
             notification_settings: client.notification_settings().await,
             client: client.clone(),
-            sync_service: Arc::new(sync_service),
+            sync_service,
             runtime: runtime.clone(),
             rescanner: RoomRescannerManager::new(client, runtime),
-            send_multispend_mutex: Arc::new(Mutex::new(())),
-            send_multispend_server_ack: Arc::new(std::sync::Mutex::new(None)),
-        };
+            send_multispend_mutex: Mutex::new(()),
+            send_multispend_server_ack: std::sync::Mutex::new(None),
+        });
 
         let encryption_passphrase = Self::encryption_passphrase(matrix_secret);
         matrix.start_background(encryption_passphrase).await?;
         Ok(matrix)
     }
 
-    pub async fn start_background(&self, encryption_passphrase: String) -> Result<()> {
+    pub async fn start_background(self: &Arc<Self>, encryption_passphrase: String) -> Result<()> {
         let this = self.clone();
         self.runtime
             .task_group
@@ -1315,7 +1314,7 @@ impl Matrix {
     }
 
     pub async fn observe_multispend_group(
-        &self,
+        self: &Arc<Self>,
         id: u64,
         room_id: OwnedRoomId,
     ) -> Result<Observable<Option<MultispendGroupStatus>>> {
@@ -1471,7 +1470,7 @@ mod tests {
     async fn mk_matrix_login(
         user_name: &str,
         secret: &DerivableSecret,
-    ) -> Result<(Matrix, mpsc::Receiver<(String, String)>, TempDir)> {
+    ) -> Result<(Arc<Matrix>, mpsc::Receiver<(String, String)>, TempDir)> {
         struct TestEventSink(mpsc::Sender<(String, String)>);
         impl IEventSink for TestEventSink {
             fn event(&self, event_type: String, body: String) {
@@ -1514,7 +1513,8 @@ mod tests {
         username
     }
 
-    async fn mk_matrix_new_user() -> Result<(Matrix, mpsc::Receiver<(String, String)>, TempDir)> {
+    async fn mk_matrix_new_user() -> Result<(Arc<Matrix>, mpsc::Receiver<(String, String)>, TempDir)>
+    {
         mk_matrix_login(&mk_username(), &mk_secret()).await
     }
 

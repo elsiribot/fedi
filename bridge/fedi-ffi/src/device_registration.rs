@@ -14,7 +14,7 @@ use crate::event::{Event, EventSink, TypedEventExt};
 use crate::storage::AppState;
 
 pub struct DeviceRegistrationService {
-    app_state: Arc<AppState>,
+    app_state: AppState,
     fedi_api: Arc<dyn IFediApi>,
     active_task_subgroup: Option<TaskGroup>,
 }
@@ -87,7 +87,7 @@ impl DeviceRegistrationService {
 
 async fn renew_registration_periodically(
     device_index: u8,
-    app_state: Arc<AppState>,
+    app_state: AppState,
     event_sink: EventSink,
     fedi_api: Arc<dyn IFediApi>,
 ) {
@@ -128,7 +128,7 @@ pub async fn get_registered_devices_with_backoff(
 
 #[allow(clippy::too_many_arguments)]
 pub async fn register_device_with_backoff(
-    app_state: Arc<AppState>,
+    app_state: AppState,
     fedi_api: Arc<dyn IFediApi>,
     event_sink: EventSink,
     device_index: u8,
@@ -143,7 +143,7 @@ pub async fn register_device_with_backoff(
     }
 
     async fn register_device_inner(
-        app_state: Arc<AppState>,
+        app_state: AppState,
         fedi_api: Arc<dyn IFediApi>,
         event_sink: EventSink,
         seed: bip39::Mnemonic,

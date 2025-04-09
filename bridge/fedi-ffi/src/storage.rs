@@ -371,6 +371,7 @@ pub struct FiatFXInfo {
     pub btc_to_fiat_hundredths: u64,
 }
 
+#[derive(Clone)]
 pub struct AppState {
     // Arc surrounding RwLock<AppStateRaw> is required to be able to move the (owned) write lock
     // within the spawn_blocking task in the with_write_lock() function.
