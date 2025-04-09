@@ -46,7 +46,10 @@ impl StabilityPoolHistoryService {
         let mut updates = sync_service.subscribe_to_updates();
 
         // Keep updating based on sync updates
-        while let Some(Some(sync)) = updates.next().await {
+        while let Some(maybe_sync) = updates.next().await {
+            let Some(sync) = maybe_sync else {
+                continue;
+            };
             retry("history fetch", backoff_util::background_backoff(), || {
                 self.update_once(&sync)
             })
