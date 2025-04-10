@@ -81,17 +81,13 @@ const MultispendWalletHeader: React.FC<Props> = ({ roomId }) => {
             await dispatch(
                 matrixRejectMultispendInvitation({ roomId, fedimint }),
             ).unwrap()
-            navigation.dispatch(
-                reset('ChatRoomConversation', {
-                    roomId,
-                }),
-            )
+            setIsConfirmingAbort(false)
         } catch (e) {
             toast.error(t, e)
         } finally {
             setIsLoading(false)
         }
-    }, [isAdmin, dispatch, roomId, t, toast, navigation])
+    }, [isAdmin, dispatch, roomId, t, toast])
 
     const handleInfoPress = useCallback(() => {
         Linking.openURL(
