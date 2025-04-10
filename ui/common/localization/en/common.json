@@ -507,7 +507,8 @@
         },
         "home": {
             "community-title": "Wallets Need Communities",
-            "community-description": "Communities are the homes for your personal wallets. Discover, join, or create your own."
+            "community-description": "Communities are the homes for your personal wallets. Discover, join, or create your own.",
+            "services-selected": "Services selected by your community."
         },
         "nostr": {
             "kind-application-data": "Application-specific data",
