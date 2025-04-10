@@ -66,11 +66,11 @@ export const BitcoinWallet: React.FC = () => {
             </Buttons>
             <RequestPaymentDialog
                 open={pathname === '/request'}
-                onOpenChange={() => push('/')}
+                onOpenChange={() => push('/home')}
             />
             <SendPaymentDialog
                 open={pathname === '/send'}
-                onOpenChange={() => push('/')}
+                onOpenChange={() => push('/home')}
             />
         </Container>
     )

@@ -40,7 +40,7 @@ export const PersonalRecovery: React.FC = () => {
                     mnemonic: words,
                 }),
             ).unwrap()
-            push('/')
+            push('/home')
         } catch (err) {
             toast.error(t, err, 'errors.unknown-error')
         }

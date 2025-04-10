@@ -2,7 +2,7 @@ import { useRouter } from 'next/router'
 import React, { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 
-import FediLogo from '@fedi/common/assets/svgs/fedi-logo.svg'
+import FediLogo from '@fedi/common/assets/svgs/fedi-logo-icon.svg'
 import { useObserveMatrixSyncStatus } from '@fedi/common/hooks/matrix'
 import { useUpdatingRef } from '@fedi/common/hooks/util'
 import {
@@ -14,8 +14,8 @@ import {
     refreshFederations,
     selectHasSetMatrixDisplayName,
     selectSocialRecoveryQr,
-    startMatrixClient,
     selectMatrixStarted,
+    startMatrixClient,
 } from '@fedi/common/redux'
 import { selectHasLoadedFromStorage } from '@fedi/common/redux/storage'
 import { formatErrorMessage } from '@fedi/common/utils/format'
@@ -37,24 +37,23 @@ interface Props {
 export const FediBridgeInitializer: React.FC<Props> = ({ children }) => {
     const dispatch = useAppDispatch()
     const { t } = useTranslation()
-    const { asPath } = useRouter()
+    const { pathname } = useRouter()
+
     const started = useAppSelector(selectMatrixStarted)
     const hasLoadedStorage = useAppSelector(selectHasLoadedFromStorage)
     const socialRecoveryId = useAppSelector(selectSocialRecoveryQr)
     const hasSetDisplayName = useAppSelector(selectHasSetMatrixDisplayName)
-    const [isInitialized, setIsInitialized] = useState(false)
-    const [isShowingLoading, setIsShowingLoading] = useState(false)
-    const [error, setError] = useState<string>()
+
     const tRef = useUpdatingRef(t)
     const dispatchRef = useUpdatingRef(dispatch)
+
+    const [isLoading, setIsLoading] = useState<boolean>(true)
+    const [error, setError] = useState<string | null>(null)
 
     useObserveMatrixSyncStatus(started)
 
     useEffect(() => {
         if (!hasLoadedStorage) return
-        const loadingTimeout = setTimeout(() => {
-            setIsShowingLoading(true)
-        }, 1000)
 
         const newDeviceId = generateDeviceId()
 
@@ -65,25 +64,28 @@ export const FediBridgeInitializer: React.FC<Props> = ({ children }) => {
             .then(() => fedimint.bridgeStatus())
             .then(status => {
                 log.info('bridgeStatus', status)
-                // Fetch federations, social recovery, and matrix setup in parallel after bridge
-                // is initialized. Only throw (via unwrap) for refreshFederations.
+
+                // if matrix has been setup (typically after creating a displayName)
+                // then start it here
+                if (status.matrixSetup) {
+                    return dispatchRef
+                        .current(startMatrixClient({ fedimint }))
+                        .unwrap()
+                }
+
+                return null
+            })
+            .then(() => {
                 return Promise.all([
-                    dispatchRef.current(refreshFederations(fedimint)).unwrap(),
-                    dispatchRef.current(fetchSocialRecovery(fedimint)),
                     dispatchRef.current(
                         initializeFedimintVersion({ fedimint }),
                     ),
+                    dispatchRef.current(fetchSocialRecovery(fedimint)),
+                    dispatchRef.current(refreshFederations(fedimint)).unwrap(),
                     dispatchRef.current(initializeNostrKeys({ fedimint })),
-                    // if there is no matrix session yet we will start the matrix
-                    // client either during recovery or during onboarding after a
-                    // display name is entered
-                    ...(status?.matrixSetup
-                        ? [dispatchRef.current(startMatrixClient({ fedimint }))]
-                        : []),
                 ])
             })
             .then(() => {
-                setIsInitialized(true)
                 dispatchRef.current(previewAllDefaultChats())
             })
             .catch(err =>
@@ -95,12 +97,7 @@ export const FediBridgeInitializer: React.FC<Props> = ({ children }) => {
                     ),
                 ),
             )
-            .finally(() => {
-                setIsShowingLoading(false)
-                clearTimeout(loadingTimeout)
-            })
-
-        return () => clearTimeout(loadingTimeout)
+            .finally(() => setIsLoading(false))
     }, [dispatchRef, hasLoadedStorage, tRef])
 
     // Show an error message if the bridge panics while running.
@@ -111,36 +108,41 @@ export const FediBridgeInitializer: React.FC<Props> = ({ children }) => {
         return () => unsubscribe()
     }, [])
 
-    if (isInitialized && !error) {
-        // If we're mid social recovery, force them to stay on the page
-        if (socialRecoveryId && asPath !== '/onboarding/recover/social') {
-            return <Redirect path="/onboarding/recover/social" />
-        }
-        // If they haven't set a display name, force them into onboarding
-        if (!hasSetDisplayName && !asPath.startsWith('/onboarding')) {
-            return <Redirect path="/onboarding" />
-        }
-        // Otherwise render the page as normal
-        return <>{children}</>
+    if (isLoading) {
+        return (
+            <Content>
+                <Loader>
+                    <FediLogo width={50} />
+                </Loader>
+            </Content>
+        )
     }
 
-    let message
     if (error) {
-        message = error
-    } else if (isShowingLoading) {
-        message = 'Running Fedi...'
+        return (
+            <Content>
+                <ErrorMessage>
+                    <Text>{error}</Text>
+                </ErrorMessage>
+            </Content>
+        )
     }
 
-    return (
-        <Loader>
-            <FediLogo />
-            {message && (
-                <Message error={!!error}>
-                    <Text>{message}</Text>
-                </Message>
-            )}
-        </Loader>
-    )
+    // // If we're mid social recovery, force them to stay on the page
+    if (socialRecoveryId && pathname !== '/onboarding/recover/social') {
+        return <Redirect path="/onboarding/recover/social" />
+    }
+
+    // If they haven't set a display name, force them into onboarding
+    if (
+        !hasSetDisplayName &&
+        !pathname.startsWith('/onboarding') &&
+        pathname !== '/'
+    ) {
+        return <Redirect path="/" />
+    }
+
+    return children
 }
 
 const loaderFadeIn = keyframes({
@@ -148,50 +150,36 @@ const loaderFadeIn = keyframes({
     '100%': { opacity: 1 },
 })
 
-const Loader = styled('div', {
-    display: 'flex',
-    justifyContent: 'center',
-    alignItems: 'center',
-    height: 80,
-    width: 120,
-    position: 'absolute',
-    top: '50%',
-    left: '50%',
-    transform: 'translate(-50%, -50%)',
-    animation: `${loaderFadeIn} 400ms ease`,
-
-    '& svg': {
-        height: '100%',
-        width: '100%',
-    },
-})
-
-const messageFadeUp = keyframes({
+const rotate = keyframes({
     '0%': {
-        transform: 'translateX(-50%) translateY(10px)',
-        opacity: 0,
+        transform: 'rotate(0deg)',
+    },
+    '70%': {
+        transform: 'rotate(360deg)',
     },
     '100%': {
-        transform: 'translateX(-50%) translateY(0)',
-        opacity: 0.6,
+        transform: 'rotate(360deg)',
     },
 })
 
-const Message = styled('div', {
-    position: 'absolute',
-    top: '100%',
-    left: '50%',
-    transform: 'translateX(-50%)',
-    width: '100vw',
-    maxWidth: 300,
-    textAlign: 'center',
-    animation: `${messageFadeUp} 600ms ease 1 forwards`,
+const Content = styled('div', {
+    alignItems: 'center',
+    display: 'flex',
+    height: '100dvh',
+    flexDirection: 'column',
+    justifyContent: 'center',
+    width: '100%',
+})
 
-    variants: {
-        error: {
-            true: {
-                color: theme.colors.red,
-            },
-        },
-    },
+const Loader = styled('div', {
+    left: '50%',
+    top: '50%',
+    transform: 'translate(-50%, -50%)',
+    transformOrigin: 'center center',
+    animation: `${rotate} 1.5s linear infinite, ${loaderFadeIn} 1s ease`,
+})
+
+const ErrorMessage = styled('div', {
+    color: theme.colors.red,
+    textAlign: 'center',
 })

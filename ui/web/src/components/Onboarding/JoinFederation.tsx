@@ -63,7 +63,7 @@ export const JoinFederation: React.FC = () => {
                 const fed = await previewInvite(fedimint, code)
                 if (federationIds.includes(fed.id)) {
                     dispatch(setActiveFederationId(fed.id))
-                    push('/')
+                    push('/home')
                 } else {
                     setFederationPreview(fed)
                 }
