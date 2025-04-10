@@ -17,13 +17,12 @@ import {
 import { useObserveMatrixRoom } from '@fedi/common/hooks/matrix'
 import {
     matchAndHidePreviewMedia,
-    paginateMatrixRoomTimeline,
     selectPreviewMedia,
     selectMatrixAuth,
     selectMatrixRoom,
     selectMatrixRoomEvents,
-    selectMatrixRoomEventsHaveLoaded,
     selectMatrixRoomMembersCount,
+    selectMatrixRoomEventsHaveLoaded,
 } from '@fedi/common/redux'
 import { ChatType, MatrixEvent, MatrixEventStatus } from '@fedi/common/types'
 import {
@@ -53,9 +52,6 @@ const ChatConversation: React.FC<MessagesListProps> = ({
 }: MessagesListProps) => {
     const { t } = useTranslation()
     const { theme } = useTheme()
-    const [hasPaginated, setHasPaginated] = useState(false)
-    const [isPaginating, setIsPaginating] = useState(false)
-    const [isAtEnd, setIsAtEnd] = useState(false)
     const matrixAuth = useAppSelector(selectMatrixAuth)
     const myId = useMemo(() => matrixAuth?.userId, [matrixAuth])
     const isBroadcast = !!useAppSelector(s => selectMatrixRoom(s, id))
@@ -63,6 +59,9 @@ const ChatConversation: React.FC<MessagesListProps> = ({
     const [hasNewMessage, setHasNewMessages] = useState(false)
     const animatedNewMessageBottom = useRef(new Animated.Value(0)).current
     const previewMedia = useAppSelector(selectPreviewMedia)
+    const hasLoadedEvents = useAppSelector(s =>
+        selectMatrixRoomEventsHaveLoaded(s, id),
+    )
     const [selectedUserId, setSelectedUserId] = useState<string | null>(null)
     const dispatch = useAppDispatch()
 
@@ -70,12 +69,9 @@ const ChatConversation: React.FC<MessagesListProps> = ({
     const isAlone =
         useAppSelector(s => selectMatrixRoomMembersCount(s, id)) === 1
 
-    useObserveMatrixRoom(id)
+    const { isPaginating, handlePaginate } = useObserveMatrixRoom(id)
 
     const events = useAppSelector(s => selectMatrixRoomEvents(s, id))
-    const hasLoadedEvents = useAppSelector(s =>
-        selectMatrixRoomEventsHaveLoaded(s, id),
-    )
     const listRef = useRef<FlatList>(null)
     const lastScrolledMessageIdRef = useRef(events?.[0]?.id)
     const isScrolledToBottomRef = useRef(true)
@@ -117,15 +113,12 @@ const ChatConversation: React.FC<MessagesListProps> = ({
     }, [previewMedia, events, id, myId])
 
     const eventGroups = useMemo(
-        () => makeMatrixEventGroups(chatEvents, 'desc'),
+        () =>
+            chatEvents.length > 0
+                ? makeMatrixEventGroups(chatEvents, 'desc')
+                : [],
         [chatEvents],
     )
-
-    // Any time we get a change in the number of events, we reset hasPaginated
-    // so that the user will attempt pagination again.
-    useEffect(() => {
-        setHasPaginated(false)
-    }, [events.length])
 
     const style = useMemo(() => styles(theme), [theme])
 
@@ -165,16 +158,6 @@ const ChatConversation: React.FC<MessagesListProps> = ({
             setHasNewMessages(true)
         }
     }, [eventGroups, myId, scrollToEnd])
-
-    const handlePaginate = useCallback(async () => {
-        if (isPaginating || hasPaginated || isAtEnd) return
-        setIsPaginating(true)
-        setHasPaginated(true)
-        await dispatch(paginateMatrixRoomTimeline({ roomId: id, limit: 30 }))
-            .unwrap()
-            .then(({ end }) => setIsAtEnd(end))
-            .finally(() => setIsPaginating(false))
-    }, [hasPaginated, id, isAtEnd, isPaginating, dispatch])
 
     // Mark hasNewMessages as false when we scroll to the bottom, and keep a ref up to date
     const handleScroll = useCallback(
@@ -233,7 +216,6 @@ const ChatConversation: React.FC<MessagesListProps> = ({
                         },
                     ]}
                     contentContainerStyle={style.contentContainer}
-                    removeClippedSubviews={false}
                     ListEmptyComponent={
                         isAlone ? (
                             <NoMembersNotice roomId={id} />
@@ -242,6 +224,9 @@ const ChatConversation: React.FC<MessagesListProps> = ({
                         )
                     }
                     onScroll={handleScroll}
+                    // this prop is required to accomplish both:
+                    // 1) correct ordering of messages with the most recent message at the bottom
+                    // 2) prevent the ListEmptyComponent from rendering upside down
                     inverted={events.length > 0}
                     // adjust this for more/less aggressive loading
                     onEndReachedThreshold={0.1}
@@ -252,12 +237,21 @@ const ChatConversation: React.FC<MessagesListProps> = ({
                         autoscrollToTopThreshold: 100,
                     }}
                     scrollsToTop={false}
+                    // Enable better scroll performance
+                    removeClippedSubviews={true}
+                    maxToRenderPerBatch={10}
+                    windowSize={10}
+                    initialNumToRender={10}
                 />
             ) : (
                 <View style={style.center}>
-                    <ActivityIndicator size="large" />
+                    <ActivityIndicator
+                        size="large"
+                        color={theme.colors.primary}
+                    />
                 </View>
             )}
+
             <ChatUserActionsOverlay
                 onDismiss={() => setSelectedUserId(null)}
                 selectedUserId={selectedUserId}

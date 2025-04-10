@@ -66,8 +66,12 @@ interface MatrixChatClientEventMap {
         members: MatrixRoomMember[]
     }
     roomTimelineUpdate: {
-        roomId: string
+        roomId: MatrixRoom['id']
         updates: MatrixTimelineObservableUpdates
+    }
+    roomTimelinePaginationStatus: {
+        roomId: MatrixRoom['id']
+        paginationStatus: RpcBackPaginationStatus
     }
     roomPowerLevels: {
         roomId: MatrixRoom['id']
@@ -93,6 +97,10 @@ export class MatrixChatClient {
         UnsubscribeFn | undefined
     > = {}
     private roomTimelineUnsubscribeMap: Record<
+        MatrixRoom['id'],
+        UnsubscribeFn | undefined
+    > = {}
+    private roomPaginationStatusUnsubscribeMap: Record<
         MatrixRoom['id'],
         UnsubscribeFn | undefined
     > = {}
@@ -206,6 +214,12 @@ export class MatrixChatClient {
     }
 
     observeRoom(roomId: string) {
+        this.observeRoomPaginationStatus(roomId).catch(err => {
+            log.warn('Failed to observe room pagination status', {
+                roomId,
+                err,
+            })
+        })
         this.observeRoomTimeline(roomId).catch(err => {
             log.warn('Failed to observe room', { roomId, err })
         })
@@ -222,6 +236,13 @@ export class MatrixChatClient {
         if (roomUnsubscribe !== undefined) {
             roomUnsubscribe()
             delete this.roomTimelineUnsubscribeMap[roomId]
+        }
+
+        const paginationStatusUnsubscribe =
+            this.roomPaginationStatusUnsubscribeMap[roomId]
+        if (paginationStatusUnsubscribe !== undefined) {
+            paginationStatusUnsubscribe()
+            delete this.roomPaginationStatusUnsubscribeMap[roomId]
         }
     }
 
@@ -306,6 +327,10 @@ export class MatrixChatClient {
     /**
      * Special wrapper around `sendMessage`, takes in a user ID instead of a
      * room ID, and creates a direct message room if one doesn't exist.
+     * TODO: Refactor this to avoid observing the room info and timeline
+     * This is currently leaking observables, as the unsubscribes are lost.
+     * Also, this leads to duplicate concurrent observables in the room.
+     * which breaks everything
      */
     async sendDirectMessage(userId: string, content: MatrixEventContent) {
         const roomId = await this.fedimint.matrixRoomCreateOrGetDm({ userId })
@@ -345,66 +370,38 @@ export class MatrixChatClient {
         await this.fedimint.matrixSetAvatarUrl({ avatarUrl })
     }
 
-    async roomPaginateTimeline(roomId: string, eventNum: number) {
-        // Must register an observable and use that to tell when to resolve
-        // the request, since `matrixRoomTimelineItemsPaginateBackwards`
-        // returns immediately, and it's not until the observable returns
-        // to `idle` that we're done.
-        // We also check the initial response, since if we're already at the
-        // beginning, we don't need to paginate at all so we return early
-        // and cancel the observer
+    private async observeRoomPaginationStatus(roomId: string) {
+        // Only observe a room once, subsequent calls are no-ops.
+        if (this.roomPaginationStatusUnsubscribeMap[roomId] !== undefined)
+            return
 
-        const paginationPromise = new Promise<{ end: boolean }>(
-            (resolve, reject) => {
-                const unsubscribe =
-                    this.fedimint.subscribeObservableSimple<RpcBackPaginationStatus>(
-                        async id => {
-                            // First check if we've already reached the timeline start
-                            const observable =
-                                await this.fedimint.matrixRoomObserveTimelineItemsPaginateBackwards(
-                                    {
-                                        roomId,
-                                        observableId: id,
-                                    },
-                                )
-                            // Early return if we've already reached the start so we don't paginate
-                            if (observable.initial === 'timelineStartReached') {
-                                resolve({ end: true })
-                                unsubscribe()
-                                return observable
-                            }
-
-                            // Triggers the pagination for this room
-                            this.fedimint
-                                .matrixRoomTimelineItemsPaginateBackwards({
-                                    roomId,
-                                    eventNum,
-                                })
-                                .catch(error => {
-                                    unsubscribe()
-                                    reject(error)
-                                })
-
-                            return observable
-                        },
-                        (paginationStatus, isInitialUpdate) => {
-                            if (!isInitialUpdate) {
-                                if (paginationStatus === 'idle') {
-                                    resolve({ end: false })
-                                    unsubscribe()
-                                } else if (
-                                    paginationStatus === 'timelineStartReached'
-                                ) {
-                                    resolve({ end: true })
-                                    unsubscribe()
-                                }
-                            }
+        // Listen and emit on observable updates
+        const unsubscribe =
+            this.fedimint.subscribeObservableSimple<RpcBackPaginationStatus>(
+                id => {
+                    return this.fedimint.matrixRoomObserveTimelineItemsPaginateBackwards(
+                        {
+                            roomId,
+                            observableId: id,
                         },
                     )
-            },
-        )
+                },
+                paginationStatus => {
+                    this.emit('roomTimelinePaginationStatus', {
+                        roomId,
+                        paginationStatus,
+                    })
+                },
+            )
+        // store unsubscribe functions to cancel later if needed
+        this.roomPaginationStatusUnsubscribeMap[roomId] = unsubscribe
+    }
 
-        return paginationPromise
+    async paginateTimeline(roomId: string, eventNum: number) {
+        return this.fedimint.matrixRoomTimelineItemsPaginateBackwards({
+            roomId,
+            eventNum,
+        })
     }
 
     async sendReadReceipt(roomId: string, eventId: string) {
@@ -760,6 +757,7 @@ export class MatrixChatClient {
     private serializeRoomInfo(room: any): MatrixRoom {
         const avatarUrl = room.base_info.avatar?.Original?.content?.url
         const directUserId = room.base_info.dm_targets?.[0]
+
         let preview: MatrixRoom['preview']
         if (room.latest_event) {
             const { event, sender_profile } = room.latest_event
@@ -887,6 +885,7 @@ export class MatrixChatClient {
         // Map the status to an enum, include the error if it failed
         let status: MatrixEventStatus
         let error: string | null = null
+        // Send but not acknowledged by the server
         if (!item.value.localEcho) {
             status = MatrixEventStatus.sent
         } else {

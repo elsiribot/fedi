@@ -43,6 +43,7 @@ import {
 } from '../types'
 import {
     FrontendMetadata,
+    RpcBackPaginationStatus,
     RpcRoomId,
     RpcRoomNotificationMode,
 } from '../types/bindings'
@@ -90,6 +91,10 @@ const initialState = {
     roomTimelines: {} as Record<
         MatrixRoom['id'],
         MatrixTimelineItem[] | undefined
+    >,
+    roomPaginationStatus: {} as Record<
+        MatrixRoom['id'],
+        RpcBackPaginationStatus | undefined
     >,
     roomPowerLevels: {} as Record<
         MatrixRoom['id'],
@@ -184,6 +189,16 @@ export const matrixSlice = createSlice({
                 state.roomTimelines[roomId] || [],
                 updates,
             )
+        },
+        handleMatrixRoomTimelinePaginationStatus(
+            state,
+            action: PayloadAction<{
+                roomId: string
+                paginationStatus: RpcBackPaginationStatus
+            }>,
+        ) {
+            const { roomId, paginationStatus } = action.payload
+            state.roomPaginationStatus[roomId] = paginationStatus
         },
         setMatrixRoomPowerLevels(
             state,
@@ -446,6 +461,7 @@ export const {
     addMatrixError,
     handleMatrixRoomListObservableUpdates,
     handleMatrixRoomTimelineObservableUpdates,
+    handleMatrixRoomTimelinePaginationStatus,
     resetMatrixState,
     setChatDraft,
     setSelectedChatMessage,
@@ -487,6 +503,9 @@ export const startMatrixClient = createAsyncThunk<
     client.on('roomMembers', ev => dispatch(setMatrixRoomMembers(ev)))
     client.on('roomTimelineUpdate', ev =>
         dispatch(handleMatrixRoomTimelineObservableUpdates(ev)),
+    )
+    client.on('roomTimelinePaginationStatus', ev =>
+        dispatch(handleMatrixRoomTimelinePaginationStatus(ev)),
     )
     client.on('roomPowerLevels', ev => dispatch(setMatrixRoomPowerLevels(ev)))
 
@@ -968,15 +987,15 @@ export const refetchMatrixRoomList = createAsyncThunk<void, void>(
 )
 
 export const paginateMatrixRoomTimeline = createAsyncThunk<
-    { end: boolean },
+    void,
     { roomId: MatrixRoom['id']; limit?: number },
     { state: CommonState }
 >(
     'matrix/paginateMatrixRoomTimeline',
-    async ({ roomId, limit = 30 }, { getState }) => {
+    ({ roomId, limit = 30 }, { getState }) => {
         const numEvents = getState().matrix.roomTimelines[roomId]?.length || 0
         const client = getMatrixClient()
-        return client.roomPaginateTimeline(roomId, numEvents + limit)
+        client.paginateTimeline(roomId, numEvents + limit)
     },
 )
 
@@ -1612,6 +1631,11 @@ export const selectDefaultMatrixRoomIds = createSelector(
 
 export const selectIsDefaultGroup = (s: CommonState, id: string) =>
     selectDefaultMatrixRoomIds(s).includes(id)
+
+export const selectMatrixRoomPaginationStatus = (
+    s: CommonState,
+    roomId: MatrixRoom['id'],
+) => s.matrix.roomPaginationStatus[roomId]
 
 export const selectChatDrafts = (s: CommonState) => s.matrix.drafts
 export const selectSelectedChatMessage = (s: CommonState) =>
