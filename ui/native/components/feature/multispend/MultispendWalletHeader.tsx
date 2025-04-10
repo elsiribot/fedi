@@ -8,12 +8,17 @@ import LinearGradient from 'react-native-linear-gradient'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 
 import { useToast } from '@fedi/common/hooks/toast'
-import { selectMatrixRoomMultispendStatus } from '@fedi/common/redux'
+import {
+    matrixRejectMultispendInvitation,
+    selectMatrixRoomMultispendStatus,
+    selectMyMultispendPowerLevel,
+} from '@fedi/common/redux'
 import { GroupInvitationWithKeys } from '@fedi/common/types/bindings'
 
 import { fedimint } from '../../../bridge'
-import { useAppSelector } from '../../../state/hooks'
+import { useAppDispatch, useAppSelector } from '../../../state/hooks'
 import { reset } from '../../../state/navigation'
+import { MultispendPowerLevel } from '../../../types'
 import CustomOverlay from '../../ui/CustomOverlay'
 import HoloCircle from '../../ui/HoloCircle'
 import HoloGradient from '../../ui/HoloGradient'
@@ -32,18 +37,26 @@ const MultispendWalletHeader: React.FC<Props> = ({ roomId }) => {
     const multispendStatus = useAppSelector(s =>
         selectMatrixRoomMultispendStatus(s, roomId),
     )
+    const myMultispendPowerLevel = useAppSelector(s =>
+        selectMyMultispendPowerLevel(s, roomId),
+    )
     const [isConfirmingAbort, setIsConfirmingAbort] = useState(false)
     const [activeInvitation, setActiveInvitation] =
         useState<GroupInvitationWithKeys | null>(null)
-    const [isAborting, setIsAborting] = useState(false)
+    const [isLoading, setIsLoading] = useState(false)
     const toast = useToast()
+    const dispatch = useAppDispatch()
+
+    const isAdmin = myMultispendPowerLevel === MultispendPowerLevel.Admin
 
     const handleBack = useCallback(() => {
         navigation.dispatch(reset('ChatRoomConversation', { roomId }))
     }, [navigation, roomId])
 
     const handleAbortMultispend = useCallback(async () => {
-        setIsAborting(true)
+        if (!isAdmin) return
+
+        setIsLoading(true)
         try {
             await fedimint.matrixCancelMultispendGroupInvitation({
                 roomId,
@@ -56,9 +69,29 @@ const MultispendWalletHeader: React.FC<Props> = ({ roomId }) => {
         } catch (e) {
             toast.error(t, e)
         } finally {
-            setIsAborting(false)
+            setIsLoading(false)
         }
-    }, [navigation, roomId, t, toast])
+    }, [navigation, roomId, t, toast, isAdmin])
+
+    const handleRejectMultispend = useCallback(async () => {
+        if (isAdmin) return
+
+        setIsLoading(true)
+        try {
+            await dispatch(
+                matrixRejectMultispendInvitation({ roomId, fedimint }),
+            ).unwrap()
+            navigation.dispatch(
+                reset('ChatRoomConversation', {
+                    roomId,
+                }),
+            )
+        } catch (e) {
+            toast.error(t, e)
+        } finally {
+            setIsLoading(false)
+        }
+    }, [isAdmin, dispatch, roomId, t, toast, navigation])
 
     const handleInfoPress = useCallback(() => {
         Linking.openURL(
@@ -106,7 +139,12 @@ const MultispendWalletHeader: React.FC<Props> = ({ roomId }) => {
                 </View>
                 <Pressable onPress={() => setIsConfirmingAbort(true)}>
                     <Text style={style.abortText} medium>
-                        {t('words.abort')}
+                        {t(
+                            myMultispendPowerLevel ===
+                                MultispendPowerLevel.Admin
+                                ? 'words.abort'
+                                : 'words.reject',
+                        )}
                     </Text>
                 </Pressable>
             </View>
@@ -161,18 +199,32 @@ const MultispendWalletHeader: React.FC<Props> = ({ roomId }) => {
                 onBackdropPress={() => setIsConfirmingAbort(false)}
                 contents={{
                     icon: 'Info',
-                    title: t('feature.multispend.abort-multispend-setup'),
-                    description: t('feature.multispend.abort-group-message'),
+                    title: t(
+                        isAdmin
+                            ? 'feature.multispend.abort-multispend-setup'
+                            : 'feature.multispend.abort-multispend-setup',
+                    ),
+                    description: t(
+                        isAdmin
+                            ? 'feature.multispend.abort-group-message'
+                            : 'feature.multispend.reject-invite-message',
+                    ),
                     buttons: [
                         {
                             text: t('words.cancel'),
                             onPress: () => setIsConfirmingAbort(false),
                         },
                         {
-                            text: t('feature.multispend.yes-abort'),
+                            text: t(
+                                isAdmin
+                                    ? 'feature.multispend.yes-abort'
+                                    : 'feature.multispend.yes-reject',
+                            ),
                             primary: true,
-                            disabled: isAborting,
-                            onPress: handleAbortMultispend,
+                            disabled: isLoading,
+                            onPress: isAdmin
+                                ? handleAbortMultispend
+                                : handleRejectMultispend,
                         },
                     ],
                 }}
