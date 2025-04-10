@@ -1877,6 +1877,7 @@ mod tests {
         assert_eq!(
             event_data1,
             Some(MsEventData::GroupInvitation(GroupInvitationWithKeys {
+                proposer: user1.clone(),
                 invitation: invitation.clone(),
                 pubkeys: BTreeMap::from_iter([(user1.clone(), RpcPublicKey(pk1))]),
                 rejections: BTreeSet::new(),
@@ -1925,6 +1926,7 @@ mod tests {
         assert_eq!(
             final_group1,
             FinalizedGroup {
+                proposer: user1.clone(),
                 pubkeys: BTreeMap::from_iter([
                     (user1.clone(), RpcPublicKey(pk1)),
                     (user2.clone(), RpcPublicKey(pk2))
@@ -1997,6 +1999,7 @@ mod tests {
         assert_eq!(
             event_data1,
             Some(MsEventData::GroupInvitation(GroupInvitationWithKeys {
+                proposer: user1.clone(),
                 invitation: invitation.clone(),
                 pubkeys: BTreeMap::from_iter([(user1.clone(), RpcPublicKey(pk1))]),
                 rejections: BTreeSet::new(),
@@ -2056,6 +2059,7 @@ mod tests {
         assert_eq!(
             event_data1,
             MsEventData::GroupInvitation(GroupInvitationWithKeys {
+                proposer: user1.clone(),
                 invitation: invitation.clone(),
                 pubkeys: BTreeMap::from_iter([(user1.clone(), RpcPublicKey(pk1))]),
                 rejections: BTreeSet::from([user2.clone()]),

@@ -111,6 +111,7 @@ pub enum MultispendEvent {
 /// Group invitation with extra state accumlated over the events.
 pub struct GroupInvitationWithKeys {
     pub invitation: GroupInvitation,
+    pub proposer: RpcUserId,
     pub pubkeys: BTreeMap<RpcUserId, RpcPublicKey>,
     pub rejections: BTreeSet<RpcUserId>,
     pub federation_id: RpcFederationId,
@@ -121,6 +122,7 @@ pub struct GroupInvitationWithKeys {
 #[ts(export)]
 pub struct FinalizedGroup {
     pub invitation: GroupInvitation,
+    pub proposer: RpcUserId,
     pub pubkeys: BTreeMap<RpcUserId, RpcPublicKey>,
     #[ts(skip)]
     pub spv2_account: Account,
@@ -137,10 +139,11 @@ impl GroupInvitationWithKeys {
         federation_id: RpcFederationId,
     ) -> Self {
         let mut pubkeys = BTreeMap::new();
-        pubkeys.insert(proposer, proposer_pubkey);
+        pubkeys.insert(proposer.clone(), proposer_pubkey);
 
         Self {
             invitation,
+            proposer,
             pubkeys,
             rejections: BTreeSet::new(),
             federation_id,
@@ -177,6 +180,7 @@ impl GroupInvitationWithKeys {
 
                     if let Ok(spv2_account) = account.try_into() {
                         return Ok(Some(FinalizedGroup {
+                            proposer: self.proposer.clone(),
                             invitation: self.invitation.clone(),
                             pubkeys: self.pubkeys.clone(),
                             spv2_account,
