@@ -2615,7 +2615,7 @@ pub mod tests {
     async fn dev_fed() -> anyhow::Result<DevFed> {
         trace!(target: LOG_DEVIMINT, "Starting dev fed");
         let (process_mgr, _) = process_setup(4).await?;
-        let dev_fed = DevJitFed::new(&process_mgr, false)?;
+        let dev_fed = DevJitFed::new(&process_mgr, false).await?;
 
         debug!(target: LOG_DEVIMINT, "Peging in client and gateways");
 
@@ -2638,17 +2638,25 @@ pub mod tests {
                     .await
             },
             async {
-                let pegin_addr = dev_fed
-                    .gw_cln_registered()
+                let gw_ldk = dev_fed
+                    .gw_ldk_connected()
                     .await?
+                    .clone()
+                    .expect("Must start LDK gateway");
+                let address = gw_ldk
                     .get_pegin_addr(&dev_fed.fed().await?.calculate_federation_id())
                     .await?;
+                debug!(
+                    target: LOG_DEVIMINT,
+                    %address,
+                    "Sending funds to LDK deposit addr"
+                );
                 dev_fed
                     .bitcoind()
                     .await?
-                    .send_to(pegin_addr, gw_pegin_amount)
-                    .await?;
-                dev_fed.bitcoind().await?.mine_blocks_no_wait(11).await
+                    .send_to(address, gw_pegin_amount)
+                    .await
+                    .map(|_| ())
             },
             async {
                 let pegin_addr = dev_fed
@@ -2908,7 +2916,10 @@ pub mod tests {
             .await;
         }
 
-        assert_eq!(receive_amount - fedi_fee, federation.get_balance().await);
+        assert_eq!(
+            receive_amount.checked_sub(fedi_fee).expect("Can't fail"),
+            federation.get_balance().await
+        );
 
         // get invoice
         let send_amount = Amount::from_sats(50);
@@ -2966,7 +2977,9 @@ pub mod tests {
 
         // check balance (sometimes fedimint-cli gives more than we ask for)
         assert_eq!(
-            ecash_receive_amount - receive_fedi_fee,
+            ecash_receive_amount
+                .checked_sub(receive_fedi_fee)
+                .expect("Can't fail"),
             federation.get_balance().await,
         );
 
@@ -2996,7 +3009,13 @@ pub mod tests {
         .ecash;
 
         assert_eq!(
-            ecash_receive_amount - receive_fedi_fee - ecash_send_amount - send_fedi_fee,
+            ecash_receive_amount
+                .checked_sub(receive_fedi_fee)
+                .expect("Can't fail")
+                .checked_sub(ecash_send_amount)
+                .expect("Can't fail")
+                .checked_sub(send_fedi_fee)
+                .expect("Can't fail"),
             federation.get_balance().await,
         );
 
@@ -3069,7 +3088,9 @@ pub mod tests {
         }
         // check balance
         assert_eq!(
-            ecash_receive_amount - ((iteration_amount + iteration_expected_fee) * iterations),
+            ecash_receive_amount
+                .checked_sub((iteration_amount + iteration_expected_fee) * iterations)
+                .expect("Can't fail"),
             federation.get_balance().await,
         );
 
@@ -3510,7 +3531,11 @@ pub mod tests {
         }
 
         assert_eq!(
-            receive_amount - amount_to_deposit - deposit_fedi_fee,
+            receive_amount
+                .checked_sub(amount_to_deposit)
+                .expect("Can't fail")
+                .checked_sub(deposit_fedi_fee)
+                .expect("Can't fail"),
             federation.get_balance().await,
         );
         let account_info = stabilityPoolAccountInfo(federation.clone(), true).await?;
@@ -3547,8 +3572,14 @@ pub mod tests {
         }
 
         assert_eq!(
-            receive_amount - amount_to_deposit - deposit_fedi_fee + amount_to_withdraw
-                - withdraw_fedi_fee,
+            (receive_amount
+                .checked_sub(amount_to_deposit)
+                .expect("Can't fail")
+                .checked_sub(deposit_fedi_fee)
+                .expect("Can't fail")
+                + amount_to_withdraw)
+                .checked_sub(withdraw_fedi_fee)
+                .expect("Can't fail"),
             federation.get_balance().await,
         );
         let account_info = stabilityPoolAccountInfo(federation.clone(), true).await?;
@@ -3631,7 +3662,11 @@ pub mod tests {
         }
 
         assert_eq!(
-            receive_amount - amount_to_deposit - deposit_fedi_fee,
+            receive_amount
+                .checked_sub(amount_to_deposit)
+                .expect("Can't fail")
+                .checked_sub(deposit_fedi_fee)
+                .expect("Can't fail"),
             federation.get_balance().await,
         );
         let RpcSPv2CachedSyncResponse { sync_response, .. } =
@@ -3674,8 +3709,14 @@ pub mod tests {
         }
 
         assert_eq!(
-            receive_amount - amount_to_deposit - deposit_fedi_fee + amount_to_withdraw
-                - withdraw_fedi_fee,
+            (receive_amount
+                .checked_sub(amount_to_deposit)
+                .expect("Can't fail")
+                .checked_sub(deposit_fedi_fee)
+                .expect("Can't fail")
+                + amount_to_withdraw)
+                .checked_sub(withdraw_fedi_fee)
+                .expect("Can't fail"),
             federation.get_balance().await,
         );
         let RpcSPv2CachedSyncResponse { sync_response, .. } =

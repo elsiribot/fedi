@@ -15,7 +15,7 @@ use fedimint_api_client::api::{DynModuleApi, FederationApiExt as _, FederationEr
 use fedimint_client::derivable_secret::DerivableSecret;
 use fedimint_client::module::init::{ClientModuleInit, ClientModuleInitArgs};
 use fedimint_client::module::recovery::NoModuleBackup;
-use fedimint_client::module::{ClientContext, ClientModule};
+use fedimint_client::module::{ClientContext, ClientModule, OutPointRange};
 use fedimint_client::oplog::{OperationLogEntry, UpdateStreamOrOutcome};
 use fedimint_client::sm::util::MapStateTransitions;
 use fedimint_client::sm::{
@@ -753,12 +753,14 @@ impl StabilityPoolClientModule {
             self.client_ctx
                 .make_client_inputs(ClientInputBundle::new(vec![input], vec![sm])),
         );
-        let withdrawal_meta_gen = |txid, _| StabilityPoolMeta::Withdrawal {
-            txid,
-            unlock_amount,
-            extra_meta: serde_json::to_value(extra_meta.clone()).expect("to value must never fail"),
-        };
-        let (transaction_id, _) = self
+        let withdrawal_meta_gen =
+            move |out_point_range: OutPointRange| StabilityPoolMeta::Withdrawal {
+                txid: out_point_range.txid,
+                unlock_amount,
+                extra_meta: serde_json::to_value(extra_meta.clone())
+                    .expect("to value must never fail"),
+            };
+        let out_point_range = self
             .client_ctx
             .finalize_and_submit_transaction(
                 operation_id,
@@ -767,7 +769,7 @@ impl StabilityPoolClientModule {
                 tx,
             )
             .await?;
-        Ok((operation_id, transaction_id))
+        Ok((operation_id, out_point_range.txid))
     }
 
     pub async fn subscribe_withdraw(
@@ -870,13 +872,15 @@ impl StabilityPoolClientModule {
             self.client_ctx
                 .make_client_inputs(ClientInputBundle::new(vec![input], vec![sm])),
         );
-        let withdrawal_meta_gen = |txid, outpoints| StabilityPoolMeta::WithdrawIdleBalance {
-            txid,
-            amount,
-            outpoints,
-            extra_meta: serde_json::to_value(extra_meta.clone()).expect("to value must never fail"),
-        };
-        let (transaction_id, _) = self
+        let withdrawal_meta_gen =
+            move |out_point_range: OutPointRange| StabilityPoolMeta::WithdrawIdleBalance {
+                txid: out_point_range.txid,
+                amount,
+                outpoints: out_point_range.into_iter().collect(),
+                extra_meta: serde_json::to_value(extra_meta.clone())
+                    .expect("to value must never fail"),
+            };
+        let out_point_range = self
             .client_ctx
             .finalize_and_submit_transaction(
                 operation_id,
@@ -885,7 +889,7 @@ impl StabilityPoolClientModule {
                 tx,
             )
             .await?;
-        Ok((operation_id, transaction_id))
+        Ok((operation_id, out_point_range.txid))
     }
 
     pub async fn subscribe_withdraw_idle_balance(
@@ -963,23 +967,23 @@ async fn submit_tx_with_output(
         }],
     );
     let tx = TransactionBuilder::new().with_outputs(client_ctx.make_client_outputs(output));
-    let meta_gen = |txid, change_outpoints| match output_v0.clone() {
+    let meta_gen = move |out_point_range: OutPointRange| match output_v0.clone() {
         StabilityPoolOutputV0::Transfer(output) => StabilityPoolMeta::Transfer {
-            txid,
+            txid: out_point_range.txid,
             signed_request: output.signed_request,
             extra_meta: serde_json::to_value(extra_meta.clone()).expect("to value must never fail"),
         },
         StabilityPoolOutputV0::DepositToSeek(..) | StabilityPoolOutputV0::DepositToProvide(..) => {
             StabilityPoolMeta::Deposit {
-                txid,
-                change_outpoints,
+                txid: out_point_range.txid,
+                change_outpoints: out_point_range.into_iter().collect(),
                 amount,
                 extra_meta: serde_json::to_value(extra_meta.clone())
                     .expect("to value must never fail"),
             }
         }
     };
-    let (transaction_id, _) = client_ctx
+    let out_point_range = client_ctx
         .finalize_and_submit_transaction(
             operation_id,
             StabilityPoolCommonGen::KIND.as_str(),
@@ -987,7 +991,7 @@ async fn submit_tx_with_output(
             tx,
         )
         .await?;
-    Ok((operation_id, transaction_id))
+    Ok((operation_id, out_point_range.txid))
 }
 
 async fn await_tx_accepted(
@@ -1016,7 +1020,7 @@ async fn await_unlock_request_processed(
                 fedimint_core::task::sleep(sleep_duration).await
             }
             Err(e) => {
-                e.report_if_important();
+                e.report_if_unusual("unlock request processed");
                 fedimint_core::task::sleep(backoff.next().unwrap_or(cycle_duration)).await
             }
         }
@@ -1042,7 +1046,7 @@ async fn claim_idle_balance_input(
         state_machines: Arc::new(move |_| Vec::<StabilityPoolStateMachine>::new()),
     };
 
-    let (tx_id, outpoints) = global_context
+    let out_point_range = global_context
         .claim_inputs(
             dbtx,
             ClientInputBundle::new(vec![input], vec![state_machines]),
@@ -1056,8 +1060,8 @@ async fn claim_idle_balance_input(
         transaction_id: old_state.transaction_id,
         state: StabilityPoolWithdrawalState::Processed {
             withdrawal_amount: idle_balance,
-            withdrawal_tx_id: tx_id,
-            withdrawal_outpoints: outpoints,
+            withdrawal_tx_id: out_point_range.txid,
+            withdrawal_outpoints: out_point_range.into_iter().collect(),
         },
     }
 }

@@ -1,5 +1,3 @@
-use std::time::Duration;
-
 use async_trait::async_trait;
 use fedi_social_common::common::SignedRecoveryRequest;
 use fedi_social_common::SignedBackupRequest;
@@ -42,7 +40,6 @@ where
         for res in join_all(self.all_peers().iter().map(|peer_id| {
             info!(%peer_id, id=%request.backup_id(), "Uploading social backup to guardian");
             self.request_single_peer_federation(
-                Some(Duration::from_secs(60)),
                 "backup".into(),
                 ApiRequestErased::new(request),
                 *peer_id,
@@ -63,7 +60,6 @@ where
         for res in join_all(self.all_peers().iter().map(|peer_id| {
             info!(%peer_id, id=%request.recovery_id(), "Uploading social backup to guardian");
             self.request_single_peer_federation(
-                Some(Duration::from_secs(60)),
                 "recover".into(),
                 ApiRequestErased::new(request),
                 *peer_id,

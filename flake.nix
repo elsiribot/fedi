@@ -6,7 +6,7 @@
     nixpkgs-unstable.url = "github:NixOS/nixpkgs/nixos-unstable";
     flake-utils.url = "github:numtide/flake-utils";
     fedimint-pkgs = {
-      url = "github:fedibtc/fedimint?ref=v0.5.0-rc.4-fed4";
+      url = "github:fedimint/fedimint?ref=v0.6.2";
     };
 
     fenix = {
@@ -207,7 +207,7 @@
             llvmPackages = pkgs.llvmPackages_11;
           in
           {
-            extraRustFlags = "--cfg tokio_unstable --cfg=curve25519_dalek_backend=\"serial\" -Csymbol-mangling-version=v0";
+            extraRustFlags = "--cfg=curve25519_dalek_backend=\"serial\" -Csymbol-mangling-version=v0";
 
             components = [
               "rustc"

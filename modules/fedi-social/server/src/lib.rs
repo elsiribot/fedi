@@ -17,7 +17,7 @@ use common::{
 pub use fedi_social_common as common;
 use fedi_social_common::{FediSocialInputError, FediSocialOutputError};
 use fedimint_core::config::{
-    ConfigGenModuleParams, DkgResult, ServerModuleConfig, ServerModuleConsensusConfig,
+    ConfigGenModuleParams, ServerModuleConfig, ServerModuleConsensusConfig,
     TypedServerModuleConfig, TypedServerModuleConsensusConfig,
 };
 use fedimint_core::core::ModuleInstanceId;
@@ -25,12 +25,16 @@ use fedimint_core::db::{DatabaseTransaction, IDatabaseTransactionOpsCoreTyped};
 use fedimint_core::module::audit::Audit;
 use fedimint_core::module::{
     api_endpoint, ApiEndpoint, ApiError, ApiVersion, CoreConsensusVersion, InputMeta, ModuleCommon,
-    ModuleConsensusVersion, ModuleInit, PeerHandle, ServerModuleInit, ServerModuleInitArgs,
-    SupportedModuleApiVersions, TransactionItemAmount,
+    ModuleConsensusVersion, ModuleInit, PeerHandle, SupportedModuleApiVersions,
+    TransactionItemAmount,
 };
-use fedimint_core::server::DynServerModule;
-use fedimint_core::{push_db_pair_items, InPoint, NumPeersExt, OutPoint, PeerId, ServerModule};
-use fedimint_server::config::distributedgen::{PeerHandleOps, ThresholdKeys};
+use fedimint_core::{push_db_pair_items, InPoint, NumPeersExt, OutPoint, PeerId};
+use fedimint_server::config::distributedgen::PeerHandleOps;
+use fedimint_server::core::{
+    DynServerModule, ServerModule, ServerModuleInit, ServerModuleInitArgs,
+};
+use fedimint_threshold_crypto::serde_impl::SerdeSecret;
+use fedimint_threshold_crypto::{PublicKeySet, SecretKey, SecretKeyShare};
 use futures::stream::StreamExt;
 use rand::rngs::OsRng;
 use secp256k1::SECP256K1;
@@ -164,22 +168,18 @@ impl ServerModuleInit for FediSocialInit {
         &self,
         peers: &PeerHandle,
         _params: &ConfigGenModuleParams,
-    ) -> DkgResult<ServerModuleConfig> {
-        let g1 = peers.run_dkg_g1(()).await?;
-
-        let ThresholdKeys {
-            public_key_set,
-            secret_key_share,
-        } = g1[&()].threshold_crypto();
+    ) -> anyhow::Result<ServerModuleConfig> {
+        let (polynomial, sks) = peers.run_dkg_g1().await?;
 
         let server = FediSocialConfig {
             private: FediSocialPrivateConfig {
-                sk_share: secret_key_share,
+                sk_share: SerdeSecret(SecretKeyShare(SecretKey(sks))),
             },
             consensus: FediSocialConsensusConfig {
-                pk_set: public_key_set,
-                threshold: u32::try_from(peers.peer_ids().to_num_peers().threshold())
-                    .expect("must not fail"),
+                pk_set: PublicKeySet::from(fedimint_threshold_crypto::poly::Commitment::from(
+                    polynomial,
+                )),
+                threshold: u32::try_from(peers.num_peers().threshold()).expect("must not fail"),
             },
             local: FediSocialConfigLocal {},
         };

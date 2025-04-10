@@ -7,8 +7,8 @@ use fedi_core::envs::{
 use fedi_social_common::config::FediSocialGenParams;
 use fedi_social_server::FediSocialInit;
 use fedimint_core::envs::is_env_var_set;
-use fedimint_core::module::ServerModuleInit;
 use fedimint_core::Amount;
+use fedimint_server_core::ServerModuleInit as _;
 use fedimintd::Fedimintd;
 use tracing::warn;
 

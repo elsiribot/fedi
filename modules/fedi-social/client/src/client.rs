@@ -85,8 +85,8 @@ impl RecoveryFile {
     }
 
     pub fn from_bytes(raw: &[u8]) -> anyhow::Result<Self> {
-        Ok(Decodable::consensus_decode(
-            &mut &raw[..],
+        Ok(Decodable::consensus_decode_whole(
+            raw,
             &ModuleDecoderRegistry::default(),
         )?)
     }
@@ -311,7 +311,7 @@ impl SocialRecoveryClient {
         Ok(())
     }
 
-    /// After successfull in person verification download the decryption share
+    /// After successful in person verification download the decryption share
     /// that the guardian should have published.
     async fn download_decryption_share_from(
         &self,
@@ -322,7 +322,7 @@ impl SocialRecoveryClient {
             .request_raw(
                 peer_id,
                 "decryption_share",
-                &[ApiRequestErased::new(self.state.recovery_id()).to_json()],
+                &ApiRequestErased::new(self.state.recovery_id()),
             )
             .await?;
 
@@ -399,11 +399,7 @@ impl SocialVerification {
     ) -> anyhow::Result<Option<VerificationDocument>> {
         let encrypted_share = self
             .api
-            .request_raw(
-                self.peer_id,
-                "get_verification",
-                &[ApiRequestErased::new(id).to_json()],
-            )
+            .request_raw(self.peer_id, "get_verification", &ApiRequestErased::new(id))
             .await?;
 
         let doc: Option<VerificationDocument> = serde_json::from_value(encrypted_share)?;
@@ -418,8 +414,7 @@ impl SocialVerification {
     ) -> anyhow::Result<()> {
         let _: Option<()> = self
             .api
-            .request_single_peer_typed(
-                None,
+            .request_single_peer(
                 "approve_recovery".to_owned(),
                 ApiRequestErased::new((id, admin_password)),
                 self.peer_id,

@@ -154,11 +154,11 @@ impl TryFrom<AccountUnchecked> for Account {
 }
 
 impl Decodable for Account {
-    fn consensus_decode<R: io::Read>(
+    fn consensus_decode_partial<R: io::Read>(
         r: &mut R,
         modules: &ModuleDecoderRegistry,
     ) -> Result<Self, DecodeError> {
-        let raw = AccountUnchecked::consensus_decode(r, modules)?;
+        let raw = AccountUnchecked::consensus_decode_partial(r, modules)?;
         Ok(raw.try_into()?)
     }
 }
@@ -236,7 +236,7 @@ pub const PROVIDER_HRP: Hrp = Hrp::parse_unchecked("spp");
 pub const BTC_DEPOSITOR_HRP: Hrp = Hrp::parse_unchecked("spd");
 
 impl Display for AccountId {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         let hrp = match self.acc_type {
             AccountType::Seeker => SEEKER_HRP,
             AccountType::Provider => PROVIDER_HRP,
@@ -296,12 +296,12 @@ impl<M> Decodable for Deposit<M>
 where
     M: Decodable,
 {
-    fn consensus_decode<R: std::io::Read>(
+    fn consensus_decode_partial<R: std::io::Read>(
         r: &mut R,
         modules: &ModuleDecoderRegistry,
     ) -> Result<Self, DecodeError> {
         let (txid, sequence, amount, meta) =
-            <(TransactionId, u64, Amount, M)>::consensus_decode(r, modules)?;
+            <(TransactionId, u64, Amount, M)>::consensus_decode_partial(r, modules)?;
         Ok(Self {
             txid,
             sequence,

@@ -29,9 +29,7 @@ use fedi_social_client::{
     SocialRecoveryState, SocialVerification, UserSeedPhrase, SOCIAL_RECOVERY_SECRET_CHILD_ID,
 };
 use fedimint_api_client::api::net::Connector;
-use fedimint_api_client::api::{
-    DynGlobalApi, DynModuleApi, FederationApiExt as _, StatusResponse, WsFederationApi,
-};
+use fedimint_api_client::api::{DynGlobalApi, DynModuleApi, FederationApiExt as _, StatusResponse};
 use fedimint_bip39::Bip39RootSecretStrategy;
 use fedimint_client::db::{CachedApiVersionSetKey, ChronologicalOperationLogKey};
 use fedimint_client::meta::{FetchKind, MetaService, MetaSource};
@@ -450,7 +448,11 @@ impl FederationV2 {
         if should_override_localhost {
             override_localhost_invite_code(&mut invite_code);
         }
-        let api_single_gaurdian = DynGlobalApi::from_invite_code(&Connector::Tcp, &invite_code);
+        let api_single_gaurdian = DynGlobalApi::from_endpoints(
+            invite_code.peers(),
+            &invite_code.api_secret(),
+            &Connector::Tcp,
+        );
         let client_root_sercet = {
             let federation_id = invite_code.federation_id();
             // We do an additional derivation using `DerivableSecret::federation_key` since
@@ -628,7 +630,7 @@ impl FederationV2 {
     /// federation ID
     pub fn federation_name(&self) -> String {
         self.client
-            .get_meta("federation_name")
+            .get_config_meta("federation_name")
             .unwrap_or(self.federation_id().to_string()[0..8].to_string())
     }
 
@@ -715,10 +717,10 @@ impl FederationV2 {
             .map(|(&peer_id, endpoint)| {
                 (
                     peer_id,
-                    WsFederationApi::new(
-                        &Connector::Tcp,
+                    DynGlobalApi::from_endpoints(
                         vec![(peer_id, endpoint.clone())],
                         api_secret,
+                        &Connector::Tcp,
                     ),
                 )
             })
@@ -915,7 +917,9 @@ impl FederationV2 {
                     | DepositStateV2::Confirmed { btc_deposited, .. }
                     | DepositStateV2::Claimed { btc_deposited, .. } => {
                         let federation_fees = wallet.get_fee_consensus().peg_in_abs;
-                        let amount = Amount::from_sats(btc_deposited.to_sat()) - federation_fees;
+                        let amount = Amount::from_sats(btc_deposited.to_sat())
+                            .checked_sub(federation_fees)
+                            .expect("'Can't fail");
                         // FIXME: add fedi fees once fedimint await primary module outputs
                         if let DepositStateV2::Claimed { .. } = &update {
                             fed.write_success_receive_fedi_fee(operation_id, amount)
@@ -1168,7 +1172,11 @@ impl FederationV2 {
         let network_fees = self
             .client
             .wallet()?
-            .get_withdraw_fees(address.clone(), amount)
+            .get_withdraw_fees(
+                // TODO: need to verify against federation network, but where do we get it from?
+                &address.assume_checked(),
+                amount,
+            )
             .await?;
 
         let amount_msat = amount.to_sat() * 1000;
@@ -1205,7 +1213,13 @@ impl FederationV2 {
                 RpcTransactionDirection::Send,
             )
             .await?;
-        let network_fees = wallet.get_withdraw_fees(address.clone(), amount).await?;
+        let network_fees = wallet
+            .get_withdraw_fees(
+                // TODO: verify
+                &address.clone().assume_checked(),
+                amount,
+            )
+            .await?;
 
         let amount_msat = amount.to_sat() * 1000;
         let fedi_fee = (amount_msat * fedi_fee_ppm).div_ceil(MILLION);
@@ -1222,7 +1236,8 @@ impl FederationV2 {
 
         let operation_id = wallet
             .withdraw(
-                address,
+                // TODO: verify
+                &address.clone().assume_checked(),
                 amount,
                 network_fees,
                 BaseMetadata::from(frontend_meta),
@@ -2751,7 +2766,11 @@ impl FederationV2 {
                                 let fees = wallet
                                     .map(|w| w.get_fee_consensus().peg_in_abs)
                                     .unwrap_or(Amount::ZERO);
-                                RpcAmount(Amount::from_sats(btc_deposited.to_sat()) - fees)
+                                RpcAmount(
+                                    Amount::from_sats(btc_deposited.to_sat())
+                                        .checked_sub(fees)
+                                        .expect("Can't fail"),
+                                )
                             }
                             _ => RpcAmount(Amount::ZERO),
                         };

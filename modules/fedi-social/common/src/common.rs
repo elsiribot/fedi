@@ -63,7 +63,7 @@ impl<T> Decodable for SerdeEncodable<T>
 where
     T: for<'de> serde::Deserialize<'de>,
 {
-    fn consensus_decode<R: std::io::Read>(
+    fn consensus_decode_partial<R: std::io::Read>(
         r: &mut R,
         _modules: &ModuleDecoderRegistry,
     ) -> Result<Self, DecodeError> {
@@ -86,11 +86,11 @@ impl VerificationDocument {
     /// Simple XOR value to fool any software that would like to mess with with
     /// video data.
     pub const DATA_XOR_VALUE: u8 = 0b10101100;
-    pub const HASH_LENGHT: usize = <sha256::Hash as Hash>::LEN;
+    pub const HASH_LENGTH: usize = <sha256::Hash as Hash>::LEN;
 
     pub fn id(&self) -> VerificationDocumentHash {
         VerificationDocumentHash(
-            sha256::Hash::from_slice(&self.0[0..Self::HASH_LENGHT])
+            sha256::Hash::from_slice(&self.0[0..Self::HASH_LENGTH])
                 .expect("the data inside RecoveryDocument validated during construction"),
         )
     }
@@ -121,13 +121,13 @@ impl VerificationDocument {
 
     /// Get the original data used to create this `VerificationDocument`
     pub fn to_raw(&self) -> anyhow::Result<Vec<u8>> {
-        let raw_data: Vec<u8> = self.0[Self::HASH_LENGHT..]
+        let raw_data: Vec<u8> = self.0[Self::HASH_LENGTH..]
             .iter()
             .map(|b| b ^ Self::DATA_XOR_VALUE)
             .collect();
         let hash = sha256::Hash::hash(&raw_data);
 
-        if hash.as_byte_array() != &self.0[..Self::HASH_LENGHT] {
+        if hash.as_byte_array() != &self.0[..Self::HASH_LENGTH] {
             anyhow::bail!("The verification document raw data does not match the checksum");
         }
 
@@ -203,8 +203,8 @@ impl DoubleEncryptedData {
             &self.0 .0,
         )?;
 
-        let mut plaintext = fedimint_aead::decrypt(&mut encrypted_to_self, personal_sk)?;
-        let decoded = T::consensus_decode(&mut plaintext, &Default::default())?;
+        let plaintext = fedimint_aead::decrypt(&mut encrypted_to_self, personal_sk)?;
+        let decoded = T::consensus_decode_whole(plaintext, &Default::default())?;
 
         Ok(decoded)
     }
