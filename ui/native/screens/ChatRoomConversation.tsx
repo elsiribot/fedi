@@ -25,6 +25,8 @@ import type { RootStackParamList } from '../types/navigation'
 
 const log = makeLog('ChatRoomConversation')
 
+const DEFAULT_NEW_MESSAGE_BOTTOM_OFFSET = 20
+
 export type Props = NativeStackScreenProps<
     RootStackParamList,
     'ChatRoomConversation'
@@ -36,6 +38,9 @@ const ChatRoomConversation: React.FC<Props> = ({ route }: Props) => {
     const dispatch = useAppDispatch()
     const { roomId, chatType = ChatType.group } = route.params
     const [isSending, setIsSending] = useState(false)
+    const [newMessageBottomOffset, setNewMessageBottomOffset] = useState(
+        DEFAULT_NEW_MESSAGE_BOTTOM_OFFSET,
+    )
     const room = useAppSelector(s => selectMatrixRoom(s, roomId))
     const groupPreview = useAppSelector(s => selectGroupPreview(s, roomId))
     const toast = useToast()
@@ -100,15 +105,28 @@ const ChatRoomConversation: React.FC<Props> = ({ route }: Props) => {
                     type={chatType}
                     id={roomId || ''}
                     isPublic={room?.isPublic}
+                    newMessageBottomOffset={newMessageBottomOffset}
                 />
                 <MessageInput
                     onMessageSubmitted={handleSend}
                     id={roomId || directUserId || ''}
                     isPublic={room?.isPublic}
+                    onHeightChanged={height =>
+                        setNewMessageBottomOffset(
+                            DEFAULT_NEW_MESSAGE_BOTTOM_OFFSET + height,
+                        )
+                    }
                 />
             </>
         )
-    }, [roomId, directUserId, chatType, handleSend, room])
+    }, [
+        roomId,
+        directUserId,
+        chatType,
+        handleSend,
+        room,
+        newMessageBottomOffset,
+    ])
 
     const style = useMemo(() => styles(theme), [theme])
 

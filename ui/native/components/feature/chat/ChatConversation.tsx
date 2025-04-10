@@ -43,12 +43,14 @@ type MessagesListProps = {
     id: string
     multiUserChat?: boolean
     isPublic?: boolean
+    newMessageBottomOffset: number
 }
 
 const ChatConversation: React.FC<MessagesListProps> = ({
     type,
     id,
     isPublic = true,
+    newMessageBottomOffset = 90,
 }: MessagesListProps) => {
     const { t } = useTranslation()
     const { theme } = useTheme()
@@ -125,12 +127,12 @@ const ChatConversation: React.FC<MessagesListProps> = ({
     // Animate new message button in and out
     useEffect(() => {
         Animated.timing(animatedNewMessageBottom, {
-            toValue: hasNewMessage ? 90 : -50,
+            toValue: hasNewMessage ? newMessageBottomOffset : -50,
             duration: 100,
             useNativeDriver: false,
             easing: Easing.linear,
         }).start()
-    }, [animatedNewMessageBottom, hasNewMessage])
+    }, [animatedNewMessageBottom, hasNewMessage, newMessageBottomOffset])
 
     const scrollToEnd = useCallback(() => {
         // Use scrollToOffset instead of scrollToEnd because the list is inverted

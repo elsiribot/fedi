@@ -7,6 +7,7 @@ import {
     Insets,
     Keyboard,
     KeyboardEvent,
+    LayoutChangeEvent,
     NativeSyntheticEvent,
     Platform,
     Pressable,
@@ -70,6 +71,7 @@ type MessageInputProps = {
     id: string
     isSending?: boolean
     isPublic?: boolean
+    onHeightChanged?: (height: number) => void
 }
 
 const log = makeLog('MessageInput')
@@ -88,6 +90,7 @@ const MessageInput: React.FC<MessageInputProps> = ({
     id,
     isSending,
     isPublic = true,
+    onHeightChanged,
 }: MessageInputProps) => {
     const { t } = useTranslation()
     const { theme } = useTheme()
@@ -443,8 +446,14 @@ const MessageInput: React.FC<MessageInputProps> = ({
         [inputHeight, theme],
     )
 
+    const onLayout = (event: LayoutChangeEvent) => {
+        if (!onHeightChanged) return
+        onHeightChanged(event.nativeEvent.layout.height)
+    }
+
     return (
         <View
+            onLayout={onLayout}
             style={[
                 style.container,
                 keyboardHeight > 0 && Platform.OS === 'ios'
