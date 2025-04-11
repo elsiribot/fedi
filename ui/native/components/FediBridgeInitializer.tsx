@@ -91,7 +91,14 @@ export const FediBridgeInitializer: React.FC<Props> = ({ children }) => {
                               ),
                           ]
                         : []),
+                    // if there is no matrix session yet we will start the matrix
+                    // client either during recovery or during onboarding after a
+                    // display name is entered
+                    ...(status?.matrixSetup
+                        ? [dispatchRef.current(startMatrixClient({ fedimint }))]
+                        : []),
                 ])
+
                 // This means the user has migrated their seed to a new device via device/app
                 // cloning so we need to prompt them to reinstall and do a device transfer
                 // so exit early without proceeding with further initialization
@@ -108,12 +115,7 @@ export const FediBridgeInitializer: React.FC<Props> = ({ children }) => {
                 // the latest metadata may include new default chats that require
                 // matrix to fetch the room previews
                 await dispatchRef.current(refreshFederations(fedimint)).unwrap()
-                // if there is no matrix session yet we will start the matrix
-                // client either during recovery or during onboarding after a
-                // display name is entered
-                if (status?.matrixSetup) {
-                    await dispatchRef.current(startMatrixClient({ fedimint }))
-                }
+
                 setBridgeIsReady(true)
                 // preview chats after matrix client has finished initializing
                 dispatchRef.current(previewAllDefaultChats())
