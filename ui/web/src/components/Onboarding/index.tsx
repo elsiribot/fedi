@@ -1,6 +1,7 @@
 import React from 'react'
 
 import { styled } from '../../styles'
+import { OnboardingCommunities } from './Communities'
 import { EnterDisplayName } from './EnterDisplayName'
 import { JoinFederation } from './JoinFederation'
 import { OnboardingComplete } from './OnboardingComplete'
@@ -30,6 +31,8 @@ export const Onboarding: React.FC<Props> = ({ step }) => {
         content = <UploadAvatarImage />
     } else if (step === 'complete') {
         content = <OnboardingComplete />
+    } else if (step === 'communities') {
+        content = <OnboardingCommunities />
     } else {
         content = <OnboardingHome />
     }

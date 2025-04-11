@@ -1,5 +1,7 @@
+import Image from 'next/image'
 import { useTranslation } from 'react-i18next'
 
+import AwesomeFedimint from '@fedi/common/assets/images/awesome-fedimint.png'
 import { ErrorBoundary } from '@fedi/common/components/ErrorBoundary'
 import { selectFederations } from '@fedi/common/redux'
 
@@ -8,6 +10,7 @@ import { ContentBlock } from '../components/ContentBlock'
 import { FediModTiles } from '../components/FediModTiles'
 import * as Layout from '../components/Layout'
 import PublicFederations from '../components/PublicFederations'
+import { Text } from '../components/Text'
 import { useAppSelector } from '../hooks'
 import { styled } from '../styles'
 
@@ -24,26 +27,57 @@ function HomePage() {
                     <Layout.Title>{t('words.home')}</Layout.Title>
                 </Layout.Header>
                 <Layout.Content>
-                    {hasFederations ? (
-                        <ContentInner>
-                            <BitcoinWallet />
-                            <ErrorBoundary fallback={null}>
-                                <FediModTiles />
-                            </ErrorBoundary>
-                        </ContentInner>
-                    ) : (
-                        <PublicFederations />
-                    )}
+                    <Content>
+                        <IllustrationWrapper>
+                            <Image
+                                src={AwesomeFedimint}
+                                alt=""
+                                width={200}
+                                height={200}
+                            />
+                        </IllustrationWrapper>
+                        <IntroTextWrapper>
+                            <Text variant="h2" weight="medium">
+                                {t('feature.community.join-a-community')}
+                            </Text>
+                            <Text>
+                                {t('feature.community.join-community-guidance')}
+                            </Text>
+                        </IntroTextWrapper>
+                        {hasFederations ? (
+                            <>
+                                <BitcoinWallet />
+                                <ErrorBoundary fallback={null}>
+                                    <FediModTiles />
+                                </ErrorBoundary>
+                            </>
+                        ) : (
+                            <PublicFederations />
+                        )}
+                    </Content>
                 </Layout.Content>
             </Layout.Root>
         </ContentBlock>
     )
 }
 
-const ContentInner = styled('div', {
+const Content = styled('div', {
     display: 'flex',
     flexDirection: 'column',
-    gap: 16,
+    gap: 20,
+})
+
+const IllustrationWrapper = styled('div', {
+    display: 'flex',
+    justifyContent: 'center',
+    padding: 16,
+})
+
+const IntroTextWrapper = styled('div', {
+    display: 'flex',
+    flexDirection: 'column',
+    gap: 10,
+    textAlign: 'center',
 })
 
 export default HomePage

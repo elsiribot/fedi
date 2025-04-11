@@ -51,7 +51,7 @@ function WelcomePage() {
         try {
             // Return early if no invite code
             if (!inviteCode) {
-                push(hasSetDisplayName ? '/home' : '/onboarding/username')
+                push(hasSetDisplayName ? '/home' : '/onboarding/communities')
                 return
             }
 

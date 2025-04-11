@@ -37,7 +37,7 @@ interface Props {
 export const FediBridgeInitializer: React.FC<Props> = ({ children }) => {
     const dispatch = useAppDispatch()
     const { t } = useTranslation()
-    const { pathname } = useRouter()
+    const { pathname, query } = useRouter()
 
     const started = useAppSelector(selectMatrixStarted)
     const hasLoadedStorage = useAppSelector(selectHasLoadedFromStorage)
@@ -140,6 +140,12 @@ export const FediBridgeInitializer: React.FC<Props> = ({ children }) => {
         pathname !== '/'
     ) {
         return <Redirect path="/" />
+    }
+
+    // If display name has been set and no invite code then prevent
+    // user from accessing welcome page again
+    if (hasSetDisplayName && !query.invite_code && pathname === '/') {
+        return <Redirect path="/home" />
     }
 
     return children

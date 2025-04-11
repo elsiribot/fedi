@@ -7,8 +7,11 @@ import { useToast } from '@fedi/common/hooks/toast'
 import {
     joinFederation,
     selectFederationIds,
+    selectIsMatrixReady,
     selectHasSetMatrixDisplayName,
     setActiveFederationId,
+    startMatrixClient,
+    setMatrixDisplayName,
 } from '@fedi/common/redux'
 import { JoinPreview, ParserDataType } from '@fedi/common/types'
 import {
@@ -17,6 +20,7 @@ import {
     getIsFederationSupported,
     previewInvite,
 } from '@fedi/common/utils/FederationUtils'
+import { generateRandomDisplayName } from '@fedi/common/utils/chat'
 import { makeLog } from '@fedi/common/utils/log'
 
 import { useAppDispatch, useAppSelector, useMediaQuery } from '../../hooks'
@@ -45,15 +49,17 @@ export const JoinFederation: React.FC = () => {
     const { push, query } = useRouter()
     const toast = useToast()
 
+    const federationIds = useAppSelector(selectFederationIds)
+    const isSm = useMediaQuery(config.media.sm)
+    const hasSetDisplayName = useAppSelector(selectHasSetMatrixDisplayName)
+    const isMatrixReady = useAppSelector(selectIsMatrixReady)
+
     const [isJoining, setIsJoining] = useState(false)
     const [isFetchingPreview, setIsFetchingPreview] = useState<boolean>(false)
     const [isShowingTos, setIsShowingTos] = useState(false)
     const [federationPreview, setFederationPreview] = useState<JoinPreview>()
 
-    const federationIds = useAppSelector(selectFederationIds)
-    const isSm = useMediaQuery(config.media.sm)
     const popupInfo = usePopupFederationInfo(federationPreview?.meta)
-    const hasSetDisplayName = useAppSelector(selectHasSetMatrixDisplayName)
 
     const handleCode = useCallback(
         async (code: string) => {
@@ -87,25 +93,42 @@ export const JoinFederation: React.FC = () => {
                     code: federationPreview.inviteCode,
                 }),
             ).unwrap()
-            push(
-                hasSetDisplayName
-                    ? '/onboarding/complete'
-                    : '/onboarding/username',
-            )
+
+            if (!isMatrixReady) {
+                await dispatch(startMatrixClient({ fedimint })).unwrap()
+            }
+
+            if (!hasSetDisplayName) {
+                await dispatch(
+                    setMatrixDisplayName({
+                        displayName: generateRandomDisplayName(2),
+                    }),
+                ).unwrap()
+            }
+
+            push('/home')
         } catch (err) {
             log.error('handleJoin', err)
             toast.error(t, err, 'errors.invalid-federation-code')
             setIsJoining(false)
         }
-    }, [dispatch, federationPreview, hasSetDisplayName, push, t, toast])
+    }, [
+        dispatch,
+        federationPreview,
+        hasSetDisplayName,
+        isMatrixReady,
+        push,
+        t,
+        toast,
+    ])
 
     // If they came here with invite code in query string then paste the code for them
     useEffect(() => {
-        if (query.code && !federationPreview) {
-            const code = String(query.code)
+        if (query.invite_code && !federationPreview) {
+            const code = String(query.invite_code)
             handleCode(code)
         }
-    }, [query.code, federationPreview, handleCode])
+    }, [query.invite_code, federationPreview, handleCode])
 
     const tosUrl = federationPreview
         ? getFederationTosUrl(federationPreview.meta)
@@ -115,7 +138,7 @@ export const JoinFederation: React.FC = () => {
     let actions: React.ReactNode
 
     if (isFetchingPreview) {
-        content = <HoloLoader size={'lg'} />
+        content = <HoloLoader size={'xl'} />
     } else if (!federationPreview) {
         content = (
             <ScanWrap>
