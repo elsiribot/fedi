@@ -207,7 +207,7 @@
             llvmPackages = pkgs.llvmPackages_11;
           in
           {
-            extraRustFlags = "--cfg=curve25519_dalek_backend=\"serial\" -Csymbol-mangling-version=v0";
+            extraRustFlags = "--cfg getrandom_backend=\"wasm_js\" --cfg=curve25519_dalek_backend=\"serial\" -Csymbol-mangling-version=v0";
 
             components = [
               "rustc"
