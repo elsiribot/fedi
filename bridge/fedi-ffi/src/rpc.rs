@@ -2555,7 +2555,8 @@ pub mod tests {
             test_new_device_registration_post_recovery
         );
         spawn_and_attach_name!(tests_set, tests_names, test_fee_remittance_on_startup);
-        spawn_and_attach_name!(tests_set, tests_names, test_reused_ecash_proofs);
+        // TODO: Ecash reuse not possible anymore, delete?
+        // spawn_and_attach_name!(tests_set, tests_names, test_reused_ecash_proofs);
         spawn_and_attach_name!(
             tests_set,
             tests_names,
@@ -2852,6 +2853,7 @@ pub mod tests {
         }
     }
 
+    #[allow(dead_code)]
     async fn test_lightning_send_and_receive() -> anyhow::Result<()> {
         // Vec of tuple of (send_ppm, receive_ppm)
         let fee_ppm_values = vec![(0, 0), (10, 5), (100, 50)];
@@ -4562,6 +4564,7 @@ pub mod tests {
         Ok(())
     }
 
+    #[allow(dead_code)]
     async fn test_reused_ecash_proofs() -> anyhow::Result<()> {
         let bridge_dir1 = create_data_dir();
         let bridge_dir2 = create_data_dir();
@@ -4603,8 +4606,9 @@ pub mod tests {
             // trigger note index reuse
             let ecash2 = cli_generate_ecash(ecash_receive_amount).await?;
             receiveEcash(federation_b2.clone(), ecash2, FrontendMetadata::default()).await?;
-            // this will still pass but federation will have unspendable ecash
-            wait_for_ecash_reissue(&federation_b2).await?;
+            wait_for_ecash_reissue(&federation_b2)
+                .await
+                .expect_err("ecash reuse must be detected by server since fedimintd 0.6");
 
             // kill both bridges
             drop(federation_b1);
