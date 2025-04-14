@@ -1571,7 +1571,7 @@ impl FederationV2 {
                             updates.next().await;
                             bail!("Lightning payment failed, got refund")
                         }
-                        LnPayState::Canceled { .. } => {
+                        LnPayState::Canceled => {
                             updates.next().await;
                             // FIXME: is this right?
                             bail!("Lightning payment failed, got refund")
