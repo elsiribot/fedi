@@ -207,7 +207,7 @@
             llvmPackages = pkgs.llvmPackages_11;
           in
           {
-            extraRustFlags = "--cfg getrandom_backend=\"wasm_js\" --cfg=curve25519_dalek_backend=\"serial\" -Csymbol-mangling-version=v0";
+            extraRustFlags = "--cfg=curve25519_dalek_backend=\"serial\" -Csymbol-mangling-version=v0";
 
             components = [
               "rustc"
@@ -388,6 +388,8 @@
               # generic Linux version of aapt2, which doesn't work on NixOS due to dynamic
               # linking idiosyncrasies
               export GRADLE_OPTS="-Dorg.gradle.project.android.aapt2FromMavenOverride=$ANDROID_SDK_ROOT/build-tools/34.0.0/aapt2"
+
+              export CARGO_TARGET_WASM32_UNKNOWN_UNKNOWN_RUSTFLAGS="--cfg getrandom_backend=\"wasm_js\" $CARGO_TARGET_WASM32_UNKNOWN_UNKNOWN_RUSTFLAGS"
             '';
           }
         );
