@@ -27,6 +27,7 @@ use crate::api::RegisteredDevice;
 use crate::bridge::BridgeFullInitError;
 use crate::error::RpcError;
 use crate::federation::federation_v2::client::ClientExt;
+use crate::matrix::RpcRoomId;
 use crate::storage::{FediFeeSchedule, FiatFXInfo};
 
 #[derive(Debug, Serialize, Deserialize, TS)]
@@ -1052,6 +1053,8 @@ pub enum SPv2TransferMetadata {
     StableBalance {
         frontend_metadata: Option<FrontendMetadata>,
     },
+    /// Deposit into multispend account
+    MultispendDeposit { room: RpcRoomId },
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]

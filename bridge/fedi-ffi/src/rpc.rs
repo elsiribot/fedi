@@ -1723,8 +1723,12 @@ async fn matrixMultispendDeposit(
         .get_federation(&finalized_group.federation_id.0)?;
     fed.spv2_feature_state()
         .ok_or(anyhow::anyhow!("SPv2 not enabled"))?;
-    fed.multispend_deposit(FiatAmount(amount.0), finalized_group.spv2_account.id())
-        .await?;
+    fed.multispend_deposit(
+        FiatAmount(amount.0),
+        finalized_group.spv2_account.id(),
+        room_id,
+    )
+    .await?;
     Ok(())
 }
 #[macro_rules_derive(rpc_method!)]

@@ -122,6 +122,7 @@ use crate::features::{
     FeatureCatalog, StabilityPoolV2FeatureConfig, StabilityPoolV2FeatureConfigState,
 };
 use crate::fedi_fee::{FediFeeHelper, FediFeeRemittanceService};
+use crate::matrix::RpcRoomId;
 use crate::storage::{AppState, FediFeeSchedule};
 use crate::types::{
     federation_v2_to_rpc_federation, BaseMetadata, EcashReceiveMetadata, EcashSendMetadata,
@@ -4012,9 +4013,15 @@ impl FederationV2 {
         &self,
         amount: FiatAmount,
         group_account: AccountId,
+        room: RpcRoomId,
     ) -> anyhow::Result<()> {
         self.ensure_multispend_feature()?;
-        self.spv2_simple_transfer(group_account, amount).await?;
+        self.spv2_simple_transfer(
+            group_account,
+            amount,
+            SPv2TransferMetadata::MultispendDeposit { room },
+        )
+        .await?;
         // FIXME: send post deposit notification
         Ok(())
     }
