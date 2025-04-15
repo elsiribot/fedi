@@ -122,19 +122,47 @@ export class FedimintBridge {
         return this.rpcTyped('spv2NextCycleStartTime', { federationId })
     }
 
-    async spv2DepositToSeek(amount: RpcAmount, federationId: string) {
-        return this.rpcTyped('spv2DepositToSeek', { amount, federationId })
-    }
-
-    async spv2Withdraw(federationId: string, fiatAmount: UsdCents) {
-        return this.rpcTyped('spv2Withdraw', {
+    async spv2DepositToSeek(
+        amount: RpcAmount,
+        federationId: string,
+        frontendMeta: FrontendMetadata = {
+            initialNotes: null,
+            recipientMatrixId: null,
+            senderMatrixId: null,
+        },
+    ) {
+        return this.rpcTyped('spv2DepositToSeek', {
+            amount,
             federationId,
-            fiatAmount,
+            frontendMeta,
         })
     }
 
-    async spv2WithdrawAll(federationId: string) {
-        return this.rpcTyped('spv2WithdrawAll', { federationId })
+    async spv2Withdraw(
+        federationId: string,
+        fiatAmount: UsdCents,
+        frontendMeta: FrontendMetadata = {
+            initialNotes: null,
+            recipientMatrixId: null,
+            senderMatrixId: null,
+        },
+    ) {
+        return this.rpcTyped('spv2Withdraw', {
+            federationId,
+            fiatAmount,
+            frontendMeta,
+        })
+    }
+
+    async spv2WithdrawAll(
+        federationId: string,
+        frontendMeta: FrontendMetadata = {
+            initialNotes: null,
+            recipientMatrixId: null,
+            senderMatrixId: null,
+        },
+    ) {
+        return this.rpcTyped('spv2WithdrawAll', { federationId, frontendMeta })
     }
 
     async spv2AverageFeeRate(federationId: string, numCycles: number) {
