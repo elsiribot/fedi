@@ -14,7 +14,7 @@
       inputs.nixpkgs.follows = "nixpkgs";
     };
     flakebox = {
-      url = "github:fedibtc/flakebox?rev=56ee87b7dd205c7af169ff72e818e3a92560b424";
+      url = "github:dpc/flakebox?rev=77a60a6b8912d780ddba27987fdde8ef8ca5aefd";
       inputs.nixpkgs.follows = "nixpkgs";
       inputs.fenix.follows = "fenix";
     };
