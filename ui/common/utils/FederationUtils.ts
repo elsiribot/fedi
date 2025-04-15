@@ -383,6 +383,27 @@ export const shouldEnableStabilityPool = (metadata: FederationMetadata) => {
         : stabilityPoolDisabled !== 'true'
 }
 
+export const hasMultispendEnabled = (metadata: FederationMetadata) => {
+    const multispendDisabled = getMetaField(
+        SupportedMetaFields.multispend_disabled,
+        metadata,
+    )
+    // Disable if and only if it is specified in meta as true, otherwise enabled
+    return multispendDisabled !== 'true'
+}
+
+export const hasMultispendModule = (federation: LoadedFederation) => {
+    if (!federation.clientConfig) return false
+    const { modules } = federation.clientConfig
+    for (const key in modules) {
+        // TODO: add better typing for this
+        const fmModule = modules[key] as Partial<{ kind: string }>
+        if (fmModule.kind === 'multi_sig_stability_pool') {
+            return true
+        }
+    }
+}
+
 // TODO: Determine if no-wallet communities breaks this
 export function supportsSingleSeed(federation: LoadedFederation) {
     return federation.version >= 2

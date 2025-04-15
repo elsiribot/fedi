@@ -249,6 +249,10 @@ export class FedimintBridge {
         return this.rpcTyped('fedimintVersion', {})
     }
 
+    async getFeatureCatalog() {
+        return this.rpcTyped('getFeatureCatalog', {})
+    }
+
     async listFederations() {
         return this.rpcTyped('listFederations', {})
     }
