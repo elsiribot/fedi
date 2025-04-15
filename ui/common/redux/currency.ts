@@ -313,11 +313,13 @@ export const selectBtcUsdExchangeRate = (
     s: CommonState,
     federationId?: Federation['id'],
 ) => {
-    const stabilityPoolPrice = selectStabilityPoolCycleStartPrice(
+    const stabilityPoolPriceCents = selectStabilityPoolCycleStartPrice(
         s,
         federationId,
     )
-    return stabilityPoolPrice || s.currency.btcUsdRate || 0
+    return stabilityPoolPriceCents
+        ? stabilityPoolPriceCents / 100
+        : s.currency.btcUsdRate || 0
 }
 
 export const selectBtcExchangeRate = (s: CommonState) => {

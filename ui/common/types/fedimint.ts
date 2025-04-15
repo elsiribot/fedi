@@ -22,6 +22,10 @@ import {
     StabilityPoolWithdrawalEvent,
     RpcTransactionListEntry,
     TransactionEvent as RpcTransactionEvent,
+    SPv2DepositEvent,
+    SPv2WithdrawalEvent,
+    SPv2TransferEvent,
+    RpcStabilityPoolConfig,
 } from './bindings'
 import { MSats, Usd, UsdCents } from './units'
 
@@ -84,6 +88,8 @@ export type OobSendTxn = TransactionKind<'oobSend'>
 export type OobReceiveTxn = TransactionKind<'oobReceive'>
 export type SpDepositTxn = TransactionKind<'spDeposit'>
 export type SpWithdrawTxn = TransactionKind<'spWithdraw'>
+export type Spv2DepositTxn = TransactionKind<'sPV2Deposit'>
+export type Spv2WithdrawalTxn = TransactionKind<'sPV2Withdrawal'>
 
 export interface Node {
     name: string
@@ -310,6 +316,9 @@ export type FedimintBridgeEventMap = {
     panic: PanicEvent
     stabilityPoolDeposit: StabilityPoolDepositEvent
     stabilityPoolWithdrawal: StabilityPoolWithdrawalEvent
+    spv2Deposit: SPv2DepositEvent
+    spv2Withdrawal: SPv2WithdrawalEvent
+    spv2Transfer: SPv2TransferEvent
     recoveryComplete: RecoveryCompleteEvent
     recoveryProgress: RecoveryProgressEvent
     observableUpdate: ObservableUpdate<unknown>
@@ -353,3 +362,11 @@ export type TransactionStatusBadge =
     | 'failed'
 
 export type TransactionAmountState = 'settled' | 'pending' | 'failed'
+
+export type StabilityPoolVersion = 1 | 2
+
+// Allows us to distinguish between spv1 and spv2 using the
+// same stabilityPoolConfig selector
+export type StabilityPoolConfig = RpcStabilityPoolConfig & {
+    version: StabilityPoolVersion
+}

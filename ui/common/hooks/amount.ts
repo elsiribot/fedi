@@ -20,6 +20,7 @@ import {
     selectShowFiatTxnAmounts,
     selectStabilityPoolAvailableLiquidity,
     selectStableBalanceSats,
+    selectWithdrawableStableBalanceCents,
     selectWithdrawableStableBalanceMsats,
     setAmountInputType,
 } from '../redux'
@@ -111,6 +112,14 @@ export const useBtcFiatPrice = (currency?: SelectableCurrency) => {
                 return amountUtils.satToFiat(sats, exchangeRate)
             },
             [exchangeRate],
+        ),
+        convertSatsToCents: useCallback(
+            (sats: Sats) => {
+                return Math.round(
+                    amountUtils.satToFiat(sats, btcUsdExchangeRate) * 100,
+                ) as UsdCents
+            },
+            [btcUsdExchangeRate],
         ),
         convertSatsToFormattedFiat: useCallback(
             (
@@ -410,8 +419,8 @@ export function useAmountInput(
             currency,
             clampSats,
             btcToFiatRateRef,
-            maximumAmount,
             minimumAmount,
+            maximumAmount,
             onChangeAmount,
         ],
     )
@@ -863,15 +872,27 @@ export function useSendForm({
  * that decreases the stable USD balance in the wallet
  */
 export function useWithdrawForm() {
-    const { convertSatsToFormattedFiat } = useBtcFiatPrice()
     const [inputAmount, setInputAmount] = useState<Sats>(0 as Sats)
+    const [inputFiatAmount, setInputFiatAmount] = useState<UsdCents>(
+        0 as UsdCents,
+    )
     const { minimumAmount, maximumAmount } = useMinMaxWithdrawAmount()
+    const maximumFiatCents = useCommonSelector(
+        selectWithdrawableStableBalanceCents,
+    )
 
-    const maximumFiatAmount = convertSatsToFormattedFiat(maximumAmount)
+    const { convertCentsToFormattedFiat, convertSatsToCents } =
+        useBtcFiatPrice()
+
+    const maximumFiatAmount = convertCentsToFormattedFiat(maximumFiatCents)
+    const inputAmountCents = convertSatsToCents(inputAmount)
 
     return {
         inputAmount,
+        inputAmountCents,
         setInputAmount,
+        inputFiatAmount,
+        setInputFiatAmount,
         minimumAmount,
         maximumAmount,
         maximumFiatAmount,
