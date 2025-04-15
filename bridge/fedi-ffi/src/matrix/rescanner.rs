@@ -9,6 +9,7 @@ use std::ops::ControlFlow;
 use std::sync::Arc;
 
 use anyhow::Context;
+use async_stream::stream;
 use fedimint_core::db::{DatabaseTransaction, IDatabaseTransactionOpsCoreTyped as _};
 use futures::Stream;
 use matrix_sdk::deserialized_responses::TimelineEvent;
@@ -16,9 +17,7 @@ use matrix_sdk::locks::RwLock;
 use matrix_sdk::ruma::events::{AnySyncTimelineEvent, SyncMessageLikeEvent};
 use matrix_sdk::ruma::{OwnedEventId, OwnedRoomId, RoomId};
 use matrix_sdk::{Client, Room};
-use tokio::sync::{watch, Notify};
-use tokio_stream::wrappers::WatchStream;
-use tokio_stream::StreamExt;
+use tokio::sync::Notify;
 use tracing::{debug, instrument, warn};
 
 use super::multispend::db::MultispendScannerLastEventKey;
@@ -45,10 +44,18 @@ pub struct RoomRescannerManager {
     client: Client,
     /// Maps room IDs to their state sender channels.
     /// see methods for explaination.
-    rescan_states: Arc<RwLock<HashMap<OwnedRoomId, watch::Sender<RoomRescanState>>>>,
+    rescan_states: Arc<RwLock<HashMap<OwnedRoomId, Arc<MultispendRoom>>>>,
     new_room_notify: Arc<Notify>,
     /// Reference to the bridge runtime for spawning tasks
     runtime: Arc<BridgeRuntime>,
+}
+
+struct MultispendRoom {
+    state: RwLock<RoomRescanState>,
+    /// triggered every time state transitions to queued
+    task_wakeup: Notify,
+    /// triggered every time state transitions to idle
+    idle_notify: Notify,
 }
 
 impl RoomRescannerManager {
@@ -69,33 +76,38 @@ impl RoomRescannerManager {
         if never_scanned {
             self.queue_rescan(room_id);
         }
-        let mut rx = {
+        let room_state = {
             self.rescan_states
                 .read()
                 .get(room_id)
                 .expect("queue inserts the state")
-                .subscribe()
+                .clone()
         };
-        // Just wait for idle state, the background task will notify us when done.
-        // might fail if background task is shutdown.
-        rx.wait_for(|state| *state == RoomRescanState::Idle)
-            .await
-            .ok();
+        let notification = room_state.idle_notify.notified();
+        if *room_state.state.read() != RoomRescanState::Idle {
+            // Just wait for idle state, the background task will notify us when done.
+            notification.await
+        }
     }
 
     /// A stream that yields items whenever a scan for this room completes.
     pub async fn scan_complete_stream(&self, room_id: &RoomId) -> impl Stream<Item = ()> {
-        let rx = loop {
-            let notification = self.new_room_notify.notified();
-            if let Some(sender) = self.rescan_states.read().get(room_id) {
-                break sender.subscribe();
+        let room_state = loop {
+            let new_room_notification = self.new_room_notify.notified();
+            if let Some(room_state) = self.rescan_states.read().get(room_id) {
+                break room_state.clone();
             }
             // no service running for this room, wait for someone to call queue_rescan
-            notification.await;
+            new_room_notification.await;
         };
-        WatchStream::new(rx)
-            .filter(|state| matches!(state, RoomRescanState::Idle))
-            .map(drop)
+        stream! {
+            loop {
+                // note: subscribe before yielding
+                let notify = room_state.idle_notify.notified();
+                yield ();
+                notify.await
+            }
+        }
     }
 
     /// Queues a room for rescanning
@@ -105,14 +117,18 @@ impl RoomRescannerManager {
         let mut states = self.rescan_states.write();
         match states.entry(room_id.to_owned()) {
             // if task was running, just update the state, the task will pick this up.
-            Entry::Occupied(o) => {
-                assert_ne!(o.get().receiver_count(), 0);
-                o.get().send_replace(RoomRescanState::Queued);
+            Entry::Occupied(room_state) => {
+                *room_state.get().state.write() = RoomRescanState::Queued;
+                room_state.get().task_wakeup.notify_one();
             }
             Entry::Vacant(v) => {
                 // if no task is running for this room, we need to start it.
-                let (tx, rx) = watch::channel(RoomRescanState::Queued);
-                v.insert(tx.clone());
+                let room_state = Arc::new(MultispendRoom {
+                    state: RwLock::new(RoomRescanState::Queued),
+                    task_wakeup: Notify::new(),
+                    idle_notify: Notify::new(),
+                });
+                v.insert(room_state.clone());
                 drop(states);
                 self.new_room_notify.notify_waiters();
 
@@ -122,7 +138,7 @@ impl RoomRescannerManager {
                 self.runtime.task_group.spawn_cancellable(
                     format!("room_rescanner::{}", room_id),
                     async move {
-                        this.run_room_rescan_task(&room_id, tx, rx).await;
+                        this.run_room_rescan_task(&room_id, &room_state).await;
                     },
                 );
             }
@@ -132,29 +148,14 @@ impl RoomRescannerManager {
     }
 
     /// Background task that handles the actual room rescanning
-    #[instrument(skip(self, tx, rx))]
-    async fn run_room_rescan_task(
-        &self,
-        room_id: &RoomId,
-        tx: watch::Sender<RoomRescanState>,
-        rx: watch::Receiver<RoomRescanState>,
-    ) {
-        // the tx and rx are of same watch channel.
-        // tx is updating state of room before and after one rescanning completes.
-        //
-        // the watch channel here is like a mutex<state> but with notification for
-        // whenever the value changes.
+    #[instrument(skip(self, room_state))]
+    async fn run_room_rescan_task(&self, room_id: &RoomId, room_state: &MultispendRoom) {
         debug!("Started rescanning room task");
-        let mut watch_stream = WatchStream::new(rx);
-        while let Some(state) = watch_stream.next().await {
-            // watch changes from queued_rescan method and start scanning.
-            if state != RoomRescanState::Queued {
-                continue;
-            }
+        loop {
             // Transition to running
             // this is mark for checking after the scanning if there was any rescans queued
             // while we were rescanning
-            tx.send_replace(RoomRescanState::Running);
+            *room_state.state.write() = RoomRescanState::Running;
 
             debug!(?room_id, "Started rescanning room");
 
@@ -170,28 +171,24 @@ impl RoomRescannerManager {
             }
 
             dbtx.commit_tx().await;
-
-            tx.send_if_modified(|current| {
-                // Only transition to idle if still in running state
-                // this will be Queued state if a rescan was queued while this rescan was
-                // running.
-                //
-                // this watch channel helps us merge multiple
-                // queue_rescan into one.
-                assert_ne!(*current, RoomRescanState::Idle);
-                if *current == RoomRescanState::Running {
-                    *current = RoomRescanState::Idle;
-                    // we send a notification to wait_for_scanned task which is waiting for Idle
-                    // state.
-                    true
-                } else {
-                    false
-                }
-            });
             debug!("Room rescanning completed");
-        }
 
-        unreachable!("loop should never end");
+            // Only transition to idle if still in running state
+            // this will be Queued state if a rescan was queued while this rescan was
+            // running.
+            {
+                let mut lock = room_state.state.write();
+                if *lock == RoomRescanState::Running {
+                    *lock = RoomRescanState::Idle;
+                    // notify all wait_for_idle()
+                    room_state.idle_notify.notify_waiters();
+                }
+            }
+            // wait for wakeup before next rescan.
+            // this works because .notify_one() stores a permit inside if there is no active
+            // listener
+            room_state.task_wakeup.notified().await
+        }
     }
 
     /// Reads the timeline events in the given room and, for each multispend

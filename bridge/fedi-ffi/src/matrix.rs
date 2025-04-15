@@ -1326,7 +1326,7 @@ impl Matrix {
                 self.get_multispend_group_status(&room_id).await,
                 move |pool, id| async move {
                     let mut update_index = 0;
-                    let mut stream = this.rescanner.scan_complete_stream(&room_id).await;
+                    let mut stream = pin!(this.rescanner.scan_complete_stream(&room_id).await);
                     while let Some(()) = stream.next().await {
                         pool.send_observable_update(ObservableUpdate::new(
                             id,

@@ -73,6 +73,7 @@ slab = "0.4.9"
 eyeball = "0.8.7"
 async-recursion = "1.1.0"
 tokio-stream = { version = "0.1.17", features = ["sync"] }
+async-stream.workspace = true
 
 [target.'cfg(target_family = "wasm")'.dependencies]
 ring = { version = "0.17.14", features = ["wasm32_unknown_unknown_js"] }

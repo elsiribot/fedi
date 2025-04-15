@@ -2509,6 +2509,7 @@ version = "0.3.0"
 dependencies = [
  "anyhow",
  "async-recursion",
+ "async-stream",
  "async-trait",
  "bech32 0.11.0",
  "bip39",
