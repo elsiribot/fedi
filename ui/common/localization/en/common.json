@@ -176,6 +176,7 @@
         "lightning-request": "Lightning request",
         "maybe-later": "Maybe Later",
         "moderation-tools": "Moderation tools",
+        "my-communities": "My Communities",
         "network-fee": "Network fee",
         "no-transactions": "No transactions",
         "onchain-address": "On-chain address",
@@ -649,6 +650,10 @@
             "ended-description": "This temporary community has <bold>ended {{date}}</bold>.",
             "ending-description": "This temporary community <bold>will end {{date}}</bold>. The remaining funds will be managed at the discretion of the guardians.",
             "ending-in": "Ending in <bold>{{time}}</bold>"
+        },
+        "quick-fact": {
+            "title": "Quick Fact",
+            "fact-1": "One account can join many communities. Each community gives you a new wallet."
         },
         "receive": {
             "add-amount": "Add an amount",
