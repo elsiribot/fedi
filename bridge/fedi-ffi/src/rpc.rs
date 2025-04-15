@@ -1614,8 +1614,7 @@ async fn matrixMultispendAccountInfo(
     let fed = bridge
         .federations
         .get_federation(&finalized_group.federation_id.0)?;
-    fed.spv2_feature_state()
-        .ok_or(anyhow::anyhow!("SPv2 not enabled"))?;
+    fed.ensure_multispend_feature()?;
     let spv2 = fed.client.spv2()?;
     Ok(spv2
         .api
@@ -1721,8 +1720,6 @@ async fn matrixMultispendDeposit(
     let fed = bridge
         .federations
         .get_federation(&finalized_group.federation_id.0)?;
-    fed.spv2_feature_state()
-        .ok_or(anyhow::anyhow!("SPv2 not enabled"))?;
     fed.multispend_deposit(
         FiatAmount(amount.0),
         finalized_group.spv2_account.id(),
