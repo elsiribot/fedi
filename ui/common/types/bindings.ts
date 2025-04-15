@@ -731,8 +731,12 @@ export type RpcMethods = {
     matrixSendMultispendGroupInvitation,
     null,
   ];
-  matrixVoteMultispendGroupInvitation: [
-    matrixVoteMultispendGroupInvitation,
+  matrixApproveMultispendGroupInvitation: [
+    matrixApproveMultispendGroupInvitation,
+    null,
+  ];
+  matrixRejectMultispendGroupInvitation: [
+    matrixRejectMultispendGroupInvitation,
     null,
   ];
   matrixCancelMultispendGroupInvitation: [
@@ -1458,6 +1462,11 @@ export type listTransactions = {
 
 export type locateRecoveryFile = {};
 
+export type matrixApproveMultispendGroupInvitation = {
+  roomId: RpcRoomId;
+  invitation: RpcEventId;
+};
+
 export type matrixCancelMultispendGroupInvitation = { roomId: RpcRoomId };
 
 export type matrixDeleteMessage = {
@@ -1508,6 +1517,11 @@ export type matrixObserveMultispendGroup = {
 export type matrixObserveSyncIndicator = { observableId: number };
 
 export type matrixPublicRoomInfo = { roomId: string };
+
+export type matrixRejectMultispendGroupInvitation = {
+  roomId: RpcRoomId;
+  invitation: RpcEventId;
+};
 
 export type matrixRespondToPoll = {
   roomId: RpcRoomId;
@@ -1651,12 +1665,6 @@ export type matrixUploadMedia = { path: string; mimeType: string };
 export type matrixUserDirectorySearch = { searchTerm: string; limit: number };
 
 export type matrixUserProfile = { userId: RpcUserId };
-
-export type matrixVoteMultispendGroupInvitation = {
-  roomId: RpcRoomId;
-  invitation: RpcEventId;
-  vote: MultispendGroupVoteType;
-};
 
 export type onAppForeground = {};
 

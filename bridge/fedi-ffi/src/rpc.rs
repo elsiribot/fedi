@@ -53,8 +53,8 @@ use crate::federation::federation_v2::{BackupServiceStatus, FederationV2};
 use crate::federation::Federations;
 use crate::matrix::multispend::db::RpcMultispendGroupStatus;
 use crate::matrix::multispend::{
-    GroupInvitation, MsEventData, MultispendGroupVoteType, WithdrawRequestWithApprovals,
-    WithdrawalResponseType,
+    GroupInvitation, GroupInvitationWithKeys, MsEventData, MultispendGroupVoteType,
+    WithdrawRequestWithApprovals, WithdrawalResponseType,
 };
 use crate::matrix::{
     self, Matrix, RpcBackPaginationStatus, RpcMatrixAccountSession, RpcMatrixUploadResult,
@@ -1654,14 +1654,46 @@ async fn matrixSendMultispendGroupInvitation(
 }
 
 #[macro_rules_derive(rpc_method!)]
-async fn matrixVoteMultispendGroupInvitation(
+async fn matrixApproveMultispendGroupInvitation(
+    bridge: &BridgeFull,
+    room_id: RpcRoomId,
+    invitation: RpcEventId,
+) -> anyhow::Result<()> {
+    let matrix = bridge.matrix.get().ok_or(ErrorCode::MatrixNotInitialized)?;
+    let Some(MsEventData::GroupInvitation(GroupInvitationWithKeys { federation_id, .. })) = matrix
+        .get_multispend_event_data(room_id.clone(), invitation.clone())
+        .await
+    else {
+        anyhow::bail!("invalid matrix invitation id")
+    };
+    matrix
+        .vote_multispend_group_invitation(
+            &room_id.into_typed()?,
+            invitation,
+            MultispendGroupVoteType::Accept {
+                member_pubkey: RpcPublicKey(
+                    bridge
+                        .federations
+                        .get_federation(&federation_id.0)?
+                        .multispend_public_key(room_id.0.clone())?,
+                ),
+            },
+        )
+        .await
+}
+
+#[macro_rules_derive(rpc_method!)]
+async fn matrixRejectMultispendGroupInvitation(
     matrix: &Matrix,
     room_id: RpcRoomId,
     invitation: RpcEventId,
-    vote: MultispendGroupVoteType,
 ) -> anyhow::Result<()> {
     matrix
-        .vote_multispend_group_invitation(&room_id.into_typed()?, invitation, vote)
+        .vote_multispend_group_invitation(
+            &room_id.into_typed()?,
+            invitation,
+            MultispendGroupVoteType::Reject,
+        )
         .await
 }
 
@@ -1977,7 +2009,8 @@ rpc_methods!(RpcMethods {
     matrixObserveMultispendGroup,
     matrixMultispendAccountInfo,
     matrixSendMultispendGroupInvitation,
-    matrixVoteMultispendGroupInvitation,
+    matrixApproveMultispendGroupInvitation,
+    matrixRejectMultispendGroupInvitation,
     matrixCancelMultispendGroupInvitation,
     matrixMultispendEventData,
     matrixSendMultispendWithdrawalRequest,
