@@ -2,10 +2,12 @@ use fedimint_core::db::{DatabaseTransaction, IDatabaseTransactionOpsCoreTyped as
 use fedimint_core::encoding::{Decodable, Encodable};
 use fedimint_core::{impl_db_lookup, impl_db_record};
 use futures::StreamExt as _;
-use stability_pool_client::common::Account;
 use ts_rs::TS;
 
-use super::{GroupInvitationWithKeys, MultispendDepositEventData, WithdrawRequestWithApprovals};
+use super::{
+    FinalizedGroup, GroupInvitationWithKeys, MultispendDepositEventData,
+    WithdrawRequestWithApprovals,
+};
 use crate::matrix::RpcRoomId;
 use crate::types::RpcEventId;
 
@@ -36,14 +38,24 @@ pub enum MultispendDbPrefix {
 #[serde(rename_all = "camelCase")]
 #[ts(export)]
 pub enum MultispendGroupStatus {
-    Finalized {
-        finalized_group: GroupInvitationWithKeys,
-        #[ts(skip)]
-        sp_account: Account,
-    },
+    Finalized { finalized_group: FinalizedGroup },
+    ActiveInvitation { active_invite_id: RpcEventId },
+}
+
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize, Encodable, Decodable, TS)]
+#[serde(tag = "status")]
+#[serde(rename_all = "camelCase")]
+#[ts(export)]
+pub enum RpcMultispendGroupStatus {
+    /// Either no inviations or all invitation got aborted
+    Inactive,
+    /// There is an active invite
     ActiveInvitation {
         active_invite_id: RpcEventId,
+        state: GroupInvitationWithKeys,
     },
+    /// Group is ready.
+    Finalized { finalized_group: FinalizedGroup },
 }
 
 #[derive(Debug, Clone, Encodable, Decodable)]

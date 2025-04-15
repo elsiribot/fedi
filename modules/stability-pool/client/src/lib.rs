@@ -5,7 +5,6 @@ use std::{ffi, iter};
 
 use anyhow::bail;
 use async_stream::stream;
-use bitcoin::hashes::sha256;
 use clap::{Parser, ValueEnum};
 use common::config::StabilityPoolClientConfig;
 use common::{
@@ -13,6 +12,7 @@ use common::{
     StabilityPoolModuleTypes, StabilityPoolOutput,
 };
 use fedimint_api_client::api::{DynModuleApi, FederationApiExt as _, FederationError};
+use fedimint_client::derivable_secret::DerivableSecret;
 use fedimint_client::module::init::{ClientModuleInit, ClientModuleInitArgs};
 use fedimint_client::module::recovery::NoModuleBackup;
 use fedimint_client::module::{ClientContext, ClientModule};
@@ -34,10 +34,10 @@ use fedimint_core::module::{
 };
 use fedimint_core::task::{MaybeSend, MaybeSync};
 use fedimint_core::util::backoff_util::background_backoff;
-use fedimint_core::{apply, async_trait_maybe_send, Amount, BitcoinHash, OutPoint, TransactionId};
+use fedimint_core::{apply, async_trait_maybe_send, Amount, OutPoint, TransactionId};
 use futures::{Stream, StreamExt};
 use rand::Rng;
-use secp256k1::{schnorr, Keypair, PublicKey, Secp256k1, SecretKey};
+use secp256k1::{schnorr, Keypair, Secp256k1};
 use serde::de::DeserializeOwned;
 use serde::{Deserialize, Serialize};
 pub use stability_pool_common as common;
@@ -84,6 +84,7 @@ impl ClientModuleInit for StabilityPoolClientInit {
                 .module_root_secret()
                 .to_owned()
                 .to_secp_key(&Secp256k1::new()),
+            module_root_secret: args.module_root_secret().to_owned(),
             module_api: args.module_api().clone(),
             client_ctx: args.context(),
             notifier: args.notifier().clone(),
@@ -105,6 +106,7 @@ pub struct StabilityPoolClientModule {
     client_ctx: ClientContext<Self>,
     notifier: ModuleNotifier<StabilityPoolStateMachine>,
     db: Database,
+    module_root_secret: DerivableSecret,
 }
 
 #[derive(Debug, Clone)]
@@ -526,13 +528,11 @@ impl StabilityPoolClientModule {
         Account::single(self.client_key_pair.public_key(), acc_type)
     }
 
-    /// Given a passphrase, derive a new public key by extending the current
-    /// module secret key with the passphrase.
-    pub fn pub_key_with_passphrase(&self, passphrase: String) -> anyhow::Result<PublicKey> {
-        let sk_bytes = self.client_key_pair.secret_bytes().to_vec();
-        let passphrase_bytes = passphrase.into_bytes();
-        let new_sk_bytes = sha256::Hash::hash(&[sk_bytes, passphrase_bytes].concat());
-        Ok(SecretKey::from_slice(new_sk_bytes.as_ref())?.public_key(secp256k1::SECP256K1))
+    /// Derive the secret for a given multispend group.
+    pub fn derive_multispend_group_key(&self, group_id: String) -> Keypair {
+        let secret_bytes: [u8; 32] = self.module_root_secret.to_random_bytes();
+        let derived_secret = DerivableSecret::new_root(&secret_bytes, group_id.as_bytes());
+        derived_secret.to_secp_key(secp256k1::SECP256K1)
     }
 
     /// Returns the average of the provider fee rate over the last #num_cycles

@@ -1,4 +1,5 @@
 #![allow(non_snake_case, non_camel_case_types)]
+use std::collections::BTreeSet;
 use std::panic::PanicHookInfo;
 use std::path::PathBuf;
 use std::str::FromStr;
@@ -12,7 +13,6 @@ use bitcoin::Amount;
 use fedi_bug_report::reused_ecash_proofs::SerializedReusedEcashProofs;
 use fedimint_client::db::ChronologicalOperationLogKey;
 use fedimint_core::core::OperationId;
-use fedimint_core::invite_code::InviteCode;
 use fedimint_core::timing::TimeReporter;
 use futures::Future;
 use lightning_invoice::Bolt11Invoice;
@@ -28,6 +28,7 @@ use matrix_sdk::RoomInfo;
 use mime::Mime;
 use serde::de::DeserializeOwned;
 use serde::{Deserialize, Serialize};
+use stability_pool_client::api::StabilityPoolApiExt;
 use stability_pool_client::common::{FiatAmount, FiatOrAll};
 pub use tokio;
 use tracing::{error, info, instrument, Level};
@@ -50,8 +51,11 @@ use crate::federation::federation_sm::FederationState;
 use crate::federation::federation_v2::client::ClientExt;
 use crate::federation::federation_v2::{BackupServiceStatus, FederationV2};
 use crate::federation::Federations;
-use crate::matrix::multispend::db::MultispendGroupStatus;
-use crate::matrix::multispend::{GroupInvitation, MsEventData, MultispendGroupVoteType};
+use crate::matrix::multispend::db::RpcMultispendGroupStatus;
+use crate::matrix::multispend::{
+    GroupInvitation, GroupInvitationWithKeys, MsEventData, MultispendGroupVoteType,
+    WithdrawRequestWithApprovals, WithdrawalResponseType,
+};
 use crate::matrix::{
     self, Matrix, RpcBackPaginationStatus, RpcMatrixAccountSession, RpcMatrixUploadResult,
     RpcMatrixUserDirectorySearchResponse, RpcRoomId, RpcRoomMember, RpcRoomNotificationMode,
@@ -62,10 +66,11 @@ use crate::storage::{DeviceIdentifier, FiatFXInfo};
 use crate::types::{
     federation_v2_to_rpc_federation, FrontendMetadata, GuardianStatus, RpcBridgeStatus,
     RpcCommunity, RpcDeviceIndexAssignmentStatus, RpcEcashInfo, RpcEventId,
-    RpcFederationMaybeLoading, RpcFederationPreview, RpcFeeDetails, RpcGenerateEcashResponse,
-    RpcLightningGateway, RpcMediaUploadParams, RpcNostrPubkey, RpcNostrSecret,
-    RpcPayAddressResponse, RpcRegisteredDevice, RpcSPv2CachedSyncResponse, RpcTransaction,
-    RpcTransactionDirection, RpcTransactionListEntry,
+    RpcFederationMaybeLoading, RpcFederationPreview, RpcFeeDetails, RpcFiatAmount,
+    RpcGenerateEcashResponse, RpcLightningGateway, RpcMediaUploadParams, RpcNostrPubkey,
+    RpcNostrSecret, RpcPayAddressResponse, RpcRegisteredDevice, RpcSPv2CachedSyncResponse,
+    RpcSPv2SyncResponse, RpcSignature, RpcTransaction, RpcTransactionDirection,
+    RpcTransactionListEntry,
 };
 
 #[derive(Debug, thiserror::Error)]
@@ -1590,29 +1595,55 @@ async fn matrixObserveMultispendGroup(
     matrix: &Arc<Matrix>,
     observable_id: u32,
     room_id: RpcRoomId,
-) -> anyhow::Result<Observable<Option<MultispendGroupStatus>>> {
+) -> anyhow::Result<Observable<RpcMultispendGroupStatus>> {
     matrix
         .observe_multispend_group(observable_id.into(), room_id.into_typed()?)
         .await
 }
 
 #[macro_rules_derive(rpc_method!)]
+async fn matrixMultispendAccountInfo(
+    bridge: &BridgeFull,
+    room_id: RpcRoomId,
+) -> anyhow::Result<RpcSPv2SyncResponse> {
+    let matrix = bridge.matrix.get().context("matrix not initialized")?;
+    let finalized_group = matrix
+        .get_multispend_finalized_group(room_id.clone())
+        .await?
+        .context("multispend group not finalized yet")?;
+    let fed = bridge
+        .federations
+        .get_federation(&finalized_group.federation_id.0)?;
+    fed.ensure_multispend_feature()?;
+    let spv2 = fed.client.spv2()?;
+    Ok(spv2
+        .api
+        .account_sync(finalized_group.spv2_account.id())
+        .await?
+        .into())
+}
+
+#[macro_rules_derive(rpc_method!)]
 async fn matrixSendMultispendGroupInvitation(
     bridge: &BridgeFull,
     room_id: RpcRoomId,
-    invitation: GroupInvitation,
+    signers: BTreeSet<RpcUserId>,
+    threshold: u32,
+    federation_id: RpcFederationId,
+    federation_name: String,
 ) -> anyhow::Result<()> {
-    let invite_code = InviteCode::from_str(&invitation.federation_invite_code.to_lowercase())?;
-    let federation_id = invite_code.federation_id().to_string();
-    let fed = bridge.federations.get_federation(&federation_id)?;
-    fed.spv2_feature_state()
-        .ok_or(anyhow::anyhow!("SPv2 not enabled"))?;
-    let spv2 = fed.client.spv2()?;
-    let proposer_pubkey = spv2.pub_key_with_passphrase(room_id.0.clone())?;
+    let fed = bridge.federations.get_federation(&federation_id.0)?;
+    let proposer_pubkey = fed.multispend_public_key(room_id.0.clone())?;
+    let invitation = GroupInvitation {
+        signers,
+        threshold: threshold.into(),
+        federation_invite_code: fed.get_invite_code().await,
+        federation_name,
+    };
     bridge
         .matrix
         .get()
-        .ok_or(anyhow::anyhow!("matrix no initialized"))?
+        .ok_or(ErrorCode::MatrixNotInitialized)?
         .send_multispend_group_invitation(
             &room_id.into_typed()?,
             invitation,
@@ -1622,14 +1653,46 @@ async fn matrixSendMultispendGroupInvitation(
 }
 
 #[macro_rules_derive(rpc_method!)]
-async fn matrixVoteMultispendGroupInvitation(
+async fn matrixApproveMultispendGroupInvitation(
+    bridge: &BridgeFull,
+    room_id: RpcRoomId,
+    invitation: RpcEventId,
+) -> anyhow::Result<()> {
+    let matrix = bridge.matrix.get().ok_or(ErrorCode::MatrixNotInitialized)?;
+    let Some(MsEventData::GroupInvitation(GroupInvitationWithKeys { federation_id, .. })) = matrix
+        .get_multispend_event_data(room_id.clone(), invitation.clone())
+        .await
+    else {
+        anyhow::bail!("invalid matrix invitation id")
+    };
+    matrix
+        .vote_multispend_group_invitation(
+            &room_id.into_typed()?,
+            invitation,
+            MultispendGroupVoteType::Accept {
+                member_pubkey: RpcPublicKey(
+                    bridge
+                        .federations
+                        .get_federation(&federation_id.0)?
+                        .multispend_public_key(room_id.0.clone())?,
+                ),
+            },
+        )
+        .await
+}
+
+#[macro_rules_derive(rpc_method!)]
+async fn matrixRejectMultispendGroupInvitation(
     matrix: &Matrix,
     room_id: RpcRoomId,
     invitation: RpcEventId,
-    vote: MultispendGroupVoteType,
 ) -> anyhow::Result<()> {
     matrix
-        .vote_multispend_group_invitation(&room_id.into_typed()?, invitation, vote)
+        .vote_multispend_group_invitation(
+            &room_id.into_typed()?,
+            invitation,
+            MultispendGroupVoteType::Reject,
+        )
         .await
 }
 
@@ -1641,6 +1704,106 @@ async fn matrixCancelMultispendGroupInvitation(
     matrix
         .cancel_multispend_group_invitation(&room_id.into_typed()?)
         .await
+}
+
+#[macro_rules_derive(rpc_method!)]
+async fn matrixMultispendDeposit(
+    bridge: &BridgeFull,
+    room_id: RpcRoomId,
+    amount: RpcFiatAmount,
+) -> anyhow::Result<()> {
+    let matrix = bridge.matrix.get().context("matrix not initialized")?;
+    let finalized_group = matrix
+        .get_multispend_finalized_group(room_id.clone())
+        .await?
+        .context("multispend group not finalized yet")?;
+    let fed = bridge
+        .federations
+        .get_federation(&finalized_group.federation_id.0)?;
+    fed.multispend_deposit(
+        FiatAmount(amount.0),
+        finalized_group.spv2_account.id(),
+        room_id,
+    )
+    .await?;
+    Ok(())
+}
+#[macro_rules_derive(rpc_method!)]
+async fn matrixSendMultispendWithdrawalRequest(
+    bridge: &BridgeFull,
+    room_id: RpcRoomId,
+    amount: RpcFiatAmount,
+    description: String,
+) -> anyhow::Result<()> {
+    let matrix = bridge.matrix.get().context("matrix not initialized")?;
+    let finalized_group = matrix
+        .get_multispend_finalized_group(room_id.clone())
+        .await?
+        .context("multispend group not finalized yet")?;
+    let fed = bridge
+        .federations
+        .get_federation(&finalized_group.federation_id.0)?;
+    let transfer_request =
+        fed.multispend_create_transfer_request(FiatAmount(amount.0), finalized_group.spv2_account)?;
+    matrix
+        .send_multispend_withdraw_request(&room_id.into_typed()?, transfer_request, description)
+        .await?;
+    Ok(())
+}
+
+#[macro_rules_derive(rpc_method!)]
+async fn matrixSendMultispendWithdrawalApprove(
+    bridge: &BridgeFull,
+    room_id: RpcRoomId,
+    withdraw_request_id: RpcEventId,
+) -> anyhow::Result<()> {
+    let matrix = bridge.matrix.get().context("matrix not initialized")?;
+    let finalized_group = matrix
+        .get_multispend_finalized_group(room_id.clone())
+        .await?
+        .context("multispend group not finalized yet")?;
+    let Some(MsEventData::WithdrawalRequest(WithdrawRequestWithApprovals {
+        request: transfer_request,
+        ..
+    })) = matrix
+        .get_multispend_event_data(room_id.clone(), withdraw_request_id.clone())
+        .await
+    else {
+        anyhow::bail!("invalid matrix withdraw request id")
+    };
+    let fed = bridge
+        .federations
+        .get_federation(&finalized_group.federation_id.0)?;
+    let signature = fed.multispend_approve_withdrawal(room_id.0.clone(), &transfer_request)?;
+
+    matrix
+        .respond_multispend_withdraw(
+            &room_id.into_typed()?,
+            withdraw_request_id,
+            WithdrawalResponseType::Approve {
+                signature: RpcSignature(signature),
+            },
+        )
+        .await?;
+
+    Ok(())
+}
+
+#[macro_rules_derive(rpc_method!)]
+async fn matrixSendMultispendWithdrawalReject(
+    bridge: &BridgeFull,
+    room_id: RpcRoomId,
+    withdraw_request_id: RpcEventId,
+) -> anyhow::Result<()> {
+    let matrix = bridge.matrix.get().context("matrix not initialized")?;
+    matrix
+        .respond_multispend_withdraw(
+            &room_id.into_typed()?,
+            withdraw_request_id,
+            WithdrawalResponseType::Reject,
+        )
+        .await?;
+    Ok(())
 }
 
 #[macro_rules_derive(rpc_method!)]
@@ -1845,11 +2008,16 @@ rpc_methods!(RpcMethods {
     matrixGetMediaPreview,
     // multispend
     matrixObserveMultispendGroup,
+    matrixMultispendAccountInfo,
     matrixSendMultispendGroupInvitation,
-    matrixVoteMultispendGroupInvitation,
+    matrixApproveMultispendGroupInvitation,
+    matrixRejectMultispendGroupInvitation,
     matrixCancelMultispendGroupInvitation,
     matrixMultispendEventData,
-
+    matrixSendMultispendWithdrawalRequest,
+    matrixSendMultispendWithdrawalApprove,
+    matrixSendMultispendWithdrawalReject,
+    matrixMultispendDeposit,
     // Communities
     communityPreview,
     joinCommunity,

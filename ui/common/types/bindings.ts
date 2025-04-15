@@ -169,6 +169,13 @@ export type FiatFXInfo = {
   btcToFiatHundredths: number;
 };
 
+export type FinalizedGroup = {
+  invitation: GroupInvitation;
+  proposer: RpcUserId;
+  pubkeys: { [key in RpcUserId]?: RpcPublicKey };
+  federationId: RpcFederationId;
+};
+
 export type FrontendMetadata = {
   initialNotes: string | null;
   recipientMatrixId: string | null;
@@ -187,8 +194,10 @@ export type GroupInvitation = {
  */
 export type GroupInvitationWithKeys = {
   invitation: GroupInvitation;
+  proposer: RpcUserId;
   pubkeys: { [key in RpcUserId]?: RpcPublicKey };
   rejections: Array<RpcUserId>;
+  federationId: RpcFederationId;
 };
 
 export type GuardianStatus =
@@ -247,7 +256,7 @@ export type MultispendEvent =
  * Represents the current status of a multispend group in a room
  */
 export type MultispendGroupStatus =
-  | { status: "finalized"; finalized_group: GroupInvitationWithKeys }
+  | { status: "finalized"; finalized_group: FinalizedGroup }
   | { status: "activeInvitation"; active_invite_id: RpcEventId };
 
 export type MultispendGroupVoteType =
@@ -712,14 +721,22 @@ export type RpcMethods = {
   matrixGetMediaPreview: [matrixGetMediaPreview, RpcMediaPreviewResponse];
   matrixObserveMultispendGroup: [
     matrixObserveMultispendGroup,
-    Observable<MultispendGroupStatus | null>,
+    Observable<RpcMultispendGroupStatus>,
+  ];
+  matrixMultispendAccountInfo: [
+    matrixMultispendAccountInfo,
+    RpcSPv2SyncResponse,
   ];
   matrixSendMultispendGroupInvitation: [
     matrixSendMultispendGroupInvitation,
     null,
   ];
-  matrixVoteMultispendGroupInvitation: [
-    matrixVoteMultispendGroupInvitation,
+  matrixApproveMultispendGroupInvitation: [
+    matrixApproveMultispendGroupInvitation,
+    null,
+  ];
+  matrixRejectMultispendGroupInvitation: [
+    matrixRejectMultispendGroupInvitation,
     null,
   ];
   matrixCancelMultispendGroupInvitation: [
@@ -727,6 +744,19 @@ export type RpcMethods = {
     null,
   ];
   matrixMultispendEventData: [matrixMultispendEventData, MsEventData | null];
+  matrixSendMultispendWithdrawalRequest: [
+    matrixSendMultispendWithdrawalRequest,
+    null,
+  ];
+  matrixSendMultispendWithdrawalApprove: [
+    matrixSendMultispendWithdrawalApprove,
+    null,
+  ];
+  matrixSendMultispendWithdrawalReject: [
+    matrixSendMultispendWithdrawalReject,
+    null,
+  ];
+  matrixMultispendDeposit: [matrixMultispendDeposit, null];
   communityPreview: [communityPreview, RpcCommunity];
   joinCommunity: [joinCommunity, RpcCommunity];
   leaveCommunity: [leaveCommunity, null];
@@ -736,6 +766,15 @@ export type RpcMethods = {
 };
 
 export type RpcModuleFediFeeSchedule = { sendPpm: number; receivePpm: number };
+
+export type RpcMultispendGroupStatus =
+  | { status: "inactive" }
+  | {
+      status: "activeInvitation";
+      active_invite_id: RpcEventId;
+      state: GroupInvitationWithKeys;
+    }
+  | { status: "finalized"; finalized_group: FinalizedGroup };
 
 export type RpcNostrPubkey = { hex: string; npub: string };
 
@@ -1423,6 +1462,11 @@ export type listTransactions = {
 
 export type locateRecoveryFile = {};
 
+export type matrixApproveMultispendGroupInvitation = {
+  roomId: RpcRoomId;
+  invitation: RpcEventId;
+};
+
 export type matrixCancelMultispendGroupInvitation = { roomId: RpcRoomId };
 
 export type matrixDeleteMessage = {
@@ -1451,6 +1495,13 @@ export type matrixInit = {};
 
 export type matrixListIgnoredUsers = {};
 
+export type matrixMultispendAccountInfo = { roomId: RpcRoomId };
+
+export type matrixMultispendDeposit = {
+  roomId: RpcRoomId;
+  amount: RpcFiatAmount;
+};
+
 export type matrixMultispendEventData = {
   roomId: RpcRoomId;
   eventId: RpcEventId;
@@ -1466,6 +1517,11 @@ export type matrixObserveMultispendGroup = {
 export type matrixObserveSyncIndicator = { observableId: number };
 
 export type matrixPublicRoomInfo = { roomId: string };
+
+export type matrixRejectMultispendGroupInvitation = {
+  roomId: RpcRoomId;
+  invitation: RpcEventId;
+};
 
 export type matrixRespondToPoll = {
   roomId: RpcRoomId;
@@ -1566,7 +1622,26 @@ export type matrixSendMessageJson = {
 
 export type matrixSendMultispendGroupInvitation = {
   roomId: RpcRoomId;
-  invitation: GroupInvitation;
+  signers: Array<RpcUserId>;
+  threshold: number;
+  federationId: RpcFederationId;
+  federationName: string;
+};
+
+export type matrixSendMultispendWithdrawalApprove = {
+  roomId: RpcRoomId;
+  withdrawRequestId: RpcEventId;
+};
+
+export type matrixSendMultispendWithdrawalReject = {
+  roomId: RpcRoomId;
+  withdrawRequestId: RpcEventId;
+};
+
+export type matrixSendMultispendWithdrawalRequest = {
+  roomId: RpcRoomId;
+  amount: RpcFiatAmount;
+  description: string;
 };
 
 export type matrixSetAvatarUrl = { avatarUrl: string };
@@ -1590,12 +1665,6 @@ export type matrixUploadMedia = { path: string; mimeType: string };
 export type matrixUserDirectorySearch = { searchTerm: string; limit: number };
 
 export type matrixUserProfile = { userId: RpcUserId };
-
-export type matrixVoteMultispendGroupInvitation = {
-  roomId: RpcRoomId;
-  invitation: RpcEventId;
-  vote: MultispendGroupVoteType;
-};
 
 export type onAppForeground = {};
 

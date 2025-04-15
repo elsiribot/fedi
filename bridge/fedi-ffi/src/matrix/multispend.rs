@@ -1,4 +1,5 @@
 use std::collections::{BTreeMap, BTreeSet};
+use std::str::FromStr;
 
 use db::{
     insert_multispend_chronological_event, MultispendChronologicalEventData,
@@ -8,6 +9,7 @@ use db::{
 };
 use fedimint_core::db::{DatabaseTransaction, IDatabaseTransactionOpsCoreTyped as _};
 use fedimint_core::encoding::{Decodable, Encodable};
+use fedimint_core::invite_code::InviteCode;
 use futures::StreamExt as _;
 use serde::{Deserialize, Serialize};
 use stability_pool_client::common::{Account, AccountType, AccountUnchecked, TransferRequest};
@@ -15,7 +17,9 @@ use tracing::error;
 use ts_rs::TS;
 
 use super::{RpcRoomId, RpcUserId};
-use crate::types::{RpcEventId, RpcFiatAmount, RpcPublicKey, RpcSignature, RpcTransactionId};
+use crate::types::{
+    RpcEventId, RpcFederationId, RpcFiatAmount, RpcPublicKey, RpcSignature, RpcTransactionId,
+};
 
 pub mod db;
 
@@ -107,8 +111,22 @@ pub enum MultispendEvent {
 /// Group invitation with extra state accumlated over the events.
 pub struct GroupInvitationWithKeys {
     pub invitation: GroupInvitation,
+    pub proposer: RpcUserId,
     pub pubkeys: BTreeMap<RpcUserId, RpcPublicKey>,
     pub rejections: BTreeSet<RpcUserId>,
+    pub federation_id: RpcFederationId,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, TS, Encodable, Decodable, PartialEq, Eq)]
+#[serde(rename_all = "camelCase")]
+#[ts(export)]
+pub struct FinalizedGroup {
+    pub invitation: GroupInvitation,
+    pub proposer: RpcUserId,
+    pub pubkeys: BTreeMap<RpcUserId, RpcPublicKey>,
+    #[ts(skip)]
+    pub spv2_account: Account,
+    pub federation_id: RpcFederationId,
 }
 
 impl GroupInvitationWithKeys {
@@ -118,26 +136,31 @@ impl GroupInvitationWithKeys {
         invitation: GroupInvitation,
         proposer: RpcUserId,
         proposer_pubkey: RpcPublicKey,
+        federation_id: RpcFederationId,
     ) -> Self {
         let mut pubkeys = BTreeMap::new();
-        pubkeys.insert(proposer, proposer_pubkey);
+        pubkeys.insert(proposer.clone(), proposer_pubkey);
 
         Self {
             invitation,
+            proposer,
             pubkeys,
             rejections: BTreeSet::new(),
+            federation_id,
         }
     }
 
     /// Process a vote from a user (either accept or reject)
-    /// Returns Ok(Some(Account)) if all signers have accepted and the account
-    /// is finalized Returns Ok(None) if the vote was processed but the
-    /// account is not yet finalized
+    /// - Returns Ok(Some(finalized_group)) if all signers have accepted and the
+    ///   group is finalized
+    ///
+    /// - Returns Ok(None) if the vote was processed but the account is not yet
+    ///   finalized
     pub fn process_vote(
         &mut self,
         sender: RpcUserId,
         vote: MultispendGroupVoteType,
-    ) -> Result<Option<Account>, ProcessEventError> {
+    ) -> Result<Option<FinalizedGroup>, ProcessEventError> {
         if !self.invitation.signers.contains(&sender)
             || self.pubkeys.contains_key(&sender)
             || self.rejections.contains(&sender)
@@ -155,7 +178,15 @@ impl GroupInvitationWithKeys {
                         threshold: self.invitation.threshold,
                     };
 
-                    return Ok(account.try_into().ok());
+                    if let Ok(spv2_account) = account.try_into() {
+                        return Ok(Some(FinalizedGroup {
+                            proposer: self.proposer.clone(),
+                            invitation: self.invitation.clone(),
+                            pubkeys: self.pubkeys.clone(),
+                            spv2_account,
+                            federation_id: self.federation_id.clone(),
+                        }));
+                    }
                 }
             }
             MultispendGroupVoteType::Reject => {
@@ -197,7 +228,7 @@ impl WithdrawRequestWithApprovals {
     fn check_can_vote(
         &self,
         sender: &RpcUserId,
-        finalized_group: &GroupInvitationWithKeys,
+        finalized_group: &FinalizedGroup,
     ) -> Result<(), ProcessEventError> {
         // Verify sender is in the finalized group's signers list
         if !finalized_group.invitation.signers.contains(sender) {
@@ -216,7 +247,7 @@ impl WithdrawRequestWithApprovals {
         &mut self,
         sender: RpcUserId,
         response: WithdrawalResponseType,
-        finalized_group: &GroupInvitationWithKeys,
+        finalized_group: &FinalizedGroup,
     ) -> Result<(), ProcessEventError> {
         match response {
             WithdrawalResponseType::Approve { signature } => {
@@ -326,9 +357,16 @@ pub async fn process_event_db_raw(
                 return Err(ProcessEventError::InvalidMessage);
             }
 
+            let invite_code = InviteCode::from_str(&invitation.federation_invite_code)
+                .map_err(|_| ProcessEventError::InvalidMessage)?;
             dbtx.insert_new_entry(
                 &MultispendInvitationKey(room_id.clone(), event_id.clone()),
-                &GroupInvitationWithKeys::new(invitation, sender, proposer_pubkey),
+                &GroupInvitationWithKeys::new(
+                    invitation,
+                    sender,
+                    proposer_pubkey,
+                    RpcFederationId(invite_code.federation_id().to_string()),
+                ),
             )
             .await;
             dbtx.insert_entry(
@@ -358,13 +396,10 @@ pub async fn process_event_db_raw(
                 .get_value(&key)
                 .await
                 .ok_or(ProcessEventError::InvalidMessage)?;
-            if let Some(sp_account) = state.process_vote(sender, vote)? {
+            if let Some(finalized_group) = state.process_vote(sender, vote)? {
                 dbtx.insert_entry(
                     &status_key,
-                    &MultispendGroupStatus::Finalized {
-                        finalized_group: state.clone(),
-                        sp_account,
-                    },
+                    &MultispendGroupStatus::Finalized { finalized_group },
                 )
                 .await;
             }
@@ -400,7 +435,7 @@ pub async fn process_event_db_raw(
         }
 
         MultispendEvent::WithdrawalResponse { request, response } => {
-            let (finalized_group, _) = get_finalized_group_db(dbtx, room_id)
+            let finalized_group = get_finalized_group_db(dbtx, room_id)
                 .await
                 .ok_or(ProcessEventError::InvalidMessage)?;
 
@@ -488,13 +523,11 @@ pub async fn get_group_status_db(
 pub async fn get_finalized_group_db(
     tx: &mut DatabaseTransaction<'_>,
     room_id: &RpcRoomId,
-) -> Option<(GroupInvitationWithKeys, Account)> {
-    if let Some(MultispendGroupStatus::Finalized {
-        finalized_group,
-        sp_account,
-    }) = get_group_status_db(tx, room_id).await
+) -> Option<FinalizedGroup> {
+    if let Some(MultispendGroupStatus::Finalized { finalized_group }) =
+        get_group_status_db(tx, room_id).await
     {
-        Some((finalized_group, sp_account))
+        Some(finalized_group)
     } else {
         None
     }
@@ -579,7 +612,7 @@ mod tests {
         let invitation = GroupInvitation {
             signers: BTreeSet::from([user1.clone(), user2.clone()]),
             threshold: 2,
-            federation_invite_code: "test".to_string(),
+            federation_invite_code: "fed11qgqrgvnhwden5te0v9k8q6rp9ekh2arfdeukuet595cr2ttpd3jhq6rzve6zuer9wchxvetyd938gcewvdhk6tcqqysptkuvknc7erjgf4em3zfh90kffqf9srujn6q53d6r056e4apze5cw27h75".to_string(),
             federation_name: "test".to_string(),
         };
 
