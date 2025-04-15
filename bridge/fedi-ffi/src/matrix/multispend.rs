@@ -178,17 +178,19 @@ pub struct WithdrawRequestWithApprovals {
     pub signatures: BTreeMap<RpcUserId, RpcSignature>,
     pub rejections: BTreeSet<RpcUserId>,
     pub completed: Option<RpcTransactionId>,
+    pub sender: RpcUserId,
 }
 
 impl WithdrawRequestWithApprovals {
     /// Create a new WithdrawRequestWithApprovals
-    pub fn new(request: TransferRequest, description: String) -> Self {
+    pub fn new(request: TransferRequest, description: String, sender: RpcUserId) -> Self {
         Self {
             request,
             description,
             signatures: BTreeMap::new(),
             rejections: BTreeSet::new(),
             completed: None,
+            sender,
         }
     }
 
@@ -229,6 +231,10 @@ impl WithdrawRequestWithApprovals {
                 fiat_amount: _,
                 txid,
             } => {
+                if self.sender != sender {
+                    // only original sender can send completion mention
+                    return Err(ProcessEventError::InvalidMessage);
+                }
                 if self.completed.is_some() {
                     return Err(ProcessEventError::InvalidMessage);
                 }
@@ -388,7 +394,7 @@ pub async fn process_event_db_raw(
                 withdraw_request_event_id: event_id.clone(),
             };
 
-            let new_state = WithdrawRequestWithApprovals::new(request, description);
+            let new_state = WithdrawRequestWithApprovals::new(request, description, sender);
             dbtx.insert_new_entry(&key, &new_state).await;
             insert_multispend_chronological_event(dbtx, room_id, &event_id, event_time).await;
         }
