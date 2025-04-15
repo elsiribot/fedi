@@ -1,8 +1,10 @@
 use std::time::Duration;
 
+use anyhow::bail;
 use fedi_core::envs::{
     FEDI_SOCIAL_RECOVERY_MODULE_ENABLE_ENV, FEDI_STABILITY_POOL_MODULE_ENABLE_ENV,
-    FEDI_STABILITY_POOL_MODULE_TEST_PARAMS_ENV, FEDI_STABILITY_POOL_V2_MODULE_ENABLE_ENV,
+    FEDI_STABILITY_POOL_MODULE_TEST_PARAMS_ENV, FEDI_STABILITY_POOL_V2_CYCLE_DURATION_SECS_ENV,
+    FEDI_STABILITY_POOL_V2_MODULE_ENABLE_ENV,
 };
 use fedi_social_common::config::FediSocialGenParams;
 use fedi_social_server::FediSocialInit;
@@ -68,6 +70,15 @@ async fn main() -> anyhow::Result<()> {
 
     if include_stability_pool_v2 {
         let use_test_params = is_env_var_set(FEDI_STABILITY_POOL_MODULE_TEST_PARAMS_ENV);
+        let cycle_duration_secs = match std::env::var(
+            FEDI_STABILITY_POOL_V2_CYCLE_DURATION_SECS_ENV,
+        ) {
+            Ok(val) => val.parse::<u64>()?,
+            Err(std::env::VarError::NotPresent) => 600,
+            Err(std::env::VarError::NotUnicode(_)) => {
+                bail!("{FEDI_STABILITY_POOL_V2_CYCLE_DURATION_SECS_ENV} contains invalid Unicode.")
+            }
+        };
         fedimintd = fedimintd
             .with_module_kind(stability_pool_server::StabilityPoolInit)
             .with_module_instance(
@@ -84,7 +95,7 @@ async fn main() -> anyhow::Result<()> {
                             cycle_duration: Duration::from_secs(if use_test_params {
                                 15
                             } else {
-                                600
+                                cycle_duration_secs
                             }),
                             collateral_ratio:
                                 stability_pool_server::common::config::CollateralRatio {
