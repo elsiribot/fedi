@@ -16,7 +16,7 @@ use ::serde::{Deserialize, Serialize};
 use anyhow::{anyhow, bail, ensure, Context, Result};
 use bitcoin::address::NetworkUnchecked;
 use bitcoin::hex::DisplayHex;
-use bitcoin::secp256k1::{self, schnorr, Keypair, PublicKey};
+use bitcoin::secp256k1::{self, schnorr, PublicKey};
 use bitcoin::{Address, Network};
 use client::ClientExt;
 use db::{
@@ -4003,9 +4003,7 @@ impl FederationV2 {
     pub fn multispend_public_key(&self, group_id: String) -> anyhow::Result<PublicKey> {
         self.ensure_multispend_feature()?;
         let spv2 = self.client.spv2()?;
-        let pubkey = spv2
-            .secret_key_with_passphrase(group_id)?
-            .public_key(secp256k1::SECP256K1);
+        let pubkey = spv2.derive_multispend_group_key(group_id).public_key();
         Ok(pubkey)
     }
 
@@ -4052,10 +4050,7 @@ impl FederationV2 {
     ) -> anyhow::Result<schnorr::Signature> {
         self.ensure_multispend_feature()?;
         let spv2 = self.client.spv2()?;
-        let key = Keypair::from_secret_key(
-            secp256k1::SECP256K1,
-            &spv2.secret_key_with_passphrase(group_id)?,
-        );
+        let key = spv2.derive_multispend_group_key(group_id);
         let message = secp256k1::Message::from(&TransferRequestId::from(transfer_request));
         Ok(key.sign_schnorr(message))
     }
