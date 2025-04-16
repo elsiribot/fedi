@@ -51,6 +51,7 @@ codegen-units = 1
 # if don't need them *somewhere*, we should manually call `strip` after the binary
 # is built
 debug = "line-tables-only"
+opt-level = "z"
 strip = false
 
 [workspace.metadata]
