@@ -2557,8 +2557,6 @@ pub mod tests {
             test_new_device_registration_post_recovery
         );
         spawn_and_attach_name!(tests_set, tests_names, test_fee_remittance_on_startup);
-        // TODO: Ecash reuse not possible anymore, delete?
-        // spawn_and_attach_name!(tests_set, tests_names, test_reused_ecash_proofs);
         spawn_and_attach_name!(
             tests_set,
             tests_names,
@@ -4563,107 +4561,6 @@ pub mod tests {
         assert_eq!(Amount::ZERO, federation.get_pending_fedi_fees().await);
         assert_eq!(Amount::ZERO, federation.get_outstanding_fedi_fees().await);
 
-        Ok(())
-    }
-
-    #[allow(dead_code)]
-    async fn test_reused_ecash_proofs() -> anyhow::Result<()> {
-        let bridge_dir1 = create_data_dir();
-        let bridge_dir2 = create_data_dir();
-
-        let mnemonic;
-        // trigger seed reuse
-        {
-            let device_identifier1 = "bridge:test:d4d743a7-b343-48e3-a5f9-90d032af3e98".to_owned();
-            let fedi_api = Arc::new(MockFediApi::default());
-            let bridge1 = setup_bridge_custom_with_data_dir(
-                device_identifier1.clone(),
-                fedi_api.clone(),
-                FeatureCatalog::new(RuntimeEnvironment::Dev).into(),
-                bridge_dir1.clone(),
-            )
-            .await?;
-            mnemonic = getMnemonic(bridge1.runtime.clone()).await?;
-
-            // trigger seed reuse: a second bridge with same seed and same device identifier
-            let bridge2 = setup_bridge_custom_with_data_dir(
-                device_identifier1.clone(),
-                fedi_api.clone(),
-                FeatureCatalog::new(RuntimeEnvironment::Dev).into(),
-                bridge_dir2.clone(),
-            )
-            .await?;
-            recoverFromMnemonic(&bridge2, mnemonic.clone()).await?;
-            transferExistingDeviceRegistration(&bridge2, 0).await?;
-
-            let (federation_b1, federation_b2) =
-                tokio::try_join!(join_test_fed(&bridge1), join_test_fed(&bridge2))?;
-            let ecash_receive_amount = fedimint_core::Amount::from_msats(10000);
-
-            // use some note indices
-            let ecash1 = cli_generate_ecash(ecash_receive_amount).await?;
-            receiveEcash(federation_b1.clone(), ecash1, FrontendMetadata::default()).await?;
-            wait_for_ecash_reissue(&federation_b1).await?;
-
-            // trigger note index reuse
-            let ecash2 = cli_generate_ecash(ecash_receive_amount).await?;
-            receiveEcash(federation_b2.clone(), ecash2, FrontendMetadata::default()).await?;
-            wait_for_ecash_reissue(&federation_b2)
-                .await
-                .expect_err("ecash reuse must be detected by server since fedimintd 0.6");
-
-            // kill both bridges
-            drop(federation_b1);
-            drop(federation_b2);
-            tokio::try_join!(
-                bridge1
-                    .runtime
-                    .task_group
-                    .clone()
-                    .shutdown_join_all(Duration::from_secs(5)),
-                bridge2
-                    .runtime
-                    .task_group
-                    .clone()
-                    .shutdown_join_all(Duration::from_secs(5))
-            )?;
-            drop(bridge1);
-            drop(bridge2);
-        }
-
-        let bridge = setup_bridge().await?;
-        recoverFromMnemonic(&bridge, mnemonic).await?;
-        registerAsNewDevice(&bridge).await?;
-        let recovery_federation = join_test_fed_recovery(&bridge, true).await?;
-        assert!(recovery_federation.recovering());
-        let id = recovery_federation.rpc_federation_id();
-        drop(recovery_federation);
-        loop {
-            // Wait until recovery complete
-            if bridge
-                .runtime
-                .event_sink
-                .num_events_of_type("recoveryComplete".into())
-                == 1
-            {
-                break;
-            }
-
-            fedimint_core::task::sleep(Duration::from_millis(100)).await;
-        }
-        let federation = bridge.federations.get_federation(&id.0)?;
-        let proofs = generateReusedEcashProofs(federation.clone()).await?;
-        assert!(
-            proofs.0.total_amount_msats > Amount::ZERO,
-            "there must be some amount in proof"
-        );
-        proofs
-            .0
-            .deserialize()?
-            .into_iter()
-            .map(|x| x.verify())
-            .collect::<anyhow::Result<Vec<_>>>()
-            .context("verification failed")?;
         Ok(())
     }
 
