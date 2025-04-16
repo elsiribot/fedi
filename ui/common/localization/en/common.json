@@ -514,7 +514,12 @@
             "community-news-title": "Community News",
             "community-description": "Communities are the homes for your personal wallets. Discover, join, or create your own.",
             "community-updates": "Get updates by joining a community.",
-            "services-selected": "Services selected by your community."
+            "services-selected": "Services selected by your community.",
+            "first-entry": "You’re in! What’s next?",
+            "first-entry-option-1": "Top up your wallet to send, receive, and save money.",
+            "first-entry-option-2": "Catch community-wide news, join group discussions, or have private 1-on-1 chats.",
+            "first-entry-option-3": "Discover “Mods” — Useful web services — either community-selected or your own.",
+            "first-entry-option-4": "Join more communities and secure your money in different personal wallets."
         },
         "nostr": {
             "kind-application-data": "Application-specific data",
