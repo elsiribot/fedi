@@ -6,7 +6,7 @@
     nixpkgs-unstable.url = "github:NixOS/nixpkgs/nixos-unstable";
     flake-utils.url = "github:numtide/flake-utils";
     fedimint-pkgs = {
-      url = "github:fedibtc/fedimint?ref=v0.5.0-rc.4-fed4";
+      url = "github:fedimint/fedimint?ref=v0.6.2";
     };
 
     fenix = {
@@ -14,7 +14,7 @@
       inputs.nixpkgs.follows = "nixpkgs";
     };
     flakebox = {
-      url = "github:fedibtc/flakebox?rev=56ee87b7dd205c7af169ff72e818e3a92560b424";
+      url = "github:dpc/flakebox?rev=77a60a6b8912d780ddba27987fdde8ef8ca5aefd";
       inputs.nixpkgs.follows = "nixpkgs";
       inputs.fenix.follows = "fenix";
     };
@@ -207,7 +207,7 @@
             llvmPackages = pkgs.llvmPackages_11;
           in
           {
-            extraRustFlags = "--cfg tokio_unstable --cfg=curve25519_dalek_backend=\"serial\" -Csymbol-mangling-version=v0";
+            extraRustFlags = "--cfg=curve25519_dalek_backend=\"serial\" -Csymbol-mangling-version=v0";
 
             components = [
               "rustc"
@@ -388,6 +388,8 @@
               # generic Linux version of aapt2, which doesn't work on NixOS due to dynamic
               # linking idiosyncrasies
               export GRADLE_OPTS="-Dorg.gradle.project.android.aapt2FromMavenOverride=$ANDROID_SDK_ROOT/build-tools/34.0.0/aapt2"
+
+              export CARGO_TARGET_WASM32_UNKNOWN_UNKNOWN_RUSTFLAGS="--cfg getrandom_backend=\"wasm_js\" $CARGO_TARGET_WASM32_UNKNOWN_UNKNOWN_RUSTFLAGS"
             '';
           }
         );

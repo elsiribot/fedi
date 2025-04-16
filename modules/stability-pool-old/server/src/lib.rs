@@ -27,7 +27,7 @@ use db::{
     StagedSeeksKeyPrefix,
 };
 use fedimint_core::config::{
-    ConfigGenModuleParams, DkgResult, ServerModuleConfig, ServerModuleConsensusConfig,
+    ConfigGenModuleParams, ServerModuleConfig, ServerModuleConsensusConfig,
     TypedServerModuleConfig, TypedServerModuleConsensusConfig,
 };
 use fedimint_core::core::ModuleInstanceId;
@@ -35,10 +35,10 @@ use fedimint_core::db::{DatabaseTransaction, DatabaseVersion, IDatabaseTransacti
 use fedimint_core::module::audit::Audit;
 use fedimint_core::module::{
     ApiEndpoint, CoreConsensusVersion, InputMeta, ModuleConsensusVersion, ModuleInit, PeerHandle,
-    ServerModuleInit, ServerModuleInitArgs, SupportedModuleApiVersions, TransactionItemAmount,
+    SupportedModuleApiVersions, TransactionItemAmount,
 };
-use fedimint_core::server::DynServerModule;
-use fedimint_core::{Amount, InPoint, NumPeersExt, OutPoint, PeerId, ServerModule, TransactionId};
+use fedimint_core::{Amount, InPoint, NumPeersExt, OutPoint, PeerId, TransactionId};
+use fedimint_server_core::{DynServerModule, ServerModule, ServerModuleInit, ServerModuleInitArgs};
 use futures::{stream, FutureExt, StreamExt};
 use itertools::Itertools;
 use oracle::{AggregateOracle, MockOracle, Oracle};
@@ -124,7 +124,7 @@ impl ServerModuleInit for StabilityPoolInit {
         &self,
         peers: &PeerHandle,
         params: &ConfigGenModuleParams,
-    ) -> DkgResult<ServerModuleConfig> {
+    ) -> anyhow::Result<ServerModuleConfig> {
         let params = params
             .to_typed::<StabilityPoolGenParams>()
             .expect("Invalid mint params");
@@ -133,7 +133,7 @@ impl ServerModuleInit for StabilityPoolInit {
             local: StabilityPoolConfigLocal,
             private: StabilityPoolConfigPrivate,
             consensus: StabilityPoolConfigConsensus {
-                consensus_threshold: peers.peers.to_num_peers().threshold() as _,
+                consensus_threshold: peers.num_peers().threshold() as _,
                 oracle_config: params.consensus.oracle_config,
                 cycle_duration: params.consensus.cycle_duration,
                 collateral_ratio: params.consensus.collateral_ratio,
@@ -518,7 +518,9 @@ impl ServerModule for StabilityPool {
                             Some(StagedSeek {
                                 txid: s.txid,
                                 sequence: s.sequence,
-                                seek: Seek(s.seek.0 - min_extractable),
+                                seek: Seek(
+                                    s.seek.0.checked_sub(min_extractable).expect("Can't fail"),
+                                ),
                             })
                         }
                     }
@@ -550,7 +552,11 @@ impl ServerModule for StabilityPool {
                                 txid: p.txid,
                                 sequence: p.sequence,
                                 provide: Provide {
-                                    amount: p.provide.amount - min_extractable,
+                                    amount: p
+                                        .provide
+                                        .amount
+                                        .checked_sub(min_extractable)
+                                        .expect("Can't fail"),
                                     min_fee_rate: p.provide.min_fee_rate,
                                 },
                             })

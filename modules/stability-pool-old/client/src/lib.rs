@@ -16,7 +16,7 @@ use db::AccountInfoKey;
 use fedimint_api_client::api::{DynModuleApi, FederationApiExt as _, FederationError};
 use fedimint_client::module::init::{ClientModuleInit, ClientModuleInitArgs};
 use fedimint_client::module::recovery::NoModuleBackup;
-use fedimint_client::module::{ClientContext, ClientModule};
+use fedimint_client::module::{ClientContext, ClientModule, OutPointRange};
 use fedimint_client::oplog::{OperationLogEntry, UpdateStreamOrOutcome};
 use fedimint_client::sm::util::MapStateTransitions;
 use fedimint_client::sm::{
@@ -733,14 +733,15 @@ impl StabilityPoolClientModule {
             );
             let estimated_withdrawal_cents =
                 estimated_withdrawal_cents(self, unlocked_amount, locked_bps).await?;
-            let withdrawal_meta_gen = |txid, outpoints| StabilityPoolMeta::Withdrawal {
-                txid,
-                outpoints,
-                unlocked_amount,
-                locked_bps,
-                estimated_withdrawal_cents,
-            };
-            let (transaction_id, _) = self
+            let withdrawal_meta_gen =
+                move |out_point_range: OutPointRange| StabilityPoolMeta::Withdrawal {
+                    txid: out_point_range.txid,
+                    outpoints: out_point_range.into_iter().collect(),
+                    unlocked_amount,
+                    locked_bps,
+                    estimated_withdrawal_cents,
+                };
+            let out_point_range = self
                 .client_ctx
                 .finalize_and_submit_transaction(
                     operation_id,
@@ -749,7 +750,7 @@ impl StabilityPoolClientModule {
                     tx,
                 )
                 .await?;
-            Ok((operation_id, transaction_id))
+            Ok((operation_id, out_point_range.txid))
         } else {
             submit_tx_with_intended_action(
                 self,
@@ -966,7 +967,7 @@ async fn submit_tx_with_intended_action(
     let stability_pool_output =
         StabilityPoolOutput::new_v0(client_pub_key, intended_action.clone());
 
-    let (transaction_id, _) = match intended_action {
+    let out_point_range = match intended_action {
         IntendedAction::Seek(Seek(amount)) | IntendedAction::Provide(Provide { amount, .. }) => {
             let output = ClientOutputBundle::new(
                 vec![ClientOutput {
@@ -978,9 +979,9 @@ async fn submit_tx_with_intended_action(
                 }],
             );
             let tx = TransactionBuilder::new().with_outputs(client_ctx.make_client_outputs(output));
-            let deposit_meta_gen = |txid, change_outpoints| StabilityPoolMeta::Deposit {
-                txid,
-                change_outpoints,
+            let deposit_meta_gen = move |idx_range: OutPointRange| StabilityPoolMeta::Deposit {
+                txid: idx_range.txid,
+                change_outpoints: idx_range.into_iter().collect(),
                 amount,
             };
             client_ctx
@@ -1013,11 +1014,12 @@ async fn submit_tx_with_intended_action(
             let tx = TransactionBuilder::new().with_outputs(client_ctx.make_client_outputs(output));
             let estimated_withdrawal_cents =
                 estimated_withdrawal_cents(module, Amount::ZERO, bps).await?;
-            let cancellation_meta_gen = |txid, _| StabilityPoolMeta::CancelRenewal {
-                txid,
-                bps,
-                estimated_withdrawal_cents,
-            };
+            let cancellation_meta_gen =
+                move |out_point_range: OutPointRange| StabilityPoolMeta::CancelRenewal {
+                    txid: out_point_range.txid,
+                    bps,
+                    estimated_withdrawal_cents,
+                };
             client_ctx
                 .finalize_and_submit_transaction(
                     operation_id,
@@ -1029,7 +1031,7 @@ async fn submit_tx_with_intended_action(
         }
         IntendedAction::UndoCancelRenewal => bail!("Not yet supported"),
     };
-    Ok((operation_id, transaction_id))
+    Ok((operation_id, out_point_range.txid))
 }
 
 async fn estimated_withdrawal_cents(
@@ -1081,7 +1083,7 @@ async fn await_cancellation_processed(
         match context.module.wait_cancellation_processed().await {
             Ok(amount) => break Ok(amount),
             Err(e) => {
-                e.report_if_important();
+                e.report_if_unusual("awaiting cancellation");
                 fedimint_core::task::sleep(Duration::from_secs(10)).await
             }
         }
@@ -1107,7 +1109,7 @@ async fn claim_idle_balance_input(
         state_machines: Arc::new(move |_| Vec::<StabilityPoolStateMachines>::new()),
     };
 
-    let (tx_id, outpoints) = global_context
+    let out_point_range = global_context
         .claim_inputs(
             dbtx,
             ClientInputBundle::new(vec![input], vec![state_machines]),
@@ -1120,8 +1122,8 @@ async fn claim_idle_balance_input(
         transaction_id: old_state.transaction_id,
         state: StabilityPoolCancelLockedState::Processed {
             withdraw_unlocked_amount: idle_balance,
-            withdraw_unlocked_tx_id: tx_id,
-            withdraw_unlocked_outpoints: outpoints,
+            withdraw_unlocked_tx_id: out_point_range.txid,
+            withdraw_unlocked_outpoints: out_point_range.into_iter().collect(),
         },
     }
 }
@@ -1159,8 +1161,8 @@ async fn maybe_fund_cancellation_output(
                 );
 
                 match global_context.fund_output(dbtx, output).await {
-                    Ok((tx_id, _)) => StabilityPoolWithdrawUnlockedState::Accepted {
-                        maybe_cancellation_tx_id: Some(tx_id),
+                    Ok(out_point_range) => StabilityPoolWithdrawUnlockedState::Accepted {
+                        maybe_cancellation_tx_id: Some(out_point_range.txid),
                     },
                     Err(e) => StabilityPoolWithdrawUnlockedState::Rejected(e.to_string()),
                 }

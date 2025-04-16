@@ -27,7 +27,7 @@ pub async fn import_db_dump(dbtx: &mut DatabaseTransaction<'_>, dump: &[u8]) -> 
     let mut cursor = Cursor::new(dump);
     while cursor.position() < dump.len() as u64 {
         let (key, value) =
-            <(Vec<u8>, Vec<u8>)>::consensus_decode(&mut cursor, &Default::default())?;
+            <(Vec<u8>, Vec<u8>)>::consensus_decode_partial(&mut cursor, &Default::default())?;
         dbtx.raw_insert_bytes(&key, &value).await?;
     }
     Ok(())

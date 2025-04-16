@@ -14,3 +14,7 @@ thiserror = { workspace = true }
 tracing = { workspace = true }
 secp256k1 = { workspace = true }
 serde_json = { workspace = true }
+
+
+[target.'cfg(target_family = "wasm")'.dependencies]
+getrandom = { workspace = true, features = ["wasm_js"] }

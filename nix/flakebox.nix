@@ -124,6 +124,7 @@ in
         moreutils-ts = pkgs.writeShellScriptBin "ts" "exec ${pkgs.moreutils}/bin/ts \"$@\"";
       in
       {
+        CARGO_TARGET_WASM32_UNKNOWN_UNKNOWN_RUSTFLAGS = "--cfg getrandom_backend=\"wasm_js\" --cfg=curve25519_dalek_backend=\"serial\" -Csymbol-mangling-version=v0";
         packages = [
           # flakebox adds toolchains via `packages`, which seems to always take precedence
           # `nativeBuildInputs` in `mkShell`, so we need to add it here as well.

@@ -44,8 +44,8 @@ pub async fn generate(mint: &MintClientModule) -> anyhow::Result<SerializedReuse
 
 impl SerializedReusedEcashProofs {
     pub fn deserialize(&self) -> anyhow::Result<ReusedEcashProofs> {
-        Ok(ReusedEcashProofs::consensus_decode_vec(
-            self.reused_ecash_proofs.clone(),
+        Ok(ReusedEcashProofs::consensus_decode_whole(
+            &self.reused_ecash_proofs,
             &Default::default(),
         )?)
     }

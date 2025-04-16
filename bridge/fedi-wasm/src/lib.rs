@@ -39,7 +39,7 @@ impl IEventSink for EventSink {
 }
 
 thread_local! {
-    static BRIDGE: RefCell<Option<Arc<Bridge>>> = RefCell::new(None);
+    static BRIDGE: RefCell<Option<Arc<Bridge>>> = const { RefCell::new(None) };
 }
 
 #[wasm_bindgen]

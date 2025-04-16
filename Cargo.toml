@@ -1,46 +1,46 @@
 [workspace]
 members = [
-    "fedimintd",
-    "fedimint-cli",
-    "modules/fedi-social/common",
-    "modules/fedi-social/server",
-    "modules/fedi-social/client",
-    "bridge/fedi-ffi",
-    "bridge/ffi-bindgen",
-    "bridge/fedi-wasm",
-    "bridge/fedi-rpc-server",
-    "modules/stability-pool-old/client",
-    "modules/stability-pool-old/common",
-    "modules/stability-pool-old/server",
-    "modules/stability-pool-old/tests",
-    "modules/stability-pool/client",
-    "modules/stability-pool/common",
-    "modules/stability-pool/server",
-    "modules/stability-pool/tests",
-    "fedi-bug-report",
-    "devi",
-    "fedi-api-types",
-    "fedi-core",
-    "fedi-debug",
+  "fedimintd",
+  "fedimint-cli",
+  "modules/fedi-social/common",
+  "modules/fedi-social/server",
+  "modules/fedi-social/client",
+  "bridge/fedi-ffi",
+  "bridge/ffi-bindgen",
+  "bridge/fedi-wasm",
+  "bridge/fedi-rpc-server",
+  "modules/stability-pool-old/client",
+  "modules/stability-pool-old/common",
+  "modules/stability-pool-old/server",
+  "modules/stability-pool-old/tests",
+  "modules/stability-pool/client",
+  "modules/stability-pool/common",
+  "modules/stability-pool/server",
+  "modules/stability-pool/tests",
+  "fedi-bug-report",
+  "devi",
+  "fedi-api-types",
+  "fedi-core",
+  "fedi-debug",
 ]
 default-members = [
-    "fedimintd",
-    "fedimint-cli",
-    "fedi-api-types",
-    "modules/fedi-social/common",
-    "modules/fedi-social/server",
-    "modules/fedi-social/client",
-    "bridge/fedi-ffi",
-    "bridge/ffi-bindgen",
-    "modules/stability-pool-old/client",
-    "modules/stability-pool-old/common",
-    "modules/stability-pool-old/server",
-    "modules/stability-pool-old/tests",
-    "modules/stability-pool/client",
-    "modules/stability-pool/common",
-    "modules/stability-pool/server",
-    "modules/stability-pool/tests",
-    "devi",
+  "fedimintd",
+  "fedimint-cli",
+  "fedi-api-types",
+  "modules/fedi-social/common",
+  "modules/fedi-social/server",
+  "modules/fedi-social/client",
+  "bridge/fedi-ffi",
+  "bridge/ffi-bindgen",
+  "modules/stability-pool-old/client",
+  "modules/stability-pool-old/common",
+  "modules/stability-pool-old/server",
+  "modules/stability-pool-old/tests",
+  "modules/stability-pool/client",
+  "modules/stability-pool/common",
+  "modules/stability-pool/server",
+  "modules/stability-pool/tests",
+  "devi",
 ]
 resolver = "2"
 
@@ -83,13 +83,14 @@ bitcoin_hashes = "0.14.0"
 clap = "4"
 erased-serde = "0.4"
 futures = "0.3"
+getrandom = "0.3.1"
 hex = { version = "0.4.2" }
 impl-tools = "0.10.0"
 itertools = "0.12.1"
 rand = "0.8"
 reqwest = { version = "0.12", features = [
-    "json",
-    "rustls-tls",
+  "json",
+  "rustls-tls",
 ], default-features = false }
 secp256k1 = { version = "0.29.0", default-features = false }
 strum = "0.24"
@@ -98,29 +99,32 @@ thiserror = "2.0.8"
 tokio = "1"
 tracing = "0.1.37"
 tracing-subscriber = { version = "0.3.16", features = ["env-filter"] }
+matrix-sdk = { git = "https://github.com/fedibtc/matrix-rust-sdk", rev = "e4f25f17bda96bf9f4b7b308dc3f903d7e4d8db5", default-features = false }
+matrix-sdk-ui = { git = "https://github.com/fedibtc/matrix-rust-sdk", rev = "e4f25f17bda96bf9f4b7b308dc3f903d7e4d8db5", default-features = false }
 
 fedimint_threshold_crypto = { version = "0.2.1", package = "fedimint-threshold-crypto" }
 
-fedimintd = { git = "https://github.com/fedibtc/fedimint", tag = "v0.5.0-rc.4-fed7" }
-fedimint-cli = { git = "https://github.com/fedibtc/fedimint", tag = "v0.5.0-rc.4-fed7" }
-fedimint-build = { git = "https://github.com/fedibtc/fedimint", tag = "v0.5.0-rc.4-fed7" }
-fedimint-core = { git = "https://github.com/fedibtc/fedimint", tag = "v0.5.0-rc.4-fed7" }
-fedimint-server = { git = "https://github.com/fedibtc/fedimint", tag = "v0.5.0-rc.4-fed7" }
-fedimint-client = { git = "https://github.com/fedibtc/fedimint", tag = "v0.5.0-rc.4-fed7" }
-fedimint-tbs = { git = "https://github.com/fedibtc/fedimint", tag = "v0.5.0-rc.4-fed7" }
-fedimint-api-client = { git = "https://github.com/fedibtc/fedimint", tag = "v0.5.0-rc.4-fed7" }
-fedimint-derive-secret = { git = "https://github.com/fedibtc/fedimint", tag = "v0.5.0-rc.4-fed7" }
-fedimint-mint-client = { git = "https://github.com/fedibtc/fedimint", tag = "v0.5.0-rc.4-fed7" }
-fedimint-wallet-client = { git = "https://github.com/fedibtc/fedimint", tag = "v0.5.0-rc.4-fed7" }
-fedimint-ln-client = { git = "https://github.com/fedibtc/fedimint", tag = "v0.5.0-rc.4-fed7" }
-fedimint-ln-common = { git = "https://github.com/fedibtc/fedimint", tag = "v0.5.0-rc.4-fed7" }
-fedimint-meta-client = { git = "https://github.com/fedibtc/fedimint", tag = "v0.5.0-rc.4-fed7" }
-fedimint-aead = { git = "https://github.com/fedibtc/fedimint", tag = "v0.5.0-rc.4-fed7" }
-fedimint-rocksdb = { git = "https://github.com/fedibtc/fedimint", tag = "v0.5.0-rc.4-fed7" }
-fedimint-bip39 = { git = "https://github.com/fedibtc/fedimint", tag = "v0.5.0-rc.4-fed7" }
-fedimint-logging = { git = "https://github.com/fedibtc/fedimint", tag = "v0.5.0-rc.4-fed7" }
-devimint = { git = "https://github.com/fedibtc/fedimint", tag = "v0.5.0-rc.4-fed7" }
-ln-gateway = { git = "https://github.com/fedibtc/fedimint", tag = "v0.5.0-rc.4-fed7" }
+fedimintd = { git = "https://github.com/fedibtc/fedimint", tag = "v0.6.3-rc.0-fedi1" }
+fedimint-cli = { git = "https://github.com/fedibtc/fedimint", tag = "v0.6.3-rc.0-fedi1" }
+fedimint-build = { git = "https://github.com/fedibtc/fedimint", tag = "v0.6.3-rc.0-fedi1" }
+fedimint-core = { git = "https://github.com/fedibtc/fedimint", tag = "v0.6.3-rc.0-fedi1" }
+fedimint-server = { git = "https://github.com/fedibtc/fedimint", tag = "v0.6.3-rc.0-fedi1" }
+fedimint-server-core = { git = "https://github.com/fedibtc/fedimint", tag = "v0.6.3-rc.0-fedi1" }
+fedimint-client = { git = "https://github.com/fedibtc/fedimint", tag = "v0.6.3-rc.0-fedi1" }
+fedimint-tbs = { git = "https://github.com/fedibtc/fedimint", tag = "v0.6.3-rc.0-fedi1" }
+fedimint-api-client = { git = "https://github.com/fedibtc/fedimint", tag = "v0.6.3-rc.0-fedi1" }
+fedimint-derive-secret = { git = "https://github.com/fedibtc/fedimint", tag = "v0.6.3-rc.0-fedi1" }
+fedimint-mint-client = { git = "https://github.com/fedibtc/fedimint", tag = "v0.6.3-rc.0-fedi1" }
+fedimint-wallet-client = { git = "https://github.com/fedibtc/fedimint", tag = "v0.6.3-rc.0-fedi1" }
+fedimint-ln-client = { git = "https://github.com/fedibtc/fedimint", tag = "v0.6.3-rc.0-fedi1" }
+fedimint-ln-common = { git = "https://github.com/fedibtc/fedimint", tag = "v0.6.3-rc.0-fedi1" }
+fedimint-meta-client = { git = "https://github.com/fedibtc/fedimint", tag = "v0.6.3-rc.0-fedi1" }
+fedimint-aead = { git = "https://github.com/fedibtc/fedimint", tag = "v0.6.3-rc.0-fedi1" }
+fedimint-rocksdb = { git = "https://github.com/fedibtc/fedimint", tag = "v0.6.3-rc.0-fedi1" }
+fedimint-bip39 = { git = "https://github.com/fedibtc/fedimint", tag = "v0.6.3-rc.0-fedi1" }
+fedimint-logging = { git = "https://github.com/fedibtc/fedimint", tag = "v0.6.3-rc.0-fedi1" }
+devimint = { git = "https://github.com/fedibtc/fedimint", tag = "v0.6.3-rc.0-fedi1" }
+ln-gateway = { git = "https://github.com/fedibtc/fedimint", tag = "v0.6.3-rc.0-fedi1" }
 
 
 # Uncomment these to use local fedimint v2
@@ -146,6 +150,7 @@ ln-gateway = { git = "https://github.com/fedibtc/fedimint", tag = "v0.5.0-rc.4-f
 
 [profile.dev]
 debug = "line-tables-only"
+incremental = false
 
 # in dev mode optimize crates that are perf-critical (usually just crypto crates)
 [profile.dev.package]

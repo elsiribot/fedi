@@ -28,7 +28,7 @@ use db::{
     UnlockRequestsKeyPrefix,
 };
 use fedimint_core::config::{
-    ConfigGenModuleParams, DkgResult, ServerModuleConfig, ServerModuleConsensusConfig,
+    ConfigGenModuleParams, ServerModuleConfig, ServerModuleConsensusConfig,
     TypedServerModuleConfig, TypedServerModuleConsensusConfig,
 };
 use fedimint_core::core::ModuleInstanceId;
@@ -38,11 +38,11 @@ use fedimint_core::db::{
 use fedimint_core::module::audit::Audit;
 use fedimint_core::module::{
     ApiEndpoint, CoreConsensusVersion, InputMeta, ModuleConsensusVersion, ModuleInit, PeerHandle,
-    ServerModuleInit, ServerModuleInitArgs, SupportedModuleApiVersions, TransactionItemAmount,
+    SupportedModuleApiVersions, TransactionItemAmount,
 };
-use fedimint_core::server::DynServerModule;
 use fedimint_core::task::{MaybeSend, MaybeSync};
-use fedimint_core::{Amount, InPoint, NumPeersExt, OutPoint, PeerId, ServerModule, TransactionId};
+use fedimint_core::{Amount, InPoint, NumPeersExt, OutPoint, PeerId, TransactionId};
+use fedimint_server_core::{DynServerModule, ServerModule, ServerModuleInit, ServerModuleInitArgs};
 use futures::{stream, StreamExt};
 use itertools::Itertools;
 use oracle::{AggregateOracle, MockOracle, Oracle};
@@ -133,7 +133,7 @@ impl ServerModuleInit for StabilityPoolInit {
         &self,
         peers: &PeerHandle,
         params: &ConfigGenModuleParams,
-    ) -> DkgResult<ServerModuleConfig> {
+    ) -> anyhow::Result<ServerModuleConfig> {
         let params = params
             .to_typed::<StabilityPoolGenParams>()
             .expect("Invalid mint params");
@@ -142,7 +142,7 @@ impl ServerModuleInit for StabilityPoolInit {
             local: StabilityPoolConfigLocal,
             private: StabilityPoolConfigPrivate,
             consensus: StabilityPoolConfigConsensus {
-                consensus_threshold: peers.peers.to_num_peers().threshold() as _,
+                consensus_threshold: peers.num_peers().threshold() as _,
                 oracle_config: params.consensus.oracle_config,
                 cycle_duration: params.consensus.cycle_duration,
                 collateral_ratio: params.consensus.collateral_ratio,
@@ -798,7 +798,7 @@ async fn process_withdrawal_input(
         return Err(StabilityPoolInputError::InsufficientBalance);
     }
 
-    let new_idle_balance = idle_balance - input.amount;
+    let new_idle_balance = idle_balance.checked_sub(input.amount).expect("Can't fail");
     dbtx.insert_entry(&IdleBalanceKey(input.account.id()), &new_idle_balance)
         .await;
 
@@ -1707,7 +1707,7 @@ async fn update_history_for_locks<M>(
                         kind: AccountHistoryItemKind::LockedToStaged,
                         txid,
                         deposit_sequence: sequence,
-                        amount: old_amount - new_amount,
+                        amount: old_amount.checked_sub(new_amount).expect("Can't fail"),
                     }],
                 )
                 .await;
@@ -1724,7 +1724,7 @@ async fn update_history_for_locks<M>(
                         kind: AccountHistoryItemKind::StagedToLocked,
                         txid,
                         deposit_sequence: sequence,
-                        amount: new_amount - old_amount,
+                        amount: new_amount.checked_sub(old_amount).expect("Can't fail"),
                     }],
                 )
                 .await;

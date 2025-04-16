@@ -35,7 +35,6 @@ async fn starter_test() -> anyhow::Result<()> {
         cln,
         lnd,
         fed,
-        gw_cln,
         gw_lnd,
         gw_ldk,
         electrs,
@@ -184,8 +183,9 @@ async fn seeker_tests_isolated(seeker: Arc<ForkedClient>) -> anyhow::Result<()> 
     );
     assert_eq!(
         new_sp_account_info.sync_response.staged_balance,
-        initial_unlocked_sp_balance + first_deposit_amount + second_deposit_amount
-            - first_withdraw_amount
+        (initial_unlocked_sp_balance + first_deposit_amount + second_deposit_amount)
+            .checked_sub(first_withdraw_amount)
+            .expect("Can't fail")
     );
     let ActiveDeposits::Seeker { staged, .. } = new_sp_account_info.active_deposits else {
         bail!("Invalid active deposits variant for seeker");
@@ -199,7 +199,7 @@ async fn seeker_tests_isolated(seeker: Arc<ForkedClient>) -> anyhow::Result<()> 
         }, Seek  {
             sequence: 1,
             amount: amount2, ..
-        }] if *amount1 == first_deposit_amount && *amount2 == second_deposit_amount - first_withdraw_amount
+        }] if *amount1 == first_deposit_amount && *amount2 == second_deposit_amount.checked_sub(first_withdraw_amount).expect("Can't fail")
     ));
 
     // Withdraw more than 2nd staged seek, verify 2nd staged seek removed
@@ -214,7 +214,13 @@ async fn seeker_tests_isolated(seeker: Arc<ForkedClient>) -> anyhow::Result<()> 
         .await?;
 
     let total_withdrawn = first_withdraw_amount + second_withdraw_amount;
-    let remaining_first_deposit = first_deposit_amount - (total_withdrawn - second_deposit_amount);
+    let remaining_first_deposit = first_deposit_amount
+        .checked_sub(
+            total_withdrawn
+                .checked_sub(second_deposit_amount)
+                .expect("Can't fail"),
+        )
+        .expect("Can't fail");
     let new_ecash_balance = seeker.balance().await?;
     let new_sp_account_info = seeker.get_sp_account_info(AccountType::Seeker).await?;
     assert_eq!(
@@ -225,9 +231,11 @@ async fn seeker_tests_isolated(seeker: Arc<ForkedClient>) -> anyhow::Result<()> 
     );
     assert_eq!(
         new_sp_account_info.sync_response.staged_balance,
-        initial_unlocked_sp_balance + first_deposit_amount + second_deposit_amount
-            - first_withdraw_amount
-            - second_withdraw_amount
+        (initial_unlocked_sp_balance + first_deposit_amount + second_deposit_amount)
+            .checked_sub(first_withdraw_amount)
+            .expect("Can't fail")
+            .checked_sub(second_withdraw_amount)
+            .expect("Can't fail")
     );
     let ActiveDeposits::Seeker { staged, .. } = new_sp_account_info.active_deposits else {
         bail!("Invalid active deposits variant for seeker");
@@ -353,8 +361,9 @@ async fn provider_tests_isolated(provider: Arc<ForkedClient>) -> anyhow::Result<
     );
     assert_eq!(
         new_sp_account_info.sync_response.staged_balance,
-        initial_unlocked_sp_balance + first_deposit_amount + second_deposit_amount
-            - first_withdraw_amount
+        (initial_unlocked_sp_balance + first_deposit_amount + second_deposit_amount)
+            .checked_sub(first_withdraw_amount)
+            .expect("not fail")
     );
     let ActiveDeposits::Provider { staged, .. } = new_sp_account_info.active_deposits else {
         bail!("Invalid active deposits variant for provider");
@@ -370,7 +379,7 @@ async fn provider_tests_isolated(provider: Arc<ForkedClient>) -> anyhow::Result<
             sequence: 3,
             amount: amount2,
             meta: FeeRate(20), ..
-        }] if *amount1 == first_deposit_amount && *amount2 == second_deposit_amount - first_withdraw_amount));
+        }] if *amount1 == first_deposit_amount && *amount2 == second_deposit_amount.checked_sub(first_withdraw_amount).expect("Can't fail")));
 
     // Withdraw more than 2nd staged provide, verify 2nd staged provide removed
     // Verify ecash balance
@@ -384,7 +393,13 @@ async fn provider_tests_isolated(provider: Arc<ForkedClient>) -> anyhow::Result<
         .await?;
 
     let total_withdrawn = first_withdraw_amount + second_withdraw_amount;
-    let remaining_first_deposit = first_deposit_amount - (total_withdrawn - second_deposit_amount);
+    let remaining_first_deposit = first_deposit_amount
+        .checked_sub(
+            total_withdrawn
+                .checked_sub(second_deposit_amount)
+                .expect("Can't fail"),
+        )
+        .expect("Can't fail");
     let new_ecash_balance = provider.balance().await?;
     let new_sp_account_info = provider.get_sp_account_info(AccountType::Provider).await?;
     assert_eq!(
@@ -395,9 +410,11 @@ async fn provider_tests_isolated(provider: Arc<ForkedClient>) -> anyhow::Result<
     );
     assert_eq!(
         new_sp_account_info.sync_response.staged_balance,
-        initial_unlocked_sp_balance + first_deposit_amount + second_deposit_amount
-            - first_withdraw_amount
-            - second_withdraw_amount
+        (initial_unlocked_sp_balance + first_deposit_amount + second_deposit_amount)
+            .checked_sub(first_withdraw_amount)
+            .expect("Can't fail")
+            .checked_sub(second_withdraw_amount)
+            .expect("Can't fail")
     );
     let ActiveDeposits::Provider { staged, .. } = new_sp_account_info.active_deposits else {
         bail!("Invalid active deposits variant for provider");

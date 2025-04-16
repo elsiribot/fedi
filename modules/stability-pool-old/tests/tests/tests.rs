@@ -28,7 +28,6 @@ async fn starter_test() -> anyhow::Result<()> {
         cln,
         lnd,
         fed,
-        gw_cln,
         gw_lnd,
         gw_ldk,
         electrs,
