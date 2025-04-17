@@ -447,6 +447,7 @@
         "community": {
             "add-community": "Add community",
             "create-title": "Want to run your own community?",
+            "create-my-community": "Create My Community",
             "create-info-1": "A community is managed by trusted people called guardians.",
             "create-info-2": "Guardians work together to keep the community safe and secure.",
             "create-info-3": "This teamwork protects your wallet, privacy, and keeps your community strong.",
