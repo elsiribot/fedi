@@ -11360,8 +11360,3 @@ dependencies = [
  "cc",
  "pkg-config",
 ]
-
-[[patch.unused]]
-name = "ldk-node"
-version = "0.4.2"
-source = "git+https://github.com/fedibtc/ldk-node?tag=v0.4.2-fed#2b006addf17f66dbe4c380b2f74486bdfcad92f0"

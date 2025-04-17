@@ -57,8 +57,7 @@ url = "2.3.1"
 reqwest = { workspace = true }
 rolling-file = "0.2.0"
 tracing-appender = "0.2.2"
-matrix-sdk-ui = { workspace = true, tag = "fedi-0.10.0", default-features = false, features = [
-] }
+matrix-sdk-ui = { workspace = true, default-features = false }
 matrix-sdk = { workspace = true, default-features = false, features = [
   "js",
   "indexeddb",
