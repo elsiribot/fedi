@@ -374,6 +374,9 @@
             "enter-a-username": "Enter a username",
             "enter-display-name": "Enter a display name",
             "file-saved": "File saved",
+            "first-entry": "Chat & Pay Instantly",
+            "first-entry-option-1": "Community news, group chats, and private messages.",
+            "first-entry-option-2": "Send money right in the chat.",
             "former-member": "Former Member",
             "go-to-direct-chat": "Go to direct chat",
             "group-chat": "Group chat",
@@ -501,6 +504,9 @@
             "delete-confirmation": "Are you sure you want to delete {{fediMod}}?",
             "enter-amount-to-withdraw": "Enter an amount to withdraw from {{fediMod}}",
             "fedi-mods": "Fedi Mods",
+            "first-entry": "Mods = Useful Web Services",
+            "first-entry-option-1": "Browse and add Mods that power your daily life.",
+            "first-entry-option-2": "Only the Mods you choose live here.",
             "leave-page-confirmation": "Are you sure you want to leave this page? Changes may not be saved",
             "mod-title": "Mod title",
             "no-mods-available": "No community mods available",
@@ -524,11 +530,9 @@
             "community-description-create": "Think of the community as a safe home for your personal wallet. Join or create your own.",
             "community-updates": "Get updates by joining a community.",
             "services-selected": "Services selected by your community.",
-            "first-entry": "You’re in! What’s next?",
+            "first-entry": "You’re In! What’s Next?",
             "first-entry-option-1": "Top up your wallet to send, receive, and save money.",
-            "first-entry-option-2": "Catch community-wide news, join group discussions, or have private 1-on-1 chats.",
-            "first-entry-option-3": "Discover “Mods” — Useful web services — either community-selected or your own.",
-            "first-entry-option-4": "Join more communities and secure your money in different personal wallets."
+            "first-entry-option-2": "Join more communities and secure your money in different personal wallets."
         },
         "nostr": {
             "kind-application-data": "Application-specific data",
