@@ -1191,6 +1191,10 @@ impl From<SyncResponse> for RpcSPv2SyncResponse {
     }
 }
 
+#[derive(Debug, Serialize, Deserialize, TS)]
+#[ts(export)]
+pub struct NetworkError {}
+
 /// We differentiate between "send" and "receive" because in the case of a send
 /// we optimistically charge the fee from the send amount (since the amount +
 /// fee must already be in the user's possession) and refund the fee in case the

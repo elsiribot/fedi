@@ -78,9 +78,10 @@ use meta::{LegacyMetaSourceWithExternalUrl, MetaEntries, MetaServiceExt};
 use rand::Rng;
 use serde::de::DeserializeOwned;
 use spv2_sweeper_service::SPv2SweeperService;
+use stability_pool_client::api::StabilityPoolApiExt as _;
 use stability_pool_client::common::{
-    Account, AccountId, AccountType, FiatAmount, FiatOrAll, SignedTransferRequest, TransferRequest,
-    TransferRequestId,
+    Account, AccountId, AccountType, FiatAmount, FiatOrAll, SignedTransferRequest, SyncResponse,
+    TransferRequest, TransferRequestId,
 };
 use stability_pool_client::db::{
     CachedSyncResponseKey, CachedSyncResponseValue, SeekLifetimeFeeKey, UserOperationHistoryItem,
@@ -4072,6 +4073,14 @@ impl FederationV2 {
         let key = spv2.derive_multispend_group_key(group_id);
         let message = secp256k1::Message::from(&TransferRequestId::from(transfer_request));
         Ok(key.sign_schnorr(message))
+    }
+
+    pub async fn multispend_group_sync_info(
+        &self,
+        account_id: AccountId,
+    ) -> anyhow::Result<SyncResponse> {
+        let spv2 = self.client.spv2()?;
+        Ok(spv2.api.account_sync(account_id).await?)
     }
 }
 

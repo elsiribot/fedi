@@ -71,9 +71,12 @@ use tracing::{error, info, warn};
 use crate::bridge::BridgeRuntime;
 use crate::error::ErrorCode;
 use crate::features::StabilityPoolV2FeatureConfigState;
+use crate::federation::federation_v2::FederationV2;
 use crate::observable::{Observable, ObservableUpdate, ObservableVec, ObservableVecUpdate};
 use crate::storage::AppState;
-use crate::types::{RpcEventId, RpcMediaUploadParams, RpcPublicKey};
+use crate::types::{
+    NetworkError, RpcEventId, RpcMediaUploadParams, RpcPublicKey, RpcSPv2SyncResponse,
+};
 use crate::utils::PoisonedLockExt as _;
 
 pub mod multispend;
@@ -1349,6 +1352,43 @@ impl Matrix {
                     Ok(())
                 },
             )
+            .await
+    }
+
+    pub async fn observe_multispend_account_info(
+        self: &Arc<Self>,
+        id: u64,
+        fed: Arc<FederationV2>,
+        room_id: OwnedRoomId,
+        finalized_group: &FinalizedGroup,
+    ) -> Result<Observable<Result<RpcSPv2SyncResponse, NetworkError>>> {
+        let account_id = finalized_group.spv2_account.id();
+        let fetch = move || {
+            let fed = fed.clone();
+            async move {
+                fed.multispend_group_sync_info(account_id)
+                    .await
+                    .map(RpcSPv2SyncResponse::from)
+                    .map_err(|_| NetworkError {})
+            }
+        };
+        let this = self.clone();
+        self.runtime
+            .observable_pool
+            .make_observable(id, fetch().await, move |pool, id| async move {
+                let mut update_index = 0;
+                let mut stream = pin!(this.rescanner.subscribe_to_account_info_refresh(&room_id));
+                while let Some(()) = stream.next().await {
+                    pool.send_observable_update(ObservableUpdate::new(
+                        id,
+                        update_index,
+                        fetch().await,
+                    ))
+                    .await;
+                    update_index += 1;
+                }
+                Ok(())
+            })
             .await
     }
 
