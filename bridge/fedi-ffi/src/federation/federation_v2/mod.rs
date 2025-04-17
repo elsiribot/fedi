@@ -2264,7 +2264,7 @@ impl FederationV2 {
         let futures = self
             .client
             .operation_log()
-            .list_operations(limit, start_after)
+            .paginate_operations_rev(limit, start_after)
             .await
             .into_iter()
             .map(|(op_key, entry)| async move {
