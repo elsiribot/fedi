@@ -7,11 +7,11 @@ import { ScrollView } from 'react-native-gesture-handler'
 import {
     selectMatrixRoomMember,
     selectMatrixRoomMultispendStatus,
+    selectMultispendRole,
 } from '@fedi/common/redux'
 import { getUserSuffix } from '@fedi/common/utils/matrix'
 
 import { useAppSelector } from '../../../state/hooks'
-import { MatrixPowerLevel } from '../../../types'
 import OverlaySelect from '../../ui/OverlaySelect'
 import ChatAvatar from '../chat/ChatAvatar'
 
@@ -117,6 +117,9 @@ function MultispendVoter({
     const member = useAppSelector(s =>
         selectMatrixRoomMember(s, roomId, pubkey),
     )
+    const voterRole = useAppSelector(s =>
+        selectMultispendRole(s, roomId, pubkey),
+    )
     const { t } = useTranslation()
     const { theme } = useTheme()
     const style = styles(theme)
@@ -136,7 +139,7 @@ function MultispendVoter({
                             {getUserSuffix(member.id)}
                         </Text>
                     </View>
-                    {member.powerLevel === MatrixPowerLevel.Admin && (
+                    {voterRole === 'proposer' && (
                         <Text small medium style={style.greyText}>
                             {t('words.admin')}
                         </Text>

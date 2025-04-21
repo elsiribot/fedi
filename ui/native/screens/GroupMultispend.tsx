@@ -8,7 +8,7 @@ import {
     matrixApproveMultispendInvitation,
     selectMatrixAuth,
     selectMatrixRoomMultispendStatus,
-    selectMyMultispendPowerLevel,
+    selectMyMultispendRole,
 } from '@fedi/common/redux'
 
 import { fedimint } from '../bridge'
@@ -16,7 +16,6 @@ import GroupVoters from '../components/feature/multispend/GroupVoters'
 import MultispendWalletHeader from '../components/feature/multispend/MultispendWalletHeader'
 import { SafeAreaContainer } from '../components/ui/SafeArea'
 import { useAppDispatch, useAppSelector } from '../state/hooks'
-import { MultispendPowerLevel } from '../types'
 import { RootStackParamList } from '../types/navigation'
 
 export type Props = NativeStackScreenProps<
@@ -33,7 +32,7 @@ const GroupMultispend: React.FC<Props> = ({ route }: Props) => {
         selectMatrixRoomMultispendStatus(s, roomId),
     )
     const myMultispendPowerLevel = useAppSelector(s =>
-        selectMyMultispendPowerLevel(s, roomId),
+        selectMyMultispendRole(s, roomId),
     )
     const dispatch = useAppDispatch()
     const toast = useToast()
@@ -42,7 +41,7 @@ const GroupMultispend: React.FC<Props> = ({ route }: Props) => {
         if (
             multispendStatus?.status !== 'activeInvitation' ||
             !myId ||
-            myMultispendPowerLevel !== MultispendPowerLevel.Voter
+            myMultispendPowerLevel !== 'voter'
         )
             return false
 
