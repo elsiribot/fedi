@@ -1588,7 +1588,7 @@ mod tests {
         )
         .await?;
         let runtime = Arc::new(runtime);
-        let multispend_services = MultispendServices::new();
+        let multispend_services = MultispendServices::new(runtime.clone());
         let matrix = Matrix::init(
             runtime,
             tmp_dir.as_ref(),

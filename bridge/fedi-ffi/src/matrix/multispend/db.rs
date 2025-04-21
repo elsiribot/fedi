@@ -6,11 +6,11 @@ use stability_pool_client::common::SignedTransferRequest;
 use ts_rs::TS;
 
 use super::{
-    FinalizedGroup, GroupInvitationWithKeys, MultispendDepositEventData,
-    WithdrawRequestWithApprovals,
+    FinalizedGroup, GroupInvitationWithKeys, MultispendDepositEventData, MultispendEvent,
+    WithdrawRequestWithApprovals, WithdrawalResponseType,
 };
 use crate::matrix::RpcRoomId;
-use crate::types::{RpcEventId, RpcFederationId};
+use crate::types::{RpcEventId, RpcFederationId, RpcFiatAmount, RpcTransactionId};
 
 pub enum MultispendDbPrefix {
     /// (room_id) => MultispendGroupStatus
@@ -34,6 +34,9 @@ pub enum MultispendDbPrefix {
     /// (room_id, event_id) => () list of our withdrawal requests that are not
     /// submited to federation yet
     MultispendPendingApprovedWithdrawalRequests = 0x09,
+    /// (room_id, multispend_event) => () list of pending multispend events to
+    /// send into group.
+    MultispendPendingCompletionNotification = 0x0A,
 }
 
 /// Represents the current status of a multispend group in a room
@@ -215,3 +218,64 @@ impl_db_lookup!(
     key = MultispendPendingApprovedWithdrawalRequestKey,
     query_prefix = MultispendPendingApprovedWithdrawalRequestKeyPrefix,
 );
+
+#[derive(Debug, Clone, Encodable, Decodable)]
+pub enum MultispendPendingCompletionNotification {
+    Withdrawal {
+        room_id: RpcRoomId,
+        request_id: RpcEventId,
+        fiat_amount: RpcFiatAmount,
+        txid: RpcTransactionId,
+    },
+    Deposit {
+        room_id: RpcRoomId,
+        fiat_amount: RpcFiatAmount,
+        txid: RpcTransactionId,
+    },
+}
+
+#[derive(Debug, Clone, Encodable, Decodable)]
+pub struct MultispendPendingCompletionNotificationPrefix;
+
+impl_db_record!(
+    key = MultispendPendingCompletionNotification,
+    value = (),
+    db_prefix = MultispendDbPrefix::MultispendPendingCompletionNotification,
+);
+
+impl_db_lookup!(
+    key = MultispendPendingCompletionNotification,
+    query_prefix = MultispendPendingCompletionNotificationPrefix,
+);
+
+impl MultispendPendingCompletionNotification {
+    pub fn room_id(&self) -> &RpcRoomId {
+        match self {
+            MultispendPendingCompletionNotification::Withdrawal { room_id, .. } => room_id,
+            MultispendPendingCompletionNotification::Deposit { room_id, .. } => room_id,
+        }
+    }
+    pub fn multispend_event(&self) -> MultispendEvent {
+        match self {
+            MultispendPendingCompletionNotification::Withdrawal {
+                request_id,
+                fiat_amount,
+                txid,
+                ..
+            } => MultispendEvent::WithdrawalResponse {
+                request: request_id.clone(),
+                response: WithdrawalResponseType::Complete {
+                    fiat_amount: *fiat_amount,
+                    txid: *txid,
+                },
+            },
+
+            MultispendPendingCompletionNotification::Deposit {
+                fiat_amount, txid, ..
+            } => MultispendEvent::DepositNotification {
+                fiat_amount: *fiat_amount,
+                txid: *txid,
+            },
+        }
+    }
+}

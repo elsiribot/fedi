@@ -60,11 +60,11 @@ impl std::fmt::Display for RpcAmount {
     }
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize, TS, Encodable, Decodable, PartialEq, Eq)]
+#[derive(Debug, Clone, Serialize, Deserialize, TS, Encodable, Decodable, PartialEq, Eq, Copy)]
 #[ts(export)]
 pub struct RpcFiatAmount(#[ts(type = "number")] pub u64);
 
-#[derive(Debug, Clone, Serialize, Deserialize, TS, Encodable, Decodable, PartialEq, Eq)]
+#[derive(Debug, Clone, Serialize, Deserialize, TS, Encodable, Decodable, PartialEq, Eq, Copy)]
 #[ts(export)]
 pub struct RpcTransactionId(#[ts(type = "string")] pub TransactionId);
 

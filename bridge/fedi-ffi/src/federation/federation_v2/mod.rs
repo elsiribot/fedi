@@ -1472,9 +1472,14 @@ impl FederationV2 {
                         fed.subscribe_spv2_withdraw(operation_id).await
                     });
                 }
-                StabilityPoolMeta::Transfer { .. } => {
+                StabilityPoolMeta::Transfer {
+                    extra_meta,
+                    signed_request,
+                    txid,
+                } => {
                     self.spawn_cancellable("subscribe_spv2_transfer", move |fed| async move {
-                        fed.subscribe_spv2_transfer(operation_id).await
+                        fed.subscribe_spv2_transfer(operation_id, txid, signed_request, extra_meta)
+                            .await
                     });
                 }
                 StabilityPoolMeta::WithdrawIdleBalance {
@@ -3225,13 +3230,17 @@ impl FederationV2 {
         // 2. The submitter of the TX might not be the sender or the recipient
 
         let operation_id = spv2.transfer(signed_request, meta).await?;
-        self.spawn_cancellable("subscribe_spv2_transfer", move |fed| async move {
-            fed.subscribe_spv2_transfer(operation_id).await
-        });
+        self.subscribe_to_operation(operation_id).await?;
         Ok(operation_id)
     }
 
-    async fn subscribe_spv2_transfer(&self, operation_id: OperationId) {
+    async fn subscribe_spv2_transfer(
+        &self,
+        operation_id: OperationId,
+        txid: TransactionId,
+        signed_request: SignedTransferRequest,
+        extra_meta: serde_json::Value,
+    ) {
         let Ok(spv2) = self.client.spv2() else {
             return;
         };
@@ -3243,6 +3252,31 @@ impl FederationV2 {
                 // Force sync spv2 once TX is accepted
                 if matches!(state, StabilityPoolTransferOperationState::Success) {
                     self.spv2_force_sync();
+                    // send multispend completion notification
+                    match serde_json::from_value::<SPv2TransferMetadata>(extra_meta.clone()) {
+                        Ok(SPv2TransferMetadata::MultispendDeposit { room }) => {
+                            self.multispend_services
+                                .completion_notification
+                                .add_deposit_notification(
+                                    room,
+                                    signed_request.details().amount(),
+                                    txid,
+                                )
+                                .await;
+                        }
+                        Ok(SPv2TransferMetadata::MultispendWithdrawal { room, request_id }) => {
+                            self.multispend_services
+                                .completion_notification
+                                .add_withdrawal_notification(
+                                    room,
+                                    request_id,
+                                    signed_request.details().amount(),
+                                    txid,
+                                )
+                                .await;
+                        }
+                        Ok(SPv2TransferMetadata::StableBalance { .. }) | Err(_) => {}
+                    }
                 }
                 self.update_operation_state(operation_id, state.clone())
                     .await;
@@ -3255,7 +3289,7 @@ impl FederationV2 {
         }
     }
 
-    async fn spv2_user_op_history_item(
+    pub async fn spv2_user_op_history_item(
         &self,
         txid: TransactionId,
     ) -> Option<UserOperationHistoryItem> {

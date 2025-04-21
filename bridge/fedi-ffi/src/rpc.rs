@@ -941,7 +941,7 @@ async fn matrixInit(bridge: &BridgeFull) -> anyhow::Result<()> {
         .set(matrix.clone())
         .map_err(|_| anyhow::anyhow!("matrix already initialized"))?;
     if matrix.is_multispend_enabled() {
-        bridge.start_multispend_services();
+        bridge.start_multispend_services(matrix);
     }
     Ok(())
 }

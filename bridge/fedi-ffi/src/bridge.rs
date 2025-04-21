@@ -300,7 +300,7 @@ impl BridgeFull {
         let device_registration_service =
             Mutex::new(DeviceRegistrationService::new(runtime.clone()).await);
 
-        let multispend_services = MultispendServices::new();
+        let multispend_services = MultispendServices::new(runtime.clone());
 
         // Load communities and federations services
         let communities = Communities::init(runtime.clone()).await;
@@ -320,7 +320,7 @@ impl BridgeFull {
         })
     }
 
-    pub fn start_multispend_services(&self) {
+    pub fn start_multispend_services(&self, matrix: Arc<Matrix>) {
         let runtime = self.runtime.clone();
         let federations = self.federations.clone();
         let multispend_services = self.multispend_services.clone();
@@ -332,6 +332,16 @@ impl BridgeFull {
                     .run_continuously(&runtime.multispend_db(), &federations)
                     .await
             });
+        let multispend_services = self.multispend_services.clone();
+        self.runtime.task_group.spawn_cancellable(
+            "multispend::CompletionNotificationService",
+            async move {
+                multispend_services
+                    .completion_notification
+                    .run_continuously(&matrix)
+                    .await
+            },
+        );
     }
 
     /// Dump the database for a given federation.

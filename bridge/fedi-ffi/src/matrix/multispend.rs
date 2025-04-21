@@ -24,6 +24,7 @@ use crate::types::{
     RpcEventId, RpcFederationId, RpcFiatAmount, RpcPublicKey, RpcSignature, RpcTransactionId,
 };
 
+pub mod completion_notification_service;
 pub mod db;
 pub mod services;
 pub mod withdrawal_service;
