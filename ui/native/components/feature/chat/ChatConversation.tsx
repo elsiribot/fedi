@@ -23,6 +23,7 @@ import {
     selectMatrixRoomEvents,
     selectMatrixRoomMembersCount,
     selectMatrixRoomEventsHaveLoaded,
+    selectMatrixRoomIsBlocked,
 } from '@fedi/common/redux'
 import { ChatType, MatrixEvent, MatrixEventStatus } from '@fedi/common/types'
 import {
@@ -70,6 +71,7 @@ const ChatConversation: React.FC<MessagesListProps> = ({
     // Room is empty if we're the only member
     const isAlone =
         useAppSelector(s => selectMatrixRoomMembersCount(s, id)) === 1
+    const isBlocked = useAppSelector(s => selectMatrixRoomIsBlocked(s, id))
 
     const { isPaginating, handlePaginate } = useObserveMatrixRoom(id)
 
@@ -225,6 +227,15 @@ const ChatConversation: React.FC<MessagesListProps> = ({
                             <NoMessagesNotice isBroadcast={isBroadcast} />
                         )
                     }
+                    ListHeaderComponent={
+                        isBlocked ? (
+                            <View style={style.blockedContainer}>
+                                <Text tiny style={style.blockedText}>
+                                    {t('feature.chat.user-is-blocked-guidance')}
+                                </Text>
+                            </View>
+                        ) : undefined
+                    }
                     onScroll={handleScroll}
                     // this prop is required to accomplish both:
                     // 1) correct ordering of messages with the most recent message at the bottom
@@ -302,6 +313,25 @@ const styles = (theme: Theme) =>
         center: {
             flex: 1,
             justifyContent: 'center',
+        },
+        initialLoadingContainer: {
+            flex: 1,
+            justifyContent: 'center',
+            alignItems: 'center',
+            minHeight: 200,
+        },
+        contentContainerLoading: {
+            flexGrow: 1,
+            justifyContent: 'center',
+        },
+        blockedContainer: {
+            alignItems: 'center',
+            width: '100%',
+            marginBottom: theme.spacing.md,
+        },
+        blockedText: {
+            color: theme.colors.red,
+            textAlign: 'center',
         },
     })
 

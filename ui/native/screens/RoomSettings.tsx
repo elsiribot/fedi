@@ -6,17 +6,20 @@ import { Alert, ScrollView, StyleSheet, View } from 'react-native'
 
 import { useToast } from '@fedi/common/hooks/toast'
 import {
+    ignoreUser,
     leaveMatrixRoom,
     selectIsDefaultGroup,
     selectMatrixRoom,
     selectMatrixRoomMembersCount,
     selectMatrixRoomSelfPowerLevel,
     setMatrixRoomBroadcastOnly,
+    unignoreUser,
 } from '@fedi/common/redux'
 import { MatrixPowerLevel } from '@fedi/common/types'
 import amountUtils from '@fedi/common/utils/AmountUtils'
 
 import { ChatSettingsAvatar } from '../components/feature/chat/ChatSettingsAvatar'
+import { ConfirmBlockOverlay } from '../components/feature/chat/ConfirmBlockOverlay'
 import SettingsItem, {
     SettingsItemProps,
 } from '../components/feature/settings/SettingsItem'
@@ -31,6 +34,7 @@ const RoomSettings: React.FC<Props> = ({ navigation, route }: Props) => {
     const dispatch = useAppDispatch()
     const { t } = useTranslation()
     const { theme } = useTheme()
+    const { show } = useToast()
     const toast = useToast()
     const { roomId } = route.params
     const room = useAppSelector(s => selectMatrixRoom(s, roomId))
@@ -45,6 +49,11 @@ const RoomSettings: React.FC<Props> = ({ navigation, route }: Props) => {
     const isGroupChat = room?.directUserId === undefined
     const [isTogglingBroadcastOnly, setIsTogglingBroadcastOnly] =
         useState(false)
+
+    const [isConfirmingBlock, setIsConfirmingBlock] = useState(false)
+    const [isBlockingUser, setIsBlockingUser] = useState(false)
+
+    const isIgnored = !!room?.isBlocked
 
     const leaveChat = useCallback(async () => {
         // Immediately navigate and replace navigation stack on leave
@@ -82,6 +91,40 @@ const RoomSettings: React.FC<Props> = ({ navigation, route }: Props) => {
     const handleChangeGroupName = useCallback(() => {
         navigation.navigate('EditGroup', { roomId })
     }, [navigation, roomId])
+
+    const blockUser = useCallback(async () => {
+        try {
+            if (!room?.directUserId) return
+            setIsBlockingUser(true)
+            await dispatch(ignoreUser({ userId: room.directUserId })).unwrap()
+            setIsBlockingUser(false)
+            setIsConfirmingBlock(false)
+            show({
+                content: t('feature.chat.block-user-success'),
+                status: 'success',
+            })
+        } catch (error) {
+            toast.error(t, t('feature.chat.block-user-failure'))
+        }
+    }, [dispatch, room?.directUserId, show, t, toast])
+
+    const unblockUser = useCallback(async () => {
+        try {
+            if (!room?.directUserId) return
+            setIsBlockingUser(true)
+
+            await dispatch(unignoreUser({ userId: room.directUserId })).unwrap()
+
+            setIsBlockingUser(false)
+            setIsConfirmingBlock(false)
+            show({
+                content: t('feature.chat.unblock-user-success'),
+                status: 'success',
+            })
+        } catch (error) {
+            toast.error(t, t('feature.chat.unblock-user-failure'))
+        }
+    }, [dispatch, room?.directUserId, show, t, toast])
 
     const handleViewMembers = useCallback(() => {
         navigation.navigate('ChatRoomMembers', { roomId })
@@ -162,11 +205,23 @@ const RoomSettings: React.FC<Props> = ({ navigation, route }: Props) => {
                 },
             )
         } else {
-            items.push({
-                icon: 'LeaveRoom',
-                label: t('feature.chat.leave-chat'),
-                onPress: handleLeaveChat,
-            })
+            items.push(
+                {
+                    icon: 'LeaveRoom',
+                    label: t('feature.chat.leave-chat'),
+                    onPress: handleLeaveChat,
+                },
+                {
+                    icon: 'BlockMember',
+                    label: isIgnored
+                        ? t('feature.chat.unblock-user')
+                        : t('feature.chat.block-user'),
+                    onPress: () => {
+                        setIsConfirmingBlock(true)
+                    },
+                    color: theme.colors.red,
+                },
+            )
         }
         return items
     }, [
@@ -183,26 +238,44 @@ const RoomSettings: React.FC<Props> = ({ navigation, route }: Props) => {
         room?.broadcastOnly,
         style.switch,
         t,
+        theme.colors.red,
+        isIgnored,
     ])
 
     if (!room) return <HoloLoader />
 
     return (
-        <View style={style.container}>
-            <ChatSettingsAvatar room={room} />
-            <ScrollView bounces={false} contentContainerStyle={style.content}>
-                <View style={style.sectionContainer}>
-                    <Text color={theme.colors.primaryLight}>
-                        {t('feature.chat.chat-settings')}
-                    </Text>
-                    <View style={style.settingsItems}>
-                        {settingsItems.map((item, index) => (
-                            <SettingsItem key={`si-${index}`} {...item} />
-                        ))}
+        <>
+            <View style={style.container}>
+                <ChatSettingsAvatar room={room} />
+                <ScrollView
+                    bounces={false}
+                    contentContainerStyle={style.content}>
+                    <View style={style.sectionContainer}>
+                        <Text color={theme.colors.primaryLight}>
+                            {t('feature.chat.chat-settings')}
+                        </Text>
+                        <View style={style.settingsItems}>
+                            {settingsItems.map((item, index) => (
+                                <SettingsItem key={`si-${index}`} {...item} />
+                            ))}
+                        </View>
                     </View>
-                </View>
-            </ScrollView>
-        </View>
+                </ScrollView>
+            </View>
+            <ConfirmBlockOverlay
+                show={isConfirmingBlock}
+                isIgnored={isIgnored}
+                confirming={isBlockingUser}
+                onConfirm={isIgnored ? unblockUser : blockUser}
+                onDismiss={() => setIsConfirmingBlock(false)}
+                user={{
+                    id: room.directUserId ?? '',
+                    displayName: room?.preview?.displayName ?? '',
+                    avatarUrl: room?.preview?.avatarUrl ?? '',
+                }}
+            />
+        </>
     )
 }
 

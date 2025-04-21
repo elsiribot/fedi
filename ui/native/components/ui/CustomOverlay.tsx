@@ -18,6 +18,7 @@ import SvgImage, { SvgImageName, SvgImageSize } from './SvgImage'
 type CustomOverlayButton = {
     text: string
     primary?: boolean
+    warning?: boolean
     disabled?: boolean
     onPress: () => void
 }
@@ -25,6 +26,7 @@ type CustomOverlayButton = {
 export type CustomOverlayContents = {
     title?: React.ReactNode | string
     icon?: SvgImageName
+    iconColor?: string
     headerElement?: React.ReactNode
     url?: string | null
     message?: string | null
@@ -100,23 +102,34 @@ const CustomOverlay: React.FC<CustomOverlayProps> = ({
                     key={i}
                     containerStyle={style.buttonContainer}
                     title={button.text}
-                    titleProps={{ numberOfLines: 1 }}
+                    titleProps={{
+                        numberOfLines: 1,
+                        adjustsFontSizeToFit: true,
+                        maxFontSizeMultiplier: 1.4,
+                    }}
                     titleStyle={{
-                        color: button.primary
-                            ? theme.colors.secondary
-                            : theme.colors.primary,
+                        color:
+                            button.primary || button.warning
+                                ? theme.colors.secondary
+                                : theme.colors.primary,
                     }}
                     buttonStyle={{
                         backgroundColor: button.primary
                             ? theme.colors.primary
-                            : theme.colors.secondary,
+                            : button.warning
+                              ? theme.colors.red
+                              : theme.colors.secondary,
                         borderWidth: 1,
                         borderRadius: 60,
+                        borderColor: button.warning
+                            ? theme.colors.red
+                            : theme.colors.primary,
                     }}
                     loadingProps={{
-                        color: button.primary
-                            ? theme.colors.secondary
-                            : theme.colors.primary,
+                        color:
+                            button.primary || button.warning
+                                ? theme.colors.secondary
+                                : theme.colors.primary,
                     }}
                     loading={loading ? button.primary : false}
                     disabled={loading ? true : button.disabled}

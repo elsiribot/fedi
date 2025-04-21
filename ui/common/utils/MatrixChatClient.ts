@@ -81,6 +81,7 @@ interface MatrixChatClientEventMap {
         roomId: MatrixRoom['id']
         mode: RpcRoomNotificationMode
     }
+    ignoredUsers: MatrixUser['id'][]
     user: MatrixUser
     error: MatrixError
     auth: MatrixAuth
@@ -133,6 +134,7 @@ export class MatrixChatClient {
                     // asynchronously get the user's avatarUrl
                     this.refetchAuth()
 
+                    this.listIgnoredUsers()
                     this.observeRoomList().catch(reject)
                 })
                 .catch(err => {
@@ -463,6 +465,12 @@ export class MatrixChatClient {
 
     async unignoreUser(userId: string) {
         return this.fedimint.matrixUnignoreUser({ userId })
+    }
+
+    async listIgnoredUsers() {
+        const users = await this.fedimint.matrixListIgnoredUsers({})
+        this.emit('ignoredUsers', users)
+        return users
     }
 
     async roomKickUser(roomId: string, userId: string, reason?: string) {
@@ -830,6 +838,7 @@ export class MatrixChatClient {
             displayName: this.ensureDisplayName(member.displayName),
             powerLevel: member.powerLevel,
             membership: member.membership,
+            ignored: member.ignored,
             // TODO: Make opaque mxc type, have each component do the conversion with width / height args
             avatarUrl: member.avatarUrl
                 ? mxcUrlToHttpUrl(member.avatarUrl, 200, 200, 'crop')
@@ -873,6 +882,7 @@ export class MatrixChatClient {
         // in the event list so that the updates apply properly. If we filtered
         // them out, the indexes would point to the wrong places.
         if (item.kind !== 'event') return null
+
         if (
             item.value.content.kind === 'json' &&
             item.value.content.value.type !== 'm.room.message' &&

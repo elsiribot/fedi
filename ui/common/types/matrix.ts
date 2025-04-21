@@ -48,7 +48,7 @@ export type MatrixGroupPreview = {
     isDefaultGroup?: boolean
 }
 
-export interface MatrixRoom {
+export type MatrixRoom = {
     id: string
     name: string
     avatarUrl?: string
@@ -60,6 +60,7 @@ export interface MatrixRoom {
     joinedMemberCount?: number
     isPreview?: boolean
     isPublic?: boolean
+    isBlocked?: boolean
     inviteCode: string
     roomState: MatrixRoomState
 }
@@ -88,6 +89,7 @@ export interface MatrixRoomMember extends MatrixUser {
     roomId: MatrixRoom['id']
     powerLevel: number
     membership: RpcMatrixMembership
+    ignored: boolean
 }
 
 export enum MatrixEventStatus {

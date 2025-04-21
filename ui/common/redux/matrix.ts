@@ -105,6 +105,7 @@ const initialState = {
         RpcRoomNotificationMode | undefined
     >,
     users: {} as Record<MatrixUser['id'], MatrixUser | undefined>,
+    ignoredUsers: [] as MatrixUser['id'][],
     errors: [] as MatrixError[],
     pushNotificationToken: null as string | null,
     groupPreviews: {} as Record<MatrixRoom['id'], MatrixGroupPreview>,
@@ -167,6 +168,12 @@ export const matrixSlice = createSlice({
             }>,
         ) {
             state.roomMembers[action.payload.roomId] = action.payload.members
+        },
+        setMatrixIgnoredUsers(
+            state,
+            action: PayloadAction<MatrixUser['id'][]>,
+        ) {
+            state.ignoredUsers = action.payload
         },
         addMatrixUser(state, action: PayloadAction<MatrixUser>) {
             state.users = upsertRecordEntity(state.users, action.payload)
@@ -407,42 +414,61 @@ export const matrixSlice = createSlice({
             }
         })
         builder.addMatcher(
-            isAnyOf(
-                previewGlobalDefaultChats.fulfilled,
-                previewCommunityDefaultChats.fulfilled,
-                previewAllDefaultChats.fulfilled,
-            ),
+            isAnyOf(ignoreUser.fulfilled, unignoreUser.fulfilled),
             (state, action) => {
-                let hasUpdates = false
-                const updatedDefaultGroups = action.payload.reduce(
-                    (
-                        result: Record<RpcRoomId, MatrixGroupPreview>,
-                        preview: MatrixGroupPreview,
-                    ) => {
-                        const existingPreview = result[preview.info.id]
-                        const updatedPreview = {
-                            ...preview,
-                            isDefaultGroup: true,
-                        }
-
-                        if (
-                            !existingPreview ||
-                            !isEqual(existingPreview, updatedPreview)
-                        ) {
-                            hasUpdates = true
-                            result[preview.info.id] = updatedPreview
-                        }
-
-                        return result
+                const oldRoomMembers = state.roomMembers
+                Object.entries(oldRoomMembers).forEach(
+                    ([roomId, roomMembers]) => {
+                        const member = roomMembers?.find(
+                            m => m.id === action.meta.arg.userId,
+                        )
+                        if (!member) return
+                        const newRoomMembers = upsertListItem(roomMembers, {
+                            ...member,
+                            ignored: action.payload,
+                        })
+                        state.roomMembers[roomId] = newRoomMembers
                     },
-                    { ...state.groupPreviews },
                 )
-
-                if (hasUpdates) {
-                    state.groupPreviews = updatedDefaultGroups
-                }
             },
-        )
+        ),
+            builder.addMatcher(
+                isAnyOf(
+                    previewGlobalDefaultChats.fulfilled,
+                    previewCommunityDefaultChats.fulfilled,
+                    previewAllDefaultChats.fulfilled,
+                ),
+                (state, action) => {
+                    let hasUpdates = false
+                    const updatedDefaultGroups = action.payload.reduce(
+                        (
+                            result: Record<RpcRoomId, MatrixGroupPreview>,
+                            preview: MatrixGroupPreview,
+                        ) => {
+                            const existingPreview = result[preview.info.id]
+                            const updatedPreview = {
+                                ...preview,
+                                isDefaultGroup: true,
+                            }
+
+                            if (
+                                !existingPreview ||
+                                !isEqual(existingPreview, updatedPreview)
+                            ) {
+                                hasUpdates = true
+                                result[preview.info.id] = updatedPreview
+                            }
+
+                            return result
+                        },
+                        { ...state.groupPreviews },
+                    )
+
+                    if (hasUpdates) {
+                        state.groupPreviews = updatedDefaultGroups
+                    }
+                },
+            )
     },
 })
 
@@ -454,6 +480,7 @@ export const {
     addMatrixRoomInfo,
     addMatrixRoomMember,
     setMatrixRoomMembers,
+    setMatrixIgnoredUsers,
     addMatrixUser,
     setMatrixUsers,
     setMatrixRoomPowerLevels,
@@ -490,9 +517,9 @@ export const startMatrixClient = createAsyncThunk<
 
     // Bind all the listeners we need to dispatch actions
     client.on('auth', auth => dispatch(setMatrixAuth(auth)))
-    client.on('roomListUpdate', updates =>
-        dispatch(handleMatrixRoomListObservableUpdates(updates)),
-    )
+    client.on('roomListUpdate', updates => {
+        dispatch(handleMatrixRoomListObservableUpdates(updates))
+    })
     client.on('roomInfo', room => {
         dispatch(addMatrixRoomInfo(room))
         if (room.roomState === 'Invited') {
@@ -508,10 +535,11 @@ export const startMatrixClient = createAsyncThunk<
         dispatch(handleMatrixRoomTimelinePaginationStatus(ev)),
     )
     client.on('roomPowerLevels', ev => dispatch(setMatrixRoomPowerLevels(ev)))
-
     client.on('roomNotificationMode', ev =>
         dispatch(setMatrixRoomNotificationMode(ev)),
     )
+
+    client.on('ignoredUsers', ev => dispatch(setMatrixIgnoredUsers(ev)))
 
     client.on('error', err => dispatch(addMatrixError(err)))
 
@@ -1031,21 +1059,45 @@ export const updateMatrixRoomNotificationMode = createAsyncThunk<
     return mode
 })
 
-export const ignoreUser = createAsyncThunk<void, { userId: MatrixUser['id'] }>(
-    'matrix/ignoreUser',
-    async ({ userId }) => {
-        const client = getMatrixClient()
-        await client.ignoreUser(userId)
-    },
-)
+export const ignoreUser = createAsyncThunk<
+    boolean,
+    { userId: MatrixUser['id']; roomId?: MatrixRoom['id'] }
+>('matrix/ignoreUser', async ({ userId }) => {
+    const client = getMatrixClient()
+    await client.ignoreUser(userId)
+
+    // TODO: make the ignored list observable to avoid the need
+    // to refetch manually. (this is kinda racy)
+    await new Promise(resolve => setTimeout(resolve, 1000))
+
+    // Refresh the list of ignored users
+    await client.listIgnoredUsers()
+    return true
+})
 
 export const unignoreUser = createAsyncThunk<
-    void,
-    { userId: MatrixUser['id'] }
+    boolean,
+    { userId: MatrixUser['id']; roomId?: MatrixRoom['id'] }
 >('matrix/unignoreUser', async ({ userId }) => {
     const client = getMatrixClient()
     await client.unignoreUser(userId)
+
+    // TODO: make the ignored list observable to avoid the need
+    // to refetch manually. (this is kinda racy)
+    await new Promise(resolve => setTimeout(resolve, 1000))
+
+    // Refresh the list of ignored users
+    await client.listIgnoredUsers()
+    return false
 })
+
+export const listIgnoredUsers = createAsyncThunk<string[], void>(
+    'matrix/listIgnoredUsers',
+    async () => {
+        const client = getMatrixClient()
+        return client.listIgnoredUsers()
+    },
+)
 
 export const kickUser = createAsyncThunk<
     void,
@@ -1204,7 +1256,8 @@ export const selectMatrixRooms = createSelector(
     (s: CommonState) => s.matrix.roomList,
     (s: CommonState) => s.matrix.roomInfo,
     (s: CommonState) => s.matrix.roomPowerLevels,
-    (roomList, roomInfo, roomPowerLevels) => {
+    (s: CommonState) => s.matrix.ignoredUsers,
+    (roomList, roomInfo, roomPowerLevels, ignoredUsers) => {
         const rooms: MatrixRoom[] = []
         for (const item of roomList) {
             if (!item.id) continue
@@ -1218,6 +1271,9 @@ export const selectMatrixRooms = createSelector(
                           'm.room.message',
                           'm.room.encrypted',
                       ]) >= MatrixPowerLevel.Moderator
+                    : false,
+                isBlocked: room.directUserId
+                    ? ignoredUsers.includes(room.directUserId)
                     : false,
             })
         }
@@ -1486,6 +1542,14 @@ export const selectMatrixDirectMessageRoom = createSelector(
     (userId, rooms) => rooms.find(room => room.directUserId === userId),
 )
 
+const selectMatrixIgnoredUsers = (s: CommonState) => s.matrix.ignoredUsers
+
+export const selectMatrixUserIsIgnored = createSelector(
+    selectMatrixIgnoredUsers,
+    (_: CommonState, userId: string) => userId,
+    (ignoredUsers, userId) => ignoredUsers.includes(userId),
+)
+
 export const selectMatrixHasNotifications = createSelector(
     selectMatrixRooms,
     rooms =>
@@ -1631,6 +1695,11 @@ export const selectDefaultMatrixRoomIds = createSelector(
 
 export const selectIsDefaultGroup = (s: CommonState, id: string) =>
     selectDefaultMatrixRoomIds(s).includes(id)
+
+export const selectMatrixRoomIsBlocked = (
+    s: CommonState,
+    id: MatrixRoom['id'],
+) => selectMatrixRoom(s, id)?.isBlocked
 
 export const selectMatrixRoomPaginationStatus = (
     s: CommonState,

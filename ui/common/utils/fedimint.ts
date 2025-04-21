@@ -689,6 +689,12 @@ export class FedimintBridge {
         return this.rpcTyped('matrixIgnoreUser', args)
     }
 
+    async matrixListIgnoredUsers(
+        args: bindings.RpcPayload<'matrixListIgnoredUsers'>,
+    ) {
+        return this.rpcTyped('matrixListIgnoredUsers', args)
+    }
+
     async matrixUnignoreUser(args: bindings.RpcPayload<'matrixUnignoreUser'>) {
         return this.rpcTyped('matrixUnignoreUser', args)
     }
