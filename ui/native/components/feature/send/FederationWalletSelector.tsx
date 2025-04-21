@@ -148,10 +148,8 @@ const styles = (theme: Theme) =>
         },
         federationsListContainer: {
             maxHeight: 400,
-            marginTop: theme.spacing.md,
         },
         federationsList: {
-            paddingTop: theme.spacing.md,
             alignItems: 'flex-start',
             width: '100%',
         },
