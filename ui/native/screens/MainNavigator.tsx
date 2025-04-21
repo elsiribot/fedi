@@ -537,13 +537,15 @@ export const MainNavigator = () => {
                                                 ),
                                             })}
                                         />
+                                        <Stack.Screen
+                                            name="GroupMultispend"
+                                            component={GroupMultispend}
+                                            options={() => ({
+                                                header: () => null,
+                                            })}
+                                        />
                                     </>
                                 )}
-                                <Stack.Screen
-                                    name="GroupMultispend"
-                                    component={GroupMultispend}
-                                    options={() => ({ header: () => null })}
-                                />
                                 <Stack.Screen
                                     name="ChatWallet"
                                     component={ChatWallet}
