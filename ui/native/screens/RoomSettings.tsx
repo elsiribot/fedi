@@ -230,7 +230,12 @@ const RoomSettings: React.FC<Props> = ({ navigation, route }: Props) => {
                 },
             )
 
-            if (isMultispendEnabled) {
+            if (
+                isMultispendEnabled &&
+                isGroupChat &&
+                !room?.isPublic &&
+                !room?.broadcastOnly
+            ) {
                 items.push({
                     icon: 'Wallet',
                     label: t('words.multispend'),
@@ -275,6 +280,7 @@ const RoomSettings: React.FC<Props> = ({ navigation, route }: Props) => {
         isTogglingBroadcastOnly,
         memberCount,
         room?.broadcastOnly,
+        room?.isPublic,
         style.switch,
         t,
         theme.colors.red,
