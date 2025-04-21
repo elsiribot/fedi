@@ -119,8 +119,7 @@ const FederationWalletSelector: React.FC<{
                     body: (
                         <ScrollView
                             style={style.federationsListContainer}
-                            contentContainerStyle={style.federationsList}
-                            alwaysBounceVertical={false}>
+                            contentContainerStyle={style.federationsList}>
                             {federations.map(renderFederation)}
                         </ScrollView>
                     ),
