@@ -54,6 +54,12 @@ const CreateMultispend: React.FC<Props> = ({ navigation, route }) => {
         })
     }, [navigation, roomId, voters])
 
+    const areVotersSufficient = (
+        possibleVoters: string[] | undefined,
+    ): possibleVoters is string[] => {
+        return Array.isArray(possibleVoters) && possibleVoters.length >= 2
+    }
+
     const canSubmit = useMemo(() => {
         const thresholdNumber = Number(approvalThreshold)
 
@@ -68,9 +74,7 @@ const CreateMultispend: React.FC<Props> = ({ navigation, route }) => {
         setFederationError(undefined)
 
         if (
-            !Array.isArray(voters) ||
-            voters.length === 0 ||
-            thresholdNumber === 0 ||
+            (areVotersSufficient(voters) && thresholdNumber === 0) ||
             isNaN(thresholdNumber)
         )
             return false
@@ -81,7 +85,9 @@ const CreateMultispend: React.FC<Props> = ({ navigation, route }) => {
             )
 
             return false
-        } else if (thresholdNumber > voters.length) {
+        }
+
+        if (areVotersSufficient(voters) && thresholdNumber > voters.length) {
             setApprovalThresholdError(
                 t('feature.multispend.max-threshold-n', { n: voters.length }),
             )
@@ -97,13 +103,7 @@ const CreateMultispend: React.FC<Props> = ({ navigation, route }) => {
     const handleSubmit = useCallback(async () => {
         const thresholdNumber = Number(approvalThreshold)
 
-        if (
-            !canSubmit ||
-            !voters ||
-            !paymentFederation ||
-            isNaN(thresholdNumber)
-        )
-            return
+        if (!canSubmit || !voters || !paymentFederation) return
 
         setIsLoading(true)
 
@@ -191,7 +191,7 @@ const CreateMultispend: React.FC<Props> = ({ navigation, route }) => {
                                 <Text caption medium>
                                     {t('feature.multispend.assign-voters')}
                                 </Text>
-                                {Array.isArray(voters) && voters.length > 0 && (
+                                {areVotersSufficient(voters) && (
                                     <View style={style.votersBadge}>
                                         <Text small>
                                             {t(
@@ -210,7 +210,7 @@ const CreateMultispend: React.FC<Props> = ({ navigation, route }) => {
                         </View>
                         <SvgImage name="ChevronRight" size={20} />
                     </Pressable>
-                    {Array.isArray(voters) && voters.length > 0 && (
+                    {areVotersSufficient(voters) && (
                         <View style={style.field}>
                             <View style={style.fieldInfo}>
                                 <Text caption medium>
