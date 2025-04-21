@@ -16,7 +16,6 @@ const baseFed: LoadedFederation = {
     balance: 0 as MSats,
     recovering: false,
     network: 'regtest',
-    version: 0,
     clientConfig: null,
     meta: {},
     fediFeeSchedule: {

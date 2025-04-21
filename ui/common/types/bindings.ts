@@ -427,7 +427,6 @@ export type RpcFederation = {
   meta: { [key in string]?: string };
   recovering: boolean;
   nodes: Record<string, { url: string; name: string }>;
-  version: number;
   clientConfig: RpcJsonClientConfig | null;
   fediFeeSchedule: RpcFediFeeSchedule;
   hadReusedEcash: boolean;
