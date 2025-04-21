@@ -11,14 +11,13 @@ import { useToast } from '@fedi/common/hooks/toast'
 import {
     matrixRejectMultispendInvitation,
     selectMatrixRoomMultispendStatus,
-    selectMyMultispendPowerLevel,
+    selectMyMultispendRole,
 } from '@fedi/common/redux'
 import { GroupInvitationWithKeys } from '@fedi/common/types/bindings'
 
 import { fedimint } from '../../../bridge'
 import { useAppDispatch, useAppSelector } from '../../../state/hooks'
 import { reset } from '../../../state/navigation'
-import { MultispendPowerLevel } from '../../../types'
 import CustomOverlay from '../../ui/CustomOverlay'
 import HoloCircle from '../../ui/HoloCircle'
 import HoloGradient from '../../ui/HoloGradient'
@@ -37,8 +36,8 @@ const MultispendWalletHeader: React.FC<Props> = ({ roomId }) => {
     const multispendStatus = useAppSelector(s =>
         selectMatrixRoomMultispendStatus(s, roomId),
     )
-    const myMultispendPowerLevel = useAppSelector(s =>
-        selectMyMultispendPowerLevel(s, roomId),
+    const myMultispendRole = useAppSelector(s =>
+        selectMyMultispendRole(s, roomId),
     )
     const [isConfirmingAbort, setIsConfirmingAbort] = useState(false)
     const [activeInvitation, setActiveInvitation] =
@@ -47,7 +46,7 @@ const MultispendWalletHeader: React.FC<Props> = ({ roomId }) => {
     const toast = useToast()
     const dispatch = useAppDispatch()
 
-    const isAdmin = myMultispendPowerLevel === MultispendPowerLevel.Admin
+    const isAdmin = myMultispendRole === 'proposer'
 
     const handleBack = useCallback(() => {
         navigation.dispatch(reset('ChatRoomConversation', { roomId }))
@@ -135,12 +134,7 @@ const MultispendWalletHeader: React.FC<Props> = ({ roomId }) => {
                 </View>
                 <Pressable onPress={() => setIsConfirmingAbort(true)}>
                     <Text style={style.abortText} medium>
-                        {t(
-                            myMultispendPowerLevel ===
-                                MultispendPowerLevel.Admin
-                                ? 'words.abort'
-                                : 'words.reject',
-                        )}
+                        {t(isAdmin ? 'words.abort' : 'words.reject')}
                     </Text>
                 </Pressable>
             </View>

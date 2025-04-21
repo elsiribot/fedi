@@ -14,7 +14,7 @@ import {
     selectMatrixRoomMembersCount,
     selectMatrixRoomMultispendStatus,
     selectMatrixRoomSelfPowerLevel,
-    selectMyMultispendPowerLevel,
+    selectMyMultispendRole,
     setMatrixRoomBroadcastOnly,
     unignoreUser,
 } from '@fedi/common/redux'
@@ -51,8 +51,8 @@ const RoomSettings: React.FC<Props> = ({ navigation, route }: Props) => {
     const multispendStatus = useAppSelector(s =>
         selectMatrixRoomMultispendStatus(s, roomId),
     )
-    const myMultispendPermission = useAppSelector(s =>
-        selectMyMultispendPowerLevel(s, roomId),
+    const myMultispendRole = useAppSelector(s =>
+        selectMyMultispendRole(s, roomId),
     )
     const isMultispendEnabled = useAppSelector(selectIsMultispendFeatureEnabled)
     const isDefaultGroup = useAppSelector(s => selectIsDefaultGroup(s, roomId))
@@ -173,10 +173,10 @@ const RoomSettings: React.FC<Props> = ({ navigation, route }: Props) => {
             navigation.navigate('MultispendIntro', {
                 roomId,
             })
-        } else if (myMultispendPermission !== null) {
+        } else if (myMultispendRole !== null) {
             navigation.navigate('GroupMultispend', { roomId })
         }
-    }, [roomId, navigation, myMultispendPermission, isAdmin, multispendStatus])
+    }, [roomId, navigation, myMultispendRole, isAdmin, multispendStatus])
 
     const style = styles(theme)
     const settingsItems = useMemo(() => {
@@ -238,7 +238,7 @@ const RoomSettings: React.FC<Props> = ({ navigation, route }: Props) => {
                     disabled:
                         multispendStatus?.status === 'activeInvitation' ||
                         multispendStatus?.status === 'finalized'
-                            ? myMultispendPermission === null
+                            ? myMultispendRole === null
                             : !isAdmin,
                 })
             }
@@ -281,7 +281,7 @@ const RoomSettings: React.FC<Props> = ({ navigation, route }: Props) => {
         isIgnored,
         multispendStatus,
         isMultispendEnabled,
-        myMultispendPermission,
+        myMultispendRole,
     ])
 
     if (!room) return <HoloLoader />
