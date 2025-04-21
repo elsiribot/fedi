@@ -61,7 +61,7 @@ use multispend::db::{
 };
 use multispend::{
     FinalizedGroup, GroupInvitation, MsEventData, MultispendEvent, MultispendGroupVoteType,
-    WithdrawalResponseType,
+    MultispendListedEvent, WithdrawalResponseType,
 };
 use stability_pool_client::common::TransferRequest;
 use tokio::sync::{mpsc, Mutex};
@@ -1368,6 +1368,17 @@ impl Matrix {
             }
             None => RpcMultispendGroupStatus::Inactive,
         }
+    }
+
+    pub async fn list_multispend_events(
+        &self,
+        room_id: &RpcRoomId,
+        start_after: Option<u64>,
+        limit: usize,
+    ) -> Vec<MultispendListedEvent> {
+        let multispend_db = self.runtime.multispend_db();
+        let mut dbtx = multispend_db.begin_transaction_nc().await;
+        multispend::list_multispend_events(&mut dbtx, room_id, start_after, limit).await
     }
 
     pub async fn send_multispend_group_invitation(

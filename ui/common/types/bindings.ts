@@ -728,6 +728,10 @@ export type RpcMethods = {
     matrixMultispendAccountInfo,
     RpcSPv2SyncResponse,
   ];
+  matrixMultispendListEvents: [
+    matrixMultispendListEvents,
+    Array<MultispendListedEvent>,
+  ];
   matrixSendMultispendGroupInvitation: [
     matrixSendMultispendGroupInvitation,
     null,
@@ -1340,6 +1344,7 @@ export type WithdrawRequestWithApprovals = {
   signatures: { [key in RpcUserId]?: RpcSignature };
   rejections: Array<RpcUserId>;
   completed: RpcTransactionId | null;
+  sender: RpcUserId;
 };
 
 export type WithdrawalResponseType =
@@ -1506,6 +1511,12 @@ export type matrixMultispendDeposit = {
 export type matrixMultispendEventData = {
   roomId: RpcRoomId;
   eventId: RpcEventId;
+};
+
+export type matrixMultispendListEvents = {
+  roomId: RpcRoomId;
+  startAfter: number | null;
+  limit: number;
 };
 
 export type matrixObservableCancel = { observableId: number };
