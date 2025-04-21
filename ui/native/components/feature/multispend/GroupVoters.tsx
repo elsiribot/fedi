@@ -36,7 +36,7 @@ const GroupVoters: React.FC<Props> = ({ roomId }) => {
 
             if (
                 multispendStatus.state.proposer === signer ||
-                Object.values(multispendStatus?.state.pubkeys).includes(signer)
+                Object.keys(multispendStatus?.state.pubkeys).includes(signer)
             )
                 return 'approved'
 
