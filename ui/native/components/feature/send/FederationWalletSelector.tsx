@@ -17,9 +17,11 @@ import CustomOverlay from '../../ui/CustomOverlay'
 import SvgImage, { SvgImageSize } from '../../ui/SvgImage'
 import { FederationLogo } from '../federations/FederationLogo'
 
-const FederationWalletSelector: React.FC<{ readonly?: boolean }> = ({
-    readonly = false,
-}) => {
+const FederationWalletSelector: React.FC<{
+    readonly?: boolean
+    fullWidth?: boolean
+    showBalance?: boolean
+}> = ({ readonly = false, fullWidth = false, showBalance = true }) => {
     const { theme } = useTheme()
     const dispatch = useAppDispatch()
     const [opened, setOpened] = useState<boolean>(false)
@@ -77,7 +79,10 @@ const FederationWalletSelector: React.FC<{ readonly?: boolean }> = ({
     return (
         <View style={style.container}>
             <Pressable
-                style={style.selectedFederation}
+                style={[
+                    style.selectedFederation,
+                    fullWidth ? { width: '100%' } : {},
+                ]}
                 onPress={() => setOpened(true)}
                 disabled={readonly}>
                 <FederationLogo federation={paymentFederation} size={32} />
@@ -85,13 +90,15 @@ const FederationWalletSelector: React.FC<{ readonly?: boolean }> = ({
                     <Text caption bold numberOfLines={1}>
                         {paymentFederation?.name || ''}
                     </Text>
-                    <Text
-                        style={{ color: theme.colors.darkGrey }}
-                        medium
-                        caption
-                        numberOfLines={1}>
-                        {`${primaryAmountToSendFrom} (${secondaryAmountToSendFrom})`}
-                    </Text>
+                    {showBalance && (
+                        <Text
+                            style={{ color: theme.colors.darkGrey }}
+                            medium
+                            caption
+                            numberOfLines={1}>
+                            {`${primaryAmountToSendFrom} (${secondaryAmountToSendFrom})`}
+                        </Text>
+                    )}
                 </View>
                 {readonly ? null : (
                     <SvgImage

@@ -27,6 +27,7 @@ import {
     RpcBackPaginationStatus,
     RpcMatrixAccountSession,
     RpcMatrixUserDirectorySearchResponse,
+    RpcMultispendGroupStatus,
     RpcRoomId,
     RpcRoomMember,
     RpcRoomNotificationMode,
@@ -82,6 +83,10 @@ interface MatrixChatClientEventMap {
         mode: RpcRoomNotificationMode
     }
     ignoredUsers: MatrixUser['id'][]
+    multispendUpdate: {
+        roomId: MatrixRoom['id']
+        status: RpcMultispendGroupStatus | null
+    }
     user: MatrixUser
     error: MatrixError
     auth: MatrixAuth
@@ -102,6 +107,10 @@ export class MatrixChatClient {
         UnsubscribeFn | undefined
     > = {}
     private roomPaginationStatusUnsubscribeMap: Record<
+        MatrixRoom['id'],
+        UnsubscribeFn | undefined
+    > = {}
+    private multispendUnsubscribeMap: Record<
         MatrixRoom['id'],
         UnsubscribeFn | undefined
     > = {}
@@ -221,6 +230,9 @@ export class MatrixChatClient {
                 roomId,
                 err,
             })
+        })
+        this.observeMultispend(roomId).catch(err => {
+            log.warn('Failed to observe multispend group', { roomId, err })
         })
         this.observeRoomTimeline(roomId).catch(err => {
             log.warn('Failed to observe room', { roomId, err })
@@ -657,6 +669,27 @@ export class MatrixChatClient {
         )
         // store unsubscribe functions to cancel later if needed
         this.roomInfoUnsubscribeMap[roomId] = unsubscribe
+    }
+
+    private async observeMultispend(roomId: string) {
+        if (this.multispendUnsubscribeMap[roomId] !== undefined) return
+
+        const unsubscribe =
+            this.fedimint.subscribeObservableSimple<RpcMultispendGroupStatus | null>(
+                observableId =>
+                    this.fedimint.matrixObserveMultispendGroup({
+                        observableId,
+                        roomId,
+                    }),
+                update => {
+                    this.emit('multispendUpdate', {
+                        roomId,
+                        status: update,
+                    })
+                },
+            )
+
+        this.multispendUnsubscribeMap[roomId] = unsubscribe
     }
 
     private async observeRoomTimeline(roomId: string) {

@@ -126,6 +126,11 @@ export enum MatrixPowerLevel {
     Admin = 100,
 }
 
+export enum MultispendPowerLevel {
+    Voter = 10,
+    Admin = 90,
+}
+
 export interface MatrixSearchResults {
     results: MatrixUser[]
     limited: boolean

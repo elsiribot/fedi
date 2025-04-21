@@ -260,10 +260,11 @@ export const selectFedimintVersion = (s: CommonState) =>
 
 export const selectFeatureFlags = (s: CommonState) => s.environment.featureFlags
 
-export const selectIsMultispendFeatureEnabled = (s: CommonState) => {
-    return (
-        s.environment.featureFlags &&
-        s.environment.featureFlags.stability_pool_v2?.state === 'Multispend'
+export const selectIsMultispendFeatureEnabled = ({
+    environment: { featureFlags },
+}: CommonState) => {
+    return Boolean(
+        featureFlags && featureFlags.stability_pool_v2?.state === 'Multispend',
     )
 }
 

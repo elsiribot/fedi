@@ -113,6 +113,9 @@ export type RootStackParamList = {
     Initializing: undefined
     JoinFederation: { invite?: string }
     LanguageSettings: undefined
+    MultispendIntro: { roomId: string }
+    CreateMultispend: { roomId: string; voters?: string[] }
+    AssignMultispendVoters: { roomId: string; voters?: string[] }
     NewMessage: undefined
     NostrSettings: undefined
     NotificationsPermission:

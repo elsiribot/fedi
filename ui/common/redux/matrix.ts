@@ -39,11 +39,13 @@ import {
     MatrixTimelineItem,
     MatrixTimelineObservableUpdates,
     MatrixUser,
+    MultispendPowerLevel,
     Sats,
 } from '../types'
 import {
     FrontendMetadata,
     RpcBackPaginationStatus,
+    RpcMultispendGroupStatus,
     RpcRoomId,
     RpcRoomNotificationMode,
 } from '../types/bindings'
@@ -103,6 +105,10 @@ const initialState = {
     roomNotificationMode: {} as Record<
         MatrixRoom['id'],
         RpcRoomNotificationMode | undefined
+    >,
+    roomMultispendStatus: {} as Record<
+        MatrixRoom['id'],
+        RpcMultispendGroupStatus | undefined
     >,
     users: {} as Record<MatrixUser['id'], MatrixUser | undefined>,
     ignoredUsers: [] as MatrixUser['id'][],
@@ -226,6 +232,16 @@ export const matrixSlice = createSlice({
         ) {
             const { roomId, mode } = action.payload
             state.roomNotificationMode[roomId] = mode
+        },
+        setMatrixRoomMultispendStatus(
+            state,
+            action: PayloadAction<{
+                roomId: MatrixRoom['id']
+                status: RpcMultispendGroupStatus
+            }>,
+        ) {
+            const { roomId, status } = action.payload
+            state.roomMultispendStatus[roomId] = status
         },
         addMatrixError(state, action: PayloadAction<MatrixError>) {
             state.errors = [...state.errors, action.payload]
@@ -485,6 +501,7 @@ export const {
     setMatrixUsers,
     setMatrixRoomPowerLevels,
     setMatrixRoomNotificationMode,
+    setMatrixRoomMultispendStatus,
     addMatrixError,
     handleMatrixRoomListObservableUpdates,
     handleMatrixRoomTimelineObservableUpdates,
@@ -499,6 +516,54 @@ export const {
 } = matrixSlice.actions
 
 /*** Async thunk actions ***/
+
+export const matrixApproveMultispendInvitation = createAsyncThunk<
+    void,
+    { fedimint: FedimintBridge; roomId: MatrixRoom['id'] },
+    { state: CommonState }
+>(
+    'matrix/approveMultispendInvitation',
+    async ({ fedimint, roomId }, { getState }) => {
+        const multispendStatus = selectMatrixRoomMultispendStatus(
+            getState(),
+            roomId,
+        )
+
+        if (multispendStatus?.status !== 'activeInvitation')
+            throw new Error(
+                'Cannot vote if multispend status is not activeInvitation',
+            )
+
+        await fedimint.matrixApproveMultispendGroupInvitation({
+            roomId,
+            invitation: multispendStatus.active_invite_id,
+        })
+    },
+)
+
+export const matrixRejectMultispendInvitation = createAsyncThunk<
+    void,
+    { fedimint: FedimintBridge; roomId: MatrixRoom['id'] },
+    { state: CommonState }
+>(
+    'matrix/approveMultispendInvitation',
+    async ({ fedimint, roomId }, { getState }) => {
+        const multispendStatus = selectMatrixRoomMultispendStatus(
+            getState(),
+            roomId,
+        )
+
+        if (multispendStatus?.status !== 'activeInvitation')
+            throw new Error(
+                'Cannot vote if multispend status is not activeInvitation',
+            )
+
+        await fedimint.matrixRejectMultispendGroupInvitation({
+            roomId,
+            invitation: multispendStatus.active_invite_id,
+        })
+    },
+)
 
 export const startMatrixClient = createAsyncThunk<
     MatrixAuth,
@@ -538,6 +603,15 @@ export const startMatrixClient = createAsyncThunk<
     client.on('roomNotificationMode', ev =>
         dispatch(setMatrixRoomNotificationMode(ev)),
     )
+    client.on('multispendUpdate', ev => {
+        if (ev.status)
+            dispatch(
+                setMatrixRoomMultispendStatus({
+                    roomId: ev.roomId,
+                    status: ev.status,
+                }),
+            )
+    })
 
     client.on('ignoredUsers', ev => dispatch(setMatrixIgnoredUsers(ev)))
 
@@ -1386,6 +1460,11 @@ export const selectMatrixRoomNotificationMode = (
     roomId: MatrixRoom['id'],
 ) => s.matrix.roomNotificationMode[roomId]
 
+export const selectMatrixRoomMultispendStatus = (
+    s: CommonState,
+    roomId: MatrixRoom['id'],
+) => s.matrix.roomMultispendStatus[roomId]
+
 export const selectMatrixRoomMembers = (
     s: CommonState,
     roomId: MatrixRoom['id'],
@@ -1721,3 +1800,22 @@ export const selectPreviewMediaMatchingEventContent = (
     s.matrix.previewMedia.find(({ media }) =>
         doesEventContentMatchPreviewMedia(media, content),
     )
+
+export const selectMyMultispendPowerLevel = (
+    s: CommonState,
+    roomId: string,
+): MultispendPowerLevel | null => {
+    const multispendStatus = selectMatrixRoomMultispendStatus(s, roomId)
+    const myId = selectMatrixAuth(s)?.userId
+
+    if (multispendStatus?.status !== 'activeInvitation' || !myId) return null
+
+    const isVoter = multispendStatus.state.invitation.signers.includes(myId)
+    const isProposer = multispendStatus.state.proposer === myId
+
+    if (!isVoter) return null
+
+    if (isProposer) return MultispendPowerLevel.Admin
+
+    return MultispendPowerLevel.Voter
+}

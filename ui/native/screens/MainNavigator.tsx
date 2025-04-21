@@ -4,7 +4,10 @@ import { Text } from '@rneui/themed'
 import { useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
 
-import { selectSocialRecoveryState } from '@fedi/common/redux'
+import {
+    selectIsMultispendFeatureEnabled,
+    selectSocialRecoveryState,
+} from '@fedi/common/redux'
 
 import ChooseBackupMethodHeader from '../components/feature/backup/ChooseBackupMethodHeader'
 import PersonalBackupHeader from '../components/feature/backup/PersonalBackupHeader'
@@ -73,6 +76,7 @@ import { MSats } from '../types'
 import { MAIN_NAVIGATOR_ID, RootStackParamList } from '../types/navigation'
 import { useIsFeatureUnlocked } from '../utils/hooks/security'
 import AddFediMod from './AddFediMod'
+import AssignMultispendVoters from './AssignMultispendVoters'
 import BitcoinRequest from './BitcoinRequest'
 import BugReportSuccess from './BugReportSuccess'
 import ChatImageViewer from './ChatImageViewer'
@@ -96,6 +100,7 @@ import ConfirmSendEcash from './ConfirmSendEcash'
 import ConfirmSendLightning from './ConfirmSendLightning'
 import ConfirmSendOnChain from './ConfirmSendOnChain'
 import CreateGroup from './CreateGroup'
+import CreateMultispend from './CreateMultispend'
 import CreatePinInstructions from './CreatePinInstructions'
 import CreatePoll from './CreatePoll'
 import CreatedPin from './CreatedPin'
@@ -122,6 +127,7 @@ import LockScreen from './LockScreen'
 import LockedDevice from './LockedDevice'
 import MigratedDevice from './MigratedDevice'
 import MigratedDeviceSuccess from './MigratedDeviceSuccess'
+import MultispendIntro from './MultispendIntro'
 import NewMessage from './NewMessage'
 import NostrSettings from './NostrSettings'
 import PersonalRecovery from './PersonalRecovery'
@@ -191,6 +197,9 @@ export const MainNavigator = () => {
     )
     const shouldLockDevice = useAppSelector(s => s.recovery.shouldLockDevice)
     const navigation = useNavigation()
+    const isMultispendFeatureEnabled = useAppSelector(
+        selectIsMultispendFeatureEnabled,
+    )
 
     useEffect(() => {
         if (socialRecoveryState && navigation) {
@@ -483,6 +492,52 @@ export const MainNavigator = () => {
                                     name="RoomSettings"
                                     component={RoomSettings}
                                 />
+                                {isMultispendFeatureEnabled && (
+                                    <>
+                                        <Stack.Screen
+                                            name="MultispendIntro"
+                                            component={MultispendIntro}
+                                            options={() => ({
+                                                header: () => (
+                                                    <CenteredHeader
+                                                        backButton
+                                                        title={t(
+                                                            'feature.multispend.create-multispend',
+                                                        )}
+                                                    />
+                                                ),
+                                            })}
+                                        />
+                                        <Stack.Screen
+                                            name="CreateMultispend"
+                                            component={CreateMultispend}
+                                            options={() => ({
+                                                header: () => (
+                                                    <CenteredHeader
+                                                        backButton
+                                                        title={t(
+                                                            'feature.multispend.create-multispend',
+                                                        )}
+                                                    />
+                                                ),
+                                            })}
+                                        />
+                                        <Stack.Screen
+                                            name="AssignMultispendVoters"
+                                            component={AssignMultispendVoters}
+                                            options={() => ({
+                                                header: () => (
+                                                    <CenteredHeader
+                                                        backButton
+                                                        title={t(
+                                                            'feature.multispend.assign-voters',
+                                                        )}
+                                                    />
+                                                ),
+                                            })}
+                                        />
+                                    </>
+                                )}
                                 <Stack.Screen
                                     name="ChatWallet"
                                     component={ChatWallet}

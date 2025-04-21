@@ -837,6 +837,44 @@ export class FedimintBridge {
         return this.rpcTyped('matrixGetMediaPreview', args)
     }
 
+    /*** MULTISPEND RPCs ***/
+
+    async matrixObserveMultispendGroup(
+        args: bindings.RpcPayload<'matrixObserveMultispendGroup'>,
+    ) {
+        return this.rpcTyped('matrixObserveMultispendGroup', args)
+    }
+
+    async matrixSendMultispendGroupInvitation(
+        args: bindings.RpcPayload<'matrixSendMultispendGroupInvitation'>,
+    ) {
+        return this.rpcTyped('matrixSendMultispendGroupInvitation', args)
+    }
+
+    async matrixApproveMultispendGroupInvitation(
+        args: bindings.RpcPayload<'matrixApproveMultispendGroupInvitation'>,
+    ) {
+        return this.rpcTyped('matrixApproveMultispendGroupInvitation', args)
+    }
+
+    async matrixRejectMultispendGroupInvitation(
+        args: bindings.RpcPayload<'matrixRejectMultispendGroupInvitation'>,
+    ) {
+        return this.rpcTyped('matrixRejectMultispendGroupInvitation', args)
+    }
+
+    async matrixCancelMultispendGroupInvitation(
+        args: bindings.RpcPayload<'matrixCancelMultispendGroupInvitation'>,
+    ) {
+        return this.rpcTyped('matrixCancelMultispendGroupInvitation', args)
+    }
+
+    async matrixMultispendEventData(
+        args: bindings.RpcPayload<'matrixMultispendEventData'>,
+    ) {
+        return this.rpcTyped('matrixMultispendEventData', args)
+    }
+
     /*** COMMUNITIES RPCs ***/
 
     async communityPreview(args: bindings.RpcPayload<'communityPreview'>) {

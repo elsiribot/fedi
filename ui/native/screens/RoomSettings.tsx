@@ -9,9 +9,12 @@ import {
     ignoreUser,
     leaveMatrixRoom,
     selectIsDefaultGroup,
+    selectIsMultispendFeatureEnabled,
     selectMatrixRoom,
     selectMatrixRoomMembersCount,
+    selectMatrixRoomMultispendStatus,
     selectMatrixRoomSelfPowerLevel,
+    selectMyMultispendPowerLevel,
     setMatrixRoomBroadcastOnly,
     unignoreUser,
 } from '@fedi/common/redux'
@@ -42,9 +45,16 @@ const RoomSettings: React.FC<Props> = ({ navigation, route }: Props) => {
         selectMatrixRoomMembersCount(s, roomId),
     )
     const myPowerLevel = useAppSelector(s =>
-        selectMatrixRoomSelfPowerLevel(s, room?.id || ''),
+        selectMatrixRoomSelfPowerLevel(s, roomId || ''),
     )
     const isAdmin = myPowerLevel >= MatrixPowerLevel.Admin
+    const multispendStatus = useAppSelector(s =>
+        selectMatrixRoomMultispendStatus(s, roomId),
+    )
+    const myMultispendPermission = useAppSelector(s =>
+        selectMyMultispendPowerLevel(s, roomId),
+    )
+    const isMultispendEnabled = useAppSelector(selectIsMultispendFeatureEnabled)
     const isDefaultGroup = useAppSelector(s => selectIsDefaultGroup(s, roomId))
     const isGroupChat = room?.directUserId === undefined
     const [isTogglingBroadcastOnly, setIsTogglingBroadcastOnly] =
@@ -154,6 +164,16 @@ const RoomSettings: React.FC<Props> = ({ navigation, route }: Props) => {
         setIsTogglingBroadcastOnly(false)
     }, [isDefaultGroup, isTogglingBroadcastOnly, room, dispatch, toast, t])
 
+    const handleNavigateToMultispend = useCallback(() => {
+        if (!multispendStatus && isAdmin) {
+            navigation.navigate('MultispendIntro', {
+                roomId,
+            })
+        } else if (myMultispendPermission !== null) {
+            // TODO: navigate to multispend screen
+        }
+    }, [roomId, navigation, myMultispendPermission, isAdmin, multispendStatus])
+
     const style = styles(theme)
     const settingsItems = useMemo(() => {
         const items: SettingsItemProps[] = []
@@ -170,6 +190,7 @@ const RoomSettings: React.FC<Props> = ({ navigation, route }: Props) => {
                     onPress: handleViewMembers,
                 })
             }
+
             items.push(
                 {
                     icon: 'Room',
@@ -204,6 +225,17 @@ const RoomSettings: React.FC<Props> = ({ navigation, route }: Props) => {
                     onPress: handleToggleBroadcastOnly,
                 },
             )
+
+            if (isMultispendEnabled) {
+                items.push({
+                    icon: 'Wallet',
+                    label: t('words.multispend'),
+                    onPress: handleNavigateToMultispend,
+                    disabled: multispendStatus
+                        ? myMultispendPermission === null
+                        : !isAdmin,
+                })
+            }
         } else {
             items.push(
                 {
@@ -225,6 +257,7 @@ const RoomSettings: React.FC<Props> = ({ navigation, route }: Props) => {
         }
         return items
     }, [
+        handleNavigateToMultispend,
         handleChangeGroupName,
         handleInviteMember,
         handleLeaveChat,
@@ -240,6 +273,9 @@ const RoomSettings: React.FC<Props> = ({ navigation, route }: Props) => {
         t,
         theme.colors.red,
         isIgnored,
+        multispendStatus,
+        isMultispendEnabled,
+        myMultispendPermission,
     ])
 
     if (!room) return <HoloLoader />
