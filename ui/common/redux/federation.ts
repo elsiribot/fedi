@@ -961,6 +961,21 @@ export const selectDoesAnyFederationHaveMultispend = createSelector(
     },
 )
 
+export const selectDoesFederationHaveMultispend = (
+    state: CommonState,
+    federationId: string,
+) => {
+    const federation = selectFederation(state, federationId)
+
+    if (!federation?.hasWallet || federation.init_state !== 'ready')
+        return false
+
+    return Boolean(
+        hasMultispendModule(federation) &&
+            hasMultispendEnabled(federation.meta),
+    )
+}
+
 export const selectShouldShowMultispend = createSelector(
     (s: CommonState) => selectIsMultispendFeatureEnabled(s),
     isMultispendEnabled => {

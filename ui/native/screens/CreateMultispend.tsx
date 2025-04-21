@@ -6,6 +6,7 @@ import { Pressable, StyleSheet, View } from 'react-native'
 
 import { useToast } from '@fedi/common/hooks/toast'
 import {
+    selectDoesFederationHaveMultispend,
     selectPaymentFederation,
     selectWalletFederations,
 } from '@fedi/common/redux'
@@ -31,10 +32,16 @@ const CreateMultispend: React.FC<Props> = ({ navigation, route }) => {
     const [approvalThresholdError, setApprovalThresholdError] = useState<
         string | undefined
     >(undefined)
+    const [federationError, setFederationError] = useState<string | undefined>(
+        undefined,
+    )
     const [isLoading, setIsLoading] = useState(false)
 
     const paymentFederation = useAppSelector(selectPaymentFederation)
     const federations = useAppSelector(selectWalletFederations)
+    const doesPaymentFederationHaveMultispend = useAppSelector(s =>
+        selectDoesFederationHaveMultispend(s, paymentFederation?.id ?? ''),
+    )
     const { roomId, voters } = route.params
     const { t } = useTranslation()
     const { theme } = useTheme()
@@ -49,6 +56,16 @@ const CreateMultispend: React.FC<Props> = ({ navigation, route }) => {
 
     const canSubmit = useMemo(() => {
         const thresholdNumber = Number(approvalThreshold)
+
+        if (!doesPaymentFederationHaveMultispend) {
+            setFederationError(
+                t('feature.multispend.federation-does-not-support-multispend'),
+            )
+
+            return false
+        }
+
+        setFederationError(undefined)
 
         if (
             !Array.isArray(voters) ||
@@ -75,7 +92,7 @@ const CreateMultispend: React.FC<Props> = ({ navigation, route }) => {
         setApprovalThresholdError(undefined)
 
         return true
-    }, [approvalThreshold, voters, t])
+    }, [approvalThreshold, voters, doesPaymentFederationHaveMultispend, t])
 
     const handleSubmit = useCallback(async () => {
         const thresholdNumber = Number(approvalThreshold)
@@ -153,10 +170,17 @@ const CreateMultispend: React.FC<Props> = ({ navigation, route }) => {
                                 {t('feature.federations.join-federation')}
                             </Button>
                         ) : (
-                            <FederationWalletSelector
-                                fullWidth
-                                showBalance={false}
-                            />
+                            <View style={style.federationContainer}>
+                                <FederationWalletSelector
+                                    fullWidth
+                                    showBalance={false}
+                                />
+                                {federationError && (
+                                    <Text small style={style.error}>
+                                        {federationError}
+                                    </Text>
+                                )}
+                            </View>
                         )}
                     </View>
                     <Pressable
@@ -270,6 +294,11 @@ const styles = (theme: Theme) =>
             borderWidth: 1.5,
             borderRadius: 8,
             height: 48,
+        },
+        error: { color: theme.colors.red, paddingLeft: theme.spacing.sm },
+        federationContainer: {
+            flexDirection: 'column',
+            gap: theme.spacing.xs,
         },
     })
 
