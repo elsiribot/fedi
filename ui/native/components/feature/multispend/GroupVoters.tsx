@@ -65,9 +65,7 @@ const GroupVoters: React.FC<Props> = ({ roomId }) => {
     if (multispendStatus?.status !== 'activeInvitation') return null
 
     return (
-        <ScrollView
-            style={style.container}
-            contentContainerStyle={style.content}>
+        <View style={style.container}>
             <View style={style.header}>
                 <Text medium>{t('words.voters')}</Text>
                 <OverlaySelect
@@ -91,7 +89,9 @@ const GroupVoters: React.FC<Props> = ({ roomId }) => {
                     </Text>
                 </View>
             )}
-            <View style={style.voters}>
+            <ScrollView
+                style={style.votersContainer}
+                contentContainerStyle={style.voters}>
                 {filteredSigners.map((signer, i) => (
                     <MultispendVoter
                         key={`multispend-voter-${i}`}
@@ -100,8 +100,8 @@ const GroupVoters: React.FC<Props> = ({ roomId }) => {
                         status={getVoterStatus(signer)}
                     />
                 ))}
-            </View>
-        </ScrollView>
+            </ScrollView>
+        </View>
     )
 }
 
@@ -172,9 +172,6 @@ const styles = (theme: Theme) =>
     StyleSheet.create({
         container: {
             flex: 1,
-        },
-        content: {
-            flex: 1,
             flexDirection: 'column',
             gap: theme.spacing.md,
             padding: theme.spacing.md,
@@ -192,6 +189,9 @@ const styles = (theme: Theme) =>
         },
         greyText: {
             color: theme.colors.grey,
+        },
+        votersContainer: {
+            flex: 1,
         },
         voters: {
             flexDirection: 'column',
