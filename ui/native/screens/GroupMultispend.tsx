@@ -1,6 +1,7 @@
+import { useNavigation } from '@react-navigation/native'
 import { NativeStackScreenProps } from '@react-navigation/native-stack'
 import { Button } from '@rneui/themed'
-import { useCallback, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 
 import { useToast } from '@fedi/common/hooks/toast'
@@ -16,6 +17,7 @@ import GroupVoters from '../components/feature/multispend/GroupVoters'
 import MultispendWalletHeader from '../components/feature/multispend/MultispendWalletHeader'
 import { SafeAreaContainer } from '../components/ui/SafeArea'
 import { useAppDispatch, useAppSelector } from '../state/hooks'
+import { reset } from '../state/navigation'
 import { RootStackParamList } from '../types/navigation'
 
 export type Props = NativeStackScreenProps<
@@ -31,17 +33,18 @@ const GroupMultispend: React.FC<Props> = ({ route }: Props) => {
     const multispendStatus = useAppSelector(s =>
         selectMatrixRoomMultispendStatus(s, roomId),
     )
-    const myMultispendPowerLevel = useAppSelector(s =>
+    const myMultispendRole = useAppSelector(s =>
         selectMyMultispendRole(s, roomId),
     )
     const dispatch = useAppDispatch()
+    const navigation = useNavigation()
     const toast = useToast()
 
     const canAccept = useMemo(() => {
         if (
             multispendStatus?.status !== 'activeInvitation' ||
             !myId ||
-            myMultispendPowerLevel !== 'voter'
+            myMultispendRole !== 'voter'
         )
             return false
 
@@ -51,7 +54,7 @@ const GroupMultispend: React.FC<Props> = ({ route }: Props) => {
         ).includes(myId)
 
         return !hasRejected && !hasApproved
-    }, [multispendStatus, myId, myMultispendPowerLevel])
+    }, [multispendStatus, myId, myMultispendRole])
 
     const handleAccept = useCallback(async () => {
         try {
@@ -68,6 +71,13 @@ const GroupMultispend: React.FC<Props> = ({ route }: Props) => {
             setVoting(false)
         }
     }, [toast, t, roomId, dispatch])
+
+    // If the multispend group is aborted by the admin, navigate back to chat
+    useEffect(() => {
+        if (multispendStatus?.status === 'inactive') {
+            navigation.dispatch(reset('ChatRoomConversation', { roomId }))
+        }
+    }, [multispendStatus, roomId, navigation])
 
     return (
         <SafeAreaContainer edges="bottom">

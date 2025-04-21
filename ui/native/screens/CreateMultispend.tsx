@@ -6,6 +6,7 @@ import { Pressable, StyleSheet, View } from 'react-native'
 
 import { useToast } from '@fedi/common/hooks/toast'
 import {
+    selectDoesFederationHaveMultispend,
     selectPaymentFederation,
     selectWalletFederations,
 } from '@fedi/common/redux'
@@ -31,10 +32,16 @@ const CreateMultispend: React.FC<Props> = ({ navigation, route }) => {
     const [approvalThresholdError, setApprovalThresholdError] = useState<
         string | undefined
     >(undefined)
+    const [federationError, setFederationError] = useState<string | undefined>(
+        undefined,
+    )
     const [isLoading, setIsLoading] = useState(false)
 
     const paymentFederation = useAppSelector(selectPaymentFederation)
     const federations = useAppSelector(selectWalletFederations)
+    const doesPaymentFederationHaveMultispend = useAppSelector(s =>
+        selectDoesFederationHaveMultispend(s, paymentFederation?.id ?? ''),
+    )
     const { roomId, voters } = route.params
     const { t } = useTranslation()
     const { theme } = useTheme()
@@ -47,14 +54,29 @@ const CreateMultispend: React.FC<Props> = ({ navigation, route }) => {
         })
     }, [navigation, roomId, voters])
 
+    const areVotersSufficient = (
+        possibleVoters: string[] | undefined,
+    ): possibleVoters is string[] => {
+        return Array.isArray(possibleVoters) && possibleVoters.length >= 2
+    }
+
     const canSubmit = useMemo(() => {
         const thresholdNumber = Number(approvalThreshold)
 
+        if (!doesPaymentFederationHaveMultispend) {
+            setFederationError(
+                t('feature.multispend.federation-does-not-support-multispend'),
+            )
+
+            return false
+        }
+
+        setFederationError(undefined)
+
         if (
-            !Array.isArray(voters) ||
-            voters.length === 0 ||
-            thresholdNumber === 0 ||
-            isNaN(thresholdNumber)
+            !areVotersSufficient(voters) ||
+            isNaN(thresholdNumber) ||
+            thresholdNumber === 0
         )
             return false
 
@@ -64,7 +86,9 @@ const CreateMultispend: React.FC<Props> = ({ navigation, route }) => {
             )
 
             return false
-        } else if (thresholdNumber > voters.length) {
+        }
+
+        if (areVotersSufficient(voters) && thresholdNumber > voters.length) {
             setApprovalThresholdError(
                 t('feature.multispend.max-threshold-n', { n: voters.length }),
             )
@@ -75,18 +99,12 @@ const CreateMultispend: React.FC<Props> = ({ navigation, route }) => {
         setApprovalThresholdError(undefined)
 
         return true
-    }, [approvalThreshold, voters, t])
+    }, [approvalThreshold, voters, doesPaymentFederationHaveMultispend, t])
 
     const handleSubmit = useCallback(async () => {
         const thresholdNumber = Number(approvalThreshold)
 
-        if (
-            !canSubmit ||
-            !voters ||
-            !paymentFederation ||
-            isNaN(thresholdNumber)
-        )
-            return
+        if (!canSubmit || !voters || !paymentFederation) return
 
         setIsLoading(true)
 
@@ -153,10 +171,17 @@ const CreateMultispend: React.FC<Props> = ({ navigation, route }) => {
                                 {t('feature.federations.join-federation')}
                             </Button>
                         ) : (
-                            <FederationWalletSelector
-                                fullWidth
-                                showBalance={false}
-                            />
+                            <View style={style.federationContainer}>
+                                <FederationWalletSelector
+                                    fullWidth
+                                    showBalance={false}
+                                />
+                                {federationError && (
+                                    <Text small style={style.error}>
+                                        {federationError}
+                                    </Text>
+                                )}
+                            </View>
                         )}
                     </View>
                     <Pressable
@@ -167,7 +192,7 @@ const CreateMultispend: React.FC<Props> = ({ navigation, route }) => {
                                 <Text caption medium>
                                     {t('feature.multispend.assign-voters')}
                                 </Text>
-                                {Array.isArray(voters) && voters.length > 0 && (
+                                {areVotersSufficient(voters) && (
                                     <View style={style.votersBadge}>
                                         <Text small>
                                             {t(
@@ -186,7 +211,7 @@ const CreateMultispend: React.FC<Props> = ({ navigation, route }) => {
                         </View>
                         <SvgImage name="ChevronRight" size={20} />
                     </Pressable>
-                    {Array.isArray(voters) && voters.length > 0 && (
+                    {areVotersSufficient(voters) && (
                         <View style={style.field}>
                             <View style={style.fieldInfo}>
                                 <Text caption medium>
@@ -204,7 +229,12 @@ const CreateMultispend: React.FC<Props> = ({ navigation, route }) => {
                                     'feature.multispend.choose-from-1-6',
                                 )}
                                 value={approvalThreshold}
-                                onChangeText={setApprovalThreshold}
+                                onChangeText={text =>
+                                    setApprovalThreshold(
+                                        text.replace(/[^0-9]/g, ''),
+                                    )
+                                }
+                                maxLength={1}
                                 inputContainerStyle={style.searchInputStyle}
                                 containerStyle={style.searchInputContainerStyle}
                                 errorMessage={approvalThresholdError}
@@ -270,6 +300,11 @@ const styles = (theme: Theme) =>
             borderWidth: 1.5,
             borderRadius: 8,
             height: 48,
+        },
+        error: { color: theme.colors.red, paddingLeft: theme.spacing.sm },
+        federationContainer: {
+            flexDirection: 'column',
+            gap: theme.spacing.xs,
         },
     })
 

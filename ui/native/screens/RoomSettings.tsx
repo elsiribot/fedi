@@ -4,6 +4,7 @@ import React, { useCallback, useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Alert, ScrollView, StyleSheet, View } from 'react-native'
 
+import { useNuxStep } from '@fedi/common/hooks/nux'
 import { useToast } from '@fedi/common/hooks/toast'
 import {
     ignoreUser,
@@ -62,6 +63,10 @@ const RoomSettings: React.FC<Props> = ({ navigation, route }: Props) => {
 
     const [isConfirmingBlock, setIsConfirmingBlock] = useState(false)
     const [isBlockingUser, setIsBlockingUser] = useState(false)
+
+    const [hasSeenMultispendIntro, seeMultispendIntro] = useNuxStep(
+        'hasSeenMultispendIntro',
+    )
 
     const isIgnored = !!room?.isBlocked
 
@@ -170,13 +175,26 @@ const RoomSettings: React.FC<Props> = ({ navigation, route }: Props) => {
                 multispendStatus?.status === 'inactive') &&
             isAdmin
         ) {
-            navigation.navigate('MultispendIntro', {
-                roomId,
-            })
+            if (!hasSeenMultispendIntro) {
+                seeMultispendIntro()
+                navigation.navigate('MultispendIntro', {
+                    roomId,
+                })
+            } else {
+                navigation.navigate('CreateMultispend', { roomId })
+            }
         } else if (myMultispendRole !== null) {
             navigation.navigate('GroupMultispend', { roomId })
         }
-    }, [roomId, navigation, myMultispendRole, isAdmin, multispendStatus])
+    }, [
+        roomId,
+        navigation,
+        myMultispendRole,
+        isAdmin,
+        multispendStatus,
+        hasSeenMultispendIntro,
+        seeMultispendIntro,
+    ])
 
     const style = styles(theme)
     const settingsItems = useMemo(() => {
@@ -230,7 +248,12 @@ const RoomSettings: React.FC<Props> = ({ navigation, route }: Props) => {
                 },
             )
 
-            if (isMultispendEnabled) {
+            if (
+                isMultispendEnabled &&
+                isGroupChat &&
+                !room?.isPublic &&
+                !room?.broadcastOnly
+            ) {
                 items.push({
                     icon: 'Wallet',
                     label: t('words.multispend'),
@@ -275,6 +298,7 @@ const RoomSettings: React.FC<Props> = ({ navigation, route }: Props) => {
         isTogglingBroadcastOnly,
         memberCount,
         room?.broadcastOnly,
+        room?.isPublic,
         style.switch,
         t,
         theme.colors.red,

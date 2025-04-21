@@ -119,9 +119,11 @@ const MultispendWalletHeader: React.FC<Props> = ({ roomId }) => {
     return (
         <HoloGradient style={style.container} level="m500">
             <View style={[style.header, { paddingTop: insets.top }]}>
-                <Pressable onPress={handleBack}>
-                    <SvgImage name="ChevronLeft" size={24} />
-                </Pressable>
+                <View style={style.headerSecondary}>
+                    <Pressable onPress={handleBack}>
+                        <SvgImage name="ChevronLeft" size={24} />
+                    </Pressable>
+                </View>
                 <View style={style.title}>
                     <Text medium>{t('words.multispend')}</Text>
                     <Pressable onPress={handleInfoPress}>
@@ -132,11 +134,17 @@ const MultispendWalletHeader: React.FC<Props> = ({ roomId }) => {
                         />
                     </Pressable>
                 </View>
-                <Pressable onPress={() => setIsConfirmingAbort(true)}>
-                    <Text style={style.abortText} medium>
-                        {t(isAdmin ? 'words.abort' : 'words.reject')}
-                    </Text>
-                </Pressable>
+                <View style={[style.headerSecondary, style.abortContainer]}>
+                    <Pressable onPress={() => setIsConfirmingAbort(true)}>
+                        <Text style={style.abortText} medium>
+                            {t(
+                                myMultispendRole === 'proposer'
+                                    ? 'words.abort'
+                                    : 'words.reject',
+                            )}
+                        </Text>
+                    </Pressable>
+                </View>
             </View>
             <View style={style.walletPreviewContainer}>
                 <LinearGradient
@@ -244,10 +252,21 @@ const styles = (theme: Theme) =>
             display: 'flex',
             flexDirection: 'row',
             alignItems: 'center',
+            justifyContent: 'center',
             gap: theme.spacing.xs,
+            flex: 2,
+            flexBasis: 0,
         },
         abortText: {
             color: theme.colors.red,
+        },
+        headerSecondary: {
+            flex: 1,
+            flexBasis: 0,
+        },
+        abortContainer: {
+            flexDirection: 'row',
+            justifyContent: 'flex-end',
         },
         walletPreviewContainer: {
             padding: theme.spacing.lg,

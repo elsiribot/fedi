@@ -154,9 +154,7 @@ const AssignMultispendVoters: React.FC<Props> = ({ navigation, route }) => {
                     </View>
                 )}
             </View>
-            <Button
-                onPress={handleSubmit}
-                disabled={selectedVoters.length === 0}>
+            <Button onPress={handleSubmit} disabled={selectedVoters.length < 2}>
                 {t('words.confirm')}
             </Button>
         </SafeAreaContainer>

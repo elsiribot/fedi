@@ -570,6 +570,7 @@
             "assign-voters-description": "Choose who gets to vote on whether money can be withdrawn.",
             "choose-from-1-6": "Choose from 1-6",
             "create-multispend": "Create Multispend",
+            "federation-does-not-support-multispend": "This federation does not support multispend",
             "incomplete-notice": "ℹ️ The Multispend group will be active after all invited voters accepted the invitation.",
             "intro-1": "<bold>Deposit Anytime</bold>: Any member can contribute to the shared pool.",
             "intro-2": "<bold>Request Withdrawals</bold>: Need to take out money? Send a request for approval.",

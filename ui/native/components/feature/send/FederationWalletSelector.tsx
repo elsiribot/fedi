@@ -119,8 +119,7 @@ const FederationWalletSelector: React.FC<{
                     body: (
                         <ScrollView
                             style={style.federationsListContainer}
-                            contentContainerStyle={style.federationsList}
-                            alwaysBounceVertical={false}>
+                            contentContainerStyle={style.federationsList}>
                             {federations.map(renderFederation)}
                         </ScrollView>
                     ),
@@ -148,10 +147,8 @@ const styles = (theme: Theme) =>
         },
         federationsListContainer: {
             maxHeight: 400,
-            marginTop: theme.spacing.md,
         },
         federationsList: {
-            paddingTop: theme.spacing.md,
             alignItems: 'flex-start',
             width: '100%',
         },
