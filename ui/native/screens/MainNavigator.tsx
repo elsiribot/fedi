@@ -118,6 +118,7 @@ import FederationInvite from './FederationInvite'
 import FediModBrowser from './FediModBrowser'
 import FediModSettings from './FediModSettings'
 import GlobalCurrency from './GlobalCurrency'
+import GroupMultispend from './GroupMultispend'
 import HelpCentre from './HelpCentre'
 import Initializing from './Initializing'
 import JoinFederation from './JoinFederation'
@@ -538,6 +539,11 @@ export const MainNavigator = () => {
                                         />
                                     </>
                                 )}
+                                <Stack.Screen
+                                    name="GroupMultispend"
+                                    component={GroupMultispend}
+                                    options={() => ({ header: () => null })}
+                                />
                                 <Stack.Screen
                                     name="ChatWallet"
                                     component={ChatWallet}

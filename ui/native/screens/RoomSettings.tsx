@@ -165,12 +165,16 @@ const RoomSettings: React.FC<Props> = ({ navigation, route }: Props) => {
     }, [isDefaultGroup, isTogglingBroadcastOnly, room, dispatch, toast, t])
 
     const handleNavigateToMultispend = useCallback(() => {
-        if (!multispendStatus && isAdmin) {
+        if (
+            (multispendStatus === null ||
+                multispendStatus?.status === 'inactive') &&
+            isAdmin
+        ) {
             navigation.navigate('MultispendIntro', {
                 roomId,
             })
         } else if (myMultispendPermission !== null) {
-            // TODO: navigate to multispend screen
+            navigation.navigate('GroupMultispend', { roomId })
         }
     }, [roomId, navigation, myMultispendPermission, isAdmin, multispendStatus])
 
@@ -231,9 +235,11 @@ const RoomSettings: React.FC<Props> = ({ navigation, route }: Props) => {
                     icon: 'Wallet',
                     label: t('words.multispend'),
                     onPress: handleNavigateToMultispend,
-                    disabled: multispendStatus
-                        ? myMultispendPermission === null
-                        : !isAdmin,
+                    disabled:
+                        multispendStatus?.status === 'activeInvitation' ||
+                        multispendStatus?.status === 'finalized'
+                            ? myMultispendPermission === null
+                            : !isAdmin,
                 })
             }
         } else {

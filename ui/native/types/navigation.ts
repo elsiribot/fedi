@@ -77,6 +77,7 @@ export type RootStackParamList = {
     EditPoll: { event: MatrixEvent<MatrixEventContentType<'m.poll'>> }
     FederationCurrency: { federationId: string }
     GlobalCurrency: undefined
+    GroupMultispend: { roomId: string }
     CompleteRecoveryAssist: { videoPath: string; recoveryId: string }
     CompleteSocialBackup: undefined
     CompleteSocialRecovery: undefined
