@@ -25,6 +25,7 @@ use crate::types::{
 };
 
 pub mod db;
+pub mod services;
 pub mod withdrawal_service;
 
 pub const MULTISPEND_MSGTYPE: &str = "xyz.fedi.multispend";

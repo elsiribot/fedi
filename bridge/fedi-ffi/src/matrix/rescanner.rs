@@ -21,7 +21,7 @@ use tokio::sync::Notify;
 use tracing::{debug, instrument, warn};
 
 use super::multispend::db::MultispendScannerLastEventKey;
-use super::multispend::withdrawal_service::WithdrawalService;
+use super::multispend::services::MultispendServices;
 use super::multispend::{self, MultispendContext, MultispendEvent, MULTISPEND_MSGTYPE};
 use super::{RpcRoomId, RpcUserId};
 use crate::bridge::BridgeRuntime;
@@ -48,7 +48,7 @@ pub struct RoomRescannerManager {
     new_room_notify: Notify,
     /// Reference to the bridge runtime for spawning tasks
     runtime: Arc<BridgeRuntime>,
-    withdrawal_service: WithdrawalService,
+    multispend_services: Arc<MultispendServices>,
 }
 
 struct MultispendRoom {
@@ -66,14 +66,14 @@ impl RoomRescannerManager {
     pub fn new(
         client: Client,
         runtime: Arc<BridgeRuntime>,
-        withdrawal_service: WithdrawalService,
+        multispend_services: Arc<MultispendServices>,
     ) -> Self {
         Self {
             client,
             rescan_states: RwLock::new(HashMap::new()),
             new_room_notify: Notify::new(),
             runtime,
-            withdrawal_service,
+            multispend_services,
         }
     }
 
@@ -211,7 +211,8 @@ impl RoomRescannerManager {
 
             dbtx.commit_tx().await;
             if context.check_pending_approved_withdrawal_requests {
-                self.withdrawal_service
+                self.multispend_services
+                    .withdrawal
                     .check_pending_approved_withdrawal_requests();
             }
             if context.refresh_account_info {

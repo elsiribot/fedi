@@ -42,6 +42,7 @@ use crate::error::ErrorCode;
 use crate::event::SocialRecoveryEvent;
 use crate::features::FeatureCatalog;
 use crate::federation::{federation_v2, Federations};
+use crate::matrix::multispend::services::MultispendServices;
 use crate::matrix::Matrix;
 use crate::observable::ObservablePool;
 use crate::storage::{
@@ -255,6 +256,7 @@ pub struct BridgeFull {
     pub federations: Arc<Federations>,
     pub communities: Arc<Communities>,
     pub matrix: OnceCell<Arc<Matrix>>,
+    pub multispend_services: Arc<MultispendServices>,
     pub device_registration_service: Mutex<DeviceRegistrationService>,
 }
 
@@ -298,9 +300,14 @@ impl BridgeFull {
         let device_registration_service =
             Mutex::new(DeviceRegistrationService::new(runtime.clone()).await);
 
+        let multispend_services = MultispendServices::new();
+
         // Load communities and federations services
         let communities = Communities::init(runtime.clone()).await;
-        let federations = Arc::new(Federations::new(runtime.clone()));
+        let federations = Arc::new(Federations::new(
+            runtime.clone(),
+            multispend_services.clone(),
+        ));
         federations.load_joined_federations_in_background().await;
 
         Ok(Self {
@@ -309,6 +316,7 @@ impl BridgeFull {
             communities,
             matrix: Default::default(),
             device_registration_service,
+            multispend_services,
         })
     }
 

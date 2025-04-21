@@ -59,7 +59,7 @@ use mime::Mime;
 use multispend::db::{
     MultispendGroupStatus, MultispendMarkedForScanning, RpcMultispendGroupStatus,
 };
-use multispend::withdrawal_service::WithdrawalService;
+use multispend::services::MultispendServices;
 use multispend::{
     FinalizedGroup, GroupInvitation, MsEventData, MultispendEvent, MultispendGroupVoteType,
     WithdrawalResponseType,
@@ -194,6 +194,7 @@ impl Matrix {
         user_name: &str,
         home_server: String,
         sliding_sync_proxy: String,
+        multispend_services: Arc<MultispendServices>,
     ) -> Result<Arc<Self>> {
         Self::run_migration_task(
             runtime.clone(),
@@ -239,7 +240,6 @@ impl Matrix {
             .with_offline_mode()
             .build()
             .await?;
-        let withdrawal_service = WithdrawalService::default();
         let matrix = Arc::new(Self {
             notification_settings: client.notification_settings().await,
             client: client.clone(),
@@ -248,7 +248,7 @@ impl Matrix {
             rescanner: Arc::new(RoomRescannerManager::new(
                 client,
                 runtime,
-                withdrawal_service,
+                multispend_services,
             )),
             send_multispend_mutex: Mutex::new(()),
             send_multispend_server_ack: std::sync::Mutex::new(None),
@@ -1544,6 +1544,7 @@ mod tests {
     use fedimint_core::util::retry;
     use fedimint_derive_secret::ChildId;
     use fedimint_logging::TracingSetup;
+    use multispend::services::MultispendServices;
     use multispend::{GroupInvitation, GroupInvitationWithKeys};
     use rand::{thread_rng, Rng};
     use stability_pool_client::common::{AccountType, AccountUnchecked};
@@ -1586,13 +1587,16 @@ mod tests {
             FeatureCatalog::new(RuntimeEnvironment::Dev).into(),
         )
         .await?;
+        let runtime = Arc::new(runtime);
+        let multispend_services = MultispendServices::new();
         let matrix = Matrix::init(
-            Arc::new(runtime),
+            runtime,
             tmp_dir.as_ref(),
             secret,
             user_name,
             format!("https://{TEST_HOME_SERVER}"),
             TEST_SLIDING_SYNC.to_string(),
+            multispend_services,
         )
         .await?;
         Ok((matrix, event_rx, tmp_dir))

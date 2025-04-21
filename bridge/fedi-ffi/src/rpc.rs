@@ -936,6 +936,7 @@ async fn matrixInit(bridge: &BridgeFull) -> anyhow::Result<()> {
                 &nostr_pubkey,
                 GLOBAL_MATRIX_SERVER.to_owned(),
                 GLOBAL_MATRIX_SLIDING_SYNC_PROXY.to_owned(),
+                bridge.multispend_services.clone(),
             )
             .await?,
         )

@@ -121,6 +121,7 @@ use crate::features::{
     FeatureCatalog, StabilityPoolV2FeatureConfig, StabilityPoolV2FeatureConfigState,
 };
 use crate::fedi_fee::{FediFeeHelper, FediFeeRemittanceService};
+use crate::matrix::multispend::services::MultispendServices;
 use crate::matrix::RpcRoomId;
 use crate::storage::{AppState, FediFeeSchedule};
 use crate::types::{
@@ -202,6 +203,7 @@ pub struct FederationV2 {
     pub spv2_sync_service: OnceCell<StabilityPoolSyncService>,
     pub spv2_history_service: OnceCell<StabilityPoolHistoryService>,
     pub spv2_sweeper_service: OnceCell<SPv2SweeperService>,
+    pub multispend_services: Arc<MultispendServices>,
 }
 
 impl FederationV2 {
@@ -230,6 +232,7 @@ impl FederationV2 {
         secret: DerivableSecret,
         fedi_fee_helper: Arc<FediFeeHelper>,
         feature_catalog: Arc<FeatureCatalog>,
+        multispend_services: Arc<MultispendServices>,
         app_state: AppState,
     ) -> Arc<Self> {
         let recovering = client.has_pending_recoveries();
@@ -251,6 +254,7 @@ impl FederationV2 {
             app_state,
             this_weak: weak.clone(),
             guard,
+            multispend_services,
             spv2_sync_service: Default::default(),
             spv2_history_service: Default::default(),
             spv2_sweeper_service: Default::default(),
@@ -404,6 +408,7 @@ impl FederationV2 {
         device_index: u8,
         fedi_fee_helper: Arc<FediFeeHelper>,
         feature_catalog: Arc<FeatureCatalog>,
+        multispend_services: Arc<MultispendServices>,
         app_state: AppState,
     ) -> anyhow::Result<Arc<Self>> {
         let client_builder = Self::build_client_builder(db.clone()).await?;
@@ -433,6 +438,7 @@ impl FederationV2 {
             auxiliary_secret,
             fedi_fee_helper,
             feature_catalog,
+            multispend_services,
             app_state,
         )
         .await)
@@ -514,6 +520,7 @@ impl FederationV2 {
         recover_from_scratch: bool,
         fedi_fee_helper: Arc<FediFeeHelper>,
         feature_catalog: Arc<FeatureCatalog>,
+        multispend_services: Arc<MultispendServices>,
         app_state: AppState,
     ) -> Result<Arc<Self>> {
         let mut invite_code =
@@ -593,6 +600,7 @@ impl FederationV2 {
             auxiliary_secret,
             fedi_fee_helper,
             feature_catalog,
+            multispend_services,
             app_state,
         )
         .await;
