@@ -926,21 +926,23 @@ async fn matrixInit(bridge: &BridgeFull) -> anyhow::Result<()> {
     }
     let nostr_pubkey = bridge.runtime.get_nostr_pubkey().await?.npub;
     let matrix_secret = bridge.runtime.get_matrix_secret().await;
+    let matrix = Matrix::init(
+        bridge.runtime.clone(),
+        &bridge.runtime.storage.platform_path("matrix".as_ref()),
+        &matrix_secret,
+        &nostr_pubkey,
+        GLOBAL_MATRIX_SERVER.to_owned(),
+        GLOBAL_MATRIX_SLIDING_SYNC_PROXY.to_owned(),
+        bridge.multispend_services.clone(),
+    )
+    .await?;
     bridge
         .matrix
-        .set(
-            Matrix::init(
-                bridge.runtime.clone(),
-                &bridge.runtime.storage.platform_path("matrix".as_ref()),
-                &matrix_secret,
-                &nostr_pubkey,
-                GLOBAL_MATRIX_SERVER.to_owned(),
-                GLOBAL_MATRIX_SLIDING_SYNC_PROXY.to_owned(),
-                bridge.multispend_services.clone(),
-            )
-            .await?,
-        )
+        .set(matrix.clone())
         .map_err(|_| anyhow::anyhow!("matrix already initialized"))?;
+    if matrix.is_multispend_enabled() {
+        bridge.start_multispend_services();
+    }
     Ok(())
 }
 

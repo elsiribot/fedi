@@ -1522,7 +1522,7 @@ impl Matrix {
         multispend::is_invalid_event(&mut dbtx, event_id).await
     }
 
-    fn is_multispend_enabled(&self) -> bool {
+    pub fn is_multispend_enabled(&self) -> bool {
         self.runtime
             .feature_catalog
             .stability_pool_v2

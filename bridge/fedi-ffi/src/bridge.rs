@@ -320,6 +320,20 @@ impl BridgeFull {
         })
     }
 
+    pub fn start_multispend_services(&self) {
+        let runtime = self.runtime.clone();
+        let federations = self.federations.clone();
+        let multispend_services = self.multispend_services.clone();
+        self.runtime
+            .task_group
+            .spawn_cancellable("multispend::WithdrawalService", async move {
+                multispend_services
+                    .withdrawal
+                    .run_continuously(&runtime.multispend_db(), &federations)
+                    .await
+            });
+    }
+
     /// Dump the database for a given federation.
     pub async fn dump_db(&self, federation_id: &str) -> anyhow::Result<PathBuf> {
         let db_dump_path = format!("db-{federation_id}.dump");
