@@ -260,7 +260,7 @@ const RoomSettings: React.FC<Props> = ({ navigation, route }: Props) => {
                     onPress: handleNavigateToMultispend,
                     disabled:
                         multispendStatus?.status === 'activeInvitation' ||
-                            multispendStatus?.status === 'finalized'
+                        multispendStatus?.status === 'finalized'
                             ? myMultispendRole === null
                             : !isAdmin,
                 })
