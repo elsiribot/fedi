@@ -573,6 +573,7 @@ export type RpcMethods = {
   payInvoice: [payInvoice, RpcPayInvoiceResponse];
   listGateways: [listGateways, Array<RpcLightningGateway>];
   switchGateway: [switchGateway, null];
+  supportsSafeOnchainDeposit: [supportsSafeOnchainDeposit, boolean];
   generateAddress: [generateAddress, string];
   recheckPeginAddress: [recheckPeginAddress, null];
   previewPayAddress: [previewPayAddress, RpcFeeDetails];
@@ -1802,6 +1803,8 @@ export type stabilityPoolWithdraw = {
   unlockedAmount: RpcAmount;
   lockedBps: number;
 };
+
+export type supportsSafeOnchainDeposit = { federationId: RpcFederationId };
 
 export type switchGateway = {
   federationId: RpcFederationId;
