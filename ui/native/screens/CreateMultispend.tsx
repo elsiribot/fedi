@@ -74,8 +74,9 @@ const CreateMultispend: React.FC<Props> = ({ navigation, route }) => {
         setFederationError(undefined)
 
         if (
-            (areVotersSufficient(voters) && thresholdNumber === 0) ||
-            isNaN(thresholdNumber)
+            !areVotersSufficient(voters) ||
+            isNaN(thresholdNumber) ||
+            thresholdNumber === 0
         )
             return false
 
@@ -228,7 +229,12 @@ const CreateMultispend: React.FC<Props> = ({ navigation, route }) => {
                                     'feature.multispend.choose-from-1-6',
                                 )}
                                 value={approvalThreshold}
-                                onChangeText={setApprovalThreshold}
+                                onChangeText={text =>
+                                    setApprovalThreshold(
+                                        text.replace(/[^0-9]/g, ''),
+                                    )
+                                }
+                                maxLength={1}
                                 inputContainerStyle={style.searchInputStyle}
                                 containerStyle={style.searchInputContainerStyle}
                                 errorMessage={approvalThresholdError}
