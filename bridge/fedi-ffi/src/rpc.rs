@@ -404,6 +404,11 @@ async fn switchGateway(
 }
 
 #[macro_rules_derive(federation_rpc_method!)]
+async fn supportsSafeOnchainDeposit(federation: Arc<FederationV2>) -> anyhow::Result<bool> {
+    Ok(federation.client.wallet()?.supports_safe_deposit().await)
+}
+
+#[macro_rules_derive(federation_rpc_method!)]
 async fn generateAddress(
     federation: Arc<FederationV2>,
     frontend_metadata: FrontendMetadata,
@@ -1884,6 +1889,7 @@ rpc_methods!(RpcMethods {
     listGateways,
     switchGateway,
     // On-Chain
+    supportsSafeOnchainDeposit,
     generateAddress,
     recheckPeginAddress,
     previewPayAddress,
