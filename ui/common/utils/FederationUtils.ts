@@ -344,12 +344,19 @@ export const shouldShowSocialRecovery = (federation: LoadedFederation) => {
         return false
     }
 
-    return (
+    const moduleEnabled = hasSocialModule(federation)
+
+    // if social_recovery_disabled meta field is:
+    // not set      => true (enabled)
+    // set to false => true (enabled)
+    // set to true  => false (disabled)
+    const isNotDisabledInMeta =
         getMetaField(
             SupportedMetaFields.social_recovery_disabled,
             federation.meta,
         ) !== 'true'
-    )
+
+    return moduleEnabled && isNotDisabledInMeta
 }
 
 export const shouldShowOfflineWallet = (
@@ -404,9 +411,16 @@ export const hasMultispendModule = (federation: LoadedFederation) => {
     }
 }
 
-// TODO: Determine if no-wallet communities breaks this
-export function supportsSingleSeed(federation: LoadedFederation) {
-    return federation.version >= 2
+export const hasSocialModule = (federation: LoadedFederation) => {
+    if (!federation.clientConfig) return false
+    const { modules } = federation.clientConfig
+    for (const key in modules) {
+        // TODO: add better typing for this
+        const fmModule = modules[key] as Partial<{ kind: string }>
+        if (fmModule.kind === 'fedi-social') {
+            return true
+        }
+    }
 }
 
 export const getFederationGroupChats = (
