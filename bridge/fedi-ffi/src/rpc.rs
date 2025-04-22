@@ -54,7 +54,7 @@ use crate::federation::Federations;
 use crate::matrix::multispend::db::RpcMultispendGroupStatus;
 use crate::matrix::multispend::{
     GroupInvitation, GroupInvitationWithKeys, MsEventData, MultispendGroupVoteType,
-    WithdrawRequestWithApprovals, WithdrawalResponseType,
+    MultispendListedEvent, WithdrawRequestWithApprovals, WithdrawalResponseType,
 };
 use crate::matrix::{
     self, Matrix, RpcBackPaginationStatus, RpcMatrixAccountSession, RpcMatrixUploadResult,
@@ -1629,6 +1629,22 @@ async fn matrixMultispendAccountInfo(
 }
 
 #[macro_rules_derive(rpc_method!)]
+pub async fn matrixMultispendListEvents(
+    matrix: &Arc<Matrix>,
+    room_id: RpcRoomId,
+    start_after: Option<u32>,
+    limit: u32,
+) -> anyhow::Result<Vec<MultispendListedEvent>> {
+    Ok(matrix
+        .list_multispend_events(
+            &room_id,
+            start_after.map(Into::into),
+            usize::try_from(limit).unwrap(),
+        )
+        .await)
+}
+
+#[macro_rules_derive(rpc_method!)]
 async fn matrixSendMultispendGroupInvitation(
     bridge: &BridgeFull,
     room_id: RpcRoomId,
@@ -2015,6 +2031,7 @@ rpc_methods!(RpcMethods {
     // multispend
     matrixObserveMultispendGroup,
     matrixMultispendAccountInfo,
+    matrixMultispendListEvents,
     matrixSendMultispendGroupInvitation,
     matrixApproveMultispendGroupInvitation,
     matrixRejectMultispendGroupInvitation,
