@@ -23,7 +23,7 @@ pub struct StabilityPoolSweeperService {}
 impl StabilityPoolSweeperService {
     pub fn new(fed: &FederationV2) -> Self {
         fed.spawn_cancellable("stability_pool_sweeper_service", |fed| async move {
-            continuously_sweep_stability_pool(&fed.client, fed.event_sink.clone()).await
+            continuously_sweep_stability_pool(&fed.client, fed.runtime.event_sink.clone()).await
         });
         Self {}
     }

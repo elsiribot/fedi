@@ -78,7 +78,8 @@ async fn sweep_spv2_inner(fed: &FederationV2, sync_response: SyncResponse) -> an
         .get_value(&LastSPv2SweeperWithdrawalKey)
         .await
     {
-        let subscribe_res = subscribe_withdraw(fed.client.spv2()?, op_id, &fed.event_sink).await;
+        let subscribe_res =
+            subscribe_withdraw(fed.client.spv2()?, op_id, &fed.runtime.event_sink).await;
         clear_sweep_op_id(fed.dbtx().await).await;
         fed.spv2_force_sync();
         return subscribe_res;
@@ -101,7 +102,8 @@ async fn sweep_spv2_inner(fed: &FederationV2, sync_response: SyncResponse) -> an
     // Since all the balance is unlocked, the transaction should go through
     // relatively quickly. So we just subscribe in-line here since this is
     // already running on a background task.
-    let subscribe_res = subscribe_withdraw(fed.client.spv2()?, operation_id, &fed.event_sink).await;
+    let subscribe_res =
+        subscribe_withdraw(fed.client.spv2()?, operation_id, &fed.runtime.event_sink).await;
     clear_sweep_op_id(fed.dbtx().await).await;
     subscribe_res
 }

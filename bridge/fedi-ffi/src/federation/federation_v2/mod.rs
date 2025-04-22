@@ -43,6 +43,7 @@ use fedimint_core::core::{ModuleKind, OperationId};
 use fedimint_core::db::{
     Committable, Database, DatabaseTransaction, IDatabaseTransactionOpsCoreTyped,
 };
+use fedimint_core::encoding::Encodable;
 use fedimint_core::invite_code::InviteCode;
 use fedimint_core::module::registry::ModuleDecoderRegistry;
 use fedimint_core::module::{ApiRequestErased, ApiVersion};
@@ -109,6 +110,7 @@ use self::dev::{
 use self::ln_gateway_service::LnGatewayService;
 use self::stability_pool_sweeper_service::StabilityPoolSweeperService;
 use super::federations_locker::FederationLockGuard;
+use crate::bridge::BridgeRuntime;
 use crate::constants::{
     ECASH_AUTO_CANCEL_DURATION, LIGHTNING_OPERATION_TYPE, MILLION, MINT_OPERATION_TYPE,
     PAY_INVOICE_TIMEOUT, REISSUE_ECASH_TIMEOUT, STABILITY_POOL_OPERATION_TYPE,
@@ -116,14 +118,12 @@ use crate::constants::{
 };
 use crate::db::FederationPendingRejoinFromScratchKey;
 use crate::error::ErrorCode;
-use crate::event::{Event, EventSink, RecoveryProgressEvent, TypedEventExt};
-use crate::features::{
-    FeatureCatalog, StabilityPoolV2FeatureConfig, StabilityPoolV2FeatureConfigState,
-};
+use crate::event::{Event, RecoveryProgressEvent, TypedEventExt};
+use crate::features::{StabilityPoolV2FeatureConfig, StabilityPoolV2FeatureConfigState};
 use crate::fedi_fee::{FediFeeHelper, FediFeeRemittanceService};
 use crate::matrix::multispend::services::MultispendServices;
 use crate::matrix::RpcRoomId;
-use crate::storage::{AppState, FediFeeSchedule};
+use crate::storage::{DatabaseInfo, FederationInfo, FediFeeSchedule};
 use crate::types::{
     federation_v2_to_rpc_federation, BaseMetadata, EcashReceiveMetadata, EcashSendMetadata,
     FrontendMetadata, GuardianStatus, LightningSendMetadata, OperationFediFeeStatus, RpcAmount,
@@ -174,8 +174,8 @@ pub fn invite_code_from_client_confing(config: &ClientConfig) -> InviteCode {
 
 /// Federation is a wrapper of "client ng" to assist with handling RPC commands
 pub struct FederationV2 {
+    pub runtime: Arc<BridgeRuntime>,
     pub client: ClientHandle,
-    pub event_sink: EventSink,
     pub task_group: TaskGroup,
     pub operation_states: Mutex<HashMap<OperationId, Box<maybe_add_send_sync!(dyn Any + 'static)>>>,
     // DerivableSecret used for non-client usecases like LNURL and Nostr etc
@@ -195,8 +195,6 @@ pub struct FederationV2 {
     pub spend_guard: Mutex<()>,
     // Mutex to prevent concurrent generate_ecash because logic is very fragile.
     pub generate_ecash_lock: Mutex<()>,
-    pub feature_catalog: Arc<FeatureCatalog>,
-    pub app_state: AppState,
     pub this_weak: Weak<Self>,
     pub guard: FederationLockGuard,
     // Stability pool v2 services for syncing accout history between client and server
@@ -225,22 +223,19 @@ impl FederationV2 {
 
     #[allow(clippy::too_many_arguments)]
     pub async fn new(
+        runtime: Arc<BridgeRuntime>,
         client: ClientHandle,
         guard: FederationLockGuard,
-        event_sink: EventSink,
-        task_group: TaskGroup,
-        secret: DerivableSecret,
+        auxiliary_secret: DerivableSecret,
         fedi_fee_helper: Arc<FediFeeHelper>,
-        feature_catalog: Arc<FeatureCatalog>,
         multispend_services: Arc<MultispendServices>,
-        app_state: AppState,
     ) -> Arc<Self> {
         let recovering = client.has_pending_recoveries();
         let federation = Arc::new_cyclic(|weak| Self {
-            event_sink,
-            task_group: task_group.clone(),
+            task_group: runtime.task_group.make_subgroup(),
+            runtime,
             operation_states: Default::default(),
-            auxiliary_secret: secret,
+            auxiliary_secret,
             fedi_fee_helper,
             backup_service: BackupService::default(),
             fedi_fee_remittance_service: OnceCell::new(),
@@ -250,8 +245,6 @@ impl FederationV2 {
             client,
             spend_guard: Default::default(),
             generate_ecash_lock: Default::default(),
-            feature_catalog,
-            app_state,
             this_weak: weak.clone(),
             guard,
             multispend_services,
@@ -400,19 +393,28 @@ impl FederationV2 {
     /// Instantiate Federation from FediConfig
     #[allow(clippy::too_many_arguments)]
     pub async fn from_db(
-        db: Database,
+        runtime: Arc<BridgeRuntime>,
+        federation_info: FederationInfo,
         guard: FederationLockGuard,
-        event_sink: EventSink,
-        task_group: TaskGroup,
-        root_mnemonic: &bip39::Mnemonic,
-        device_index: u8,
         fedi_fee_helper: Arc<FediFeeHelper>,
-        feature_catalog: Arc<FeatureCatalog>,
         multispend_services: Arc<MultispendServices>,
-        app_state: AppState,
     ) -> anyhow::Result<Arc<Self>> {
-        let client_builder = Self::build_client_builder(db.clone()).await?;
-        let config = Client::get_config_from_db(&db)
+        let root_mnemonic = runtime.app_state.root_mnemonic().await;
+        let device_index = runtime
+            .app_state
+            .device_index()
+            .await
+            .context("device index must exist when joined federations exist")?;
+        let federation_db = match &federation_info.database {
+            DatabaseInfo::DatabaseName(db_name) => {
+                runtime.storage.federation_database_v2(db_name).await?
+            }
+            DatabaseInfo::DatabasePrefix(prefix) => runtime
+                .global_db
+                .with_prefix(prefix.consensus_encode_to_vec()),
+        };
+        let client_builder = Self::build_client_builder(federation_db.clone()).await?;
+        let config = Client::get_config_from_db(&federation_db)
             .await
             .context("config not found in database")?;
         let federation_id = config.calculate_federation_id();
@@ -422,24 +424,21 @@ impl FederationV2 {
             let _g = TimeReporter::new("federation loading").level(Level::INFO);
             client_builder
                 .open(Self::client_root_secret_from_root_mnemonic(
-                    root_mnemonic,
+                    &root_mnemonic,
                     &federation_id,
                     device_index,
                 ))
                 .await?
         };
         let auxiliary_secret =
-            Self::auxiliary_secret_from_root_mnemonic(root_mnemonic, &federation_id, device_index);
+            Self::auxiliary_secret_from_root_mnemonic(&root_mnemonic, &federation_id, device_index);
         Ok(Self::new(
+            runtime,
             client,
             guard,
-            event_sink,
-            task_group.make_subgroup(),
             auxiliary_secret,
             fedi_fee_helper,
-            feature_catalog,
             multispend_services,
-            app_state,
         )
         .await)
     }
@@ -455,7 +454,7 @@ impl FederationV2 {
         if should_override_localhost {
             override_localhost_invite_code(&mut invite_code);
         }
-        let api_single_gaurdian = DynGlobalApi::from_endpoints(
+        let api_single_guardian = DynGlobalApi::from_endpoints(
             invite_code.peers(),
             &invite_code.api_secret(),
             &Connector::Tcp,
@@ -471,7 +470,7 @@ impl FederationV2 {
         let (client_config, backup) = tokio::join!(
             download_from_invite_code(&invite_code),
             Client::download_backup_from_federation_static(
-                &api_single_gaurdian,
+                &api_single_guardian,
                 &client_root_sercet,
                 &decoders,
             )
@@ -481,7 +480,7 @@ impl FederationV2 {
         let meta_source =
             MetaModuleMetaSourceWithFallback::new(LegacyMetaSourceWithExternalUrl::default());
         let meta = meta_source
-            .fetch(&config, &api_single_gaurdian, FetchKind::Initial, None)
+            .fetch(&config, &api_single_guardian, FetchKind::Initial, None)
             .await?
             .values
             .into_iter()
@@ -505,31 +504,37 @@ impl FederationV2 {
             },
         })
     }
+
     /// Download federation configs using an invite code. Save client config to
     /// correct database with Storage.
     #[allow(clippy::too_many_arguments)]
     pub async fn join(
+        runtime: Arc<BridgeRuntime>,
+        federation_id_string: String,
         invite_code_string: String,
         guard: FederationLockGuard,
-        event_sink: EventSink,
-        task_group: TaskGroup,
-        bridge_db: Database,
-        federation_db: Database,
-        root_mnemonic: &bip39::Mnemonic,
-        device_index: u8,
         recover_from_scratch: bool,
         fedi_fee_helper: Arc<FediFeeHelper>,
-        feature_catalog: Arc<FeatureCatalog>,
         multispend_services: Arc<MultispendServices>,
-        app_state: AppState,
     ) -> Result<Arc<Self>> {
+        let db_prefix = runtime
+            .app_state
+            .new_federation_db_prefix()
+            .await
+            .context("failed to write AppState")?;
+        let federation_db = runtime
+            .global_db
+            .with_prefix(db_prefix.consensus_encode_to_vec());
+        let root_mnemonic = runtime.app_state.root_mnemonic().await;
+        let device_index = runtime.app_state.ensure_device_index().await?;
+
         let mut invite_code =
             InviteCode::from_str(&invite_code_string).context("invalid invite code")?;
-        if feature_catalog.override_localhost.is_some() {
+        if runtime.feature_catalog.override_localhost.is_some() {
             override_localhost_invite_code(&mut invite_code);
         }
         let mut client_config: ClientConfig = download_from_invite_code(&invite_code).await?;
-        if feature_catalog.override_localhost.is_some() {
+        if runtime.feature_catalog.override_localhost.is_some() {
             override_localhost_client_config(&mut client_config);
         }
 
@@ -549,12 +554,12 @@ impl FederationV2 {
         let client_builder = Self::build_client_builder(federation_db.clone()).await?;
         let federation_id = client_config.calculate_federation_id();
         let client_secret = Self::client_root_secret_from_root_mnemonic(
-            root_mnemonic,
+            &root_mnemonic,
             &federation_id,
             device_index,
         );
         let auxiliary_secret =
-            Self::auxiliary_secret_from_root_mnemonic(root_mnemonic, &federation_id, device_index);
+            Self::auxiliary_secret_from_root_mnemonic(&root_mnemonic, &federation_id, device_index);
         // restore from scratch is not used because it takes too much time.
         // FIXME: api secret
         let client_backup = client_builder
@@ -568,7 +573,8 @@ impl FederationV2 {
         } else if let Some(client_backup) = client_backup {
             // Ensure that rejoin attempt after nonce reuse check failure can never enter
             // this branch
-            if bridge_db
+            if runtime
+                .bridge_db()
                 .begin_transaction_nc()
                 .await
                 .get_value(&FederationPendingRejoinFromScratchKey {
@@ -593,17 +599,32 @@ impl FederationV2 {
                 .await?
         };
         let this = Self::new(
+            runtime.clone(),
             client,
             guard,
-            event_sink,
-            task_group.make_subgroup(),
             auxiliary_secret,
             fedi_fee_helper,
-            feature_catalog,
             multispend_services,
-            app_state,
         )
         .await;
+
+        // If the phone dies here, it's still ok because the federation wouldn't
+        // exist in the app_state, and we'd reattempt to join it. And the name of the
+        // DB file is random so there shouldn't be any collisions.
+        runtime
+            .app_state
+            .with_write_lock(|state| {
+                let old_value = state.joined_federations.insert(
+                    federation_id_string,
+                    FederationInfo {
+                        version: 2,
+                        database: DatabaseInfo::DatabasePrefix(db_prefix),
+                        fedi_fee_schedule: FediFeeSchedule::default(),
+                    },
+                );
+                assert!(old_value.is_none(), "must not override a federation");
+            })
+            .await?;
         Ok(this)
     }
 
@@ -680,7 +701,7 @@ impl FederationV2 {
 
     pub async fn select_gateway(&self) -> anyhow::Result<Option<LightningGateway>> {
         let gateway = self.gateway_service()?.select_gateway(&self.client).await?;
-        if self.feature_catalog.override_localhost.is_none() {
+        if self.runtime.feature_catalog.override_localhost.is_none() {
             return Ok(gateway);
         }
 
@@ -1724,7 +1745,7 @@ impl FederationV2 {
         match self.get_transaction(operation_id).await {
             Ok(transaction) => {
                 let event = Event::transaction(self.federation_id().to_string(), transaction);
-                self.event_sink.typed_event(&event);
+                self.runtime.event_sink.typed_event(&event);
             }
             Err(e) => {
                 tracing::error!("Failed to get transaction details: {}", e);
@@ -1738,12 +1759,12 @@ impl FederationV2 {
             complete: progress.complete,
             total: progress.total,
         });
-        self.event_sink.typed_event(&event);
+        self.runtime.event_sink.typed_event(&event);
     }
 
     /// Send whenever balance changes
     pub async fn send_balance_event(&self) {
-        self.event_sink.typed_event(&Event::balance(
+        self.runtime.event_sink.typed_event(&Event::balance(
             self.federation_id().to_string(),
             self.get_balance().await,
         ));
@@ -1753,7 +1774,7 @@ impl FederationV2 {
     pub async fn send_federation_event(&self) {
         let rpc_federation = federation_v2_to_rpc_federation(self).await;
         let event = Event::federation(RpcFederationMaybeLoading::Ready(rpc_federation));
-        self.event_sink.typed_event(&event);
+        self.runtime.event_sink.typed_event(&event);
     }
 
     fn gateway_service(&self) -> anyhow::Result<&LnGatewayService> {
@@ -2904,7 +2925,10 @@ impl FederationV2 {
     pub fn spv2_feature_state(&self) -> Option<StabilityPoolV2FeatureConfig> {
         // If the module is not available, the feature flag value doesn't matter. It's
         // always treated as None.
-        match (&self.feature_catalog.stability_pool_v2, self.client.spv2()) {
+        match (
+            &self.runtime.feature_catalog.stability_pool_v2,
+            self.client.spv2(),
+        ) {
             (state, Ok(_)) => state.clone(),
             _ => None,
         }
@@ -3082,7 +3106,7 @@ impl FederationV2 {
                     }
                     _ => (),
                 }
-                self.event_sink.typed_event(&Event::spv2_deposit(
+                self.runtime.event_sink.typed_event(&Event::spv2_deposit(
                     self.federation_id().to_string(),
                     operation_id,
                     state,
@@ -3166,7 +3190,7 @@ impl FederationV2 {
                     }
                     _ => (),
                 }
-                self.event_sink.typed_event(&Event::spv2_withdrawal(
+                self.runtime.event_sink.typed_event(&Event::spv2_withdrawal(
                     self.federation_id().to_string(),
                     operation_id,
                     state,
@@ -3280,7 +3304,7 @@ impl FederationV2 {
                 }
                 self.update_operation_state(operation_id, state.clone())
                     .await;
-                self.event_sink.typed_event(&Event::spv2_transfer(
+                self.runtime.event_sink.typed_event(&Event::spv2_transfer(
                     self.federation_id().to_string(),
                     operation_id,
                     state,
@@ -3499,11 +3523,13 @@ impl FederationV2 {
                     }
                     _ => (),
                 }
-                self.event_sink.typed_event(&Event::stability_pool_deposit(
-                    self.federation_id().to_string(),
-                    operation_id,
-                    state,
-                ));
+                self.runtime
+                    .event_sink
+                    .typed_event(&Event::stability_pool_deposit(
+                        self.federation_id().to_string(),
+                        operation_id,
+                        state,
+                    ));
             }
         } else {
             // TODO shaurya ok to ignore result? Or should bridge panic if error?
@@ -3539,7 +3565,8 @@ impl FederationV2 {
                     }
                     _ => (),
                 }
-                self.event_sink
+                self.runtime
+                    .event_sink
                     .typed_event(&Event::stability_pool_withdrawal(
                         self.federation_id().to_string(),
                         operation_id,
@@ -4038,7 +4065,8 @@ impl FederationV2 {
             return Ok(());
         }
 
-        let Some(cached_fiat_fx_info) = self.app_state.get_cached_fiat_fx_info().await else {
+        let Some(cached_fiat_fx_info) = self.runtime.app_state.get_cached_fiat_fx_info().await
+        else {
             bail!("No cached fiat FX info present");
         };
         dbtx.insert_entry(
