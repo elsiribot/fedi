@@ -39,6 +39,8 @@ pub enum ErrorCode {
     Recovery,
     #[error("Deserializing JSON failed: {0}")]
     InvalidJson(String),
+    #[error("Community version {0} is not supported")]
+    UnsupportedCommunityVersion(u32),
     #[error("pay_invoice is already paid")]
     PayLnInvoiceAlreadyPaid,
     #[error("pay_invoice is already in progress")]

@@ -312,7 +312,7 @@ async fn fetch_community_meta_json(
     http_client: reqwest::Client,
     community_meta_url: String,
 ) -> anyhow::Result<CommunityJson> {
-    Ok(fedimint_core::task::timeout(
+    let json = fedimint_core::task::timeout(
         Duration::from_secs(5),
         http_client.get(community_meta_url).send(),
     )
@@ -320,7 +320,12 @@ async fn fetch_community_meta_json(
     .context(ErrorCode::Timeout)??
     .json::<CommunityJson>()
     .await
-    .map_err(|e| ErrorCode::InvalidJson(e.to_string()))?)
+    .map_err(|e| ErrorCode::InvalidJson(e.to_string()))?;
+    anyhow::ensure!(
+        json.version == 1,
+        ErrorCode::UnsupportedCommunityVersion(json.version)
+    );
+    Ok(json)
 }
 
 #[cfg(test)]
