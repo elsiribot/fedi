@@ -186,7 +186,6 @@ impl Matrix {
     }
 
     /// Start the matrix service.
-    #[allow(clippy::too_many_arguments)]
     pub async fn init(
         runtime: Arc<BridgeRuntime>,
         base_dir: &Path,
