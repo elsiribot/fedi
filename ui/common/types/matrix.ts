@@ -3,6 +3,7 @@ import type {
     JSONObject,
     ObservableVecUpdate,
     RpcMatrixMembership,
+    RpcMultispendGroupStatus,
 } from './bindings'
 
 export { MatrixEventContent }
@@ -199,3 +200,13 @@ export type InputMedia = InputAttachment & {
     width: number
     height: number
 }
+
+export type MultispendActiveInvitation = Extract<
+    RpcMultispendGroupStatus,
+    { status: 'activeInvitation' }
+>
+
+export type MultispendFinalized = Extract<
+    RpcMultispendGroupStatus,
+    { status: 'finalized' }
+>

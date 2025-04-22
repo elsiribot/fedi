@@ -578,6 +578,8 @@
             "intro-3": "<bold>Admin Control</bold>: Admins can restart invitations or cancel the setup before full approval.",
             "intro-4": "<bold>Clear & Transparent</bold>: Every action is tracked so the group stays informed.",
             "intro-5": "<bold>Full Approval Needed</bold>: All voters must accept the invitation for the Multispend Group to be created.",
+            "join-federation": "Join {{federation}}",
+            "join-federation-notice": "In order to approve this multispend invitation, you must join the {{federation}} federation.",
             "learn-more": "LEARN MORE",
             "max-threshold-n": "The max approval threshold you can set is {{n}}",
             "multispend-title": "<bold>Multispend</bold>: Simple Way to Manage Shared Money",
