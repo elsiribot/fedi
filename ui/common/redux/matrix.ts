@@ -258,6 +258,19 @@ export const matrixSlice = createSlice({
             const { roomId, status } = action.payload
             state.roomMultispendStatus[roomId] = status
         },
+        setMatrixRoomMultispendAccountInfo(
+            state,
+            action: PayloadAction<{
+                roomId: MatrixRoom['id']
+                info:
+                    | { Ok: RpcSPv2SyncResponse }
+                    | { Err: NetworkError }
+                    | undefined
+            }>,
+        ) {
+            const { roomId, info } = action.payload
+            state.roomMultispendAccountInfo[roomId] = info
+        },
         addMatrixError(state, action: PayloadAction<MatrixError>) {
             state.errors = [...state.errors, action.payload]
         },
@@ -518,6 +531,7 @@ export const {
     setMatrixRoomPowerLevels,
     setMatrixRoomNotificationMode,
     setMatrixRoomMultispendStatus,
+    setMatrixRoomMultispendAccountInfo,
     addMatrixError,
     handleMatrixRoomListObservableUpdates,
     handleMatrixRoomTimelineObservableUpdates,
@@ -627,6 +641,16 @@ export const startMatrixClient = createAsyncThunk<
                     status: ev.status,
                 }),
             )
+    })
+    client.on('multispendAccountUpdate', ev => {
+        if (ev.info) {
+            dispatch(
+                setMatrixRoomMultispendAccountInfo({
+                    roomId: ev.roomId,
+                    info: ev.info,
+                }),
+            )
+        }
     })
 
     client.on('ignoredUsers', ev => dispatch(setMatrixIgnoredUsers(ev)))
