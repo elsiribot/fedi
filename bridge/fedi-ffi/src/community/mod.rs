@@ -81,7 +81,6 @@ impl Communities {
             .map(|json| RpcCommunity {
                 invite_code: invite_code.to_owned(),
                 name: json.name,
-                version: json.version,
                 meta: json.meta,
             })
     }
@@ -98,7 +97,6 @@ impl Communities {
         let rpc_community = RpcCommunity {
             invite_code: invite_code.to_owned(),
             name: meta.name.clone(),
-            version: meta.version,
             meta: meta.meta.clone(),
         };
 
@@ -147,7 +145,6 @@ impl Communities {
             RpcCommunity {
                 invite_code: invite_code.to_owned(),
                 name: meta.name,
-                version: meta.version,
                 meta: meta.meta,
             }
         });
@@ -298,7 +295,6 @@ impl Community {
                     .typed_event(&Event::community_metadata_updated(RpcCommunity {
                         invite_code: self.invite_code.clone(),
                         name: meta.name,
-                        version: meta.version,
                         meta: meta.meta,
                     }));
             }

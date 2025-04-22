@@ -214,7 +214,6 @@ pub struct RpcFederationPreview {
 pub struct RpcCommunity {
     pub invite_code: String,
     pub name: String,
-    pub version: u32,
     pub meta: BTreeMap<String, String>,
 }
 

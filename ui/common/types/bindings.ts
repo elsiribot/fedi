@@ -388,7 +388,6 @@ export type RpcBridgeStatus = {
 export type RpcCommunity = {
   inviteCode: string;
   name: string;
-  version: number;
   meta: { [key in string]?: string };
 };
 
