@@ -20,5 +20,5 @@ export FM_ADMIN_PASSWORD=p
 echo "## Ensuring everything built"
 cargo build --profile "${CARGO_PROFILE}" --all-targets
 echo "## Running v2 bridge tests"
-cargo nextest run -v --locked --cargo-profile "${CARGO_PROFILE}" -E 'package(fedi-ffi)' --nocapture "$@"
+cargo nextest run -v --locked --cargo-profile "${CARGO_PROFILE}" -E 'package(fedi-ffi)' "$@"
 echo "## Tests Passed"
