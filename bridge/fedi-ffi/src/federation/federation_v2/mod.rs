@@ -221,7 +221,6 @@ impl FederationV2 {
         Ok(client_builder)
     }
 
-    #[allow(clippy::too_many_arguments)]
     pub async fn new(
         runtime: Arc<BridgeRuntime>,
         client: ClientHandle,
@@ -391,7 +390,6 @@ impl FederationV2 {
     }
 
     /// Instantiate Federation from FediConfig
-    #[allow(clippy::too_many_arguments)]
     pub async fn from_db(
         runtime: Arc<BridgeRuntime>,
         federation_info: FederationInfo,
@@ -507,7 +505,6 @@ impl FederationV2 {
 
     /// Download federation configs using an invite code. Save client config to
     /// correct database with Storage.
-    #[allow(clippy::too_many_arguments)]
     pub async fn join(
         runtime: Arc<BridgeRuntime>,
         federation_id_string: String,

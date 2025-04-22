@@ -126,7 +126,6 @@ pub async fn get_registered_devices_with_backoff(
     .await
 }
 
-#[allow(clippy::too_many_arguments)]
 pub async fn register_device_with_backoff(
     app_state: AppState,
     fedi_api: Arc<dyn IFediApi>,
@@ -142,6 +141,7 @@ pub async fn register_device_with_backoff(
         Conflict(String),
     }
 
+    #[allow(clippy::too_many_arguments)]
     async fn register_device_inner(
         app_state: AppState,
         fedi_api: Arc<dyn IFediApi>,

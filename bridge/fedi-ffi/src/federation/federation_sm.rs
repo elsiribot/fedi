@@ -128,7 +128,6 @@ impl FederationStateMachine {
     }
 
     /// Transition from NewForLoad to LoadFailed or Normal or Recovering
-    #[allow(clippy::too_many_arguments)]
     pub async fn load_from_db(
         &self,
         federation_id: String,
