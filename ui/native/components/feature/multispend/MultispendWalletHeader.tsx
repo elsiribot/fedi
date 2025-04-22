@@ -11,8 +11,15 @@ import {
     useMultispendDisplayUtils,
     useMultispendVoting,
 } from '@fedi/common/hooks/multispend'
+import {
+    selectCurrency,
+    selectCurrencyLocale,
+    selectMultispendBalance,
+} from '@fedi/common/redux'
+import amountUtils from '@fedi/common/utils/AmountUtils'
 
 import { fedimint } from '../../../bridge'
+import { useAppSelector } from '../../../state/hooks'
 import { reset } from '../../../state/navigation'
 import CustomOverlay from '../../ui/CustomOverlay'
 import HoloCircle from '../../ui/HoloCircle'
@@ -36,6 +43,11 @@ const MultispendWalletHeader: React.FC<Props> = ({ roomId }) => {
         abortConfirmationContents,
         rejectConfirmationContents,
     } = useMultispendVoting({ t, fedimint, roomId })
+    const multispendBalance = useAppSelector(s =>
+        selectMultispendBalance(s, roomId),
+    )
+    const selectedCurrency = useAppSelector(selectCurrency)
+    const currencyLocale = useAppSelector(selectCurrencyLocale)
 
     const {
         walletHeader: { federationName, status, threshold, totalSigners },
@@ -44,6 +56,12 @@ const MultispendWalletHeader: React.FC<Props> = ({ roomId }) => {
     const handleBack = useCallback(() => {
         navigation.dispatch(reset('ChatRoomConversation', { roomId }))
     }, [navigation, roomId])
+
+    const formattedMultispendBalance = amountUtils.formatFiat(
+        multispendBalance,
+        selectedCurrency,
+        { symbolPosition: 'none', locale: currencyLocale },
+    )
 
     const handleInfoPress = useCallback(() => {
         Linking.openURL(
@@ -95,11 +113,10 @@ const MultispendWalletHeader: React.FC<Props> = ({ roomId }) => {
                         <View style={style.balance}>
                             {/* TODO: balance */}
                             <Text style={style.infoText} bold>
-                                {'100.00'}
+                                {formattedMultispendBalance}
                             </Text>
-                            {/* TODO: currency */}
                             <Text small bold style={style.infoText}>
-                                {'USD'}
+                                {selectedCurrency}
                             </Text>
                         </View>
                     </View>
