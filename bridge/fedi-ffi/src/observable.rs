@@ -269,7 +269,7 @@ impl ObservablePool {
         Ok(())
     }
 
-    pub async fn send_observable_update<T: Clone + Serialize + std::fmt::Debug>(
+    pub async fn send_observable_update<T: Serialize + std::fmt::Debug>(
         &self,
         event: ObservableUpdate<T>,
     ) {

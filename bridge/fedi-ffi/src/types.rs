@@ -60,11 +60,11 @@ impl std::fmt::Display for RpcAmount {
     }
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize, TS, Encodable, Decodable, PartialEq, Eq)]
+#[derive(Debug, Clone, Serialize, Deserialize, TS, Encodable, Decodable, PartialEq, Eq, Copy)]
 #[ts(export)]
 pub struct RpcFiatAmount(#[ts(type = "number")] pub u64);
 
-#[derive(Debug, Clone, Serialize, Deserialize, TS, Encodable, Decodable, PartialEq, Eq)]
+#[derive(Debug, Clone, Serialize, Deserialize, TS, Encodable, Decodable, PartialEq, Eq, Copy)]
 #[ts(export)]
 pub struct RpcTransactionId(#[ts(type = "string")] pub TransactionId);
 
@@ -1055,6 +1055,11 @@ pub enum SPv2TransferMetadata {
     },
     /// Deposit into multispend account
     MultispendDeposit { room: RpcRoomId },
+    /// Withdraw from multispend account
+    MultispendWithdrawal {
+        room: RpcRoomId,
+        request_id: RpcEventId,
+    },
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
@@ -1185,6 +1190,10 @@ impl From<SyncResponse> for RpcSPv2SyncResponse {
         }
     }
 }
+
+#[derive(Debug, Serialize, Deserialize, TS)]
+#[ts(export)]
+pub struct NetworkError {}
 
 /// We differentiate between "send" and "receive" because in the case of a send
 /// we optimistically charge the fee from the send amount (since the amount +

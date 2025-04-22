@@ -11,6 +11,7 @@ use tracing::error;
 
 use crate::bridge::BridgeRuntime;
 use crate::fedi_fee::FediFeeHelper;
+use crate::matrix::multispend::services::MultispendServices;
 use crate::storage::FederationInfo;
 use crate::types::RpcFederationPreview;
 use crate::utils::PoisonedLockExt as _;
@@ -24,15 +25,17 @@ pub struct Federations {
     pub fedi_fee_helper: Arc<FediFeeHelper>,
     federations: Mutex<BTreeMap<String, FederationStateMachine>>,
     federations_locker: FederationsLocker,
+    multispend_services: Arc<MultispendServices>,
 }
 
 impl Federations {
-    pub fn new(runtime: Arc<BridgeRuntime>) -> Self {
+    pub fn new(runtime: Arc<BridgeRuntime>, multispend_services: Arc<MultispendServices>) -> Self {
         Federations {
             fedi_fee_helper: Arc::new(FediFeeHelper::new(runtime.clone())),
             runtime,
             federations: Default::default(),
             federations_locker: Default::default(),
+            multispend_services,
         }
     }
 
@@ -61,6 +64,7 @@ impl Federations {
                     &this.federations_locker,
                     federation_id.clone(),
                     federation_info,
+                    this.multispend_services.clone(),
                     fed_sm,
                 )
                 .await
@@ -121,6 +125,7 @@ impl Federations {
                 &self.federations_locker,
                 recover_from_scratch,
                 &self.fedi_fee_helper,
+                self.multispend_services.clone(),
             )
             .await?;
         Ok(federation_arc)
@@ -209,6 +214,7 @@ async fn load_federation(
     federations_locker: &FederationsLocker,
     federation_id_str: String,
     federation_info: FederationInfo,
+    multispend_services: Arc<MultispendServices>,
     fed_sm: FederationStateMachine,
 ) -> anyhow::Result<()> {
     fed_sm
@@ -218,6 +224,7 @@ async fn load_federation(
             federation_info,
             federations_locker,
             &fedi_fee_helper,
+            multispend_services,
         )
         .await;
     Ok(())

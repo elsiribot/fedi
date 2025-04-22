@@ -223,6 +223,10 @@ impl Account {
     pub fn threshold(&self) -> u64 {
         self.threshold
     }
+
+    pub fn pub_keys(&self) -> impl Iterator<Item = &PublicKey> {
+        self.pub_keys.iter()
+    }
 }
 
 impl AccountId {

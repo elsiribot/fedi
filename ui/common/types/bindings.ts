@@ -269,6 +269,8 @@ export type MultispendListedEvent = {
   event: MsEventData;
 };
 
+export type NetworkError = Record<string, never>;
+
 /**
  * Notify front-end that given federation has failed the e-cash blind nonce
  * reuse check and must be rejoined using a recovery-from-scratch.
@@ -726,7 +728,7 @@ export type RpcMethods = {
   ];
   matrixMultispendAccountInfo: [
     matrixMultispendAccountInfo,
-    RpcSPv2SyncResponse,
+    Observable<{ Ok: RpcSPv2SyncResponse } | { Err: NetworkError }>,
   ];
   matrixMultispendListEvents: [
     matrixMultispendListEvents,
@@ -1501,7 +1503,10 @@ export type matrixInit = {};
 
 export type matrixListIgnoredUsers = {};
 
-export type matrixMultispendAccountInfo = { roomId: RpcRoomId };
+export type matrixMultispendAccountInfo = {
+  roomId: RpcRoomId;
+  observableId: number;
+};
 
 export type matrixMultispendDeposit = {
   roomId: RpcRoomId;

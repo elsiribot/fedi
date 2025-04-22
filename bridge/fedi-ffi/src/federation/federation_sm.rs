@@ -15,6 +15,7 @@ use crate::error::RpcError;
 use crate::event::{Event, TypedEventExt as _};
 use crate::federation::federation_v2::FederationV2;
 use crate::fedi_fee::FediFeeHelper;
+use crate::matrix::multispend::services::MultispendServices;
 use crate::storage::{DatabaseInfo, FederationInfo, FediFeeSchedule, Storage};
 use crate::types::{RpcFederationId, RpcFederationMaybeLoading};
 
@@ -92,6 +93,7 @@ impl FederationStateMachine {
         locker: &FederationsLocker,
         recover_from_scratch: bool,
         fedi_fee_helper: &Arc<FediFeeHelper>,
+        multispend_services: Arc<MultispendServices>,
     ) -> Result<Arc<FederationV2>> {
         let mut wstate = self.state.write().await;
         anyhow::ensure!(
@@ -126,6 +128,7 @@ impl FederationStateMachine {
             recover_from_scratch,
             fedi_fee_helper.clone(),
             runtime.feature_catalog.clone(),
+            multispend_services,
             runtime.app_state.clone(),
         )
         .await?;
@@ -167,6 +170,7 @@ impl FederationStateMachine {
         federation_info: FederationInfo,
         locker: &FederationsLocker,
         fedi_fee_helper: &Arc<FediFeeHelper>,
+        multispend_services: Arc<MultispendServices>,
     ) {
         let mut wstate = self.state.write().await;
         assert!(matches!(&*wstate, FederationStateInternal::NewForLoad));
@@ -174,7 +178,13 @@ impl FederationStateMachine {
             .try_lock_federation(federation_id.clone())
             .expect("lock must not be held in this federation state");
         let federation_result = self
-            .load_from_db_inner(&runtime, federation_info, fedi_fee_helper, guard)
+            .load_from_db_inner(
+                &runtime,
+                federation_info,
+                fedi_fee_helper,
+                multispend_services,
+                guard,
+            )
             .await;
 
         // TODO: send federation event
@@ -205,6 +215,7 @@ impl FederationStateMachine {
         runtime: &Arc<BridgeRuntime>,
         federation_info: FederationInfo,
         fedi_fee_helper: &Arc<FediFeeHelper>,
+        multispend_services: Arc<MultispendServices>,
         guard: FederationLockGuard,
     ) -> anyhow::Result<Arc<FederationV2>> {
         let root_mnemonic = runtime.app_state.root_mnemonic().await;
@@ -230,6 +241,7 @@ impl FederationStateMachine {
             device_index,
             fedi_fee_helper.clone(),
             runtime.feature_catalog.clone(),
+            multispend_services,
             runtime.app_state.clone(),
         )
         .await
@@ -279,6 +291,7 @@ impl FederationStateMachine {
             app_state,
             client,
             guard,
+            multispend_services,
             ..
         } = wait_for_unique(federation_arc).await;
         client.shutdown().await;
@@ -298,6 +311,7 @@ impl FederationStateMachine {
             device_index,
             fedi_fee_helper,
             feature_catalog,
+            multispend_services,
             app_state,
         )
         .await;

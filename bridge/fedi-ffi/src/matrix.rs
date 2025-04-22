@@ -59,6 +59,7 @@ use mime::Mime;
 use multispend::db::{
     MultispendGroupStatus, MultispendMarkedForScanning, RpcMultispendGroupStatus,
 };
+use multispend::services::MultispendServices;
 use multispend::{
     FinalizedGroup, GroupInvitation, MsEventData, MultispendEvent, MultispendGroupVoteType,
     MultispendListedEvent, WithdrawalResponseType,
@@ -70,9 +71,12 @@ use tracing::{error, info, warn};
 use crate::bridge::BridgeRuntime;
 use crate::error::ErrorCode;
 use crate::features::StabilityPoolV2FeatureConfigState;
+use crate::federation::federation_v2::FederationV2;
 use crate::observable::{Observable, ObservableUpdate, ObservableVec, ObservableVecUpdate};
 use crate::storage::AppState;
-use crate::types::{RpcEventId, RpcMediaUploadParams, RpcPublicKey};
+use crate::types::{
+    NetworkError, RpcEventId, RpcMediaUploadParams, RpcPublicKey, RpcSPv2SyncResponse,
+};
 use crate::utils::PoisonedLockExt as _;
 
 pub mod multispend;
@@ -90,7 +94,7 @@ pub struct Matrix {
     pub runtime: Arc<BridgeRuntime>,
     notification_settings: NotificationSettings,
     /// Manager for room rescanning operations
-    rescanner: RoomRescannerManager,
+    pub rescanner: Arc<RoomRescannerManager>,
     /// Mutex to prevent concurrent send_multispend_event
     send_multispend_mutex: Mutex<()>,
     // This is used as a synchronization mechanism between sending multispend
@@ -190,6 +194,7 @@ impl Matrix {
         user_name: &str,
         home_server: String,
         sliding_sync_proxy: String,
+        multispend_services: Arc<MultispendServices>,
     ) -> Result<Arc<Self>> {
         Self::run_migration_task(
             runtime.clone(),
@@ -240,7 +245,11 @@ impl Matrix {
             client: client.clone(),
             sync_service,
             runtime: runtime.clone(),
-            rescanner: RoomRescannerManager::new(client, runtime),
+            rescanner: Arc::new(RoomRescannerManager::new(
+                client,
+                runtime,
+                multispend_services,
+            )),
             send_multispend_mutex: Mutex::new(()),
             send_multispend_server_ack: std::sync::Mutex::new(None),
         });
@@ -1330,7 +1339,7 @@ impl Matrix {
                 self.get_multispend_group_status(&room_id).await,
                 move |pool, id| async move {
                     let mut update_index = 0;
-                    let mut stream = pin!(this.rescanner.scan_complete_stream(&room_id).await);
+                    let mut stream = pin!(this.rescanner.scan_complete_stream(&room_id));
                     while let Some(()) = stream.next().await {
                         pool.send_observable_update(ObservableUpdate::new(
                             id,
@@ -1343,6 +1352,43 @@ impl Matrix {
                     Ok(())
                 },
             )
+            .await
+    }
+
+    pub async fn observe_multispend_account_info(
+        self: &Arc<Self>,
+        id: u64,
+        fed: Arc<FederationV2>,
+        room_id: OwnedRoomId,
+        finalized_group: &FinalizedGroup,
+    ) -> Result<Observable<Result<RpcSPv2SyncResponse, NetworkError>>> {
+        let account_id = finalized_group.spv2_account.id();
+        let fetch = move || {
+            let fed = fed.clone();
+            async move {
+                fed.multispend_group_sync_info(account_id)
+                    .await
+                    .map(RpcSPv2SyncResponse::from)
+                    .map_err(|_| NetworkError {})
+            }
+        };
+        let this = self.clone();
+        self.runtime
+            .observable_pool
+            .make_observable(id, fetch().await, move |pool, id| async move {
+                let mut update_index = 0;
+                let mut stream = pin!(this.rescanner.subscribe_to_account_info_refresh(&room_id));
+                while let Some(()) = stream.next().await {
+                    pool.send_observable_update(ObservableUpdate::new(
+                        id,
+                        update_index,
+                        fetch().await,
+                    ))
+                    .await;
+                    update_index += 1;
+                }
+                Ok(())
+            })
             .await
     }
 
@@ -1487,7 +1533,7 @@ impl Matrix {
         multispend::is_invalid_event(&mut dbtx, event_id).await
     }
 
-    fn is_multispend_enabled(&self) -> bool {
+    pub fn is_multispend_enabled(&self) -> bool {
         self.runtime
             .feature_catalog
             .stability_pool_v2
@@ -1509,6 +1555,7 @@ mod tests {
     use fedimint_core::util::retry;
     use fedimint_derive_secret::ChildId;
     use fedimint_logging::TracingSetup;
+    use multispend::services::MultispendServices;
     use multispend::{GroupInvitation, GroupInvitationWithKeys};
     use rand::{thread_rng, Rng};
     use stability_pool_client::common::{AccountType, AccountUnchecked};
@@ -1551,13 +1598,16 @@ mod tests {
             FeatureCatalog::new(RuntimeEnvironment::Dev).into(),
         )
         .await?;
+        let runtime = Arc::new(runtime);
+        let multispend_services = MultispendServices::new(runtime.clone());
         let matrix = Matrix::init(
-            Arc::new(runtime),
+            runtime,
             tmp_dir.as_ref(),
             secret,
             user_name,
             format!("https://{TEST_HOME_SERVER}"),
             TEST_SLIDING_SYNC.to_string(),
+            multispend_services,
         )
         .await?;
         Ok((matrix, event_rx, tmp_dir))

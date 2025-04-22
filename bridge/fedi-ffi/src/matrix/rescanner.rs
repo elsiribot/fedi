@@ -21,7 +21,8 @@ use tokio::sync::Notify;
 use tracing::{debug, instrument, warn};
 
 use super::multispend::db::MultispendScannerLastEventKey;
-use super::multispend::{self, MultispendEvent, MULTISPEND_MSGTYPE};
+use super::multispend::services::MultispendServices;
+use super::multispend::{self, MultispendContext, MultispendEvent, MULTISPEND_MSGTYPE};
 use super::{RpcRoomId, RpcUserId};
 use crate::bridge::BridgeRuntime;
 use crate::matrix::AnySyncMessageLikeEvent;
@@ -39,15 +40,15 @@ pub enum RoomRescanState {
 }
 
 /// Manages room rescanning operations
-#[derive(Clone)]
 pub struct RoomRescannerManager {
     client: Client,
     /// Maps room IDs to their state sender channels.
     /// see methods for explaination.
-    rescan_states: Arc<RwLock<HashMap<OwnedRoomId, Arc<MultispendRoom>>>>,
-    new_room_notify: Arc<Notify>,
+    rescan_states: RwLock<HashMap<OwnedRoomId, Arc<MultispendRoom>>>,
+    new_room_notify: Notify,
     /// Reference to the bridge runtime for spawning tasks
     runtime: Arc<BridgeRuntime>,
+    multispend_services: Arc<MultispendServices>,
 }
 
 struct MultispendRoom {
@@ -56,22 +57,29 @@ struct MultispendRoom {
     task_wakeup: Notify,
     /// triggered every time state transitions to idle
     idle_notify: Notify,
+    // notification for refreshing balance of multispend account
+    account_info_refresh: Notify,
 }
 
 impl RoomRescannerManager {
     /// Creates a new RoomRescannerManager
-    pub fn new(client: Client, runtime: Arc<BridgeRuntime>) -> Self {
+    pub fn new(
+        client: Client,
+        runtime: Arc<BridgeRuntime>,
+        multispend_services: Arc<MultispendServices>,
+    ) -> Self {
         Self {
             client,
-            rescan_states: Arc::new(RwLock::new(HashMap::new())),
-            new_room_notify: Arc::default(),
+            rescan_states: RwLock::new(HashMap::new()),
+            new_room_notify: Notify::new(),
             runtime,
+            multispend_services,
         }
     }
 
     /// Wait for any rescan operations to complete for this room
     /// Queues a rescan if this room was not scanned in this run.
-    pub async fn wait_for_scanned(&self, room_id: &RoomId) {
+    pub async fn wait_for_scanned(self: &Arc<Self>, room_id: &RoomId) {
         let never_scanned = { !self.rescan_states.read().contains_key(room_id) };
         if never_scanned {
             self.queue_rescan(room_id);
@@ -90,17 +98,21 @@ impl RoomRescannerManager {
         }
     }
 
-    /// A stream that yields items whenever a scan for this room completes.
-    pub async fn scan_complete_stream(&self, room_id: &RoomId) -> impl Stream<Item = ()> {
-        let room_state = loop {
+    async fn wait_for_room(&self, room_id: &RoomId) -> Arc<MultispendRoom> {
+        loop {
             let new_room_notification = self.new_room_notify.notified();
             if let Some(room_state) = self.rescan_states.read().get(room_id) {
                 break room_state.clone();
             }
             // no service running for this room, wait for someone to call queue_rescan
             new_room_notification.await;
-        };
+        }
+    }
+
+    /// A stream that yields items whenever a scan for this room completes.
+    pub fn scan_complete_stream<'a>(&'a self, room_id: &'a RoomId) -> impl Stream<Item = ()> + 'a {
         stream! {
+            let room_state = self.wait_for_room(room_id).await;
             loop {
                 // note: subscribe before yielding
                 let notify = room_state.idle_notify.notified();
@@ -110,10 +122,26 @@ impl RoomRescannerManager {
         }
     }
 
+    /// A stream that yields items whenever a scan for this room completes.
+    pub fn subscribe_to_account_info_refresh<'a>(
+        &'a self,
+        room_id: &'a RoomId,
+    ) -> impl Stream<Item = ()> + 'a {
+        stream! {
+            let room_state = self.wait_for_room(room_id).await;
+            loop {
+                // note: subscribe before yielding
+                let notify = room_state.account_info_refresh.notified();
+                yield ();
+                notify.await
+            }
+        }
+    }
+
     /// Queues a room for rescanning
     // Just sets the room state to `Queued` and background service will eventually
     // completes.
-    pub fn queue_rescan(&self, room_id: &RoomId) {
+    pub fn queue_rescan(self: &Arc<Self>, room_id: &RoomId) {
         let mut states = self.rescan_states.write();
         match states.entry(room_id.to_owned()) {
             // if task was running, just update the state, the task will pick this up.
@@ -127,6 +155,7 @@ impl RoomRescannerManager {
                     state: RwLock::new(RoomRescanState::Queued),
                     task_wakeup: Notify::new(),
                     idle_notify: Notify::new(),
+                    account_info_refresh: Notify::new(),
                 });
                 v.insert(room_state.clone());
                 drop(states);
@@ -163,14 +192,32 @@ impl RoomRescannerManager {
             let db = self.runtime.multispend_db();
             let mut dbtx = db.begin_transaction().await;
 
+            let mut context = MultispendContext {
+                check_pending_approved_withdrawal_requests: false,
+                refresh_account_info: false,
+                our_id: RpcUserId(
+                    self.client
+                        .user_id()
+                        .expect("must be logged in before processing multispend events")
+                        .to_string(),
+                ),
+            };
             if let Err(err) = self
-                .process_multispend_events(room_id, &mut dbtx.to_ref_nc())
+                .process_multispend_events(room_id, &mut dbtx.to_ref_nc(), &mut context)
                 .await
             {
                 warn!(?err, ?room_id, "Error rescanning room");
             }
 
             dbtx.commit_tx().await;
+            if context.check_pending_approved_withdrawal_requests {
+                self.multispend_services
+                    .withdrawal
+                    .check_pending_approved_withdrawal_requests();
+            }
+            if context.refresh_account_info {
+                room_state.account_info_refresh.notify_waiters();
+            }
             debug!("Room rescanning completed");
 
             // Only transition to idle if still in running state
@@ -198,6 +245,7 @@ impl RoomRescannerManager {
         &self,
         room_id: &RoomId,
         dbtx: &mut DatabaseTransaction<'_>,
+        context: &mut MultispendContext,
     ) -> anyhow::Result<()> {
         let room = self
             .client
@@ -258,6 +306,7 @@ impl RoomRescannerManager {
                 event_id.clone(),
                 event.clone(),
                 event_time,
+                context,
             )
             .await;
         }

@@ -78,9 +78,10 @@ use meta::{LegacyMetaSourceWithExternalUrl, MetaEntries, MetaServiceExt};
 use rand::Rng;
 use serde::de::DeserializeOwned;
 use spv2_sweeper_service::SPv2SweeperService;
+use stability_pool_client::api::StabilityPoolApiExt as _;
 use stability_pool_client::common::{
-    Account, AccountId, AccountType, FiatAmount, FiatOrAll, SignedTransferRequest, TransferRequest,
-    TransferRequestId,
+    Account, AccountId, AccountType, FiatAmount, FiatOrAll, SignedTransferRequest, SyncResponse,
+    TransferRequest, TransferRequestId,
 };
 use stability_pool_client::db::{
     CachedSyncResponseKey, CachedSyncResponseValue, SeekLifetimeFeeKey, UserOperationHistoryItem,
@@ -120,6 +121,7 @@ use crate::features::{
     FeatureCatalog, StabilityPoolV2FeatureConfig, StabilityPoolV2FeatureConfigState,
 };
 use crate::fedi_fee::{FediFeeHelper, FediFeeRemittanceService};
+use crate::matrix::multispend::services::MultispendServices;
 use crate::matrix::RpcRoomId;
 use crate::storage::{AppState, FediFeeSchedule};
 use crate::types::{
@@ -201,6 +203,7 @@ pub struct FederationV2 {
     pub spv2_sync_service: OnceCell<StabilityPoolSyncService>,
     pub spv2_history_service: OnceCell<StabilityPoolHistoryService>,
     pub spv2_sweeper_service: OnceCell<SPv2SweeperService>,
+    pub multispend_services: Arc<MultispendServices>,
 }
 
 impl FederationV2 {
@@ -229,6 +232,7 @@ impl FederationV2 {
         secret: DerivableSecret,
         fedi_fee_helper: Arc<FediFeeHelper>,
         feature_catalog: Arc<FeatureCatalog>,
+        multispend_services: Arc<MultispendServices>,
         app_state: AppState,
     ) -> Arc<Self> {
         let recovering = client.has_pending_recoveries();
@@ -250,6 +254,7 @@ impl FederationV2 {
             app_state,
             this_weak: weak.clone(),
             guard,
+            multispend_services,
             spv2_sync_service: Default::default(),
             spv2_history_service: Default::default(),
             spv2_sweeper_service: Default::default(),
@@ -403,6 +408,7 @@ impl FederationV2 {
         device_index: u8,
         fedi_fee_helper: Arc<FediFeeHelper>,
         feature_catalog: Arc<FeatureCatalog>,
+        multispend_services: Arc<MultispendServices>,
         app_state: AppState,
     ) -> anyhow::Result<Arc<Self>> {
         let client_builder = Self::build_client_builder(db.clone()).await?;
@@ -432,6 +438,7 @@ impl FederationV2 {
             auxiliary_secret,
             fedi_fee_helper,
             feature_catalog,
+            multispend_services,
             app_state,
         )
         .await)
@@ -513,6 +520,7 @@ impl FederationV2 {
         recover_from_scratch: bool,
         fedi_fee_helper: Arc<FediFeeHelper>,
         feature_catalog: Arc<FeatureCatalog>,
+        multispend_services: Arc<MultispendServices>,
         app_state: AppState,
     ) -> Result<Arc<Self>> {
         let mut invite_code =
@@ -592,6 +600,7 @@ impl FederationV2 {
             auxiliary_secret,
             fedi_fee_helper,
             feature_catalog,
+            multispend_services,
             app_state,
         )
         .await;
@@ -1463,9 +1472,14 @@ impl FederationV2 {
                         fed.subscribe_spv2_withdraw(operation_id).await
                     });
                 }
-                StabilityPoolMeta::Transfer { .. } => {
+                StabilityPoolMeta::Transfer {
+                    extra_meta,
+                    signed_request,
+                    txid,
+                } => {
                     self.spawn_cancellable("subscribe_spv2_transfer", move |fed| async move {
-                        fed.subscribe_spv2_transfer(operation_id).await
+                        fed.subscribe_spv2_transfer(operation_id, txid, signed_request, extra_meta)
+                            .await
                     });
                 }
                 StabilityPoolMeta::WithdrawIdleBalance {
@@ -3216,13 +3230,17 @@ impl FederationV2 {
         // 2. The submitter of the TX might not be the sender or the recipient
 
         let operation_id = spv2.transfer(signed_request, meta).await?;
-        self.spawn_cancellable("subscribe_spv2_transfer", move |fed| async move {
-            fed.subscribe_spv2_transfer(operation_id).await
-        });
+        self.subscribe_to_operation(operation_id).await?;
         Ok(operation_id)
     }
 
-    async fn subscribe_spv2_transfer(&self, operation_id: OperationId) {
+    async fn subscribe_spv2_transfer(
+        &self,
+        operation_id: OperationId,
+        txid: TransactionId,
+        signed_request: SignedTransferRequest,
+        extra_meta: serde_json::Value,
+    ) {
         let Ok(spv2) = self.client.spv2() else {
             return;
         };
@@ -3234,6 +3252,31 @@ impl FederationV2 {
                 // Force sync spv2 once TX is accepted
                 if matches!(state, StabilityPoolTransferOperationState::Success) {
                     self.spv2_force_sync();
+                    // send multispend completion notification
+                    match serde_json::from_value::<SPv2TransferMetadata>(extra_meta.clone()) {
+                        Ok(SPv2TransferMetadata::MultispendDeposit { room }) => {
+                            self.multispend_services
+                                .completion_notification
+                                .add_deposit_notification(
+                                    room,
+                                    signed_request.details().amount(),
+                                    txid,
+                                )
+                                .await;
+                        }
+                        Ok(SPv2TransferMetadata::MultispendWithdrawal { room, request_id }) => {
+                            self.multispend_services
+                                .completion_notification
+                                .add_withdrawal_notification(
+                                    room,
+                                    request_id,
+                                    signed_request.details().amount(),
+                                    txid,
+                                )
+                                .await;
+                        }
+                        Ok(SPv2TransferMetadata::StableBalance { .. }) | Err(_) => {}
+                    }
                 }
                 self.update_operation_state(operation_id, state.clone())
                     .await;
@@ -3246,7 +3289,7 @@ impl FederationV2 {
         }
     }
 
-    async fn spv2_user_op_history_item(
+    pub async fn spv2_user_op_history_item(
         &self,
         txid: TransactionId,
     ) -> Option<UserOperationHistoryItem> {
@@ -4072,6 +4115,14 @@ impl FederationV2 {
         let key = spv2.derive_multispend_group_key(group_id);
         let message = secp256k1::Message::from(&TransferRequestId::from(transfer_request));
         Ok(key.sign_schnorr(message))
+    }
+
+    pub async fn multispend_group_sync_info(
+        &self,
+        account_id: AccountId,
+    ) -> anyhow::Result<SyncResponse> {
+        let spv2 = self.client.spv2()?;
+        Ok(spv2.api.account_sync(account_id).await?)
     }
 }
 

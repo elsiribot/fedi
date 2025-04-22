@@ -28,7 +28,6 @@ use matrix_sdk::RoomInfo;
 use mime::Mime;
 use serde::de::DeserializeOwned;
 use serde::{Deserialize, Serialize};
-use stability_pool_client::api::StabilityPoolApiExt;
 use stability_pool_client::common::{FiatAmount, FiatOrAll};
 pub use tokio;
 use tracing::{error, info, instrument, Level};
@@ -64,8 +63,8 @@ use crate::matrix::{
 use crate::observable::{Observable, ObservableVec};
 use crate::storage::{DeviceIdentifier, FiatFXInfo};
 use crate::types::{
-    federation_v2_to_rpc_federation, FrontendMetadata, GuardianStatus, RpcBridgeStatus,
-    RpcCommunity, RpcDeviceIndexAssignmentStatus, RpcEcashInfo, RpcEventId,
+    federation_v2_to_rpc_federation, FrontendMetadata, GuardianStatus, NetworkError,
+    RpcBridgeStatus, RpcCommunity, RpcDeviceIndexAssignmentStatus, RpcEcashInfo, RpcEventId,
     RpcFederationMaybeLoading, RpcFederationPreview, RpcFeeDetails, RpcFiatAmount,
     RpcGenerateEcashResponse, RpcLightningGateway, RpcMediaUploadParams, RpcNostrPubkey,
     RpcNostrSecret, RpcPayAddressResponse, RpcRegisteredDevice, RpcSPv2CachedSyncResponse,
@@ -927,20 +926,23 @@ async fn matrixInit(bridge: &BridgeFull) -> anyhow::Result<()> {
     }
     let nostr_pubkey = bridge.runtime.get_nostr_pubkey().await?.npub;
     let matrix_secret = bridge.runtime.get_matrix_secret().await;
+    let matrix = Matrix::init(
+        bridge.runtime.clone(),
+        &bridge.runtime.storage.platform_path("matrix".as_ref()),
+        &matrix_secret,
+        &nostr_pubkey,
+        GLOBAL_MATRIX_SERVER.to_owned(),
+        GLOBAL_MATRIX_SLIDING_SYNC_PROXY.to_owned(),
+        bridge.multispend_services.clone(),
+    )
+    .await?;
     bridge
         .matrix
-        .set(
-            Matrix::init(
-                bridge.runtime.clone(),
-                &bridge.runtime.storage.platform_path("matrix".as_ref()),
-                &matrix_secret,
-                &nostr_pubkey,
-                GLOBAL_MATRIX_SERVER.to_owned(),
-                GLOBAL_MATRIX_SLIDING_SYNC_PROXY.to_owned(),
-            )
-            .await?,
-        )
+        .set(matrix.clone())
         .map_err(|_| anyhow::anyhow!("matrix already initialized"))?;
+    if matrix.is_multispend_enabled() {
+        bridge.start_multispend_services(matrix);
+    }
     Ok(())
 }
 
@@ -1610,7 +1612,8 @@ async fn matrixObserveMultispendGroup(
 async fn matrixMultispendAccountInfo(
     bridge: &BridgeFull,
     room_id: RpcRoomId,
-) -> anyhow::Result<RpcSPv2SyncResponse> {
+    observable_id: u32,
+) -> anyhow::Result<Observable<Result<RpcSPv2SyncResponse, NetworkError>>> {
     let matrix = bridge.matrix.get().context("matrix not initialized")?;
     let finalized_group = matrix
         .get_multispend_finalized_group(room_id.clone())
@@ -1620,12 +1623,10 @@ async fn matrixMultispendAccountInfo(
         .federations
         .get_federation(&finalized_group.federation_id.0)?;
     fed.ensure_multispend_feature()?;
-    let spv2 = fed.client.spv2()?;
-    Ok(spv2
-        .api
-        .account_sync(finalized_group.spv2_account.id())
-        .await?
-        .into())
+    let room_id = room_id.into_typed()?;
+    matrix
+        .observe_multispend_account_info(observable_id.into(), fed, room_id, &finalized_group)
+        .await
 }
 
 #[macro_rules_derive(rpc_method!)]
@@ -2134,7 +2135,6 @@ pub mod tests {
     use crate::event::{DeviceRegistrationEvent, TransactionEvent};
     use crate::features::RuntimeEnvironment;
     use crate::federation::federation_sm::FederationState;
-    use crate::federation::federation_v2::client::ClientExt;
     use crate::federation::federation_v2::FederationV2;
     use crate::ffi::PathBasedStorage;
     use crate::storage::{DeviceIdentifier, FediFeeSchedule, IStorage};
