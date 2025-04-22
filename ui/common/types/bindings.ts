@@ -84,6 +84,7 @@ export type ErrorCode =
   | "timeout"
   | "recovery"
   | { invalidJson: string }
+  | { unsupportedCommunityVersion: number }
   | "payLnInvoiceAlreadyPaid"
   | "payLnInvoiceAlreadyInProgress"
   | "noLnGatewayAvailable"
