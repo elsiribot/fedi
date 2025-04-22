@@ -586,9 +586,12 @@
             "multispend-title": "<bold>Multispend</bold>: Simple Way to Manage Shared Money",
             "n-voters-selected": "{{count}} voters selected",
             "n-voters-selected-max": "<bold>{{count}}</bold> voters selected (Max: 21)",
+            "no-pending-requests": "No pending withdrawal requests",
+            "no-requests-notice": "Deposit funds to grow the shared pool or request a withdrawal if you need funds.",
             "reject-invite-message": "Are you sure you want to reject this Multispend invitation?",
             "waiting-for-approval": "Waiting for approval",
             "wallet-community-description": "Your group's money is linked to a wallet community. You need this to send or receive money.",
+            "withdrawal-requests": "Withdrawal Requests",
             "x-n-votes-required": "{{x}}/{{n}} votes required",
             "yes-abort": "Yes, Abort",
             "yes-reject": "Yes, Reject"
