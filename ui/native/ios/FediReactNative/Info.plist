@@ -78,7 +78,12 @@
 		<dict>
 			<key>internet.fedi.xyz</key>
 			<dict>
-				<key>NSAllowsArbitraryLoadsInWebContent</key>
+				<key>NSExceptionAllowsInsecureHTTPLoads</key>
+				<true/>
+			</dict>
+			<key>wifi.fedi.xyz</key>
+			<dict>
+				<key>NSExceptionAllowsInsecureHTTPLoads</key>
 				<true/>
 			</dict>
 		</dict>
