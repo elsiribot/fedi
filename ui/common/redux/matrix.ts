@@ -11,6 +11,7 @@ import { v4 as uuidv4 } from 'uuid'
 
 import {
     CommonState,
+    selectBtcUsdExchangeRate,
     selectGlobalCommunityMeta,
     selectLoadedFederation,
     selectLoadedFederations,
@@ -41,14 +42,17 @@ import {
     MatrixUser,
     MultispendRole,
     Sats,
+    UsdCents,
 } from '../types'
 import {
     FrontendMetadata,
     GroupInvitation,
+    NetworkError,
     RpcBackPaginationStatus,
     RpcMultispendGroupStatus,
     RpcRoomId,
     RpcRoomNotificationMode,
+    RpcSPv2SyncResponse,
 } from '../types/bindings'
 import amountUtils from '../utils/AmountUtils'
 import { getFederationGroupChats } from '../utils/FederationUtils'
@@ -113,6 +117,10 @@ const initialState = {
     roomMultispendStatus: {} as Record<
         MatrixRoom['id'],
         RpcMultispendGroupStatus | undefined
+    >,
+    roomMultispendAccountInfo: {} as Record<
+        MatrixRoom['id'],
+        { Ok: RpcSPv2SyncResponse } | { Err: NetworkError } | undefined
     >,
     users: {} as Record<MatrixUser['id'], MatrixUser | undefined>,
     ignoredUsers: [] as MatrixUser['id'][],
@@ -1841,3 +1849,49 @@ export const selectMultispendInvite = (
     if (!multispendStatus) return null
     return getMultispendInvite(multispendStatus)
 }
+
+export const selectMatrixRoomMultispendAccountInfo = (
+    s: CommonState,
+    roomId: string,
+) => {
+    return s.matrix.roomMultispendAccountInfo[roomId]
+}
+
+export const selectMultispendBalanceCents = createSelector(
+    selectMatrixRoomMultispendAccountInfo,
+    accountInfo => {
+        if (!accountInfo || 'Err' in accountInfo) return 0 as UsdCents
+
+        const { lockedBalance, currCycleStartPrice } = accountInfo.Ok
+
+        const balanceMsats = lockedBalance
+        const balanceCents = Number(
+            amountUtils
+                .msatToFiat(balanceMsats, currCycleStartPrice)
+                .toFixed(0),
+        ) as UsdCents
+
+        return balanceCents
+    },
+)
+
+export const selectMultispendBalance = createSelector(
+    selectMultispendBalanceCents,
+    (s: CommonState) => selectBtcUsdExchangeRate(s),
+    (balanceCents, btcUsdExchangeRate) => {
+        return amountUtils.convertCentsToOtherFiat(
+            balanceCents,
+            btcUsdExchangeRate,
+            btcUsdExchangeRate,
+        )
+    },
+)
+
+export const selectMultispendBalanceSats = createSelector(
+    selectMultispendBalanceCents,
+    (s: CommonState) => selectBtcUsdExchangeRate(s),
+    (balanceCents, btcUsdExchangeRate) => {
+        const balanceDollars = balanceCents / 100
+        return amountUtils.fiatToSat(balanceDollars, btcUsdExchangeRate)
+    },
+)

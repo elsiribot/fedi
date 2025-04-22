@@ -23,6 +23,7 @@ import {
 } from '../types'
 import {
     JSONObject,
+    NetworkError,
     ObservableVecUpdate,
     RpcBackPaginationStatus,
     RpcMatrixAccountSession,
@@ -31,6 +32,7 @@ import {
     RpcRoomId,
     RpcRoomMember,
     RpcRoomNotificationMode,
+    RpcSPv2SyncResponse,
     RpcSyncIndicator,
     RpcTimelineItem,
 } from '../types/bindings'
@@ -87,6 +89,10 @@ interface MatrixChatClientEventMap {
         roomId: MatrixRoom['id']
         status: RpcMultispendGroupStatus | null
     }
+    multispendAccountUpdate: {
+        roomId: MatrixRoom['id']
+        info: { Ok: RpcSPv2SyncResponse } | { Err: NetworkError } | null
+    }
     user: MatrixUser
     error: MatrixError
     auth: MatrixAuth
@@ -111,6 +117,10 @@ export class MatrixChatClient {
         UnsubscribeFn | undefined
     > = {}
     private multispendUnsubscribeMap: Record<
+        MatrixRoom['id'],
+        UnsubscribeFn | undefined
+    > = {}
+    private multispendAccountUnsubscribeMap: Record<
         MatrixRoom['id'],
         UnsubscribeFn | undefined
     > = {}
@@ -231,8 +241,14 @@ export class MatrixChatClient {
                 err,
             })
         })
-        this.observeMultispend(roomId).catch(err => {
+        this.observeMultispendGroup(roomId).catch(err => {
             log.warn('Failed to observe multispend group', { roomId, err })
+        })
+        this.observeMultispendAccountInfo(roomId).catch(err => {
+            log.warn('Failed to observe multispend account info', {
+                roomId,
+                err,
+            })
         })
         this.observeRoomTimeline(roomId).catch(err => {
             log.warn('Failed to observe room', { roomId, err })
@@ -671,7 +687,7 @@ export class MatrixChatClient {
         this.roomInfoUnsubscribeMap[roomId] = unsubscribe
     }
 
-    private async observeMultispend(roomId: string) {
+    private async observeMultispendGroup(roomId: string) {
         if (this.multispendUnsubscribeMap[roomId] !== undefined) return
 
         const unsubscribe =
@@ -690,6 +706,28 @@ export class MatrixChatClient {
             )
 
         this.multispendUnsubscribeMap[roomId] = unsubscribe
+    }
+
+    private async observeMultispendAccountInfo(roomId: string) {
+        if (this.multispendAccountUnsubscribeMap[roomId] !== undefined) return
+
+        const unsubscribe = this.fedimint.subscribeObservableSimple<
+            { Ok: RpcSPv2SyncResponse } | { Err: NetworkError } | null
+        >(
+            observableId =>
+                this.fedimint.matrixMultispendAccountInfo({
+                    roomId,
+                    observableId,
+                }),
+            update => {
+                this.emit('multispendAccountUpdate', {
+                    roomId,
+                    info: update,
+                })
+            },
+        )
+
+        this.multispendAccountUnsubscribeMap[roomId] = unsubscribe
     }
 
     private async observeRoomTimeline(roomId: string) {
