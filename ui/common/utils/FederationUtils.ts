@@ -344,12 +344,19 @@ export const shouldShowSocialRecovery = (federation: LoadedFederation) => {
         return false
     }
 
-    return (
+    const moduleEnabled = hasSocialModule(federation)
+
+    // if social_recovery_disabled meta field is:
+    // not set      => true (enabled)
+    // set to false => true (enabled)
+    // set to true  => false (disabled)
+    const isNotDisabledInMeta =
         getMetaField(
             SupportedMetaFields.social_recovery_disabled,
             federation.meta,
         ) !== 'true'
-    )
+
+    return moduleEnabled && isNotDisabledInMeta
 }
 
 export const shouldShowOfflineWallet = (
