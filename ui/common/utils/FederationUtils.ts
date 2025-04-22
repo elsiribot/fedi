@@ -339,11 +339,6 @@ export const shouldShowJoinFederation = (metadata: FederationMetadata) => {
 }
 
 export const shouldShowSocialRecovery = (federation: LoadedFederation) => {
-    // Social recovery not supported on v0 federations
-    if (federation.version === 0) {
-        return false
-    }
-
     const moduleEnabled = hasSocialModule(federation)
 
     // if social_recovery_disabled meta field is:

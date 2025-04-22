@@ -102,7 +102,6 @@ pub struct RpcFederation {
     pub recovering: bool,
     #[ts(type = "Record<string, {url: string, name: string}>")]
     pub nodes: BTreeMap<RpcPeerId, PeerUrl>,
-    pub version: u32,
     pub client_config: Option<RpcJsonClientConfig>,
     pub fedi_fee_schedule: RpcFediFeeSchedule,
     pub had_reused_ecash: bool,
@@ -215,7 +214,6 @@ pub struct RpcFederationPreview {
 pub struct RpcCommunity {
     pub invite_code: String,
     pub name: String,
-    pub version: u32,
     pub meta: BTreeMap<String, String>,
 }
 
@@ -339,7 +337,6 @@ pub async fn federation_v2_to_rpc_federation(federation: &FederationV2) -> RpcFe
         meta,
         nodes,
         recovering: federation.recovering(),
-        version: 2,
         client_config: Some(RpcJsonClientConfig {
             global: client_config_json.global,
             modules: client_config_json.modules,

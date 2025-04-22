@@ -388,7 +388,6 @@ export type RpcBridgeStatus = {
 export type RpcCommunity = {
   inviteCode: string;
   name: string;
-  version: number;
   meta: { [key in string]?: string };
 };
 
@@ -427,7 +426,6 @@ export type RpcFederation = {
   meta: { [key in string]?: string };
   recovering: boolean;
   nodes: Record<string, { url: string; name: string }>;
-  version: number;
   clientConfig: RpcJsonClientConfig | null;
   fediFeeSchedule: RpcFediFeeSchedule;
   hadReusedEcash: boolean;
