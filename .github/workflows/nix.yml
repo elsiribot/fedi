@@ -26,7 +26,7 @@ concurrency:
 jobs:
     precheck:
         name: 'Check for non-UI file changes'
-        runs-on: [self-hosted, linux, legacy]
+        runs-on: [self-hosted, linux]
         outputs:
             IS_PUSH_TO_MASTER: ${{ steps.check-event.outputs.IS_PUSH_TO_MASTER }}
             IS_PUSH_TO_TAG: ${{ steps.check-event.outputs.IS_PUSH_TO_TAG }}
@@ -73,7 +73,7 @@ jobs:
         if: >
             needs.precheck.outputs.HAS_NON_UI_CHANGES == '1' ||
             needs.precheck.outputs.IS_PUSH_TO_MASTER == '1'
-        runs-on: [self-hosted, linux, legacy]
+        runs-on: [self-hosted, linux]
         timeout-minutes: 5
         steps:
             - uses: actions/checkout@v4
@@ -99,7 +99,7 @@ jobs:
               - macos
             include:
               - host: linux
-                runs-on: [self-hosted, linux, legacy]
+                runs-on: [self-hosted, linux]
                 run-tests: true
                 build-wasm: true
               - host: macos
