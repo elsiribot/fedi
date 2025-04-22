@@ -81,6 +81,12 @@
 				<key>NSExceptionAllowsInsecureHTTPLoads</key>
 				<true/>
 			</dict>
+			<!-- This is a backup domain for the same purpose as internet.fedi.xyz -->
+			<key>connect.fedi.xyz</key>
+			<dict>
+				<key>NSExceptionAllowsInsecureHTTPLoads</key>
+				<true/>
+			</dict>
 		</dict>
 	</dict>
 	<key>MinimumOSVersion</key>
