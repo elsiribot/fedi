@@ -127,7 +127,7 @@ export enum MatrixPowerLevel {
     Admin = 100,
 }
 
-export type MultispendRole = 'voter' | 'proposer'
+export type MultispendRole = 'member' | 'voter' | 'proposer'
 
 export interface MatrixSearchResults {
     results: MatrixUser[]

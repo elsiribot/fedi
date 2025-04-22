@@ -44,11 +44,11 @@ import {
 } from '../types'
 import {
     FrontendMetadata,
+    GroupInvitation,
     RpcBackPaginationStatus,
     RpcMultispendGroupStatus,
     RpcRoomId,
     RpcRoomNotificationMode,
-    RpcUserId,
 } from '../types/bindings'
 import amountUtils from '../utils/AmountUtils'
 import { getFederationGroupChats } from '../utils/FederationUtils'
@@ -58,6 +58,8 @@ import { makeLog } from '../utils/log'
 import {
     MatrixEventContentType,
     doesEventContentMatchPreviewMedia,
+    getMultispendInvite,
+    getMultispendRole,
     getReceivablePaymentEvents,
     getRoomEventPowerLevel,
     getUserSuffix,
@@ -1814,26 +1816,9 @@ export const selectMyMultispendRole = (
     const multispendStatus = selectMatrixRoomMultispendStatus(s, roomId)
     const myId = selectMatrixAuth(s)?.userId
 
-    if (!myId) return null
+    if (!myId || !multispendStatus) return null
 
-    let signers: Array<RpcUserId> = []
-    let proposer: RpcUserId | null = null
-    if (multispendStatus?.status === 'activeInvitation') {
-        signers = multispendStatus.state.invitation.signers
-        proposer = multispendStatus.state.proposer
-    } else if (multispendStatus?.status === 'finalized') {
-        signers = multispendStatus.finalized_group.invitation.signers
-        proposer = multispendStatus.finalized_group.proposer
-    }
-
-    const isVoter = signers.includes(myId)
-    const isProposer = proposer === myId
-
-    if (!isVoter) return null
-
-    if (isProposer) return 'proposer'
-
-    return 'voter'
+    return getMultispendRole(multispendStatus, myId)
 }
 
 export const selectMultispendRole = (
@@ -1843,24 +1828,16 @@ export const selectMultispendRole = (
 ): MultispendRole | null => {
     const multispendStatus = selectMatrixRoomMultispendStatus(s, roomId)
 
-    if (!userId) return null
+    if (!userId || !multispendStatus) return null
 
-    let signers: Array<RpcUserId> = []
-    let proposer: RpcUserId | null = null
-    if (multispendStatus?.status === 'activeInvitation') {
-        signers = multispendStatus.state.invitation.signers
-        proposer = multispendStatus.state.proposer
-    } else if (multispendStatus?.status === 'finalized') {
-        signers = multispendStatus.finalized_group.invitation.signers
-        proposer = multispendStatus.finalized_group.proposer
-    }
+    return getMultispendRole(multispendStatus, userId)
+}
 
-    const isVoter = signers.includes(userId)
-    const isProposer = proposer === userId
-
-    if (!isVoter) return null
-
-    if (isProposer) return 'proposer'
-
-    return 'voter'
+export const selectMultispendInvite = (
+    s: CommonState,
+    roomId: string,
+): GroupInvitation | null => {
+    const multispendStatus = selectMatrixRoomMultispendStatus(s, roomId)
+    if (!multispendStatus) return null
+    return getMultispendInvite(multispendStatus)
 }

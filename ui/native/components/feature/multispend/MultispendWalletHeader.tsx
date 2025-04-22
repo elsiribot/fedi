@@ -1,22 +1,18 @@
 import { useNavigation } from '@react-navigation/native'
 import { Text, Theme, useTheme } from '@rneui/themed'
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Linking, StyleSheet, View } from 'react-native'
 import { Pressable } from 'react-native-gesture-handler'
 import LinearGradient from 'react-native-linear-gradient'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 
-import { useToast } from '@fedi/common/hooks/toast'
 import {
-    matrixRejectMultispendInvitation,
-    selectMatrixRoomMultispendStatus,
-    selectMyMultispendRole,
-} from '@fedi/common/redux'
-import { GroupInvitationWithKeys } from '@fedi/common/types/bindings'
+    useMultispendDisplayUtils,
+    useMultispendVoting,
+} from '@fedi/common/hooks/multispend'
 
 import { fedimint } from '../../../bridge'
-import { useAppDispatch, useAppSelector } from '../../../state/hooks'
 import { reset } from '../../../state/navigation'
 import CustomOverlay from '../../ui/CustomOverlay'
 import HoloCircle from '../../ui/HoloCircle'
@@ -33,88 +29,27 @@ const MultispendWalletHeader: React.FC<Props> = ({ roomId }) => {
     const style = styles(theme)
     const navigation = useNavigation()
     const insets = useSafeAreaInsets()
-    const multispendStatus = useAppSelector(s =>
-        selectMatrixRoomMultispendStatus(s, roomId),
-    )
-    const myMultispendRole = useAppSelector(s =>
-        selectMyMultispendRole(s, roomId),
-    )
-    const [isConfirmingAbort, setIsConfirmingAbort] = useState(false)
-    const [activeInvitation, setActiveInvitation] =
-        useState<GroupInvitationWithKeys | null>(null)
-    const [isLoading, setIsLoading] = useState(false)
-    const toast = useToast()
-    const dispatch = useAppDispatch()
+    const {
+        isProposer,
+        isConfirmingAbort,
+        setIsConfirmingAbort,
+        abortConfirmationContents,
+        rejectConfirmationContents,
+    } = useMultispendVoting({ t, fedimint, roomId })
 
-    const isAdmin = myMultispendRole === 'proposer'
+    const {
+        walletHeader: { federationName, status, threshold, totalSigners },
+    } = useMultispendDisplayUtils(t, roomId)
 
     const handleBack = useCallback(() => {
         navigation.dispatch(reset('ChatRoomConversation', { roomId }))
     }, [navigation, roomId])
-
-    const handleAbortMultispend = useCallback(async () => {
-        if (!isAdmin) return
-
-        setIsLoading(true)
-        try {
-            await fedimint.matrixCancelMultispendGroupInvitation({
-                roomId,
-            })
-            navigation.dispatch(
-                reset('ChatRoomConversation', {
-                    roomId,
-                }),
-            )
-        } catch (e) {
-            toast.error(t, e)
-        } finally {
-            setIsLoading(false)
-        }
-    }, [navigation, roomId, t, toast, isAdmin])
-
-    const handleRejectMultispend = useCallback(async () => {
-        if (isAdmin) return
-
-        setIsLoading(true)
-        try {
-            await dispatch(
-                matrixRejectMultispendInvitation({ roomId, fedimint }),
-            ).unwrap()
-            setIsConfirmingAbort(false)
-        } catch (e) {
-            toast.error(t, e)
-        } finally {
-            setIsLoading(false)
-        }
-    }, [isAdmin, dispatch, roomId, t, toast])
 
     const handleInfoPress = useCallback(() => {
         Linking.openURL(
             'https://support.fedi.xyz/hc/en-us/articles/20019791912466-What-is-Multispend',
         )
     }, [])
-
-    useEffect(() => {
-        async function loadActiveInvitation() {
-            if (multispendStatus?.status === 'activeInvitation') {
-                const eventData = await fedimint.matrixMultispendEventData({
-                    roomId,
-                    eventId: multispendStatus.active_invite_id,
-                })
-                if (
-                    eventData &&
-                    eventData !== 'invalidEvent' &&
-                    'groupInvitation' in eventData
-                ) {
-                    setActiveInvitation(eventData.groupInvitation)
-                }
-            }
-        }
-
-        loadActiveInvitation()
-    }, [multispendStatus, roomId])
-
-    if (multispendStatus?.status !== 'activeInvitation') return null
 
     return (
         <HoloGradient style={style.container} level="m500">
@@ -137,11 +72,7 @@ const MultispendWalletHeader: React.FC<Props> = ({ roomId }) => {
                 <View style={[style.headerSecondary, style.abortContainer]}>
                     <Pressable onPress={() => setIsConfirmingAbort(true)}>
                         <Text style={style.abortText} medium>
-                            {t(
-                                myMultispendRole === 'proposer'
-                                    ? 'words.abort'
-                                    : 'words.reject',
-                            )}
+                            {t(isProposer ? 'words.abort' : 'words.reject')}
                         </Text>
                     </Pressable>
                 </View>
@@ -159,7 +90,7 @@ const MultispendWalletHeader: React.FC<Props> = ({ roomId }) => {
                     />
                     <View style={style.walletInfo}>
                         <Text small bold style={style.infoText}>
-                            {multispendStatus.state.invitation.federationName}
+                            {federationName}
                         </Text>
                         <View style={style.balance}>
                             {/* TODO: balance */}
@@ -175,17 +106,14 @@ const MultispendWalletHeader: React.FC<Props> = ({ roomId }) => {
                     <View style={style.statusContainer}>
                         <View style={[style.badge, style.pendingBadge]}>
                             <Text tiny bold>
-                                {t('feature.multispend.waiting-for-approval')}
+                                {status}
                             </Text>
                         </View>
                         <View style={[style.badge]}>
                             <Text tiny bold>
                                 {t('feature.multispend.x-n-votes-required', {
-                                    x: Object.values(
-                                        activeInvitation?.pubkeys ?? {},
-                                    ).length,
-                                    n: multispendStatus.state.invitation.signers
-                                        .length,
+                                    x: threshold,
+                                    n: totalSigners,
                                 })}
                             </Text>
                         </View>
@@ -195,37 +123,11 @@ const MultispendWalletHeader: React.FC<Props> = ({ roomId }) => {
             <CustomOverlay
                 show={isConfirmingAbort}
                 onBackdropPress={() => setIsConfirmingAbort(false)}
-                contents={{
-                    icon: 'Info',
-                    title: t(
-                        isAdmin
-                            ? 'feature.multispend.abort-multispend-setup'
-                            : 'feature.multispend.abort-multispend-setup',
-                    ),
-                    description: t(
-                        isAdmin
-                            ? 'feature.multispend.abort-group-message'
-                            : 'feature.multispend.reject-invite-message',
-                    ),
-                    buttons: [
-                        {
-                            text: t('words.cancel'),
-                            onPress: () => setIsConfirmingAbort(false),
-                        },
-                        {
-                            text: t(
-                                isAdmin
-                                    ? 'feature.multispend.yes-abort'
-                                    : 'feature.multispend.yes-reject',
-                            ),
-                            primary: true,
-                            disabled: isLoading,
-                            onPress: isAdmin
-                                ? handleAbortMultispend
-                                : handleRejectMultispend,
-                        },
-                    ],
-                }}
+                contents={
+                    isProposer
+                        ? abortConfirmationContents
+                        : rejectConfirmationContents
+                }
             />
         </HoloGradient>
     )

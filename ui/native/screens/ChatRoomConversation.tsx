@@ -4,6 +4,7 @@ import React, { useCallback, useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { StyleSheet, View } from 'react-native'
 
+import { useMultispendDisplayUtils } from '@fedi/common/hooks/multispend'
 import { useToast } from '@fedi/common/hooks/toast'
 import {
     addPreviewMedia,
@@ -45,6 +46,7 @@ const ChatRoomConversation: React.FC<Props> = ({ route }: Props) => {
     const room = useAppSelector(s => selectMatrixRoom(s, roomId))
     const groupPreview = useAppSelector(s => selectGroupPreview(s, roomId))
     const toast = useToast()
+    const { shouldShowHeader } = useMultispendDisplayUtils(t, roomId)
 
     const directUserId = useMemo(() => room?.directUserId, [room])
 
@@ -102,7 +104,7 @@ const ChatRoomConversation: React.FC<Props> = ({ route }: Props) => {
     const content = useMemo(() => {
         return (
             <>
-                <MultispendChatHeader roomId={roomId} />
+                {shouldShowHeader && <MultispendChatHeader roomId={roomId} />}
                 <ChatConversation
                     type={chatType}
                     id={roomId || ''}
@@ -128,6 +130,7 @@ const ChatRoomConversation: React.FC<Props> = ({ route }: Props) => {
         handleSend,
         room,
         newMessageBottomOffset,
+        shouldShowHeader,
     ])
 
     const style = useMemo(() => styles(theme), [theme])

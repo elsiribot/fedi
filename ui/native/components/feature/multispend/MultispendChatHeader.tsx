@@ -1,5 +1,6 @@
 import { useNavigation } from '@react-navigation/native'
 import { Text, Theme, useTheme } from '@rneui/themed'
+import { useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Pressable, StyleSheet, View } from 'react-native'
 
@@ -23,7 +24,27 @@ const MultispendChatHeader: React.FC<Props> = ({ roomId }) => {
 
     const style = styles(theme)
 
-    if (multispendStatus?.status !== 'activeInvitation') return null
+    const statusBadge = useMemo(() => {
+        switch (multispendStatus?.status) {
+            case 'activeInvitation':
+                return (
+                    <View style={[style.statusBadge, style.pendingStatusBadge]}>
+                        <Text small bold style={style.pendingStatusBadgeText}>
+                            {t('feature.multispend.waiting-for-approval')}
+                        </Text>
+                    </View>
+                )
+            case 'finalized':
+                return (
+                    <View style={[style.statusBadge, style.activeStatusBadge]}>
+                        <Text small bold style={style.activeStatusBadgeText}>
+                            {t('words.active')}
+                        </Text>
+                    </View>
+                )
+        }
+        return null
+    }, [multispendStatus, t, style])
 
     return (
         <Pressable
@@ -39,13 +60,7 @@ const MultispendChatHeader: React.FC<Props> = ({ roomId }) => {
                             {t('words.multispend')}
                         </Text>
                     </View>
-                    {multispendStatus.status === 'activeInvitation' && (
-                        <View style={style.statusBadge}>
-                            <Text small bold>
-                                {t('feature.multispend.waiting-for-approval')}
-                            </Text>
-                        </View>
-                    )}
+                    {statusBadge}
                 </View>
                 <SvgImage name="ChevronRight" color={theme.colors.grey} />
             </HoloGradient>
@@ -80,8 +95,21 @@ const styles = (theme: Theme) =>
             borderRadius: 4,
             paddingHorizontal: theme.spacing.sm,
             paddingVertical: theme.spacing.xxs,
+            alignSelf: 'flex-start',
+        },
+        pendingStatusBadge: {
             color: theme.colors.primary,
             backgroundColor: theme.colors.orange100,
+        },
+        pendingStatusBadgeText: {
+            color: theme.colors.orange,
+        },
+        activeStatusBadge: {
+            color: theme.colors.primary,
+            backgroundColor: theme.colors.green,
+        },
+        activeStatusBadgeText: {
+            color: theme.colors.white,
         },
     })
 

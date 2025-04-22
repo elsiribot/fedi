@@ -18,8 +18,14 @@ import {
     MatrixRoomPowerLevels,
     MatrixTimelineItem,
     MatrixUser,
+    MultispendRole,
 } from '../types'
-import { RpcTimelineEventItemId } from '../types/bindings'
+import {
+    GroupInvitation,
+    RpcMultispendGroupStatus,
+    RpcTimelineEventItemId,
+    RpcUserId,
+} from '../types/bindings'
 import { makeLog } from './log'
 
 const log = makeLog('common/utils/matrix')
@@ -628,4 +634,72 @@ export const arePollEventsEqual = (
     }
 
     return true
+}
+
+export const getMultispendInvite = (
+    multispendStatus: RpcMultispendGroupStatus,
+): GroupInvitation | null => {
+    if (multispendStatus.status === 'inactive') return null
+    if (multispendStatus.status === 'activeInvitation')
+        return multispendStatus.state.invitation
+    if (multispendStatus.status === 'finalized')
+        return multispendStatus.finalized_group.invitation
+    return null
+}
+
+export const getMultispendRole = (
+    multispendStatus: RpcMultispendGroupStatus,
+    userId: RpcUserId,
+): MultispendRole => {
+    let signers: Array<RpcUserId> = []
+    let proposer: RpcUserId | null = null
+    if (multispendStatus?.status === 'activeInvitation') {
+        signers = multispendStatus.state.invitation.signers
+        proposer = multispendStatus.state.proposer
+    } else if (multispendStatus?.status === 'finalized') {
+        signers = multispendStatus.finalized_group.invitation.signers
+        proposer = multispendStatus.finalized_group.proposer
+    }
+
+    const isVoter = signers.includes(userId)
+    const isProposer = proposer === userId
+
+    if (isProposer) return 'proposer'
+    if (isVoter) return 'voter'
+
+    return 'member'
+}
+
+export const makeMultispendWalletHeader = (
+    t: TFunction,
+    multispendStatus: RpcMultispendGroupStatus | undefined,
+) => {
+    switch (multispendStatus?.status) {
+        case 'activeInvitation':
+            return {
+                federationName:
+                    multispendStatus.state.invitation.federationName,
+                status: t('feature.multispend.waiting-for-approval'),
+                threshold: multispendStatus.state.invitation.threshold,
+                totalSigners: multispendStatus.state.invitation.signers.length,
+            }
+        case 'finalized':
+            return {
+                federationName:
+                    multispendStatus.finalized_group.invitation.federationName,
+                status: t('words.active'),
+                threshold:
+                    multispendStatus.finalized_group.invitation.threshold,
+                totalSigners:
+                    multispendStatus.finalized_group.invitation.signers.length,
+            }
+        case 'inactive':
+        default:
+            return {
+                federationName: '',
+                status: t('words.canceled'),
+                threshold: 0,
+                totalSigners: 0,
+            }
+    }
 }
