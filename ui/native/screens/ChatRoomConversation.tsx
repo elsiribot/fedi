@@ -20,7 +20,7 @@ import ChatConversation from '../components/feature/chat/ChatConversation'
 import ChatPreviewConversation from '../components/feature/chat/ChatPreviewConversation'
 import MessageInput from '../components/feature/chat/MessageInput'
 import SelectedMessageOverlay from '../components/feature/chat/SelectedMessageOverlay'
-import MultispendChatHeader from '../components/feature/multispend/MultispendChatHeader'
+import MultispendChatBanner from '../components/feature/multispend/MultispendChatBanner'
 import HoloLoader from '../components/ui/HoloLoader'
 import { useAppDispatch, useAppSelector } from '../state/hooks'
 import type { RootStackParamList } from '../types/navigation'
@@ -104,7 +104,7 @@ const ChatRoomConversation: React.FC<Props> = ({ route }: Props) => {
     const content = useMemo(() => {
         return (
             <>
-                {shouldShowHeader && <MultispendChatHeader roomId={roomId} />}
+                {shouldShowHeader && <MultispendChatBanner roomId={roomId} />}
                 <ChatConversation
                     type={chatType}
                     id={roomId || ''}

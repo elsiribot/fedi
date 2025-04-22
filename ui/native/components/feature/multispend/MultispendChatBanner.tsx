@@ -14,7 +14,7 @@ type Props = {
     roomId: string
 }
 
-const MultispendChatHeader: React.FC<Props> = ({ roomId }) => {
+const MultispendChatBanner: React.FC<Props> = ({ roomId }) => {
     const { t } = useTranslation()
     const { theme } = useTheme()
     const navigation = useNavigation()
@@ -113,4 +113,4 @@ const styles = (theme: Theme) =>
         },
     })
 
-export default MultispendChatHeader
+export default MultispendChatBanner
