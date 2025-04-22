@@ -1,18 +1,14 @@
-import { useNavigation } from '@react-navigation/native'
 import { NativeStackScreenProps } from '@react-navigation/native-stack'
 import { useTranslation } from 'react-i18next'
+import { View } from 'react-native'
 
-import {
-    useMultispendDisplayUtils,
-    useMultispendVoting,
-} from '@fedi/common/hooks/multispend'
+import { useMultispendDisplayUtils } from '@fedi/common/hooks/multispend'
+import { selectMatrixRoomMultispendStatus } from '@fedi/common/redux'
 
-import { fedimint } from '../bridge'
-import AcceptMultispendInvitation from '../components/feature/multispend/AcceptMultispendInvitation'
-import GroupVoters from '../components/feature/multispend/GroupVoters'
 import MultispendWalletHeader from '../components/feature/multispend/MultispendWalletHeader'
-import { SafeAreaContainer } from '../components/ui/SafeArea'
-import { reset } from '../state/navigation'
+import MultispendFinalized from '../components/feature/multispend/finalized'
+import MultispendActiveInvitation from '../components/feature/multispend/invitation'
+import { useAppSelector } from '../state/hooks'
 import { RootStackParamList } from '../types/navigation'
 
 export type Props = NativeStackScreenProps<
@@ -22,27 +18,29 @@ export type Props = NativeStackScreenProps<
 
 const GroupMultispend: React.FC<Props> = ({ route }: Props) => {
     const { roomId } = route.params
+    const multispendStatus = useAppSelector(s =>
+        selectMatrixRoomMultispendStatus(s, roomId),
+    )
+
+    if (!multispendStatus)
+        throw new Error(
+            'GroupMultispend should not be shown unless multispend status is activeInvitation',
+        )
+
     const { t } = useTranslation()
-    const navigation = useNavigation()
-    const { canAccept } = useMultispendVoting({
-        t,
-        fedimint,
-        roomId,
-        onMultispendAborted: () => {
-            navigation.dispatch(reset('ChatRoomConversation', { roomId }))
-        },
-    })
 
     const { shouldShowHeader } = useMultispendDisplayUtils(t, roomId)
 
     return (
-        <SafeAreaContainer edges="bottom">
+        <View style={{ flex: 1 }}>
             {shouldShowHeader && <MultispendWalletHeader roomId={roomId} />}
-            <GroupVoters roomId={roomId} />
-            <SafeAreaContainer edges="horizontal" style={{ flex: 0 }}>
-                {canAccept && <AcceptMultispendInvitation roomId={roomId} />}
-            </SafeAreaContainer>
-        </SafeAreaContainer>
+            {multispendStatus.status === 'activeInvitation' && (
+                <MultispendActiveInvitation roomId={roomId} />
+            )}
+            {multispendStatus.status === 'finalized' && (
+                <MultispendFinalized roomId={roomId} />
+            )}
+        </View>
     )
 }
 

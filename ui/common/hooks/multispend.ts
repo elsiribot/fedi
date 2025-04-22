@@ -205,14 +205,19 @@ export function useMultispendDisplayUtils(t: TFunction, roomId: RpcRoomId) {
     const multispendStatus = useCommonSelector(s =>
         selectMatrixRoomMultispendStatus(s, roomId),
     )
-    const shouldShowHeader =
-        multispendStatus?.status === 'activeInvitation' ||
-        multispendStatus?.status === 'finalized'
+
+    const isActiveInvitation = multispendStatus?.status === 'activeInvitation'
+    const isFinalized = multispendStatus?.status === 'finalized'
+
+    const shouldShowHeader = isActiveInvitation || isFinalized
+
+    const shouldShowVoters = isActiveInvitation
 
     const walletHeader = makeMultispendWalletHeader(t, multispendStatus)
 
     return {
         shouldShowHeader,
+        shouldShowVoters,
         walletHeader,
     }
 }
