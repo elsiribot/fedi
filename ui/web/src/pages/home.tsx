@@ -1,24 +1,23 @@
-import Image from 'next/image'
+import Link from 'next/link'
 import { useTranslation } from 'react-i18next'
 
-import AwesomeFedimint from '@fedi/common/assets/images/awesome-fedimint.png'
+import ChatIcon from '@fedi/common/assets/svgs/chat.svg'
+import ArrowRightIcon from '@fedi/common/assets/svgs/chevron-right.svg'
 import { ErrorBoundary } from '@fedi/common/components/ErrorBoundary'
 import { selectFederations } from '@fedi/common/redux'
 
 import { BitcoinWallet } from '../components/BitcoinWallet'
 import { ContentBlock } from '../components/ContentBlock'
 import { FediModTiles } from '../components/FediModTiles'
+import { Icon } from '../components/Icon'
 import * as Layout from '../components/Layout'
-import PublicFederations from '../components/PublicFederations'
 import { Text } from '../components/Text'
 import { useAppSelector } from '../hooks'
-import { styled } from '../styles'
+import { styled, theme } from '../styles'
 
 function HomePage() {
     const { t } = useTranslation()
     const federations = useAppSelector(selectFederations)
-
-    const hasFederations = federations.length > 0
 
     return (
         <ContentBlock>
@@ -28,32 +27,45 @@ function HomePage() {
                 </Layout.Header>
                 <Layout.Content>
                     <Content>
-                        <IllustrationWrapper>
-                            <Image
-                                src={AwesomeFedimint}
-                                alt=""
-                                width={200}
-                                height={200}
-                            />
-                        </IllustrationWrapper>
-                        <IntroTextWrapper>
-                            <Text variant="h2" weight="medium">
-                                {t('feature.community.join-a-community')}
-                            </Text>
-                            <Text>
-                                {t('feature.community.join-community-guidance')}
-                            </Text>
-                        </IntroTextWrapper>
-                        {hasFederations ? (
-                            <>
-                                <BitcoinWallet />
-                                <ErrorBoundary fallback={null}>
-                                    <FediModTiles />
-                                </ErrorBoundary>
-                            </>
-                        ) : (
-                            <PublicFederations />
+                        <Section>
+                            <BitcoinWallet />
+                        </Section>
+                        {/* Hide community news section for now until designs and endpoints are are ready */}
+                        {federations.length === 0 && (
+                            <Section>
+                                <Title variant="h2">
+                                    {t('feature.home.community-news-title')}
+                                </Title>
+                                <SubTitle variant="body">
+                                    <JoinBlock href="/onboarding">
+                                        <EmptyBlockIcon>
+                                            <Icon icon={ChatIcon} />
+                                        </EmptyBlockIcon>
+                                        <EmptyBlockText>
+                                            {t(
+                                                'feature.home.community-updates',
+                                            )}
+                                        </EmptyBlockText>
+                                        <EmptyBlockArrow>
+                                            <Icon icon={ArrowRightIcon} />
+                                        </EmptyBlockArrow>
+                                    </JoinBlock>
+                                </SubTitle>
+                            </Section>
                         )}
+                        <Section>
+                            <Title variant="h2">
+                                {t('feature.home.community-mods-title')}
+                            </Title>
+                            <SubTitle variant="body">
+                                {t('feature.home.services-selected')}
+                            </SubTitle>
+                            <ErrorBoundary fallback={null}>
+                                <FediModTiles
+                                    isFederation={federations.length > 0}
+                                />
+                            </ErrorBoundary>
+                        </Section>
                     </Content>
                 </Layout.Content>
             </Layout.Root>
@@ -67,17 +79,44 @@ const Content = styled('div', {
     gap: 20,
 })
 
-const IllustrationWrapper = styled('div', {
-    display: 'flex',
-    justifyContent: 'center',
-    padding: 16,
+const Section = styled('div', {
+    marginBottom: 20,
 })
 
-const IntroTextWrapper = styled('div', {
+const Title = styled(Text, {})
+
+const SubTitle = styled(Text, {
+    color: theme.colors.darkGrey,
+})
+
+const JoinBlock = styled(Link, {
+    alignItems: 'center',
+    background: theme.colors.offWhite,
+    borderRadius: 20,
+    boxSizing: 'border-box',
+    color: theme.colors.night,
+    display: 'flex',
+    gap: 10,
+    padding: 20,
+})
+
+const EmptyBlockIcon = styled('div', {
+    alignItems: 'center',
+    display: 'flex',
+    width: 30,
+})
+
+const EmptyBlockText = styled('div', {
     display: 'flex',
     flexDirection: 'column',
-    gap: 10,
-    textAlign: 'center',
+    flex: 1,
+    textAlign: 'left',
+})
+
+const EmptyBlockArrow = styled('div', {
+    alignItems: 'center',
+    display: 'flex',
+    width: 20,
 })
 
 export default HomePage

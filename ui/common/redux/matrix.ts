@@ -85,6 +85,7 @@ const getMatrixClient = () => {
 /*** Initial State ***/
 
 const initialState = {
+    setup: false,
     started: false,
     auth: null as null | MatrixAuth,
     status: MatrixSyncStatus.uninitialized,
@@ -138,6 +139,9 @@ export const matrixSlice = createSlice({
     name: 'matrix',
     initialState,
     reducers: {
+        setMatrixSetup(state, action: PayloadAction<boolean>) {
+            state.setup = action.payload
+        },
         setMatrixStatus(state, action: PayloadAction<MatrixState['status']>) {
             state.status = action.payload
         },
@@ -492,6 +496,7 @@ export const matrixSlice = createSlice({
 /*** Basic actions ***/
 
 export const {
+    setMatrixSetup,
     setMatrixStatus,
     setMatrixAuth,
     addMatrixRoomInfo,

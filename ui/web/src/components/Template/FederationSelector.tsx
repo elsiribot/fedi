@@ -66,7 +66,7 @@ export const FederationSelector: React.FC = () => {
                 )
             })}
             <li>
-                <FederationItem add as={Link} href="/onboarding/communities">
+                <FederationItem add as={Link} href="/onboarding">
                     <Icon icon={PlusIcon} size="sm" />
                     <Text variant="caption" weight="bold">
                         {t('feature.federations.join-federation')}

@@ -554,6 +554,7 @@
             "community-description-join": "Got an invite? Scan or paste the code to unlock access to a private or public community.",
             "community-description-create": "Think of the community as a safe home for your personal wallet. Join or create your own.",
             "community-updates": "Get updates by joining a community.",
+            "community-mods-title": "Community Mods",
             "services-selected": "Services selected by your community.",
             "first-entry": "You’re In! What’s Next?",
             "first-entry-option-1": "Top up your wallet to send, receive, and save money.",
@@ -1020,6 +1021,7 @@
             "zendesk-initialization-failed": "We couldn't reach the support chat. Please check your internet connection and try again."
         },
         "wallet": {
+            "join-community": "Join a community to activate your wallet",
             "network-notice": "This community uses {{network}} SATS",
             "show-fiat-txn-amounts": "Show Fiat Transaction Amounts",
             "show-fiat-txn-amounts-info": "Transaction amounts will be displayed in the selected fiat currency"

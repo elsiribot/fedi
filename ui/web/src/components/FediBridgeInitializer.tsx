@@ -12,12 +12,16 @@ import {
     initializeNostrKeys,
     previewAllDefaultChats,
     refreshFederations,
-    selectHasSetMatrixDisplayName,
     selectSocialRecoveryQr,
     selectMatrixStarted,
     startMatrixClient,
+    setMatrixDisplayName,
+    setMatrixSetup,
+    selectMatrixStatus,
 } from '@fedi/common/redux'
 import { selectHasLoadedFromStorage } from '@fedi/common/redux/storage'
+import { MatrixSyncStatus } from '@fedi/common/types'
+import { generateRandomDisplayName } from '@fedi/common/utils/chat'
 import { formatErrorMessage } from '@fedi/common/utils/format'
 import { makeLog } from '@fedi/common/utils/log'
 
@@ -37,12 +41,13 @@ interface Props {
 export const FediBridgeInitializer: React.FC<Props> = ({ children }) => {
     const dispatch = useAppDispatch()
     const { t } = useTranslation()
-    const { pathname, query } = useRouter()
+    const { asPath, pathname, query } = useRouter()
 
     const started = useAppSelector(selectMatrixStarted)
     const hasLoadedStorage = useAppSelector(selectHasLoadedFromStorage)
     const socialRecoveryId = useAppSelector(selectSocialRecoveryQr)
-    const hasSetDisplayName = useAppSelector(selectHasSetMatrixDisplayName)
+    const isMatrixSetup = useAppSelector(s => s.matrix.setup)
+    const syncStatus = useAppSelector(selectMatrixStatus)
 
     const tRef = useUpdatingRef(t)
     const dispatchRef = useUpdatingRef(dispatch)
@@ -65,16 +70,16 @@ export const FediBridgeInitializer: React.FC<Props> = ({ children }) => {
             .then(status => {
                 log.info('bridgeStatus', status)
 
-                // if matrix has been setup (typically after creating a displayName)
-                // then start it here
+                // if matrix has been setup then make this available in state
                 if (status.matrixSetup) {
+                    dispatchRef.current(setMatrixSetup(true))
+
                     return dispatchRef
                         .current(startMatrixClient({ fedimint }))
                         .unwrap()
                 }
-
-                return null
             })
+
             .then(() => {
                 return Promise.all([
                     dispatchRef.current(
@@ -99,6 +104,20 @@ export const FediBridgeInitializer: React.FC<Props> = ({ children }) => {
             )
             .finally(() => setIsLoading(false))
     }, [dispatchRef, hasLoadedStorage, tRef])
+
+    // Listen for matrix "synced" so display name can be set
+    // This should only ever happen once because isMatrixSetup
+    // will always be true from this point
+    useEffect(() => {
+        if (syncStatus === MatrixSyncStatus.synced && !isMatrixSetup) {
+            dispatch(
+                setMatrixDisplayName({
+                    displayName: generateRandomDisplayName(2),
+                }),
+            )
+            dispatch(setMatrixSetup(true))
+        }
+    }, [dispatch, isMatrixSetup, syncStatus])
 
     // Show an error message if the bridge panics while running.
     useEffect(() => {
@@ -128,23 +147,35 @@ export const FediBridgeInitializer: React.FC<Props> = ({ children }) => {
         )
     }
 
-    // // If we're mid social recovery, force them to stay on the page
-    if (socialRecoveryId && pathname !== '/onboarding/recover/social') {
+    // If mid social recovery, force them to stay on the page
+    if (socialRecoveryId && asPath !== '/onboarding/recover/social') {
         return <Redirect path="/onboarding/recover/social" />
     }
 
-    // If they haven't set a display name, force them into onboarding
+    // If matrix hasn't been initialized redirect to Welcome page
+    // but allow access to onboarding/recovery routes
+    // (Note: we could move all recovery pages out of /onboarding route and into /recover)
     if (
-        !hasSetDisplayName &&
-        !pathname.startsWith('/onboarding') &&
-        pathname !== '/'
+        syncStatus === MatrixSyncStatus.uninitialized &&
+        pathname !== '/' &&
+        !asPath.includes('recover')
     ) {
         return <Redirect path="/" />
     }
 
-    // If display name has been set and no invite code then prevent
-    // user from accessing welcome page again
-    if (hasSetDisplayName && !query.invite_code && pathname === '/') {
+    // If invite code in query string but user has already onboarded
+    // then go straight to join federation page
+    if (query.invite_code && pathname === '/' && isMatrixSetup) {
+        return (
+            <Redirect
+                path={`/onboarding/join?invite_code=${query.invite_code}`}
+            />
+        )
+    }
+
+    // If user has onboarded and no invite code in query string then
+    // redirect user to /home
+    if (isMatrixSetup && !query.invite_code && asPath === '/') {
         return <Redirect path="/home" />
     }
 

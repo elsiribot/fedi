@@ -5,24 +5,14 @@ import { Trans, useTranslation } from 'react-i18next'
 import welcomeBackground from '@fedi/common/assets/images/welcome-bg.png'
 import FediLogo from '@fedi/common/assets/svgs/fedi-logo-icon.svg'
 import { useToast } from '@fedi/common/hooks/toast'
-import {
-    joinFederation,
-    selectFederationIds,
-    setActiveFederationId,
-    selectHasSetMatrixDisplayName,
-    selectIsMatrixReady,
-    setMatrixDisplayName,
-    startMatrixClient,
-} from '@fedi/common/redux'
-import { previewInvite } from '@fedi/common/utils/FederationUtils'
-import { generateRandomDisplayName } from '@fedi/common/utils/chat'
+import { startMatrixClient } from '@fedi/common/redux'
 import { makeLog } from '@fedi/common/utils/log'
 
 import { Button } from '../components/Button'
 import { ContentBlock } from '../components/ContentBlock'
 import * as Layout from '../components/Layout'
 import { Text } from '../components/Text'
-import { useAppDispatch, useAppSelector } from '../hooks'
+import { useAppDispatch } from '../hooks'
 import { fedimint } from '../lib/bridge'
 import { styled, theme } from '../styles'
 
@@ -30,14 +20,9 @@ const log = makeLog('WelcomePage')
 
 function WelcomePage() {
     const { t } = useTranslation()
-    const dispatch = useAppDispatch()
     const { query, push } = useRouter()
+    const dispatch = useAppDispatch()
     const toast = useToast()
-
-    const federationIds = useAppSelector(selectFederationIds)
-    const hasSetDisplayName = useAppSelector(selectHasSetMatrixDisplayName)
-    const isMatrixReady = useAppSelector(selectIsMatrixReady)
-
     const [inviteCode, setInviteCode] = useState<string | null>(null)
     const [loading, setLoading] = useState<boolean>(false)
 
@@ -49,46 +34,15 @@ function WelcomePage() {
 
     const handleOnContinue = async () => {
         try {
+            dispatch(startMatrixClient({ fedimint })).unwrap()
+
             // Return early if no invite code
             if (!inviteCode) {
-                push(hasSetDisplayName ? '/home' : '/onboarding/communities')
+                push('/onboarding')
                 return
             }
 
-            if (!fedimint) return
-
-            setLoading(true)
-
-            if (!isMatrixReady) {
-                await dispatch(startMatrixClient({ fedimint })).unwrap()
-            }
-
-            if (!hasSetDisplayName) {
-                await dispatch(
-                    setMatrixDisplayName({
-                        displayName: generateRandomDisplayName(2),
-                    }),
-                ).unwrap()
-            }
-
-            // Avoid attempt to join federation again
-            const fed = await previewInvite(fedimint, inviteCode)
-            dispatch(setActiveFederationId(fed.id))
-            if (federationIds.includes(fed.id)) {
-                push('/home')
-                return
-            }
-
-            await dispatch(
-                joinFederation({
-                    fedimint,
-                    code: inviteCode,
-                }),
-            ).unwrap()
-
-            setLoading(false)
-
-            push('/home')
+            push(`/onboarding/join?invite_code=${inviteCode}`)
         } catch (err) {
             log.error('handleJoin', err)
             toast.error(t, 'errors.invalid-federation-code')
