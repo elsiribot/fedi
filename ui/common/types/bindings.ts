@@ -246,7 +246,11 @@ export type MultispendEvent =
       fiatAmount: RpcFiatAmount;
       txid: RpcTransactionId;
     }
-  | { kind: "withdrawalRequest"; request: JSONObject; description: string }
+  | {
+      kind: "withdrawalRequest";
+      request: { transfer_amount: RpcFiatAmount };
+      description: string;
+    }
   | {
       kind: "withdrawalResponse";
       request: RpcEventId;
@@ -623,6 +627,10 @@ export type RpcMethods = {
   stabilityPoolAverageFeeRate: [stabilityPoolAverageFeeRate, bigint];
   stabilityPoolAvailableLiquidity: [stabilityPoolAvailableLiquidity, RpcAmount];
   spv2AccountInfo: [spv2AccountInfo, RpcSPv2CachedSyncResponse];
+  spv2ObserveAccountInfo: [
+    spv2ObserveAccountInfo,
+    Observable<RpcSPv2CachedSyncResponse>,
+  ];
   spv2NextCycleStartTime: [spv2NextCycleStartTime, bigint];
   spv2DepositToSeek: [spv2DepositToSeek, RpcOperationId];
   spv2Withdraw: [spv2Withdraw, RpcOperationId];
@@ -1345,7 +1353,7 @@ export type UserProfile = JSONObject;
  * Withdrawal request with extra data accumulated over events.
  */
 export type WithdrawRequestWithApprovals = {
-  request: JSONObject;
+  request: { transfer_amount: RpcFiatAmount };
   description: string;
   signatures: { [key in RpcUserId]?: RpcSignature };
   rejections: Array<RpcUserId>;
@@ -1794,6 +1802,11 @@ export type spv2DepositToSeek = {
 };
 
 export type spv2NextCycleStartTime = { federationId: RpcFederationId };
+
+export type spv2ObserveAccountInfo = {
+  federationId: RpcFederationId;
+  observableId: number;
+};
 
 export type spv2Withdraw = {
   federationId: RpcFederationId;

@@ -102,7 +102,7 @@ pub enum MultispendEvent {
     },
 
     WithdrawalRequest {
-        #[ts(type = "JSONObject")]
+        #[ts(type = "{ transfer_amount: RpcFiatAmount }")]
         request: TransferRequest,
         description: String,
     },
@@ -211,7 +211,7 @@ impl GroupInvitationWithKeys {
 #[ts(export)]
 /// Withdrawal request with extra data accumulated over events.
 pub struct WithdrawRequestWithApprovals {
-    #[ts(type = "JSONObject")]
+    #[ts(type = "{ transfer_amount: RpcFiatAmount }")]
     pub request: TransferRequest,
     pub description: String,
     pub signatures: BTreeMap<RpcUserId, RpcSignature>,
