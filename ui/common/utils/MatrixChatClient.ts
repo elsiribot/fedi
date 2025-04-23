@@ -23,6 +23,7 @@ import {
 } from '../types'
 import {
     JSONObject,
+    MultispendListedEvent,
     NetworkError,
     ObservableVecUpdate,
     RpcBackPaginationStatus,
@@ -92,6 +93,10 @@ interface MatrixChatClientEventMap {
     multispendAccountUpdate: {
         roomId: MatrixRoom['id']
         info: { Ok: RpcSPv2SyncResponse } | { Err: NetworkError } | null
+    }
+    multispendTransactions: {
+        roomId: MatrixRoom['id']
+        transactions: MultispendListedEvent[]
     }
     user: MatrixUser
     error: MatrixError
@@ -499,6 +504,22 @@ export class MatrixChatClient {
         const users = await this.fedimint.matrixListIgnoredUsers({})
         this.emit('ignoredUsers', users)
         return users
+    }
+
+    async fetchMultispendTransactions(roomId: string) {
+        try {
+            const transactions = await this.fedimint.matrixMultispendListEvents(
+                {
+                    roomId,
+                    startAfter: null,
+                    limit: 100,
+                },
+            )
+            this.emit('multispendTransactions', { roomId, transactions })
+            return transactions
+        } catch (error) {
+            log.warn('Failed to get transactions for roomId', roomId, error)
+        }
     }
 
     async roomKickUser(roomId: string, userId: string, reason?: string) {

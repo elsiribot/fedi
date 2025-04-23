@@ -1,5 +1,5 @@
 import type { TFunction } from 'i18next'
-import { useState, useMemo, useEffect } from 'react'
+import { useState, useMemo, useEffect, useCallback } from 'react'
 
 import {
     matrixApproveMultispendInvitation,
@@ -8,6 +8,8 @@ import {
     selectMatrixAuth,
     selectMyMultispendRole,
     selectWalletFederations,
+    selectMatrixRoomMultispendTransactions,
+    refreshMultispendTransactions,
 } from '../redux'
 import { RpcRoomId } from '../types/bindings'
 import { FedimintBridge } from '../utils/fedimint'
@@ -219,5 +221,34 @@ export function useMultispendDisplayUtils(t: TFunction, roomId: RpcRoomId) {
         shouldShowHeader,
         shouldShowVoters,
         walletHeader,
+    }
+}
+
+export function useMultispendTransactions(t: TFunction, roomId: RpcRoomId) {
+    const toast = useToast()
+    const dispatch = useCommonDispatch()
+    const [isLoading, setIsLoading] = useState(false)
+    const transactions = useCommonSelector(s =>
+        selectMatrixRoomMultispendTransactions(s, roomId),
+    )
+    const fetchTransactions = useCallback(async () => {
+        setIsLoading(true)
+        try {
+            await dispatch(refreshMultispendTransactions({ roomId })).unwrap()
+        } catch (e) {
+            toast.error(t, e)
+        } finally {
+            setIsLoading(false)
+        }
+    }, [dispatch, roomId, t, toast])
+
+    useEffect(() => {
+        fetchTransactions()
+    }, [fetchTransactions])
+
+    return {
+        isLoading,
+        transactions,
+        fetchTransactions,
     }
 }

@@ -47,6 +47,7 @@ import {
 import {
     FrontendMetadata,
     GroupInvitation,
+    MultispendListedEvent,
     NetworkError,
     RpcBackPaginationStatus,
     RpcMultispendGroupStatus,
@@ -121,6 +122,10 @@ const initialState = {
     roomMultispendAccountInfo: {} as Record<
         MatrixRoom['id'],
         { Ok: RpcSPv2SyncResponse } | { Err: NetworkError } | undefined
+    >,
+    roomMultispendTransactions: {} as Record<
+        MatrixRoom['id'],
+        MultispendListedEvent[] | undefined
     >,
     users: {} as Record<MatrixUser['id'], MatrixUser | undefined>,
     ignoredUsers: [] as MatrixUser['id'][],
@@ -270,6 +275,16 @@ export const matrixSlice = createSlice({
         ) {
             const { roomId, info } = action.payload
             state.roomMultispendAccountInfo[roomId] = info
+        },
+        setMatrixRoomMultispendTransactions(
+            state,
+            action: PayloadAction<{
+                roomId: MatrixRoom['id']
+                transactions: MultispendListedEvent[]
+            }>,
+        ) {
+            const { roomId, transactions } = action.payload
+            state.roomMultispendTransactions[roomId] = transactions
         },
         addMatrixError(state, action: PayloadAction<MatrixError>) {
             state.errors = [...state.errors, action.payload]
@@ -532,6 +547,7 @@ export const {
     setMatrixRoomNotificationMode,
     setMatrixRoomMultispendStatus,
     setMatrixRoomMultispendAccountInfo,
+    setMatrixRoomMultispendTransactions,
     addMatrixError,
     handleMatrixRoomListObservableUpdates,
     handleMatrixRoomTimelineObservableUpdates,
@@ -648,6 +664,16 @@ export const startMatrixClient = createAsyncThunk<
                 setMatrixRoomMultispendAccountInfo({
                     roomId: ev.roomId,
                     info: ev.info,
+                }),
+            )
+        }
+    })
+    client.on('multispendTransactions', ev => {
+        if (ev.transactions) {
+            dispatch(
+                setMatrixRoomMultispendTransactions({
+                    roomId: ev.roomId,
+                    transactions: ev.transactions,
                 }),
             )
         }
@@ -1203,6 +1229,15 @@ export const unignoreUser = createAsyncThunk<
     // Refresh the list of ignored users
     await client.listIgnoredUsers()
     return false
+})
+
+export const refreshMultispendTransactions = createAsyncThunk<
+    MultispendListedEvent[],
+    { roomId: MatrixRoom['id'] }
+>('matrix/refreshMultispendTransactions', async ({ roomId }) => {
+    const client = getMatrixClient()
+    const transactions = await client.fetchMultispendTransactions(roomId)
+    return transactions || []
 })
 
 export const listIgnoredUsers = createAsyncThunk<string[], void>(
@@ -1879,6 +1914,13 @@ export const selectMatrixRoomMultispendAccountInfo = (
     roomId: string,
 ) => {
     return s.matrix.roomMultispendAccountInfo[roomId]
+}
+
+export const selectMatrixRoomMultispendTransactions = (
+    s: CommonState,
+    roomId: string,
+) => {
+    return s.matrix.roomMultispendTransactions[roomId] || []
 }
 
 export const selectMultispendBalanceCents = createSelector(

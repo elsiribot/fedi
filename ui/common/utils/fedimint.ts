@@ -875,6 +875,12 @@ export class FedimintBridge {
         return this.rpcTyped('matrixMultispendAccountInfo', args)
     }
 
+    async matrixMultispendListEvents(
+        args: bindings.RpcPayload<'matrixMultispendListEvents'>,
+    ) {
+        return this.rpcTyped('matrixMultispendListEvents', args)
+    }
+
     async matrixMultispendEventData(
         args: bindings.RpcPayload<'matrixMultispendEventData'>,
     ) {
