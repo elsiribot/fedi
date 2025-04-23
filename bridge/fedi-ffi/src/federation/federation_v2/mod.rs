@@ -4164,7 +4164,6 @@ impl FederationV2 {
             },
         )
         .await?;
-        // FIXME: send post deposit notification
         Ok(())
     }
 
