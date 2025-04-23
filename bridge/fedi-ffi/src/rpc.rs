@@ -1768,6 +1768,8 @@ async fn matrixMultispendDeposit(
     bridge: &BridgeFull,
     room_id: RpcRoomId,
     amount: RpcFiatAmount,
+    description: String,
+    frontend_meta: FrontendMetadata,
 ) -> anyhow::Result<()> {
     let matrix = bridge.matrix.get().context("matrix not initialized")?;
     let finalized_group = matrix
@@ -1781,6 +1783,8 @@ async fn matrixMultispendDeposit(
         FiatAmount(amount.0),
         finalized_group.spv2_account.id(),
         room_id,
+        description,
+        frontend_meta,
     )
     .await?;
     Ok(())

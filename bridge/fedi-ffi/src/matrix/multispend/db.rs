@@ -231,6 +231,7 @@ pub enum MultispendPendingCompletionNotification {
         room_id: RpcRoomId,
         fiat_amount: RpcFiatAmount,
         txid: RpcTransactionId,
+        description: String,
     },
 }
 
@@ -271,10 +272,14 @@ impl MultispendPendingCompletionNotification {
             },
 
             MultispendPendingCompletionNotification::Deposit {
-                fiat_amount, txid, ..
+                fiat_amount,
+                txid,
+                description,
+                ..
             } => MultispendEvent::DepositNotification {
                 fiat_amount: *fiat_amount,
                 txid: *txid,
+                description: description.clone(),
             },
         }
     }

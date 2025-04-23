@@ -2675,9 +2675,12 @@ impl FederationV2 {
                 } => {
                     frontend_metadata =
                         match serde_json::from_value::<SPv2TransferMetadata>(extra_meta) {
-                            Ok(SPv2TransferMetadata::StableBalance { frontend_metadata }) => {
-                                frontend_metadata
-                            }
+                            Ok(
+                                SPv2TransferMetadata::StableBalance { frontend_metadata }
+                                | SPv2TransferMetadata::MultispendDeposit {
+                                    frontend_metadata, ..
+                                },
+                            ) => frontend_metadata,
                             _ => None,
                         };
                     // We must either be the sender or the recipient of the
@@ -3320,13 +3323,16 @@ impl FederationV2 {
                     self.spv2_force_sync();
                     // send multispend completion notification
                     match serde_json::from_value::<SPv2TransferMetadata>(extra_meta.clone()) {
-                        Ok(SPv2TransferMetadata::MultispendDeposit { room }) => {
+                        Ok(SPv2TransferMetadata::MultispendDeposit {
+                            room, description, ..
+                        }) => {
                             self.multispend_services
                                 .completion_notification
                                 .add_deposit_notification(
                                     room,
                                     signed_request.details().amount(),
                                     txid,
+                                    description,
                                 )
                                 .await;
                         }
@@ -4144,12 +4150,18 @@ impl FederationV2 {
         amount: FiatAmount,
         group_account: AccountId,
         room: RpcRoomId,
+        description: String,
+        frontend_meta: FrontendMetadata,
     ) -> anyhow::Result<()> {
         self.ensure_multispend_feature()?;
         self.spv2_simple_transfer(
             group_account,
             amount,
-            SPv2TransferMetadata::MultispendDeposit { room },
+            SPv2TransferMetadata::MultispendDeposit {
+                room,
+                description,
+                frontend_metadata: Some(frontend_meta),
+            },
         )
         .await?;
         // FIXME: send post deposit notification

@@ -224,6 +224,7 @@ export type MultispendDepositEventData = {
   user: RpcUserId;
   fiatAmount: RpcFiatAmount;
   txid: RpcTransactionId;
+  description: string;
 };
 
 /**
@@ -245,6 +246,7 @@ export type MultispendEvent =
       kind: "depositNotification";
       fiatAmount: RpcFiatAmount;
       txid: RpcTransactionId;
+      description: string;
     }
   | { kind: "withdrawalRequest"; request: JSONObject; description: string }
   | {
@@ -623,6 +625,10 @@ export type RpcMethods = {
   stabilityPoolAverageFeeRate: [stabilityPoolAverageFeeRate, bigint];
   stabilityPoolAvailableLiquidity: [stabilityPoolAvailableLiquidity, RpcAmount];
   spv2AccountInfo: [spv2AccountInfo, RpcSPv2CachedSyncResponse];
+  spv2ObserveAccountInfo: [
+    spv2ObserveAccountInfo,
+    Observable<RpcSPv2CachedSyncResponse>,
+  ];
   spv2NextCycleStartTime: [spv2NextCycleStartTime, bigint];
   spv2DepositToSeek: [spv2DepositToSeek, RpcOperationId];
   spv2Withdraw: [spv2Withdraw, RpcOperationId];
@@ -1520,6 +1526,8 @@ export type matrixMultispendAccountInfo = {
 export type matrixMultispendDeposit = {
   roomId: RpcRoomId;
   amount: RpcFiatAmount;
+  description: string;
+  frontendMeta: FrontendMetadata;
 };
 
 export type matrixMultispendEventData = {
@@ -1794,6 +1802,11 @@ export type spv2DepositToSeek = {
 };
 
 export type spv2NextCycleStartTime = { federationId: RpcFederationId };
+
+export type spv2ObserveAccountInfo = {
+  federationId: RpcFederationId;
+  observableId: number;
+};
 
 export type spv2Withdraw = {
   federationId: RpcFederationId;
