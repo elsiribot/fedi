@@ -6,7 +6,7 @@ use fedimint_core::util::update_merge::UpdateMerge;
 use fedimint_core::util::{backoff_util, retry};
 use futures::Stream;
 use stability_pool_common::config::StabilityPoolClientConfig;
-use stability_pool_common::{AccountId, SyncResponse};
+use stability_pool_common::AccountId;
 use tokio::sync::watch;
 use tokio_stream::wrappers::WatchStream;
 
@@ -16,7 +16,7 @@ use crate::db::{CachedSyncResponseKey, CachedSyncResponseValue, SeekLifetimeFeeK
 /// Service that syncs account state from server in the background
 #[derive(Debug)]
 pub struct StabilityPoolSyncService {
-    sync_response: watch::Sender<Option<SyncResponse>>,
+    sync_response: watch::Sender<Option<CachedSyncResponseValue>>,
     module_api: DynModuleApi,
     db: Database,
     account_id: AccountId,
@@ -28,12 +28,11 @@ impl StabilityPoolSyncService {
         // Fetch initial sync response from database
         let mut dbtx = db.begin_transaction().await;
         let maybe_sync_response = dbtx.get_value(&CachedSyncResponseKey { account_id }).await;
-        let initial_sync = maybe_sync_response.map(|stored| stored.value);
         drop(dbtx);
 
         // Create service with initial state
         Self {
-            sync_response: watch::channel(initial_sync).0,
+            sync_response: watch::channel(maybe_sync_response).0,
             module_api,
             db,
             account_id,
@@ -50,7 +49,7 @@ impl StabilityPoolSyncService {
                 .sync_response
                 .borrow()
                 .as_ref()
-                .map(|x| x.current_cycle.start_time);
+                .map(|x| x.value.current_cycle.start_time);
             if let Some(last_sync_time) = last_sync_time {
                 let sleep_time = client_config
                     .next_cycle_start_time(last_sync_time)
@@ -71,21 +70,24 @@ impl StabilityPoolSyncService {
         self.update_merge
             .merge(async {
                 let sync_response = self.module_api.account_sync(self.account_id).await?;
+                let cached_sync_response = CachedSyncResponseValue {
+                    fetch_time: fedimint_core::time::now(),
+                    value: sync_response,
+                };
 
                 let mut dbtx = self.db.begin_transaction().await;
                 dbtx.insert_entry(
                     &CachedSyncResponseKey {
                         account_id: self.account_id,
                     },
-                    &CachedSyncResponseValue {
-                        fetch_time: fedimint_core::time::now(),
-                        value: sync_response.clone(),
-                    },
+                    &cached_sync_response,
                 )
                 .await;
 
-                if let Some(locked_seeks_lifetime_fee) =
-                    sync_response.locked_seeks_lifetime_fee.as_ref()
+                if let Some(locked_seeks_lifetime_fee) = cached_sync_response
+                    .value
+                    .locked_seeks_lifetime_fee
+                    .as_ref()
                 {
                     for (txid, amount) in locked_seeks_lifetime_fee {
                         dbtx.insert_entry(&SeekLifetimeFeeKey(*txid), amount).await;
@@ -94,14 +96,14 @@ impl StabilityPoolSyncService {
                 dbtx.commit_tx().await;
 
                 // Send the new SyncResponse to all watchers
-                self.sync_response.send_replace(Some(sync_response));
+                self.sync_response.send_replace(Some(cached_sync_response));
                 Ok(())
             })
             .await
     }
 
     /// Subscribe to sync data updates
-    pub fn subscribe_to_updates(&self) -> impl Stream<Item = Option<SyncResponse>> {
+    pub fn subscribe_to_updates(&self) -> impl Stream<Item = Option<CachedSyncResponseValue>> {
         WatchStream::new(self.sync_response.subscribe())
     }
 }

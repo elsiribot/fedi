@@ -175,7 +175,7 @@ impl ClientModule for StabilityPoolClientModule {
                     .await
                     .unwrap()
                     .expect("must be present after calling update once");
-                Ok(serde_json::to_value(sync_response)?)
+                Ok(serde_json::to_value(sync_response.value)?)
             }
 
             CliCommand::ActiveDeposits { account_type } => {

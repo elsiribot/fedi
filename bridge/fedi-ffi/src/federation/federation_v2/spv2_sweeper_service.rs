@@ -36,7 +36,7 @@ impl SPv2SweeperService {
                 let Some(sync_response) = maybe_sync_response else {
                     continue;
                 };
-                if let Err(e) = sweep_spv2_inner(&fed, sync_response).await {
+                if let Err(e) = sweep_spv2_inner(&fed, sync_response.value).await {
                     error!(%e, "Error sweeping spv2, will retry next cycle if needed");
                 }
             }

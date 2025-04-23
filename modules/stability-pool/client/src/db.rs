@@ -30,7 +30,7 @@ pub struct CachedSyncResponseKey {
     pub account_id: AccountId,
 }
 
-#[derive(Debug, Encodable, Decodable)]
+#[derive(Debug, Clone, Encodable, Decodable)]
 pub struct CachedSyncResponseValue {
     pub fetch_time: SystemTime,
     pub value: SyncResponse,

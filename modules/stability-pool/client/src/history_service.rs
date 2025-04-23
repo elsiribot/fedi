@@ -53,7 +53,7 @@ impl StabilityPoolHistoryService {
                 continue;
             };
             retry("history fetch", backoff_util::background_backoff(), || {
-                self.update_once(&sync)
+                self.update_once(&sync.value)
             })
             .await
             .expect("inifinite retry");
