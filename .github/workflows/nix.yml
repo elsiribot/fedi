@@ -150,7 +150,7 @@ jobs:
             needs.precheck.outputs.HAS_NON_UI_CHANGES == '1' ||
             needs.precheck.outputs.IS_PUSH_TO_MASTER == '1' ||
             needs.precheck.outputs.IS_PUSH_TO_TAG == '1'
-        runs-on: [self-hosted, linux, legacy]
+        runs-on: [ self-hosted, linux ]
         timeout-minutes: 60
         steps:
             - uses: actions/checkout@v4
@@ -202,7 +202,7 @@ jobs:
             needs.precheck.outputs.HAS_NON_UI_CHANGES == '1' ||
             needs.precheck.outputs.IS_PUSH_TO_MASTER == '1' ||
             needs.precheck.outputs.IS_PUSH_TO_TAG == '1'
-        runs-on: [self-hosted, linux, legacy]
+        runs-on: [self-hosted, linux]
         timeout-minutes: 60
         steps:
             - uses: actions/checkout@v4
@@ -272,7 +272,7 @@ jobs:
                     - macos-arm64
                 include:
                     - on: linux
-                      runs-on: [self-hosted, linux, legacy]
+                      runs-on: [self-hosted, linux]
                       build-in-pr: true
                       timeout: 30
                       system: x86_64-linux
@@ -315,7 +315,7 @@ jobs:
           needs.precheck.outputs.HAS_NON_UI_CHANGES == '1' ||
           needs.precheck.outputs.IS_PUSH_TO_MASTER == '1' ||
           needs.precheck.outputs.IS_PUSH_TO_TAG == '1'
-      runs-on: [self-hosted, linux, legacy]
+      runs-on: [self-hosted, linux]
       timeout-minutes: 30
       steps:
         - name: Checkout Code
