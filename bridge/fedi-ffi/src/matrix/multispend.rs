@@ -92,7 +92,9 @@ pub enum MultispendEvent {
         vote: MultispendGroupVoteType,
     },
 
-    GroupInvitationCancel {},
+    GroupInvitationCancel {
+        invitation: RpcEventId,
+    },
 
     DepositNotification {
         fiat_amount: RpcFiatAmount,
@@ -442,12 +444,14 @@ pub async fn process_event_db_raw(
             }
             dbtx.insert_entry(&key, &state).await;
         }
-        MultispendEvent::GroupInvitationCancel {} => {
+        MultispendEvent::GroupInvitationCancel { invitation } => {
             let status_key = MultispendGroupStatusKey(room_id.clone());
             // there is no active invite
             if !matches!(
                 dbtx.get_value(&status_key).await,
-                Some(MultispendGroupStatus::ActiveInvitation { .. })
+                Some(MultispendGroupStatus::ActiveInvitation {
+                    active_invite_id
+                }) if invitation == active_invite_id
             ) {
                 return Err(ProcessEventError::InvalidMessage);
             }

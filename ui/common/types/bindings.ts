@@ -240,7 +240,7 @@ export type MultispendEvent =
       invitation: RpcEventId;
       vote: MultispendGroupVoteType;
     }
-  | { kind: "groupInvitationCancel" }
+  | { kind: "groupInvitationCancel"; invitation: RpcEventId }
   | {
       kind: "depositNotification";
       fiatAmount: RpcFiatAmount;

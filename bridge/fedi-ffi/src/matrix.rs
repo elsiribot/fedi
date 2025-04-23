@@ -1460,8 +1460,22 @@ impl Matrix {
             own_member.suggested_role_for_power_level() == RoomMemberRole::Administrator,
             ErrorCode::BadRequest
         );
-        self.send_multispend_event(room_id, MultispendEvent::GroupInvitationCancel {})
-            .await
+        match self.get_multispend_group_status(room_id).await {
+            RpcMultispendGroupStatus::ActiveInvitation {
+                active_invite_id, ..
+            } => {
+                self.send_multispend_event(
+                    room_id,
+                    MultispendEvent::GroupInvitationCancel {
+                        invitation: active_invite_id,
+                    },
+                )
+                .await
+            }
+            RpcMultispendGroupStatus::Inactive | RpcMultispendGroupStatus::Finalized { .. } => {
+                bail!("Cannot cancel inactive or finalized group")
+            }
+        }
     }
 
     pub async fn vote_multispend_group_invitation(
