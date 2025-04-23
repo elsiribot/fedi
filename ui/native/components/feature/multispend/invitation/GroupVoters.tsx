@@ -11,29 +11,31 @@ import {
 } from '@fedi/common/redux'
 import { getUserSuffix } from '@fedi/common/utils/matrix'
 
-import { useAppSelector } from '../../../state/hooks'
-import OverlaySelect from '../../ui/OverlaySelect'
-import ChatAvatar from '../chat/ChatAvatar'
+import { useAppSelector } from '../../../../state/hooks'
+import OverlaySelect from '../../../ui/OverlaySelect'
+import ChatAvatar from '../../chat/ChatAvatar'
 
 type Props = {
     roomId: string
 }
 
 const GroupVoters: React.FC<Props> = ({ roomId }) => {
-    const [filter, setFilter] = useState('all')
-
     const multispendStatus = useAppSelector(s =>
         selectMatrixRoomMultispendStatus(s, roomId),
     )
+
+    if (multispendStatus?.status !== 'activeInvitation')
+        throw new Error(
+            'GroupVoters shold not be shown unless multispend status is activeInvitation',
+        )
+
+    const [filter, setFilter] = useState('all')
     const { t } = useTranslation()
     const { theme } = useTheme()
     const style = styles(theme)
 
     const getVoterStatus = useCallback(
         (signer: string) => {
-            if (multispendStatus?.status !== 'activeInvitation')
-                return 'pending'
-
             if (
                 multispendStatus.state.proposer === signer ||
                 Object.keys(multispendStatus?.state.pubkeys).includes(signer)
@@ -49,8 +51,6 @@ const GroupVoters: React.FC<Props> = ({ roomId }) => {
     )
 
     const filteredSigners = useMemo(() => {
-        if (multispendStatus?.status !== 'activeInvitation') return []
-
         return multispendStatus.state.invitation.signers.filter(signer => {
             if (filter === 'all') return true
             if (filter === 'pending')
@@ -61,8 +61,6 @@ const GroupVoters: React.FC<Props> = ({ roomId }) => {
                 return getVoterStatus(signer) === 'rejected'
         })
     }, [filter, multispendStatus, getVoterStatus])
-
-    if (multispendStatus?.status !== 'activeInvitation') return null
 
     return (
         <View style={style.container}>
