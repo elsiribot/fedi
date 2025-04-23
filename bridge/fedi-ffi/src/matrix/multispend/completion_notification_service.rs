@@ -64,6 +64,7 @@ impl CompletionNotificationService {
         room_id: RpcRoomId,
         fiat_amount: FiatAmount,
         txid: TransactionId,
+        description: String,
     ) {
         let multispend_db = self.runtime.multispend_db();
         let mut dbtx = multispend_db.begin_transaction().await;
@@ -72,6 +73,7 @@ impl CompletionNotificationService {
                 room_id,
                 fiat_amount: RpcFiatAmount(fiat_amount.0),
                 txid: RpcTransactionId(txid),
+                description,
             },
             &(),
         )

@@ -1051,7 +1051,11 @@ pub enum SPv2TransferMetadata {
         frontend_metadata: Option<FrontendMetadata>,
     },
     /// Deposit into multispend account
-    MultispendDeposit { room: RpcRoomId },
+    MultispendDeposit {
+        room: RpcRoomId,
+        description: String,
+        frontend_metadata: Option<FrontendMetadata>,
+    },
     /// Withdraw from multispend account
     MultispendWithdrawal {
         room: RpcRoomId,

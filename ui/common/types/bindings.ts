@@ -224,6 +224,7 @@ export type MultispendDepositEventData = {
   user: RpcUserId;
   fiatAmount: RpcFiatAmount;
   txid: RpcTransactionId;
+  description: string;
 };
 
 /**
@@ -245,6 +246,7 @@ export type MultispendEvent =
       kind: "depositNotification";
       fiatAmount: RpcFiatAmount;
       txid: RpcTransactionId;
+      description: string;
     }
   | {
       kind: "withdrawalRequest";
@@ -1528,6 +1530,8 @@ export type matrixMultispendAccountInfo = {
 export type matrixMultispendDeposit = {
   roomId: RpcRoomId;
   amount: RpcFiatAmount;
+  description: string;
+  frontendMeta: FrontendMetadata;
 };
 
 export type matrixMultispendEventData = {

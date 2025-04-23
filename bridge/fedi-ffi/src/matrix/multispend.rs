@@ -99,6 +99,7 @@ pub enum MultispendEvent {
     DepositNotification {
         fiat_amount: RpcFiatAmount,
         txid: RpcTransactionId,
+        description: String,
     },
 
     WithdrawalRequest {
@@ -314,6 +315,7 @@ pub struct MultispendDepositEventData {
     pub user: RpcUserId,
     pub fiat_amount: RpcFiatAmount,
     pub txid: RpcTransactionId,
+    pub description: String,
 }
 
 /// Collected details for a given event id.
@@ -530,7 +532,11 @@ pub async fn process_event_db_raw(
             dbtx.insert_entry(&key, &state).await;
         }
 
-        MultispendEvent::DepositNotification { fiat_amount, txid } => {
+        MultispendEvent::DepositNotification {
+            fiat_amount,
+            txid,
+            description,
+        } => {
             context.refresh_account_info = true;
             get_finalized_group_db(dbtx, room_id)
                 .await
@@ -543,6 +549,7 @@ pub async fn process_event_db_raw(
                 user: sender.clone(),
                 fiat_amount,
                 txid,
+                description,
             };
             dbtx.insert_new_entry(&key, &new_state).await;
             insert_multispend_chronological_event(dbtx, room_id, &event_id, event_time).await;
