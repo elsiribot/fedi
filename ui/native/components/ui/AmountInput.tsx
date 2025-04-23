@@ -240,7 +240,7 @@ const styles = (theme: Theme, width: number) =>
         },
         errorContainer: {
             width: '100%',
-            maxHeight: 20,
+            maxHeight: 60,
             alignItems: 'center',
             justifyContent: 'center',
             paddingHorizontal: theme.spacing.lg,
@@ -261,9 +261,7 @@ const styles = (theme: Theme, width: number) =>
             alignItems: 'center',
         },
         error: {
-            width: '100%',
             color: theme.colors.red,
-            textAlign: 'center',
         },
         errorSuggestion: {
             color: theme.colors.red,
