@@ -67,9 +67,9 @@ use crate::types::{
     RpcBridgeStatus, RpcCommunity, RpcDeviceIndexAssignmentStatus, RpcEcashInfo, RpcEventId,
     RpcFederationMaybeLoading, RpcFederationPreview, RpcFeeDetails, RpcFiatAmount,
     RpcGenerateEcashResponse, RpcLightningGateway, RpcMediaUploadParams, RpcNostrPubkey,
-    RpcNostrSecret, RpcPayAddressResponse, RpcRegisteredDevice, RpcSPv2CachedSyncResponse,
-    RpcSPv2SyncResponse, RpcSignature, RpcTransaction, RpcTransactionDirection,
-    RpcTransactionListEntry,
+    RpcNostrSecret, RpcPayAddressResponse, RpcPrevPayInvoiceResult, RpcRegisteredDevice,
+    RpcSPv2CachedSyncResponse, RpcSPv2SyncResponse, RpcSignature, RpcTransaction,
+    RpcTransactionDirection, RpcTransactionListEntry,
 };
 
 #[derive(Debug, thiserror::Error)]
@@ -387,6 +387,15 @@ async fn payInvoice(
 ) -> anyhow::Result<RpcPayInvoiceResponse> {
     let invoice: Bolt11Invoice = invoice.trim().parse().context(ErrorCode::InvalidInvoice)?;
     federation.pay_invoice(&invoice, frontend_metadata).await
+}
+
+#[macro_rules_derive(federation_rpc_method!)]
+async fn getPrevPayInvoiceResult(
+    federation: Arc<FederationV2>,
+    invoice: String,
+) -> anyhow::Result<RpcPrevPayInvoiceResult> {
+    let invoice: Bolt11Invoice = invoice.trim().parse().context(ErrorCode::InvalidInvoice)?;
+    federation.get_prev_pay_invoice_result(&invoice).await
 }
 
 #[macro_rules_derive(federation_recovering_rpc_method!)]
@@ -1903,6 +1912,7 @@ rpc_methods!(RpcMethods {
     generateInvoice,
     decodeInvoice,
     payInvoice,
+    getPrevPayInvoiceResult,
     listGateways,
     switchGateway,
     // On-Chain

@@ -572,6 +572,7 @@ export type RpcMethods = {
   generateInvoice: [generateInvoice, string];
   decodeInvoice: [decodeInvoice, RpcInvoice];
   payInvoice: [payInvoice, RpcPayInvoiceResponse];
+  getPrevPayInvoiceResult: [getPrevPayInvoiceResult, RpcPrevPayInvoiceResult];
   listGateways: [listGateways, Array<RpcLightningGateway>];
   switchGateway: [switchGateway, null];
   supportsSafeOnchainDeposit: [supportsSafeOnchainDeposit, boolean];
@@ -851,6 +852,8 @@ export type RpcPollResult = {
 };
 
 export type RpcPollResultAnswer = { id: string; text: string };
+
+export type RpcPrevPayInvoiceResult = { completed: boolean };
 
 export type RpcPublicKey = string;
 
@@ -1434,6 +1437,11 @@ export type getMnemonic = {};
 export type getNostrPubkey = {};
 
 export type getNostrSecret = {};
+
+export type getPrevPayInvoiceResult = {
+  federationId: RpcFederationId;
+  invoice: string;
+};
 
 export type getSensitiveLog = {};
 
