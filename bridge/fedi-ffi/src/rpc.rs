@@ -1717,7 +1717,7 @@ async fn matrixApproveMultispendGroupInvitation(
 ) -> anyhow::Result<()> {
     let matrix = bridge.matrix.get().ok_or(ErrorCode::MatrixNotInitialized)?;
     let Some(MsEventData::GroupInvitation(GroupInvitationWithKeys { federation_id, .. })) = matrix
-        .get_multispend_event_data(room_id.clone(), invitation.clone())
+        .get_multispend_event_data(&room_id, &invitation)
         .await
     else {
         anyhow::bail!("invalid matrix invitation id")
@@ -1823,7 +1823,7 @@ async fn matrixSendMultispendWithdrawalApprove(
         request: transfer_request,
         ..
     })) = matrix
-        .get_multispend_event_data(room_id.clone(), withdraw_request_id.clone())
+        .get_multispend_event_data(&room_id, &withdraw_request_id)
         .await
     else {
         anyhow::bail!("invalid matrix withdraw request id")
@@ -1869,7 +1869,19 @@ async fn matrixMultispendEventData(
     room_id: RpcRoomId,
     event_id: RpcEventId,
 ) -> anyhow::Result<Option<MsEventData>> {
-    Ok(matrix.get_multispend_event_data(room_id, event_id).await)
+    Ok(matrix.get_multispend_event_data(&room_id, &event_id).await)
+}
+
+#[macro_rules_derive(rpc_method!)]
+async fn matrixObserveMultispendEventData(
+    matrix: &Arc<Matrix>,
+    observable_id: u32,
+    room_id: RpcRoomId,
+    event_id: RpcEventId,
+) -> anyhow::Result<Observable<MsEventData>> {
+    matrix
+        .observe_multispend_event_data(observable_id.into(), room_id, event_id)
+        .await
 }
 
 // converts from a typed handler into untyped handler
@@ -2077,6 +2089,7 @@ rpc_methods!(RpcMethods {
     matrixRejectMultispendGroupInvitation,
     matrixCancelMultispendGroupInvitation,
     matrixMultispendEventData,
+    matrixObserveMultispendEventData,
     matrixSendMultispendWithdrawalRequest,
     matrixSendMultispendWithdrawalApprove,
     matrixSendMultispendWithdrawalReject,
