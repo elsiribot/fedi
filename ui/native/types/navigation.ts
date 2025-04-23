@@ -78,6 +78,18 @@ export type RootStackParamList = {
     FederationCurrency: { federationId: string }
     GlobalCurrency: undefined
     GroupMultispend: { roomId: string }
+    MultispendConfirmDeposit: {
+        roomId: string
+        amount: UsdCents
+        notes?: string
+    }
+    MultispendConfirmWithdraw: {
+        roomId: string
+        amount: UsdCents
+        notes?: string
+    }
+    MultispendDeposit: { roomId: string }
+    MultispendWithdraw: { roomId: string }
     CompleteRecoveryAssist: { videoPath: string; recoveryId: string }
     CompleteSocialBackup: undefined
     CompleteSocialRecovery: undefined

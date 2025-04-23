@@ -881,6 +881,30 @@ export class FedimintBridge {
         return this.rpcTyped('matrixMultispendEventData', args)
     }
 
+    async matrixMultispendDeposit(
+        args: bindings.RpcPayload<'matrixMultispendDeposit'>,
+    ) {
+        return this.rpcTyped('matrixMultispendDeposit', args)
+    }
+
+    async matrixSendMultispendWithdrawalRequest(
+        args: bindings.RpcPayload<'matrixSendMultispendWithdrawalRequest'>,
+    ) {
+        return this.rpcTyped('matrixSendMultispendWithdrawalRequest', args)
+    }
+
+    async matrixSendMultispendWithdrawalApprove(
+        args: bindings.RpcPayload<'matrixSendMultispendWithdrawalApprove'>,
+    ) {
+        return this.rpcTyped('matrixSendMultispendWithdrawalApprove', args)
+    }
+
+    async matrixSendMultispendWithdrawalReject(
+        args: bindings.RpcPayload<'matrixSendMultispendWithdrawalReject'>,
+    ) {
+        return this.rpcTyped('matrixSendMultispendWithdrawalReject', args)
+    }
+
     /*** COMMUNITIES RPCs ***/
 
     async communityPreview(args: bindings.RpcPayload<'communityPreview'>) {

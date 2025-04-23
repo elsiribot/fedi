@@ -128,7 +128,11 @@ import LockScreen from './LockScreen'
 import LockedDevice from './LockedDevice'
 import MigratedDevice from './MigratedDevice'
 import MigratedDeviceSuccess from './MigratedDeviceSuccess'
+import MultispendConfirmDeposit from './MultispendConfirmDeposit'
+import MultispendConfirmWithdraw from './MultispendConfirmWithdraw'
+import MultispendDeposit from './MultispendDeposit'
 import MultispendIntro from './MultispendIntro'
+import MultispendWithdraw from './MultispendWithdraw'
 import NewMessage from './NewMessage'
 import NostrSettings from './NostrSettings'
 import PersonalRecovery from './PersonalRecovery'
@@ -542,6 +546,64 @@ export const MainNavigator = () => {
                                             component={GroupMultispend}
                                             options={() => ({
                                                 header: () => null,
+                                            })}
+                                        />
+                                        <Stack.Screen
+                                            name="MultispendDeposit"
+                                            component={MultispendDeposit}
+                                            options={() => ({
+                                                header: () => (
+                                                    <CenteredHeader
+                                                        backButton
+                                                        title={t(
+                                                            'feature.multispend.deposit-to-multispend',
+                                                        )}
+                                                    />
+                                                ),
+                                            })}
+                                        />
+                                        <Stack.Screen
+                                            name="MultispendConfirmDeposit"
+                                            component={MultispendConfirmDeposit}
+                                            options={() => ({
+                                                header: () => (
+                                                    <CenteredHeader
+                                                        backButton
+                                                        title={t(
+                                                            'feature.multispend.confirm-transaction',
+                                                        )}
+                                                    />
+                                                ),
+                                            })}
+                                        />
+                                        <Stack.Screen
+                                            name="MultispendWithdraw"
+                                            component={MultispendWithdraw}
+                                            options={() => ({
+                                                header: () => (
+                                                    <CenteredHeader
+                                                        backButton
+                                                        title={t(
+                                                            'feature.multispend.withdraw-from-multispend',
+                                                        )}
+                                                    />
+                                                ),
+                                            })}
+                                        />
+                                        <Stack.Screen
+                                            name="MultispendConfirmWithdraw"
+                                            component={
+                                                MultispendConfirmWithdraw
+                                            }
+                                            options={() => ({
+                                                header: () => (
+                                                    <CenteredHeader
+                                                        backButton
+                                                        title={t(
+                                                            'feature.multispend.confirm-transaction',
+                                                        )}
+                                                    />
+                                                ),
                                             })}
                                         />
                                     </>

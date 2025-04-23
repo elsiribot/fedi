@@ -1,3 +1,4 @@
+import { useNavigation } from '@react-navigation/native'
 import { Button, Text, Theme, useTheme } from '@rneui/themed'
 import { useTranslation } from 'react-i18next'
 import { StyleSheet, View } from 'react-native'
@@ -22,6 +23,7 @@ const MultispendFinalized: React.FC<{
 
     const { theme } = useTheme()
     const { t } = useTranslation()
+    const navigation = useNavigation()
 
     const style = styles(theme)
 
@@ -46,10 +48,19 @@ const MultispendFinalized: React.FC<{
                 </Text>
             </View>
             <SafeAreaContainer edges="notop" style={style.buttons}>
-                <Button containerStyle={style.button} outline>
+                <Button
+                    containerStyle={style.button}
+                    outline
+                    onPress={() =>
+                        navigation.navigate('MultispendDeposit', { roomId })
+                    }>
                     {t('words.deposit')}
                 </Button>
-                <Button containerStyle={style.button}>
+                <Button
+                    containerStyle={style.button}
+                    onPress={() =>
+                        navigation.navigate('MultispendWithdraw', { roomId })
+                    }>
                     {t('words.withdraw')}
                 </Button>
             </SafeAreaContainer>
