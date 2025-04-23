@@ -72,11 +72,20 @@ export function OnboardingHome() {
                 isInternetUnreachable,
             )
 
-            if (parsedResponse.type !== ParserDataType.FedimintInvite) {
+            // Allow community and federation invites
+            const permittedInviteTypes = [
+                ParserDataType.CommunityInvite,
+                ParserDataType.FedimintInvite,
+            ]
+
+            if (
+                !parsedResponse ||
+                !permittedInviteTypes.includes(parsedResponse.type)
+            ) {
                 throw new Error('Invite code is invalid')
             }
 
-            return parsedResponse.data.invite
+            return input
         } catch (err) {
             return null
         }
