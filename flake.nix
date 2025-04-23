@@ -370,9 +370,6 @@
               export ESLINT_USE_FLAT_CONFIG=false
 
               export REPO_ROOT="$(git rev-parse --show-toplevel)"
-              if [ -z "$FEDI_DISABLE_SCCACHE" ]; then
-                export RUSTC_WRAPPER=${pkgs.sccache}/bin/sccache
-              fi
               export CARGO_BUILD_TARGET_DIR="''${CARGO_BUILD_TARGET_DIR:-''${REPO_ROOT}/target-nix}"
               export UPSTREAM_FEDIMINTD_NIX_PKG=${fedimint-pkgs.packages.${system}.fedimintd}
               export FEDIMINT_LOAD_TEST_TOOL_NIX_PKG=${fedimint-pkgs.packages.${system}.fedimint-load-test-tool}
