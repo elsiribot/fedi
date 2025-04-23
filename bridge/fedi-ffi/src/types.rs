@@ -1332,3 +1332,9 @@ pub enum RpcDeviceIndexAssignmentStatus {
 #[derive(Debug, Clone, Serialize, Deserialize, TS)]
 #[ts(export)]
 pub struct RpcTransferRequestId(#[ts(type = "string")] pub TransferRequestId);
+
+#[derive(Debug, Clone, Serialize, Deserialize, TS)]
+#[ts(export)]
+pub struct RpcPrevPayInvoiceResult {
+    pub completed: bool,
+}

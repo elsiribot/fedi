@@ -129,11 +129,11 @@ use crate::types::{
     FrontendMetadata, GuardianStatus, LightningSendMetadata, OperationFediFeeStatus, RpcAmount,
     RpcFederationId, RpcFederationMaybeLoading, RpcFederationPreview, RpcFeeDetails,
     RpcGenerateEcashResponse, RpcInvoice, RpcLightningGateway, RpcOperationFediFeeStatus,
-    RpcPayAddressResponse, RpcPayInvoiceResponse, RpcPublicKey, RpcReturningMemberStatus,
-    RpcSPDepositState, RpcSPV2DepositState, RpcSPV2TransferInState, RpcSPV2TransferOutState,
-    RpcSPV2WithdrawalState, RpcSPWithdrawState, RpcTransaction, RpcTransactionDirection,
-    RpcTransactionKind, RpcTransactionListEntry, SPv2DepositMetadata, SPv2TransferMetadata,
-    SPv2WithdrawMetadata,
+    RpcPayAddressResponse, RpcPayInvoiceResponse, RpcPrevPayInvoiceResult, RpcPublicKey,
+    RpcReturningMemberStatus, RpcSPDepositState, RpcSPV2DepositState, RpcSPV2TransferInState,
+    RpcSPV2TransferOutState, RpcSPV2WithdrawalState, RpcSPWithdrawState, RpcTransaction,
+    RpcTransactionDirection, RpcTransactionKind, RpcTransactionListEntry, SPv2DepositMetadata,
+    SPv2TransferMetadata, SPv2WithdrawMetadata,
 };
 use crate::utils::{display_currency, to_unix_time};
 
@@ -1181,6 +1181,21 @@ impl FederationV2 {
         Ok(response)
     }
 
+    pub async fn get_prev_pay_invoice_result(
+        &self,
+        invoice: &Bolt11Invoice,
+    ) -> Result<RpcPrevPayInvoiceResult> {
+        let ln = &self.client.ln()?;
+        let payment_result = ln
+            .get_prev_payment_result(
+                invoice.payment_hash(),
+                &mut ln.db.begin_transaction_nc().await,
+            )
+            .await;
+        Ok(RpcPrevPayInvoiceResult {
+            completed: payment_result.completed_payment.is_some(),
+        })
+    }
     // Returns the fee details for making a payment on-chain. Returns an error in
     // case the amount exceeds the max spendable amount.
     pub async fn preview_pay_address(
