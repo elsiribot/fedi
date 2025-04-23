@@ -610,6 +610,8 @@ export type RpcMethods = {
   getNostrPubkey: [getNostrPubkey, RpcNostrPubkey];
   getNostrSecret: [getNostrSecret, RpcNostrSecret];
   signNostrEvent: [signNostrEvent, string];
+  nostrEncrypt: [nostrEncrypt, string];
+  nostrDecrypt: [nostrDecrypt, string];
   stabilityPoolAccountInfo: [
     stabilityPoolAccountInfo,
     RpcStabilityPoolAccountInfo,
@@ -1689,6 +1691,10 @@ export type matrixUploadMedia = { path: string; mimeType: string };
 export type matrixUserDirectorySearch = { searchTerm: string; limit: number };
 
 export type matrixUserProfile = { userId: RpcUserId };
+
+export type nostrDecrypt = { pubkey: string; ciphertext: string };
+
+export type nostrEncrypt = { pubkey: string; plaintext: string };
 
 export type onAppForeground = {};
 

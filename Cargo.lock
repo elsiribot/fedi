@@ -2584,6 +2584,7 @@ dependencies = [
  "matrix-sdk-ui",
  "mime",
  "mockito",
+ "nostr",
  "rand 0.8.5",
  "reqwest 0.12.15",
  "ring 0.17.14",
@@ -5074,6 +5075,9 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "e0242819d153cba4b4b05a5a8f2a7e9bbf97b6055b2a002b395c96b5ff3c0222"
 dependencies = [
  "cfg-if",
+ "js-sys",
+ "wasm-bindgen",
+ "web-sys",
 ]
 
 [[package]]
@@ -6313,6 +6317,30 @@ checksum = "d273983c5a657a70a3e8f2a01329822f3b8c8172b73826411a55751e404a0a4a"
 dependencies = [
  "memchr",
  "minimal-lexical",
+]
+
+[[package]]
+name = "nostr"
+version = "0.41.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "95d3f2f0d564cce3ebe09bb1343af67d88c60108cedc518a307dfdf6e3f503b6"
+dependencies = [
+ "base64 0.22.1",
+ "bech32 0.11.0",
+ "bip39",
+ "bitcoin_hashes 0.14.0",
+ "cbc",
+ "chacha20",
+ "chacha20poly1305",
+ "getrandom 0.2.15",
+ "instant",
+ "regex",
+ "scrypt",
+ "secp256k1",
+ "serde",
+ "serde_json",
+ "unicode-normalization",
+ "url",
 ]
 
 [[package]]
@@ -8003,6 +8031,15 @@ dependencies = [
 ]
 
 [[package]]
+name = "salsa20"
+version = "0.10.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "97a22f5af31f73a954c10289c93e8a50cc23d971e80ee446f1f6f7137a088213"
+dependencies = [
+ "cipher",
+]
+
+[[package]]
 name = "same-file"
 version = "1.0.6"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -8045,6 +8082,18 @@ dependencies = [
  "proc-macro2",
  "quote",
  "syn 2.0.100",
+]
+
+[[package]]
+name = "scrypt"
+version = "0.11.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "0516a385866c09368f0b5bcd1caff3366aace790fcd46e2bb032697bb172fd1f"
+dependencies = [
+ "password-hash",
+ "pbkdf2",
+ "salsa20",
+ "sha2",
 ]
 
 [[package]]

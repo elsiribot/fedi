@@ -24,6 +24,7 @@ use fedimint_core::PeerId;
 use fedimint_derive_secret::{ChildId, DerivableSecret};
 use fedimint_mint_client::OOBNotes;
 use futures::StreamExt;
+use nostr::nips::nip44;
 use tokio::sync::{Mutex, OnceCell};
 use tracing::debug;
 
@@ -246,6 +247,31 @@ impl BridgeRuntime {
             .map(|(key, _)| key.invite_code_str)
             .collect::<Vec<_>>()
             .await
+    }
+
+    /// Given a recipient's pubkey and plaintext content, encrypts and returns
+    /// the ciphertext as per NIP44.
+    pub async fn nip44_encrypt(&self, pubkey: String, plaintext: String) -> Result<String> {
+        let secp = Secp256k1::new();
+        let secret_key = self.nostr_secret_key(&secp).await?.secret_key();
+        Ok(nip44::encrypt(
+            &nostr::SecretKey::from(secret_key),
+            &nostr::PublicKey::parse(&pubkey)?,
+            plaintext,
+            nip44::Version::V2,
+        )?)
+    }
+
+    /// Given a recipient's pubkey and ciphertext content, decrypts and returns
+    /// the plaintext as per NIP44.
+    pub async fn nip44_decrypt(&self, pubkey: String, ciphertext: String) -> Result<String> {
+        let secp = Secp256k1::new();
+        let secret_key = self.nostr_secret_key(&secp).await?.secret_key();
+        Ok(nip44::decrypt(
+            &nostr::SecretKey::from(secret_key),
+            &nostr::PublicKey::parse(&pubkey)?,
+            ciphertext,
+        )?)
     }
 }
 

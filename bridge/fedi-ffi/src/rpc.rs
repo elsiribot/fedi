@@ -683,6 +683,24 @@ async fn signNostrEvent(runtime: Arc<BridgeRuntime>, event_hash: String) -> anyh
     runtime.sign_nostr_event(event_hash).await
 }
 
+#[macro_rules_derive(rpc_method!)]
+async fn nostrEncrypt(
+    runtime: Arc<BridgeRuntime>,
+    pubkey: String,
+    plaintext: String,
+) -> anyhow::Result<String> {
+    runtime.nip44_encrypt(pubkey, plaintext).await
+}
+
+#[macro_rules_derive(rpc_method!)]
+async fn nostrDecrypt(
+    runtime: Arc<BridgeRuntime>,
+    pubkey: String,
+    ciphertext: String,
+) -> anyhow::Result<String> {
+    runtime.nip44_decrypt(pubkey, ciphertext).await
+}
+
 #[macro_rules_derive(federation_rpc_method!)]
 async fn stabilityPoolAccountInfo(
     federation: Arc<FederationV2>,
@@ -1955,6 +1973,8 @@ rpc_methods!(RpcMethods {
     getNostrPubkey,
     getNostrSecret,
     signNostrEvent,
+    nostrEncrypt,
+    nostrDecrypt,
     // Stability Pool
     stabilityPoolAccountInfo,
     stabilityPoolNextCycleStartTime,
@@ -2131,6 +2151,7 @@ pub mod tests {
     use fedimint_core::task::{sleep_in_test, TaskGroup};
     use fedimint_core::{apply, async_trait_maybe_send, Amount};
     use fedimint_logging::{TracingSetup, LOG_DEVIMINT};
+    use nostr::nips::nip44;
     use rand::distributions::Alphanumeric;
     use rand::Rng;
     use tokio::sync::Mutex;
@@ -4817,6 +4838,49 @@ pub mod tests {
         )
         .await
         .is_err());
+
+        Ok(())
+    }
+
+    #[tokio::test(flavor = "multi_thread")]
+    async fn test_nip44_encrypt_and_decrypt() -> anyhow::Result<()> {
+        let bridge = setup_bridge().await?;
+
+        let other_nsec = "nsec1u66skyesf45vd9w0u63q7qhfj2wnhjplxkympvh5t2q28h0lvz8qgglls9";
+        let other_npub = "npub1e9uht8sv5msnz7gwartsntt0w2v8tzxyrzemk793lzs0ulegr4es0fafdx";
+        let our_npub = getNostrPubkey(bridge.runtime.clone()).await?.npub;
+
+        // Simulate us sending a message to other
+        let our_plaintext = "Hey, Fedi is cool!";
+        let ciphertext = nostrEncrypt(
+            bridge.runtime.clone(),
+            other_npub.to_string(),
+            our_plaintext.to_string(),
+        )
+        .await?;
+
+        // Other decrypts our encrypted message
+        let other_decrypted = nip44::decrypt(
+            &nostr::SecretKey::parse(other_nsec)?,
+            &nostr::PublicKey::parse(&our_npub)?,
+            ciphertext,
+        )?;
+
+        assert_eq!(our_plaintext, other_decrypted);
+
+        // Simulate other sending a message to us
+        let other_plaintext = "I know right, it is pretty cool!";
+        let ciphertext = nip44::encrypt(
+            &nostr::SecretKey::parse(other_nsec)?,
+            &nostr::PublicKey::parse(&our_npub)?,
+            other_plaintext,
+            nip44::Version::V2,
+        )?;
+
+        // We decrypt other's message
+        let our_decrypted =
+            nostrDecrypt(bridge.runtime.clone(), other_npub.to_string(), ciphertext).await?;
+        assert_eq!(other_plaintext, our_decrypted);
 
         Ok(())
     }
