@@ -13,10 +13,6 @@ BUILD_ALL_BRIDGE_TARGETS=${BUILD_ALL_BRIDGE_TARGETS:-0}
 export BRIDGE_ROOT=$REPO_ROOT/bridge
 cd "$BRIDGE_ROOT"
 
-# Disable sccache for android, it only slows down everything given
-# how many artifacts are flying around
-unset RUSTC_WRAPPER
-
 # only build emulator target by default
 TARGETS=("aarch64-linux-android")
 
@@ -28,7 +24,7 @@ echo "Building android bridge for targets: ${TARGETS[*]}"
 
 function build_android_target() {
   set -euo pipefail
-  
+
   local target="$1"
 
   # If we use the same target dir, all builds will wait for each other
@@ -65,7 +61,7 @@ function build_android_target() {
   if [ "${target:-}" == "armv7-linux-androideabi" ]; then
     JNILIBS_PATH=armeabi-v7a
   fi
-  
+
   mkdir -p "$BRIDGE_ROOT/fedi-android/lib/src/main/jniLibs/${JNILIBS_PATH}"
   cp "${CARGO_BUILD_TARGET_DIR}/pkg/fedi-ffi/${target}/${CARGO_PROFILE_DIR}/libfediffi.so" fedi-android/lib/src/main/jniLibs/${JNILIBS_PATH}/libfediffi.so
   >&2 echo "Building android bridge for $target: DONE"
