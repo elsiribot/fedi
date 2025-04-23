@@ -545,25 +545,21 @@ const MessageInput: React.FC<MessageInputProps> = ({
                             <ChatWalletButton recipientId={directUserId} />
                         )}
                         {/**
-                         * - Polls are available in both public and private chat rooms
+                         * - Polls are available in both public and private chat rooms that the user can post in
                          * - Polls are not available in user-to-user direct chats
-                         * - Polls are not available in **default** public rooms
-                         * - Polls are not available in broadcast rooms
+                         * - Polls are not available in **default announcment** rooms
                          * */}
-                        {!isDefaultGroup &&
-                            !directUserId &&
-                            !isReadOnly &&
-                            !existingRoom?.broadcastOnly && (
-                                <Pressable
-                                    onPress={() => {
-                                        navigation.navigate('CreatePoll', {
-                                            roomId: id,
-                                        })
-                                    }}
-                                    hitSlop={10}>
-                                    <SvgImage name="Poll" />
-                                </Pressable>
-                            )}
+                        {!isReadOnly && !directUserId && !isDefaultGroup && (
+                            <Pressable
+                                onPress={() => {
+                                    navigation.navigate('CreatePoll', {
+                                        roomId: id,
+                                    })
+                                }}
+                                hitSlop={10}>
+                                <SvgImage name="Poll" />
+                            </Pressable>
+                        )}
                         {/* To prevent users from uploading unencrypted media, media uploads are not available in public chats */}
                         {!isPublic && !isReadOnly && (
                             <>
