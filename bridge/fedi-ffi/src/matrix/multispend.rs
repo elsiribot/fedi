@@ -562,7 +562,7 @@ pub async fn process_event_db_raw(
 pub async fn get_event_data_db(
     tx: &mut DatabaseTransaction<'_>,
     room_id: &RpcRoomId,
-    event_id: RpcEventId,
+    event_id: &RpcEventId,
 ) -> Option<MsEventData> {
     let invite_key = MultispendInvitationKey(room_id.clone(), event_id.clone());
     if let Some(invite) = tx.get_value(&invite_key).await {
@@ -652,8 +652,7 @@ pub async fn list_multispend_events(
 
     let mut result = Vec::new();
     for (counter, event_data) in events {
-        if let Some(ms_event) = get_event_data_db(dbtx, room_id, event_data.event_id.clone()).await
-        {
+        if let Some(ms_event) = get_event_data_db(dbtx, room_id, &event_data.event_id).await {
             result.push(MultispendListedEvent {
                 counter,
                 time: event_data.event_time,
@@ -765,7 +764,7 @@ mod tests {
 
         // Verify the data through get_event_data_db.
         if let Some(MsEventData::GroupInvitation(invite)) =
-            get_event_data_db(&mut tx.to_ref_nc(), &room_id, event1_id).await
+            get_event_data_db(&mut tx.to_ref_nc(), &room_id, &event1_id).await
         {
             assert_eq!(invite.invitation, invitation);
             let pubkeys: BTreeSet<_> = invite.pubkeys.values().cloned().collect();

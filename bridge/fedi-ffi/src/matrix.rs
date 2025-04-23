@@ -1398,8 +1398,7 @@ impl Matrix {
         match multispend::get_group_status_db(&mut dbtx, &room_id).await {
             Some(MultispendGroupStatus::ActiveInvitation { active_invite_id }) => {
                 let Some(MsEventData::GroupInvitation(state)) =
-                    multispend::get_event_data_db(&mut dbtx, &room_id, active_invite_id.clone())
-                        .await
+                    multispend::get_event_data_db(&mut dbtx, &room_id, &active_invite_id).await
                 else {
                     panic!("inconsistent multispend db")
                 };
@@ -1531,14 +1530,58 @@ impl Matrix {
     /// Get all accumulated data for an event id.
     pub async fn get_multispend_event_data(
         &self,
-        room_id: RpcRoomId,
-        event_id: RpcEventId,
+        room_id: &RpcRoomId,
+        event_id: &RpcEventId,
     ) -> Option<MsEventData> {
         let multispend_db = self.runtime.multispend_db();
         let mut dbtx = multispend_db.begin_transaction_nc().await;
-        multispend::get_event_data_db(&mut dbtx, &room_id, event_id).await
+        multispend::get_event_data_db(&mut dbtx, room_id, event_id).await
     }
 
+    /// Get all accumulated data for an event id.
+    pub async fn observe_multispend_event_data(
+        self: &Arc<Self>,
+        observable_id: u64,
+        room_id: RpcRoomId,
+        event_id: RpcEventId,
+    ) -> Result<Observable<MsEventData>> {
+        let this = self.clone();
+        let typed_room_id = room_id.into_typed()?;
+        self.rescanner.wait_for_scanned(&typed_room_id).await;
+        let initial = self
+            .get_multispend_event_data(&room_id, &event_id)
+            .await
+            .context("event not found")?;
+        let mut last_value = initial.clone();
+        self.runtime
+            .observable_pool
+            .make_observable(
+                observable_id,
+                initial,
+                move |pool, observable_id| async move {
+                    let mut update_index = 0;
+                    let mut stream = pin!(this.rescanner.scan_complete_stream(&typed_room_id));
+                    while let Some(()) = stream.next().await {
+                        let updated = this
+                            .get_multispend_event_data(&room_id, &event_id)
+                            .await
+                            .expect("event to not disappear after checking once above");
+                        if updated != last_value {
+                            last_value = updated.clone();
+                            pool.send_observable_update(ObservableUpdate::new(
+                                observable_id,
+                                update_index,
+                                updated,
+                            ))
+                            .await;
+                            update_index += 1;
+                        }
+                    }
+                    Ok(())
+                },
+            )
+            .await
+    }
     /// Check if this is an invalid multispend event.
     pub async fn is_invalid_multispend_event(&self, event_id: RpcEventId) -> bool {
         let multispend_db = self.runtime.multispend_db();
@@ -1894,8 +1937,8 @@ mod tests {
         let event_id = last_event.event_id().unwrap();
         let event_data = matrix
             .get_multispend_event_data(
-                RpcRoomId(room_id.to_string()),
-                RpcEventId(event_id.to_string()),
+                &RpcRoomId(room_id.to_string()),
+                &RpcEventId(event_id.to_string()),
             )
             .await;
         assert!(event_data.is_some());
@@ -1945,7 +1988,7 @@ mod tests {
         let invitation_event_id = RpcEventId(last_event.event_id().unwrap().to_string());
 
         let event_data1 = matrix1
-            .get_multispend_event_data(RpcRoomId(room_id.to_string()), invitation_event_id.clone())
+            .get_multispend_event_data(&RpcRoomId(room_id.to_string()), &invitation_event_id)
             .await;
 
         assert_eq!(
@@ -1964,8 +2007,8 @@ mod tests {
             || async {
                 matrix2
                     .get_multispend_event_data(
-                        RpcRoomId(room_id.to_string()),
-                        invitation_event_id.clone(),
+                        &RpcRoomId(room_id.to_string()),
+                        &invitation_event_id,
                     )
                     .await
                     .context("event not found")
@@ -2067,7 +2110,7 @@ mod tests {
         let invitation_event_id = RpcEventId(last_event.event_id().unwrap().to_string());
 
         let event_data1 = matrix1
-            .get_multispend_event_data(RpcRoomId(room_id.to_string()), invitation_event_id.clone())
+            .get_multispend_event_data(&RpcRoomId(room_id.to_string()), &invitation_event_id)
             .await;
 
         assert_eq!(
@@ -2087,8 +2130,8 @@ mod tests {
             || async {
                 matrix2
                     .get_multispend_event_data(
-                        RpcRoomId(room_id.to_string()),
-                        invitation_event_id.clone(),
+                        &RpcRoomId(room_id.to_string()),
+                        &invitation_event_id,
                     )
                     .await
                     .context("event not found")
@@ -2114,8 +2157,8 @@ mod tests {
             || async {
                 let data = matrix1
                     .get_multispend_event_data(
-                        RpcRoomId(room_id.to_string()),
-                        invitation_event_id.clone(),
+                        &RpcRoomId(room_id.to_string()),
+                        &invitation_event_id,
                     )
                     .await
                     .unwrap();
@@ -2143,7 +2186,7 @@ mod tests {
 
         // Verify matrix2 has the same data
         let event_data2 = matrix2
-            .get_multispend_event_data(RpcRoomId(room_id.to_string()), invitation_event_id)
+            .get_multispend_event_data(&RpcRoomId(room_id.to_string()), &invitation_event_id)
             .await;
         assert_eq!(Some(event_data1), event_data2);
 

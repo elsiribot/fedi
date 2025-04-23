@@ -763,6 +763,10 @@ export type RpcMethods = {
     null,
   ];
   matrixMultispendEventData: [matrixMultispendEventData, MsEventData | null];
+  matrixObserveMultispendEventData: [
+    matrixObserveMultispendEventData,
+    Observable<MsEventData>,
+  ];
   matrixSendMultispendWithdrawalRequest: [
     matrixSendMultispendWithdrawalRequest,
     null,
@@ -1546,6 +1550,12 @@ export type matrixMultispendListEvents = {
 };
 
 export type matrixObservableCancel = { observableId: number };
+
+export type matrixObserveMultispendEventData = {
+  observableId: number;
+  roomId: RpcRoomId;
+  eventId: RpcEventId;
+};
 
 export type matrixObserveMultispendGroup = {
   observableId: number;
