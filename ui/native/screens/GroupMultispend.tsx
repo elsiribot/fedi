@@ -6,8 +6,8 @@ import { useMultispendDisplayUtils } from '@fedi/common/hooks/multispend'
 import { selectMatrixRoomMultispendStatus } from '@fedi/common/redux'
 
 import MultispendWalletHeader from '../components/feature/multispend/MultispendWalletHeader'
-import MultispendFinalized from '../components/feature/multispend/finalized'
-import MultispendActiveInvitation from '../components/feature/multispend/invitation'
+import MultispendFinalized from '../components/feature/multispend/finalized/MultispendFinalized'
+import MultispendActiveInvitation from '../components/feature/multispend/invitation/MultispendActiveInvitation'
 import { useAppSelector } from '../state/hooks'
 import { RootStackParamList } from '../types/navigation'
 
