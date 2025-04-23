@@ -178,7 +178,7 @@ impl ObservablePool {
     ) -> Result<Observable<R>>
     where
         T: std::fmt::Debug + MaybeSend + MaybeSync + 'static,
-        R: 'static + Clone + Serialize + std::fmt::Debug + MaybeSend + MaybeSync + From<T>,
+        R: 'static + Serialize + std::fmt::Debug + MaybeSend + MaybeSync + From<T>,
     {
         let mut stream = Box::pin(stream);
         let initial = if let Some(initial) = initial {

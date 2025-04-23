@@ -770,6 +770,14 @@ async fn spv2AccountInfo(
 }
 
 #[macro_rules_derive(federation_rpc_method!)]
+async fn spv2ObserveAccountInfo(
+    federation: Arc<FederationV2>,
+    observable_id: u32,
+) -> anyhow::Result<Observable<RpcSPv2CachedSyncResponse>> {
+    federation.spv2_observe_account_info(observable_id).await
+}
+
+#[macro_rules_derive(federation_rpc_method!)]
 async fn spv2NextCycleStartTime(federation: Arc<FederationV2>) -> anyhow::Result<u64> {
     federation.spv2_next_cycle_start_time().await
 }
@@ -1985,6 +1993,7 @@ rpc_methods!(RpcMethods {
     stabilityPoolAvailableLiquidity,
     // Stability Pool v2
     spv2AccountInfo,
+    spv2ObserveAccountInfo,
     spv2NextCycleStartTime,
     spv2DepositToSeek,
     spv2Withdraw,

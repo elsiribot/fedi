@@ -123,6 +123,7 @@ use crate::features::{StabilityPoolV2FeatureConfig, StabilityPoolV2FeatureConfig
 use crate::fedi_fee::{FediFeeHelper, FediFeeRemittanceService};
 use crate::matrix::multispend::services::MultispendServices;
 use crate::matrix::RpcRoomId;
+use crate::observable::Observable;
 use crate::storage::{DatabaseInfo, FederationInfo, FediFeeSchedule};
 use crate::types::{
     federation_v2_to_rpc_federation, BaseMetadata, EcashReceiveMetadata, EcashSendMetadata,
@@ -131,9 +132,9 @@ use crate::types::{
     RpcGenerateEcashResponse, RpcInvoice, RpcLightningGateway, RpcOperationFediFeeStatus,
     RpcPayAddressResponse, RpcPayInvoiceResponse, RpcPrevPayInvoiceResult, RpcPublicKey,
     RpcReturningMemberStatus, RpcSPDepositState, RpcSPV2DepositState, RpcSPV2TransferInState,
-    RpcSPV2TransferOutState, RpcSPV2WithdrawalState, RpcSPWithdrawState, RpcTransaction,
-    RpcTransactionDirection, RpcTransactionKind, RpcTransactionListEntry, SPv2DepositMetadata,
-    SPv2TransferMetadata, SPv2WithdrawMetadata,
+    RpcSPV2TransferOutState, RpcSPV2WithdrawalState, RpcSPWithdrawState, RpcSPv2CachedSyncResponse,
+    RpcTransaction, RpcTransactionDirection, RpcTransactionKind, RpcTransactionListEntry,
+    SPv2DepositMetadata, SPv2TransferMetadata, SPv2WithdrawMetadata,
 };
 use crate::utils::{display_currency, to_unix_time};
 
@@ -2966,6 +2967,35 @@ impl FederationV2 {
             .get_value(&CachedSyncResponseKey { account_id })
             .await
             .ok_or(ErrorCode::BadRequest.into())
+    }
+
+    /// Same as [`spv2_account_info`] except that it returns an Observable that
+    /// emits new values whenever the CachedSyncResponse in the DB updates.
+    pub async fn spv2_observe_account_info(
+        &self,
+        observable_id: u32,
+    ) -> Result<Observable<RpcSPv2CachedSyncResponse>> {
+        ensure!(
+            self.spv2_feature_state().is_some(),
+            ErrorCode::ModuleNotFound(STABILITY_POOL_V2_OPERATION_TYPE.to_string())
+        );
+
+        let Some(sync_service) = self.spv2_sync_service.get() else {
+            bail!("Unexpected: sync service must have been initialized");
+        };
+
+        let update_stream = sync_service
+            .subscribe_to_updates()
+            .filter_map(|sync| async { sync.map(|sync| sync.into()) });
+
+        self.runtime
+            .observable_pool
+            .make_observable_from_stream(
+                observable_id.into(),
+                None::<RpcSPv2CachedSyncResponse>,
+                update_stream,
+            )
+            .await
     }
 
     /// Returns the start time of the next cycle by adding cycle duration to the
