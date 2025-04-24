@@ -71,7 +71,7 @@ export function initializeNativeStore() {
         debounce(state => {
             log.debug('Network status changed (debounced)', state)
             store.dispatch(setNetworkInfo(state))
-        }, 1350),
+        }, 225),
     )
 
     return () => {
