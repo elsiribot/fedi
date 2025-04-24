@@ -1,20 +1,10 @@
 [package]
-name = "fedi-ffi"
+name = "fedi"
 version = "0.3.0"
 edition = "2021"
 
-[lib]
-crate-type = ["staticlib", "cdylib", "rlib"]
-name = "fediffi"
-
-# TODO: remove after uniffi upgraded
-# https://github.com/mozilla/uniffi-rs/issues/2346
-[lints.clippy]
-empty-line-after-doc-comments = "allow"
-
 [dependencies]
 fedi-api-types = { workspace = true }
-fedi-core = { workspace = true }
 fedimint-core = { workspace = true }
 fedimint-client = { workspace = true }
 fedimint-tbs = { workspace = true }
@@ -56,8 +46,6 @@ async-trait = { workspace = true }
 tokio = { workspace = true, features = ["time", "macros"] }
 url = "2.3.1"
 reqwest = { workspace = true }
-rolling-file = "0.2.0"
-tracing-appender = "0.2.2"
 matrix-sdk-ui = { workspace = true, default-features = false }
 matrix-sdk = { workspace = true, default-features = false, features = [
   "js",
@@ -74,16 +62,11 @@ eyeball = "0.8.7"
 async-recursion = "1.1.0"
 tokio-stream = { version = "0.1.17", features = ["sync"] }
 async-stream.workspace = true
-fedi = { path = "../fedi" }
 
 [target.'cfg(target_family = "wasm")'.dependencies]
 ring = { version = "0.17.14", features = ["wasm32_unknown_unknown_js"] }
 
 [target.'cfg(not(target_family = "wasm"))'.dependencies]
-fedimint-rocksdb = { workspace = true }
-tokio-util = { version = "0.7.9", features = ["codec", "net"] }
-tracing-subscriber = { version = "0.3.1", features = ["env-filter", "json"] }
-uniffi = { version = "0.25.3" }
 matrix-sdk = { workspace = true, default-features = false, features = [
   "sqlite",
 ] }
@@ -95,19 +78,4 @@ rusqlite = { version = "*" }
 rusqlite = { version = "*", features = ["bundled"] }
 
 [build-dependencies]
-uniffi = { version = "0.25.3", features = ["build"] }
 fedimint-build = { workspace = true }
-
-[dev-dependencies]
-tempfile = "3.17.1"
-mockito = "1.4.0"
-clap = { workspace = true }
-
-# FIXME: just put these above? or dev-dependencies
-[target.'cfg(target_os = "macos")'.dependencies]
-fedimint-logging = { workspace = true }
-devimint = { workspace = true }
-
-[target.'cfg(target_os = "linux")'.dependencies]
-fedimint-logging = { workspace = true }
-devimint = { workspace = true }

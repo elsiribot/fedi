@@ -4,23 +4,23 @@ use std::sync::Arc;
 
 use anyhow::{bail, Context};
 use async_trait::async_trait;
+use fedi::api::LiveFediApi;
+use fedi::bridge::Bridge;
+use fedi::error::ErrorCode;
+// used by uniffi
+pub use fedi::event::IEventSink as EventSink;
+use fedi::features::{FeatureCatalog, RuntimeEnvironment};
+use fedi::storage::IStorage;
+use fedi::types::{RpcAppFlavor, RpcInitOpts};
 use lazy_static::lazy_static;
 use tokio::sync::Mutex;
 use tracing::{error, info, warn};
 
-use super::bridge::Bridge;
-// used by uniffi
-pub use super::event::IEventSink as EventSink;
 use super::logging;
 pub use super::rpc::FedimintError;
 use super::rpc::{fedimint_initialize_async, fedimint_rpc_async};
-use super::storage::IStorage;
-use crate::api::LiveFediApi;
-use crate::error::ErrorCode;
-use crate::features::{FeatureCatalog, RuntimeEnvironment};
 use crate::remote::{fedimint_remote_initialize, fedimint_remote_rpc};
 use crate::rpc::{self, rpc_error_json};
-use crate::types::{RpcAppFlavor, RpcInitOpts};
 
 lazy_static! {
     // Global Tokio runtime
