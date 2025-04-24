@@ -1,6 +1,5 @@
 pub mod api;
-pub mod bridge;
-pub mod community;
+pub mod bridge_runtime;
 pub mod federation;
 // FIXME: kinda feels like this should just be it's own crate ...
 pub mod constants;

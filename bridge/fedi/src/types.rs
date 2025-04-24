@@ -24,7 +24,6 @@ use ts_rs::TS;
 use super::federation::federation_v2::FederationV2;
 use super::utils::to_unix_time;
 use crate::api::RegisteredDevice;
-use crate::bridge::BridgeFullInitError;
 use crate::error::RpcError;
 use crate::federation::federation_v2::client::ClientExt;
 use crate::matrix::RpcRoomId;
@@ -124,29 +123,6 @@ pub enum RpcFederationMaybeLoading {
 
 #[derive(Debug, Serialize, Deserialize, TS)]
 #[serde(rename_all = "camelCase")]
-#[serde(tag = "type")]
-#[ts(export)]
-pub enum RpcBridgeFullInitError {
-    V2IdentifierMismatch { existing: String, new: String },
-    Other(String),
-}
-
-impl From<&BridgeFullInitError> for RpcBridgeFullInitError {
-    fn from(error: &BridgeFullInitError) -> Self {
-        match error {
-            BridgeFullInitError::V2IdentifierMismatch { existing, new } => {
-                RpcBridgeFullInitError::V2IdentifierMismatch {
-                    existing: existing.to_string(),
-                    new: new.to_string(),
-                }
-            }
-            BridgeFullInitError::Other(error) => RpcBridgeFullInitError::Other(error.to_string()),
-        }
-    }
-}
-
-#[derive(Debug, Serialize, Deserialize, TS)]
-#[serde(rename_all = "camelCase")]
 #[ts(export)]
 pub enum RpcBitcoinNetwork {
     /// Mainnet Bitcoin.
@@ -175,15 +151,6 @@ impl From<Network> for RpcBitcoinNetwork {
             _ => RpcBitcoinNetwork::Unknown,
         }
     }
-}
-
-#[derive(Debug, Serialize, Deserialize, TS)]
-#[serde(rename_all = "camelCase")]
-#[ts(export)]
-pub struct RpcBridgeStatus {
-    pub matrix_setup: bool,
-    pub device_index_assignment_status: RpcDeviceIndexAssignmentStatus,
-    pub bridge_full_init_error: Option<RpcBridgeFullInitError>,
 }
 
 #[derive(Debug, Serialize, Deserialize, TS)]

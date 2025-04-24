@@ -8,7 +8,7 @@ use fedimint_core::util::retry;
 use tracing::{error, info};
 
 use crate::api::{IFediApi, RegisterDeviceError, RegisteredDevice};
-use crate::bridge::BridgeRuntime;
+use crate::bridge_runtime::BridgeRuntime;
 use crate::constants::{DEVICE_REGISTRATION_FREQUENCY, DEVICE_REGISTRATION_OVERDUE};
 use crate::event::{Event, EventSink, TypedEventExt};
 use crate::storage::AppState;

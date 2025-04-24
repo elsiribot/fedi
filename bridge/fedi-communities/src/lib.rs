@@ -5,20 +5,18 @@ use std::sync::Arc;
 use std::time::Duration;
 
 use anyhow::{bail, Context};
-use bech32;
+use fedi::bridge_runtime::BridgeRuntime;
+use fedi::constants::COMMUNITY_INVITE_CODE_HRP;
+use fedi::error::ErrorCode;
+use fedi::event::{Event, EventSink, TypedEventExt};
+use fedi::storage::{AppState, CommunityInfo, CommunityJson};
+use fedi::types::RpcCommunity;
 use fedimint_core::task::TaskGroup;
 use fedimint_core::util::backoff_util::aggressive_backoff;
 use fedimint_core::util::update_merge::UpdateMerge;
 use serde::{Deserialize, Serialize};
 use tokio::sync::{Mutex, RwLock};
 use tracing::info;
-
-use crate::bridge::BridgeRuntime;
-use crate::constants::COMMUNITY_INVITE_CODE_HRP;
-use crate::error::ErrorCode;
-use crate::event::{Event, EventSink, TypedEventExt};
-use crate::storage::{AppState, CommunityInfo};
-use crate::types::RpcCommunity;
 
 /// Communities is a coordinator-like struct that encapsulates all state and
 /// logic related to the functionality of communities. The Bridge struct
@@ -191,17 +189,6 @@ impl FromStr for CommunityInvite {
         let decoded_str = String::from_utf8(data)?;
         Ok(serde_json::from_str(&decoded_str)?)
     }
-}
-
-/// When fetching the Community's JSON file and deserializing it, we expect the
-/// name, and version to always be there. All other fields are encapsulated in
-/// the "meta" map and the front-end can decide how best to utilize them.
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
-pub struct CommunityJson {
-    pub name: String,
-    pub version: u32,
-    #[serde(flatten)]
-    pub meta: BTreeMap<String, String>,
 }
 
 /// We think of a Community as a Federation without a wallet (fedimint-client).

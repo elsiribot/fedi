@@ -12,6 +12,7 @@ anyhow = { workspace = true }
 async-trait = { workspace = true }
 console_error_panic_hook = "0.1.7"
 fedi-ffi = { version = "0.3.0", path = "../fedi-ffi" }
+fedi-bridge = { path = "../fedi-bridge" }
 futures = { workspace = true }
 gloo-file = "0.2.3"
 imbl = "4"

@@ -9,7 +9,7 @@ use federations_locker::FederationsLocker;
 use fedimint_core::invite_code::InviteCode;
 use tracing::error;
 
-use crate::bridge::BridgeRuntime;
+use crate::bridge_runtime::BridgeRuntime;
 use crate::fedi_fee::FediFeeHelper;
 use crate::matrix::multispend::services::MultispendServices;
 use crate::storage::FederationInfo;

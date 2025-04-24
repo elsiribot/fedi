@@ -5,13 +5,13 @@ use std::sync::Arc;
 use anyhow::{bail, Context};
 use async_trait::async_trait;
 use fedi::api::LiveFediApi;
-use fedi::bridge::Bridge;
 use fedi::error::ErrorCode;
 // used by uniffi
 pub use fedi::event::IEventSink as EventSink;
 use fedi::features::{FeatureCatalog, RuntimeEnvironment};
 use fedi::storage::IStorage;
 use fedi::types::{RpcAppFlavor, RpcInitOpts};
+use fedi_bridge::Bridge;
 use lazy_static::lazy_static;
 use tokio::sync::Mutex;
 use tracing::{error, info, warn};

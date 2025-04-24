@@ -21,7 +21,6 @@ use tokio::sync::RwLock;
 use tracing::error;
 use ts_rs::TS;
 
-use crate::community::CommunityJson;
 use crate::constants::{
     DEVICE_IDENTIFIER_FIXED_LENGTH, DEVICE_REGISTRATION_CHILD_ID, FEDI_FILE_PATH,
 };
@@ -351,6 +350,17 @@ pub struct CommunityInfo {
     /// restart, and also to be able to diff and notify the front-end in
     /// case of any updates.
     pub meta: CommunityJson,
+}
+
+/// When fetching the Community's JSON file and deserializing it, we expect the
+/// name, and version to always be there. All other fields are encapsulated in
+/// the "meta" map and the front-end can decide how best to utilize them.
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+pub struct CommunityJson {
+    pub name: String,
+    pub version: u32,
+    #[serde(flatten)]
+    pub meta: BTreeMap<String, String>,
 }
 
 // In order to display time-of-transaction fiat rate and currency, we need to

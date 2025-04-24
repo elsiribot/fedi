@@ -13,7 +13,7 @@ use lightning_invoice::Bolt11Invoice;
 use tokio::sync::{Mutex, OwnedMutexGuard};
 use tracing::{error, info, instrument, warn};
 
-use crate::bridge::BridgeRuntime;
+use crate::bridge_runtime::BridgeRuntime;
 use crate::constants::MILLION;
 use crate::federation::federation_v2::client::ClientExt;
 use crate::federation::federation_v2::db::{

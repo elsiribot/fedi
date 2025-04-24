@@ -2,7 +2,7 @@ use std::sync::Arc;
 
 use super::completion_notification_service::CompletionNotificationService;
 use super::withdrawal_service::WithdrawalService;
-use crate::bridge::BridgeRuntime;
+use crate::bridge_runtime::BridgeRuntime;
 
 pub struct MultispendServices {
     pub withdrawal: WithdrawalService,
