@@ -10,6 +10,39 @@ use std::time::{Duration, UNIX_EPOCH};
 use anyhow::Context;
 use bitcoin::secp256k1::Message;
 use bitcoin::Amount;
+use fedi::api::IFediApi;
+use fedi::bridge::{Bridge, BridgeFull, BridgeRuntime};
+use fedi::constants::{GLOBAL_MATRIX_SERVER, GLOBAL_MATRIX_SLIDING_SYNC_PROXY};
+use fedi::error::{ErrorCode, RpcError};
+use fedi::event::{Event, EventSink, IEventSink, PanicEvent, SocialRecoveryEvent, TypedEventExt};
+use fedi::features::FeatureCatalog;
+use fedi::federation::federation_sm::FederationState;
+use fedi::federation::federation_v2::client::ClientExt;
+use fedi::federation::federation_v2::{BackupServiceStatus, FederationV2};
+use fedi::federation::Federations;
+use fedi::matrix::multispend::db::RpcMultispendGroupStatus;
+use fedi::matrix::multispend::{
+    GroupInvitation, GroupInvitationWithKeys, MsEventData, MultispendGroupVoteType,
+    MultispendListedEvent, WithdrawRequestWithApprovals, WithdrawalResponseType,
+};
+use fedi::matrix::{
+    self, Matrix, RpcBackPaginationStatus, RpcMatrixAccountSession, RpcMatrixUploadResult,
+    RpcMatrixUserDirectorySearchResponse, RpcRoomId, RpcRoomMember, RpcRoomNotificationMode,
+    RpcSyncIndicator, RpcTimelineEventItemId, RpcTimelineItem, RpcUserId,
+};
+use fedi::observable::{Observable, ObservableVec};
+use fedi::storage::{DeviceIdentifier, FiatFXInfo, Storage};
+use fedi::types::{
+    federation_v2_to_rpc_federation, FrontendMetadata, GuardianStatus, NetworkError, RpcAmount,
+    RpcBridgeStatus, RpcCommunity, RpcDeviceIndexAssignmentStatus, RpcEcashInfo, RpcEventId,
+    RpcFederation, RpcFederationId, RpcFederationMaybeLoading, RpcFederationPreview, RpcFeeDetails,
+    RpcFiatAmount, RpcGenerateEcashResponse, RpcInvoice, RpcLightningGateway, RpcMediaUploadParams,
+    RpcNostrPubkey, RpcNostrSecret, RpcOperationId, RpcPayAddressResponse, RpcPayInvoiceResponse,
+    RpcPeerId, RpcPrevPayInvoiceResult, RpcPublicKey, RpcRecoveryId, RpcRegisteredDevice,
+    RpcSPv2CachedSyncResponse, RpcSPv2SyncResponse, RpcSignature, RpcSignedLnurlMessage,
+    RpcStabilityPoolAccountInfo, RpcTransaction, RpcTransactionDirection, RpcTransactionListEntry,
+    SocialRecoveryQr,
+};
 use fedi_bug_report::reused_ecash_proofs::SerializedReusedEcashProofs;
 use fedimint_client::db::ChronologicalOperationLogKey;
 use fedimint_core::core::OperationId;
@@ -31,46 +64,6 @@ use serde::{Deserialize, Serialize};
 use stability_pool_client::common::{FiatAmount, FiatOrAll};
 pub use tokio;
 use tracing::{error, info, instrument, Level};
-
-use super::bridge::Bridge;
-use super::error::ErrorCode;
-use super::storage::Storage;
-use super::types::{
-    RpcAmount, RpcFederation, RpcFederationId, RpcInvoice, RpcOperationId, RpcPayInvoiceResponse,
-    RpcPeerId, RpcPublicKey, RpcRecoveryId, RpcSignedLnurlMessage, RpcStabilityPoolAccountInfo,
-    SocialRecoveryQr,
-};
-use crate::api::IFediApi;
-use crate::bridge::{BridgeFull, BridgeRuntime};
-use crate::constants::{GLOBAL_MATRIX_SERVER, GLOBAL_MATRIX_SLIDING_SYNC_PROXY};
-use crate::error::RpcError;
-use crate::event::{Event, EventSink, IEventSink, PanicEvent, SocialRecoveryEvent, TypedEventExt};
-use crate::features::FeatureCatalog;
-use crate::federation::federation_sm::FederationState;
-use crate::federation::federation_v2::client::ClientExt;
-use crate::federation::federation_v2::{BackupServiceStatus, FederationV2};
-use crate::federation::Federations;
-use crate::matrix::multispend::db::RpcMultispendGroupStatus;
-use crate::matrix::multispend::{
-    GroupInvitation, GroupInvitationWithKeys, MsEventData, MultispendGroupVoteType,
-    MultispendListedEvent, WithdrawRequestWithApprovals, WithdrawalResponseType,
-};
-use crate::matrix::{
-    self, Matrix, RpcBackPaginationStatus, RpcMatrixAccountSession, RpcMatrixUploadResult,
-    RpcMatrixUserDirectorySearchResponse, RpcRoomId, RpcRoomMember, RpcRoomNotificationMode,
-    RpcSyncIndicator, RpcTimelineEventItemId, RpcTimelineItem, RpcUserId,
-};
-use crate::observable::{Observable, ObservableVec};
-use crate::storage::{DeviceIdentifier, FiatFXInfo};
-use crate::types::{
-    federation_v2_to_rpc_federation, FrontendMetadata, GuardianStatus, NetworkError,
-    RpcBridgeStatus, RpcCommunity, RpcDeviceIndexAssignmentStatus, RpcEcashInfo, RpcEventId,
-    RpcFederationMaybeLoading, RpcFederationPreview, RpcFeeDetails, RpcFiatAmount,
-    RpcGenerateEcashResponse, RpcLightningGateway, RpcMediaUploadParams, RpcNostrPubkey,
-    RpcNostrSecret, RpcPayAddressResponse, RpcPrevPayInvoiceResult, RpcRegisteredDevice,
-    RpcSPv2CachedSyncResponse, RpcSPv2SyncResponse, RpcSignature, RpcTransaction,
-    RpcTransactionDirection, RpcTransactionListEntry,
-};
 
 #[derive(Debug, thiserror::Error)]
 pub enum FedimintError {
@@ -2169,6 +2162,19 @@ pub mod tests {
     use devimint::util::{ClnLightningCli, FedimintCli, LnCli, ProcessManager};
     use devimint::vars::{self, mkdir};
     use devimint::{cmd, DevFed};
+    use fedi::api::{RegisterDeviceError, RegisteredDevice};
+    use fedi::community::CommunityInvite;
+    use fedi::constants::{COMMUNITY_INVITE_CODE_HRP, FEDI_FILE_PATH, MILLION};
+    use fedi::envs::USE_UPSTREAM_FEDIMINTD_ENV;
+    use fedi::event::{DeviceRegistrationEvent, TransactionEvent};
+    use fedi::features::RuntimeEnvironment;
+    use fedi::federation::federation_sm::FederationState;
+    use fedi::federation::federation_v2::FederationV2;
+    use fedi::storage::{DeviceIdentifier, FediFeeSchedule, IStorage};
+    use fedi::types::{
+        RpcLnReceiveState, RpcOOBReissueState, RpcOnchainDepositState, RpcReturningMemberStatus,
+        RpcTransactionDirection, RpcTransactionKind,
+    };
     use fedi_core::envs::FEDI_SOCIAL_RECOVERY_MODULE_ENABLE_ENV;
     use fedi_social_client::common::VerificationDocument;
     use fedimint_bip39::Bip39RootSecretStrategy;
@@ -2185,20 +2191,7 @@ pub mod tests {
     use tracing::{debug, info, trace};
 
     use super::*;
-    use crate::api::{RegisterDeviceError, RegisteredDevice};
-    use crate::community::CommunityInvite;
-    use crate::constants::{COMMUNITY_INVITE_CODE_HRP, FEDI_FILE_PATH, MILLION};
-    use crate::envs::USE_UPSTREAM_FEDIMINTD_ENV;
-    use crate::event::{DeviceRegistrationEvent, TransactionEvent};
-    use crate::features::RuntimeEnvironment;
-    use crate::federation::federation_sm::FederationState;
-    use crate::federation::federation_v2::FederationV2;
     use crate::ffi::PathBasedStorage;
-    use crate::storage::{DeviceIdentifier, FediFeeSchedule, IStorage};
-    use crate::types::{
-        RpcLnReceiveState, RpcOOBReissueState, RpcOnchainDepositState, RpcReturningMemberStatus,
-        RpcTransactionDirection, RpcTransactionKind,
-    };
 
     struct FakeEventSink {
         pub events: Arc<RwLock<Vec<(String, String)>>>,
@@ -3996,7 +3989,7 @@ pub mod tests {
         // service would try to renew registration. The conflict event is what the
         // front-end uses to block further user action.
         let registration_conflict_body = serde_json::to_string(&DeviceRegistrationEvent {
-            state: crate::event::DeviceRegistrationState::Conflict,
+            state: fedi::event::DeviceRegistrationState::Conflict,
         })
         .expect("failed to json serialize");
         assert!(!bridge_1
@@ -4133,7 +4126,7 @@ pub mod tests {
         // service would try to renew registration. The conflict event is what the
         // front-end uses to block further user action.
         let registration_conflict_body = serde_json::to_string(&DeviceRegistrationEvent {
-            state: crate::event::DeviceRegistrationState::Conflict,
+            state: fedi::event::DeviceRegistrationState::Conflict,
         })
         .expect("failed to json serialize");
         assert!(!backup_bridge

@@ -351,7 +351,7 @@ impl FederationV2 {
                 history_service.update_continuously(sync_service).await
             });
 
-            #[cfg(not(test))]
+            #[cfg(not(feature = "test-support"))]
             if self
                 .spv2_sweeper_service
                 .set(SPv2SweeperService::new(self))
@@ -360,7 +360,7 @@ impl FederationV2 {
                 error!("spv2 sweeper service already initialized");
             }
         } else {
-            #[cfg(not(test))]
+            #[cfg(not(feature = "test-support"))]
             if self.client.sp().is_ok()
                 && self
                     .stability_pool_sweeper_service
