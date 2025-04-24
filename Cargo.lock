@@ -2065,6 +2065,21 @@ dependencies = [
 ]
 
 [[package]]
+name = "device-registration"
+version = "0.3.0"
+dependencies = [
+ "anyhow",
+ "bip39",
+ "fedi",
+ "fedimint-core",
+ "reqwest 0.12.15",
+ "serde",
+ "serde_json",
+ "tokio",
+ "tracing",
+]
+
+[[package]]
 name = "devimint"
 version = "0.6.3-alpha"
 source = "git+https://github.com/fedibtc/fedimint?tag=v0.6.3-rc.0-fedi2#6b42ee792f710bd25291a7869c55b46b067c768e"
@@ -2547,6 +2562,7 @@ dependencies = [
  "bech32 0.11.0",
  "bip39",
  "bitcoin",
+ "device-registration",
  "fedi",
  "fedi-bug-report",
  "fedi-communities",
