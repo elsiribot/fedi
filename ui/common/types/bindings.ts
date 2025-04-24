@@ -171,7 +171,6 @@ export type FiatFXInfo = {
 };
 
 export type FinalizedGroup = {
-  invitationId: RpcEventId;
   invitation: GroupInvitation;
   proposer: RpcUserId;
   pubkeys: { [key in RpcUserId]?: RpcPublicKey };
