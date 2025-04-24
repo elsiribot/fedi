@@ -1,4 +1,6 @@
 use anyhow::anyhow;
+use fedi_common::event::{Event, EventSink, TypedEventExt};
+use fedi_common::types::{RpcAmount, SPv2WithdrawMetadata};
 use fedimint_client::ClientModuleInstance;
 use fedimint_core::core::OperationId;
 use fedimint_core::db::{Committable, DatabaseTransaction, IDatabaseTransactionOpsCoreTyped};
@@ -11,8 +13,6 @@ use tracing::{error, info};
 use super::client::ClientExt;
 use super::db::{LastSPv2SweeperWithdrawalKey, LastStabilityPoolV2DepositCycleKey};
 use super::FederationV2;
-use crate::event::{Event, EventSink, TypedEventExt};
-use crate::types::{RpcAmount, SPv2WithdrawMetadata};
 
 // A continously running background service that sweeps unfilled seeker deposits
 // back into e-cash balance. Unfilled deposits could be a result of

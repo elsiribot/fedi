@@ -1,11 +1,9 @@
 [package]
-name = "fedi"
+name = "fedi-common"
 version = "0.3.0"
 edition = "2021"
 
 [features]
-# to disable SP sweepers in tests
-test-support = []
 
 [dependencies]
 fedi-api-types = { workspace = true }
@@ -17,11 +15,9 @@ fedimint-ln-client = { workspace = true }
 fedimint-api-client = { workspace = true }
 fedimint-ln-common = { workspace = true }
 fedimint-wallet-client = { workspace = true }
-fedimint-meta-client = { workspace = true }
 fedi-social-client = { workspace = true }
 stability-pool-client-old = { path = "../../modules/stability-pool-old/client" }
 stability-pool-client = { path = "../../modules/stability-pool/client" }
-fedi-bug-report = { path = "../../fedi-bug-report" }
 fedimint-derive-secret = { workspace = true }
 fedimint-logging = { workspace = true }
 fedimint-bip39 = { workspace = true }
@@ -66,7 +62,6 @@ eyeball = "0.8.7"
 async-recursion = "1.1.0"
 tokio-stream = { version = "0.1.17", features = ["sync"] }
 async-stream.workspace = true
-fedi-common = { path = "../fedi-common" }
 
 [target.'cfg(target_family = "wasm")'.dependencies]
 ring = { version = "0.17.14", features = ["wasm32_unknown_unknown_js"] }

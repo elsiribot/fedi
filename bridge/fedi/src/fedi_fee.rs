@@ -4,6 +4,10 @@ use std::sync::Arc;
 use anyhow::{anyhow, bail};
 use async_recursion::async_recursion;
 use bitcoin::Network;
+use fedi_common::bridge_runtime::BridgeRuntime;
+use fedi_common::constants::MILLION;
+use fedi_common::storage::{FediFeeSchedule, ModuleFediFeeSchedule};
+use fedi_common::types::{LightningSendMetadata, RpcTransactionDirection};
 use fedimint_core::core::ModuleKind;
 use fedimint_core::db::IDatabaseTransactionOpsCoreTyped;
 use fedimint_core::Amount;
@@ -13,15 +17,11 @@ use lightning_invoice::Bolt11Invoice;
 use tokio::sync::{Mutex, OwnedMutexGuard};
 use tracing::{error, info, instrument, warn};
 
-use crate::bridge_runtime::BridgeRuntime;
-use crate::constants::MILLION;
 use crate::federation::federation_v2::client::ClientExt;
 use crate::federation::federation_v2::db::{
     OutstandingFediFeesPerTXTypeKey, OutstandingFediFeesPerTXTypeKeyPrefix,
 };
 use crate::federation::federation_v2::{zero_gateway_fees, FederationV2};
-use crate::storage::{FediFeeSchedule, ModuleFediFeeSchedule};
-use crate::types::{LightningSendMetadata, RpcTransactionDirection};
 
 /// Helper struct to encapsulate all state and logic related to Fedi fee. This
 /// struct can be consumed by both the bridge and each individual federation

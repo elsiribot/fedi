@@ -7,6 +7,7 @@ use std::any::Any;
 use std::collections::{BTreeMap, HashMap};
 use std::fmt::Debug;
 use std::future::Future;
+use std::ops::Not as _;
 use std::pin::pin;
 use std::str::FromStr;
 use std::sync::{Arc, Weak};
@@ -23,6 +24,31 @@ use db::{
     FediRawClientConfigKey, InviteCodeKey, LastStabilityPoolV2DepositCycleKey, TransactionNotesKey,
 };
 use fedi_bug_report::reused_ecash_proofs::{self, SerializedReusedEcashProofs};
+use fedi_common::bridge_runtime::BridgeRuntime;
+use fedi_common::constants::{
+    ECASH_AUTO_CANCEL_DURATION, LIGHTNING_OPERATION_TYPE, MILLION, MINT_OPERATION_TYPE,
+    PAY_INVOICE_TIMEOUT, REISSUE_ECASH_TIMEOUT, STABILITY_POOL_OPERATION_TYPE,
+    STABILITY_POOL_V2_OPERATION_TYPE, WALLET_OPERATION_TYPE,
+};
+use fedi_common::db::FederationPendingRejoinFromScratchKey;
+use fedi_common::error::ErrorCode;
+use fedi_common::event::{Event, RecoveryProgressEvent, TypedEventExt};
+use fedi_common::features::{StabilityPoolV2FeatureConfig, StabilityPoolV2FeatureConfigState};
+use fedi_common::observable::Observable;
+use fedi_common::storage::{DatabaseInfo, FederationInfo, FediFeeSchedule};
+use fedi_common::types::matrix::RpcRoomId;
+use fedi_common::types::{
+    BaseMetadata, EcashReceiveMetadata, EcashSendMetadata, FrontendMetadata, GuardianStatus,
+    LightningSendMetadata, OperationFediFeeStatus, RpcAmount, RpcFederation, RpcFederationId,
+    RpcFederationMaybeLoading, RpcFederationPreview, RpcFeeDetails, RpcGenerateEcashResponse,
+    RpcInvoice, RpcJsonClientConfig, RpcLightningGateway, RpcOperationFediFeeStatus,
+    RpcPayAddressResponse, RpcPayInvoiceResponse, RpcPeerId, RpcPrevPayInvoiceResult, RpcPublicKey,
+    RpcReturningMemberStatus, RpcSPDepositState, RpcSPV2DepositState, RpcSPV2TransferInState,
+    RpcSPV2TransferOutState, RpcSPV2WithdrawalState, RpcSPWithdrawState, RpcSPv2CachedSyncResponse,
+    RpcTransaction, RpcTransactionDirection, RpcTransactionKind, RpcTransactionListEntry,
+    SPv2DepositMetadata, SPv2TransferMetadata, SPv2WithdrawMetadata,
+};
+use fedi_common::utils::{display_currency, to_unix_time};
 use fedi_social_client::common::VerificationDocument;
 use fedi_social_client::{
     FediSocialClientInit, RecoveryFile, RecoveryId, SocialBackup, SocialRecoveryClient,
@@ -110,33 +136,8 @@ use self::dev::{
 use self::ln_gateway_service::LnGatewayService;
 use self::stability_pool_sweeper_service::StabilityPoolSweeperService;
 use super::federations_locker::FederationLockGuard;
-use crate::bridge_runtime::BridgeRuntime;
-use crate::constants::{
-    ECASH_AUTO_CANCEL_DURATION, LIGHTNING_OPERATION_TYPE, MILLION, MINT_OPERATION_TYPE,
-    PAY_INVOICE_TIMEOUT, REISSUE_ECASH_TIMEOUT, STABILITY_POOL_OPERATION_TYPE,
-    STABILITY_POOL_V2_OPERATION_TYPE, WALLET_OPERATION_TYPE,
-};
-use crate::db::FederationPendingRejoinFromScratchKey;
-use crate::error::ErrorCode;
-use crate::event::{Event, RecoveryProgressEvent, TypedEventExt};
-use crate::features::{StabilityPoolV2FeatureConfig, StabilityPoolV2FeatureConfigState};
 use crate::fedi_fee::{FediFeeHelper, FediFeeRemittanceService};
 use crate::matrix::multispend::services::MultispendServices;
-use crate::matrix::RpcRoomId;
-use crate::observable::Observable;
-use crate::storage::{DatabaseInfo, FederationInfo, FediFeeSchedule};
-use crate::types::{
-    federation_v2_to_rpc_federation, BaseMetadata, EcashReceiveMetadata, EcashSendMetadata,
-    FrontendMetadata, GuardianStatus, LightningSendMetadata, OperationFediFeeStatus, RpcAmount,
-    RpcFederationId, RpcFederationMaybeLoading, RpcFederationPreview, RpcFeeDetails,
-    RpcGenerateEcashResponse, RpcInvoice, RpcLightningGateway, RpcOperationFediFeeStatus,
-    RpcPayAddressResponse, RpcPayInvoiceResponse, RpcPrevPayInvoiceResult, RpcPublicKey,
-    RpcReturningMemberStatus, RpcSPDepositState, RpcSPV2DepositState, RpcSPV2TransferInState,
-    RpcSPV2TransferOutState, RpcSPV2WithdrawalState, RpcSPWithdrawState, RpcSPv2CachedSyncResponse,
-    RpcTransaction, RpcTransactionDirection, RpcTransactionKind, RpcTransactionListEntry,
-    SPv2DepositMetadata, SPv2TransferMetadata, SPv2WithdrawMetadata,
-};
-use crate::utils::{display_currency, to_unix_time};
 
 mod backup_service;
 mod ln_gateway_service;
@@ -1783,9 +1784,51 @@ impl FederationV2 {
         ));
     }
 
+    pub async fn to_rpc_federation(&self) -> RpcFederation {
+        let id = RpcFederationId(self.federation_id().to_string());
+        let name = self.federation_name();
+        let network = self.get_network().map(Into::into);
+        let client_config = self.client.config().await;
+        let meta = self.get_cached_meta().await;
+        let nodes = client_config
+            .global
+            .api_endpoints
+            .clone()
+            .iter()
+            .map(|(peer_id, peer_url)| (RpcPeerId(*peer_id), peer_url.clone()))
+            .collect();
+        let client_config_json = self.client.get_config_json().await;
+        let (invite_code, fedi_fee_schedule, balance) = futures::join!(
+            self.get_invite_code(),
+            self.fedi_fee_schedule(),
+            self.get_balance(),
+        );
+        let had_reused_ecash = if let Ok(x) = self.client.mint() {
+            x.reused_note_secrets().await.is_empty().not()
+        } else {
+            false
+        };
+        RpcFederation {
+            balance: RpcAmount(balance),
+            id,
+            network,
+            name,
+            invite_code,
+            meta,
+            nodes,
+            recovering: self.recovering(),
+            client_config: Some(RpcJsonClientConfig {
+                global: client_config_json.global,
+                modules: client_config_json.modules,
+            }),
+            fedi_fee_schedule: fedi_fee_schedule.into(),
+            had_reused_ecash,
+        }
+    }
+
     /// Send whenever federation meta keys change
     pub async fn send_federation_event(&self) {
-        let rpc_federation = federation_v2_to_rpc_federation(self).await;
+        let rpc_federation = self.to_rpc_federation().await;
         let event = Event::federation(RpcFederationMaybeLoading::Ready(rpc_federation));
         self.runtime.event_sink.typed_event(&event);
     }

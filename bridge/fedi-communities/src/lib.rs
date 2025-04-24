@@ -5,12 +5,12 @@ use std::sync::Arc;
 use std::time::Duration;
 
 use anyhow::{bail, Context};
-use fedi::bridge_runtime::BridgeRuntime;
-use fedi::constants::COMMUNITY_INVITE_CODE_HRP;
-use fedi::error::ErrorCode;
-use fedi::event::{Event, EventSink, TypedEventExt};
-use fedi::storage::{AppState, CommunityInfo, CommunityJson};
-use fedi::types::RpcCommunity;
+use fedi_common::bridge_runtime::BridgeRuntime;
+use fedi_common::constants::COMMUNITY_INVITE_CODE_HRP;
+use fedi_common::error::ErrorCode;
+use fedi_common::event::{Event, EventSink, TypedEventExt};
+use fedi_common::storage::{AppState, CommunityInfo, CommunityJson};
+use fedi_common::types::RpcCommunity;
 use fedimint_core::task::TaskGroup;
 use fedimint_core::util::backoff_util::aggressive_backoff;
 use fedimint_core::util::update_merge::UpdateMerge;

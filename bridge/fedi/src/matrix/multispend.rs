@@ -8,6 +8,9 @@ use db::{
     MultispendGroupStatusKey, MultispendInvalidEvent, MultispendInvitationKey,
     MultispendPendingApprovedWithdrawalRequestKey, MultispendWithdrawRequestKey,
 };
+use fedi_common::types::{
+    RpcEventId, RpcFederationId, RpcFiatAmount, RpcPublicKey, RpcSignature, RpcTransactionId,
+};
 use fedimint_core::db::{DatabaseTransaction, IDatabaseTransactionOpsCoreTyped};
 use fedimint_core::encoding::{Decodable, Encodable};
 use fedimint_core::invite_code::InviteCode;
@@ -20,9 +23,6 @@ use tracing::error;
 use ts_rs::TS;
 
 use super::{RpcRoomId, RpcUserId};
-use crate::types::{
-    RpcEventId, RpcFederationId, RpcFiatAmount, RpcPublicKey, RpcSignature, RpcTransactionId,
-};
 
 pub mod completion_notification_service;
 pub mod db;

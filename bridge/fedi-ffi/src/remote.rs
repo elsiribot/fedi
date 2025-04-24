@@ -3,9 +3,9 @@ use std::sync::{Arc, OnceLock};
 use std::thread;
 
 use anyhow::{Context, Result};
-use fedi::api::LiveFediApi;
-use fedi::event::IEventSink;
-use fedi::features::FeatureCatalog;
+use fedi_common::api::LiveFediApi;
+use fedi_common::event::IEventSink;
+use fedi_common::features::FeatureCatalog;
 use fedimint_core::task;
 use fedimint_logging::TracingSetup;
 use futures::{Future, SinkExt, StreamExt};
@@ -175,7 +175,7 @@ pub async fn init(data_dir: PathBuf) -> anyhow::Result<()> {
         Arc::new(SenderEventSink(response_tx.clone())),
         Arc::new(LiveFediApi::new()),
         "Unknown (remote bridge)".to_owned(),
-        FeatureCatalog::new(fedi::features::RuntimeEnvironment::Dev).into(),
+        FeatureCatalog::new(fedi_common::features::RuntimeEnvironment::Dev).into(),
     )
     .await
     .context("fedimint initalize")?;

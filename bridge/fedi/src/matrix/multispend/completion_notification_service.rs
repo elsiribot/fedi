@@ -1,5 +1,7 @@
 use std::sync::Arc;
 
+use fedi_common::bridge_runtime::BridgeRuntime;
+use fedi_common::types::{RpcEventId, RpcFiatAmount, RpcTransactionId};
 use fedimint_core::db::IDatabaseTransactionOpsCoreTyped as _;
 use fedimint_core::util::backoff_util::background_backoff;
 use fedimint_core::util::retry;
@@ -10,10 +12,8 @@ use tokio::sync::Notify;
 use tracing::error;
 
 use super::db::MultispendPendingCompletionNotification;
-use crate::bridge_runtime::BridgeRuntime;
 use crate::matrix::multispend::db::MultispendPendingCompletionNotificationPrefix;
 use crate::matrix::{Matrix, RpcRoomId};
-use crate::types::{RpcEventId, RpcFiatAmount, RpcTransactionId};
 
 // This service maintains a list of pending multispend notifications and sends
 // them into the room.

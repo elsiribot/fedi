@@ -1,6 +1,9 @@
 use std::time::{Duration, SystemTime};
 
 use anyhow::Result;
+use fedi_common::constants::BACKUP_FREQUENCY;
+use fedi_common::types::FediBackupMetadata;
+use fedi_common::utils::to_unix_time;
 use fedimint_client::backup::Metadata;
 use fedimint_client::Client;
 use fedimint_core::db::{DatabaseTransaction, IDatabaseTransactionOpsCoreTyped};
@@ -13,9 +16,6 @@ use tracing::{error, info, instrument};
 use ts_rs::TS;
 
 use super::db::LastBackupTimestampKey;
-use crate::constants::BACKUP_FREQUENCY;
-use crate::types::FediBackupMetadata;
-use crate::utils::to_unix_time;
 
 #[derive(Default)]
 pub struct BackupService {

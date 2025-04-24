@@ -40,4 +40,5 @@ url = "2.3.1"
 reqwest = { workspace = true }
 fedi = { path = "../fedi" }
 fedi-communities = { path = "../fedi-communities" }
+fedi-common = { path = "../fedi-common" }
 device-registration = { path = "../device-registration" }

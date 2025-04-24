@@ -13,4 +13,4 @@ bip39 = { version = "2.0.0", features = ["rand"] }
 tracing = { workspace = true }
 tokio = { workspace = true, features = ["time", "macros"] }
 reqwest = { workspace = true }
-fedi = { path = "../fedi" }
+fedi-common = { path = "../fedi-common" }
