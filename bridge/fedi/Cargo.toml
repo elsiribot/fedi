@@ -3,6 +3,10 @@ name = "fedi"
 version = "0.3.0"
 edition = "2021"
 
+[features]
+# to disable SP sweepers in tests
+test-support = []
+
 [dependencies]
 fedi-api-types = { workspace = true }
 fedimint-core = { workspace = true }
