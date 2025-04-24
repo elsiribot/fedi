@@ -1,4 +1,4 @@
-use fedi_common::types::{RpcEventId, RpcFederationId, RpcFiatAmount, RpcTransactionId};
+use fedi_rpc_types::{RpcEventId, RpcFederationId, RpcFiatAmount, RpcTransactionId};
 use fedimint_core::db::{DatabaseTransaction, IDatabaseTransactionOpsCoreTyped as _};
 use fedimint_core::encoding::{Decodable, Encodable};
 use fedimint_core::{impl_db_lookup, impl_db_record};

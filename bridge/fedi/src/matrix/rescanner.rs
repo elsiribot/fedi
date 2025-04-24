@@ -11,7 +11,7 @@ use std::sync::Arc;
 use anyhow::Context;
 use async_stream::stream;
 use fedi_common::bridge_runtime::BridgeRuntime;
-use fedi_common::types::RpcEventId;
+use fedi_rpc_types::RpcEventId;
 use fedimint_core::db::{DatabaseTransaction, IDatabaseTransactionOpsCoreTyped as _};
 use futures::Stream;
 use matrix_sdk::deserialized_responses::TimelineEvent;

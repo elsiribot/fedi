@@ -8,7 +8,7 @@ use db::{
     MultispendGroupStatusKey, MultispendInvalidEvent, MultispendInvitationKey,
     MultispendPendingApprovedWithdrawalRequestKey, MultispendWithdrawRequestKey,
 };
-use fedi_common::types::{
+use fedi_rpc_types::{
     RpcEventId, RpcFederationId, RpcFiatAmount, RpcPublicKey, RpcSignature, RpcTransactionId,
 };
 use fedimint_core::db::{DatabaseTransaction, IDatabaseTransactionOpsCoreTyped};

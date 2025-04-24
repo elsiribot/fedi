@@ -8,7 +8,7 @@ use std::sync::{Arc, Mutex};
 use std::time::SystemTime;
 
 use anyhow::Context;
-use fedi_common::event::{Event, EventSink, TypedEventExt};
+use fedi_rpc_types::event::{Event, EventSink, TypedEventExt};
 use fedimint_logging::{LOG_CLIENT, LOG_CLIENT_MODULE_WALLET, LOG_CLIENT_REACTOR};
 use rolling_file::{BasicRollingFileAppender, RollingConditionBasic};
 use tracing::metadata::LevelFilter;

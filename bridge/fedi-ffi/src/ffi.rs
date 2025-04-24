@@ -6,12 +6,12 @@ use anyhow::{bail, Context};
 use async_trait::async_trait;
 use fedi_bridge::Bridge;
 use fedi_common::api::LiveFediApi;
-use fedi_common::error::ErrorCode;
 // used by uniffi
 pub use fedi_common::event::IEventSink as EventSink;
 use fedi_common::features::{FeatureCatalog, RuntimeEnvironment};
 use fedi_common::storage::IStorage;
-use fedi_common::types::{RpcAppFlavor, RpcInitOpts};
+use fedi_rpc_types::error::ErrorCode;
+use fedi_rpc_types::{RpcAppFlavor, RpcInitOpts};
 use lazy_static::lazy_static;
 use tokio::sync::Mutex;
 use tracing::{error, info, warn};

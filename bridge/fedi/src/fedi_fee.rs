@@ -4,10 +4,11 @@ use std::sync::Arc;
 use anyhow::{anyhow, bail};
 use async_recursion::async_recursion;
 use bitcoin::Network;
+use fedi_common::api::TransactionDirection;
 use fedi_common::bridge_runtime::BridgeRuntime;
 use fedi_common::constants::MILLION;
 use fedi_common::storage::{FediFeeSchedule, ModuleFediFeeSchedule};
-use fedi_common::types::{LightningSendMetadata, RpcTransactionDirection};
+use fedi_rpc_types::{LightningSendMetadata, RpcTransactionDirection};
 use fedimint_core::core::ModuleKind;
 use fedimint_core::db::IDatabaseTransactionOpsCoreTyped;
 use fedimint_core::Amount;
@@ -192,7 +193,15 @@ impl FediFeeHelper {
     ) -> anyhow::Result<Bolt11Invoice> {
         self.runtime
             .fedi_api
-            .fetch_fedi_fee_invoice(amount, network, module, tx_direction)
+            .fetch_fedi_fee_invoice(
+                amount,
+                network,
+                module,
+                match tx_direction {
+                    RpcTransactionDirection::Receive => TransactionDirection::Receive,
+                    RpcTransactionDirection::Send => TransactionDirection::Send,
+                },
+            )
             .await
     }
 }

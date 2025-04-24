@@ -8,8 +8,8 @@ use federation_v2::FederationV2;
 use federations_locker::FederationsLocker;
 use fedi_common::bridge_runtime::BridgeRuntime;
 use fedi_common::storage::FederationInfo;
-use fedi_common::types::RpcFederationPreview;
 use fedi_common::utils::PoisonedLockExt as _;
+use fedi_rpc_types::RpcFederationPreview;
 use fedimint_core::invite_code::InviteCode;
 use tracing::error;
 

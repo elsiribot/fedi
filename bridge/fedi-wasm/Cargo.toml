@@ -14,6 +14,7 @@ console_error_panic_hook = "0.1.7"
 fedi-ffi = { version = "0.3.0", path = "../fedi-ffi" }
 fedi-bridge = { path = "../fedi-bridge" }
 fedi-common = { path = "../fedi-common" }
+fedi-rpc-types = { path = "../fedi-rpc-types" }
 futures = { workspace = true }
 gloo-file = "0.2.3"
 imbl = "4"

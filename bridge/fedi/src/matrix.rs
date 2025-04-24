@@ -6,14 +6,14 @@ use std::time::Duration;
 
 use anyhow::{bail, Context, Result};
 use fedi_common::bridge_runtime::BridgeRuntime;
-use fedi_common::error::ErrorCode;
 use fedi_common::features::StabilityPoolV2FeatureConfigState;
 use fedi_common::observable::{Observable, ObservableUpdate, ObservableVec, ObservableVecUpdate};
 use fedi_common::storage::AppState;
-use fedi_common::types::{
+use fedi_common::utils::PoisonedLockExt as _;
+use fedi_rpc_types::error::ErrorCode;
+use fedi_rpc_types::{
     NetworkError, RpcEventId, RpcMediaUploadParams, RpcPublicKey, RpcSPv2SyncResponse,
 };
-use fedi_common::utils::PoisonedLockExt as _;
 use fedimint_core::db::IDatabaseTransactionOpsCoreTyped;
 use fedimint_derive_secret::DerivableSecret;
 use futures::StreamExt;
@@ -81,7 +81,7 @@ use crate::federation::federation_v2::FederationV2;
 
 pub mod multispend;
 mod rescanner;
-pub use fedi_common::types::matrix::*;
+pub use fedi_rpc_types::matrix::*;
 
 use crate::matrix::rescanner::RoomRescannerManager;
 

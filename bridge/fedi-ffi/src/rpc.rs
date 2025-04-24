@@ -24,19 +24,18 @@ use fedi::matrix::{
     RpcMatrixUserDirectorySearchResponse, RpcRoomId, RpcRoomMember, RpcRoomNotificationMode,
     RpcSyncIndicator, RpcTimelineEventItemId, RpcTimelineItem, RpcUserId,
 };
-use fedi_bridge::{Bridge, BridgeFull, RpcBridgeStatus};
+use fedi_bridge::{Bridge, BridgeFull, BridgeRuntimeExt as _, RpcBridgeStatus};
 use fedi_bug_report::reused_ecash_proofs::SerializedReusedEcashProofs;
 use fedi_common::api::IFediApi;
 use fedi_common::bridge_runtime::BridgeRuntime;
 use fedi_common::constants::{GLOBAL_MATRIX_SERVER, GLOBAL_MATRIX_SLIDING_SYNC_PROXY};
-use fedi_common::error::{ErrorCode, RpcError};
-use fedi_common::event::{
-    Event, EventSink, IEventSink, PanicEvent, SocialRecoveryEvent, TypedEventExt,
-};
+use fedi_common::event::IEventSink;
 use fedi_common::features::FeatureCatalog;
 use fedi_common::observable::{Observable, ObservableVec};
 use fedi_common::storage::{DeviceIdentifier, FiatFXInfo, Storage};
-use fedi_common::types::{
+use fedi_rpc_types::error::{ErrorCode, RpcError};
+use fedi_rpc_types::event::{Event, EventSink, PanicEvent, SocialRecoveryEvent, TypedEventExt};
+use fedi_rpc_types::{
     FrontendMetadata, GuardianStatus, NetworkError, RpcAmount, RpcCommunity,
     RpcDeviceIndexAssignmentStatus, RpcEcashInfo, RpcEventId, RpcFederation, RpcFederationId,
     RpcFederationMaybeLoading, RpcFederationPreview, RpcFeeDetails, RpcFiatAmount,
@@ -1002,7 +1001,7 @@ async fn transferExistingDeviceRegistration(
     bridge.register_device_with_index(index, true).await
 }
 
-async fn ensure_device_index_unassigned(runtime: &BridgeRuntime) -> anyhow::Result<()> {
+async fn ensure_device_index_unassigned(runtime: &Arc<BridgeRuntime>) -> anyhow::Result<()> {
     anyhow::ensure!(
         matches!(
             runtime.device_index_assignment_status().await,
@@ -2167,18 +2166,19 @@ pub mod tests {
     use devimint::{cmd, DevFed};
     use fedi::federation::federation_sm::FederationState;
     use fedi::federation::federation_v2::FederationV2;
-    use fedi_common::api::{RegisterDeviceError, RegisteredDevice};
+    use fedi_bridge::BridgeRuntimeExt as _;
+    use fedi_common::api::{RegisterDeviceError, RegisteredDevice, TransactionDirection};
     use fedi_common::constants::{COMMUNITY_INVITE_CODE_HRP, FEDI_FILE_PATH, MILLION};
     use fedi_common::envs::USE_UPSTREAM_FEDIMINTD_ENV;
-    use fedi_common::event::{DeviceRegistrationEvent, TransactionEvent};
     use fedi_common::features::RuntimeEnvironment;
     use fedi_common::storage::{DeviceIdentifier, FediFeeSchedule, IStorage};
-    use fedi_common::types::{
+    use fedi_communities::CommunityInvite;
+    use fedi_core::envs::FEDI_SOCIAL_RECOVERY_MODULE_ENABLE_ENV;
+    use fedi_rpc_types::event::{DeviceRegistrationEvent, TransactionEvent};
+    use fedi_rpc_types::{
         RpcLnReceiveState, RpcOOBReissueState, RpcOnchainDepositState, RpcReturningMemberStatus,
         RpcTransactionDirection, RpcTransactionKind,
     };
-    use fedi_communities::CommunityInvite;
-    use fedi_core::envs::FEDI_SOCIAL_RECOVERY_MODULE_ENABLE_ENV;
     use fedi_social_client::common::VerificationDocument;
     use fedimint_bip39::Bip39RootSecretStrategy;
     use fedimint_client::secret::RootSecretStrategy;
@@ -2266,7 +2266,7 @@ pub mod tests {
             _amount: Amount,
             _network: Network,
             _module: ModuleKind,
-            _tx_direction: RpcTransactionDirection,
+            _tx_direction: TransactionDirection,
         ) -> anyhow::Result<Bolt11Invoice> {
             self.fedi_fee_invoice
                 .clone()
@@ -3992,7 +3992,7 @@ pub mod tests {
         // service would try to renew registration. The conflict event is what the
         // front-end uses to block further user action.
         let registration_conflict_body = serde_json::to_string(&DeviceRegistrationEvent {
-            state: fedi_common::event::DeviceRegistrationState::Conflict,
+            state: fedi_rpc_types::event::DeviceRegistrationState::Conflict,
         })
         .expect("failed to json serialize");
         assert!(!bridge_1
@@ -4129,7 +4129,7 @@ pub mod tests {
         // service would try to renew registration. The conflict event is what the
         // front-end uses to block further user action.
         let registration_conflict_body = serde_json::to_string(&DeviceRegistrationEvent {
-            state: fedi_common::event::DeviceRegistrationState::Conflict,
+            state: fedi_rpc_types::event::DeviceRegistrationState::Conflict,
         })
         .expect("failed to json serialize");
         assert!(!backup_bridge
