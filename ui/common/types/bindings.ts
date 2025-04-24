@@ -171,6 +171,7 @@ export type FiatFXInfo = {
 };
 
 export type FinalizedGroup = {
+  invitationId: RpcEventId;
   invitation: GroupInvitation;
   proposer: RpcUserId;
   pubkeys: { [key in RpcUserId]?: RpcPublicKey };
@@ -274,6 +275,7 @@ export type MultispendListedEvent = {
   counter: number;
   time: number;
   event: MsEventData;
+  eventId: RpcEventId;
 };
 
 export type NetworkError = Record<string, never>;

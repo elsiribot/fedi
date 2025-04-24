@@ -338,6 +338,7 @@ pub struct MultispendListedEvent {
     #[ts(type = "number")]
     pub time: u64,
     pub event: MsEventData,
+    pub event_id: RpcEventId,
 }
 
 pub struct MultispendContext {
@@ -657,6 +658,7 @@ pub async fn list_multispend_events(
                 counter,
                 time: event_data.event_time,
                 event: ms_event,
+                event_id: event_data.event_id,
             });
         } else {
             error!("inconsistent database");
