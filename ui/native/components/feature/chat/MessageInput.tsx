@@ -118,6 +118,7 @@ const MessageInput: React.FC<MessageInputProps> = ({
     const editingMessage = useAppSelector(selectMessageToEdit)
 
     const isEditingMessage = !!editingMessage
+    const inputDisabled = isSending || isReadOnly
 
     useDebouncedEffect(
         () => {
@@ -404,14 +405,6 @@ const MessageInput: React.FC<MessageInputProps> = ({
         attachments,
         isSendingMessage,
     ])
-
-    // Re-focus input after it had been disabled
-    const inputDisabled = isSending || isReadOnly
-    useEffect(() => {
-        if (!inputDisabled) {
-            inputRef.current?.focus()
-        }
-    }, [inputDisabled])
 
     const style = useMemo(() => styles(theme, insets), [theme, insets])
 
