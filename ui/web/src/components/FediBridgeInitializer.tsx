@@ -3,9 +3,11 @@ import React, { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 
 import FediLogo from '@fedi/common/assets/svgs/fedi-logo-icon.svg'
+import { INVALID_NAME_PLACEHOLDER } from '@fedi/common/constants/matrix'
 import { useObserveMatrixSyncStatus } from '@fedi/common/hooks/matrix'
 import { useUpdatingRef } from '@fedi/common/hooks/util'
 import {
+    fetchRegisteredDevices,
     fetchSocialRecovery,
     initializeDeviceIdWeb,
     initializeFedimintVersion,
@@ -14,13 +16,21 @@ import {
     refreshFederations,
     selectSocialRecoveryQr,
     selectMatrixStarted,
+    setDeviceIndexRequired,
+    setShouldLockDevice,
     startMatrixClient,
     setMatrixDisplayName,
+    selectHasSetMatrixDisplayName,
     setMatrixSetup,
     selectMatrixStatus,
+    selectMatrixAuth,
 } from '@fedi/common/redux'
 import { selectHasLoadedFromStorage } from '@fedi/common/redux/storage'
 import { MatrixSyncStatus } from '@fedi/common/types'
+import {
+    DeviceRegistrationEvent,
+    PanicEvent,
+} from '@fedi/common/types/bindings'
 import { generateRandomDisplayName } from '@fedi/common/utils/chat'
 import { formatErrorMessage } from '@fedi/common/utils/format'
 import { makeLog } from '@fedi/common/utils/log'
@@ -46,8 +56,16 @@ export const FediBridgeInitializer: React.FC<Props> = ({ children }) => {
     const started = useAppSelector(selectMatrixStarted)
     const hasLoadedStorage = useAppSelector(selectHasLoadedFromStorage)
     const socialRecoveryId = useAppSelector(selectSocialRecoveryQr)
+    const hasSetMatrixDisplayName = useAppSelector(
+        selectHasSetMatrixDisplayName,
+    )
+    const shouldLockDevice = useAppSelector(s => s.recovery.shouldLockDevice)
+    const deviceIndexRequired = useAppSelector(
+        s => s.recovery.deviceIndexRequired,
+    )
     const isMatrixSetup = useAppSelector(s => s.matrix.setup)
     const syncStatus = useAppSelector(selectMatrixStatus)
+    const matrixAuth = useAppSelector(selectMatrixAuth)
 
     const tRef = useUpdatingRef(t)
     const dispatchRef = useUpdatingRef(dispatch)
@@ -70,28 +88,47 @@ export const FediBridgeInitializer: React.FC<Props> = ({ children }) => {
             .then(status => {
                 log.info('bridgeStatus', status)
 
-                // if matrix has been setup then make this available in state
-                if (status.matrixSetup) {
-                    dispatchRef.current(setMatrixSetup(true))
+                const promises = [
+                    dispatchRef.current(fetchSocialRecovery(fedimint)),
+                    dispatchRef.current(initializeNostrKeys({ fedimint })),
 
-                    return dispatchRef
-                        .current(startMatrixClient({ fedimint }))
-                        .unwrap()
-                }
+                    // this happens when the user entered seed words but quit the app
+                    // before completing device index selection so we fetch devices
+                    // again since that typically gets fetched from recoverFromMnemonic
+                    ...(status?.deviceIndexAssignmentStatus === 'unassigned'
+                        ? [
+                              dispatchRef.current(setDeviceIndexRequired(true)),
+                              dispatchRef.current(
+                                  // TODO: make sure this is offline-friendly? should it be?
+                                  fetchRegisteredDevices(fedimint),
+                              ),
+                          ]
+                        : []),
+
+                    // if there is no matrix session yet we will start the matrix
+                    // client either during recovery or during onboarding after a
+                    // display name is entered
+                    ...(status?.matrixSetup
+                        ? [
+                              dispatchRef.current(
+                                  startMatrixClient({ fedimint }),
+                              ),
+                              dispatchRef.current(setMatrixSetup(true)),
+                          ]
+                        : []),
+                ]
+
+                return Promise.all(promises)
             })
 
             .then(() => {
-                return Promise.all([
-                    dispatchRef.current(
-                        initializeFedimintVersion({ fedimint }),
-                    ),
-                    dispatchRef.current(fetchSocialRecovery(fedimint)),
-                    dispatchRef.current(refreshFederations(fedimint)).unwrap(),
-                    dispatchRef.current(initializeNostrKeys({ fedimint })),
-                ])
+                return dispatchRef
+                    .current(refreshFederations(fedimint))
+                    .unwrap()
             })
             .then(() => {
                 dispatchRef.current(previewAllDefaultChats())
+                dispatchRef.current(initializeFedimintVersion({ fedimint }))
             })
             .catch(err =>
                 setError(
@@ -105,27 +142,57 @@ export const FediBridgeInitializer: React.FC<Props> = ({ children }) => {
             .finally(() => setIsLoading(false))
     }, [dispatchRef, hasLoadedStorage, tRef])
 
-    // Listen for matrix "synced" so display name can be set
-    // This should only ever happen once because isMatrixSetup
-    // will always be true from this point
+    // Set random displayName when bridge has synced unless the user
+    // has one (which could have been done on another device before recovery)
     useEffect(() => {
-        if (syncStatus === MatrixSyncStatus.synced && !isMatrixSetup) {
+        if (
+            syncStatus === MatrixSyncStatus.synced &&
+            !isMatrixSetup &&
+            (!matrixAuth?.displayName ||
+                matrixAuth?.displayName === INVALID_NAME_PLACEHOLDER)
+        ) {
             dispatch(
                 setMatrixDisplayName({
                     displayName: generateRandomDisplayName(2),
                 }),
             )
+
             dispatch(setMatrixSetup(true))
         }
-    }, [dispatch, isMatrixSetup, syncStatus])
+    }, [
+        dispatch,
+        hasSetMatrixDisplayName,
+        isMatrixSetup,
+        matrixAuth?.displayName,
+        syncStatus,
+    ])
 
     // Show an error message if the bridge panics while running.
     useEffect(() => {
-        const unsubscribe = fedimint.addListener('panic', ev => {
-            setError(ev.message)
-        })
-        return () => unsubscribe()
-    }, [])
+        // Initialize panic listener
+        const unsubscribePanic = fedimint.addListener(
+            'panic',
+            (ev: PanicEvent) => {
+                setError(ev.message)
+            },
+        )
+
+        // Initialize locked device listener
+        const unsubscribeDeviceRegistration = fedimint.addListener(
+            'deviceRegistration',
+            (ev: DeviceRegistrationEvent) => {
+                log.info('DeviceRegistrationEvent', ev)
+                if (ev.state === 'conflict') {
+                    dispatchRef.current(setShouldLockDevice(true))
+                }
+            },
+        )
+
+        return () => {
+            unsubscribePanic()
+            unsubscribeDeviceRegistration()
+        }
+    }, [dispatchRef])
 
     if (isLoading) {
         return (
@@ -147,13 +214,37 @@ export const FediBridgeInitializer: React.FC<Props> = ({ children }) => {
         )
     }
 
+    if (shouldLockDevice) {
+        return (
+            <Content>
+                <Text>{'🔒'}</Text>
+                <Text variant="h2">
+                    {t('feature.recovery.wallet-moved-title')}
+                </Text>
+                <Text variant="body">
+                    {t('feature.recovery.wallet-moved-desc')}
+                </Text>
+            </Content>
+        )
+    }
+
+    // Navigates to personal recovery flow here because the user entered
+    // seed words but quit the app before completing device index selection
+    if (
+        deviceIndexRequired &&
+        asPath !== '/onboarding/recover/wallet-transfer' &&
+        !asPath.includes('recover')
+    ) {
+        return <Redirect path="/onboarding/recover/wallet-transfer" />
+    }
+
     // If mid social recovery, force them to stay on the page
     if (socialRecoveryId && asPath !== '/onboarding/recover/social') {
         return <Redirect path="/onboarding/recover/social" />
     }
 
     // If matrix hasn't been initialized redirect to Welcome page
-    // but allow access to onboarding/recovery routes
+    // but allow access to recovery routes
     // (Note: we could move all recovery pages out of /onboarding route and into /recover)
     if (
         syncStatus === MatrixSyncStatus.uninitialized &&
@@ -204,7 +295,10 @@ const Content = styled('div', {
     display: 'flex',
     height: '100dvh',
     flexDirection: 'column',
+    gap: 10,
     justifyContent: 'center',
+    padding: '0 40px',
+    textAlign: 'center',
     width: '100%',
 })
 

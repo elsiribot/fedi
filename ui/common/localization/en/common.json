@@ -872,6 +872,8 @@
             "transfer-existing-wallet-guidance-1": "This will bring your existing wallet to this device and lock the wallet on the other device.",
             "transfer-existing-wallet-guidance-2": "You do not need the old device to transfer.",
             "try-social-recovery-again": "Try social recovery again",
+            "wallet-moved-title": "This Wallet Has Moved",
+            "wallet-moved-desc": "It's now active on another device. To set up a new wallet here, reinstall Fedi.",
             "wallet-transfer": "Wallet transfer",
             "wallet-was-transferred": "Wallet was transferred",
             "you-completed-personal-recovery": "You completed Personal Recovery",

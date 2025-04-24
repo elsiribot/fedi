@@ -77,16 +77,15 @@ function WelcomePage() {
                         loading={loading}>
                         {t('words.continue')}
                     </Button>
-                    {/* Recover account option is hidden for the time-being
-                    as requires device lock and seed reuse logic (#4214) */}
-                    {/* {!inviteCode && (
+
+                    {!inviteCode && (
                         <Button
                             width="full"
                             href="/onboarding/recover"
                             variant="secondary">
                             {t('phrases.recover-my-account')}
                         </Button>
-                    )} */}
+                    )}
 
                     <TextWrapper>
                         <Text
