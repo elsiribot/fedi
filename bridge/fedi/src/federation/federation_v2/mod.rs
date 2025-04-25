@@ -110,7 +110,7 @@ use self::dev::{
 use self::ln_gateway_service::LnGatewayService;
 use self::stability_pool_sweeper_service::StabilityPoolSweeperService;
 use super::federations_locker::FederationLockGuard;
-use crate::bridge::BridgeRuntime;
+use crate::bridge_runtime::BridgeRuntime;
 use crate::constants::{
     ECASH_AUTO_CANCEL_DURATION, LIGHTNING_OPERATION_TYPE, MILLION, MINT_OPERATION_TYPE,
     PAY_INVOICE_TIMEOUT, REISSUE_ECASH_TIMEOUT, STABILITY_POOL_OPERATION_TYPE,

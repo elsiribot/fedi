@@ -68,7 +68,7 @@ use stability_pool_client::common::TransferRequest;
 use tokio::sync::{mpsc, Mutex};
 use tracing::{error, info, warn};
 
-use crate::bridge::BridgeRuntime;
+use crate::bridge_runtime::BridgeRuntime;
 use crate::error::ErrorCode;
 use crate::features::StabilityPoolV2FeatureConfigState;
 use crate::federation::federation_v2::FederationV2;

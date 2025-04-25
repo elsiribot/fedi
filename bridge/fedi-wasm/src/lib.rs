@@ -5,8 +5,8 @@ use std::panic::AssertUnwindSafe;
 use std::sync::Arc;
 
 use anyhow::{bail, Context};
+use fedi_bridge::Bridge;
 use fediffi::api::LiveFediApi;
-use fediffi::bridge::Bridge;
 use fediffi::error::ErrorCode;
 use fediffi::event::IEventSink;
 use fediffi::features::{FeatureCatalog, RuntimeEnvironment};

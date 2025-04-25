@@ -75,6 +75,8 @@ async-recursion = "1.1.0"
 tokio-stream = { version = "0.1.17", features = ["sync"] }
 async-stream.workspace = true
 fedi = { path = "../fedi" }
+fedi-bridge = { path = "../fedi-bridge" }
+fedi-communities = { path = "../fedi-communities" }
 
 [target.'cfg(target_family = "wasm")'.dependencies]
 ring = { version = "0.17.14", features = ["wasm32_unknown_unknown_js"] }

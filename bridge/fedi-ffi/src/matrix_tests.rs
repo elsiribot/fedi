@@ -6,7 +6,7 @@ use std::time::Duration;
 
 use anyhow::{Context as _, Result};
 use bitcoin::secp256k1;
-use fedi::bridge::BridgeRuntime;
+use fedi::bridge_runtime::BridgeRuntime;
 use fedi::constants::MATRIX_CHILD_ID;
 use fedi::event::IEventSink;
 use fedi::features::{FeatureCatalog, RuntimeEnvironment};

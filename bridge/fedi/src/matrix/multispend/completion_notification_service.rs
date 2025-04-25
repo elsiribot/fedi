@@ -10,7 +10,7 @@ use tokio::sync::Notify;
 use tracing::error;
 
 use super::db::MultispendPendingCompletionNotification;
-use crate::bridge::BridgeRuntime;
+use crate::bridge_runtime::BridgeRuntime;
 use crate::matrix::multispend::db::MultispendPendingCompletionNotificationPrefix;
 use crate::matrix::{Matrix, RpcRoomId};
 use crate::types::{RpcEventId, RpcFiatAmount, RpcTransactionId};

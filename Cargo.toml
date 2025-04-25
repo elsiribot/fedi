@@ -32,6 +32,8 @@ default-members = [
   "modules/fedi-social/client",
   "bridge/fedi-ffi",
   "bridge/fedi",
+  "bridge/fedi-bridge",
+  "bridge/fedi-communities",
   "bridge/ffi-bindgen",
   "modules/stability-pool-old/client",
   "modules/stability-pool-old/common",

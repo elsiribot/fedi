@@ -9,7 +9,7 @@ use tokio::sync::RwLock;
 use tracing::{error, info};
 
 use super::federations_locker::{FederationLockGuard, FederationsLocker};
-use crate::bridge::BridgeRuntime;
+use crate::bridge_runtime::BridgeRuntime;
 use crate::db::FederationPendingRejoinFromScratchKey;
 use crate::error::RpcError;
 use crate::event::{Event, TypedEventExt as _};

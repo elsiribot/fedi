@@ -24,7 +24,7 @@ use super::multispend::db::MultispendScannerLastEventKey;
 use super::multispend::services::MultispendServices;
 use super::multispend::{self, MultispendContext, MultispendEvent, MULTISPEND_MSGTYPE};
 use super::{RpcRoomId, RpcUserId};
-use crate::bridge::BridgeRuntime;
+use crate::bridge_runtime::BridgeRuntime;
 use crate::matrix::AnySyncMessageLikeEvent;
 use crate::types::RpcEventId;
 
