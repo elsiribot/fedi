@@ -1,3 +1,4 @@
+use fedi_common::types::{RpcEventId, RpcFederationId, RpcFiatAmount, RpcTransactionId};
 use fedimint_core::db::{DatabaseTransaction, IDatabaseTransactionOpsCoreTyped as _};
 use fedimint_core::encoding::{Decodable, Encodable};
 use fedimint_core::{impl_db_lookup, impl_db_record};
@@ -10,7 +11,6 @@ use super::{
     WithdrawRequestWithApprovals, WithdrawalResponseType,
 };
 use crate::matrix::RpcRoomId;
-use crate::types::{RpcEventId, RpcFederationId, RpcFiatAmount, RpcTransactionId};
 
 pub enum MultispendDbPrefix {
     /// (room_id) => MultispendGroupStatus

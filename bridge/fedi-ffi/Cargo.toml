@@ -75,6 +75,7 @@ async-recursion = "1.1.0"
 tokio-stream = { version = "0.1.17", features = ["sync"] }
 async-stream.workspace = true
 fedi = { path = "../fedi" }
+fedi-common = { path = "../fedi-common" }
 fedi-bridge = { path = "../fedi-bridge" }
 fedi-communities = { path = "../fedi-communities" }
 

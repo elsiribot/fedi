@@ -10,12 +10,6 @@ use std::time::{Duration, UNIX_EPOCH};
 use anyhow::Context;
 use bitcoin::secp256k1::Message;
 use bitcoin::Amount;
-use fedi::api::IFediApi;
-use fedi::bridge_runtime::BridgeRuntime;
-use fedi::constants::{GLOBAL_MATRIX_SERVER, GLOBAL_MATRIX_SLIDING_SYNC_PROXY};
-use fedi::error::{ErrorCode, RpcError};
-use fedi::event::{Event, EventSink, IEventSink, PanicEvent, SocialRecoveryEvent, TypedEventExt};
-use fedi::features::FeatureCatalog;
 use fedi::federation::federation_sm::FederationState;
 use fedi::federation::federation_v2::client::ClientExt;
 use fedi::federation::federation_v2::{BackupServiceStatus, FederationV2};
@@ -30,12 +24,22 @@ use fedi::matrix::{
     RpcMatrixUserDirectorySearchResponse, RpcRoomId, RpcRoomMember, RpcRoomNotificationMode,
     RpcSyncIndicator, RpcTimelineEventItemId, RpcTimelineItem, RpcUserId,
 };
-use fedi::observable::{Observable, ObservableVec};
-use fedi::storage::{DeviceIdentifier, FiatFXInfo, Storage};
-use fedi::types::{
-    federation_v2_to_rpc_federation, FrontendMetadata, GuardianStatus, NetworkError, RpcAmount,
-    RpcCommunity, RpcDeviceIndexAssignmentStatus, RpcEcashInfo, RpcEventId, RpcFederation,
-    RpcFederationId, RpcFederationMaybeLoading, RpcFederationPreview, RpcFeeDetails, RpcFiatAmount,
+use fedi_bridge::{Bridge, BridgeFull, RpcBridgeStatus};
+use fedi_bug_report::reused_ecash_proofs::SerializedReusedEcashProofs;
+use fedi_common::api::IFediApi;
+use fedi_common::bridge_runtime::BridgeRuntime;
+use fedi_common::constants::{GLOBAL_MATRIX_SERVER, GLOBAL_MATRIX_SLIDING_SYNC_PROXY};
+use fedi_common::error::{ErrorCode, RpcError};
+use fedi_common::event::{
+    Event, EventSink, IEventSink, PanicEvent, SocialRecoveryEvent, TypedEventExt,
+};
+use fedi_common::features::FeatureCatalog;
+use fedi_common::observable::{Observable, ObservableVec};
+use fedi_common::storage::{DeviceIdentifier, FiatFXInfo, Storage};
+use fedi_common::types::{
+    FrontendMetadata, GuardianStatus, NetworkError, RpcAmount, RpcCommunity,
+    RpcDeviceIndexAssignmentStatus, RpcEcashInfo, RpcEventId, RpcFederation, RpcFederationId,
+    RpcFederationMaybeLoading, RpcFederationPreview, RpcFeeDetails, RpcFiatAmount,
     RpcGenerateEcashResponse, RpcInvoice, RpcLightningGateway, RpcMediaUploadParams,
     RpcNostrPubkey, RpcNostrSecret, RpcOperationId, RpcPayAddressResponse, RpcPayInvoiceResponse,
     RpcPeerId, RpcPrevPayInvoiceResult, RpcPublicKey, RpcRecoveryId, RpcRegisteredDevice,
@@ -43,8 +47,6 @@ use fedi::types::{
     RpcStabilityPoolAccountInfo, RpcTransaction, RpcTransactionDirection, RpcTransactionListEntry,
     SocialRecoveryQr,
 };
-use fedi_bridge::{Bridge, BridgeFull, RpcBridgeStatus};
-use fedi_bug_report::reused_ecash_proofs::SerializedReusedEcashProofs;
 use fedimint_client::db::ChronologicalOperationLogKey;
 use fedimint_core::core::OperationId;
 use fedimint_core::timing::TimeReporter;
@@ -290,7 +292,7 @@ async fn joinFederation(
     let fed_arc = federations
         .join_federation(invite_code, recover_from_scratch)
         .await?;
-    Ok(federation_v2_to_rpc_federation(&fed_arc).await)
+    Ok(fed_arc.to_rpc_federation().await)
 }
 
 #[macro_rules_derive(rpc_method!)]
@@ -313,7 +315,7 @@ async fn listFederations(
         feds_list.push(match fed_state {
             FederationState::Loading => RpcFederationMaybeLoading::Loading { id },
             FederationState::Ready(fed_arc) | FederationState::Recovering(fed_arc) => {
-                RpcFederationMaybeLoading::Ready(federation_v2_to_rpc_federation(&fed_arc).await)
+                RpcFederationMaybeLoading::Ready(fed_arc.to_rpc_federation().await)
             }
             FederationState::Failed(err_arc) => RpcFederationMaybeLoading::Failed {
                 id,
@@ -2163,15 +2165,15 @@ pub mod tests {
     use devimint::util::{ClnLightningCli, FedimintCli, LnCli, ProcessManager};
     use devimint::vars::{self, mkdir};
     use devimint::{cmd, DevFed};
-    use fedi::api::{RegisterDeviceError, RegisteredDevice};
-    use fedi::constants::{COMMUNITY_INVITE_CODE_HRP, FEDI_FILE_PATH, MILLION};
-    use fedi::envs::USE_UPSTREAM_FEDIMINTD_ENV;
-    use fedi::event::{DeviceRegistrationEvent, TransactionEvent};
-    use fedi::features::RuntimeEnvironment;
     use fedi::federation::federation_sm::FederationState;
     use fedi::federation::federation_v2::FederationV2;
-    use fedi::storage::{DeviceIdentifier, FediFeeSchedule, IStorage};
-    use fedi::types::{
+    use fedi_common::api::{RegisterDeviceError, RegisteredDevice};
+    use fedi_common::constants::{COMMUNITY_INVITE_CODE_HRP, FEDI_FILE_PATH, MILLION};
+    use fedi_common::envs::USE_UPSTREAM_FEDIMINTD_ENV;
+    use fedi_common::event::{DeviceRegistrationEvent, TransactionEvent};
+    use fedi_common::features::RuntimeEnvironment;
+    use fedi_common::storage::{DeviceIdentifier, FediFeeSchedule, IStorage};
+    use fedi_common::types::{
         RpcLnReceiveState, RpcOOBReissueState, RpcOnchainDepositState, RpcReturningMemberStatus,
         RpcTransactionDirection, RpcTransactionKind,
     };
@@ -3990,7 +3992,7 @@ pub mod tests {
         // service would try to renew registration. The conflict event is what the
         // front-end uses to block further user action.
         let registration_conflict_body = serde_json::to_string(&DeviceRegistrationEvent {
-            state: fedi::event::DeviceRegistrationState::Conflict,
+            state: fedi_common::event::DeviceRegistrationState::Conflict,
         })
         .expect("failed to json serialize");
         assert!(!bridge_1
@@ -4127,7 +4129,7 @@ pub mod tests {
         // service would try to renew registration. The conflict event is what the
         // front-end uses to block further user action.
         let registration_conflict_body = serde_json::to_string(&DeviceRegistrationEvent {
-            state: fedi::event::DeviceRegistrationState::Conflict,
+            state: fedi_common::event::DeviceRegistrationState::Conflict,
         })
         .expect("failed to json serialize");
         assert!(!backup_bridge

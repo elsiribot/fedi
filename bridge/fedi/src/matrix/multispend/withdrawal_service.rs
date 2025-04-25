@@ -1,4 +1,5 @@
 use anyhow::Context as _;
+use fedi_common::types::SPv2TransferMetadata;
 use fedimint_core::db::{Database, IDatabaseTransactionOpsCoreTyped};
 use futures::StreamExt as _;
 use tokio::sync::Notify;
@@ -6,7 +7,6 @@ use tracing::warn;
 
 use crate::federation::Federations;
 use crate::matrix::multispend::db::MultispendPendingApprovedWithdrawalRequestKeyPrefix;
-use crate::types::SPv2TransferMetadata;
 
 #[derive(Default)]
 pub struct WithdrawalService {

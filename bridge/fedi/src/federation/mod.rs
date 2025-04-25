@@ -6,15 +6,15 @@ use anyhow::{bail, Context};
 use federation_sm::{FederationState, FederationStateMachine};
 use federation_v2::FederationV2;
 use federations_locker::FederationsLocker;
+use fedi_common::bridge_runtime::BridgeRuntime;
+use fedi_common::storage::FederationInfo;
+use fedi_common::types::RpcFederationPreview;
+use fedi_common::utils::PoisonedLockExt as _;
 use fedimint_core::invite_code::InviteCode;
 use tracing::error;
 
-use crate::bridge_runtime::BridgeRuntime;
 use crate::fedi_fee::FediFeeHelper;
 use crate::matrix::multispend::services::MultispendServices;
-use crate::storage::FederationInfo;
-use crate::types::RpcFederationPreview;
-use crate::utils::PoisonedLockExt as _;
 
 pub mod federation_sm;
 pub mod federation_v2;

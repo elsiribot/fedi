@@ -10,6 +10,8 @@ use std::sync::Arc;
 
 use anyhow::Context;
 use async_stream::stream;
+use fedi_common::bridge_runtime::BridgeRuntime;
+use fedi_common::types::RpcEventId;
 use fedimint_core::db::{DatabaseTransaction, IDatabaseTransactionOpsCoreTyped as _};
 use futures::Stream;
 use matrix_sdk::deserialized_responses::TimelineEvent;
@@ -24,9 +26,7 @@ use super::multispend::db::MultispendScannerLastEventKey;
 use super::multispend::services::MultispendServices;
 use super::multispend::{self, MultispendContext, MultispendEvent, MULTISPEND_MSGTYPE};
 use super::{RpcRoomId, RpcUserId};
-use crate::bridge_runtime::BridgeRuntime;
 use crate::matrix::AnySyncMessageLikeEvent;
-use crate::types::RpcEventId;
 
 /// Represents the current state of a room rescan operation
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]

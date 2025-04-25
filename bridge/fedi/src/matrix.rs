@@ -5,6 +5,15 @@ use std::sync::Arc;
 use std::time::Duration;
 
 use anyhow::{bail, Context, Result};
+use fedi_common::bridge_runtime::BridgeRuntime;
+use fedi_common::error::ErrorCode;
+use fedi_common::features::StabilityPoolV2FeatureConfigState;
+use fedi_common::observable::{Observable, ObservableUpdate, ObservableVec, ObservableVecUpdate};
+use fedi_common::storage::AppState;
+use fedi_common::types::{
+    NetworkError, RpcEventId, RpcMediaUploadParams, RpcPublicKey, RpcSPv2SyncResponse,
+};
+use fedi_common::utils::PoisonedLockExt as _;
 use fedimint_core::db::IDatabaseTransactionOpsCoreTyped;
 use fedimint_derive_secret::DerivableSecret;
 use futures::StreamExt;
@@ -68,21 +77,11 @@ use stability_pool_client::common::TransferRequest;
 use tokio::sync::{mpsc, Mutex};
 use tracing::{error, info, warn};
 
-use crate::bridge_runtime::BridgeRuntime;
-use crate::error::ErrorCode;
-use crate::features::StabilityPoolV2FeatureConfigState;
 use crate::federation::federation_v2::FederationV2;
-use crate::observable::{Observable, ObservableUpdate, ObservableVec, ObservableVecUpdate};
-use crate::storage::AppState;
-use crate::types::{
-    NetworkError, RpcEventId, RpcMediaUploadParams, RpcPublicKey, RpcSPv2SyncResponse,
-};
-use crate::utils::PoisonedLockExt as _;
 
 pub mod multispend;
 mod rescanner;
-mod types;
-pub use types::*;
+pub use fedi_common::types::matrix::*;
 
 use crate::matrix::rescanner::RoomRescannerManager;
 

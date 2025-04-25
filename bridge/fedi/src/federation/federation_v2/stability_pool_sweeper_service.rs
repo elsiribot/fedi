@@ -1,6 +1,8 @@
 use std::time::Duration;
 
 use anyhow::anyhow;
+use fedi_common::event::{Event, EventSink, TypedEventExt};
+use fedi_common::types::RpcAmount;
 use fedimint_core::db::IDatabaseTransactionOpsCoreTyped;
 use fedimint_core::Amount;
 use futures::StreamExt;
@@ -10,8 +12,6 @@ use tracing::{error, info};
 use super::client::ClientExt;
 use super::db::LastStabilityPoolDepositCycleKey;
 use super::FederationV2;
-use crate::event::{Event, EventSink, TypedEventExt};
-use crate::types::RpcAmount;
 
 // A continously running background service that sweeps unfilled seeker deposits
 // back into e-cash balance. Unfilled deposits could be a result of

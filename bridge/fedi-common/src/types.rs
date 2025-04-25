@@ -1,6 +1,5 @@
 use std::collections::BTreeMap;
 use std::fmt;
-use std::ops::Not;
 use std::time::Duration;
 
 use anyhow::anyhow;
@@ -14,6 +13,7 @@ use fedimint_ln_client::pay::GatewayPayError;
 use fedimint_ln_client::{LnPayState, LnReceiveState};
 use fedimint_mint_client::{ReissueExternalNotesState, SpendOOBState};
 use fedimint_wallet_client::{DepositStateV2, WithdrawState};
+use matrix::RpcRoomId;
 use serde::de::{self, MapAccess, Visitor};
 use serde::{Deserialize, Deserializer, Serialize};
 use stability_pool_client::common::{SyncResponse, TransferRequestId};
@@ -21,13 +21,12 @@ use stability_pool_client::db::CachedSyncResponseValue;
 use stability_pool_client_old::ClientAccountInfo;
 use ts_rs::TS;
 
-use super::federation::federation_v2::FederationV2;
 use super::utils::to_unix_time;
 use crate::api::RegisteredDevice;
 use crate::error::RpcError;
-use crate::federation::federation_v2::client::ClientExt;
-use crate::matrix::RpcRoomId;
 use crate::storage::{FediFeeSchedule, FiatFXInfo};
+
+pub mod matrix;
 
 #[derive(Debug, Serialize, Deserialize, TS)]
 #[serde(rename_all = "camelCase")]
@@ -198,10 +197,10 @@ pub enum GuardianStatus {
 #[ts(export)]
 pub struct RpcJsonClientConfig {
     #[ts(type = "unknown")]
-    global: GlobalClientConfig,
+    pub global: GlobalClientConfig,
     #[ts(type = "Record<string, unknown>")]
     #[serde(deserialize_with = "deserialize_string_keys_to_u16")]
-    modules: BTreeMap<u16, JsonWithKind>,
+    pub modules: BTreeMap<u16, JsonWithKind>,
 }
 
 // Custom deserialization function for fields with u16 keys that may be in
@@ -268,48 +267,6 @@ pub struct RpcOperationId(#[ts(type = "string")] pub fedimint_core::core::Operat
 impl From<fedimint_core::core::OperationId> for RpcOperationId {
     fn from(value: fedimint_core::core::OperationId) -> Self {
         Self(fedimint_core::core::OperationId(value.0))
-    }
-}
-
-pub async fn federation_v2_to_rpc_federation(federation: &FederationV2) -> RpcFederation {
-    let id = RpcFederationId(federation.federation_id().to_string());
-    let name = federation.federation_name();
-    let network = federation.get_network().map(Into::into);
-    let client_config = federation.client.config().await;
-    let meta = federation.get_cached_meta().await;
-    let nodes = client_config
-        .global
-        .api_endpoints
-        .clone()
-        .iter()
-        .map(|(peer_id, peer_url)| (RpcPeerId(*peer_id), peer_url.clone()))
-        .collect();
-    let client_config_json = federation.client.get_config_json().await;
-    let (invite_code, fedi_fee_schedule, balance) = futures::join!(
-        federation.get_invite_code(),
-        federation.fedi_fee_schedule(),
-        federation.get_balance(),
-    );
-    let had_reused_ecash = if let Ok(x) = federation.client.mint() {
-        x.reused_note_secrets().await.is_empty().not()
-    } else {
-        false
-    };
-    RpcFederation {
-        balance: RpcAmount(balance),
-        id,
-        network,
-        name,
-        invite_code,
-        meta,
-        nodes,
-        recovering: federation.recovering(),
-        client_config: Some(RpcJsonClientConfig {
-            global: client_config_json.global,
-            modules: client_config_json.modules,
-        }),
-        fedi_fee_schedule: fedi_fee_schedule.into(),
-        had_reused_ecash,
     }
 }
 

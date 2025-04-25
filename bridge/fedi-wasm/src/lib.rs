@@ -6,12 +6,12 @@ use std::sync::Arc;
 
 use anyhow::{bail, Context};
 use fedi_bridge::Bridge;
-use fediffi::api::LiveFediApi;
-use fediffi::error::ErrorCode;
-use fediffi::event::IEventSink;
-use fediffi::features::{FeatureCatalog, RuntimeEnvironment};
+use fedi_common::api::LiveFediApi;
+use fedi_common::error::ErrorCode;
+use fedi_common::event::IEventSink;
+use fedi_common::features::{FeatureCatalog, RuntimeEnvironment};
+use fedi_common::types::{RpcAppFlavor, RpcInitOpts};
 use fediffi::rpc::rpc_error_json;
-use fediffi::types::{RpcAppFlavor, RpcInitOpts};
 use futures::FutureExt;
 use js_sys::Uint8Array;
 use storage::WasmStorage;

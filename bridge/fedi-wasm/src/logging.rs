@@ -1,7 +1,7 @@
 use std::io::Write;
 use std::sync::{Arc, Mutex as StdMutex};
 
-use fediffi::event::IEventSink;
+use fedi_common::event::IEventSink;
 use tracing_subscriber::fmt::MakeWriter;
 // nosemgrep: ban-wildcard-imports
 use tracing_subscriber::prelude::*;

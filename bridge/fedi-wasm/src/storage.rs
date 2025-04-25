@@ -3,7 +3,7 @@ use std::path::{Path, PathBuf};
 use std::sync::Mutex as StdMutex;
 
 use anyhow::bail;
-use fediffi::storage::IStorage;
+use fedi_common::storage::IStorage;
 use fedimint_core::{apply, async_trait_maybe_send};
 use rexie::{ObjectStore, Rexie, TransactionMode};
 use wasm_bindgen::{JsCast, JsValue};

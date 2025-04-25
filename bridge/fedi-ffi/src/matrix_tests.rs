@@ -6,14 +6,14 @@ use std::time::Duration;
 
 use anyhow::{Context as _, Result};
 use bitcoin::secp256k1;
-use fedi::bridge_runtime::BridgeRuntime;
-use fedi::constants::MATRIX_CHILD_ID;
-use fedi::event::IEventSink;
-use fedi::features::{FeatureCatalog, RuntimeEnvironment};
 use fedi::matrix::multispend::MultispendGroupVoteType;
 // nosemgrep: ban-wildcard-imports
 use fedi::matrix::*;
-use fedi::types::{RpcEventId, RpcFederationId, RpcMediaUploadParams, RpcPublicKey};
+use fedi_common::bridge_runtime::BridgeRuntime;
+use fedi_common::constants::MATRIX_CHILD_ID;
+use fedi_common::event::IEventSink;
+use fedi_common::features::{FeatureCatalog, RuntimeEnvironment};
+use fedi_common::types::{RpcEventId, RpcFederationId, RpcMediaUploadParams, RpcPublicKey};
 use fedimint_bip39::Bip39RootSecretStrategy;
 use fedimint_client::secret::RootSecretStrategy as _;
 use fedimint_core::util::backoff_util::aggressive_backoff;

@@ -2,9 +2,8 @@ use std::collections::BTreeMap;
 use std::sync::Arc;
 
 use anyhow::Result;
+use fedi_common::utils::PoisonedLockExt as _;
 use tokio::sync::{Mutex, OwnedMutexGuard, TryLockError};
-
-use crate::utils::PoisonedLockExt as _;
 
 /// To prevent concurrent fedimint client to exist for same federation id
 ///

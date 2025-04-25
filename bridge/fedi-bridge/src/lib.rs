@@ -6,19 +6,18 @@ use std::time::Duration;
 
 use anyhow::{anyhow, bail, Context, Result};
 use device_registration::DeviceRegistrationService;
-use fedi::bridge_runtime::BridgeRuntime;
-use fedi::error::ErrorCode;
-use fedi::event::SocialRecoveryEvent;
 use fedi::federation::{federation_v2, Federations};
 use fedi::matrix::multispend::services::MultispendServices;
 use fedi::matrix::Matrix;
-use fedi::storage::{DeviceIdentifier, ModuleFediFeeSchedule};
-use fedi::types::{
-    federation_v2_to_rpc_federation, RpcAmount, RpcDeviceIndexAssignmentStatus, RpcEcashInfo,
-    RpcFederation, RpcFederationId, RpcPeerId, RpcRecoveryId, RpcRegisteredDevice,
-    SocialRecoveryApproval, SocialRecoveryQr,
+use fedi_common::bridge_runtime::BridgeRuntime;
+use fedi_common::error::ErrorCode;
+use fedi_common::event::SocialRecoveryEvent;
+use fedi_common::storage::{DeviceIdentifier, ModuleFediFeeSchedule};
+use fedi_common::types::{
+    RpcAmount, RpcDeviceIndexAssignmentStatus, RpcEcashInfo, RpcFederation, RpcFederationId,
+    RpcPeerId, RpcRecoveryId, RpcRegisteredDevice, SocialRecoveryApproval, SocialRecoveryQr,
 };
-use fedi::utils::required_threashold_of;
+use fedi_common::utils::required_threashold_of;
 use fedi_communities::Communities;
 use fedi_social_client::{
     self, FediSocialCommonGen, RecoveryFile, SocialRecoveryClient, SocialRecoveryState,
@@ -260,7 +259,7 @@ impl BridgeFull {
                     false,
                 )
                 .await?;
-            Ok(Some(federation_v2_to_rpc_federation(&fed_arc).await))
+            Ok(Some(fed_arc.to_rpc_federation().await))
         } else {
             Ok(None)
         }
