@@ -8,9 +8,8 @@ use fedi_api_types::device_control::request::{GetDevicesForSeedQueryV0, Register
 use fedi_api_types::device_control::response::DevicesForSeedResultV0;
 use fedi_api_types::device_control::{DeviceIdentifierV0, DeviceIndexV0, SeedCommitmentV0};
 use fedi_api_types::fee_schedule::FeesV0;
-use fedi_api_types::invoice_generator::{
-    GenerateInvoiceRequestV1, GenerateInvoiceResponseV1, TransactionDirection,
-};
+pub use fedi_api_types::invoice_generator::TransactionDirection;
+use fedi_api_types::invoice_generator::{GenerateInvoiceRequestV1, GenerateInvoiceResponseV1};
 use fedimint_bip39::Bip39RootSecretStrategy;
 use fedimint_client::secret::RootSecretStrategy;
 use fedimint_core::core::ModuleKind;
@@ -24,7 +23,6 @@ use crate::constants::{
     FEDI_INVOICE_API_URL_MAINNET, FEDI_INVOICE_API_URL_MUTINYNET,
 };
 use crate::storage::{DeviceIdentifier, FediFeeSchedule, ModuleFediFeeSchedule};
-use crate::types::RpcTransactionDirection;
 
 /// Represents registration information of a device using our root seed as
 /// recorded with Fedi's servers.
@@ -101,7 +99,7 @@ pub trait IFediApi: MaybeSend + MaybeSync + 'static {
         amount: Amount,
         network: Network,
         module: ModuleKind,
-        tx_direction: RpcTransactionDirection,
+        tx_direction: TransactionDirection,
     ) -> anyhow::Result<Bolt11Invoice>;
 
     /// Fetches a list of all registered devices (as recorded by Fedi's servers)
@@ -213,7 +211,7 @@ impl IFediApi for LiveFediApi {
         amount: Amount,
         network: Network,
         module: ModuleKind,
-        tx_direction: RpcTransactionDirection,
+        tx_direction: TransactionDirection,
     ) -> anyhow::Result<Bolt11Invoice> {
         let api_url = match network {
             Network::Bitcoin => FEDI_INVOICE_API_URL_MAINNET,
@@ -226,10 +224,7 @@ impl IFediApi for LiveFediApi {
                 .json(&GenerateInvoiceRequestV1 {
                     amount_msat: amount.msats,
                     module: module.to_string(),
-                    tx_direction: match tx_direction {
-                        RpcTransactionDirection::Send => TransactionDirection::Send,
-                        RpcTransactionDirection::Receive => TransactionDirection::Receive,
-                    },
+                    tx_direction,
                 })
                 .send()
                 .await

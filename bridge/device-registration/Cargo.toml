@@ -14,3 +14,4 @@ tracing = { workspace = true }
 tokio = { workspace = true, features = ["time", "macros"] }
 reqwest = { workspace = true }
 fedi-common = { path = "../fedi-common" }
+fedi-rpc-types = { path = "../fedi-rpc-types" }

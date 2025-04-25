@@ -2,8 +2,8 @@ use std::time::{Duration, SystemTime};
 
 use anyhow::Result;
 use fedi_common::constants::BACKUP_FREQUENCY;
-use fedi_common::types::FediBackupMetadata;
 use fedi_common::utils::to_unix_time;
+use fedi_rpc_types::FediBackupMetadata;
 use fedimint_client::backup::Metadata;
 use fedimint_client::Client;
 use fedimint_core::db::{DatabaseTransaction, IDatabaseTransactionOpsCoreTyped};

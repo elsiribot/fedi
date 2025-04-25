@@ -1,6 +1,6 @@
 use anyhow::anyhow;
-use fedi_common::event::{Event, EventSink, TypedEventExt};
-use fedi_common::types::{RpcAmount, SPv2WithdrawMetadata};
+use fedi_rpc_types::event::{Event, EventSink, TypedEventExt};
+use fedi_rpc_types::{RpcAmount, SPv2WithdrawMetadata};
 use fedimint_client::ClientModuleInstance;
 use fedimint_core::core::OperationId;
 use fedimint_core::db::{Committable, DatabaseTransaction, IDatabaseTransactionOpsCoreTyped};

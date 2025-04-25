@@ -6,6 +6,9 @@ use anyhow::anyhow;
 use bitcoin::secp256k1::ecdsa::Signature;
 use bitcoin::secp256k1::schnorr;
 use bitcoin::Network;
+use fedi_common::api::RegisteredDevice;
+use fedi_common::storage::{FediFeeSchedule, FiatFXInfo};
+use fedi_common::utils::to_unix_time;
 use fedimint_core::config::{GlobalClientConfig, JsonWithKind, PeerUrl};
 use fedimint_core::encoding::{Decodable, Encodable};
 use fedimint_core::{Amount, TransactionId};
@@ -21,11 +24,10 @@ use stability_pool_client::db::CachedSyncResponseValue;
 use stability_pool_client_old::ClientAccountInfo;
 use ts_rs::TS;
 
-use super::utils::to_unix_time;
-use crate::api::RegisteredDevice;
 use crate::error::RpcError;
-use crate::storage::{FediFeeSchedule, FiatFXInfo};
 
+pub mod error;
+pub mod event;
 pub mod matrix;
 
 #[derive(Debug, Serialize, Deserialize, TS)]

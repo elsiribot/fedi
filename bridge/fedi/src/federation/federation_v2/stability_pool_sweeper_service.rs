@@ -1,8 +1,8 @@
 use std::time::Duration;
 
 use anyhow::anyhow;
-use fedi_common::event::{Event, EventSink, TypedEventExt};
-use fedi_common::types::RpcAmount;
+use fedi_rpc_types::event::{Event, EventSink, TypedEventExt};
+use fedi_rpc_types::RpcAmount;
 use fedimint_core::db::IDatabaseTransactionOpsCoreTyped;
 use fedimint_core::Amount;
 use futures::StreamExt;

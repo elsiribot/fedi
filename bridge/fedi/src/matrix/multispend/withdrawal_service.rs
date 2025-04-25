@@ -1,5 +1,5 @@
 use anyhow::Context as _;
-use fedi_common::types::SPv2TransferMetadata;
+use fedi_rpc_types::SPv2TransferMetadata;
 use fedimint_core::db::{Database, IDatabaseTransactionOpsCoreTyped};
 use futures::StreamExt as _;
 use tokio::sync::Notify;

@@ -1,7 +1,7 @@
 use std::sync::Arc;
 
 use fedi_common::bridge_runtime::BridgeRuntime;
-use fedi_common::types::{RpcEventId, RpcFiatAmount, RpcTransactionId};
+use fedi_rpc_types::{RpcEventId, RpcFiatAmount, RpcTransactionId};
 use fedimint_core::db::IDatabaseTransactionOpsCoreTyped as _;
 use fedimint_core::util::backoff_util::background_backoff;
 use fedimint_core::util::retry;

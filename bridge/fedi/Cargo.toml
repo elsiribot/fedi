@@ -44,7 +44,6 @@ thiserror = "2.0.8"
 hex = { workspace = true }
 macro_rules_attribute = "0.1.3"
 mime = "0.3.17"
-nostr = { workspace = true }
 ts-rs = "10"
 async-trait = { workspace = true }
 tokio = { workspace = true, features = ["time", "macros"] }
@@ -67,6 +66,7 @@ async-recursion = "1.1.0"
 tokio-stream = { version = "0.1.17", features = ["sync"] }
 async-stream.workspace = true
 fedi-common = { path = "../fedi-common" }
+fedi-rpc-types = { path = "../fedi-rpc-types" }
 
 [target.'cfg(target_family = "wasm")'.dependencies]
 ring = { version = "0.17.14", features = ["wasm32_unknown_unknown_js"] }

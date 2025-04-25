@@ -13,7 +13,7 @@ use fedi_common::bridge_runtime::BridgeRuntime;
 use fedi_common::constants::MATRIX_CHILD_ID;
 use fedi_common::event::IEventSink;
 use fedi_common::features::{FeatureCatalog, RuntimeEnvironment};
-use fedi_common::types::{RpcEventId, RpcFederationId, RpcMediaUploadParams, RpcPublicKey};
+use fedi_rpc_types::{RpcEventId, RpcFederationId, RpcMediaUploadParams, RpcPublicKey};
 use fedimint_bip39::Bip39RootSecretStrategy;
 use fedimint_client::secret::RootSecretStrategy as _;
 use fedimint_core::util::backoff_util::aggressive_backoff;

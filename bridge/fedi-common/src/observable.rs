@@ -11,8 +11,7 @@ use serde::Serialize;
 use tokio::sync::Mutex;
 use tracing::warn;
 
-use crate::error::ErrorCode;
-use crate::event::{EventSink, TypedEventExt};
+use crate::event::EventSink;
 use crate::serde::{SerdeAs, SerdeVectorDiff};
 
 /// ObservableVec is special; it utilizes VectorDiff for efficient
@@ -148,7 +147,7 @@ impl ObservablePool {
         {
             let mut observables = self.observables.lock().await;
             if observables.contains_key(&id) {
-                bail!(ErrorCode::DuplicateObservableID(id));
+                bail!("Duplicated observable id: {id}");
             }
             observables.insert(id, tg.clone());
             // should be independent of number of rooms and number of messages
@@ -263,7 +262,7 @@ impl ObservablePool {
 
     pub async fn observable_cancel(&self, id: u64) -> Result<()> {
         let Some(tg) = self.observables.lock().await.remove(&id) else {
-            bail!(ErrorCode::UnknownObservable);
+            bail!("Unknown observable");
         };
         tg.shutdown_join_all(None).await?;
         Ok(())

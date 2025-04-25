@@ -11,7 +11,6 @@ fedimint-core = { workspace = true }
 fedimint-client = { workspace = true }
 fedimint-tbs = { workspace = true }
 fedimint-mint-client = { workspace = true }
-fedimint-ln-client = { workspace = true }
 fedimint-api-client = { workspace = true }
 fedimint-ln-common = { workspace = true }
 fedimint-wallet-client = { workspace = true }
@@ -40,13 +39,11 @@ thiserror = "2.0.8"
 hex = { workspace = true }
 macro_rules_attribute = "0.1.3"
 mime = "0.3.17"
-nostr = { workspace = true }
 ts-rs = "10"
 async-trait = { workspace = true }
 tokio = { workspace = true, features = ["time", "macros"] }
 url = "2.3.1"
 reqwest = { workspace = true }
-matrix-sdk-ui = { workspace = true, default-features = false }
 matrix-sdk = { workspace = true, default-features = false, features = [
   "js",
   "indexeddb",
@@ -65,12 +62,6 @@ async-stream.workspace = true
 
 [target.'cfg(target_family = "wasm")'.dependencies]
 ring = { version = "0.17.14", features = ["wasm32_unknown_unknown_js"] }
-
-[target.'cfg(not(target_family = "wasm"))'.dependencies]
-matrix-sdk = { workspace = true, default-features = false, features = [
-  "sqlite",
-] }
-rusqlite = { version = "*" }
 
 # we don't have an easy way to get static sqlite for android targets
 # so we enable bundled feature when compiling for it

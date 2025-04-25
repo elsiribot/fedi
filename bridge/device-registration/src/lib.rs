@@ -5,8 +5,8 @@ use anyhow::{anyhow, bail};
 use fedi_common::api::{IFediApi, RegisterDeviceError, RegisteredDevice};
 use fedi_common::bridge_runtime::BridgeRuntime;
 use fedi_common::constants::{DEVICE_REGISTRATION_FREQUENCY, DEVICE_REGISTRATION_OVERDUE};
-use fedi_common::event::{Event, EventSink, TypedEventExt};
 use fedi_common::storage::AppState;
+use fedi_rpc_types::event::{Event, EventSink, TypedEventExt as _};
 use fedimint_core::task::TaskGroup;
 use fedimint_core::util::backoff_util::custom_backoff;
 use fedimint_core::util::retry;
@@ -176,7 +176,7 @@ pub async fn register_device_with_backoff(
                             .await
                             .inspect_err(|e| error!(?e, "failed to write to app state"));
                         event_sink.typed_event(&Event::device_registration(
-                            fedi_common::event::DeviceRegistrationState::Success,
+                            fedi_rpc_types::event::DeviceRegistrationState::Success,
                         ));
                         Ok(RegisterDeviceRetryOk::Success)
                     }
@@ -184,7 +184,7 @@ pub async fn register_device_with_backoff(
                         error!(%error, "unexpected device registration conflict");
                         if emit_event_on_conflict {
                             event_sink.typed_event(&Event::device_registration(
-                                fedi_common::event::DeviceRegistrationState::Conflict,
+                                fedi_rpc_types::event::DeviceRegistrationState::Conflict,
                             ));
                         }
                         // Return an Ok to indicate the error is non-retryable
@@ -202,7 +202,7 @@ pub async fn register_device_with_backoff(
                                 < fedimint_core::time::now()
                             {
                                 event_sink.typed_event(&Event::device_registration(
-                                    fedi_common::event::DeviceRegistrationState::Overdue,
+                                    fedi_rpc_types::event::DeviceRegistrationState::Overdue,
                                 ));
                             }
                         }

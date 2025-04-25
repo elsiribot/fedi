@@ -1,24 +1,31 @@
 use std::fmt::Display;
+use std::ops::Deref;
 use std::path::PathBuf;
 use std::str::FromStr;
 use std::sync::Arc;
 use std::time::Duration;
 
 use anyhow::{anyhow, bail, Context, Result};
+use bech32::Bech32;
+use bitcoin::key::{Keypair, Secp256k1};
+use bitcoin::XOnlyPublicKey;
 use device_registration::DeviceRegistrationService;
 use fedi::federation::{federation_v2, Federations};
 use fedi::matrix::multispend::services::MultispendServices;
 use fedi::matrix::Matrix;
 use fedi_common::bridge_runtime::BridgeRuntime;
-use fedi_common::error::ErrorCode;
-use fedi_common::event::SocialRecoveryEvent;
-use fedi_common::storage::{DeviceIdentifier, ModuleFediFeeSchedule};
-use fedi_common::types::{
-    RpcAmount, RpcDeviceIndexAssignmentStatus, RpcEcashInfo, RpcFederation, RpcFederationId,
-    RpcPeerId, RpcRecoveryId, RpcRegisteredDevice, SocialRecoveryApproval, SocialRecoveryQr,
-};
+use fedi_common::constants::{LNURL_CHILD_ID, MATRIX_CHILD_ID, NOSTR_CHILD_ID};
+use fedi_common::db::FederationPendingRejoinFromScratchKeyPrefix;
+use fedi_common::storage::{DeviceIdentifier, FiatFXInfo, ModuleFediFeeSchedule};
 use fedi_common::utils::required_threashold_of;
 use fedi_communities::Communities;
+use fedi_rpc_types::error::ErrorCode;
+use fedi_rpc_types::event::SocialRecoveryEvent;
+use fedi_rpc_types::{
+    RpcAmount, RpcDeviceIndexAssignmentStatus, RpcEcashInfo, RpcFederation, RpcFederationId,
+    RpcNostrPubkey, RpcNostrSecret, RpcPeerId, RpcPublicKey, RpcRecoveryId, RpcRegisteredDevice,
+    RpcSignedLnurlMessage, SocialRecoveryApproval, SocialRecoveryQr,
+};
 use fedi_social_client::{
     self, FediSocialCommonGen, RecoveryFile, SocialRecoveryClient, SocialRecoveryState,
 };
@@ -26,11 +33,16 @@ use fedimint_api_client::api::net::Connector;
 use fedimint_api_client::api::DynGlobalApi;
 use fedimint_core::config::ClientConfig;
 use fedimint_core::core::ModuleKind;
+use fedimint_core::db::IDatabaseTransactionOpsCoreTyped as _;
 use fedimint_core::encoding::Decodable;
 use fedimint_core::module::registry::ModuleDecoderRegistry;
 use fedimint_core::module::CommonModuleInit;
 use fedimint_core::PeerId;
+use fedimint_derive_secret::{ChildId, DerivableSecret};
 use fedimint_mint_client::OOBNotes;
+use futures::StreamExt as _;
+use nostr::nips::nip44;
+use nostr::secp256k1::Message;
 use serde::{Deserialize, Serialize};
 use tokio::sync::{Mutex, OnceCell};
 use tracing::debug;
@@ -654,3 +666,172 @@ impl From<&BridgeFullInitError> for RpcBridgeFullInitError {
         }
     }
 }
+
+#[allow(async_fn_in_trait)]
+pub trait BridgeRuntimeExt: Deref<Target = BridgeRuntime> {
+    async fn device_index_assignment_status(
+        &self,
+    ) -> anyhow::Result<RpcDeviceIndexAssignmentStatus> {
+        Ok(match self.app_state.ensure_device_index().await {
+            Ok(index) => RpcDeviceIndexAssignmentStatus::Assigned(index),
+            Err(_) => RpcDeviceIndexAssignmentStatus::Unassigned,
+        })
+    }
+
+    async fn get_mnemonic_words(&self) -> anyhow::Result<Vec<String>> {
+        Ok(self
+            .app_state
+            .root_mnemonic()
+            .await
+            .words()
+            .map(|x| x.to_owned())
+            .collect())
+    }
+
+    async fn update_cached_fiat_fx_info(&self, info: FiatFXInfo) -> anyhow::Result<()> {
+        self.app_state
+            .with_write_lock(|state| state.cached_fiat_fx_info = Some(info))
+            .await
+    }
+
+    /// Enable logging of potentially sensitive information.
+    async fn sensitive_log(&self) -> bool {
+        self.app_state
+            .with_read_lock(|f| f.sensitive_log.unwrap_or(false))
+            .await
+    }
+
+    async fn set_sensitive_log(&self, enable: bool) -> anyhow::Result<()> {
+        self.app_state
+            .with_write_lock(|f| {
+                f.sensitive_log = Some(enable);
+            })
+            .await?;
+        Ok(())
+    }
+
+    async fn sign_lnurl_message(
+        &self,
+        message: Message,
+        domain: String,
+    ) -> Result<RpcSignedLnurlMessage> {
+        let secp = Secp256k1::new();
+        let lnurl_secret = self
+            .app_state
+            .root_secret()
+            .await
+            .child_key(ChildId(LNURL_CHILD_ID));
+        let lnurl_secret_bytes: [u8; 32] = lnurl_secret.to_random_bytes();
+        let lnurl_domain_secret = DerivableSecret::new_root(&lnurl_secret_bytes, domain.as_bytes());
+        let lnurl_domain_keypair = lnurl_domain_secret.to_secp_key(&secp);
+        let lnurl_domain_pubkey = lnurl_domain_keypair.public_key();
+        let signature = secp.sign_ecdsa(&message, &lnurl_domain_keypair.secret_key());
+        Ok(RpcSignedLnurlMessage {
+            signature,
+            pubkey: RpcPublicKey(lnurl_domain_pubkey),
+        })
+    }
+
+    async fn get_nostr_pubkey(&self) -> Result<RpcNostrPubkey> {
+        let nostr_pubkey = self.nostr_pubkey().await;
+        let hrp = bech32::Hrp::parse_unchecked("npub");
+        Ok(RpcNostrPubkey {
+            npub: bech32::encode::<Bech32>(hrp, &nostr_pubkey.serialize())?,
+            hex: nostr_pubkey.to_string(),
+        })
+    }
+
+    async fn nostr_pubkey(&self) -> XOnlyPublicKey {
+        let global_root_secret = self.app_state.root_secret().await;
+        let secp = Secp256k1::new();
+        let nostr_secret = global_root_secret.child_key(ChildId(NOSTR_CHILD_ID));
+        let nostr_keypair = nostr_secret.to_secp_key(&secp);
+
+        nostr_keypair.x_only_public_key().0
+    }
+
+    async fn get_nostr_secret(&self) -> Result<RpcNostrSecret> {
+        let secp = Secp256k1::new();
+        let bytes = self.nostr_secret_key(&secp).await?.secret_bytes();
+        let hrp = bech32::Hrp::parse_unchecked("nsec");
+        let nsec = bech32::encode::<Bech32>(hrp, &bytes)?;
+        let hex = hex::encode(bytes);
+
+        Ok(RpcNostrSecret { hex, nsec })
+    }
+
+    async fn nostr_secret_key<Ctx: bitcoin::secp256k1::Context + bitcoin::secp256k1::Signing>(
+        &self,
+        secp: &Secp256k1<Ctx>,
+    ) -> anyhow::Result<Keypair> {
+        let global_root_secret = self.app_state.root_secret().await;
+        let nostr_secret = global_root_secret.child_key(ChildId(NOSTR_CHILD_ID));
+        let nostr_keypair = nostr_secret.to_secp_key(secp);
+
+        Ok(nostr_keypair)
+    }
+
+    async fn sign_nostr_event(&self, event_hash: String) -> Result<String> {
+        let global_root_secret = self.app_state.root_secret().await;
+        let secp = Secp256k1::new();
+        let nostr_secret = global_root_secret.child_key(ChildId(NOSTR_CHILD_ID));
+        let nostr_keypair = nostr_secret.to_secp_key(&secp);
+        let data = &hex::decode(event_hash)?;
+        let message = Message::from_digest_slice(data)?;
+        let sig = secp.sign_schnorr(&message, &nostr_keypair);
+        // Return hex-encoded string
+        Ok(format!("{}", sig))
+    }
+
+    async fn get_matrix_secret(&self) -> DerivableSecret {
+        let global_root_secret = self.app_state.root_secret().await;
+        global_root_secret.child_key(ChildId(MATRIX_CHILD_ID))
+    }
+
+    async fn get_matrix_media_file(&self, path: PathBuf) -> Result<Vec<u8>> {
+        let media_file = self
+            .storage
+            .read_file(&path)
+            .await?
+            .ok_or(anyhow!("media file not found"))?;
+        Ok(media_file)
+    }
+
+    async fn list_federations_pending_rejoin_from_scratch(&self) -> Vec<String> {
+        self.bridge_db()
+            .begin_transaction_nc()
+            .await
+            .find_by_prefix(&FederationPendingRejoinFromScratchKeyPrefix)
+            .await
+            .map(|(key, _)| key.invite_code_str)
+            .collect::<Vec<_>>()
+            .await
+    }
+
+    /// Given a recipient's pubkey and plaintext content, encrypts and returns
+    /// the ciphertext as per NIP44.
+    async fn nip44_encrypt(&self, pubkey: String, plaintext: String) -> Result<String> {
+        let secp = Secp256k1::new();
+        let secret_key = self.nostr_secret_key(&secp).await?.secret_key();
+        Ok(nip44::encrypt(
+            &nostr::SecretKey::from(secret_key),
+            &nostr::PublicKey::parse(&pubkey)?,
+            plaintext,
+            nip44::Version::V2,
+        )?)
+    }
+
+    /// Given a recipient's pubkey and ciphertext content, decrypts and returns
+    /// the plaintext as per NIP44.
+    async fn nip44_decrypt(&self, pubkey: String, ciphertext: String) -> Result<String> {
+        let secp = Secp256k1::new();
+        let secret_key = self.nostr_secret_key(&secp).await?.secret_key();
+        Ok(nip44::decrypt(
+            &nostr::SecretKey::from(secret_key),
+            &nostr::PublicKey::parse(&pubkey)?,
+            ciphertext,
+        )?)
+    }
+}
+
+impl BridgeRuntimeExt for Arc<BridgeRuntime> {}

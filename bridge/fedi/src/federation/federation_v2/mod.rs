@@ -31,13 +31,14 @@ use fedi_common::constants::{
     STABILITY_POOL_V2_OPERATION_TYPE, WALLET_OPERATION_TYPE,
 };
 use fedi_common::db::FederationPendingRejoinFromScratchKey;
-use fedi_common::error::ErrorCode;
-use fedi_common::event::{Event, RecoveryProgressEvent, TypedEventExt};
 use fedi_common::features::{StabilityPoolV2FeatureConfig, StabilityPoolV2FeatureConfigState};
 use fedi_common::observable::Observable;
 use fedi_common::storage::{DatabaseInfo, FederationInfo, FediFeeSchedule};
-use fedi_common::types::matrix::RpcRoomId;
-use fedi_common::types::{
+use fedi_common::utils::{display_currency, to_unix_time};
+use fedi_rpc_types::error::ErrorCode;
+use fedi_rpc_types::event::{Event, RecoveryProgressEvent, TypedEventExt};
+use fedi_rpc_types::matrix::RpcRoomId;
+use fedi_rpc_types::{
     BaseMetadata, EcashReceiveMetadata, EcashSendMetadata, FrontendMetadata, GuardianStatus,
     LightningSendMetadata, OperationFediFeeStatus, RpcAmount, RpcFederation, RpcFederationId,
     RpcFederationMaybeLoading, RpcFederationPreview, RpcFeeDetails, RpcGenerateEcashResponse,
@@ -48,7 +49,6 @@ use fedi_common::types::{
     RpcTransaction, RpcTransactionDirection, RpcTransactionKind, RpcTransactionListEntry,
     SPv2DepositMetadata, SPv2TransferMetadata, SPv2WithdrawMetadata,
 };
-use fedi_common::utils::{display_currency, to_unix_time};
 use fedi_social_client::common::VerificationDocument;
 use fedi_social_client::{
     FediSocialClientInit, RecoveryFile, RecoveryId, SocialBackup, SocialRecoveryClient,
