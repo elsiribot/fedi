@@ -16,6 +16,5 @@ pub mod observable;
 pub mod serde;
 
 pub mod storage;
-pub mod translate;
 pub mod types;
 pub mod utils;
