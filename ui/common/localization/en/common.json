@@ -507,6 +507,7 @@
             "connection-status-online": "This community is fully active",
             "connection-status-unstable": "This community is unstable. Please reach out to the guardians or community leader for further information.",
             "copied-federation-invite": "Copied community invite link",
+            "drawer-subtitle": "Communities are home to your wallet, and community news and services.",
             "enter-federation-code": "Enter a community code",
             "federation-details": "Community Details",
             "federation-invite": "Community invite",
