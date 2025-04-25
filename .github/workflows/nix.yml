@@ -163,8 +163,8 @@ jobs:
             - name: Build fedi-fedimint-cli
               run: nix build -L .#ci.fedi-fedimint-cli
 
-            - name: Build fedi-api-types
-              run: nix build -L .#ci.fedi-api-types
+            - name: Build api-types
+              run: nix build -L .#ci.api-types
 
             - name: Build fedi-ffi
               run: nix build -L .#ci.fedi-ffi

@@ -6,14 +6,9 @@ use std::time::Duration;
 
 use anyhow::{Context as _, Result};
 use bitcoin::secp256k1;
-use fedi::matrix::multispend::MultispendGroupVoteType;
+use bridge_inner::matrix::multispend::MultispendGroupVoteType;
 // nosemgrep: ban-wildcard-imports
-use fedi::matrix::*;
-use fedi_common::bridge_runtime::BridgeRuntime;
-use fedi_common::constants::MATRIX_CHILD_ID;
-use fedi_common::event::IEventSink;
-use fedi_common::features::{FeatureCatalog, RuntimeEnvironment};
-use fedi_rpc_types::{RpcEventId, RpcFederationId, RpcMediaUploadParams, RpcPublicKey};
+use bridge_inner::matrix::*;
 use fedimint_bip39::Bip39RootSecretStrategy;
 use fedimint_client::secret::RootSecretStrategy as _;
 use fedimint_core::util::backoff_util::aggressive_backoff;
@@ -26,6 +21,11 @@ use multispend::{
     FinalizedGroup, GroupInvitation, GroupInvitationWithKeys, MsEventData, MultispendEvent,
 };
 use rand::{thread_rng, Rng};
+use rpc_types::{RpcEventId, RpcFederationId, RpcMediaUploadParams, RpcPublicKey};
+use runtime::bridge_runtime::Runtime;
+use runtime::constants::MATRIX_CHILD_ID;
+use runtime::event::IEventSink;
+use runtime::features::{FeatureCatalog, RuntimeEnvironment};
 use stability_pool_client::common::{AccountType, AccountUnchecked};
 use tempfile::TempDir;
 use tokio::sync::mpsc;
@@ -52,7 +52,7 @@ async fn mk_matrix_login(
     let event_sink = Arc::new(TestEventSink(event_tx));
     let tmp_dir = TempDir::new()?;
     let storage = PathBasedStorage::new(tmp_dir.as_ref().to_path_buf()).await?;
-    let runtime = BridgeRuntime::new(
+    let runtime = Runtime::new(
         Arc::new(storage),
         event_sink,
         Arc::new(MockFediApi::default()),

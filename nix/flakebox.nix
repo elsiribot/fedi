@@ -18,24 +18,7 @@ let
     ".config"
     ".clippy.toml"
     "bridge"
-    "fedimintd"
-    "fedimint-cli"
-    "fedi-api-types"
-    "fedi-bug-report"
-    "fedi-debug"
-    "fedi-core"
-    "devi"
-    "modules/fedi-social/client"
-    "modules/fedi-social/common"
-    "modules/fedi-social/server"
-    "modules/stability-pool-old/client"
-    "modules/stability-pool-old/common"
-    "modules/stability-pool-old/server"
-    "modules/stability-pool-old/tests"
-    "modules/stability-pool/client"
-    "modules/stability-pool/common"
-    "modules/stability-pool/server"
-    "modules/stability-pool/tests"
+    "crates"
   ];
 
   root = builtins.path {
@@ -331,10 +314,10 @@ in
       pkg = fedi-fedimint-pkgs;
     };
 
-    fedi-api-types = fediBuildPackageGroup {
-      pname = "fedi-api-types";
+    api-types = fediBuildPackageGroup {
+      pname = "api-types";
       packages = [
-        "fedi-api-types"
+        "api-types"
       ];
     };
 
