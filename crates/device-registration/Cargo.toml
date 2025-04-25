@@ -7,11 +7,7 @@ edition = "2021"
 fedimint-core = { workspace = true }
 
 anyhow = { workspace = true }
-serde = { workspace = true }
-serde_json = { workspace = true }
 bip39 = { version = "2.0.0", features = ["rand"] }
 tracing = { workspace = true }
-tokio = { workspace = true, features = ["time", "macros"] }
-reqwest = { workspace = true }
 runtime = { workspace = true }
 rpc-types = { workspace = true }

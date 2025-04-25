@@ -11,28 +11,19 @@ name = "fedi_social_server"
 path = "src/lib.rs"
 
 [dependencies]
-fedimint-aead = { workspace = true }
 anyhow = { workspace = true }
 async-trait = { workspace = true }
-bincode = { workspace = true }
-bitcoin_hashes = { workspace = true }
 erased-serde = { workspace = true }
 futures = { workspace = true }
-hex = { workspace = true, features = ["serde"] }
-itertools = { workspace = true }
 fedimint-core = { workspace = true }
 fedimint-server = { workspace = true }
 fedi-social-common = { workspace = true }
 rand = { workspace = true }
 subtle = { workspace = true }
 secp256k1 = { workspace = true }
-serde = { workspace = true, features = ["derive"] }
 strum = { workspace = true }
-strum_macros = { workspace = true }
-thiserror = { workspace = true }
 fedimint_threshold_crypto = { workspace = true }
 tracing = { workspace = true }
-impl-tools = { workspace = true }
 
 [dev-dependencies]
 tracing-subscriber = { workspace = true }

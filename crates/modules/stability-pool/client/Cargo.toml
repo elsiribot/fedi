@@ -13,7 +13,6 @@ fedimint-client = { workspace = true }
 fedimint-api-client = { workspace = true }
 futures = { workspace = true }
 serde = { workspace = true, features = ["derive"] }
-bitcoin = { workspace = true, features = ["rand", "serde"] }
 tracing = { workspace = true }
 secp256k1 = { workspace = true }
 serde_json = { workspace = true }

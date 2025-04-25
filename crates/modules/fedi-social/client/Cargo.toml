@@ -13,13 +13,9 @@ path = "src/lib.rs"
 [dependencies]
 anyhow = { workspace = true }
 async-trait = { workspace = true }
-bincode = { workspace = true }
 bitcoin = { workspace = true }
-bitcoin_hashes = { workspace = true }
 erased-serde = { workspace = true }
 futures = { workspace = true }
-hex = { workspace = true, features = ["serde"] }
-itertools = { workspace = true }
 fedimint-aead = { workspace = true }
 fedimint-client = { workspace = true }
 fedimint-api-client = { workspace = true }
@@ -27,13 +23,8 @@ fedimint-core = { workspace = true }
 fedimint-derive-secret = { workspace = true }
 fedimint_threshold_crypto = { workspace = true }
 fedi-social-common = { workspace = true }
-rand = { workspace = true }
 ring = { workspace = true }
 secp256k1 = { workspace = true }
 serde = { workspace = true, features = ["derive"] }
 serde_json = { workspace = true }
-strum = { workspace = true }
-strum_macros = { workspace = true }
-thiserror = { workspace = true }
 tracing = { workspace = true }
-impl-tools = { workspace = true }
