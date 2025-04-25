@@ -3,12 +3,12 @@ use std::sync::{Arc, OnceLock};
 use std::thread;
 
 use anyhow::{Context, Result};
-use fedi_common::api::LiveFediApi;
-use fedi_common::event::IEventSink;
-use fedi_common::features::FeatureCatalog;
 use fedimint_core::task;
 use fedimint_logging::TracingSetup;
 use futures::{Future, SinkExt, StreamExt};
+use runtime::api::LiveFediApi;
+use runtime::event::IEventSink;
+use runtime::features::FeatureCatalog;
 use serde::{Deserialize, Serialize};
 use tokio::net::{TcpListener, TcpStream};
 use tokio::sync::{mpsc, oneshot, Mutex};
@@ -175,7 +175,7 @@ pub async fn init(data_dir: PathBuf) -> anyhow::Result<()> {
         Arc::new(SenderEventSink(response_tx.clone())),
         Arc::new(LiveFediApi::new()),
         "Unknown (remote bridge)".to_owned(),
-        FeatureCatalog::new(fedi_common::features::RuntimeEnvironment::Dev).into(),
+        FeatureCatalog::new(runtime::features::RuntimeEnvironment::Dev).into(),
     )
     .await
     .context("fedimint initalize")?;

@@ -11,10 +11,10 @@ crate-type = ["cdylib", "rlib"]
 anyhow = { workspace = true }
 async-trait = { workspace = true }
 console_error_panic_hook = "0.1.7"
-fedi-ffi = { version = "0.3.0", path = "../fedi-ffi" }
-fedi-bridge = { path = "../fedi-bridge" }
-fedi-common = { path = "../fedi-common" }
-fedi-rpc-types = { path = "../fedi-rpc-types" }
+fedi-ffi = { workspace = true }
+bridge = { workspace = true }
+runtime = { workspace = true }
+rpc-types = { workspace = true }
 futures = { workspace = true }
 gloo-file = "0.2.3"
 imbl = "4"

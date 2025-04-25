@@ -10,42 +10,22 @@ use std::time::{Duration, UNIX_EPOCH};
 use anyhow::Context;
 use bitcoin::secp256k1::Message;
 use bitcoin::Amount;
-use fedi::federation::federation_sm::FederationState;
-use fedi::federation::federation_v2::client::ClientExt;
-use fedi::federation::federation_v2::{BackupServiceStatus, FederationV2};
-use fedi::federation::Federations;
-use fedi::matrix::multispend::db::RpcMultispendGroupStatus;
-use fedi::matrix::multispend::{
+use bridge::{Bridge, BridgeFull, RpcBridgeStatus, RuntimeExt as _};
+use bridge_inner::federation::federation_sm::FederationState;
+use bridge_inner::federation::federation_v2::client::ClientExt;
+use bridge_inner::federation::federation_v2::{BackupServiceStatus, FederationV2};
+use bridge_inner::federation::Federations;
+use bridge_inner::matrix::multispend::db::RpcMultispendGroupStatus;
+use bridge_inner::matrix::multispend::{
     GroupInvitation, GroupInvitationWithKeys, MsEventData, MultispendGroupVoteType,
     MultispendListedEvent, WithdrawRequestWithApprovals, WithdrawalResponseType,
 };
-use fedi::matrix::{
+use bridge_inner::matrix::{
     self, Matrix, RpcBackPaginationStatus, RpcMatrixAccountSession, RpcMatrixUploadResult,
     RpcMatrixUserDirectorySearchResponse, RpcRoomId, RpcRoomMember, RpcRoomNotificationMode,
     RpcSyncIndicator, RpcTimelineEventItemId, RpcTimelineItem, RpcUserId,
 };
-use fedi_bridge::{Bridge, BridgeFull, BridgeRuntimeExt as _, RpcBridgeStatus};
-use fedi_bug_report::reused_ecash_proofs::SerializedReusedEcashProofs;
-use fedi_common::api::IFediApi;
-use fedi_common::bridge_runtime::BridgeRuntime;
-use fedi_common::constants::{GLOBAL_MATRIX_SERVER, GLOBAL_MATRIX_SLIDING_SYNC_PROXY};
-use fedi_common::event::IEventSink;
-use fedi_common::features::FeatureCatalog;
-use fedi_common::observable::{Observable, ObservableVec};
-use fedi_common::storage::{DeviceIdentifier, FiatFXInfo, Storage};
-use fedi_rpc_types::error::{ErrorCode, RpcError};
-use fedi_rpc_types::event::{Event, EventSink, PanicEvent, SocialRecoveryEvent, TypedEventExt};
-use fedi_rpc_types::{
-    FrontendMetadata, GuardianStatus, NetworkError, RpcAmount, RpcCommunity,
-    RpcDeviceIndexAssignmentStatus, RpcEcashInfo, RpcEventId, RpcFederation, RpcFederationId,
-    RpcFederationMaybeLoading, RpcFederationPreview, RpcFeeDetails, RpcFiatAmount,
-    RpcGenerateEcashResponse, RpcInvoice, RpcLightningGateway, RpcMediaUploadParams,
-    RpcNostrPubkey, RpcNostrSecret, RpcOperationId, RpcPayAddressResponse, RpcPayInvoiceResponse,
-    RpcPeerId, RpcPrevPayInvoiceResult, RpcPublicKey, RpcRecoveryId, RpcRegisteredDevice,
-    RpcSPv2CachedSyncResponse, RpcSPv2SyncResponse, RpcSignature, RpcSignedLnurlMessage,
-    RpcStabilityPoolAccountInfo, RpcTransaction, RpcTransactionDirection, RpcTransactionListEntry,
-    SocialRecoveryQr,
-};
+use bug_report::reused_ecash_proofs::SerializedReusedEcashProofs;
 use fedimint_client::db::ChronologicalOperationLogKey;
 use fedimint_core::core::OperationId;
 use fedimint_core::timing::TimeReporter;
@@ -61,6 +41,26 @@ use matrix_sdk::ruma::events::room::MediaSource;
 use matrix_sdk::ruma::OwnedEventId;
 use matrix_sdk::RoomInfo;
 use mime::Mime;
+use rpc_types::error::{ErrorCode, RpcError};
+use rpc_types::event::{Event, EventSink, PanicEvent, SocialRecoveryEvent, TypedEventExt};
+use rpc_types::{
+    FrontendMetadata, GuardianStatus, NetworkError, RpcAmount, RpcCommunity,
+    RpcDeviceIndexAssignmentStatus, RpcEcashInfo, RpcEventId, RpcFederation, RpcFederationId,
+    RpcFederationMaybeLoading, RpcFederationPreview, RpcFeeDetails, RpcFiatAmount,
+    RpcGenerateEcashResponse, RpcInvoice, RpcLightningGateway, RpcMediaUploadParams,
+    RpcNostrPubkey, RpcNostrSecret, RpcOperationId, RpcPayAddressResponse, RpcPayInvoiceResponse,
+    RpcPeerId, RpcPrevPayInvoiceResult, RpcPublicKey, RpcRecoveryId, RpcRegisteredDevice,
+    RpcSPv2CachedSyncResponse, RpcSPv2SyncResponse, RpcSignature, RpcSignedLnurlMessage,
+    RpcStabilityPoolAccountInfo, RpcTransaction, RpcTransactionDirection, RpcTransactionListEntry,
+    SocialRecoveryQr,
+};
+use runtime::api::IFediApi;
+use runtime::bridge_runtime::Runtime;
+use runtime::constants::{GLOBAL_MATRIX_SERVER, GLOBAL_MATRIX_SLIDING_SYNC_PROXY};
+use runtime::event::IEventSink;
+use runtime::features::FeatureCatalog;
+use runtime::observable::{Observable, ObservableVec};
+use runtime::storage::{DeviceIdentifier, FiatFXInfo, Storage};
 use serde::de::DeserializeOwned;
 use serde::{Deserialize, Serialize};
 use stability_pool_client::common::{FiatAmount, FiatOrAll};
@@ -87,7 +87,7 @@ pub async fn fedimint_initialize_async(
     let _g = TimeReporter::new("fedimint_initialize").level(Level::INFO);
 
     let device_identifier = DeviceIdentifier::from_str(&device_identifier)?;
-    let runtime = BridgeRuntime::new(
+    let runtime = Runtime::new(
         storage,
         event_sink,
         fedi_api,
@@ -130,8 +130,8 @@ impl<'a> TryGet<&'a BridgeFull> for &'a Bridge {
     }
 }
 
-impl TryGet<Arc<BridgeRuntime>> for &Bridge {
-    fn try_get(self) -> anyhow::Result<Arc<BridgeRuntime>> {
+impl TryGet<Arc<Runtime>> for &Bridge {
+    fn try_get(self) -> anyhow::Result<Arc<Runtime>> {
         Ok(self.runtime().clone())
     }
 }
@@ -485,7 +485,7 @@ async fn validateEcash(bridge: &BridgeFull, ecash: String) -> anyhow::Result<Rpc
 
 #[macro_rules_derive(rpc_method!)]
 async fn updateCachedFiatFXInfo(
-    runtime: Arc<BridgeRuntime>,
+    runtime: Arc<Runtime>,
     fiat_code: String,
     btc_to_fiat_hundredths: u64,
 ) -> anyhow::Result<()> {
@@ -544,12 +544,12 @@ async fn updateTransactionNotes(
 }
 
 #[macro_rules_derive(rpc_method!)]
-async fn getMnemonic(runtime: Arc<BridgeRuntime>) -> anyhow::Result<Vec<String>> {
+async fn getMnemonic(runtime: Arc<Runtime>) -> anyhow::Result<Vec<String>> {
     runtime.get_mnemonic_words().await
 }
 
 #[macro_rules_derive(rpc_method!)]
-async fn checkMnemonic(runtime: Arc<BridgeRuntime>, mnemonic: Vec<String>) -> anyhow::Result<bool> {
+async fn checkMnemonic(runtime: Arc<Runtime>, mnemonic: Vec<String>) -> anyhow::Result<bool> {
     Ok(runtime.get_mnemonic_words().await? == mnemonic)
 }
 
@@ -580,7 +580,7 @@ async fn uploadBackupFile(
 
 // This method is a bit of a stopgap ...
 #[macro_rules_derive(rpc_method!)]
-async fn locateRecoveryFile(runtime: Arc<BridgeRuntime>) -> anyhow::Result<PathBuf> {
+async fn locateRecoveryFile(runtime: Arc<Runtime>) -> anyhow::Result<PathBuf> {
     let storage = runtime.storage.clone();
     Ok(storage.platform_path(RECOVERY_FILENAME.as_ref()))
 }
@@ -638,7 +638,7 @@ async fn completeSocialRecovery(bridge: &BridgeFull) -> anyhow::Result<Vec<RpcRe
 
 #[macro_rules_derive(rpc_method!)]
 async fn signLnurlMessage(
-    runtime: Arc<BridgeRuntime>,
+    runtime: Arc<Runtime>,
     // hex-encoded message
     message: String,
     domain: String,
@@ -664,23 +664,23 @@ async fn fedimintVersion(_bridge: &Bridge) -> anyhow::Result<String> {
 }
 
 #[macro_rules_derive(rpc_method!)]
-async fn getNostrSecret(runtime: Arc<BridgeRuntime>) -> anyhow::Result<RpcNostrSecret> {
+async fn getNostrSecret(runtime: Arc<Runtime>) -> anyhow::Result<RpcNostrSecret> {
     runtime.get_nostr_secret().await
 }
 
 #[macro_rules_derive(rpc_method!)]
-async fn getNostrPubkey(runtime: Arc<BridgeRuntime>) -> anyhow::Result<RpcNostrPubkey> {
+async fn getNostrPubkey(runtime: Arc<Runtime>) -> anyhow::Result<RpcNostrPubkey> {
     runtime.get_nostr_pubkey().await
 }
 
 #[macro_rules_derive(rpc_method!)]
-async fn signNostrEvent(runtime: Arc<BridgeRuntime>, event_hash: String) -> anyhow::Result<String> {
+async fn signNostrEvent(runtime: Arc<Runtime>, event_hash: String) -> anyhow::Result<String> {
     runtime.sign_nostr_event(event_hash).await
 }
 
 #[macro_rules_derive(rpc_method!)]
 async fn nostrEncrypt(
-    runtime: Arc<BridgeRuntime>,
+    runtime: Arc<Runtime>,
     pubkey: String,
     plaintext: String,
 ) -> anyhow::Result<String> {
@@ -689,7 +689,7 @@ async fn nostrEncrypt(
 
 #[macro_rules_derive(rpc_method!)]
 async fn nostrDecrypt(
-    runtime: Arc<BridgeRuntime>,
+    runtime: Arc<Runtime>,
     pubkey: String,
     ciphertext: String,
 ) -> anyhow::Result<String> {
@@ -826,12 +826,12 @@ async fn spv2WithdrawAll(
 }
 
 #[macro_rules_derive(rpc_method!)]
-async fn getSensitiveLog(runtime: Arc<BridgeRuntime>) -> anyhow::Result<bool> {
+async fn getSensitiveLog(runtime: Arc<Runtime>) -> anyhow::Result<bool> {
     Ok(runtime.sensitive_log().await)
 }
 
 #[macro_rules_derive(rpc_method!)]
-async fn setSensitiveLog(runtime: Arc<BridgeRuntime>, enable: bool) -> anyhow::Result<()> {
+async fn setSensitiveLog(runtime: Arc<Runtime>, enable: bool) -> anyhow::Result<()> {
     runtime.set_sensitive_log(enable).await
 }
 
@@ -1001,7 +1001,7 @@ async fn transferExistingDeviceRegistration(
     bridge.register_device_with_index(index, true).await
 }
 
-async fn ensure_device_index_unassigned(runtime: &Arc<BridgeRuntime>) -> anyhow::Result<()> {
+async fn ensure_device_index_unassigned(runtime: &Arc<Runtime>) -> anyhow::Result<()> {
     anyhow::ensure!(
         matches!(
             runtime.device_index_assignment_status().await,
@@ -1015,7 +1015,7 @@ async fn ensure_device_index_unassigned(runtime: &Arc<BridgeRuntime>) -> anyhow:
 
 #[macro_rules_derive(rpc_method!)]
 async fn deviceIndexAssignmentStatus(
-    runtime: Arc<BridgeRuntime>,
+    runtime: Arc<Runtime>,
 ) -> anyhow::Result<RpcDeviceIndexAssignmentStatus> {
     runtime.device_index_assignment_status().await
 }
@@ -1085,7 +1085,7 @@ async fn evilSpamAddress(federation: Arc<FederationV2>) -> anyhow::Result<()> {
 
 #[macro_rules_derive(rpc_method!)]
 async fn listFederationsPendingRejoinFromScratch(
-    bridge: Arc<BridgeRuntime>,
+    bridge: Arc<Runtime>,
 ) -> anyhow::Result<Vec<String>> {
     Ok(bridge.list_federations_pending_rejoin_from_scratch().await)
 }
@@ -1623,7 +1623,7 @@ async fn matrixGetMediaPreview(
 }
 
 #[macro_rules_derive(rpc_method!)]
-async fn getFeatureCatalog(runtime: Arc<BridgeRuntime>) -> anyhow::Result<Arc<FeatureCatalog>> {
+async fn getFeatureCatalog(runtime: Arc<Runtime>) -> anyhow::Result<Arc<FeatureCatalog>> {
     Ok(runtime.feature_catalog.clone())
 }
 
@@ -2159,26 +2159,16 @@ pub mod tests {
     use bech32::{self, Bech32m};
     use bitcoin::secp256k1::PublicKey;
     use bitcoin::Network;
+    use bridge::RuntimeExt as _;
+    use bridge_inner::federation::federation_sm::FederationState;
+    use bridge_inner::federation::federation_v2::FederationV2;
+    use communities::CommunityInvite;
     use devimint::devfed::DevJitFed;
     use devimint::envs::FM_INVITE_CODE_ENV;
     use devimint::util::{ClnLightningCli, FedimintCli, LnCli, ProcessManager};
     use devimint::vars::{self, mkdir};
     use devimint::{cmd, DevFed};
-    use fedi::federation::federation_sm::FederationState;
-    use fedi::federation::federation_v2::FederationV2;
-    use fedi_bridge::BridgeRuntimeExt as _;
-    use fedi_common::api::{RegisterDeviceError, RegisteredDevice, TransactionDirection};
-    use fedi_common::constants::{COMMUNITY_INVITE_CODE_HRP, FEDI_FILE_PATH, MILLION};
-    use fedi_common::envs::USE_UPSTREAM_FEDIMINTD_ENV;
-    use fedi_common::features::RuntimeEnvironment;
-    use fedi_common::storage::{DeviceIdentifier, FediFeeSchedule, IStorage};
-    use fedi_communities::CommunityInvite;
-    use fedi_core::envs::FEDI_SOCIAL_RECOVERY_MODULE_ENABLE_ENV;
-    use fedi_rpc_types::event::{DeviceRegistrationEvent, TransactionEvent};
-    use fedi_rpc_types::{
-        RpcLnReceiveState, RpcOOBReissueState, RpcOnchainDepositState, RpcReturningMemberStatus,
-        RpcTransactionDirection, RpcTransactionKind,
-    };
+    use env::envs::FEDI_SOCIAL_RECOVERY_MODULE_ENABLE_ENV;
     use fedi_social_client::common::VerificationDocument;
     use fedimint_bip39::Bip39RootSecretStrategy;
     use fedimint_client::secret::RootSecretStrategy;
@@ -2189,6 +2179,16 @@ pub mod tests {
     use nostr::nips::nip44;
     use rand::distributions::Alphanumeric;
     use rand::Rng;
+    use rpc_types::event::{DeviceRegistrationEvent, TransactionEvent};
+    use rpc_types::{
+        RpcLnReceiveState, RpcOOBReissueState, RpcOnchainDepositState, RpcReturningMemberStatus,
+        RpcTransactionDirection, RpcTransactionKind,
+    };
+    use runtime::api::{RegisterDeviceError, RegisteredDevice, TransactionDirection};
+    use runtime::constants::{COMMUNITY_INVITE_CODE_HRP, FEDI_FILE_PATH, MILLION};
+    use runtime::envs::USE_UPSTREAM_FEDIMINTD_ENV;
+    use runtime::features::RuntimeEnvironment;
+    use runtime::storage::{DeviceIdentifier, FediFeeSchedule, IStorage};
     use tokio::sync::Mutex;
     use tokio::task::JoinSet;
     use tracing::{debug, info, trace};
@@ -2536,7 +2536,7 @@ pub mod tests {
         let event_sink = Arc::new(FakeEventSink::new());
         let storage = Arc::new(PathBasedStorage::new(data_dir).await?);
         let device_identifier = DeviceIdentifier::from_str(&device_identifier)?;
-        let runtime = BridgeRuntime::new(
+        let runtime = Runtime::new(
             storage,
             event_sink,
             fedi_api,
@@ -3992,7 +3992,7 @@ pub mod tests {
         // service would try to renew registration. The conflict event is what the
         // front-end uses to block further user action.
         let registration_conflict_body = serde_json::to_string(&DeviceRegistrationEvent {
-            state: fedi_rpc_types::event::DeviceRegistrationState::Conflict,
+            state: rpc_types::event::DeviceRegistrationState::Conflict,
         })
         .expect("failed to json serialize");
         assert!(!bridge_1
@@ -4129,7 +4129,7 @@ pub mod tests {
         // service would try to renew registration. The conflict event is what the
         // front-end uses to block further user action.
         let registration_conflict_body = serde_json::to_string(&DeviceRegistrationEvent {
-            state: fedi_rpc_types::event::DeviceRegistrationState::Conflict,
+            state: rpc_types::event::DeviceRegistrationState::Conflict,
         })
         .expect("failed to json serialize");
         assert!(!backup_bridge

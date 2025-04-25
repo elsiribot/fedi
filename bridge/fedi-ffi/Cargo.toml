@@ -13,8 +13,8 @@ name = "fediffi"
 empty-line-after-doc-comments = "allow"
 
 [dependencies]
-fedi-api-types = { workspace = true }
-fedi-core = { workspace = true }
+api-types = { workspace = true }
+env = { workspace = true }
 fedimint-core = { workspace = true }
 fedimint-client = { workspace = true }
 fedimint-tbs = { workspace = true }
@@ -25,9 +25,9 @@ fedimint-ln-common = { workspace = true }
 fedimint-wallet-client = { workspace = true }
 fedimint-meta-client = { workspace = true }
 fedi-social-client = { workspace = true }
-stability-pool-client-old = { path = "../../modules/stability-pool-old/client" }
-stability-pool-client = { path = "../../modules/stability-pool/client" }
-fedi-bug-report = { path = "../../fedi-bug-report" }
+stability-pool-client-old = { workspace = true }
+stability-pool-client = { workspace = true }
+bug-report = { workspace = true }
 fedimint-derive-secret = { workspace = true }
 fedimint-logging = { workspace = true }
 fedimint-bip39 = { workspace = true }
@@ -74,11 +74,11 @@ eyeball = "0.8.7"
 async-recursion = "1.1.0"
 tokio-stream = { version = "0.1.17", features = ["sync"] }
 async-stream.workspace = true
-fedi = { path = "../fedi" }
-fedi-common = { path = "../fedi-common" }
-fedi-bridge = { path = "../fedi-bridge" }
-fedi-communities = { path = "../fedi-communities" }
-fedi-rpc-types = { path = "../fedi-rpc-types" }
+bridge-inner = { workspace = true }
+runtime = { workspace = true }
+bridge = { workspace = true }
+communities = { workspace = true }
+rpc-types = { workspace = true }
 
 [target.'cfg(target_family = "wasm")'.dependencies]
 ring = { version = "0.17.14", features = ["wasm32_unknown_unknown_js"] }
@@ -106,7 +106,7 @@ fedimint-build = { workspace = true }
 tempfile = "3.17.1"
 mockito = "1.4.0"
 clap = { workspace = true }
-fedi = { path = "../fedi", features = ["test-support"] }
+bridge-inner = { workspace = true, features = ["test-support"] }
 
 # FIXME: just put these above? or dev-dependencies
 [target.'cfg(target_os = "macos")'.dependencies]

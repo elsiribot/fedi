@@ -4,15 +4,15 @@ use std::sync::Arc;
 
 use anyhow::{bail, Context};
 use async_trait::async_trait;
-use fedi_bridge::Bridge;
-use fedi_common::api::LiveFediApi;
-// used by uniffi
-pub use fedi_common::event::IEventSink as EventSink;
-use fedi_common::features::{FeatureCatalog, RuntimeEnvironment};
-use fedi_common::storage::IStorage;
-use fedi_rpc_types::error::ErrorCode;
-use fedi_rpc_types::{RpcAppFlavor, RpcInitOpts};
+use bridge::Bridge;
 use lazy_static::lazy_static;
+use rpc_types::error::ErrorCode;
+use rpc_types::{RpcAppFlavor, RpcInitOpts};
+use runtime::api::LiveFediApi;
+// used by uniffi
+pub use runtime::event::IEventSink as EventSink;
+use runtime::features::{FeatureCatalog, RuntimeEnvironment};
+use runtime::storage::IStorage;
 use tokio::sync::Mutex;
 use tracing::{error, info, warn};
 

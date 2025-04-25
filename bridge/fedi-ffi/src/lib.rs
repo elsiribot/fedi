@@ -9,7 +9,7 @@ pub mod remote;
 pub mod rpc;
 
 // nosemgrep: ban-wildcard-imports
-pub use fedi::*;
+pub use bridge_inner::*;
 #[cfg(not(target_family = "wasm"))]
 // nosemgrep: ban-wildcard-imports
 use ffi::*;

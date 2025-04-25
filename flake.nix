@@ -432,7 +432,7 @@
           fedi-fedimintd = craneMultiBuild.fedi-fedimintd;
           fedi-fedimint-cli = craneMultiBuild.fedi-fedimint-cli;
 
-          fedi-api-types = craneMultiBuild.fedi-api-types;
+          api-types = craneMultiBuild.api-types;
           fedi-wasm = craneMultiBuild.wasm32-unknown.release.fedi-wasm;
         };
 
