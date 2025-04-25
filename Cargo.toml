@@ -30,6 +30,7 @@ default-members = [
   "modules/fedi-social/common",
   "modules/fedi-social/server",
   "modules/fedi-social/client",
+  "bridge/device-registration",
   "bridge/fedi-ffi",
   "bridge/fedi",
   "bridge/fedi-bridge",

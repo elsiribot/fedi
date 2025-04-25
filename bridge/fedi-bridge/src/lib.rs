@@ -5,8 +5,8 @@ use std::sync::Arc;
 use std::time::Duration;
 
 use anyhow::{anyhow, bail, Context, Result};
+use device_registration::DeviceRegistrationService;
 use fedi::bridge_runtime::BridgeRuntime;
-use fedi::device_registration::{self, DeviceRegistrationService};
 use fedi::error::ErrorCode;
 use fedi::event::SocialRecoveryEvent;
 use fedi::federation::{federation_v2, Federations};

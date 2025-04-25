@@ -2,16 +2,15 @@ use std::sync::Arc;
 use std::time::Duration;
 
 use anyhow::{anyhow, bail};
+use fedi::api::{IFediApi, RegisterDeviceError, RegisteredDevice};
+use fedi::bridge_runtime::BridgeRuntime;
+use fedi::constants::{DEVICE_REGISTRATION_FREQUENCY, DEVICE_REGISTRATION_OVERDUE};
+use fedi::event::{Event, EventSink, TypedEventExt};
+use fedi::storage::AppState;
 use fedimint_core::task::TaskGroup;
 use fedimint_core::util::backoff_util::custom_backoff;
 use fedimint_core::util::retry;
 use tracing::{error, info};
-
-use crate::api::{IFediApi, RegisterDeviceError, RegisteredDevice};
-use crate::bridge_runtime::BridgeRuntime;
-use crate::constants::{DEVICE_REGISTRATION_FREQUENCY, DEVICE_REGISTRATION_OVERDUE};
-use crate::event::{Event, EventSink, TypedEventExt};
-use crate::storage::AppState;
 
 pub struct DeviceRegistrationService {
     app_state: AppState,
@@ -177,7 +176,7 @@ pub async fn register_device_with_backoff(
                             .await
                             .inspect_err(|e| error!(?e, "failed to write to app state"));
                         event_sink.typed_event(&Event::device_registration(
-                            crate::event::DeviceRegistrationState::Success,
+                            fedi::event::DeviceRegistrationState::Success,
                         ));
                         Ok(RegisterDeviceRetryOk::Success)
                     }
@@ -185,7 +184,7 @@ pub async fn register_device_with_backoff(
                         error!(%error, "unexpected device registration conflict");
                         if emit_event_on_conflict {
                             event_sink.typed_event(&Event::device_registration(
-                                crate::event::DeviceRegistrationState::Conflict,
+                                fedi::event::DeviceRegistrationState::Conflict,
                             ));
                         }
                         // Return an Ok to indicate the error is non-retryable
@@ -203,7 +202,7 @@ pub async fn register_device_with_backoff(
                                 < fedimint_core::time::now()
                             {
                                 event_sink.typed_event(&Event::device_registration(
-                                    crate::event::DeviceRegistrationState::Overdue,
+                                    fedi::event::DeviceRegistrationState::Overdue,
                                 ));
                             }
                         }
