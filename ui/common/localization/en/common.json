@@ -562,10 +562,12 @@
             "community-description-create": "Think of the community as a safe home for your personal wallet. Join or create your own.",
             "community-updates": "Get updates by joining a community.",
             "community-mods-title": "Community Mods",
+            "display-name": "Here's your display name:",
             "services-selected": "Services selected by your community.",
             "first-entry": "You’re In! What’s Next?",
             "first-entry-option-1": "Top up your wallet to send, receive, and save money.",
-            "first-entry-option-2": "Join more communities and secure your money in different personal wallets."
+            "first-entry-option-2": "Join more communities and secure your money in different personal wallets.",
+            "profile-change": "To change, tap the profile"
         },
         "multispend": {
             "abort-multispend-setup": "Abort Multispend Setup?",
