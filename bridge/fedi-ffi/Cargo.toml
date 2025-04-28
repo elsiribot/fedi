@@ -13,17 +13,12 @@ name = "fediffi"
 empty-line-after-doc-comments = "allow"
 
 [dependencies]
-api-types = { workspace = true }
 env = { workspace = true }
 fedimint-core = { workspace = true }
 fedimint-client = { workspace = true }
-fedimint-tbs = { workspace = true }
 fedimint-mint-client = { workspace = true }
-fedimint-ln-client = { workspace = true }
-fedimint-api-client = { workspace = true }
 fedimint-ln-common = { workspace = true }
 fedimint-wallet-client = { workspace = true }
-fedimint-meta-client = { workspace = true }
 fedi-social-client = { workspace = true }
 stability-pool-client-old = { workspace = true }
 stability-pool-client = { workspace = true }
@@ -31,8 +26,6 @@ bug-report = { workspace = true }
 fedimint-derive-secret = { workspace = true }
 fedimint-logging = { workspace = true }
 fedimint-bip39 = { workspace = true }
-fedimint_threshold_crypto = { workspace = true }
-fedimint-aead = { workspace = true }
 
 anyhow = { workspace = true }
 bip39 = { version = "2.0.0", features = ["rand"] }
@@ -54,26 +47,15 @@ nostr = { workspace = true }
 ts-rs = "10"
 async-trait = { workspace = true }
 tokio = { workspace = true, features = ["time", "macros"] }
-url = "2.3.1"
-reqwest = { workspace = true }
 rolling-file = "0.2.0"
 tracing-appender = "0.2.2"
-matrix-sdk-ui = { workspace = true, default-features = false }
 matrix-sdk = { workspace = true, default-features = false, features = [
   "js",
   "indexeddb",
   "rustls-tls",
   "e2e-encryption",
 ] }
-imbl = { version = "4", features = ["serde"] }
-serde_with = "3.12.0"
-eyeball-im = "0.6"
 tempfile = "3.17.1"
-slab = "0.4.9"
-eyeball = "0.8.7"
-async-recursion = "1.1.0"
-tokio-stream = { version = "0.1.17", features = ["sync"] }
-async-stream.workspace = true
 bridge-inner = { workspace = true }
 runtime = { workspace = true }
 bridge = { workspace = true }
