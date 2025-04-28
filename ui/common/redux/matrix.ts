@@ -41,6 +41,7 @@ import {
     MatrixTimelineObservableUpdates,
     MatrixUser,
     MultispendRole,
+    MultispendTransactionListEntry,
     Sats,
     UsdCents,
 } from '../types'
@@ -62,6 +63,7 @@ import { FedimintBridge } from '../utils/fedimint'
 import { makeLog } from '../utils/log'
 import {
     MatrixEventContentType,
+    coerceMultispendTxn,
     doesEventContentMatchPreviewMedia,
     getMultispendInvite,
     getMultispendRole,
@@ -125,7 +127,7 @@ const initialState = {
     >,
     roomMultispendTransactions: {} as Record<
         MatrixRoom['id'],
-        MultispendListedEvent[] | undefined
+        MultispendTransactionListEntry[] | undefined
     >,
     users: {} as Record<MatrixUser['id'], MatrixUser | undefined>,
     ignoredUsers: [] as MatrixUser['id'][],
@@ -284,7 +286,8 @@ export const matrixSlice = createSlice({
             }>,
         ) {
             const { roomId, transactions } = action.payload
-            state.roomMultispendTransactions[roomId] = transactions
+            state.roomMultispendTransactions[roomId] =
+                transactions.map(coerceMultispendTxn)
         },
         addMatrixError(state, action: PayloadAction<MatrixError>) {
             state.errors = [...state.errors, action.payload]

@@ -4,7 +4,6 @@ import type {
     FedimintBridgeEventMap,
     MSats,
     Sats,
-    TransactionListEntry,
     UsdCents,
     bindings,
 } from '../types'
@@ -26,6 +25,7 @@ import {
     RpcStabilityPoolAccountInfo,
     RpcTimelineEventItemId,
     RpcTransaction,
+    RpcTransactionListEntry,
 } from '../types/bindings'
 import { isDev } from './environment'
 import { formatBridgeError } from './error'
@@ -181,7 +181,7 @@ export class FedimintBridge {
         startTime?: number,
         limit?: number,
     ) {
-        return this.rpcTyped<'listTransactions', TransactionListEntry[]>(
+        return this.rpcTyped<'listTransactions', RpcTransactionListEntry[]>(
             'listTransactions',
             {
                 federationId,

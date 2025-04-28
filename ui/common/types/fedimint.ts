@@ -26,6 +26,9 @@ import {
     SPv2WithdrawalEvent,
     SPv2TransferEvent,
     RpcStabilityPoolConfig,
+    MultispendListedEvent,
+    MultispendDepositEventData,
+    WithdrawRequestWithApprovals,
 } from './bindings'
 import { MSats, Usd, UsdCents } from './units'
 
@@ -42,12 +45,53 @@ export enum TransactionDirection {
     receive = 'receive',
 }
 
+type CommonTxnFields = Pick<
+    RpcTransactionListEntry,
+    | 'createdAt'
+    | 'id'
+    | 'amount'
+    | 'txnNotes'
+    | 'txDateFiatInfo'
+    | 'fediFeeStatus'
+    | 'frontendMetadata'
+    | 'outcomeTime'
+>
+
+export type MultispendTransactionListEntry = CommonTxnFields & {
+    id: string
+    counter: MultispendListedEvent['counter']
+    time: MultispendListedEvent['time']
+    event: MultispendListedEvent['event']
+    kind: 'multispend'
+} & (
+        | {
+              state: 'deposit'
+              event: { depositNotification: MultispendDepositEventData }
+          }
+        | {
+              state: 'withdrawal'
+              event: { withdrawalRequest: WithdrawRequestWithApprovals }
+          }
+        | {
+              state: 'invalid'
+          }
+    )
+
 // These types are almost identical (only difference is the `createdAt` field),
 // but we need to keep both for now. The `listTransactions` rpc includes the
 // `createdAt` field, while `getTransaction` & transaction updates do not.
 // TODO: Find a way to include the `createdAt` field in all types on the bridge.
 export type Transaction = RpcTransaction
-export type TransactionListEntry = RpcTransactionListEntry
+
+type NarrowType<
+    T extends MultispendTransactionListEntry | RpcTransactionListEntry,
+> = T extends { kind: 'multispend' }
+    ? MultispendTransactionListEntry
+    : RpcTransactionListEntry
+
+export type TransactionListEntry = NarrowType<
+    MultispendTransactionListEntry | RpcTransactionListEntry
+>
 
 type TestEquals<T, K> = T extends K ? (K extends T ? true : never) : never
 

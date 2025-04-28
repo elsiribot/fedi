@@ -19,9 +19,11 @@ import {
     MatrixTimelineItem,
     MatrixUser,
     MultispendRole,
+    MultispendTransactionListEntry,
 } from '../types'
 import {
     GroupInvitation,
+    MultispendListedEvent,
     RpcMultispendGroupStatus,
     RpcTimelineEventItemId,
     RpcUserId,
@@ -701,5 +703,49 @@ export const makeMultispendWalletHeader = (
                 threshold: 0,
                 totalSigners: 0,
             }
+    }
+}
+
+export const coerceMultispendTxn = (
+    txn: MultispendListedEvent,
+): MultispendTransactionListEntry => {
+    const coerced = {
+        ...txn,
+        createdAt: txn.time,
+        id: txn.eventId,
+        amount: 0 as MSats,
+        fediFeeStatus: null,
+        txnNotes: '',
+        txDateFiatInfo: null,
+        frontendMetadata: {
+            initialNotes: null,
+            recipientMatrixId: null,
+            senderMatrixId: null,
+        },
+        outcomeTime: null,
+        kind: 'multispend' as const,
+    }
+    if (txn.event === 'invalidEvent') {
+        return {
+            ...coerced,
+            state: 'invalid' as const,
+        }
+    } else if ('depositNotification' in txn.event) {
+        return {
+            ...coerced,
+            state: 'deposit' as const,
+            event: { depositNotification: txn.event.depositNotification },
+        }
+    } else if ('withdrawalRequest' in txn.event) {
+        return {
+            ...coerced,
+            state: 'withdrawal' as const,
+            event: { withdrawalRequest: txn.event.withdrawalRequest },
+        }
+    } else {
+        return {
+            ...coerced,
+            state: 'invalid' as const,
+        }
     }
 }
