@@ -20,6 +20,7 @@ declare module '@rneui/themed' {
             // Add new colors here
             moneyGreen: string
             green: string
+            green100: string
             orange: string
             orange100: string
             lightOrange: string
@@ -30,6 +31,7 @@ declare module '@rneui/themed' {
             ghost: string
             keyboardGrey: string
             red: string
+            red100: string
             white: string
             yellow: string
             offWhite: string

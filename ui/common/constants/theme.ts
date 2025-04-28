@@ -6,6 +6,7 @@
 const HEX_COLORS = {
     moneyGreen: '#26A07B',
     green: '#00A829',
+    green100: '#B4F1C7',
     orange: '#DF7B00',
     orange100: '#F8DFB3',
     lightOrange: '#ECA429',
@@ -15,6 +16,7 @@ const HEX_COLORS = {
     extraLightGrey: '#E9E9EA',
     keyboardGrey: '#E8EAED',
     red: '#E00A00',
+    red100: '#FFC6B8',
     white: '#FFFFFF',
     yellow: '#FBE32D',
     offWhite: '#E6F7FF',

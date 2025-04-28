@@ -33,12 +33,6 @@ const MultispendConfirmDeposit: React.FC<Props> = ({ route }: Props) => {
     const multispendStatus = useAppSelector(s =>
         selectMatrixRoomMultispendStatus(s, roomId),
     )
-
-    if (multispendStatus?.status !== 'finalized')
-        throw new Error(
-            'MultispendConfirmDeposit should not be shown unless multispend status is finalized',
-        )
-
     const [loading, setLoading] = useState(false)
     const { t } = useTranslation()
     const { theme } = useTheme()
@@ -87,6 +81,8 @@ const MultispendConfirmDeposit: React.FC<Props> = ({ route }: Props) => {
     )
 
     const style = styles(theme)
+
+    if (multispendStatus?.status !== 'finalized') return null
 
     return (
         <SafeAreaContainer edges="notop" style={style.container}>

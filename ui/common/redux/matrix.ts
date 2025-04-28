@@ -40,6 +40,8 @@ import {
     MatrixTimelineItem,
     MatrixTimelineObservableUpdates,
     MatrixUser,
+    MultispendActiveInvitation,
+    MultispendFinalized,
     MultispendRole,
     MultispendTransactionListEntry,
     Sats,
@@ -48,6 +50,7 @@ import {
 import {
     FrontendMetadata,
     GroupInvitation,
+    MsEventData,
     MultispendListedEvent,
     NetworkError,
     RpcBackPaginationStatus,
@@ -119,7 +122,7 @@ const initialState = {
     >,
     roomMultispendStatus: {} as Record<
         MatrixRoom['id'],
-        RpcMultispendGroupStatus | undefined
+        MultispendActiveInvitation | MultispendFinalized | undefined
     >,
     roomMultispendAccountInfo: {} as Record<
         MatrixRoom['id'],
@@ -263,7 +266,12 @@ export const matrixSlice = createSlice({
             }>,
         ) {
             const { roomId, status } = action.payload
-            state.roomMultispendStatus[roomId] = status
+            state.roomMultispendStatus[roomId] =
+                status.status === 'inactive'
+                    ? undefined
+                    : (status as
+                          | MultispendActiveInvitation
+                          | MultispendFinalized)
         },
         setMatrixRoomMultispendAccountInfo(
             state,
@@ -288,6 +296,30 @@ export const matrixSlice = createSlice({
             const { roomId, transactions } = action.payload
             state.roomMultispendTransactions[roomId] =
                 transactions.map(coerceMultispendTxn)
+        },
+        updateMatrixRoomMultispendEvent(
+            state,
+            action: PayloadAction<{
+                roomId: MatrixRoom['id']
+                eventId: string
+                update: MsEventData
+            }>,
+        ) {
+            const existingRoomEvents =
+                state.roomMultispendTransactions[action.payload.roomId]
+
+            if (!existingRoomEvents) return
+
+            state.roomMultispendTransactions[action.payload.roomId] =
+                existingRoomEvents.map(evt =>
+                    evt.id === action.payload.eventId
+                        ? coerceMultispendTxn({
+                              ...evt,
+                              event: action.payload.update,
+                              eventId: action.payload.eventId,
+                          })
+                        : evt,
+                )
         },
         addMatrixError(state, action: PayloadAction<MatrixError>) {
             state.errors = [...state.errors, action.payload]
@@ -562,6 +594,7 @@ export const {
     addPreviewMedia,
     matchAndHidePreviewMedia,
     matchAndRemovePreviewMedia,
+    updateMatrixRoomMultispendEvent,
 } = matrixSlice.actions
 
 /*** Async thunk actions ***/
@@ -614,6 +647,22 @@ export const matrixRejectMultispendInvitation = createAsyncThunk<
     },
 )
 
+export const observeMultispendEvent = createAsyncThunk<
+    void,
+    { roomId: MatrixRoom['id']; eventId: string }
+>('matrix/observeMultispendEvent', async ({ roomId, eventId }) => {
+    const client = getMatrixClient()
+    return client.observeMultispendEvent(roomId, eventId)
+})
+
+export const unobserveMultispendEvent = createAsyncThunk<
+    void,
+    { roomId: MatrixRoom['id']; eventId: string }
+>('matrix/unobserveMultispendEvent', async ({ roomId, eventId }) => {
+    const client = getMatrixClient()
+    return client.unobserveMultispendEvent(roomId, eventId)
+})
+
 export const startMatrixClient = createAsyncThunk<
     MatrixAuth,
     { fedimint: FedimintBridge },
@@ -660,6 +709,17 @@ export const startMatrixClient = createAsyncThunk<
                     status: ev.status,
                 }),
             )
+    })
+    client.on('multispendEventUpdate', ({ update, roomId, eventId }) => {
+        if (!update) return
+
+        dispatch(
+            updateMatrixRoomMultispendEvent({
+                roomId,
+                eventId,
+                update,
+            }),
+        )
     })
     client.on('multispendAccountUpdate', ev => {
         if (ev.info) {

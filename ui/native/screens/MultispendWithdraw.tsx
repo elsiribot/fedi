@@ -38,11 +38,6 @@ const MultispendWithdraw: React.FC<Props> = ({ route }: Props) => {
         selectMatrixRoomMultispendStatus(s, roomId),
     )
 
-    if (multispendStatus?.status !== 'finalized')
-        throw new Error(
-            'MultispendDeposit should not be shown unless multispend status is finalized',
-        )
-
     const navigation = useNavigation()
     const { theme } = useTheme()
     const { t } = useTranslation()
@@ -54,7 +49,12 @@ const MultispendWithdraw: React.FC<Props> = ({ route }: Props) => {
     const [submitAttempts, setSubmitAttempts] = useState(0)
     const [notes, setNotes] = useState<string>('')
     const matchingFederation = useAppSelector(s =>
-        selectFederation(s, multispendStatus.finalized_group.federationId),
+        selectFederation(
+            s,
+            multispendStatus?.status === 'finalized'
+                ? multispendStatus.finalized_group.federationId
+                : '',
+        ),
     )
     const matrixRoom = useAppSelector(s => selectMatrixRoom(s, roomId))
     const multispendBalance = useAppSelector(s =>

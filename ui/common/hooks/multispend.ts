@@ -11,6 +11,7 @@ import {
     selectMatrixRoomMultispendTransactions,
     refreshMultispendTransactions,
 } from '../redux'
+import { MultispendFilterOption, MultispendWithdrawalEvent } from '../types'
 import { RpcRoomId } from '../types/bindings'
 import { FedimintBridge } from '../utils/fedimint'
 import {
@@ -182,7 +183,7 @@ export function useMultispendVoting({
 
     // If the multispend group is aborted for any reason, fire a callback that should handle navigating back to the chat
     useEffect(() => {
-        if (multispendStatus?.status === 'inactive' && onMultispendAborted) {
+        if (!multispendStatus && onMultispendAborted) {
             onMultispendAborted()
         }
     }, [multispendStatus, onMultispendAborted])
@@ -250,5 +251,128 @@ export function useMultispendTransactions(t: TFunction, roomId: RpcRoomId) {
         isLoading,
         transactions,
         fetchTransactions,
+    }
+}
+
+export function useMultispendWithdrawalRequests(
+    t: TFunction,
+    roomId: RpcRoomId,
+) {
+    const multispendStatus = useCommonSelector(s =>
+        selectMatrixRoomMultispendStatus(s, roomId),
+    )
+    const { transactions, isLoading, fetchTransactions } =
+        useMultispendTransactions(t, roomId)
+    const matrixAuth = useCommonSelector(selectMatrixAuth)
+
+    const withdrawalRequests = transactions.filter(
+        txn => txn.state === 'withdrawal',
+    )
+
+    const getWithdrawalStatus = useCallback(
+        (event: MultispendWithdrawalEvent) => {
+            if (multispendStatus?.status !== 'finalized') return 'pending'
+            if (event.event.withdrawalRequest.completed) return 'completed'
+
+            const voterCount = Object.keys(
+                multispendStatus.finalized_group.pubkeys,
+            ).length
+            const voteCount = Object.keys(
+                event.event.withdrawalRequest.signatures,
+            ).length
+            const rejectionCount =
+                event.event.withdrawalRequest.rejections.length
+
+            const threshold =
+                multispendStatus.finalized_group.invitation.threshold
+
+            if (voteCount >= threshold) return 'approved'
+            if (voterCount - rejectionCount < threshold) return 'rejected'
+
+            return 'pending'
+        },
+        [multispendStatus],
+    )
+
+    const getFormattedWithdrawalStatus = useCallback(
+        (event: MultispendWithdrawalEvent) => {
+            const status = getWithdrawalStatus(event)
+
+            switch (status) {
+                case 'approved':
+                    return t('words.approved')
+                case 'rejected':
+                    return t('words.rejected')
+                case 'pending':
+                    return t('words.pending')
+                case 'completed':
+                    return t('words.complete')
+            }
+        },
+        [t, getWithdrawalStatus],
+    )
+
+    const hasUserVotedForWithdrawal = useCallback(
+        (event: MultispendWithdrawalEvent, userId: string) => {
+            const rejections = event.event.withdrawalRequest.rejections
+            const signatures = event.event.withdrawalRequest.signatures
+
+            return Boolean(rejections.includes(userId) || signatures[userId])
+        },
+        [],
+    )
+
+    const filteredWithdrawalRequests = useCallback(
+        (filter: MultispendFilterOption) => {
+            if (filter === 'all' || multispendStatus?.status !== 'finalized')
+                return withdrawalRequests
+
+            const filtered = withdrawalRequests.filter(event => {
+                const eventStatus = getWithdrawalStatus(event)
+
+                if (filter === 'approved')
+                    return (
+                        eventStatus === 'approved' ||
+                        eventStatus === 'completed'
+                    )
+
+                return eventStatus === filter
+            })
+
+            if (filter === 'pending') {
+                filtered
+                    // Sort by oldest
+                    .sort((a, b) => a.time - b.time)
+                    // Sort by not voted for
+                    .sort((a, b) => {
+                        if (!matrixAuth) return 0
+
+                        if (hasUserVotedForWithdrawal(a, matrixAuth.userId))
+                            return 1
+                        if (hasUserVotedForWithdrawal(b, matrixAuth.userId))
+                            return -1
+                        return 0
+                    })
+            }
+
+            return filtered
+        },
+        [
+            matrixAuth,
+            withdrawalRequests,
+            multispendStatus,
+            getWithdrawalStatus,
+            hasUserVotedForWithdrawal,
+        ],
+    )
+
+    return {
+        withdrawalRequests,
+        isLoading,
+        fetchTransactions,
+        getWithdrawalStatus,
+        getFormattedWithdrawalStatus,
+        hasUserVotedForWithdrawal,
+        filteredWithdrawalRequests,
     }
 }

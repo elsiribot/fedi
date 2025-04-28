@@ -24,11 +24,6 @@ const GroupVoters: React.FC<Props> = ({ roomId }) => {
         selectMatrixRoomMultispendStatus(s, roomId),
     )
 
-    if (multispendStatus?.status !== 'activeInvitation')
-        throw new Error(
-            'GroupVoters shold not be shown unless multispend status is activeInvitation',
-        )
-
     const [filter, setFilter] = useState('all')
     const { t } = useTranslation()
     const { theme } = useTheme()
@@ -36,6 +31,9 @@ const GroupVoters: React.FC<Props> = ({ roomId }) => {
 
     const getVoterStatus = useCallback(
         (signer: string) => {
+            if (multispendStatus?.status !== 'activeInvitation')
+                return 'pending'
+
             if (
                 multispendStatus.state.proposer === signer ||
                 Object.keys(multispendStatus?.state.pubkeys).includes(signer)
@@ -51,6 +49,9 @@ const GroupVoters: React.FC<Props> = ({ roomId }) => {
     )
 
     const filteredSigners = useMemo(() => {
+        if (multispendStatus?.status !== 'activeInvitation' || filter === 'all')
+            return []
+
         return multispendStatus.state.invitation.signers.filter(signer => {
             if (filter === 'all') return true
             if (filter === 'pending')

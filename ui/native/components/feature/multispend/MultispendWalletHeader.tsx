@@ -7,20 +7,17 @@ import { Pressable } from 'react-native-gesture-handler'
 import LinearGradient from 'react-native-linear-gradient'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 
+import { useBtcFiatPrice } from '@fedi/common/hooks/amount'
 import {
     useMultispendDisplayUtils,
     useMultispendVoting,
 } from '@fedi/common/hooks/multispend'
-import {
-    selectCurrency,
-    selectCurrencyLocale,
-    selectMultispendBalance,
-} from '@fedi/common/redux'
-import amountUtils from '@fedi/common/utils/AmountUtils'
+import { selectCurrency, selectMultispendBalance } from '@fedi/common/redux'
 
 import { fedimint } from '../../../bridge'
 import { useAppSelector } from '../../../state/hooks'
 import { reset } from '../../../state/navigation'
+import { UsdCents } from '../../../types'
 import CustomOverlay from '../../ui/CustomOverlay'
 import HoloCircle from '../../ui/HoloCircle'
 import HoloGradient from '../../ui/HoloGradient'
@@ -47,7 +44,7 @@ const MultispendWalletHeader: React.FC<Props> = ({ roomId }) => {
         selectMultispendBalance(s, roomId),
     )
     const selectedCurrency = useAppSelector(selectCurrency)
-    const currencyLocale = useAppSelector(selectCurrencyLocale)
+    const { convertCentsToFormattedFiat } = useBtcFiatPrice(selectedCurrency)
 
     const {
         walletHeader: { federationName, status, threshold, totalSigners },
@@ -57,10 +54,9 @@ const MultispendWalletHeader: React.FC<Props> = ({ roomId }) => {
         navigation.dispatch(reset('ChatRoomConversation', { roomId }))
     }, [navigation, roomId])
 
-    const formattedMultispendBalance = amountUtils.formatFiat(
-        multispendBalance,
-        selectedCurrency,
-        { symbolPosition: 'none', locale: currencyLocale },
+    const formattedMultispendBalance = convertCentsToFormattedFiat(
+        multispendBalance as UsdCents,
+        'none',
     )
 
     const handleInfoPress = useCallback(() => {

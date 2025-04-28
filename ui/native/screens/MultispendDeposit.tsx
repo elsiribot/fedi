@@ -30,11 +30,6 @@ const MultispendDeposit: React.FC<Props> = ({ route }: Props) => {
         selectMatrixRoomMultispendStatus(s, roomId),
     )
 
-    if (multispendStatus?.status !== 'finalized')
-        throw new Error(
-            'MultispendDeposit should not be shown unless multispend status is finalized',
-        )
-
     const navigation = useNavigation()
     const { theme } = useTheme()
     const { t } = useTranslation()
@@ -52,7 +47,12 @@ const MultispendDeposit: React.FC<Props> = ({ route }: Props) => {
     const [insufficientBalanceOverlay, setInsufficientBalanceOverlay] =
         useState(false)
     const matchingFederation = useAppSelector(s =>
-        selectFederation(s, multispendStatus.finalized_group.federationId),
+        selectFederation(
+            s,
+            multispendStatus?.status === 'finalized'
+                ? multispendStatus.finalized_group.federationId
+                : '',
+        ),
     )
     const { formattedStableBalance } = useStabilityPool()
 
@@ -79,6 +79,8 @@ const MultispendDeposit: React.FC<Props> = ({ route }: Props) => {
     }
 
     const style = styles(theme)
+
+    if (multispendStatus?.status !== 'finalized') return null
 
     return (
         <>

@@ -845,6 +845,12 @@ export class FedimintBridge {
         return this.rpcTyped('matrixObserveMultispendGroup', args)
     }
 
+    async matrixObserveMultispendEventData(
+        args: bindings.RpcPayload<'matrixObserveMultispendEventData'>,
+    ) {
+        return this.rpcTyped('matrixObserveMultispendEventData', args)
+    }
+
     async matrixSendMultispendGroupInvitation(
         args: bindings.RpcPayload<'matrixSendMultispendGroupInvitation'>,
     ) {

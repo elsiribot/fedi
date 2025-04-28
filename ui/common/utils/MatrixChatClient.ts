@@ -23,6 +23,7 @@ import {
 } from '../types'
 import {
     JSONObject,
+    MsEventData,
     MultispendListedEvent,
     NetworkError,
     ObservableVecUpdate,
@@ -90,6 +91,11 @@ interface MatrixChatClientEventMap {
         roomId: MatrixRoom['id']
         status: RpcMultispendGroupStatus | null
     }
+    multispendEventUpdate: {
+        roomId: MatrixRoom['id']
+        eventId: string
+        update: MsEventData | null
+    }
     multispendAccountUpdate: {
         roomId: MatrixRoom['id']
         info: { Ok: RpcSPv2SyncResponse } | { Err: NetworkError } | null
@@ -124,6 +130,10 @@ export class MatrixChatClient {
     private multispendUnsubscribeMap: Record<
         MatrixRoom['id'],
         UnsubscribeFn | undefined
+    > = {}
+    private multispendEventUnsubscribeMap: Record<
+        MatrixRoom['id'],
+        Record<string, UnsubscribeFn | undefined>
     > = {}
     private multispendAccountUnsubscribeMap: Record<
         MatrixRoom['id'],
@@ -727,6 +737,47 @@ export class MatrixChatClient {
             )
 
         this.multispendUnsubscribeMap[roomId] = unsubscribe
+    }
+
+    public async observeMultispendEvent(roomId: string, eventId: string) {
+        if (this.multispendEventUnsubscribeMap[roomId]?.[eventId] !== undefined)
+            return
+
+        const unsubscribe =
+            this.fedimint.subscribeObservableSimple<MsEventData | null>(
+                observableId =>
+                    this.fedimint.matrixObserveMultispendEventData({
+                        observableId,
+                        roomId,
+                        eventId,
+                    }),
+                update => {
+                    this.emit('multispendEventUpdate', {
+                        roomId,
+                        eventId,
+                        update,
+                    })
+                },
+            )
+
+        this.multispendEventUnsubscribeMap[roomId] = {
+            ...(this.multispendUnsubscribeMap[roomId] || {}),
+            [eventId]: unsubscribe,
+        }
+    }
+
+    public async unobserveMultispendEvent(roomId: string, eventId: string) {
+        const multispendEventUnsubscribe =
+            this.multispendEventUnsubscribeMap[roomId]?.[eventId]
+
+        if (multispendEventUnsubscribe !== undefined) {
+            multispendEventUnsubscribe()
+
+            this.multispendEventUnsubscribeMap[roomId] = {
+                ...(this.multispendEventUnsubscribeMap[roomId] || {}),
+                [eventId]: undefined,
+            }
+        }
     }
 
     private async observeMultispendAccountInfo(roomId: string) {

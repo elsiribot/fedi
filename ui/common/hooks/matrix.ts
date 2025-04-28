@@ -26,6 +26,8 @@ import {
     unobserveMatrixRoom,
     unsubscribeMatrixSyncStatus,
     selectMatrixContactsList,
+    observeMultispendEvent,
+    unobserveMultispendEvent,
 } from '../redux'
 import {
     MatrixPaymentEvent,
@@ -495,6 +497,21 @@ export function useObserveMatrixSyncStatus(isMatrixStarted: boolean) {
             dispatch(unsubscribeMatrixSyncStatus())
         }
     }, [isMatrixStarted, dispatch])
+}
+
+export function useObserveMultispendEvent(
+    roomId: MatrixRoom['id'],
+    eventId: string,
+) {
+    const dispatch = useCommonDispatch()
+
+    useEffect(() => {
+        dispatch(observeMultispendEvent({ roomId, eventId }))
+
+        return () => {
+            dispatch(unobserveMultispendEvent({ roomId, eventId }))
+        }
+    }, [dispatch, roomId, eventId])
 }
 
 export function useMatrixUrlPreview({

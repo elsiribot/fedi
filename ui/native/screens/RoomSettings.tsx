@@ -170,11 +170,7 @@ const RoomSettings: React.FC<Props> = ({ navigation, route }: Props) => {
     }, [isDefaultGroup, isTogglingBroadcastOnly, room, dispatch, toast, t])
 
     const handleNavigateToMultispend = useCallback(() => {
-        if (
-            (multispendStatus === null ||
-                multispendStatus?.status === 'inactive') &&
-            isAdmin
-        ) {
+        if (!multispendStatus && isAdmin) {
             if (!hasSeenMultispendIntro) {
                 seeMultispendIntro()
                 navigation.navigate('MultispendIntro', {

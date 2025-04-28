@@ -641,7 +641,6 @@ export const arePollEventsEqual = (
 export const getMultispendInvite = (
     multispendStatus: RpcMultispendGroupStatus,
 ): GroupInvitation | null => {
-    if (multispendStatus.status === 'inactive') return null
     if (multispendStatus.status === 'activeInvitation')
         return multispendStatus.state.invitation
     if (multispendStatus.status === 'finalized')
@@ -695,7 +694,6 @@ export const makeMultispendWalletHeader = (
                 totalSigners:
                     multispendStatus.finalized_group.invitation.signers.length,
             }
-        case 'inactive':
         default:
             return {
                 federationName: '',

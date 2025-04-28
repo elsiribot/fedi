@@ -22,14 +22,10 @@ const GroupMultispend: React.FC<Props> = ({ route }: Props) => {
         selectMatrixRoomMultispendStatus(s, roomId),
     )
 
-    if (!multispendStatus)
-        throw new Error(
-            'GroupMultispend should not be shown unless multispend status is activeInvitation',
-        )
-
     const { t } = useTranslation()
-
     const { shouldShowHeader } = useMultispendDisplayUtils(t, roomId)
+
+    if (!multispendStatus) return null
 
     return (
         <View style={{ flex: 1 }}>

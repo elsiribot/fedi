@@ -4,10 +4,8 @@ import { useTranslation } from 'react-i18next'
 import { StyleSheet, View } from 'react-native'
 
 import { useMultispendVoting } from '@fedi/common/hooks/multispend'
-import { selectMatrixRoomMultispendStatus } from '@fedi/common/redux'
 
 import { fedimint } from '../../../../bridge'
-import { useAppSelector } from '../../../../state/hooks'
 import CustomOverlay from '../../../ui/CustomOverlay'
 import { SafeAreaContainer } from '../../../ui/SafeArea'
 import GroupVoters from './GroupVoters'
@@ -15,15 +13,6 @@ import GroupVoters from './GroupVoters'
 const MultispendActiveInvitation: React.FC<{
     roomId: string
 }> = ({ roomId }) => {
-    const multispendStatus = useAppSelector(s =>
-        selectMatrixRoomMultispendStatus(s, roomId),
-    )
-
-    if (!multispendStatus)
-        throw new Error(
-            'MultispendActiveInvitation should not be shown unless multispend status is activeInvitation',
-        )
-
     const navigation = useNavigation()
     const { t } = useTranslation()
     const { theme } = useTheme()
