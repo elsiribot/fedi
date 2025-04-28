@@ -45,8 +45,13 @@ pub enum MultispendDbPrefix {
 #[serde(rename_all = "camelCase")]
 #[ts(export)]
 pub enum MultispendGroupStatus {
-    Finalized { finalized_group: FinalizedGroup },
-    ActiveInvitation { active_invite_id: RpcEventId },
+    Finalized {
+        invite_event_id: RpcEventId,
+        finalized_group: FinalizedGroup,
+    },
+    ActiveInvitation {
+        active_invite_id: RpcEventId,
+    },
 }
 
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize, Encodable, Decodable, TS)]
@@ -62,7 +67,10 @@ pub enum RpcMultispendGroupStatus {
         state: GroupInvitationWithKeys,
     },
     /// Group is ready.
-    Finalized { finalized_group: FinalizedGroup },
+    Finalized {
+        invite_event_id: RpcEventId,
+        finalized_group: FinalizedGroup,
+    },
 }
 
 #[derive(Debug, Clone, Encodable, Decodable)]

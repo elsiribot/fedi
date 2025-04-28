@@ -263,7 +263,11 @@ export type MultispendEvent =
  * Represents the current status of a multispend group in a room
  */
 export type MultispendGroupStatus =
-  | { status: "finalized"; finalized_group: FinalizedGroup }
+  | {
+      status: "finalized";
+      invite_event_id: RpcEventId;
+      finalized_group: FinalizedGroup;
+    }
   | { status: "activeInvitation"; active_invite_id: RpcEventId };
 
 export type MultispendGroupVoteType =
@@ -798,7 +802,11 @@ export type RpcMultispendGroupStatus =
       active_invite_id: RpcEventId;
       state: GroupInvitationWithKeys;
     }
-  | { status: "finalized"; finalized_group: FinalizedGroup };
+  | {
+      status: "finalized";
+      invite_event_id: RpcEventId;
+      finalized_group: FinalizedGroup;
+    };
 
 export type RpcNostrPubkey = { hex: string; npub: string };
 
