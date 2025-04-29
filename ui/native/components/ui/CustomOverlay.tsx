@@ -124,6 +124,7 @@ const CustomOverlay: React.FC<CustomOverlayProps> = ({
                         borderColor: button.warning
                             ? theme.colors.red
                             : theme.colors.primary,
+                        height: 60,
                     }}
                     loadingProps={{
                         color:
