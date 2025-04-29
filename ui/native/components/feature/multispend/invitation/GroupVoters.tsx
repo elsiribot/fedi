@@ -49,8 +49,7 @@ const GroupVoters: React.FC<Props> = ({ roomId }) => {
     )
 
     const filteredSigners = useMemo(() => {
-        if (multispendStatus?.status !== 'activeInvitation' || filter === 'all')
-            return []
+        if (multispendStatus?.status !== 'activeInvitation') return []
 
         return multispendStatus.state.invitation.signers.filter(signer => {
             if (filter === 'all') return true

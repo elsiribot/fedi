@@ -53,6 +53,12 @@ export function useMultispendVoting({
         selectMyMultispendRole(s, roomId),
     )
     const isProposer = myMultispendRole === 'proposer'
+    const hasRejected = Boolean(
+        multispendStatus?.status === 'activeInvitation' &&
+            myId &&
+            multispendStatus.state.rejections.includes(myId),
+    )
+
     const canAccept = useMemo(() => {
         if (
             multispendStatus?.status !== 'activeInvitation' ||
@@ -61,13 +67,12 @@ export function useMultispendVoting({
         )
             return false
 
-        const hasRejected = multispendStatus.state.rejections.includes(myId)
         const hasApproved = Object.values(
             multispendStatus.state.pubkeys,
         ).includes(myId)
 
         return !hasRejected && !hasApproved
-    }, [multispendStatus, myId, myMultispendRole])
+    }, [multispendStatus, myId, myMultispendRole, hasRejected])
 
     const handleAbortMultispend = async () => {
         if (!isProposer) return
@@ -191,6 +196,7 @@ export function useMultispendVoting({
     }, [multispendStatus, onMultispendAborted])
 
     return {
+        hasRejected,
         isProposer,
         isLoading,
         isConfirmingAbort,

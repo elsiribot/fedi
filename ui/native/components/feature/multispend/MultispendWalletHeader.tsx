@@ -35,8 +35,15 @@ const MultispendWalletHeader: React.FC<Props> = ({ roomId }) => {
         setIsConfirmingAbort,
         abortConfirmationContents,
         rejectConfirmationContents,
-    } = useMultispendVoting({ t, fedimint, roomId })
-
+        hasRejected,
+    } = useMultispendVoting({
+        t,
+        fedimint,
+        roomId,
+        onMultispendAborted: () => {
+            navigation.dispatch(reset('ChatRoomConversation', { roomId }))
+        },
+    })
     const {
         formattedMultispendBalance,
         selectedCurrency,
@@ -72,11 +79,13 @@ const MultispendWalletHeader: React.FC<Props> = ({ roomId }) => {
                     </Pressable>
                 </View>
                 <View style={[style.headerSecondary, style.abortContainer]}>
-                    <Pressable onPress={() => setIsConfirmingAbort(true)}>
-                        <Text style={style.abortText} medium>
-                            {t(isProposer ? 'words.abort' : 'words.reject')}
-                        </Text>
-                    </Pressable>
+                    {!hasRejected && (
+                        <Pressable onPress={() => setIsConfirmingAbort(true)}>
+                            <Text style={style.abortText} medium>
+                                {t(isProposer ? 'words.abort' : 'words.reject')}
+                            </Text>
+                        </Pressable>
+                    )}
                 </View>
             </View>
             <View style={style.walletPreviewContainer}>
