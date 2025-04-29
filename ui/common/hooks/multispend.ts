@@ -10,6 +10,8 @@ import {
     selectWalletFederations,
     selectMatrixRoomMultispendTransactions,
     refreshMultispendTransactions,
+    selectFormattedMultispendBalance,
+    selectCurrency,
 } from '../redux'
 import { MultispendFilterOption, MultispendWithdrawalEvent } from '../types'
 import { RpcRoomId } from '../types/bindings'
@@ -205,8 +207,12 @@ export function useMultispendVoting({
 }
 
 export function useMultispendDisplayUtils(t: TFunction, roomId: RpcRoomId) {
+    const selectedCurrency = useCommonSelector(selectCurrency)
     const multispendStatus = useCommonSelector(s =>
         selectMatrixRoomMultispendStatus(s, roomId),
+    )
+    const formattedMultispendBalance = useCommonSelector(s =>
+        selectFormattedMultispendBalance(s, roomId),
     )
 
     const isActiveInvitation = multispendStatus?.status === 'activeInvitation'
@@ -222,6 +228,8 @@ export function useMultispendDisplayUtils(t: TFunction, roomId: RpcRoomId) {
         shouldShowHeader,
         shouldShowVoters,
         walletHeader,
+        formattedMultispendBalance,
+        selectedCurrency,
     }
 }
 

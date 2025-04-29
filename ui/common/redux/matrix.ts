@@ -2004,7 +2004,8 @@ export const selectMultispendBalanceCents = createSelector(
     },
 )
 
-export const selectMultispendBalance = createSelector(
+// Converts the multispend balance in cents to the selected currency
+export const selectFormattedMultispendBalance = createSelector(
     selectMultispendBalanceCents,
     (s: CommonState) => selectBtcUsdExchangeRate(s),
     (balanceCents, btcUsdExchangeRate) => {

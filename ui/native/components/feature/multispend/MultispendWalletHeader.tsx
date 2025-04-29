@@ -7,17 +7,13 @@ import { Pressable } from 'react-native-gesture-handler'
 import LinearGradient from 'react-native-linear-gradient'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 
-import { useBtcFiatPrice } from '@fedi/common/hooks/amount'
 import {
     useMultispendDisplayUtils,
     useMultispendVoting,
 } from '@fedi/common/hooks/multispend'
-import { selectCurrency, selectMultispendBalance } from '@fedi/common/redux'
 
 import { fedimint } from '../../../bridge'
-import { useAppSelector } from '../../../state/hooks'
 import { reset } from '../../../state/navigation'
-import { UsdCents } from '../../../types'
 import CustomOverlay from '../../ui/CustomOverlay'
 import HoloCircle from '../../ui/HoloCircle'
 import HoloGradient from '../../ui/HoloGradient'
@@ -40,24 +36,16 @@ const MultispendWalletHeader: React.FC<Props> = ({ roomId }) => {
         abortConfirmationContents,
         rejectConfirmationContents,
     } = useMultispendVoting({ t, fedimint, roomId })
-    const multispendBalance = useAppSelector(s =>
-        selectMultispendBalance(s, roomId),
-    )
-    const selectedCurrency = useAppSelector(selectCurrency)
-    const { convertCentsToFormattedFiat } = useBtcFiatPrice(selectedCurrency)
 
     const {
+        formattedMultispendBalance,
+        selectedCurrency,
         walletHeader: { federationName, status, threshold, totalSigners },
     } = useMultispendDisplayUtils(t, roomId)
 
     const handleBack = useCallback(() => {
         navigation.dispatch(reset('ChatRoomConversation', { roomId }))
     }, [navigation, roomId])
-
-    const formattedMultispendBalance = convertCentsToFormattedFiat(
-        multispendBalance as UsdCents,
-        'none',
-    )
 
     const handleInfoPress = useCallback(() => {
         Linking.openURL(
@@ -107,7 +95,6 @@ const MultispendWalletHeader: React.FC<Props> = ({ roomId }) => {
                             {federationName}
                         </Text>
                         <View style={style.balance}>
-                            {/* TODO: balance */}
                             <Text style={style.infoText} bold>
                                 {formattedMultispendBalance}
                             </Text>
