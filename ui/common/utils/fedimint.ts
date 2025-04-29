@@ -341,6 +341,10 @@ export class FedimintBridge {
         })
     }
 
+    async supportsSafeOnchainDeposit(federationId: string) {
+        return this.rpcTyped('supportsSafeOnchainDeposit', { federationId })
+    }
+
     async generateEcash(
         amount: MSats,
         federationId: string,
