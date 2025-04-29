@@ -4,7 +4,6 @@ import type {
     ObservableVecUpdate,
     RpcMatrixMembership,
     RpcMultispendGroupStatus,
-    WithdrawRequestWithApprovals,
 } from './bindings'
 import { MultispendTransactionListEntry } from './fedimint'
 
@@ -213,11 +212,9 @@ export type MultispendFinalized = Extract<
     { status: 'finalized' }
 >
 
-export type MultispendWithdrawalEvent = Omit<
+export type MultispendWithdrawalEvent = Extract<
     MultispendTransactionListEntry,
-    'event'
-> & {
-    event: { withdrawalRequest: WithdrawRequestWithApprovals }
-}
+    { state: 'withdrawal' }
+>
 
 export type MultispendFilterOption = 'all' | 'pending' | 'approved' | 'rejected'

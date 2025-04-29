@@ -274,7 +274,7 @@ export function useMultispendWithdrawalRequests(
     const matrixAuth = useCommonSelector(selectMatrixAuth)
 
     const withdrawalRequests = transactions.filter(
-        txn => txn.state === 'withdrawal',
+        (txn): txn is MultispendWithdrawalEvent => txn.state === 'withdrawal',
     )
 
     const getWithdrawalStatus = useCallback(
