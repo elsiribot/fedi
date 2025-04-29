@@ -61,7 +61,7 @@ export const currencyFlags: Record<SelectableCurrency, string> = {
     chad: '🇹🇩',
     equatorial_guinea: '🇬🇶',
     gabon: '🇬🇦',
-    republic_of_the_congo: '🇨🇩',
+    republic_of_the_congo: '🇨🇬',
     benin: '🇧🇯',
     burkina_faso: '🇧🇫',
     cote_d_ivoire: '🇨🇮',
