@@ -44,6 +44,7 @@ const Item = styled('div', {
     border: `2px solid ${theme.colors.extraLightGrey}`,
     borderRadius: 20,
     color: theme.colors.night,
+    cursor: 'pointer',
     display: 'flex',
     flex: 1,
     height: '100%',
