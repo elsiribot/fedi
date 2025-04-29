@@ -34,7 +34,7 @@ function HomePage() {
                         {federations.length === 0 && (
                             <Section>
                                 <Title variant="h2">
-                                    {t('feature.home.community-news-title')}
+                                    {t('feature.home.federation-news-title')}
                                 </Title>
                                 <SubTitle variant="body">
                                     <JoinBlock href="/onboarding">
@@ -43,7 +43,7 @@ function HomePage() {
                                         </EmptyBlockIcon>
                                         <EmptyBlockText>
                                             {t(
-                                                'feature.home.community-updates',
+                                                'feature.home.federation-updates',
                                             )}
                                         </EmptyBlockText>
                                         <EmptyBlockArrow>
@@ -55,10 +55,10 @@ function HomePage() {
                         )}
                         <Section>
                             <Title variant="h2">
-                                {t('feature.home.community-mods-title')}
+                                {t('feature.home.federation-mods-title')}
                             </Title>
                             <SubTitle variant="body">
-                                {t('feature.home.services-selected')}
+                                {t('feature.home.federation-services-selected')}
                             </SubTitle>
                             <ErrorBoundary fallback={null}>
                                 <FediModTiles

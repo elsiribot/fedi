@@ -160,12 +160,12 @@ export function OnboardingHome() {
                 <Content>
                     <TitleWrapper>
                         <Text variant="h2" css={{ marginBottom: 0 }}>
-                            {t('feature.home.community-title')}
+                            {t('feature.onboarding.title')}
                         </Text>
                         <Text
                             variant="caption"
                             css={{ color: theme.colors.darkGrey }}>
-                            {t('feature.home.community-description')}
+                            {t('feature.onboarding.description')}
                         </Text>
                     </TitleWrapper>
                     <Switcher
