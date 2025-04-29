@@ -35,6 +35,7 @@ import {
 } from '@fedi/common/utils/matrix'
 
 import { useAppDispatch, useAppSelector } from '../../../state/hooks'
+import Flex from '../../ui/Flex'
 import ChatEventCollection from './ChatEventCollection'
 import { ChatUserActionsOverlay } from './ChatUserActionsOverlay'
 import NoMembersNotice from './NoMembersNotice'
@@ -263,12 +264,12 @@ const ChatConversation: React.FC<MessagesListProps> = ({
                     initialNumToRender={10}
                 />
             ) : (
-                <View style={style.center}>
+                <Flex grow justify="center">
                     <ActivityIndicator
                         size="large"
                         color={theme.colors.primary}
                     />
-                </View>
+                </Flex>
             )}
 
             <ChatUserActionsOverlay
@@ -315,20 +316,6 @@ const styles = (theme: Theme) =>
         },
         newMessageButtonText: {
             color: theme.colors.secondary,
-        },
-        center: {
-            flex: 1,
-            justifyContent: 'center',
-        },
-        initialLoadingContainer: {
-            flex: 1,
-            justifyContent: 'center',
-            alignItems: 'center',
-            minHeight: 200,
-        },
-        contentContainerLoading: {
-            flexGrow: 1,
-            justifyContent: 'center',
         },
         blockedContainer: {
             alignItems: 'center',

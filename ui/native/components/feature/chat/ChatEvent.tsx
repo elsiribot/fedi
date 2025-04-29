@@ -22,6 +22,7 @@ import {
 
 import { useAppSelector } from '../../../state/hooks'
 import ChatMultispendEvent from '../multispend/chat-events/ChatMultispendEvent'
+import Flex from '../../ui/Flex'
 import ChatDeletedEvent from './ChatDeletedEvent'
 import ChatEmbeddedLinkPreview from './ChatEmbeddedLinkPreview'
 import ChatEncryptedEvent from './ChatEncryptedEvent'
@@ -99,7 +100,7 @@ const ChatEvent: React.FC<Props> = ({
                     styles(theme).container,
                     isQueued && styles(theme).containerQueued,
                 ]}>
-                <View style={styles(theme).messageContainer}>
+                <Flex row>
                     <View
                         style={[
                             styles(theme).contentContainer,
@@ -151,7 +152,7 @@ const ChatEvent: React.FC<Props> = ({
                             </View>
                         )}
                     </View>
-                </View>
+                </Flex>
             </View>
         </ErrorBoundary>
     )
@@ -177,9 +178,6 @@ const styles = (theme: Theme) =>
         },
         fullWidth: {
             width: '100%',
-        },
-        messageContainer: {
-            flexDirection: 'row',
         },
         leftAlignedMessage: {
             marginRight: 'auto',

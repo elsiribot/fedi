@@ -73,27 +73,6 @@ const styles = (theme: Theme) =>
         sendersContainer: {
             flexDirection: 'column-reverse',
         },
-        senderGroup: {
-            marginBottom: theme.spacing.md,
-        },
-        senderAvatar: {
-            flexDirection: 'row',
-            alignItems: 'flex-end',
-            marginRight: theme.spacing.sm,
-        },
-        senderGroupContent: {
-            flexDirection: 'row',
-            alignItems: 'flex-end',
-        },
-        senderNameContainer: {
-            paddingLeft: 43,
-            flexDirection: 'row',
-            alignItems: 'center',
-            gap: theme.spacing.xxs,
-        },
-        senderMessages: {
-            flexDirection: 'column-reverse',
-        },
     })
 
 export default ChatEventCollection

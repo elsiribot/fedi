@@ -60,6 +60,7 @@ import {
     prefixFileUri,
 } from '../../../utils/media'
 import { Attachments } from '../../ui/Attachments'
+import Flex from '../../ui/Flex'
 import SvgImage, { SvgImageSize } from '../../ui/SvgImage'
 import ChatWalletButton from './ChatWalletButton'
 
@@ -445,7 +446,7 @@ const MessageInput: React.FC<MessageInputProps> = ({
     }
 
     return (
-        <View
+        <Flex
             onLayout={onLayout}
             style={[
                 style.container,
@@ -461,12 +462,12 @@ const MessageInput: React.FC<MessageInputProps> = ({
                             <View style={style.attachmentIcon}>
                                 <SvgImage name="File" />
                             </View>
-                            <View style={style.attachmentContent}>
+                            <Flex grow gap="xs">
                                 <Text>{att.name}</Text>
                                 <Text style={style.attachmentSize}>
                                     {formatFileSize(att.size ?? 0)}
                                 </Text>
-                            </View>
+                            </Flex>
                             <Pressable
                                 style={style.removeButton}
                                 onPress={() =>
@@ -492,7 +493,7 @@ const MessageInput: React.FC<MessageInputProps> = ({
                     options={imageOptions}
                 />
             )}
-            <View style={style.inputContainer}>
+            <Flex row align="center" justify="between" gap="lg">
                 <Input
                     onChangeText={setMessageText}
                     value={messageText}
@@ -529,10 +530,10 @@ const MessageInput: React.FC<MessageInputProps> = ({
                         />
                     </Pressable>
                 )}
-            </View>
+            </Flex>
             {existingRoom && (
-                <View style={style.buttonContainer}>
-                    <View style={style.chatControls}>
+                <Flex row align="center" justify="between">
+                    <Flex row align="center" gap="lg">
                         {/* in-chat payments only available for DirectChat after a room has already been created with the user */}
                         {directUserId && (
                             <ChatWalletButton recipientId={directUserId} />
@@ -568,11 +569,11 @@ const MessageInput: React.FC<MessageInputProps> = ({
                                 </Pressable>
                             </>
                         )}
-                    </View>
+                    </Flex>
                     {!isReadOnly && (
                         <>
                             {isEditingMessage ? (
-                                <View style={style.editButtonsEnd}>
+                                <Flex row align="center" justify="end" gap="md">
                                     <Pressable
                                         style={style.cancelButton}
                                         onPress={() => {
@@ -596,7 +597,7 @@ const MessageInput: React.FC<MessageInputProps> = ({
                                             color={theme.colors.white}
                                         />
                                     </Pressable>
-                                </View>
+                                </Flex>
                             ) : (
                                 <Pressable
                                     style={style.sendButton}
@@ -618,9 +619,9 @@ const MessageInput: React.FC<MessageInputProps> = ({
                             )}
                         </>
                     )}
-                </View>
+                </Flex>
             )}
-        </View>
+        </Flex>
     )
 }
 
@@ -628,7 +629,6 @@ const styles = (theme: Theme, insets: Insets) =>
     StyleSheet.create({
         container: {
             width: '100%',
-            flexDirection: 'column',
             marginTop: 'auto',
             backgroundColor: theme.colors.secondary,
             borderTopColor: theme.colors.primaryVeryLight,
@@ -642,16 +642,6 @@ const styles = (theme: Theme, insets: Insets) =>
         },
         noRoomContainer: {
             paddingBottom: Math.max(theme.spacing.lg, insets.bottom || 0),
-        },
-        buttonContainer: {
-            flexDirection: 'row',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-        },
-        chatControls: {
-            flexDirection: 'row',
-            alignItems: 'center',
-            gap: theme.spacing.lg,
         },
         sendButton: {
             flexShrink: 0,
@@ -694,12 +684,6 @@ const styles = (theme: Theme, insets: Insets) =>
             backgroundColor: theme.colors.extraLightGrey,
             borderRadius: 8,
         },
-        attachmentContent: {
-            flex: 1,
-            flexDirection: 'column',
-            display: 'flex',
-            gap: theme.spacing.xs,
-        },
         attachmentSize: {
             color: theme.colors.darkGrey,
         },
@@ -713,12 +697,6 @@ const styles = (theme: Theme, insets: Insets) =>
             height: 16,
             borderRadius: 16,
             backgroundColor: theme.colors.night,
-        },
-        inputContainer: {
-            flexDirection: 'row',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-            gap: theme.spacing.lg,
         },
         saveButton: {
             flexShrink: 0,
@@ -739,12 +717,6 @@ const styles = (theme: Theme, insets: Insets) =>
             color: theme.colors.white,
             alignItems: 'center',
             justifyContent: 'center',
-        },
-        editButtonsEnd: {
-            flexDirection: 'row',
-            alignItems: 'center',
-            justifyContent: 'flex-end',
-            gap: theme.spacing.md,
         },
     })
 

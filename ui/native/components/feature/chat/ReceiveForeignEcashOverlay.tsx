@@ -13,6 +13,7 @@ import { fedimint } from '../../../bridge'
 import { useAppDispatch } from '../../../state/hooks'
 import { MatrixPaymentEvent } from '../../../types'
 import CustomOverlay from '../../ui/CustomOverlay'
+import Flex from '../../ui/Flex'
 import SvgImage, { SvgImageSize } from '../../ui/SvgImage'
 import { FederationLogo } from '../federations/FederationLogo'
 import FederationPreview from '../onboarding/FederationPreview'
@@ -95,7 +96,7 @@ const ReceiveForeignEcashOverlay: React.FC<Props> = ({
             )
         }
         return (
-            <View style={style.optionsList}>
+            <Flex align="start" style={style.optionsList}>
                 {federationPreview && (
                     <Pressable
                         style={style.actionCardContainer}
@@ -185,7 +186,8 @@ const ReceiveForeignEcashOverlay: React.FC<Props> = ({
                         <Pressable
                             style={style.actionCardContainer}
                             onPress={() => onRejected()}>
-                            <View
+                            <Flex
+                                center
                                 style={[
                                     style.iconContainer,
                                     style.roundIconContainer,
@@ -198,7 +200,7 @@ const ReceiveForeignEcashOverlay: React.FC<Props> = ({
                                     size={SvgImageSize.sm}
                                     color={theme.colors.white}
                                 />
-                            </View>
+                            </Flex>
                             <View style={style.actionCardTextContainer}>
                                 <Text medium>
                                     {t('feature.receive.reject-payment')}
@@ -246,7 +248,7 @@ const ReceiveForeignEcashOverlay: React.FC<Props> = ({
                         />
                     </View>
                 </Pressable>
-            </View>
+            </Flex>
         )
     }
 
@@ -266,7 +268,6 @@ const styles = (theme: Theme) =>
     StyleSheet.create({
         optionsList: {
             paddingTop: theme.spacing.md,
-            alignItems: 'flex-start',
             width: '100%',
             gap: 16,
         },
@@ -281,8 +282,6 @@ const styles = (theme: Theme) =>
         },
         actionCardTextContainer: { alignItems: 'flex-start', gap: 2 },
         iconContainer: {
-            alignItems: 'center',
-            justifyContent: 'center',
             height: 40,
             width: 40,
         },
