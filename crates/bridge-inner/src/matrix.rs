@@ -1406,9 +1406,13 @@ impl Matrix {
                     state,
                 }
             }
-            Some(MultispendGroupStatus::Finalized { finalized_group }) => {
-                RpcMultispendGroupStatus::Finalized { finalized_group }
-            }
+            Some(MultispendGroupStatus::Finalized {
+                invite_event_id,
+                finalized_group,
+            }) => RpcMultispendGroupStatus::Finalized {
+                invite_event_id,
+                finalized_group,
+            },
             None => RpcMultispendGroupStatus::Inactive,
         }
     }

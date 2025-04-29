@@ -441,7 +441,10 @@ pub async fn process_event_db_raw(
             if let Some(finalized_group) = state.process_vote(sender, vote)? {
                 dbtx.insert_entry(
                     &status_key,
-                    &MultispendGroupStatus::Finalized { finalized_group },
+                    &MultispendGroupStatus::Finalized {
+                        invite_event_id: invitation,
+                        finalized_group,
+                    },
                 )
                 .await;
             }
@@ -611,8 +614,9 @@ pub async fn get_finalized_group_db(
     tx: &mut DatabaseTransaction<'_>,
     room_id: &RpcRoomId,
 ) -> Option<FinalizedGroup> {
-    if let Some(MultispendGroupStatus::Finalized { finalized_group }) =
-        get_group_status_db(tx, room_id).await
+    if let Some(MultispendGroupStatus::Finalized {
+        finalized_group, ..
+    }) = get_group_status_db(tx, room_id).await
     {
         Some(finalized_group)
     } else {
