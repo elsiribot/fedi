@@ -9,7 +9,7 @@ export const currencyFlags: Record<SelectableCurrency, string> = {
     [SupportedCurrency.BRL]: '🇧🇷',
     [SupportedCurrency.BWP]: '🇧🇼',
     [SupportedCurrency.CAD]: '🇨🇦',
-    [SupportedCurrency.CDF]: '🇨🇫',
+    [SupportedCurrency.CDF]: '🇨🇩',
     [SupportedCurrency.CLP]: '🇨🇱',
     [SupportedCurrency.COP]: '🇨🇴',
     [SupportedCurrency.CRC]: '🇨🇷',
