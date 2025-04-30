@@ -7,6 +7,7 @@ import Hyperlink from 'react-native-hyperlink'
 import { getFederationTosUrl } from '@fedi/common/utils/FederationUtils'
 
 import { JoinPreview } from '../../../types'
+import Flex from '../../ui/Flex'
 
 export type Props = {
     federation: JoinPreview
@@ -26,7 +27,7 @@ const AcceptTermsOfService: React.FC<Props> = ({
     const tosUrl = getFederationTosUrl(federation.meta)
 
     return (
-        <View style={styles(theme).container}>
+        <Flex grow center style={styles(theme).container}>
             <Text h2 medium h2Style={styles(theme).title}>
                 {t('feature.onboarding.terms-and-conditions')}
             </Text>
@@ -73,16 +74,13 @@ const AcceptTermsOfService: React.FC<Props> = ({
                     disabled={isAccepting}
                 />
             </View>
-        </View>
+        </Flex>
     )
 }
 
 const styles = (theme: Theme) =>
     StyleSheet.create({
         container: {
-            flex: 1,
-            alignItems: 'center',
-            justifyContent: 'center',
             padding: theme.spacing.xl,
         },
         button: {

@@ -28,6 +28,7 @@ import { useAppDispatch, useAppSelector } from '../../../state/hooks'
 import { MSats, ParserDataType } from '../../../types'
 import AmountInput from '../../ui/AmountInput'
 import CustomOverlay from '../../ui/CustomOverlay'
+import Flex from '../../ui/Flex'
 import LineBreak from '../../ui/LineBreak'
 import SvgImage from '../../ui/SvgImage'
 import FederationWalletSelector from '../send/FederationWalletSelector'
@@ -204,7 +205,7 @@ export const SendPaymentOverlay: React.FC<Props> = ({ onReject, onAccept }) => {
                     fediMod: siteInfo?.title,
                 }),
                 body: (
-                    <View style={style.container}>
+                    <Flex grow align="center" gap="lg" style={style.container}>
                         <FederationWalletSelector />
                         <AmountInput
                             key={amountInputKey}
@@ -253,7 +254,7 @@ export const SendPaymentOverlay: React.FC<Props> = ({ onReject, onAccept }) => {
                                 />
                             }
                         />
-                    </View>
+                    </Flex>
                 ),
                 buttons: [
                     {
@@ -278,11 +279,7 @@ export const SendPaymentOverlay: React.FC<Props> = ({ onReject, onAccept }) => {
 const styles = (theme: Theme) =>
     StyleSheet.create({
         container: {
-            flex: 1,
-            flexDirection: 'column',
             paddingTop: theme.spacing.xl,
-            alignItems: 'center',
-            gap: theme.spacing.lg,
             width: '100%',
             paddingHorizontal: theme.spacing.md,
         },
