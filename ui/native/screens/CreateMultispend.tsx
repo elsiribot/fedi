@@ -10,6 +10,7 @@ import {
     selectPaymentFederation,
     selectWalletFederations,
 } from '@fedi/common/redux'
+import { makeLog } from '@fedi/common/utils/log'
 
 import { fedimint } from '../bridge'
 import FederationWalletSelector from '../components/feature/send/FederationWalletSelector'
@@ -21,6 +22,8 @@ import { useAppSelector } from '../state/hooks'
 import { reset } from '../state/navigation'
 import { ChatType } from '../types'
 import { RootStackParamList } from '../types/navigation'
+
+const log = makeLog('CreateMultispend')
 
 export type Props = NativeStackScreenProps<
     RootStackParamList,
@@ -116,19 +119,18 @@ const CreateMultispend: React.FC<Props> = ({ navigation, route }) => {
                 federationId: paymentFederation.id,
                 federationName: paymentFederation.name,
             })
+        } catch (e) {
+            // TODO: Handle error properly
+            log.error('handleSubmit', e)
+            toast.error(t, e)
+        } finally {
             navigation.dispatch(
                 reset('ChatRoomConversation', {
                     roomId,
                     chatType: ChatType.group,
                 }),
             )
-        } catch (e) {
-            toast.error(t, e)
         }
-
-        navigation.dispatch(
-            reset('ChatRoomConversation', { roomId, chatType: ChatType.group }),
-        )
     }, [
         canSubmit,
         voters,
