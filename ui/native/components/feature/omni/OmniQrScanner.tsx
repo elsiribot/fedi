@@ -1,7 +1,7 @@
 import { Button, Text, Theme, useTheme } from '@rneui/themed'
 import React from 'react'
 import { useTranslation } from 'react-i18next'
-import { Linking, StyleSheet, View } from 'react-native'
+import { Dimensions, Linking, StyleSheet, View } from 'react-native'
 import { EdgeInsets, useSafeAreaInsets } from 'react-native-safe-area-context'
 
 import {
@@ -13,6 +13,8 @@ import SvgImage from '../../ui/SvgImage'
 import QrCodeScanner from '../scan/QrCodeScanner'
 import { OmniActions } from './OmniActions'
 import { OmniInputAction } from './OmniInput'
+
+const { height } = Dimensions.get('screen')
 
 interface Props {
     onInput(data: string): void
@@ -108,6 +110,7 @@ const styles = (theme: Theme, insets: EdgeInsets) =>
             flex: 1,
             width: '100%',
             borderRadius: 20,
+            minHeight: height * 0.38, //ensure that on smaller screens we don't get a tiny rectangular window for the scanner.
             overflow: 'hidden',
             backgroundColor: theme.colors.extraLightGrey,
         },

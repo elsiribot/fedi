@@ -276,7 +276,11 @@ export const MainNavigator = () => {
                         name="PublicFederations"
                         component={PublicFederations}
                         options={() => ({
-                            header: () => <Header backButton />,
+                            header: () => (
+                                <CenteredHeader
+                                    title={t('phrases.join-a-federation')}
+                                />
+                            ),
                         })}
                     />
                     <Stack.Screen

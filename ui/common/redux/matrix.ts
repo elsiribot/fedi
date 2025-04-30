@@ -1626,6 +1626,14 @@ export const selectMatrixUsers = (s: CommonState) => s.matrix.users
 export const selectMatrixUser = (s: CommonState, userId: MatrixUser['id']) =>
     s.matrix.users[userId]
 
+export const selectMatrixChatsWithoutDefaultGroupPreviewsList = createSelector(
+    selectMatrixRooms,
+    (roomsList): MatrixRoom[] => {
+        const joined = roomsList.filter(r => r.roomState === 'Joined')
+        return orderBy(joined, room => room.preview?.timestamp ?? 0, 'desc')
+    },
+)
+
 export const selectMatrixChatsList = createSelector(
     selectMatrixRooms,
     selectGroupPreviews,
