@@ -93,6 +93,7 @@ export { default as LockUnlocked } from '@fedi/common/assets/svgs/lock-unlocked.
 export { default as Minus } from '@fedi/common/assets/svgs/minus.svg'
 export { default as MoodSearch } from '@fedi/common/assets/svgs/mood-search.svg'
 export { default as MultispendGroup } from '@fedi/common/assets/svgs/multispend-group.svg'
+export { default as MultispendGroupCircle } from '@fedi/common/assets/svgs/multispend-group-circle.svg'
 export { default as NewModIcon } from '@fedi/common/assets/svgs/new-mod-icon.svg'
 export { default as NewRoom } from '@fedi/common/assets/svgs/new-room.svg'
 export { default as NorthStar } from '@fedi/common/assets/svgs/north-star.svg'

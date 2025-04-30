@@ -32,6 +32,7 @@ const MultispendWalletHeader: React.FC<Props> = ({ roomId }) => {
     const {
         isProposer,
         isActive,
+        isFinalized,
         isConfirmingAbort,
         setIsConfirmingAbort,
         abortConfirmationContents,
@@ -61,6 +62,27 @@ const MultispendWalletHeader: React.FC<Props> = ({ roomId }) => {
         )
     }, [])
 
+    const actionButtons = (
+        <>
+            {isActive && !hasRejected ? (
+                <Pressable onPress={() => setIsConfirmingAbort(true)}>
+                    <Text style={style.abortText} medium>
+                        {t(isProposer ? 'words.abort' : 'words.reject')}
+                    </Text>
+                </Pressable>
+            ) : isFinalized && roomId ? (
+                <Pressable
+                    onPress={() =>
+                        navigation.navigate('MultispendTransactions', {
+                            roomId,
+                        })
+                    }>
+                    <SvgImage name="List" size={24} />
+                </Pressable>
+            ) : null}
+        </>
+    )
+
     return (
         <HoloGradient style={style.container} level="m500">
             <View style={[style.header, { paddingTop: insets.top }]}>
@@ -79,14 +101,12 @@ const MultispendWalletHeader: React.FC<Props> = ({ roomId }) => {
                         />
                     </Pressable>
                 </View>
-                <View style={[style.headerSecondary, style.abortContainer]}>
-                    {isActive && !hasRejected && (
-                        <Pressable onPress={() => setIsConfirmingAbort(true)}>
-                            <Text style={style.abortText} medium>
-                                {t(isProposer ? 'words.abort' : 'words.reject')}
-                            </Text>
-                        </Pressable>
-                    )}
+                <View
+                    style={[
+                        style.headerSecondary,
+                        style.actionButtonsContainer,
+                    ]}>
+                    {actionButtons}
                 </View>
             </View>
             <View style={style.walletPreviewContainer}>
@@ -176,7 +196,7 @@ const styles = (theme: Theme) =>
             flex: 1,
             flexBasis: 0,
         },
-        abortContainer: {
+        actionButtonsContainer: {
             flexDirection: 'row',
             justifyContent: 'flex-end',
         },

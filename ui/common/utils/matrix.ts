@@ -779,3 +779,7 @@ export const coerceMultispendTxn = (
         }
     }
 }
+
+export const makeNameWithSuffix = (user: MatrixUser) => {
+    return `${user.displayName} ${getUserSuffix(user.id)}`
+}

@@ -40,6 +40,7 @@
         "currency": "Currency",
         "delete": "Delete",
         "deposit": "Deposit",
+        "depositor": "Depositor",
         "details": "Details",
         "discover": "Discover",
         "done": "Done",
@@ -135,6 +136,7 @@
         "wallet": "Wallet",
         "withdraw": "Withdraw",
         "withdrawal": "Withdrawal",
+        "withdrawer": "Withdrawer",
         "yes": "Yes",
         "you": "you"
     },

@@ -127,6 +127,7 @@ export type RootStackParamList = {
     JoinFederation: { invite?: string }
     LanguageSettings: undefined
     MultispendIntro: { roomId: string }
+    MultispendTransactions: { roomId: string }
     CreateMultispend: { roomId: string; voters?: string[] }
     AssignMultispendVoters: { roomId: string; voters?: string[] }
     NewMessage: undefined

@@ -132,6 +132,7 @@ import MultispendConfirmDeposit from './MultispendConfirmDeposit'
 import MultispendConfirmWithdraw from './MultispendConfirmWithdraw'
 import MultispendDeposit from './MultispendDeposit'
 import MultispendIntro from './MultispendIntro'
+import MultispendTransactions from './MultispendTransactions'
 import MultispendWithdraw from './MultispendWithdraw'
 import NewMessage from './NewMessage'
 import NostrSettings from './NostrSettings'
@@ -546,6 +547,20 @@ export const MainNavigator = () => {
                                             component={GroupMultispend}
                                             options={() => ({
                                                 header: () => null,
+                                            })}
+                                        />
+                                        <Stack.Screen
+                                            name="MultispendTransactions"
+                                            component={MultispendTransactions}
+                                            options={() => ({
+                                                header: () => (
+                                                    <CenteredHeader
+                                                        backButton
+                                                        title={t(
+                                                            'words.transactions',
+                                                        )}
+                                                    />
+                                                ),
                                             })}
                                         />
                                         <Stack.Screen
