@@ -31,6 +31,7 @@ const MultispendWalletHeader: React.FC<Props> = ({ roomId }) => {
     const insets = useSafeAreaInsets()
     const {
         isProposer,
+        isActive,
         isConfirmingAbort,
         setIsConfirmingAbort,
         abortConfirmationContents,
@@ -79,7 +80,7 @@ const MultispendWalletHeader: React.FC<Props> = ({ roomId }) => {
                     </Pressable>
                 </View>
                 <View style={[style.headerSecondary, style.abortContainer]}>
-                    {!hasRejected && (
+                    {isActive && !hasRejected && (
                         <Pressable onPress={() => setIsConfirmingAbort(true)}>
                             <Text style={style.abortText} medium>
                                 {t(isProposer ? 'words.abort' : 'words.reject')}
