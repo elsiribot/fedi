@@ -4,10 +4,10 @@ import {
     GestureResponderEvent,
     Pressable,
     StyleSheet,
-    View,
 } from 'react-native'
 
 import * as Svgs from '../../../assets/images/svgs'
+import Flex from '../../ui/Flex'
 import SvgImage from '../../ui/SvgImage'
 
 export type SettingsItemProps = {
@@ -50,7 +50,7 @@ const SettingsItem = ({
             ]}
             onPress={disabled ? undefined : onPress}>
             <>
-                <View style={style.content}>
+                <Flex row grow align="center" gap="sm">
                     <SvgImage
                         color={color || theme.colors.primary}
                         dimensions={{ width: 24, height: 24 }}
@@ -65,7 +65,7 @@ const SettingsItem = ({
                         {label}
                     </Text>
                     {adornment ? <>{adornment}</> : null}
-                </View>
+                </Flex>
                 {isLoading ? (
                     <ActivityIndicator size={theme.sizes.sm} />
                 ) : (
@@ -90,12 +90,6 @@ const styles = (theme: Theme) =>
             paddingHorizontal: theme.spacing.lg,
             paddingVertical: theme.spacing.md,
             borderRadius: theme.borders.settingsRadius,
-        },
-        content: {
-            flexDirection: 'row',
-            flex: 1,
-            alignItems: 'center',
-            gap: theme.spacing.sm,
         },
         disabled: {
             opacity: 0.3,

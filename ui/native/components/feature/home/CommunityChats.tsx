@@ -2,7 +2,7 @@ import { useNavigation } from '@react-navigation/native'
 import { Text, Theme, useTheme } from '@rneui/themed'
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { StyleSheet, View } from 'react-native'
+import { StyleSheet } from 'react-native'
 
 import {
     selectActiveFederation,
@@ -12,6 +12,7 @@ import { ChatType, MatrixRoom } from '@fedi/common/types'
 import { getFederationGroupChats } from '@fedi/common/utils/FederationUtils'
 
 import { useAppSelector } from '../../../state/hooks'
+import Flex from '../../ui/Flex'
 import CommunityChatTile from './CommunityChatTile'
 
 const CommunityChats = () => {
@@ -70,8 +71,8 @@ const CommunityChats = () => {
         return null
 
     return (
-        <View style={style.container}>
-            <Text style={style.sectionTitle}>
+        <Flex gap="sm" style={style.container}>
+            <Text medium style={style.sectionTitle}>
                 {!hasWallet
                     ? t('feature.chat.community-news')
                     : t('feature.chat.federation-news')}
@@ -83,13 +84,13 @@ const CommunityChats = () => {
                     onSelect={handleOpenChat}
                 />
             ))}
-        </View>
+        </Flex>
     )
 }
 
 const styles = (theme: Theme) =>
     StyleSheet.create({
-        container: { gap: theme.spacing.sm, width: '100%' },
+        container: { width: '100%' },
         sectionTitle: {
             color: theme.colors.night,
             letterSpacing: -0.16,

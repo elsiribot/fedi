@@ -16,6 +16,7 @@ import RecoveryInProgress from '../../../components/feature/recovery/RecoveryInP
 import BitcoinWalletPlaceholder from '../../../components/feature/wallet/BitcoinWalletPlaceholder'
 import StabilityWalletPlaceholder from '../../../components/feature/wallet/StabilityWalletPlaceholder'
 import { useAppSelector } from '../../../state/hooks'
+import Flex from '../../ui/Flex'
 import CommunityChatsPlaceholder from './CommunityChatsPlaceholder'
 
 const HomeWalletsPlaceholder: React.FC = () => {
@@ -32,7 +33,7 @@ const HomeWalletsPlaceholder: React.FC = () => {
         <ScrollView
             contentContainerStyle={style.container}
             alwaysBounceVertical={false}>
-            <View style={style.content}>
+            <Flex gap="lg" style={style.content}>
                 {pinnedMessage && (
                     <View style={style.section}>
                         <WelcomeMessage message={pinnedMessage} />
@@ -48,10 +49,10 @@ const HomeWalletsPlaceholder: React.FC = () => {
                             />
                         </View>
                     ) : (
-                        <View style={style.wallets}>
+                        <Flex gap="lg">
                             <BitcoinWalletPlaceholder />
                             <StabilityWalletPlaceholder />
-                        </View>
+                        </Flex>
                     )}
                 </View>
                 <View style={style.section}>
@@ -62,7 +63,7 @@ const HomeWalletsPlaceholder: React.FC = () => {
                         <ShortcutsListPlaceholder />
                     </ErrorBoundary>
                 </View>
-            </View>
+            </Flex>
         </ScrollView>
     )
 }
@@ -79,7 +80,6 @@ const styles = (theme: Theme) =>
         },
         content: {
             width: '100%',
-            gap: theme.spacing.lg,
         },
         recovery: {
             minHeight: theme.sizes.walletCardHeight,
@@ -89,9 +89,6 @@ const styles = (theme: Theme) =>
         section: {
             // Uncomment the following line to debug section boundaries:
             // borderWidth: 1,
-        },
-        wallets: {
-            gap: theme.spacing.lg,
         },
     })
 

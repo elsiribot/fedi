@@ -5,6 +5,7 @@ import React from 'react'
 import { StyleSheet, View, Pressable } from 'react-native'
 
 import SvgImage, { SvgImageSize } from '../../../components/ui/SvgImage'
+import Flex from '../../ui/Flex'
 
 const CommunityChatsPlaceholder: React.FC = () => {
     const { theme } = useTheme()
@@ -12,8 +13,8 @@ const CommunityChatsPlaceholder: React.FC = () => {
     const navigation = useNavigation()
 
     return (
-        <View style={stylesPlaceholder.container}>
-            <Text style={stylesPlaceholder.sectionTitle}>
+        <Flex grow style={stylesPlaceholder.container}>
+            <Text medium style={stylesPlaceholder.sectionTitle}>
                 {t('feature.home.federation-news-title')}
             </Text>
             <Pressable
@@ -36,14 +37,13 @@ const CommunityChatsPlaceholder: React.FC = () => {
                     containerStyle={stylesPlaceholder.chevron}
                 />
             </Pressable>
-        </View>
+        </Flex>
     )
 }
 
 const styles = (theme: Theme) =>
     StyleSheet.create({
         container: {
-            flex: 1,
             width: '100%',
         },
         sectionTitle: {
