@@ -4,6 +4,7 @@ import { StyleSheet, View } from 'react-native'
 
 import { DetailItem } from '@fedi/common/utils/wallet'
 
+import Flex from '../../ui/Flex'
 import { PressableIcon } from '../../ui/PressableIcon'
 import { SvgImageSize } from '../../ui/SvgImage'
 import { FeeBreakdownItem } from './FeeBreakdownItem'
@@ -32,7 +33,7 @@ export const FeeBreakdown: React.FC<FeeBreakdownProps> = ({
     const style = styles(theme)
 
     return (
-        <View style={style.container}>
+        <Flex align="center" style={style.container}>
             <View style={style.headerButtons}>
                 <PressableIcon
                     svgName="ChevronLeft"
@@ -70,14 +71,13 @@ export const FeeBreakdown: React.FC<FeeBreakdownProps> = ({
                     </Text>
                 )}
             </View>
-        </View>
+        </Flex>
     )
 }
 
 const styles = (theme: Theme) =>
     StyleSheet.create({
         container: {
-            alignItems: 'center',
             width: '100%',
         },
         closeIconContainer: {

@@ -6,12 +6,12 @@ import {
     FlatList,
     ListRenderItem,
     StyleSheet,
-    View,
 } from 'react-native'
 
 import { ErrorBoundary } from '@fedi/common/components/ErrorBoundary'
 import { FeeItem } from '@fedi/common/hooks/transactions'
 
+import Flex from '../../ui/Flex'
 import { SafeAreaContainer } from '../../ui/SafeArea'
 import { HistoryDetailProps } from './HistoryDetail'
 import HistoryDetailOverlay from './HistoryDetailOverlay'
@@ -74,19 +74,19 @@ export function HistoryList<T extends { id: string }>({
 
     if (loading) {
         return (
-            <View style={style.emptyContainer}>
+            <Flex grow center style={style.emptyContainer}>
                 <ActivityIndicator />
-            </View>
+            </Flex>
         )
     }
 
     if (!rows.length) {
         return (
-            <View style={style.emptyContainer}>
+            <Flex grow center style={style.emptyContainer}>
                 <Text style={style.emptyText}>
                     {t('phrases.no-transactions')}
                 </Text>
-            </View>
+            </Flex>
         )
     }
 
@@ -136,10 +136,7 @@ const styles = (theme: Theme) =>
             paddingTop: theme.spacing.xl,
         },
         emptyContainer: {
-            flex: 1,
             width: '100%',
-            justifyContent: 'center',
-            alignItems: 'center',
         },
         emptyText: {
             textAlign: 'center',
