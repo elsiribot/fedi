@@ -2,20 +2,13 @@ import { Text, Theme, useTheme } from '@rneui/themed'
 import { useTranslation } from 'react-i18next'
 import { Pressable, StyleSheet, View } from 'react-native'
 
-import { useBtcFiatPrice } from '@fedi/common/hooks/amount'
 import { useObserveMultispendEvent } from '@fedi/common/hooks/matrix'
 import { useMultispendWithdrawalRequests } from '@fedi/common/hooks/multispend'
-import {
-    selectCurrency,
-    selectMatrixAuth,
-    selectMatrixRoomMember,
-    selectMatrixRoomMultispendStatus,
-} from '@fedi/common/redux'
 import dateUtils from '@fedi/common/utils/DateUtils'
 import { getUserSuffix } from '@fedi/common/utils/matrix'
 
-import { useAppSelector } from '../../../../state/hooks'
-import { MultispendWithdrawalEvent, UsdCents } from '../../../../types'
+import { fedimint } from '../../../../bridge'
+import { MultispendWithdrawalEvent } from '../../../../types'
 import { AvatarSize } from '../../../ui/Avatar'
 import SvgImage from '../../../ui/SvgImage'
 import ChatAvatar from '../../chat/ChatAvatar'
@@ -25,38 +18,29 @@ const WithdrawalRequest: React.FC<{
     onSelect: () => void
     roomId: string
 }> = ({ event, onSelect, roomId }) => {
-    const multispendStatus = useAppSelector(s =>
-        selectMatrixRoomMultispendStatus(s, roomId),
-    )
-    const { withdrawalRequest } = event.event
     const { theme } = useTheme()
     const { t } = useTranslation()
-    const selectedFiatCurrency = useAppSelector(selectCurrency)
-    const sender = useAppSelector(s =>
-        selectMatrixRoomMember(s, roomId, withdrawalRequest.sender),
-    )
-    const matrixAuth = useAppSelector(selectMatrixAuth)
-    const { convertCentsToFormattedFiat } =
-        useBtcFiatPrice(selectedFiatCurrency)
-    const { hasUserVotedForWithdrawal, getWithdrawalStatus } =
-        useMultispendWithdrawalRequests(t, roomId)
+    const {
+        haveIVotedForWithdrawal,
+        getWithdrawalStatus,
+        getWithdrawalRequest,
+    } = useMultispendWithdrawalRequests({ t, fedimint, roomId })
 
     useObserveMultispendEvent(event.id, roomId)
 
-    if (multispendStatus?.status !== 'finalized' || !sender) return null
+    const {
+        sender,
+        approvalCount,
+        rejectionCount,
+        formattedFiatAmount,
+        selectedFiatCurrency,
+    } = getWithdrawalRequest(event)
 
     const withdrawalStatus = getWithdrawalStatus(event)
-    const haveIVoted = hasUserVotedForWithdrawal(
-        event,
-        matrixAuth?.userId ?? '',
-    )
-    const approvalCount = Object.keys(withdrawalRequest.signatures).length
-    const rejectionCount = withdrawalRequest.rejections.length
+    const haveIVoted = haveIVotedForWithdrawal(event)
 
-    const formattedFiatAmount = convertCentsToFormattedFiat(
-        withdrawalRequest.request.transfer_amount as UsdCents,
-        'none',
-    )
+    // don't show the request if sender is not a member of the group
+    if (!sender) return null
 
     const style = styles(theme)
 

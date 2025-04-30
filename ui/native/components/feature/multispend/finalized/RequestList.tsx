@@ -1,14 +1,14 @@
 import { Text, Theme, useTheme } from '@rneui/themed'
-import { useCallback, useState } from 'react'
+import { useCallback } from 'react'
 import { useTranslation } from 'react-i18next'
 import { ListRenderItem, StyleSheet, View, FlatList } from 'react-native'
 
-import { useMultispendWithdrawalRequests } from '@fedi/common/hooks/multispend'
-import { useToast } from '@fedi/common/hooks/toast'
-import { selectMatrixAuth } from '@fedi/common/redux'
+import {
+    useMultispendTransactions,
+    useMultispendWithdrawalRequests,
+} from '@fedi/common/hooks/multispend'
 
 import { fedimint } from '../../../../bridge'
-import { useAppSelector } from '../../../../state/hooks'
 import {
     MultispendFilterOption,
     MultispendWithdrawalEvent,
@@ -20,69 +20,34 @@ import WithdrawalOverlayContents from './WithdrawalOverlayContents'
 import WithdrawalRequest from './WithdrawalRequest'
 
 const RequestList: React.FC<{ roomId: string }> = ({ roomId }) => {
-    const [isVoting, setIsVoting] = useState(false)
-    const [selectedWithdrawalId, setSelectedWithdrawalId] = useState<
-        string | null
-    >(null)
-    const [filter, setFilter] = useState<MultispendFilterOption>('all')
     const { theme } = useTheme()
     const { t } = useTranslation()
-    const toast = useToast()
     const {
+        isVoting,
+        selectedWithdrawalId,
+        setSelectedWithdrawalId,
         withdrawalRequests,
-        isLoading,
-        fetchTransactions,
-        hasUserVotedForWithdrawal,
         filteredWithdrawalRequests,
-    } = useMultispendWithdrawalRequests(t, roomId)
-    const matrixAuth = useAppSelector(selectMatrixAuth)
+        haveIVotedForWithdrawal,
+        handleRejectRequest,
+        handleApproveRequest,
+        filter,
+        filterOptions,
+        selectedFilterOption,
+        setFilter,
+    } = useMultispendWithdrawalRequests({ t, fedimint, roomId })
+    const { isLoading, fetchTransactions } = useMultispendTransactions(
+        t,
+        roomId,
+    )
 
     const selectedWithdrawal = withdrawalRequests.find(
         withdrawal => withdrawal.id === selectedWithdrawalId,
     )
 
     const haveIVoted = selectedWithdrawal
-        ? hasUserVotedForWithdrawal(
-              selectedWithdrawal,
-              matrixAuth?.userId ?? '',
-          )
+        ? haveIVotedForWithdrawal(selectedWithdrawal)
         : false
-
-    const handleRejectRequest = useCallback(async () => {
-        if (!selectedWithdrawalId) return
-
-        setIsVoting(true)
-        try {
-            await fedimint.matrixSendMultispendWithdrawalReject({
-                roomId,
-                withdrawRequestId: selectedWithdrawalId,
-            })
-
-            setSelectedWithdrawalId(null)
-        } catch (e) {
-            toast.error(t, e)
-        } finally {
-            setIsVoting(false)
-        }
-    }, [selectedWithdrawalId, t, toast, roomId])
-
-    const handleApproveRequest = useCallback(async () => {
-        if (!selectedWithdrawalId) return
-
-        setIsVoting(true)
-        try {
-            await fedimint.matrixSendMultispendWithdrawalApprove({
-                roomId,
-                withdrawRequestId: selectedWithdrawalId,
-            })
-
-            setSelectedWithdrawalId(null)
-        } catch (e) {
-            toast.error(t, e)
-        } finally {
-            setIsVoting(false)
-        }
-    }, [selectedWithdrawalId, roomId, t, toast])
 
     const renderWithdrawalRequest: ListRenderItem<MultispendWithdrawalEvent> =
         useCallback(
@@ -96,16 +61,6 @@ const RequestList: React.FC<{ roomId: string }> = ({ roomId }) => {
             ),
             [roomId, setSelectedWithdrawalId],
         )
-
-    const filterOptions = [
-        { value: 'all', label: t('words.all') },
-        { value: 'pending', label: t('words.pending') },
-        { value: 'approved', label: t('words.approved') },
-        { value: 'rejected', label: t('words.rejected') },
-    ]
-    const selectedFilterOption = filterOptions.find(
-        option => option.value === filter,
-    )
 
     const style = styles(theme)
 
@@ -126,7 +81,7 @@ const RequestList: React.FC<{ roomId: string }> = ({ roomId }) => {
             <FlatList
                 style={style.requestList}
                 contentContainerStyle={style.requestListContainer}
-                data={filteredWithdrawalRequests(filter)}
+                data={filteredWithdrawalRequests}
                 renderItem={renderWithdrawalRequest}
                 onRefresh={fetchTransactions}
                 refreshing={isLoading}

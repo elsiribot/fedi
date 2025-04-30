@@ -12,14 +12,20 @@ import {
     refreshMultispendTransactions,
     selectFormattedMultispendBalance,
     selectCurrency,
+    selectMatrixRoomMembers,
 } from '../redux'
-import { MultispendFilterOption, MultispendWithdrawalEvent } from '../types'
+import {
+    MultispendFilterOption,
+    MultispendWithdrawalEvent,
+    UsdCents,
+} from '../types'
 import { RpcRoomId } from '../types/bindings'
 import { FedimintBridge } from '../utils/fedimint'
 import {
     getMultispendInvite,
     makeMultispendWalletHeader,
 } from '../utils/matrix'
+import { useBtcFiatPrice } from './amount'
 import { useCommonDispatch, useCommonSelector } from './redux'
 import { useToast } from './toast'
 
@@ -269,16 +275,33 @@ export function useMultispendTransactions(t: TFunction, roomId: RpcRoomId) {
     }
 }
 
-export function useMultispendWithdrawalRequests(
-    t: TFunction,
-    roomId: RpcRoomId,
-) {
+export function useMultispendWithdrawalRequests({
+    t,
+    fedimint,
+    roomId,
+}: {
+    t: TFunction
+    fedimint: FedimintBridge
+    roomId: RpcRoomId
+}) {
+    const toast = useToast()
+    const selectedFiatCurrency = useCommonSelector(selectCurrency)
+    const { convertCentsToFormattedFiat } =
+        useBtcFiatPrice(selectedFiatCurrency)
+    const [selectedWithdrawalId, setSelectedWithdrawalId] = useState<
+        string | null
+    >(null)
+    const [isVoting, setIsVoting] = useState(false)
+    const [filter, setFilter] = useState<MultispendFilterOption>('all')
     const multispendStatus = useCommonSelector(s =>
         selectMatrixRoomMultispendStatus(s, roomId),
     )
     const { transactions, isLoading, fetchTransactions } =
         useMultispendTransactions(t, roomId)
     const matrixAuth = useCommonSelector(selectMatrixAuth)
+    const roomMembers = useCommonSelector(s =>
+        selectMatrixRoomMembers(s, roomId),
+    )
 
     const withdrawalRequests = transactions.filter(
         (txn): txn is MultispendWithdrawalEvent => txn.state === 'withdrawal',
@@ -337,57 +360,153 @@ export function useMultispendWithdrawalRequests(
         [],
     )
 
-    const filteredWithdrawalRequests = useCallback(
-        (filter: MultispendFilterOption) => {
-            if (filter === 'all' || multispendStatus?.status !== 'finalized')
-                return withdrawalRequests
+    const haveIVotedForWithdrawal = useCallback(
+        (event: MultispendWithdrawalEvent) => {
+            return hasUserVotedForWithdrawal(event, matrixAuth?.userId ?? '')
+        },
+        [hasUserVotedForWithdrawal, matrixAuth?.userId],
+    )
 
-            const filtered = withdrawalRequests.filter(event => {
-                const eventStatus = getWithdrawalStatus(event)
+    const filteredWithdrawalRequests = useMemo(() => {
+        if (filter === 'all' || multispendStatus?.status !== 'finalized')
+            return withdrawalRequests
 
-                if (filter === 'approved')
-                    return (
-                        eventStatus === 'approved' ||
-                        eventStatus === 'completed'
-                    )
+        const filtered = withdrawalRequests.filter(event => {
+            const eventStatus = getWithdrawalStatus(event)
 
-                return eventStatus === filter
-            })
+            if (filter === 'approved')
+                return eventStatus === 'approved' || eventStatus === 'completed'
 
-            if (filter === 'pending') {
-                filtered
-                    // Sort by oldest
-                    .sort((a, b) => a.time - b.time)
-                    // Sort by not voted for
-                    .sort((a, b) => {
-                        if (!matrixAuth) return 0
+            return eventStatus === filter
+        })
 
-                        if (hasUserVotedForWithdrawal(a, matrixAuth.userId))
-                            return 1
-                        if (hasUserVotedForWithdrawal(b, matrixAuth.userId))
-                            return -1
-                        return 0
-                    })
+        if (filter === 'pending') {
+            filtered
+                // Sort by oldest
+                .sort((a, b) => a.time - b.time)
+                // Sort by not voted for
+                .sort((a, b) => {
+                    if (!matrixAuth) return 0
+
+                    if (hasUserVotedForWithdrawal(a, matrixAuth.userId))
+                        return 1
+                    if (hasUserVotedForWithdrawal(b, matrixAuth.userId))
+                        return -1
+                    return 0
+                })
+        }
+
+        return filtered
+    }, [
+        filter,
+        multispendStatus?.status,
+        withdrawalRequests,
+        getWithdrawalStatus,
+        matrixAuth,
+        hasUserVotedForWithdrawal,
+    ])
+
+    const getWithdrawalRequest = useCallback(
+        (event: MultispendWithdrawalEvent) => {
+            const { withdrawalRequest } = event.event
+
+            const sender = roomMembers.find(
+                m => m.id === withdrawalRequest.sender,
+            )
+            const approvals = Object.keys(withdrawalRequest.signatures)
+            const rejections = withdrawalRequest.rejections
+
+            return {
+                sender,
+                request: withdrawalRequest,
+                approvals,
+                rejections,
+                approvalCount: approvals.length,
+                rejectionCount: rejections.length,
+                formattedFiatAmount: convertCentsToFormattedFiat(
+                    withdrawalRequest.request.transfer_amount as UsdCents,
+                    'none',
+                ),
+                formattedFiatAmountWithCurrency: convertCentsToFormattedFiat(
+                    withdrawalRequest.request.transfer_amount as UsdCents,
+                    'end',
+                ),
+                selectedFiatCurrency,
+                status: getWithdrawalStatus(event),
             }
-
-            return filtered
         },
         [
-            matrixAuth,
-            withdrawalRequests,
-            multispendStatus,
+            roomMembers,
+            convertCentsToFormattedFiat,
+            selectedFiatCurrency,
             getWithdrawalStatus,
-            hasUserVotedForWithdrawal,
         ],
     )
 
+    const handleRejectRequest = useCallback(async () => {
+        if (!selectedWithdrawalId) return
+
+        setIsVoting(true)
+        try {
+            await fedimint.matrixSendMultispendWithdrawalReject({
+                roomId,
+                withdrawRequestId: selectedWithdrawalId,
+            })
+
+            setSelectedWithdrawalId(null)
+        } catch (e) {
+            toast.error(t, e)
+        } finally {
+            setIsVoting(false)
+        }
+    }, [selectedWithdrawalId, t, toast, roomId, fedimint])
+
+    const handleApproveRequest = useCallback(async () => {
+        if (!selectedWithdrawalId) return
+
+        setIsVoting(true)
+        try {
+            await fedimint.matrixSendMultispendWithdrawalApprove({
+                roomId,
+                withdrawRequestId: selectedWithdrawalId,
+            })
+
+            setSelectedWithdrawalId(null)
+        } catch (e) {
+            toast.error(t, e)
+        } finally {
+            setIsVoting(false)
+        }
+    }, [selectedWithdrawalId, roomId, t, toast, fedimint])
+
+    const filterOptions = [
+        { value: 'all', label: t('words.all') },
+        { value: 'pending', label: t('words.pending') },
+        { value: 'approved', label: t('words.approved') },
+        { value: 'rejected', label: t('words.rejected') },
+    ]
+    const selectedFilterOption = filterOptions.find(
+        option => option.value === filter,
+    )
+
     return {
+        isVoting,
+        filter,
+        setFilter,
+        filterOptions,
+        selectedFilterOption,
+        selectedWithdrawalId,
+        setSelectedWithdrawalId,
         withdrawalRequests,
         isLoading,
         fetchTransactions,
         getWithdrawalStatus,
         getFormattedWithdrawalStatus,
         hasUserVotedForWithdrawal,
+        haveIVotedForWithdrawal,
         filteredWithdrawalRequests,
+        getWithdrawalRequest,
+        handleRejectRequest,
+        handleApproveRequest,
     }
 }

@@ -3,22 +3,13 @@ import { useState } from 'react'
 import { Trans, useTranslation } from 'react-i18next'
 import { Pressable, StyleSheet, View } from 'react-native'
 
-import { useBtcFiatPrice } from '@fedi/common/hooks/amount'
 import { useMultispendWithdrawalRequests } from '@fedi/common/hooks/multispend'
-import {
-    selectCurrency,
-    selectMatrixAuth,
-    selectMatrixRoomMember,
-    selectMatrixRoomMembers,
-} from '@fedi/common/redux'
+import { selectMatrixRoomMembers } from '@fedi/common/redux'
 import { getUserSuffix } from '@fedi/common/utils/matrix'
 
+import { fedimint } from '../../../../bridge'
 import { useAppSelector } from '../../../../state/hooks'
-import {
-    MatrixRoomMember,
-    MultispendWithdrawalEvent,
-    UsdCents,
-} from '../../../../types'
+import { MatrixRoomMember, MultispendWithdrawalEvent } from '../../../../types'
 import { AvatarSize } from '../../../ui/Avatar'
 import AvatarStack from '../../../ui/AvatarStack'
 import SvgImage from '../../../ui/SvgImage'
@@ -30,39 +21,19 @@ const WithdrawalOverlayContents: React.FC<{
 }> = ({ selectedWithdrawal, roomId }) => {
     const { theme } = useTheme()
     const { t } = useTranslation()
-    const selectedFiatCurrency = useAppSelector(selectCurrency)
-    const { convertCentsToFormattedFiat } =
-        useBtcFiatPrice(selectedFiatCurrency)
-    const matrixAuth = useAppSelector(selectMatrixAuth)
-    const sender = useAppSelector(s =>
-        selectMatrixRoomMember(
-            s,
+    const { getWithdrawalRequest, haveIVotedForWithdrawal } =
+        useMultispendWithdrawalRequests({
+            t,
+            fedimint,
             roomId,
-            selectedWithdrawal?.event.withdrawalRequest.sender ?? '',
-        ),
-    )
-    const { hasUserVotedForWithdrawal } = useMultispendWithdrawalRequests(
-        t,
-        roomId,
-    )
+        })
+
+    const { sender, approvals, rejections, formattedFiatAmountWithCurrency } =
+        getWithdrawalRequest(selectedWithdrawal)
 
     const haveIVoted = selectedWithdrawal
-        ? hasUserVotedForWithdrawal(
-              selectedWithdrawal,
-              matrixAuth?.userId ?? '',
-          )
+        ? haveIVotedForWithdrawal(selectedWithdrawal)
         : false
-
-    const formattedFiatAmount = convertCentsToFormattedFiat(
-        selectedWithdrawal.event.withdrawalRequest.request
-            .transfer_amount as UsdCents,
-        'end',
-    )
-
-    const approvalIds = Object.keys(
-        selectedWithdrawal.event.withdrawalRequest.signatures,
-    )
-    const rejectionIds = selectedWithdrawal.event.withdrawalRequest.rejections
 
     const style = styles(theme)
 
@@ -73,7 +44,7 @@ const WithdrawalOverlayContents: React.FC<{
                     i18nKey="feature.multispend.user-wants-to-withdraw"
                     values={{
                         user: sender?.displayName,
-                        amount: formattedFiatAmount,
+                        amount: formattedFiatAmountWithCurrency,
                     }}
                     components={{ bold: <Text bold /> }}
                 />
@@ -85,12 +56,12 @@ const WithdrawalOverlayContents: React.FC<{
             </View>
             <VoterDropdown
                 roomId={roomId}
-                userIds={approvalIds}
+                userIds={approvals}
                 status="approve"
             />
             <VoterDropdown
                 roomId={roomId}
-                userIds={rejectionIds}
+                userIds={rejections}
                 status="reject"
             />
             {haveIVoted && (
