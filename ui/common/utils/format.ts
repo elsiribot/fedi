@@ -31,11 +31,18 @@ export function formatErrorMessage<T extends TFunction>(
     return defaultMessage
 }
 
-export function formatCurrencyText<T extends TFunction>(
+export function formattedCurrencyName<T extends TFunction>(
     t: T,
     currency: SelectableCurrency,
 ) {
     const i18nKey = `feature.settings.currency-names.${currency.toLowerCase()}`
 
-    return `${getCurrencyCode(currency)} - ${t(i18nKey as ResourceKey)}`
+    return t(i18nKey as ResourceKey)
+}
+
+export function formatCurrencyText<T extends TFunction>(
+    t: T,
+    currency: SelectableCurrency,
+) {
+    return `${getCurrencyCode(currency)} - ${formattedCurrencyName(t, currency)}`
 }
