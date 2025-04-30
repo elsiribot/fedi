@@ -13,6 +13,7 @@ import {
 import { Images } from '../../assets/images'
 import { reset } from '../../state/navigation'
 import type { NavigationHook, RootStackParamList } from '../../types/navigation'
+import Flex from './Flex'
 import SvgImage from './SvgImage'
 
 interface SuccessBase {
@@ -53,11 +54,11 @@ const Success: React.FC<SuccessProps> = ({
     const { theme } = useTheme()
     const navigation = useNavigation<NavigationHook>()
 
+    const style = styles(theme)
+
     return (
-        <ImageBackground
-            source={Images.HoloBackground}
-            style={styles(theme).container}>
-            <View style={styles(theme).detailsContainer}>
+        <ImageBackground source={Images.HoloBackground} style={style.container}>
+            <Flex center style={style.detailsContainer}>
                 <SvgImage
                     name="Check"
                     svgProps={{
@@ -68,12 +69,12 @@ const Success: React.FC<SuccessProps> = ({
                 {message ? (
                     message
                 ) : (
-                    <Text h2 h2Style={styles(theme).successMessage}>
+                    <Text h2 h2Style={style.successMessage}>
                         {messageText}
                     </Text>
                 )}
-            </View>
-            <View style={styles(theme).buttonContainer}>
+            </Flex>
+            <View style={style.buttonContainer}>
                 {button ? (
                     button
                 ) : (
@@ -110,8 +111,6 @@ const styles = (theme: Theme) =>
             marginBottom: theme.spacing.xl,
         },
         detailsContainer: {
-            alignItems: 'center',
-            justifyContent: 'center',
             backgroundColor: theme.colors.secondary,
             marginTop: 'auto',
             // for a perfect circle borderRadius should be half of

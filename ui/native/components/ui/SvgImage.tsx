@@ -1,6 +1,6 @@
 import { useTheme } from '@rneui/themed'
 import React from 'react'
-import { StyleSheet, View, ViewStyle, useWindowDimensions } from 'react-native'
+import { View, ViewStyle, useWindowDimensions } from 'react-native'
 import { SvgProps } from 'react-native-svg'
 
 import * as Svgs from '../../assets/images/svgs'
@@ -67,7 +67,7 @@ const SvgImage = ({
         ...svgProps,
     }
 
-    const mergedStyles = [styles.container, containerStyle]
+    const mergedStyles = [containerStyle]
 
     return (
         <View style={mergedStyles}>
@@ -75,9 +75,5 @@ const SvgImage = ({
         </View>
     )
 }
-
-const styles = StyleSheet.create({
-    container: {},
-})
 
 export default SvgImage
