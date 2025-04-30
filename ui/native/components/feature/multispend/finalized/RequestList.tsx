@@ -1,5 +1,5 @@
 import { Text, Theme, useTheme } from '@rneui/themed'
-import { useCallback } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { ListRenderItem, StyleSheet, View, FlatList } from 'react-native'
 
@@ -7,6 +7,7 @@ import {
     useMultispendTransactions,
     useMultispendWithdrawalRequests,
 } from '@fedi/common/hooks/multispend'
+import { makeLog } from '@fedi/common/utils/log'
 
 import { fedimint } from '../../../../bridge'
 import {
@@ -19,9 +20,12 @@ import SvgImage from '../../../ui/SvgImage'
 import WithdrawalOverlayContents from './WithdrawalOverlayContents'
 import WithdrawalRequest from './WithdrawalRequest'
 
+const log = makeLog('RequestList')
+
 const RequestList: React.FC<{ roomId: string }> = ({ roomId }) => {
     const { theme } = useTheme()
     const { t } = useTranslation()
+    const [isLoading, setIsLoading] = useState(false)
     const {
         isVoting,
         selectedWithdrawalId,
@@ -36,10 +40,16 @@ const RequestList: React.FC<{ roomId: string }> = ({ roomId }) => {
         selectedFilterOption,
         setFilter,
     } = useMultispendWithdrawalRequests({ t, fedimint, roomId })
-    const { isLoading, fetchTransactions } = useMultispendTransactions(
-        t,
-        roomId,
-    )
+    const { fetchTransactions } = useMultispendTransactions(t, roomId)
+
+    useEffect(() => {
+        setIsLoading(true)
+        fetchTransactions()
+            .catch(err => {
+                log.error('Error refreshing transactions', err)
+            })
+            .finally(() => setIsLoading(false))
+    }, [fetchTransactions, t])
 
     const selectedWithdrawal = withdrawalRequests.find(
         withdrawal => withdrawal.id === selectedWithdrawalId,

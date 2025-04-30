@@ -154,6 +154,37 @@ const initialState = {
 
 export type MatrixState = typeof initialState
 
+/**
+ * Given a list of new transactions and optionally the old ones, return a
+ * combined list that has been sorted and deduplicated.
+ *
+ * TODO: only modify updated fields for existing transactions
+ */
+const updateMultispendTransactions = (
+    newTransactions: MultispendTransactionListEntry[],
+    oldTransactions: MultispendTransactionListEntry[] = [],
+) => {
+    // Use a Map for O(1) lookups during deduplication
+    // The Map preserves insertion order, with newer transactions added first
+    const transactionMap = new Map<string, MultispendTransactionListEntry>()
+
+    for (const tx of newTransactions) {
+        transactionMap.set(tx.id, tx)
+    }
+
+    // Add old transactions only if they don't already exist in the map
+    for (const tx of oldTransactions) {
+        if (!transactionMap.has(tx.id)) {
+            transactionMap.set(tx.id, tx)
+        }
+    }
+
+    const transactions = Array.from(transactionMap.values())
+
+    // Sort list in descending order of when the transaction was created
+    return orderBy(transactions, 'counter', 'desc')
+}
+
 /*** Slice definition ***/
 
 export const matrixSlice = createSlice({
@@ -297,6 +328,21 @@ export const matrixSlice = createSlice({
             const { roomId, transactions } = action.payload
             state.roomMultispendTransactions[roomId] =
                 transactions.map(coerceMultispendTxn)
+        },
+        updateMatrixRoomMultispendTxns(
+            state,
+            action: PayloadAction<{
+                roomId: MatrixRoom['id']
+                transactions: MultispendListedEvent[]
+            }>,
+        ) {
+            const { roomId, transactions } = action.payload
+            const currentTxns = state.roomMultispendTransactions[roomId] || []
+            const updatedTxns = updateMultispendTransactions(
+                transactions.map(coerceMultispendTxn),
+                currentTxns,
+            )
+            state.roomMultispendTransactions[roomId] = updatedTxns
         },
         updateMatrixRoomMultispendEvent(
             state,
@@ -584,6 +630,7 @@ export const {
     setMatrixRoomMultispendStatus,
     setMatrixRoomMultispendAccountInfo,
     setMatrixRoomMultispendTransactions,
+    updateMatrixRoomMultispendTxns,
     addMatrixError,
     handleMatrixRoomListObservableUpdates,
     handleMatrixRoomTimelineObservableUpdates,
@@ -735,7 +782,7 @@ export const startMatrixClient = createAsyncThunk<
     client.on('multispendTransactions', ev => {
         if (ev.transactions) {
             dispatch(
-                setMatrixRoomMultispendTransactions({
+                updateMatrixRoomMultispendTxns({
                     roomId: ev.roomId,
                     transactions: ev.transactions,
                 }),
@@ -1295,14 +1342,52 @@ export const unignoreUser = createAsyncThunk<
     return false
 })
 
-export const refreshMultispendTransactions = createAsyncThunk<
-    MultispendListedEvent[],
-    { roomId: MatrixRoom['id'] }
->('matrix/refreshMultispendTransactions', async ({ roomId }) => {
-    const client = getMatrixClient()
-    const transactions = await client.fetchMultispendTransactions(roomId)
-    return transactions || []
-})
+export const fetchMultispendTransactions = createAsyncThunk<
+    Promise<MultispendListedEvent[] | undefined>,
+    {
+        roomId: MatrixRoom['id']
+        limit?: number
+        more?: boolean
+        refresh?: boolean
+    },
+    { state: CommonState }
+>(
+    'matrix/fetchMultispendTransactions',
+    async (
+        { roomId, refresh = false, limit = 100, more = false },
+        { getState },
+    ) => {
+        const state = getState()
+        const client = getMatrixClient()
+        if (refresh) {
+            const txns = selectMatrixRoomMultispendTransactions(state, roomId)
+            // when refreshing:
+            // - always use startAfter: null for fresh results. use { more: true } for pagination
+            // - limit should be at least 100 or the # of fetched txns (if we have already paginated)
+            // - refreshing will ignore limit param if passed to the thunk
+            return client.fetchMultispendTransactions({
+                roomId,
+                startAfter: null,
+                limit: Math.max(100, txns.length + 1),
+            })
+        } else if (more) {
+            // when fetching more, find the latest txn (txn with highest counter field)
+            const latestRoomTxn = selectLatestMultispendTxnInRoom(state, roomId)
+            const startAfter = latestRoomTxn ? latestRoomTxn.counter : null
+            return client.fetchMultispendTransactions({
+                roomId,
+                startAfter,
+                limit,
+            })
+        } else {
+            return client.fetchMultispendTransactions({
+                roomId,
+                startAfter: null,
+                limit,
+            })
+        }
+    },
+)
 
 export const listIgnoredUsers = createAsyncThunk<string[], void>(
     'matrix/listIgnoredUsers',
@@ -1962,6 +2047,17 @@ export const selectMatrixRoomMultispendTransactions = (
 ) => {
     return s.matrix.roomMultispendTransactions[roomId] || []
 }
+
+export const selectLatestMultispendTxnInRoom = createSelector(
+    selectMatrixRoomMultispendTransactions,
+    transactions => {
+        // unintuitively, the latest txn is the one with the lowest counter
+        const latestTxn = transactions.reduce((latest, current) => {
+            return latest.counter < current.counter ? latest : current
+        }, transactions[0])
+        return latestTxn
+    },
+)
 
 export const selectMultispendBalanceCents = createSelector(
     selectMatrixRoomMultispendAccountInfo,

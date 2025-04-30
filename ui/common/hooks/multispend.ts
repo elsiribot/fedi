@@ -9,7 +9,7 @@ import {
     selectMyMultispendRole,
     selectWalletFederations,
     selectMatrixRoomMultispendTransactions,
-    refreshMultispendTransactions,
+    fetchMultispendTransactions,
     selectFormattedMultispendBalance,
     selectCurrency,
     selectMatrixRoomMembers,
@@ -249,27 +249,28 @@ export function useMultispendDisplayUtils(t: TFunction, roomId: RpcRoomId) {
 export function useMultispendTransactions(t: TFunction, roomId: RpcRoomId) {
     const toast = useToast()
     const dispatch = useCommonDispatch()
-    const [isLoading, setIsLoading] = useState(false)
     const transactions = useCommonSelector(s =>
         selectMatrixRoomMultispendTransactions(s, roomId),
     )
-    const fetchTransactions = useCallback(async () => {
-        setIsLoading(true)
-        try {
-            await dispatch(refreshMultispendTransactions({ roomId })).unwrap()
-        } catch (e) {
-            toast.error(t, e)
-        } finally {
-            setIsLoading(false)
-        }
-    }, [dispatch, roomId, t, toast])
-
-    useEffect(() => {
-        fetchTransactions()
-    }, [fetchTransactions])
+    const fetchTransactions = useCallback(
+        async (
+            args?: Pick<
+                Parameters<typeof fetchMultispendTransactions>[0],
+                'limit' | 'more' | 'refresh'
+            >,
+        ) => {
+            try {
+                await dispatch(
+                    fetchMultispendTransactions({ roomId, ...args }),
+                ).unwrap()
+            } catch (e) {
+                toast.error(t, e)
+            }
+        },
+        [dispatch, roomId, t, toast],
+    )
 
     return {
-        isLoading,
         transactions,
         fetchTransactions,
     }
@@ -296,8 +297,7 @@ export function useMultispendWithdrawalRequests({
     const multispendStatus = useCommonSelector(s =>
         selectMatrixRoomMultispendStatus(s, roomId),
     )
-    const { transactions, isLoading, fetchTransactions } =
-        useMultispendTransactions(t, roomId)
+    const { transactions } = useMultispendTransactions(t, roomId)
     const matrixAuth = useCommonSelector(selectMatrixAuth)
     const roomMembers = useCommonSelector(s =>
         selectMatrixRoomMembers(s, roomId),
@@ -498,8 +498,6 @@ export function useMultispendWithdrawalRequests({
         selectedWithdrawalId,
         setSelectedWithdrawalId,
         withdrawalRequests,
-        isLoading,
-        fetchTransactions,
         getWithdrawalStatus,
         getFormattedWithdrawalStatus,
         hasUserVotedForWithdrawal,

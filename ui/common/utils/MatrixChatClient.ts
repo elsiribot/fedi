@@ -5,6 +5,7 @@ import {
     INVALID_NAME_PLACEHOLDER,
 } from '../constants/matrix'
 import {
+    bindings,
     MatrixAuth,
     MatrixCreateRoomOptions,
     MatrixError,
@@ -516,13 +517,17 @@ export class MatrixChatClient {
         return users
     }
 
-    async fetchMultispendTransactions(roomId: string) {
+    async fetchMultispendTransactions({
+        roomId,
+        startAfter = null,
+        limit = 100,
+    }: bindings.RpcPayload<'matrixMultispendListEvents'>) {
         try {
             const transactions = await this.fedimint.matrixMultispendListEvents(
                 {
                     roomId,
-                    startAfter: null,
-                    limit: 100,
+                    startAfter,
+                    limit,
                 },
             )
             this.emit('multispendTransactions', { roomId, transactions })
