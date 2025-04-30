@@ -47,6 +47,7 @@ export const ALLOWED_PARSER_TYPES_BEFORE_FEDERATION = [
     ParserDataType.FedimintEcash,
     ParserDataType.Website,
     ParserDataType.Unknown,
+    ParserDataType.OfflineError,
 ]
 
 /** List of parse types that are not usable before recovery is complete */
