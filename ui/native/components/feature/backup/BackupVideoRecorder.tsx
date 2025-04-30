@@ -1,7 +1,8 @@
 import { Theme, useTheme } from '@rneui/themed'
-import { StyleSheet, View } from 'react-native'
+import { StyleSheet } from 'react-native'
 
 import { useBackupRecoveryContext } from '../../../state/contexts/BackupRecoveryContext'
+import Flex from '../../ui/Flex'
 import RecordVideo from './RecordVideo'
 import ReviewVideo from './ReviewVideo'
 
@@ -10,17 +11,15 @@ const BackupVideoRecorder = () => {
     const { state } = useBackupRecoveryContext()
     const { videoFile } = state
     return (
-        <View style={styles(theme).container}>
+        <Flex grow align="center" style={styles(theme).container}>
             {videoFile ? <ReviewVideo /> : <RecordVideo />}
-        </View>
+        </Flex>
     )
 }
 
 const styles = (theme: Theme) =>
     StyleSheet.create({
         container: {
-            flex: 1,
-            alignItems: 'center',
             width: '100%',
             paddingHorizontal: theme.spacing.md,
         },
