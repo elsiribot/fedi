@@ -62,6 +62,38 @@ const encryptedFileSchema = z
     // Don't strip off additional decryption keys from the file object
     .passthrough()
 
+/**
+ * Filter out payment events that aren't the initial push or request
+ * since we only render the original event. Keep track of the latest
+ * payment for each payment ID, and replace the initial event's content
+ * with the latest content.
+ *
+ */
+export const consolidatePaymentEvents = (events: MatrixEvent[]) => {
+    const latestPayments: Record<string, MatrixPaymentEvent> = {}
+    const filteredEvents = events.filter(event => {
+        if (!isPaymentEvent(event)) return true
+        latestPayments[event.content.paymentId] = event
+        return [
+            MatrixPaymentStatus.pushed,
+            MatrixPaymentStatus.requested,
+        ].includes(event.content.status)
+    })
+    const consolidatedEvents = filteredEvents.map(event => {
+        if (!isPaymentEvent(event)) return event
+        const latestPayment = latestPayments[event.content.paymentId]
+        if (!latestPayment || event.id === latestPayment.id) return event
+        return {
+            ...event,
+            content: {
+                ...event.content,
+                ...latestPayment.content,
+            },
+        }
+    })
+    return consolidatedEvents
+}
+
 export type MatrixEncryptedFile = z.infer<typeof encryptedFileSchema>
 
 const contentSchemas = {

@@ -67,6 +67,7 @@ import { makeLog } from '../utils/log'
 import {
     MatrixEventContentType,
     coerceMultispendTxn,
+    consolidatePaymentEvents,
     doesEventContentMatchPreviewMedia,
     getMultispendInvite,
     getMultispendRole,
@@ -1676,35 +1677,11 @@ export const selectMatrixRoomEvents = createSelector(
         if (!timeline) return []
 
         // Filter out non-events from the timeline
-        let events = timeline.filter((item): item is MatrixEvent => {
+        const allEvents = timeline.filter((item): item is MatrixEvent => {
             return item !== null
         })
 
-        // Filter out payment events that aren't the initial push or request
-        // since we only render the original event. Keep track of the latest
-        // payment for each payment ID, and replace the intial event's content
-        // with the latest content.
-        const latestPayments: Record<string, MatrixPaymentEvent> = {}
-        events = events.filter(event => {
-            if (!isPaymentEvent(event)) return true
-            latestPayments[event.content.paymentId] = event
-            return [
-                MatrixPaymentStatus.pushed,
-                MatrixPaymentStatus.requested,
-            ].includes(event.content.status)
-        })
-        events = events.map(event => {
-            if (!isPaymentEvent(event)) return event
-            const latestPayment = latestPayments[event.content.paymentId]
-            if (!latestPayment || event.id === latestPayment.id) return event
-            return {
-                ...event,
-                content: {
-                    ...event.content,
-                    ...latestPayment.content,
-                },
-            }
-        })
+        const events = consolidatePaymentEvents(allEvents)
 
         return events
     },
