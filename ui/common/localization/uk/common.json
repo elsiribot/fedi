@@ -429,8 +429,8 @@
         },
         "federation": {
             "add-federation": "Додати громаду",
-            "join-a-community": "Приєднатися до громади",
-            "join-community-guidance": "Приєднуйтесь до улюбленої громади, щоб отримати доступ до грошей та іншого",
+            "join-a-federation": "Приєднатися до громади",
+            "join-federation-guidance": "Приєднуйтесь до улюбленої громади, щоб отримати доступ до грошей та іншого",
             "or-visit-awesome-fedimint": "або відвідайте Awesome Fedimint"
         },
         "developer": {

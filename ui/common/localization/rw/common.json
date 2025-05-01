@@ -428,8 +428,8 @@
         },
         "federation": {
             "add-federation": "Ongeraho umuganda",
-            "join-a-community": "Injira mumuryango",
-            "join-community-guidance": "Injira mumuryango ukunda kugirango ubone amafaranga nibindi byinshi",
+            "join-a-federation": "Injira mumuryango",
+            "join-federation-guidance": "Injira mumuryango ukunda kugirango ubone amafaranga nibindi byinshi",
             "or-visit-awesome-fedimint": "cyangwa Sura Fedimint nziza"
         },
         "developer": {

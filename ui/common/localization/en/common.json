@@ -494,8 +494,8 @@
             "create-info-3": "This teamwork protects your wallet, privacy, and keeps your Federation strong.",
             "create-info-4": "You can create a Federation that’s either public (open to anyone) or private (invite-only).",
             "create-info-5": "Federations could help you safely recover your wallet if you lose access.",
-            "join-a-community": "Join a Federation",
-            "join-community-guidance": "Join your favorite community to access money and more",
+            "join-a-federation": "Join a Federation",
+            "join-federation-guidance": "Join your favorite federation to access money and more",
             "or-visit-awesome-fedimint": "or Visit Awesome Fedimint"
         },
         "developer": {

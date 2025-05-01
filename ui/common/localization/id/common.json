@@ -429,8 +429,8 @@
         },
         "federation": {
             "add-federation": "Tambahkan komunitas",
-            "join-a-community": "Bergabunglah dengan komunitas",
-            "join-community-guidance": "Gabung ke komunitas favorit kamu untuk mengakses uang dan lainnya.",
+            "join-a-federation": "Bergabunglah dengan komunitas",
+            "join-federation-guidance": "Gabung ke komunitas favorit kamu untuk mengakses uang dan lainnya.",
             "or-visit-awesome-fedimint": "atau Kunjungi Awesome Fedimint"
         },
         "developer": {

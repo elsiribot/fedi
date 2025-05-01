@@ -429,8 +429,8 @@
         },
         "federation": {
             "add-federation": "Ongeza jumuiya",
-            "join-a-community": "Jiunge na jumuiya",
-            "join-community-guidance": "Jiunge na jumuiya unayopenda ili kupata pesa na zaidi",
+            "join-a-federation": "Jiunge na jumuiya",
+            "join-federation-guidance": "Jiunge na jumuiya unayopenda ili kupata pesa na zaidi",
             "or-visit-awesome-fedimint": "au Tembelea Awesome Fedimint"
         },
         "developer": {

@@ -427,8 +427,8 @@
         },
         "federation": {
             "add-federation": "Ku dar bulsho",
-            "join-a-community": "Ku biir bulsho",
-            "join-community-guidance": "Ku biir bulshada aad jeceshahay si aad lacag u hesho iyo wax ka badan",
+            "join-a-federation": "Ku biir bulsho",
+            "join-federation-guidance": "Ku biir bulshada aad jeceshahay si aad lacag u hesho iyo wax ka badan",
             "or-visit-awesome-fedimint": "ama Booqo Fedimint Awesome"
         },
         "developer": {

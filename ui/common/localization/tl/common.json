@@ -429,8 +429,8 @@
         },
         "federation": {
             "add-federation": "Magdagdag ng komunidad",
-            "join-a-community": "Sumali sa isang komunidad",
-            "join-community-guidance": "Sumali sa paborito mong komunidad para maka-access ng pera at iba pa",
+            "join-a-federation": "Sumali sa isang komunidad",
+            "join-federation-guidance": "Sumali sa paborito mong komunidad para maka-access ng pera at iba pa",
             "or-visit-awesome-fedimint": "o Bisitahin ang Awesome Fedimint"
         },
         "developer": {

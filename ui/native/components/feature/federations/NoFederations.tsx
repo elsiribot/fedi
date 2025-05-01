@@ -33,10 +33,10 @@ const NoFederations: React.FC = () => {
             <Image style={style.image} source={Images.AwesomeFedimint} />
             <View style={style.titleContainer}>
                 <Text h2 medium>
-                    {t('feature.federation.join-a-community')}
+                    {t('feature.federation.join-a-federation')}
                 </Text>
                 <Text style={style.subtitle}>
-                    {t('feature.federation.join-community-guidance')}
+                    {t('feature.federation.join-federation-guidance')}
                 </Text>
             </View>
             <View style={style.contentContainer}>

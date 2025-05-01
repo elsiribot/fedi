@@ -429,8 +429,8 @@
         },
         "federation": {
             "add-federation": "Ajouter une communauté",
-            "join-a-community": "Rejoignez une communauté",
-            "join-community-guidance": "Rejoignez votre communauté préférée pour accéder à de l'argent et bien plus encore",
+            "join-a-federation": "Rejoignez une communauté",
+            "join-federation-guidance": "Rejoignez votre communauté préférée pour accéder à de l'argent et bien plus encore",
             "or-visit-awesome-fedimint": "ou visitez Awesome Fedimint"
         },
         "developer": {
