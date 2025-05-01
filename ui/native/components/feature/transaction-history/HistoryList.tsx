@@ -74,7 +74,7 @@ export function HistoryList<T extends { id: string }>({
 
     if (loading) {
         return (
-            <Flex grow center style={style.emptyContainer}>
+            <Flex grow center fullWidth>
                 <ActivityIndicator />
             </Flex>
         )
@@ -82,7 +82,7 @@ export function HistoryList<T extends { id: string }>({
 
     if (!rows.length) {
         return (
-            <Flex grow center style={style.emptyContainer}>
+            <Flex grow center fullWidth>
                 <Text style={style.emptyText}>
                     {t('phrases.no-transactions')}
                 </Text>
@@ -134,9 +134,6 @@ const styles = (theme: Theme) =>
         },
         content: {
             paddingTop: theme.spacing.xl,
-        },
-        emptyContainer: {
-            width: '100%',
         },
         emptyText: {
             textAlign: 'center',

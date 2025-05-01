@@ -3,7 +3,7 @@ import { useNavigation } from '@react-navigation/native'
 import { Button, Card, Text, Theme, useTheme } from '@rneui/themed'
 import React, { useCallback, useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { Dimensions, Share, StyleSheet, View } from 'react-native'
+import { Dimensions, Share, StyleSheet } from 'react-native'
 import QRCode from 'react-native-qrcode-svg'
 
 import { useToast } from '@fedi/common/hooks/toast'
@@ -129,11 +129,11 @@ const ReceiveQr: React.FC<ReceiveQrProps> = ({
                         </Flex>
                     )}
 
-                    <View style={style.uriContainer}>
+                    <Flex align="center" style={style.uriContainer}>
                         <Text style={style.uri} numberOfLines={1} small>
                             {stringUtils.truncateMiddleOfString(uri.body, 6)}
                         </Text>
-                    </View>
+                    </Flex>
                 </Card>
                 {type === BitcoinOrLightning.bitcoin && (
                     <NotesInput
@@ -144,7 +144,7 @@ const ReceiveQr: React.FC<ReceiveQrProps> = ({
                 )}
                 {type === BitcoinOrLightning.bitcoin && <OnchainDepositInfo />}
             </Flex>
-            <Flex row justify="between" style={style.buttonsContainer}>
+            <Flex row justify="between" fullWidth>
                 <Button
                     title={t('words.share')}
                     onPress={openShareDialog}
@@ -165,9 +165,6 @@ const styles = (theme: Theme) =>
         content: {
             paddingHorizontal: theme.spacing.lg,
         },
-        buttonsContainer: {
-            width: '100%',
-        },
         button: {
             width: '48%',
         },
@@ -175,7 +172,6 @@ const styles = (theme: Theme) =>
             lineHeight: 18,
         },
         uriContainer: {
-            alignItems: 'center',
             paddingTop: theme.spacing.md,
         },
         qrCard: {

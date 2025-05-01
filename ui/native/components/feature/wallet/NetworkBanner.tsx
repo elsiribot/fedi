@@ -24,7 +24,7 @@ export const NetworkBanner: React.FC = () => {
 
     const style = styles(theme)
     return (
-        <Flex row center gap="xs" style={style.container}>
+        <Flex row center gap="xs" fullWidth>
             <SvgImage
                 color={theme.colors.night}
                 name="Info"
@@ -48,7 +48,6 @@ export const NetworkBanner: React.FC = () => {
 const styles = (theme: Theme) =>
     StyleSheet.create({
         container: {
-            width: '100%',
             padding: theme.spacing.sm,
             backgroundColor: '#FFFAEB', // TODO: add to theme.colors
         },

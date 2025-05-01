@@ -150,7 +150,7 @@ export const HistoryDetail: React.FC<HistoryDetailProps> = ({
                     {amount}
                 </Text>
             )}
-            <Flex gap="xs" style={style.detailItemsContainer}>
+            <Flex gap="xs" fullWidth style={style.detailItemsContainer}>
                 {items.map((item, idx) => (
                     <HistoryDetailItem
                         key={idx}
@@ -255,7 +255,6 @@ const styles = (theme: Theme) =>
         },
         detailItemsContainer: {
             marginTop: theme.spacing.xl,
-            width: '100%',
         },
         detailTitle: {
             marginTop: theme.spacing.sm,

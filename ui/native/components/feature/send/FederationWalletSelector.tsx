@@ -78,7 +78,7 @@ const FederationWalletSelector: React.FC<{
     if (federations.length === 0) return null
 
     return (
-        <Flex align="center" style={style.container}>
+        <Flex align="center" fullWidth>
             <Pressable
                 style={[
                     style.selectedFederation,
@@ -132,9 +132,6 @@ const FederationWalletSelector: React.FC<{
 
 const styles = (theme: Theme) =>
     StyleSheet.create({
-        container: {
-            width: '100%',
-        },
         selectedFederation: {
             flexDirection: 'row',
             alignItems: 'center',

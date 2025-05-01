@@ -30,6 +30,7 @@ export const StabilityBitcoinBanner: React.FC = () => {
             align="start"
             justify="center"
             gap="xs"
+            fullWidth
             style={style.container}>
             <SvgImage
                 color={theme.colors.night}
@@ -48,7 +49,6 @@ export const StabilityBitcoinBanner: React.FC = () => {
 const styles = (theme: Theme) =>
     StyleSheet.create({
         container: {
-            width: '100%',
             padding: theme.spacing.sm,
             backgroundColor: '#FFFAEB', // TODO: add to theme.colors
         },

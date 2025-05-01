@@ -72,7 +72,7 @@ export const HistoryRow: React.FC<HistoryRowProps> = memo(
                 style={[style.container]}
                 hitSlop={4}>
                 {icon}
-                <Flex grow gap="xs" style={style.centerContainer}>
+                <Flex grow gap="xs" fullWidth>
                     <Text caption medium>
                         {status}
                     </Text>
@@ -116,9 +116,6 @@ const styles = (theme: Theme) =>
             paddingHorizontal: theme.spacing.xl,
             backgroundColor: theme.colors.secondary,
             marginBottom: theme.spacing.xl,
-        },
-        centerContainer: {
-            width: '100%',
         },
         rightAlignedText: {
             textAlign: 'right',
