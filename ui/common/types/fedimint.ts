@@ -29,6 +29,7 @@ import {
     MultispendListedEvent,
     MultispendDepositEventData,
     WithdrawRequestWithApprovals,
+    GroupInvitationWithKeys,
 } from './bindings'
 import { MSats, Usd, UsdCents } from './units'
 
@@ -61,7 +62,6 @@ export type MultispendTransactionListEntry = CommonTxnFields & {
     id: string
     counter: MultispendListedEvent['counter']
     time: MultispendListedEvent['time']
-    event: MultispendListedEvent['event']
     kind: 'multispend'
 } & (
         | {
@@ -74,6 +74,10 @@ export type MultispendTransactionListEntry = CommonTxnFields & {
           }
         | {
               state: 'invalid'
+          }
+        | {
+              state: 'groupInvitation'
+              event: { groupInvitation: GroupInvitationWithKeys }
           }
     )
 

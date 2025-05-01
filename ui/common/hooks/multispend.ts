@@ -1,5 +1,5 @@
 import type { TFunction } from 'i18next'
-import { useState, useMemo, useEffect, useCallback } from 'react'
+import { useState, useMemo, useEffect, useCallback, ReactNode } from 'react'
 
 import {
     matrixApproveMultispendInvitation,
@@ -8,24 +8,34 @@ import {
     selectMatrixAuth,
     selectMyMultispendRole,
     selectWalletFederations,
-    selectMatrixRoomMultispendTransactions,
+    selectRoomMultispendFinancialTransactions,
     fetchMultispendTransactions,
     selectFormattedMultispendBalance,
     selectCurrency,
     selectMatrixRoomMembers,
+    selectMultispendInvitationEvent,
+    selectMatrixRoomMember,
+    selectMatrixRoomMultispendEvent,
 } from '../redux'
 import {
+    MatrixEvent,
     MultispendFilterOption,
     MultispendWithdrawalEvent,
     UsdCents,
+    MultispendRole,
+    MultispendListedInvitationEvent,
 } from '../types'
-import { RpcRoomId } from '../types/bindings'
+import { RpcMultispendGroupStatus, RpcRoomId } from '../types/bindings'
 import { FedimintBridge } from '../utils/fedimint'
 import {
     getMultispendInvite,
+    isMultispendWithdrawalEvent,
     makeMultispendWalletHeader,
+    MatrixEventContentType,
+    MultispendEventContentType,
 } from '../utils/matrix'
 import { useBtcFiatPrice } from './amount'
+import { useObserveMultispendEvent } from './matrix'
 import { useCommonDispatch, useCommonSelector } from './redux'
 import { useToast } from './toast'
 
@@ -251,7 +261,7 @@ export function useMultispendTransactions(t: TFunction, roomId: RpcRoomId) {
     const toast = useToast()
     const dispatch = useCommonDispatch()
     const transactions = useCommonSelector(s =>
-        selectMatrixRoomMultispendTransactions(s, roomId),
+        selectRoomMultispendFinancialTransactions(s, roomId),
     )
     const fetchTransactions = useCallback(
         async (
@@ -277,35 +287,9 @@ export function useMultispendTransactions(t: TFunction, roomId: RpcRoomId) {
     }
 }
 
-export function useMultispendWithdrawalRequests({
-    t,
-    fedimint,
-    roomId,
-}: {
-    t: TFunction
-    fedimint: FedimintBridge
-    roomId: RpcRoomId
-}) {
-    const toast = useToast()
-    const selectedFiatCurrency = useCommonSelector(selectCurrency)
-    const { convertCentsToFormattedFiat } =
-        useBtcFiatPrice(selectedFiatCurrency)
-    const [selectedWithdrawalId, setSelectedWithdrawalId] = useState<
-        string | null
-    >(null)
-    const [isVoting, setIsVoting] = useState(false)
-    const [filter, setFilter] = useState<MultispendFilterOption>('all')
+export function useMultispendWithdrawUtils(t: TFunction, roomId: RpcRoomId) {
     const multispendStatus = useCommonSelector(s =>
         selectMatrixRoomMultispendStatus(s, roomId),
-    )
-    const { transactions } = useMultispendTransactions(t, roomId)
-    const matrixAuth = useCommonSelector(selectMatrixAuth)
-    const roomMembers = useCommonSelector(s =>
-        selectMatrixRoomMembers(s, roomId),
-    )
-
-    const withdrawalRequests = transactions.filter(
-        (txn): txn is MultispendWithdrawalEvent => txn.state === 'withdrawal',
     )
 
     const getWithdrawalStatus = useCallback(
@@ -331,6 +315,43 @@ export function useMultispendWithdrawalRequests({
             return 'pending'
         },
         [multispendStatus],
+    )
+
+    return {
+        getWithdrawalStatus,
+    }
+}
+
+export function useMultispendWithdrawalRequests({
+    t,
+    fedimint,
+    roomId,
+}: {
+    t: TFunction
+    fedimint: FedimintBridge
+    roomId: RpcRoomId
+}) {
+    const toast = useToast()
+    const selectedFiatCurrency = useCommonSelector(selectCurrency)
+    const { convertCentsToFormattedFiat } =
+        useBtcFiatPrice(selectedFiatCurrency)
+    const [selectedWithdrawalId, setSelectedWithdrawalId] = useState<
+        string | null
+    >(null)
+    const [isVoting, setIsVoting] = useState(false)
+    const [filter, setFilter] = useState<MultispendFilterOption>('all')
+    const multispendStatus = useCommonSelector(s =>
+        selectMatrixRoomMultispendStatus(s, roomId),
+    )
+    const { transactions } = useMultispendTransactions(t, roomId)
+    const { getWithdrawalStatus } = useMultispendWithdrawUtils(t, roomId)
+    const matrixAuth = useCommonSelector(selectMatrixAuth)
+    const roomMembers = useCommonSelector(s =>
+        selectMatrixRoomMembers(s, roomId),
+    )
+
+    const withdrawalRequests = transactions.filter(
+        (txn): txn is MultispendWithdrawalEvent => txn.state === 'withdrawal',
     )
 
     const getFormattedWithdrawalStatus = useCallback(
@@ -507,5 +528,239 @@ export function useMultispendWithdrawalRequests({
         getWithdrawalRequest,
         handleRejectRequest,
         handleApproveRequest,
+    }
+}
+
+const extractInvitationData = (
+    event: MatrixEvent<MultispendEventContentType<'groupInvitation'>>,
+    invitation: MultispendListedInvitationEvent | undefined,
+    roomStatus: RpcMultispendGroupStatus | undefined,
+    myId: string | undefined,
+) => {
+    const finalizedInvitationId =
+        roomStatus?.status === 'finalized'
+            ? roomStatus.invite_event_id
+            : undefined
+
+    const activeInvitationId =
+        roomStatus?.status === 'activeInvitation'
+            ? roomStatus.active_invite_id
+            : undefined
+
+    // If we found the data from the observed event, use that
+    if (invitation) {
+        const invite = invitation.event.groupInvitation.invitation
+        return {
+            proposer: invitation.event.groupInvitation.proposer,
+            status:
+                activeInvitationId === invitation.id
+                    ? ('activeInvitation' as const)
+                    : finalizedInvitationId === invitation.id
+                      ? ('finalized' as const)
+                      : ('inactive' as const),
+            role:
+                event.senderId === myId
+                    ? ('proposer' as const)
+                    : myId !== undefined && invite.signers.includes(myId)
+                      ? ('voter' as const)
+                      : ('member' as const),
+            voters: invite.signers.length,
+            hasVoted:
+                myId !== undefined &&
+                invitation.event.groupInvitation.pubkeys[myId] !== undefined,
+            threshold: invite.threshold,
+            hasInvite: true,
+        }
+    }
+    // Fallback to using data from the chat event itself
+    else {
+        const invite = event.content.invitation
+        const proposer = event.senderId ?? ''
+        const role =
+            proposer === myId
+                ? ('proposer' as const)
+                : myId !== undefined && invite.signers.includes(myId)
+                  ? ('voter' as const)
+                  : ('member' as const)
+        return {
+            status:
+                activeInvitationId === event.eventId
+                    ? ('activeInvitation' as const)
+                    : finalizedInvitationId === event.eventId
+                      ? ('finalized' as const)
+                      : ('inactive' as const),
+            role,
+            proposer,
+            // If we don't have the loaded invitation data, we can
+            // only be certain the user voted if they are the proposer
+            hasVoted: role === 'proposer',
+            voters: invite.signers.length,
+            threshold: invite.threshold,
+            hasInvite: false,
+        }
+    }
+}
+
+export function useMultispendInvitationEventContent(
+    event: MatrixEvent<MultispendEventContentType<'groupInvitation'>>,
+): {
+    status: RpcMultispendGroupStatus['status']
+    statusDescription?: string
+    voters: number
+    threshold: number
+    proposer: string
+    hasVoted: boolean
+    role: MultispendRole
+    hasInvite: boolean
+    hasStatus: boolean
+} {
+    useObserveMultispendEvent(event.roomId, event?.eventId ?? '')
+
+    const invitation = useCommonSelector(s =>
+        selectMultispendInvitationEvent(s, event.roomId, event?.eventId ?? ''),
+    )
+
+    const myId = useCommonSelector(selectMatrixAuth)?.userId
+
+    // Finalized or active invitation
+    const roomStatus = useCommonSelector(s =>
+        selectMatrixRoomMultispendStatus(s, event.roomId),
+    )
+
+    const data = useMemo(
+        () => extractInvitationData(event, invitation, roomStatus, myId),
+        [event, invitation, roomStatus, myId],
+    )
+
+    return {
+        ...data,
+        hasStatus: !!roomStatus,
+    }
+}
+
+export function useMultispendChatEventContent({
+    t,
+    event,
+}: {
+    t: TFunction
+    event: MatrixEvent<MatrixEventContentType<'xyz.fedi.multispend'>>
+    createBullets: (heading: string, lines: ReactNode[]) => ReactNode
+}): {
+    heading: string
+    body1?: ReactNode
+    body2?: string
+    status?: string
+    threshold?: number
+} {
+    return {
+        heading: t('feature.multispend.message-header'),
+        body1: `${event.content.body}: ${event.content.kind}`,
+        body2: 'TODO: implement me',
+    }
+}
+
+export function useMultispendDepositEventContent({
+    t,
+    event,
+}: {
+    t: TFunction
+    event: MatrixEvent<MultispendEventContentType<'depositNotification'>>
+}): {
+    heading: string
+    senderName: string | undefined
+    formattedFiatAmount: string
+} {
+    const selectedFiatCurrency = useCommonSelector(selectCurrency)
+    const { convertCentsToFormattedFiat } =
+        useBtcFiatPrice(selectedFiatCurrency)
+    const { senderId, content } = event
+    const senderMember = useCommonSelector(s =>
+        selectMatrixRoomMember(s, event.roomId, senderId ?? ''),
+    )
+    const senderName = senderMember
+        ? senderMember.membership === 'leave'
+            ? t('feature.chat.former-member')
+            : senderMember.displayName
+        : t('words.member')
+
+    const formattedFiatAmount = convertCentsToFormattedFiat(
+        content.fiatAmount as UsdCents,
+        'end',
+    )
+
+    return {
+        heading: t('feature.multispend.chat-events.message-header'),
+        senderName,
+        formattedFiatAmount,
+    }
+}
+
+export function useMultispendWithdrawalEventContent({
+    t,
+    event,
+}: {
+    t: TFunction
+    event: MatrixEvent<MultispendEventContentType<'withdrawalRequest'>>
+}): {
+    heading: string
+    senderName: string | undefined
+    formattedFiatAmount: string
+    text?: string
+    subText?: string
+} {
+    const { senderId, content, roomId } = event
+    const { getWithdrawalStatus } = useMultispendWithdrawUtils(t, roomId)
+    const selectedFiatCurrency = useCommonSelector(selectCurrency)
+    const { convertCentsToFormattedFiat } =
+        useBtcFiatPrice(selectedFiatCurrency)
+    const senderMember = useCommonSelector(s =>
+        selectMatrixRoomMember(s, roomId, senderId ?? ''),
+    )
+    const senderName = senderMember
+        ? senderMember.membership === 'leave'
+            ? t('feature.chat.former-member')
+            : senderMember.displayName
+        : t('words.member')
+    const formattedFiatAmount = convertCentsToFormattedFiat(
+        content.request.transfer_amount as UsdCents,
+        'end',
+    )
+    let text = t('feature.multispend.chat-events.withdrawal-requested')
+    let subText = ''
+    useObserveMultispendEvent(event.roomId, event?.eventId ?? '')
+
+    const withdrawalEvent = useCommonSelector(s =>
+        selectMatrixRoomMultispendEvent(s, event.roomId, event?.eventId ?? ''),
+    )
+    if (withdrawalEvent && isMultispendWithdrawalEvent(withdrawalEvent)) {
+        const status = getWithdrawalStatus(withdrawalEvent)
+        switch (status) {
+            case 'rejected':
+                text = t(`feature.multispend.chat-events.withdrawal-requested`)
+                subText = t(
+                    'feature.multispend.chat-events.withdrawal-rejected',
+                )
+                break
+            case 'approved':
+            case 'completed':
+                text = t(
+                    'feature.multispend.chat-events.withdrawal-approved-body',
+                )
+                subText = t(
+                    'feature.multispend.chat-events.withdrawal-approved',
+                )
+                break
+            case 'pending':
+            default:
+                text = t(`feature.multispend.chat-events.withdrawal-requested`)
+        }
+    }
+
+    return {
+        heading: t('feature.multispend.chat-events.message-header'),
+        senderName,
+        formattedFiatAmount,
+        text,
+        subText,
     }
 }

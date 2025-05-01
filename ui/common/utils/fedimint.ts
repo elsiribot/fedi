@@ -839,6 +839,7 @@ export class FedimintBridge {
 
     /*** MULTISPEND RPCs ***/
 
+    // Group active/pending_invitation/inactive status
     async matrixObserveMultispendGroup(
         args: bindings.RpcPayload<'matrixObserveMultispendGroup'>,
     ) {
@@ -875,6 +876,7 @@ export class FedimintBridge {
         return this.rpcTyped('matrixCancelMultispendGroupInvitation', args)
     }
 
+    // Active group status (MUST be in federation to use)
     async matrixMultispendAccountInfo(
         args: bindings.RpcPayload<'matrixMultispendAccountInfo'>,
     ) {
@@ -892,6 +894,9 @@ export class FedimintBridge {
     ) {
         return this.rpcTyped('matrixMultispendEventData', args)
     }
+
+    // Matrix observe multispnd group events ()
+    // observe multispend event data
 
     async matrixMultispendDeposit(
         args: bindings.RpcPayload<'matrixMultispendDeposit'>,

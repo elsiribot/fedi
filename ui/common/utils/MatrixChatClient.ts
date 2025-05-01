@@ -257,15 +257,6 @@ export class MatrixChatClient {
                 err,
             })
         })
-        this.observeMultispendGroup(roomId).catch(err => {
-            log.warn('Failed to observe multispend group', { roomId, err })
-        })
-        this.observeMultispendAccountInfo(roomId).catch(err => {
-            log.warn('Failed to observe multispend account info', {
-                roomId,
-                err,
-            })
-        })
         this.observeRoomTimeline(roomId).catch(err => {
             log.warn('Failed to observe room', { roomId, err })
         })
@@ -275,6 +266,28 @@ export class MatrixChatClient {
         this.observeRoomPowerLevels(roomId).catch(err => {
             log.warn('Failed to observe room power levels', { roomId, err })
         })
+        this.observeMultispendGroup(roomId).catch(err => {
+            log.warn('Failed to observe multispend group', { roomId, err })
+        })
+    }
+
+    // MUST be in the federation to use
+    observeMultispendAccount(roomId: string) {
+        this.observeMultispendAccountInfo(roomId).catch(err => {
+            log.warn('Failed to observe multispend account info', {
+                roomId,
+                err,
+            })
+        })
+    }
+
+    unobserveMultispendAccount(roomId: string) {
+        const multispendAccountUnsubscribe =
+            this.multispendAccountUnsubscribeMap[roomId]
+        if (multispendAccountUnsubscribe !== undefined) {
+            multispendAccountUnsubscribe()
+            delete this.multispendAccountUnsubscribeMap[roomId]
+        }
     }
 
     unobserveRoom(roomId: string) {
@@ -289,6 +302,12 @@ export class MatrixChatClient {
         if (paginationStatusUnsubscribe !== undefined) {
             paginationStatusUnsubscribe()
             delete this.roomPaginationStatusUnsubscribeMap[roomId]
+        }
+
+        const multispendUnsubscribe = this.multispendUnsubscribeMap[roomId]
+        if (multispendUnsubscribe !== undefined) {
+            multispendUnsubscribe()
+            delete this.multispendUnsubscribeMap[roomId]
         }
     }
 

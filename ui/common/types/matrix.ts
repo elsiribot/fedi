@@ -1,6 +1,10 @@
-import type { MatrixEventContent } from '../utils/matrix'
+import type {
+    MatrixEventContent,
+    MultispendEventContentType,
+} from '../utils/matrix'
 import type {
     JSONObject,
+    MultispendEvent,
     ObservableVecUpdate,
     RpcMatrixMembership,
     RpcMultispendGroupStatus,
@@ -217,4 +221,26 @@ export type MultispendWithdrawalEvent = Extract<
     { state: 'withdrawal' }
 >
 
+export type MultispendDepositEvent = Extract<
+    MultispendTransactionListEntry,
+    { state: 'deposit' }
+>
+
 export type MultispendFilterOption = 'all' | 'pending' | 'approved' | 'rejected'
+
+// Extracts only the invitation events from the transaction list
+export type MultispendListedInvitationEvent =
+    MultispendTransactionListEntry extends infer T
+        ? T extends { state: 'groupInvitation' }
+            ? T
+            : never
+        : never
+
+export type MultispendEventKind = MultispendEvent['kind']
+
+export type MultispendInvitationEvent = MatrixEvent<
+    MultispendEventContentType<'groupInvitation'>
+>
+export type MultispendInvitationVoteEvent = MatrixEvent<
+    MultispendEventContentType<'groupInvitationVote'>
+>

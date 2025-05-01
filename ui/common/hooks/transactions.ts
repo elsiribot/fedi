@@ -256,7 +256,7 @@ export function useMultispendTxnDisplayUtils(t: TFunction, roomId: RpcRoomId) {
 
     const makeMultispendTxnStatusText = useCallback(
         (txn: MultispendTransactionListEntry) => {
-            if (txn.event === 'invalidEvent') return t('words.unknown')
+            if (txn.state === 'invalid') return t('words.unknown')
             // group should always be finalized at this point
             if (!multispendStatus || multispendStatus.status !== 'finalized')
                 return t('words.unknown')
@@ -286,11 +286,11 @@ export function useMultispendTxnDisplayUtils(t: TFunction, roomId: RpcRoomId) {
 
     const makeMultispendTxnNotesText = useCallback(
         (txn: MultispendTransactionListEntry) => {
-            if (txn.event === 'invalidEvent') return t('words.unknown')
-            if ('depositNotification' in txn.event) {
+            if (txn.state === 'invalid') return t('words.unknown')
+            if (txn.state === 'deposit') {
                 return txn.event.depositNotification.description
             }
-            if ('withdrawalRequest' in txn.event) {
+            if (txn.state === 'withdrawal') {
                 return txn.event.withdrawalRequest.description
             }
             return t('words.unknown')
@@ -300,15 +300,15 @@ export function useMultispendTxnDisplayUtils(t: TFunction, roomId: RpcRoomId) {
 
     const makeMultispendTxnAmountText = useCallback(
         (txn: MultispendTransactionListEntry, includeCurrency = false) => {
-            if (txn.event === 'invalidEvent') {
+            if (txn.state === 'invalid') {
                 return '-'
             }
-            if ('depositNotification' in txn.event) {
+            if (txn.state === 'deposit') {
                 const fiatAmount = txn.event.depositNotification
                     .fiatAmount as UsdCents
                 return `${convertCentsToFormattedFiat(fiatAmount, 'none')}${includeCurrency ? ` ${preferredCurrency || SupportedCurrency.USD}` : ''}`
             }
-            if ('withdrawalRequest' in txn.event) {
+            if (txn.state === 'withdrawal') {
                 const fiatAmount = txn.event.withdrawalRequest.request
                     .transfer_amount as UsdCents
                 return `${convertCentsToFormattedFiat(fiatAmount, 'none')}${includeCurrency ? ` ${preferredCurrency || SupportedCurrency.USD}` : ''}`

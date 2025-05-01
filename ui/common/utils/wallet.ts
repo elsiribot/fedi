@@ -531,7 +531,7 @@ export const makeTxnStatusBadge = (
             badge = 'incoming'
     }
     if (txn.kind === 'multispend') {
-        if (txn.event === 'invalidEvent') return 'failed'
+        if (txn.state === 'invalid') return 'failed'
         if ('depositNotification' in txn.event) {
             badge = 'incoming'
         } else if ('withdrawalRequest' in txn.event) {

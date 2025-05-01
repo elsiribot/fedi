@@ -1,7 +1,8 @@
 import { NativeStackScreenProps } from '@react-navigation/native-stack'
 import { useTranslation } from 'react-i18next'
-import { View } from 'react-native'
+import { ActivityIndicator, View } from 'react-native'
 
+import { useObserveMultispendAccountInfo } from '@fedi/common/hooks/matrix'
 import { useMultispendDisplayUtils } from '@fedi/common/hooks/multispend'
 import { selectMatrixRoomMultispendStatus } from '@fedi/common/redux'
 
@@ -18,6 +19,9 @@ export type Props = NativeStackScreenProps<
 
 const GroupMultispend: React.FC<Props> = ({ route }: Props) => {
     const { roomId } = route.params
+
+    useObserveMultispendAccountInfo(roomId)
+
     const multispendStatus = useAppSelector(s =>
         selectMatrixRoomMultispendStatus(s, roomId),
     )
@@ -29,6 +33,16 @@ const GroupMultispend: React.FC<Props> = ({ route }: Props) => {
 
     return (
         <View style={{ flex: 1 }}>
+            {!multispendStatus && (
+                <View
+                    style={{
+                        flex: 1,
+                        justifyContent: 'center',
+                        alignItems: 'center',
+                    }}>
+                    <ActivityIndicator size="large" />
+                </View>
+            )}
             {shouldShowHeader && <MultispendWalletHeader roomId={roomId} />}
             {multispendStatus.status === 'activeInvitation' && (
                 <MultispendActiveInvitation roomId={roomId} />

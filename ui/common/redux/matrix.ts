@@ -67,6 +67,7 @@ import { makeLog } from '../utils/log'
 import {
     MatrixEventContentType,
     coerceMultispendTxn,
+    filterMultispendEvents,
     consolidatePaymentEvents,
     doesEventContentMatchPreviewMedia,
     getMultispendInvite,
@@ -74,11 +75,14 @@ import {
     getReceivablePaymentEvents,
     getRoomEventPowerLevel,
     getUserSuffix,
+    isMultispendInvitation,
+    isMultispendWithdrawalEvent,
     isPaymentEvent,
     makeChatFromPreview,
     matrixIdToUsername,
     mxcUrlToHttpUrl,
     shouldShowUnreadIndicator,
+    isMultispendFinancialTransaction,
 } from '../utils/matrix'
 import { applyObservableUpdates } from '../utils/observable'
 import { isBolt11 } from '../utils/parser'
@@ -129,6 +133,12 @@ const initialState = {
         MatrixRoom['id'],
         { Ok: RpcSPv2SyncResponse } | { Err: NetworkError } | undefined
     >,
+    // TODO: change this to something like `roomMultispendEventStates`
+    // and remove the `counter` and `time` fields. Since we're using this
+    // for multiple things (txn list, withdraw screen, chat), the type of this
+    // should be the union of all possible event types.
+    //
+    // e.g. type MultispendEvent = MultispendTransaction | MultispendInvitationEvent
     roomMultispendTransactions: {} as Record<
         MatrixRoom['id'],
         MultispendTransactionListEntry[] | undefined
@@ -355,18 +365,28 @@ export const matrixSlice = createSlice({
             const existingRoomEvents =
                 state.roomMultispendTransactions[action.payload.roomId]
 
-            if (!existingRoomEvents) return
-
-            state.roomMultispendTransactions[action.payload.roomId] =
-                existingRoomEvents.map(evt =>
-                    evt.id === action.payload.eventId
-                        ? coerceMultispendTxn({
-                              ...evt,
-                              event: action.payload.update,
-                              eventId: action.payload.eventId,
-                          })
-                        : evt,
-                )
+            if (!existingRoomEvents) {
+                state.roomMultispendTransactions[action.payload.roomId] = [
+                    coerceMultispendTxn({
+                        eventId: action.payload.eventId,
+                        event: action.payload.update,
+                        // TODO: Remove this once we change the type of roomMultispendTransactions
+                        counter: 0,
+                        time: 0,
+                    }),
+                ]
+            } else {
+                state.roomMultispendTransactions[action.payload.roomId] =
+                    existingRoomEvents.map(evt =>
+                        evt.id === action.payload.eventId
+                            ? coerceMultispendTxn({
+                                  ...evt,
+                                  event: action.payload.update,
+                                  eventId: action.payload.eventId,
+                              })
+                            : evt,
+                    )
+            }
         },
         addMatrixError(state, action: PayloadAction<MatrixError>) {
             state.errors = [...state.errors, action.payload]
@@ -886,6 +906,22 @@ export const unobserveMatrixRoom = createAsyncThunk<
     return client.unobserveRoom(roomId)
 })
 
+export const observeMultispendAccountInfo = createAsyncThunk<
+    void,
+    { roomId: MatrixRoom['id'] }
+>('matrix/observeMultispendRoomDetails', async ({ roomId }) => {
+    const client = getMatrixClient()
+    return client.observeMultispendAccount(roomId)
+})
+
+export const unobserveMultispendAccountInfo = createAsyncThunk<
+    void,
+    { roomId: MatrixRoom['id'] }
+>('matrix/unobserveMultispendRoomDetails', async ({ roomId }) => {
+    const client = getMatrixClient()
+    return client.unobserveMultispendAccount(roomId)
+})
+
 export const inviteUserToMatrixRoom = createAsyncThunk<
     void,
     { roomId: MatrixRoom['id']; userId: MatrixUser['id'] }
@@ -1360,7 +1396,10 @@ export const fetchMultispendTransactions = createAsyncThunk<
         const state = getState()
         const client = getMatrixClient()
         if (refresh) {
-            const txns = selectMatrixRoomMultispendTransactions(state, roomId)
+            const txns = selectRoomMultispendFinancialTransactions(
+                state,
+                roomId,
+            )
             // when refreshing:
             // - always use startAfter: null for fresh results. use { more: true } for pagination
             // - limit should be at least 100 or the # of fetched txns (if we have already paginated)
@@ -1774,7 +1813,9 @@ export const selectMatrixRoomEvents = createSelector(
             return item !== null
         })
 
-        const events = consolidatePaymentEvents(allEvents)
+        const filteredEvents = filterMultispendEvents(allEvents)
+
+        const events = consolidatePaymentEvents(filteredEvents)
 
         return events
     },
@@ -2056,8 +2097,15 @@ export const selectMatrixRoomMultispendTransactions = (
     return s.matrix.roomMultispendTransactions[roomId] || []
 }
 
-export const selectLatestMultispendTxnInRoom = createSelector(
+export const selectRoomMultispendFinancialTransactions = createSelector(
     selectMatrixRoomMultispendTransactions,
+    transactions => {
+        return transactions.filter(isMultispendFinancialTransaction)
+    },
+)
+
+export const selectLatestMultispendTxnInRoom = createSelector(
+    selectRoomMultispendFinancialTransactions,
     transactions => {
         // unintuitively, the latest txn is the one with the lowest counter
         const latestTxn = transactions.reduce((latest, current) => {
@@ -2105,4 +2153,35 @@ export const selectMultispendBalanceSats = createSelector(
         const balanceDollars = balanceCents / 100
         return amountUtils.fiatToSat(balanceDollars, btcUsdExchangeRate)
     },
+)
+
+export const selectMatrixRoomMultispendWithdrawalRequests = createSelector(
+    selectRoomMultispendFinancialTransactions,
+    events => {
+        return events.filter(isMultispendWithdrawalEvent)
+    },
+)
+
+export const selectMatrixRoomMultispendEvent = (
+    s: CommonState,
+    roomId: string,
+    eventId: string,
+) => {
+    if (!s.matrix.roomMultispendTransactions[roomId]) return null
+    return (
+        s.matrix.roomMultispendTransactions[roomId].find(
+            e => e.id === eventId,
+        ) ?? null
+    )
+}
+
+export const selectMultispendInvitationEvents = createSelector(
+    selectMatrixRoomMultispendTransactions,
+    events => events.filter(isMultispendInvitation),
+)
+
+export const selectMultispendInvitationEvent = createSelector(
+    selectMultispendInvitationEvents,
+    (_: CommonState, _roomId: string, eventId: string) => eventId,
+    (events, eventId) => events.find(e => e.id === eventId) ?? undefined,
 )

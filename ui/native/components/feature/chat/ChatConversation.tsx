@@ -29,6 +29,7 @@ import { ChatType, MatrixEvent, MatrixEventStatus } from '@fedi/common/types'
 import {
     MatrixEventContent,
     isImageEvent,
+    isMultispendEvent,
     isVideoEvent,
     makeMatrixEventGroups,
 } from '@fedi/common/utils/matrix'
@@ -184,7 +185,12 @@ const ChatConversation: React.FC<MessagesListProps> = ({
                     key={item[0].at(-1)?.eventId}
                     roomId={id}
                     collection={item}
-                    showUsernames={type === ChatType.group}
+                    showUsernames={
+                        type === ChatType.group &&
+                        // TODO: Separate multispend events into their own collection
+                        // This is causing some normal messages to not show usernames
+                        item.every(e => e.every(ev => !isMultispendEvent(ev)))
+                    }
                     onSelect={setSelectedUserId}
                     isPublic={isPublic}
                 />

@@ -28,6 +28,8 @@ import {
     selectMatrixContactsList,
     observeMultispendEvent,
     unobserveMultispendEvent,
+    observeMultispendAccountInfo,
+    unobserveMultispendAccountInfo,
 } from '../redux'
 import {
     MatrixPaymentEvent,
@@ -226,6 +228,17 @@ type PaymentThunkAction = ReturnType<
     | typeof acceptMatrixPaymentRequest
     | typeof rejectMatrixPaymentRequest
 >
+
+// MUST be in the federation to use
+export function useObserveMultispendAccountInfo(roomId: MatrixRoom['id']) {
+    const dispatch = useCommonDispatch()
+    useEffect(() => {
+        dispatch(observeMultispendAccountInfo({ roomId }))
+        return () => {
+            dispatch(unobserveMultispendAccountInfo({ roomId }))
+        }
+    }, [dispatch, roomId])
+}
 
 /**
  * Given a MatrixPaymentEvent, returns all the information necessary for

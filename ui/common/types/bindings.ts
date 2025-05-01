@@ -185,7 +185,7 @@ export type FrontendMetadata = {
 
 export type GroupInvitation = {
   signers: Array<RpcUserId>;
-  threshold: bigint;
+  threshold: number;
   federationInviteCode: string;
   federationName: string;
 };

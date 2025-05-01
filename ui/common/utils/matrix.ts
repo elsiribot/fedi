@@ -18,15 +18,22 @@ import {
     MatrixRoomPowerLevels,
     MatrixTimelineItem,
     MatrixUser,
+    MultispendDepositEvent,
+    MultispendFinalized,
+    MultispendListedInvitationEvent,
     MultispendRole,
     MultispendTransactionListEntry,
+    MultispendWithdrawalEvent,
 } from '../types'
 import {
+    WithdrawalResponseType,
     GroupInvitation,
-    MultispendListedEvent,
+    MultispendGroupVoteType,
+    MultispendEvent,
     RpcMultispendGroupStatus,
     RpcTimelineEventItemId,
     RpcUserId,
+    MultispendListedEvent,
 } from '../types/bindings'
 import { makeLog } from './log'
 
@@ -94,7 +101,100 @@ export const consolidatePaymentEvents = (events: MatrixEvent[]) => {
     return consolidatedEvents
 }
 
+/**
+ * Filter out multispend events that aren't the initial group invitation
+ * or initial withdrawal request. Events for invitation approvals, cancellations,
+ * and withdrawal responses are not rendered since the status of the invite or
+ * withdrawal is tracked by observing the initial event.
+ */
+export const filterMultispendEvents = (events: MatrixEvent[]) => {
+    return events.filter(
+        event =>
+            !isMultispendInvitationCancelEvent(event) &&
+            !isMultispendWithdrawalResponseEvent(event) &&
+            !isMultispendInvitationVoteEvent(event),
+    )
+}
+
 export type MatrixEncryptedFile = z.infer<typeof encryptedFileSchema>
+
+const groupInvitationSchema = z.object({
+    federationInviteCode: z.string(),
+    federationName: z.string(),
+    signers: z.array(z.string()),
+    threshold: z.number(),
+}) satisfies z.ZodType<GroupInvitation>
+
+const multispendGroupVoteTypeSchema = z.union([
+    z.object({
+        kind: z.literal('accept'),
+        memberPubkey: z.string(),
+    }),
+    z.object({
+        kind: z.literal('reject'),
+    }),
+]) satisfies z.ZodType<MultispendGroupVoteType>
+
+const withdrawalResponseTypeSchema = z.union([
+    z.object({
+        kind: z.literal('approve'),
+        signature: z.string(),
+    }),
+    z.object({
+        kind: z.literal('reject'),
+    }),
+    z.object({
+        kind: z.literal('complete'),
+        fiatAmount: z.number(),
+        txid: z.string(),
+    }),
+]) satisfies z.ZodType<WithdrawalResponseType>
+
+const multispendEventSchemas = {
+    groupInvitation: z.object({
+        kind: z.literal('groupInvitation'),
+        invitation: groupInvitationSchema,
+        proposerPubkey: z.string(),
+    }) satisfies z.ZodType<
+        Extract<MultispendEvent, { kind: 'groupInvitation' }>
+    >,
+    groupInvitationVote: z.object({
+        kind: z.literal('groupInvitationVote'),
+        invitation: z.string(),
+        vote: multispendGroupVoteTypeSchema,
+    }) satisfies z.ZodType<
+        Extract<MultispendEvent, { kind: 'groupInvitationVote' }>
+    >,
+    groupInvitationCancel: z.object({
+        kind: z.literal('groupInvitationCancel'),
+        invitation: z.string(),
+    }) satisfies z.ZodType<
+        Extract<MultispendEvent, { kind: 'groupInvitationCancel' }>
+    >,
+    depositNotification: z.object({
+        kind: z.literal('depositNotification'),
+        fiatAmount: z.number(),
+        txid: z.string(),
+        description: z.string(),
+    }) satisfies z.ZodType<
+        Extract<MultispendEvent, { kind: 'depositNotification' }>
+    >,
+    withdrawalRequest: z.object({
+        kind: z.literal('withdrawalRequest'),
+        // TODO: get a better type from the bridge for this
+        request: z.object({ transfer_amount: z.number() }),
+        description: z.string(),
+    }) satisfies z.ZodType<
+        Extract<MultispendEvent, { kind: 'withdrawalRequest' }>
+    >,
+    withdrawalResponse: z.object({
+        kind: z.literal('withdrawalResponse'),
+        request: z.string(),
+        response: withdrawalResponseTypeSchema,
+    }) satisfies z.ZodType<
+        Extract<MultispendEvent, { kind: 'withdrawalResponse' }>
+    >,
+}
 
 const contentSchemas = {
     /* Matrix standard events, not an exhaustive list */
@@ -233,6 +333,23 @@ const contentSchemas = {
             uri: z.string(),
         }),
     }),
+    'xyz.fedi.multispend': z
+        .object({
+            msgtype: z.literal('xyz.fedi.multispend'),
+            body: z.string(),
+        })
+        .and(
+            // for each multispend event kind, it will reference the corresponding
+            // type in the multispendEventSchemas object
+            z.discriminatedUnion('kind', [
+                multispendEventSchemas.groupInvitation,
+                multispendEventSchemas.groupInvitationVote,
+                multispendEventSchemas.groupInvitationCancel,
+                multispendEventSchemas.depositNotification,
+                multispendEventSchemas.withdrawalRequest,
+                multispendEventSchemas.withdrawalResponse,
+            ]),
+        ),
 }
 
 type MatrixEventUnknownContent = {
@@ -240,6 +357,12 @@ type MatrixEventUnknownContent = {
     body: string
     originalContent: MatrixEventContent
 }
+
+export type MultispendMatrixEvent =
+    MatrixEventContentType<'xyz.fedi.multispend'>
+
+export type MultispendEventContentType<T extends MultispendEvent['kind']> =
+    Extract<MultispendMatrixEvent, { kind: T }>
 
 export type MatrixEventContentType<T extends keyof typeof contentSchemas> =
     z.infer<(typeof contentSchemas)[T]>
@@ -639,6 +762,66 @@ export function isPollEvent(
     return event.content.msgtype === 'm.poll'
 }
 
+export function isMultispendEvent(
+    event: MatrixEvent,
+): event is MatrixEvent<MatrixEventContentType<'xyz.fedi.multispend'>> {
+    return event.content.msgtype === 'xyz.fedi.multispend'
+}
+
+export function isMultispendWithdrawalResponseEvent(
+    event: MatrixEvent,
+): event is MatrixEvent<MultispendEventContentType<'withdrawalResponse'>> {
+    return (
+        event.content.msgtype === 'xyz.fedi.multispend' &&
+        event.content.kind === 'withdrawalResponse'
+    )
+}
+
+export function isMultispendWithdrawalRequestEvent(
+    event: MatrixEvent,
+): event is MatrixEvent<MultispendEventContentType<'withdrawalRequest'>> {
+    return (
+        event.content.msgtype === 'xyz.fedi.multispend' &&
+        event.content.kind === 'withdrawalRequest'
+    )
+}
+
+export function isMultispendDepositEvent(
+    event: MatrixEvent,
+): event is MatrixEvent<MultispendEventContentType<'depositNotification'>> {
+    return (
+        event.content.msgtype === 'xyz.fedi.multispend' &&
+        event.content.kind === 'depositNotification'
+    )
+}
+
+export function isMultispendInvitationEvent(
+    event: MatrixEvent,
+): event is MatrixEvent<MultispendEventContentType<'groupInvitation'>> {
+    return (
+        event.content.msgtype === 'xyz.fedi.multispend' &&
+        event.content.kind === 'groupInvitation'
+    )
+}
+
+export function isMultispendInvitationVoteEvent(
+    event: MatrixEvent,
+): event is MatrixEvent<MultispendEventContentType<'groupInvitationVote'>> {
+    return (
+        event.content.msgtype === 'xyz.fedi.multispend' &&
+        event.content.kind === 'groupInvitationVote'
+    )
+}
+
+export function isMultispendInvitationCancelEvent(
+    event: MatrixEvent,
+): event is MatrixEvent<MultispendEventContentType<'groupInvitationCancel'>> {
+    return (
+        event.content.msgtype === 'xyz.fedi.multispend' &&
+        event.content.kind === 'groupInvitationCancel'
+    )
+}
+
 /**
  * Checks to see if a chat video/image event's content matches the `media` argument
  */
@@ -772,6 +955,12 @@ export const coerceMultispendTxn = (
             state: 'withdrawal' as const,
             event: { withdrawalRequest: txn.event.withdrawalRequest },
         }
+    } else if ('groupInvitation' in txn.event) {
+        return {
+            ...coerced,
+            state: 'groupInvitation' as const,
+            event: { groupInvitation: txn.event.groupInvitation },
+        }
     } else {
         return {
             ...coerced,
@@ -782,4 +971,63 @@ export const coerceMultispendTxn = (
 
 export const makeNameWithSuffix = (user: MatrixUser) => {
     return `${user.displayName} ${getUserSuffix(user.id)}`
+}
+
+export function isMultispendFinancialTransaction(
+    event: MultispendTransactionListEntry,
+): event is MultispendWithdrawalEvent | MultispendDepositEvent {
+    return event.state === 'withdrawal' || event.state === 'deposit'
+}
+
+export function isMultispendWithdrawalEvent(
+    event: MultispendTransactionListEntry,
+): event is MultispendWithdrawalEvent {
+    return (
+        'event' in event &&
+        typeof event.event === 'object' &&
+        'withdrawalRequest' in event.event
+    )
+}
+
+// References type from the listEvents rpc. NOT matrix events.
+// Use this when handling responses from the `observeMultispendEvent` stream.
+export function isMultispendInvitation(
+    event: MultispendTransactionListEntry,
+): event is MultispendListedInvitationEvent {
+    return (
+        'event' in event &&
+        typeof event.event === 'object' &&
+        'groupInvitation' in event.event
+    )
+}
+
+export function getMultispendWithdrawalStatus(
+    event: MultispendWithdrawalEvent,
+    multispendStatus: MultispendFinalized,
+) {
+    if (event.event.withdrawalRequest.completed) return 'completed'
+
+    const voterCount = Object.keys(
+        multispendStatus.finalized_group.pubkeys,
+    ).length
+    const voteCount = Object.keys(
+        event.event.withdrawalRequest.signatures,
+    ).length
+    const rejectionCount = event.event.withdrawalRequest.rejections.length
+    const threshold = multispendStatus.finalized_group.invitation.threshold
+
+    if (voteCount >= threshold) return 'approved'
+    if (voterCount - rejectionCount < threshold) return 'rejected'
+
+    return 'pending'
+}
+
+export function getHasUserVotedForWithdrawal(
+    event: MultispendWithdrawalEvent,
+    userId: string,
+) {
+    const rejections = event.event.withdrawalRequest.rejections
+    const signatures = event.event.withdrawalRequest.signatures
+
+    return Boolean(rejections.includes(userId) || signatures[userId])
 }

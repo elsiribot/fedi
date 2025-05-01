@@ -38,6 +38,7 @@ pub const MULTISPEND_MSGTYPE: &str = "xyz.fedi.multispend";
 #[ts(export)]
 pub struct GroupInvitation {
     pub signers: BTreeSet<RpcUserId>,
+    #[ts(type = "number")]
     pub threshold: u64,
     pub federation_invite_code: String,
     pub federation_name: String,
