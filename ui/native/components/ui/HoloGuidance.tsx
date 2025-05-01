@@ -114,10 +114,6 @@ const styles = (theme: Theme) =>
             height: theme.sizes.lg,
             width: theme.sizes.lg,
         },
-        continueButton: {
-            width: '100%',
-            marginVertical: theme.spacing.md,
-        },
     })
 
 export default HoloGuidance

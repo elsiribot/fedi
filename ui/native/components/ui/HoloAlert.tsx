@@ -58,7 +58,6 @@ const styles = (theme: Theme) =>
         alertText: {
             color: theme.colors.darkGrey,
         },
-
         fullWidth: {
             width: '100%',
         },

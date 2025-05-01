@@ -25,7 +25,7 @@ const HoloCard: React.FC<HoloCardProps> = ({
             source={Images.HoloBackground}
             style={style.container}
             imageStyle={style.roundedBorder}>
-            <Flex align="center" style={style.innerContainer}>
+            <Flex align="center" fullWidth style={style.innerContainer}>
                 {iconImage}
 
                 {title && (
@@ -51,7 +51,6 @@ const styles = (theme: Theme) =>
             width: theme.sizes.sm,
         },
         innerContainer: {
-            width: '100%',
             padding: theme.spacing.xl,
         },
         roundedBorder: {

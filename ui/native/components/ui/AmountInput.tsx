@@ -153,7 +153,7 @@ const AmountInput: React.FC<Props> = ({
         : `${fiatValue} ${currency}`
 
     return (
-        <Flex grow align="center" style={style.container}>
+        <Flex grow align="center" fullWidth>
             <Flex center gap="sm" style={style.amounts}>
                 <Pressable
                     style={style.primaryAmount}
@@ -192,7 +192,7 @@ const AmountInput: React.FC<Props> = ({
                         )}
                     </Pressable>
                 )}
-                <Flex center style={style.errorContainer}>
+                <Flex center fullWidth>
                     {customError ? (
                         <Text style={style.error} caption>
                             {customError}
@@ -202,7 +202,7 @@ const AmountInput: React.FC<Props> = ({
                     )}
                 </Flex>
                 {content && (
-                    <Flex align="center" style={style.contentContainer}>
+                    <Flex align="center" fullWidth>
                         {content}
                     </Flex>
                 )}
@@ -217,7 +217,7 @@ const AmountInput: React.FC<Props> = ({
                 )}
             </Flex>
             {hasNumpad && (
-                <Flex row wrap style={style.numpad}>
+                <Flex row wrap fullWidth style={style.numpad}>
                     {numpadButtons.map(btn => (
                         <NumpadButton
                             key={btn}
@@ -240,14 +240,10 @@ const AmountInput: React.FC<Props> = ({
 
 const styles = (theme: Theme, width: number) =>
     StyleSheet.create({
-        container: {
-            width: '100%',
-        },
         amounts: {
             paddingHorizontal: theme.spacing.lg,
         },
         errorContainer: {
-            width: '100%',
             maxHeight: 60,
             paddingHorizontal: theme.spacing.lg,
         },
@@ -276,14 +272,10 @@ const styles = (theme: Theme, width: number) =>
             textDecorationLine: 'underline',
         },
         numpad: {
-            width: '100%',
             maxWidth: Math.min(400, width),
             paddingHorizontal: theme.spacing.lg,
         },
         notesContainer: {
-            width: '100%',
-        },
-        contentContainer: {
             width: '100%',
         },
     })

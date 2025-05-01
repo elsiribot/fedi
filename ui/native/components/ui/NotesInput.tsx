@@ -39,6 +39,7 @@ export default function NotesInput({
                     align="stretch"
                     justify="center"
                     gap="xs"
+                    fullWidth
                     style={style.content}>
                     <Flex row grow align="center" justify="between">
                         <Text small bold color={theme.colors.night}>
@@ -85,7 +86,6 @@ const styles = (theme: Theme) =>
             alignSelf: 'stretch',
         },
         content: {
-            width: '100%',
             paddingHorizontal: theme.spacing.xs,
         },
         rightContainer: {

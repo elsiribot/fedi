@@ -107,7 +107,7 @@ export const BubbleCard = ({
     return (
         <BubbleView containerStyle={[style.wrapper, containerStyle]}>
             <LinearGradient {...gradientProps} style={style.gradient}>
-                <Flex gap="md" style={[style.wrapper, style.card]}>
+                <Flex gap="md" fullWidth style={[style.wrapper, style.card]}>
                     {children}
                 </Flex>
             </LinearGradient>
@@ -125,7 +125,6 @@ const styles = (theme: Theme, width: number) =>
         },
         card: {
             padding: theme.spacing.lg,
-            width: '100%',
             overflow: 'hidden',
         },
         container: {

@@ -1,6 +1,6 @@
 import { Text, Theme, useTheme } from '@rneui/themed'
 import React from 'react'
-import { StyleSheet, View } from 'react-native'
+import { StyleSheet } from 'react-native'
 
 import Flex from './Flex'
 import QRCodeContainer from './QRCodeContainer'
@@ -44,12 +44,8 @@ const QRScreen: React.FC<Props> = ({
             justify="between"
             gap="lg"
             style={style.container}>
-            <Flex
-                align="center"
-                justify="end"
-                gap="sm"
-                style={style.topContainer}>
-                <Flex row center gap="sm" style={style.titleContainer}>
+            <Flex align="center" justify="end" gap="sm" fullWidth>
+                <Flex row center gap="sm" fullWidth>
                     {title && (
                         <Text
                             h2
@@ -80,7 +76,7 @@ const QRScreen: React.FC<Props> = ({
                 qrValue={qrValue}
             />
 
-            <View style={style.bottomContainer}>{bottom}</View>
+            <Flex fullWidth>{bottom}</Flex>
         </Flex>
     )
 }
@@ -91,17 +87,11 @@ const styles = (theme: Theme, dark?: boolean) =>
             padding: theme.spacing.xl,
             backgroundColor: dark ? theme.colors.primary : undefined,
         },
-        topContainer: {
-            width: '100%',
-        },
-        titleContainer: {
-            textAlign: 'center',
-            width: '100%',
-        },
         title: {
             textAlign: 'center',
         },
         titleSuffix: {
+            textAlign: 'center',
             color: theme.colors.grey,
         },
         subtitle: {
