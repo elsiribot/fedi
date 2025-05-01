@@ -250,7 +250,7 @@
         "please-force-quit-the-app": "Terjadi kesalahan, silakan tutup aplikasi dan coba lagi",
         "please-grant-permission": "Berikan izin untuk mengunduh file ini",
         "please-join-a-federation": "Silakan bergabung dengan komunitas sebelum melakukan pembayaran melalui chat",
-        "please-join-wallet-community": "Silakan bergabung dengan dompet komunitas sebelum melakukan pembayaran",
+        "please-join-wallet-federation": "Silakan bergabung dengan dompet komunitas sebelum melakukan pembayaran",
         "please-select-balance-federation": "Silakan pilih komunitas dengan saldo yang tersedia untuk melakukan pembayaran.",
         "receive-ecash-failed": "Gagal menerima e-cash",
         "receive-ecash-failed-claimed": "Gagal menerima e-cash. Ini sudah diklaim sebelumnya",

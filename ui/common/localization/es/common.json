@@ -250,7 +250,7 @@
         "please-force-quit-the-app": "Se ha producido un error. Cierra la aplicación y vuelve a intentarlo",
         "please-grant-permission": "Concede permiso para descargar este archivo",
         "please-join-a-federation": "Por favor, únete a una federación antes de realizar pagos por chat",
-        "please-join-wallet-community": "Por favor, únete a una wallet de comunidad antes de realizar pagos",
+        "please-join-wallet-federation": "Por favor, únete a una wallet de comunidad antes de realizar pagos",
         "please-select-balance-federation": "Por favor selecciona una federación con balance suficiente para el pago",
         "receive-ecash-failed": "No se pudo recibir eCash",
         "receive-ecash-failed-claimed": "No se pudo recibir. Este eCash ya ha sido redimido.",

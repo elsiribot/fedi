@@ -250,7 +250,7 @@
         "please-force-quit-the-app": "Une erreur s'est produite, veuillez forcer la fermeture de l'application et réessayer",
         "please-grant-permission": "Veuillez accorder l’autorisation de télécharger ce fichier",
         "please-join-a-federation": "Veuillez rejoindre une fédération avant d'effectuer des paiements par chat",
-        "please-join-wallet-community": "Veuillez rejoindre une communauté de portefeuille avant d’effectuer des paiements.",
+        "please-join-wallet-federation": "Veuillez rejoindre une communauté de portefeuille avant d’effectuer des paiements.",
         "please-select-balance-federation": "Veuillez sélectionner une fédération avec un solde pour effectuer le paiement.",
         "receive-ecash-failed": "Échec de réception d'eCash",
         "receive-ecash-failed-claimed": "Échec de la réception de l’eCash. Celui-ci a déjà été réclamé.",
