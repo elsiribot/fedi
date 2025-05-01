@@ -71,7 +71,7 @@ const BitcoinWalletPlaceholder: React.FC = () => {
                 </View>
                 <View style={stylesPlaceholder.buttonsContainer}>
                     <Text style={stylesPlaceholder.buttonLabel}>
-                        {t('feature.wallet.join-community')}
+                        {t('feature.wallet.join-federation')}
                     </Text>
                 </View>
             </BubbleCard>

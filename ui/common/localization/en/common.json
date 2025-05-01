@@ -1078,8 +1078,8 @@
             "zendesk-initialization-failed": "We couldn't reach the support chat. Please check your internet connection and try again."
         },
         "wallet": {
-            "join-community": "Join a federation to activate your wallet",
-            "network-notice": "This community uses {{network}} SATS",
+            "join-federation": "Join a federation to activate your wallet",
+            "network-notice": "This federation uses {{network}} SATS",
             "show-fiat-txn-amounts": "Show Fiat Transaction Amounts",
             "show-fiat-txn-amounts-info": "Transaction amounts will be displayed in the selected fiat currency"
         }
