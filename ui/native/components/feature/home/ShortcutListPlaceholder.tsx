@@ -57,10 +57,10 @@ const ShortcutsListPlaceholder: React.FC = () => {
 
     return (
         <View style={styles(theme).container}>
-            <Text medium style={styles(theme).sectionTitle}>
+            <Text style={styles(theme).sectionTitle}>
                 {t('feature.home.federation-mods-title')}
             </Text>
-            <Text h4 medium h4Style={styles(theme).servicesSelected}>
+            <Text style={styles(theme).servicesSelected}>
                 {t('feature.home.federation-services-selected')}
             </Text>
 

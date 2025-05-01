@@ -91,9 +91,6 @@ const Splash: React.FC<Props> = ({ navigation }: Props) => {
                     <View style={style.iconContainer}>
                         <SvgImage size={SvgImageSize.lg} name="FediLogoIcon" />
                     </View>
-                    <Text h2 medium style={style.welcomeText}>
-                        {t('feature.onboarding.welcome-to-fedi')}
-                    </Text>
                     <Text style={style.welcomeText}>
                         {t('feature.onboarding.chat-earn-save-spend')}
                     </Text>

@@ -71,7 +71,7 @@ const CommunityChats = () => {
 
     return (
         <View style={style.container}>
-            <Text medium style={style.sectionTitle}>
+            <Text style={style.sectionTitle}>
                 {!hasWallet
                     ? t('feature.chat.community-news')
                     : t('feature.chat.federation-news')}
@@ -93,6 +93,17 @@ const styles = (theme: Theme) =>
         sectionTitle: {
             color: theme.colors.night,
             letterSpacing: -0.16,
+            fontSize: 20,
+            marginBottom: 4,
+        },
+        servicesSelected: {
+            fontFamily: 'Albert Sans',
+            fontWeight: '400',
+            fontSize: 14,
+            lineHeight: 18,
+            color: theme.colors.darkGrey,
+            letterSpacing: -0.14,
+            marginBottom: 12,
         },
     })
 

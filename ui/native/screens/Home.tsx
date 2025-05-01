@@ -105,13 +105,13 @@ const Home: React.FC<Props> = ({ offline }) => {
                     </View>
 
                     <View style={style.section}>
-                        <ErrorBoundary fallback={null}>
-                            <ShortcutsList />
-                        </ErrorBoundary>
+                        <CommunityChats />
                     </View>
 
                     <View style={style.section}>
-                        <CommunityChats />
+                        <ErrorBoundary fallback={null}>
+                            <ShortcutsList />
+                        </ErrorBoundary>
                     </View>
                 </View>
             </ScrollView>
