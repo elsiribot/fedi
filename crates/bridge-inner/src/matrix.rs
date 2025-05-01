@@ -1,3 +1,4 @@
+use std::collections::BTreeSet;
 use std::future::pending;
 use std::path::{Path, PathBuf};
 use std::pin::pin;
@@ -912,6 +913,41 @@ impl Matrix {
             .inner_room()
             .invite_user_by_id(user_id)
             .await?;
+        match self.get_multispend_group_status(room_id).await {
+            RpcMultispendGroupStatus::Finalized {
+                invite_event_id,
+                finalized_group,
+            } => {
+                self.send_multispend_event(
+                    room_id,
+                    MultispendEvent::GroupReannounce {
+                        invitation_id: invite_event_id,
+                        invitation: finalized_group.invitation,
+                        proposer: finalized_group.proposer,
+                        pubkeys: finalized_group.pubkeys,
+                        rejections: BTreeSet::new(),
+                    },
+                )
+                .await?;
+            }
+            RpcMultispendGroupStatus::ActiveInvitation {
+                active_invite_id,
+                state,
+            } => {
+                self.send_multispend_event(
+                    room_id,
+                    MultispendEvent::GroupReannounce {
+                        invitation_id: active_invite_id,
+                        invitation: state.invitation,
+                        proposer: state.proposer,
+                        pubkeys: state.pubkeys,
+                        rejections: state.rejections,
+                    },
+                )
+                .await?;
+            }
+            RpcMultispendGroupStatus::Inactive => (),
+        }
         Ok(())
     }
 

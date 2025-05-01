@@ -97,6 +97,15 @@ pub enum MultispendEvent {
         invitation: RpcEventId,
     },
 
+    /// Reannouncement of group to newly invite members.
+    GroupReannounce {
+        invitation_id: RpcEventId,
+        invitation: GroupInvitation,
+        proposer: RpcUserId,
+        pubkeys: BTreeMap<RpcUserId, RpcPublicKey>,
+        rejections: BTreeSet<RpcUserId>,
+    },
+
     DepositNotification {
         fiat_amount: RpcFiatAmount,
         txid: RpcTransactionId,
@@ -170,7 +179,7 @@ impl GroupInvitationWithKeys {
         &mut self,
         sender: RpcUserId,
         vote: MultispendGroupVoteType,
-    ) -> Result<Option<FinalizedGroup>, ProcessEventError> {
+    ) -> Result<(), ProcessEventError> {
         if !self.invitation.signers.contains(&sender)
             || self.pubkeys.contains_key(&sender)
             || self.rejections.contains(&sender)
@@ -181,30 +190,33 @@ impl GroupInvitationWithKeys {
         match vote {
             MultispendGroupVoteType::Accept { member_pubkey } => {
                 self.pubkeys.insert(sender, member_pubkey);
-                if self.pubkeys.len() == self.invitation.signers.len() {
-                    let account = AccountUnchecked {
-                        acc_type: AccountType::Seeker,
-                        pub_keys: self.pubkeys.values().cloned().map(|pk| pk.0).collect(),
-                        threshold: self.invitation.threshold,
-                    };
-
-                    if let Ok(spv2_account) = account.try_into() {
-                        return Ok(Some(FinalizedGroup {
-                            proposer: self.proposer.clone(),
-                            invitation: self.invitation.clone(),
-                            pubkeys: self.pubkeys.clone(),
-                            spv2_account,
-                            federation_id: self.federation_id.clone(),
-                        }));
-                    }
-                }
             }
             MultispendGroupVoteType::Reject => {
                 self.rejections.insert(sender);
             }
         }
+        Ok(())
+    }
 
-        Ok(None)
+    pub fn to_finalized(&self) -> Option<FinalizedGroup> {
+        if self.pubkeys.len() == self.invitation.signers.len() {
+            let account = AccountUnchecked {
+                acc_type: AccountType::Seeker,
+                pub_keys: self.pubkeys.values().cloned().map(|pk| pk.0).collect(),
+                threshold: self.invitation.threshold,
+            };
+
+            if let Ok(spv2_account) = account.try_into() {
+                return Some(FinalizedGroup {
+                    proposer: self.proposer.clone(),
+                    invitation: self.invitation.clone(),
+                    pubkeys: self.pubkeys.clone(),
+                    spv2_account,
+                    federation_id: self.federation_id.clone(),
+                });
+            }
+        }
+        None
     }
 }
 
@@ -421,6 +433,51 @@ pub async fn process_event_db_raw(
             .await;
         }
 
+        MultispendEvent::GroupReannounce {
+            invitation_id,
+            invitation,
+            proposer,
+            pubkeys,
+            rejections,
+        } => {
+            let status_key = MultispendGroupStatusKey(room_id.clone());
+            let invitation_key = MultispendInvitationKey(room_id.clone(), invitation_id.clone());
+            // only processed if you have no state
+            if dbtx.get_value(&status_key).await.is_some()
+                || dbtx.get_value(&invitation_key).await.is_some()
+            {
+                return Ok(());
+            }
+            let invite_code = InviteCode::from_str(&invitation.federation_invite_code)
+                .map_err(|_| ProcessEventError::InvalidMessage)?;
+            let invitation_state = GroupInvitationWithKeys {
+                invitation,
+                proposer,
+                pubkeys,
+                rejections,
+                federation_id: RpcFederationId(invite_code.federation_id().to_string()),
+            };
+            dbtx.insert_new_entry(&invitation_key, &invitation_state)
+                .await;
+            if let Some(finalized_group) = invitation_state.to_finalized() {
+                dbtx.insert_new_entry(
+                    &status_key,
+                    &MultispendGroupStatus::Finalized {
+                        invite_event_id: invitation_id,
+                        finalized_group,
+                    },
+                )
+                .await;
+            } else {
+                dbtx.insert_new_entry(
+                    &status_key,
+                    &MultispendGroupStatus::ActiveInvitation {
+                        active_invite_id: invitation_id,
+                    },
+                )
+                .await;
+            }
+        }
         MultispendEvent::GroupInvitationVote { invitation, vote } => {
             let status_key = MultispendGroupStatusKey(room_id.clone());
 
@@ -439,7 +496,8 @@ pub async fn process_event_db_raw(
                 .get_value(&key)
                 .await
                 .ok_or(ProcessEventError::InvalidMessage)?;
-            if let Some(finalized_group) = state.process_vote(sender, vote)? {
+            state.process_vote(sender, vote)?;
+            if let Some(finalized_group) = state.to_finalized() {
                 dbtx.insert_entry(
                     &status_key,
                     &MultispendGroupStatus::Finalized {

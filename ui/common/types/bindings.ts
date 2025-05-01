@@ -243,6 +243,14 @@ export type MultispendEvent =
     }
   | { kind: "groupInvitationCancel"; invitation: RpcEventId }
   | {
+      kind: "groupReannounce";
+      invitationId: RpcEventId;
+      invitation: GroupInvitation;
+      proposer: RpcUserId;
+      pubkeys: { [key in RpcUserId]?: RpcPublicKey };
+      rejections: Array<RpcUserId>;
+    }
+  | {
       kind: "depositNotification";
       fiatAmount: RpcFiatAmount;
       txid: RpcTransactionId;
