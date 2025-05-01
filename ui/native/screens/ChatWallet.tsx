@@ -67,7 +67,7 @@ const ChatWallet: React.FC<Props> = ({ navigation, route }: Props) => {
 
     if (!existingRoom) {
         return (
-            <Flex grow center style={{ width: '100%' }}>
+            <Flex grow center fullWidth>
                 <Text style={{ textAlign: 'center' }}>
                     {t('errors.chat-member-not-found')}
                 </Text>

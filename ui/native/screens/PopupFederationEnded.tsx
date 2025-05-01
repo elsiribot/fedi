@@ -107,7 +107,7 @@ const PopupFederationEnded: React.FC<Props> = ({ navigation }) => {
                     federation={activeFederation}
                 />
             )}
-            <Flex align="center" style={style.buttonsContainer}>
+            <Flex align="center" fullWidth style={style.buttonsContainer}>
                 {tosUrl && (
                     <Button
                         fullWidth
@@ -141,7 +141,6 @@ const styles = (theme: Theme) =>
         },
         buttonsContainer: {
             marginTop: 'auto',
-            width: '100%',
         },
     })
 

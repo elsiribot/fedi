@@ -129,7 +129,7 @@ const ConfirmReceiveOffline: React.FC<Props> = ({
 
     return (
         <SafeAreaContainer edges="notop" style={style.container}>
-            <Flex align="center" style={style.content}>
+            <Flex align="center" fullWidth style={style.content}>
                 <Flex row align="center" gap="sm">
                     <Text maxFontSizeMultiplier={1.5}>
                         {t('feature.receive.receive-ecash-from')}
@@ -166,13 +166,14 @@ const ConfirmReceiveOffline: React.FC<Props> = ({
                     <FiatAmount amountSats={amountSats} />
                 </Flex>
             </Flex>
-            <Flex grow justify="end" gap="lg" style={style.actionContainer}>
+            <Flex grow justify="end" gap="lg" fullWidth>
                 {isFederationRecovering && (
                     <HoloAlert>
                         <Flex
                             row
                             align="center"
                             justify="between"
+                            fullWidth
                             style={style.recoveryIndicator}>
                             <Text>{t('phrases.recovery-in-progress')}</Text>
                             <View style={style.recoverySpinner}>
@@ -222,24 +223,16 @@ const styles = (theme: Theme) =>
         },
         content: {
             paddingVertical: theme.spacing.xxl,
-            width: '100%',
         },
         amountContainer: {
             paddingVertical: theme.spacing.xxl,
         },
-        actionContainer: {
-            width: '100%',
-        },
         recoveryIndicator: {
             minHeight: 64,
-            width: '100%',
         },
         recoverySpinner: {
             width: 64,
             height: 64,
-        },
-        offlineHeader: {
-            width: '100%',
         },
     })
 

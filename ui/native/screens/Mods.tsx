@@ -129,7 +129,7 @@ const Mods: React.FC = () => {
     }
 
     return (
-        <Flex grow style={style.container}>
+        <Flex grow fullWidth>
             <ModsHeader />
             {mods.length > 0 ? (
                 <ScrollView contentContainerStyle={style.listContainer}>
@@ -157,7 +157,6 @@ const Mods: React.FC = () => {
 
 const styles = (theme: Theme, columns: number) =>
     StyleSheet.create({
-        container: { width: '100%' },
         shortcut: { width: `${100 / columns}%` },
         buffer: { height: theme.sizes.lg },
         listContainer: {

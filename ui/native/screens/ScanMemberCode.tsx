@@ -129,7 +129,7 @@ const ScanMemberCode: React.FC<Props> = ({ navigation, route }: Props) => {
     )
 
     return (
-        <Flex grow style={{ width: '100%' }}>
+        <Flex grow fullWidth>
             <OmniInput
                 expectedInputTypes={[ParserDataType.FediChatUser]}
                 onExpectedInput={handleScannedData}

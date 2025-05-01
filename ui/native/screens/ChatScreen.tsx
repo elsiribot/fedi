@@ -78,7 +78,7 @@ const ChatScreen: React.FC<Props> = () => {
     return (
         <Flex grow center>
             {needsChatRegistration ? (
-                <Flex grow center style={style.registration}>
+                <Flex grow center fullWidth style={style.registration}>
                     <Image
                         resizeMode="contain"
                         source={Images.IllustrationChat}
@@ -178,7 +178,6 @@ const styles = (theme: Theme) =>
         },
         errorText: { textAlign: 'center' },
         registration: {
-            width: '100%',
             maxWidth: 320,
         },
         registrationText: {

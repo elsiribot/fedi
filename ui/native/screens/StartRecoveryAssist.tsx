@@ -2,7 +2,7 @@ import type { NativeStackScreenProps } from '@react-navigation/native-stack'
 import { Button, Text, Theme, useTheme } from '@rneui/themed'
 import React from 'react'
 import { useTranslation } from 'react-i18next'
-import { StyleSheet, View } from 'react-native'
+import { StyleSheet } from 'react-native'
 
 import Flex from '../components/ui/Flex'
 import HoloCard from '../components/ui/HoloCard'
@@ -31,7 +31,7 @@ const StartRecoveryAssist: React.FC<Props> = ({ navigation }: Props) => {
                 title={t('feature.recovery.recovery-assist-process')}
                 body={
                     <>
-                        <View style={style.textContainer}>
+                        <Flex fullWidth>
                             <Text>
                                 {t(
                                     'feature.recovery.recovery-assist-instructions-1',
@@ -62,7 +62,7 @@ const StartRecoveryAssist: React.FC<Props> = ({ navigation }: Props) => {
                                 )}
                             </Text>
                             <LineBreak />
-                        </View>
+                        </Flex>
                     </>
                 }
             />
@@ -91,9 +91,6 @@ const styles = (theme: Theme) =>
             paddingHorizontal: theme.spacing.xl,
             marginBottom: theme.spacing.md,
             fontWeight: '400',
-        },
-        textContainer: {
-            width: '100%',
         },
     })
 

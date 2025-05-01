@@ -11,7 +11,7 @@ export type Props = BottomTabScreenProps<
 
 const OmniScanner: React.FC<Props> = () => {
     return (
-        <Flex grow style={{ width: '100%' }}>
+        <Flex grow fullWidth>
             <OmniInput
                 expectedInputTypes={[]}
                 onExpectedInput={() => null}

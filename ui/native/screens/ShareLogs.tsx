@@ -130,6 +130,7 @@ const ShareLogs: React.FC<Props> = ({ navigation, route }) => {
                         row
                         align="center"
                         justify="between"
+                        fullWidth
                         style={style.dbAttachedIndicator}>
                         <Text medium>
                             {t('feature.bug.database-attached')} 🕷️🐞🦟
@@ -220,7 +221,6 @@ const styles = (theme: Theme) =>
             backgroundColor: theme.colors.offWhite,
             padding: 12,
             borderRadius: 12,
-            width: '100%',
         },
         descriptionInput: {
             textAlignVertical: 'top',

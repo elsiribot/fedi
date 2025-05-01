@@ -82,7 +82,7 @@ const UploadAvatarImage: React.FC<Props> = ({ navigation }: Props) => {
 
     const renderPreUploadButtons = () => {
         return (
-            <Flex gap="sm" style={style.buttonContainer}>
+            <Flex gap="sm" fullWidth style={style.buttonContainer}>
                 <Button
                     titleStyle={style.skipButtonText}
                     color={theme.colors.offWhite100}
@@ -105,7 +105,7 @@ const UploadAvatarImage: React.FC<Props> = ({ navigation }: Props) => {
 
     const renderPostUploadButtons = () => {
         return (
-            <Flex gap="sm" style={style.buttonContainer}>
+            <Flex gap="sm" fullWidth style={style.buttonContainer}>
                 <Button
                     fullWidth
                     title={t('words.continue')}
@@ -158,7 +158,6 @@ const styles = (theme: Theme) =>
         },
         buttonContainer: {
             marginTop: 'auto',
-            width: '100%',
         },
         skipButtonText: {
             color: theme.colors.black,

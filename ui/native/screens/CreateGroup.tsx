@@ -117,6 +117,7 @@ const CreateGroup: React.FC<Props> = ({ navigation, route }: Props) => {
                 row
                 align="center"
                 justify="between"
+                fullWidth
                 style={style.switchWrapper}>
                 <Text style={style.inputLabel}>
                     {t('feature.chat.broadcast-only')}
@@ -134,6 +135,7 @@ const CreateGroup: React.FC<Props> = ({ navigation, route }: Props) => {
                 row
                 align="center"
                 justify="between"
+                fullWidth
                 style={style.switchWrapper}>
                 <Text style={style.inputLabel}>{t('words.public')}</Text>
                 <Switch
@@ -186,7 +188,6 @@ const styles = (theme: Theme) =>
         },
         switchWrapper: {
             marginTop: theme.spacing.xl,
-            width: '100%',
             paddingHorizontal: 10,
         },
         textInputInner: {

@@ -47,6 +47,7 @@ import { makeLog } from '@fedi/common/utils/log'
 
 import { fedimint } from '../bridge'
 import CheckBox from '../components/ui/CheckBox'
+import Flex from '../components/ui/Flex'
 import SvgImage from '../components/ui/SvgImage'
 import { version } from '../package.json'
 import { useAppDispatch, useAppSelector } from '../state/hooks'
@@ -636,7 +637,7 @@ const DeveloperSettings: React.FC<Props> = ({ navigation }) => {
                         )
                     })}
                 {authenticatedGuardian && (
-                    <View style={style.passwordContainer}>
+                    <Flex fullWidth>
                         <Text small>{'Confirm guardian password'}</Text>
                         <Input
                             onChangeText={input => {
@@ -652,7 +653,7 @@ const DeveloperSettings: React.FC<Props> = ({ navigation }) => {
                             autoCapitalize={'none'}
                             autoCorrect={false}
                         />
-                    </View>
+                    </Flex>
                 )}
             </SettingsSection>
 
@@ -822,10 +823,6 @@ const styles = (theme: Theme) =>
         },
         buttonContainer: {
             marginBottom: theme.spacing.md,
-        },
-        passwordContainer: {
-            flexDirection: 'column',
-            width: '100%',
         },
         version: {
             marginBottom: theme.spacing.sm,

@@ -18,7 +18,7 @@ const NewMessage: React.FC<Props> = ({ navigation }: Props) => {
     const { setParsedLink } = useOmniLinkContext()
 
     return (
-        <Flex grow style={{ width: '100%' }}>
+        <Flex grow fullWidth>
             <OmniInput
                 expectedInputTypes={[
                     ParserDataType.LegacyFediChatMember,

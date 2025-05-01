@@ -50,7 +50,7 @@ const SocialBackupCloudUpload: React.FC<Props> = ({ navigation }: Props) => {
                 title={t('feature.backup.cloud-backup')}
                 message={t('feature.backup.cloud-backup-instructions')}
             />
-            <Flex align="center" style={style.buttonsContainer}>
+            <Flex align="center" fullWidth style={style.buttonsContainer}>
                 <Button
                     title={t('words.skip')}
                     type="clear"
@@ -77,7 +77,6 @@ const styles = (theme: Theme) =>
         },
         buttonsContainer: {
             marginTop: 'auto',
-            width: '100%',
         },
         continueButton: {
             width: '100%',

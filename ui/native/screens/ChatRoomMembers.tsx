@@ -102,7 +102,7 @@ const ChatRoomMembers: React.FC<ChatRoomMembersProps> = ({
     const style = styles(theme)
 
     return (
-        <Flex grow style={style.container}>
+        <Flex grow fullWidth style={style.container}>
             <Flex
                 row
                 align="center"
@@ -140,7 +140,6 @@ const ChatRoomMembers: React.FC<ChatRoomMembersProps> = ({
 const styles = (theme: Theme) =>
     StyleSheet.create({
         container: {
-            width: '100%',
             padding: theme.spacing.lg,
         },
         titleContainer: {

@@ -31,7 +31,7 @@ const RecoveryWalletOptions: React.FC<Props> = ({ navigation }: Props) => {
                     {t('feature.recovery.choose-wallet-option')}
                 </Text>
             </Flex>
-            <Flex align="center" gap="lg" style={style.optionsContainer}>
+            <Flex align="center" gap="lg" fullWidth>
                 <Pressable
                     containerStyle={style.actionCardContainer}
                     onPress={() =>
@@ -88,7 +88,6 @@ const styles = (theme: Theme) =>
             padding: theme.spacing.lg,
             gap: 24,
         },
-        optionsContainer: { width: '100%' },
         actionCardContainer: {
             padding: theme.spacing.md,
             width: '100%',

@@ -171,7 +171,7 @@ const LockScreen = ({ navigation, route }: Props) => {
                     )}
                 </Flex>
             </Flex>
-            <Flex row wrap style={style.numpad}>
+            <Flex row wrap fullWidth style={style.numpad}>
                 {numpadButtons.map(btn => (
                     <NumpadButton
                         key={btn}
@@ -204,7 +204,6 @@ export const styles = (theme: Theme, width: number) =>
             gap: 32,
         },
         numpad: {
-            width: '100%',
             maxWidth: Math.min(400, width),
             paddingHorizontal: theme.spacing.lg,
             position: 'relative',

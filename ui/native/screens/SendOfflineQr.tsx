@@ -117,6 +117,7 @@ const SendOfflineQr: React.FC<Props> = ({ navigation, route }: Props) => {
                     row
                     justify="between"
                     gap="md"
+                    fullWidth
                     style={style.buttonContainer}>
                     <Button
                         size="md"
@@ -139,7 +140,11 @@ const SendOfflineQr: React.FC<Props> = ({ navigation, route }: Props) => {
                 </Flex>
                 <HoloAlert text={t('feature.send.ecash-recipient-notice')} />
             </Flex>
-            <Flex align="center" gap="md" style={style.optionsContainer}>
+            <Flex
+                align="center"
+                gap="md"
+                fullWidth
+                style={style.optionsContainer}>
                 <Pressable onPress={handleCancelSend}>
                     <Flex row center gap="sm" style={style.cancelSendContainer}>
                         <SvgImage
@@ -182,7 +187,6 @@ const styles = (theme: Theme) =>
             color: theme.colors.darkGrey,
         },
         buttonContainer: {
-            width: '100%',
             paddingHorizontal: theme.spacing.lg,
         },
         actionButton: {
@@ -200,7 +204,6 @@ const styles = (theme: Theme) =>
             color: theme.colors.red,
         },
         optionsContainer: {
-            width: '100%',
             marginTop: 'auto',
         },
     })

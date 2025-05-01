@@ -5,7 +5,6 @@ import { Trans, useTranslation } from 'react-i18next'
 import {
     ImageBackground,
     StyleSheet,
-    View,
     useWindowDimensions,
     Linking,
 } from 'react-native'
@@ -93,15 +92,13 @@ const Splash: React.FC<Props> = ({ navigation }: Props) => {
                     shrink
                     center
                     gap="sm"
+                    fullWidth
                     style={style.welcomeContainer}>
-                    <View style={style.iconContainer}>
+                    <Flex center style={style.iconContainer}>
                         <SvgImage size={SvgImageSize.lg} name="FediLogoIcon" />
-                    </View>
-                    <Text style={style.title}>
-                        {t('feature.onboarding.fedi')}
-                    </Text>
+                    </Flex>
                     <Text style={style.welcomeText}>
-                        {t('feature.onboarding.tagline')}
+                        {t('feature.onboarding.fedi')}
                     </Text>
                 </Flex>
 
@@ -109,8 +106,9 @@ const Splash: React.FC<Props> = ({ navigation }: Props) => {
                     grow={false}
                     shrink
                     align="center"
+                    justify="evenly"
                     gap="md"
-                    style={style.buttonsContainer}>
+                    fullWidth>
                     <Button
                         fullWidth
                         testID="JoinFederationButton"
@@ -168,13 +166,8 @@ const styles = (theme: Theme, fontScale: number) =>
             justifyContent: 'flex-end',
             padding: theme.spacing.xl,
         },
-        buttonsContainer: {
-            width: '100%',
-            justifyContent: 'space-evenly',
-        },
         welcomeContainer: {
             flexBasis: 'auto',
-            width: '100%',
             maxWidth: 320 * Math.max(fontScale, 1),
             paddingHorizontal: theme.spacing.xl,
         },
@@ -182,8 +175,6 @@ const styles = (theme: Theme, fontScale: number) =>
             marginBottom: theme.spacing.lg,
             width: 32,
             height: 32,
-            justifyContent: 'center',
-            alignItems: 'center',
         },
         title: {
             textAlign: 'center',

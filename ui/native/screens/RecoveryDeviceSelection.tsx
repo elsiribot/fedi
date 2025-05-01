@@ -82,13 +82,13 @@ const RecoveryDeviceSelection: React.FC<Props> = ({ navigation }: Props) => {
                 </Text>
             </Flex>
             {registeredDevices.length === 0 ? (
-                <Flex align="center" gap="lg" style={style.optionsContainer}>
+                <Flex align="center" gap="lg" fullWidth>
                     <Text caption>
                         {t('feature.recovery.no-devices-found')}
                     </Text>
                 </Flex>
             ) : (
-                <Flex align="center" gap="lg" style={style.optionsContainer}>
+                <Flex align="center" gap="lg" fullWidth>
                     {registeredDevices.map(renderDevice)}
                 </Flex>
             )}
@@ -111,7 +111,6 @@ const styles = (theme: Theme) =>
             padding: theme.spacing.lg,
             gap: 24,
         },
-        optionsContainer: { width: '100%' },
         actionCardContainer: {
             padding: theme.spacing.md,
             width: '100%',

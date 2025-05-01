@@ -42,7 +42,7 @@ const Send: React.FC<Props> = ({ navigation }: Props) => {
     )
 
     return (
-        <Flex grow style={{ width: '100%' }}>
+        <Flex grow fullWidth>
             <OmniInput
                 expectedInputTypes={[
                     ParserDataType.Bolt11,

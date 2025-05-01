@@ -50,7 +50,7 @@ const StabilityHome: React.FC<Props> = () => {
             edges={{ left: 'additive', right: 'additive', bottom: 'maximum' }}>
             <StabilityBitcoinBanner />
             <Flex grow center style={style.content}>
-                <Flex grow center style={style.balanceContainer}>
+                <Flex grow center fullWidth>
                     <Progress.Circle
                         progress={1}
                         color={
@@ -77,7 +77,7 @@ const StabilityHome: React.FC<Props> = () => {
                         )}
                     </Flex>
                 </Flex>
-                <Flex row style={style.buttonContainer}>
+                <Flex row fullWidth style={style.buttonContainer}>
                     <Button
                         containerStyle={style.button}
                         onPress={() => {
@@ -162,9 +162,6 @@ const styles = (theme: Theme) =>
         content: {
             padding: theme.spacing.lg,
         },
-        balanceContainer: {
-            width: '100%',
-        },
         balanceTextContainer: {
             position: 'absolute',
         },
@@ -175,7 +172,6 @@ const styles = (theme: Theme) =>
             flex: 1,
         },
         buttonContainer: {
-            width: '100%',
             marginTop: 'auto',
             gap: 20,
         },

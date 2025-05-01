@@ -29,7 +29,7 @@ const Receive: React.FC<Props> = () => {
         }, [syncCurrencyRatesAndCache]),
     )
     return (
-        <Flex grow style={{ width: '100%' }}>
+        <Flex grow fullWidth>
             <OmniInput
                 expectedInputTypes={[
                     ParserDataType.LnurlWithdraw,

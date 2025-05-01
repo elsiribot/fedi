@@ -165,7 +165,7 @@ const ChatRoomInvite: React.FC<Props> = ({ route }: Props) => {
     return (
         <KeyboardAwareWrapper>
             <SafeAreaContainer style={style.container} edges="notop">
-                <Flex align="center" style={style.inputWrapper}>
+                <Flex align="center" fullWidth>
                     <ChatSettingsAvatar room={room} />
                     <Text bold style={style.inputLabel}>
                         {t('feature.chat.invite-to-group')}
@@ -202,9 +202,6 @@ const styles = (theme: Theme) =>
         container: {
             paddingLeft: theme.spacing.xl,
             paddingRight: theme.spacing.xl,
-            width: '100%',
-        },
-        inputWrapper: {
             width: '100%',
         },
         inputLabel: {

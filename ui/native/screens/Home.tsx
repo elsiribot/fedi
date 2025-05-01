@@ -24,6 +24,7 @@ import HomeWalletsPlaceholder from '../components/feature/home/HomeWalletsPlaceh
 import ShortcutsList from '../components/feature/home/ShortcutsList'
 import WelcomeMessage from '../components/feature/home/WelcomeMessage'
 import RecoveryInProgress from '../components/feature/recovery/RecoveryInProgress'
+import Flex from '../components/ui/Flex'
 import type {
     RootStackParamList,
     TabsNavigatorParamList,
@@ -79,11 +80,11 @@ const Home: React.FC<Props> = ({ offline }) => {
 
     const style = styles(theme)
     return (
-        <View style={style.bottomView}>
+        <View>
             <ScrollView
                 contentContainerStyle={style.container}
                 alwaysBounceVertical={false}>
-                <View style={style.content}>
+                <Flex gap="lg" fullWidth>
                     {pinnedMessage && (
                         <View style={style.section}>
                             <WelcomeMessage message={pinnedMessage} />
@@ -113,7 +114,7 @@ const Home: React.FC<Props> = ({ offline }) => {
                             <ShortcutsList />
                         </ErrorBoundary>
                     </View>
-                </View>
+                </Flex>
             </ScrollView>
 
             {/* Overlays */}
@@ -137,7 +138,6 @@ const Home: React.FC<Props> = ({ offline }) => {
 
 const styles = (theme: Theme) =>
     StyleSheet.create({
-        bottomView: {},
         container: {
             alignItems: 'center',
             justifyContent: 'flex-start',
@@ -145,10 +145,6 @@ const styles = (theme: Theme) =>
             paddingHorizontal: theme.spacing.lg,
             paddingBottom: theme.spacing.xl,
             width: '100%',
-        },
-        content: {
-            width: '100%',
-            gap: theme.spacing.lg,
         },
         recovery: {
             minHeight: theme.sizes.walletCardHeight,
