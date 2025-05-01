@@ -113,7 +113,7 @@ const MultispendConfirmWithdraw: React.FC<Props> = ({ route }: Props) => {
                     <View style={style.separator} />
                     <View style={style.row}>
                         <Text caption medium>
-                            {t('words.community')}
+                            {t('words.federation')}
                         </Text>
                         <Text caption>
                             {
