@@ -22,6 +22,7 @@ import FirstTimeCommunityEntryOverlay, {
 import ModsHeader from '../components/feature/fedimods/ModsHeader'
 import ShortcutTile from '../components/feature/home/ShortcutTile'
 import ZendeskBadge from '../components/feature/support/ZendeskBadge'
+import Flex from '../components/ui/Flex'
 import SvgImage from '../components/ui/SvgImage'
 import { useAppDispatch, useAppSelector } from '../state/hooks'
 import { FediMod, Shortcut } from '../types'
@@ -128,7 +129,7 @@ const Mods: React.FC = () => {
     }
 
     return (
-        <View style={style.container}>
+        <Flex grow style={style.container}>
             <ModsHeader />
             {mods.length > 0 ? (
                 <ScrollView contentContainerStyle={style.listContainer}>
@@ -136,13 +137,13 @@ const Mods: React.FC = () => {
                     {renderBuffers()}
                 </ScrollView>
             ) : (
-                <View style={style.empty}>
+                <Flex center grow gap="md">
                     <Pressable
                         onPress={() => navigation.navigate('AddFediMod')}>
                         <SvgImage name="NewModIcon" size={48} />
                     </Pressable>
                     <Text>{t('feature.fedimods.add-mods-homescreen')}</Text>
-                </View>
+                </Flex>
             )}
             <FirstTimeCommunityEntryOverlay
                 overlayItems={modsFirstTimeOverlayItems}
@@ -150,23 +151,15 @@ const Mods: React.FC = () => {
                 show={!hasSeenMods}
                 onDismiss={completeSeenMods}
             />
-        </View>
+        </Flex>
     )
 }
 
 const styles = (theme: Theme, columns: number) =>
     StyleSheet.create({
-        container: { flex: 1, width: '100%' },
+        container: { width: '100%' },
         shortcut: { width: `${100 / columns}%` },
         buffer: { height: theme.sizes.lg },
-        empty: {
-            flex: 1,
-            display: 'flex',
-            flexDirection: 'column',
-            gap: theme.spacing.md,
-            alignItems: 'center',
-            justifyContent: 'center',
-        },
         listContainer: {
             flexDirection: 'row',
             marginTop: 4,

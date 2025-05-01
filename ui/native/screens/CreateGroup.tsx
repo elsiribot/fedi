@@ -10,6 +10,7 @@ import { ChatType } from '@fedi/common/types'
 import { makeLog } from '@fedi/common/utils/log'
 
 import Avatar, { AvatarSize } from '../components/ui/Avatar'
+import Flex from '../components/ui/Flex'
 import { useAppDispatch, useAppSelector } from '../state/hooks'
 import type { RootStackParamList } from '../types/navigation'
 
@@ -89,7 +90,7 @@ const CreateGroup: React.FC<Props> = ({ navigation, route }: Props) => {
     const style = styles(theme)
 
     return (
-        <View style={style.container}>
+        <Flex grow center style={style.container}>
             <Avatar id={''} icon={icon} size={AvatarSize.md} />
             <View style={style.inputWrapper}>
                 <Input
@@ -112,7 +113,11 @@ const CreateGroup: React.FC<Props> = ({ navigation, route }: Props) => {
                     </Text>
                 )}
             </View>
-            <View style={style.switchWrapper}>
+            <Flex
+                row
+                align="center"
+                justify="between"
+                style={style.switchWrapper}>
                 <Text style={style.inputLabel}>
                     {t('feature.chat.broadcast-only')}
                 </Text>
@@ -124,8 +129,12 @@ const CreateGroup: React.FC<Props> = ({ navigation, route }: Props) => {
                         setBroadcastOnly(value)
                     }}
                 />
-            </View>
-            <View style={style.switchWrapper}>
+            </Flex>
+            <Flex
+                row
+                align="center"
+                justify="between"
+                style={style.switchWrapper}>
                 <Text style={style.inputLabel}>{t('words.public')}</Text>
                 <Switch
                     value={isPublic}
@@ -135,7 +144,7 @@ const CreateGroup: React.FC<Props> = ({ navigation, route }: Props) => {
                         setIsPublic(value)
                     }}
                 />
-            </View>
+            </Flex>
             {isPublic && (
                 <Text caption style={style.errorLabel}>
                     {t('feature.chat.public-group-warning')}
@@ -149,16 +158,13 @@ const CreateGroup: React.FC<Props> = ({ navigation, route }: Props) => {
                 disabled={!groupName || creatingGroup}
                 containerStyle={style.button}
             />
-        </View>
+        </Flex>
     )
 }
 
 const styles = (theme: Theme) =>
     StyleSheet.create({
         container: {
-            flex: 1,
-            alignItems: 'center',
-            justifyContent: 'center',
             padding: theme.spacing.lg,
         },
         button: {
@@ -181,9 +187,6 @@ const styles = (theme: Theme) =>
         switchWrapper: {
             marginTop: theme.spacing.xl,
             width: '100%',
-            flexDirection: 'row',
-            alignItems: 'center',
-            justifyContent: 'space-between',
             paddingHorizontal: 10,
         },
         textInputInner: {

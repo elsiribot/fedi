@@ -7,6 +7,7 @@ import { View } from 'react-native'
 import { fedimint } from '../bridge'
 import CustomOverlay from '../components/ui/CustomOverlay'
 import { FieldInput } from '../components/ui/FieldInput'
+import Flex from '../components/ui/Flex'
 import { PressableIcon } from '../components/ui/PressableIcon'
 import { SafeScrollArea } from '../components/ui/SafeArea'
 import SvgImage from '../components/ui/SvgImage'
@@ -33,13 +34,13 @@ const EditPoll: React.FC<Props> = ({ route, navigation }: Props) => {
                 value={event.content.body}
                 disabled
             />
-            <View style={style.options}>
+            <Flex gap="sm">
                 <Text small style={style.optionsLabel}>
                     {t('words.options')}
                 </Text>
-                <View style={style.optionsContainer}>
+                <Flex gap="sm">
                     {event.content.answers.map(answer => (
-                        <View style={style.option} key={answer.id}>
+                        <Flex row align="center" gap="sm" key={answer.id}>
                             <View style={style.optionInput}>
                                 <FieldInput value={answer.text} disabled />
                             </View>
@@ -48,35 +49,35 @@ const EditPoll: React.FC<Props> = ({ route, navigation }: Props) => {
                                 containerStyle={style.deleteOptionIcon}
                                 disabled
                             />
-                        </View>
+                        </Flex>
                     ))}
-                </View>
-                <View style={style.addOptionContainer}>
+                </Flex>
+                <Flex row>
                     <View style={style.addOptionButton}>
                         <Text>{t('words.add')}</Text>
                         <SvgImage name="PlusCircle" />
                     </View>
-                </View>
-            </View>
-            <View style={style.settings}>
-                <View style={style.setting}>
-                    <View style={style.settingLabel}>
+                </Flex>
+            </Flex>
+            <Flex gap="lg">
+                <Flex row align="center" justify="between" gap="sm">
+                    <Flex row align="center" gap="sm">
                         <SvgImage name="List" />
                         <Text>{t('feature.chat.multiple-choice')}</Text>
-                    </View>
+                    </Flex>
                     <Switch value={event.content.maxSelections > 1} disabled />
-                </View>
-                <View style={style.setting}>
-                    <View style={style.settingLabel}>
+                </Flex>
+                <Flex row align="center" justify="between" gap="sm">
+                    <Flex row align="center" gap="sm">
                         <SvgImage name="Bolt" />
                         <Text>{t('feature.chat.show-live-results')}</Text>
-                    </View>
+                    </Flex>
                     <Switch
                         value={event.content.kind === 'disclosed'}
                         disabled
                     />
-                </View>
-            </View>
+                </Flex>
+            </Flex>
             <Button
                 title={t('feature.chat.end-poll')}
                 buttonStyle={style.endButton}
@@ -88,14 +89,14 @@ const EditPoll: React.FC<Props> = ({ route, navigation }: Props) => {
                 onBackdropPress={() => setIsConfirmingEnd(false)}
                 contents={{
                     body: (
-                        <View style={style.endPollPreview}>
+                        <Flex align="center" gap="lg">
                             <View style={style.pollPreview}>
                                 <Text>{event.content.body}</Text>
                             </View>
                             <Text medium>
                                 {t('feature.chat.confirm-end-poll')}
                             </Text>
-                        </View>
+                        </Flex>
                     ),
                     buttons: [
                         {

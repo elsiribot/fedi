@@ -4,6 +4,7 @@ import React from 'react'
 import { useTranslation } from 'react-i18next'
 import { StyleSheet, View } from 'react-native'
 
+import Flex from '../components/ui/Flex'
 import HoloCard from '../components/ui/HoloCard'
 import LineBreak from '../components/ui/LineBreak'
 import SvgImage from '../components/ui/SvgImage'
@@ -18,9 +19,11 @@ const StartRecoveryAssist: React.FC<Props> = ({ navigation }: Props) => {
     const { t } = useTranslation()
     const { theme } = useTheme()
 
+    const style = styles(theme)
+
     return (
-        <View style={styles(theme).container}>
-            <Text style={styles(theme).instructionsText}>
+        <Flex grow align="center" justify="start" style={style.container}>
+            <Text style={style.instructionsText}>
                 {t('feature.recovery.recovery-assist-description')}
             </Text>
             <HoloCard
@@ -28,7 +31,7 @@ const StartRecoveryAssist: React.FC<Props> = ({ navigation }: Props) => {
                 title={t('feature.recovery.recovery-assist-process')}
                 body={
                     <>
-                        <View style={styles(theme).textContainer}>
+                        <View style={style.textContainer}>
                             <Text>
                                 {t(
                                     'feature.recovery.recovery-assist-instructions-1',
@@ -65,21 +68,18 @@ const StartRecoveryAssist: React.FC<Props> = ({ navigation }: Props) => {
             />
             <Button
                 title={t('words.continue')}
-                containerStyle={styles(theme).continueButton}
+                containerStyle={style.continueButton}
                 onPress={() => {
                     navigation.navigate('ConfirmRecoveryAssist')
                 }}
             />
-        </View>
+        </Flex>
     )
 }
 
 const styles = (theme: Theme) =>
     StyleSheet.create({
         container: {
-            flex: 1,
-            alignItems: 'center',
-            justifyContent: 'flex-start',
             padding: theme.spacing.xl,
         },
         continueButton: {
