@@ -106,7 +106,7 @@ const RecordVideo = () => {
     const style = styles(theme)
 
     return (
-        <Flex grow align="center" style={style.container}>
+        <Flex grow align="center" fullWidth style={style.container}>
             <ImageBackground
                 source={isRecording ? Images.Red : Images.HoloBackground}
                 style={style.gradient}>
@@ -174,7 +174,6 @@ const RecordVideo = () => {
 const styles = (theme: Theme) =>
     StyleSheet.create({
         container: {
-            width: '100%',
             paddingHorizontal: theme.spacing.md,
         },
         gradient: {

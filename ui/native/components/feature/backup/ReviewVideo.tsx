@@ -55,7 +55,7 @@ const ReviewVideo = () => {
     const style = styles(theme)
 
     return (
-        <Flex grow align="center" style={style.container}>
+        <Flex grow align="center" justify="evenly" fullWidth>
             <ImageBackground
                 source={Images.HoloBackground}
                 style={style.gradient}>
@@ -95,7 +95,7 @@ const ReviewVideo = () => {
                 {t('feature.backup.please-review-backup-video')}
             </Text>
 
-            <View style={style.buttonsContainer}>
+            <Flex align="center" fullWidth style={style.buttonsContainer}>
                 <Button
                     title={t('feature.backup.record-again')}
                     onPress={() => dispatch(resetVideo())}
@@ -107,21 +107,15 @@ const ReviewVideo = () => {
                     onPress={() => setConfirmingVideo(true)}
                     containerStyle={style.confirmButton}
                 />
-            </View>
+            </Flex>
         </Flex>
     )
 }
 
 const styles = (theme: Theme) =>
     StyleSheet.create({
-        container: {
-            justifyContent: 'space-evenly',
-            width: '100%',
-        },
         buttonsContainer: {
             marginTop: 'auto',
-            alignItems: 'center',
-            width: '100%',
         },
         confirmButton: {
             marginTop: theme.spacing.md,
