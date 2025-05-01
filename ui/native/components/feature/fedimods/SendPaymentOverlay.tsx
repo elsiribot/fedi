@@ -1,7 +1,7 @@
 import { Theme, useTheme } from '@rneui/themed'
 import React, { useEffect, useMemo, useState } from 'react'
 import { Trans, useTranslation } from 'react-i18next'
-import { StyleSheet, View } from 'react-native'
+import { StyleSheet } from 'react-native'
 import { RejectionError } from 'webln'
 
 import { useSendForm } from '@fedi/common/hooks/amount'
@@ -205,7 +205,12 @@ export const SendPaymentOverlay: React.FC<Props> = ({ onReject, onAccept }) => {
                     fediMod: siteInfo?.title,
                 }),
                 body: (
-                    <Flex grow align="center" gap="lg" style={style.container}>
+                    <Flex
+                        grow
+                        align="center"
+                        gap="lg"
+                        fullWidth
+                        style={style.container}>
                         <FederationWalletSelector />
                         <AmountInput
                             key={amountInputKey}
@@ -222,7 +227,7 @@ export const SendPaymentOverlay: React.FC<Props> = ({ onReject, onAccept }) => {
                             }}
                             error={error}
                         />
-                        <View style={style.previewDetails}>
+                        <Flex fullWidth>
                             <SendPreviewDetails
                                 onPressFees={() => setShowFeeBreakdown(true)}
                                 formattedTotalFee={formattedTotalFee}
@@ -231,7 +236,7 @@ export const SendPaymentOverlay: React.FC<Props> = ({ onReject, onAccept }) => {
                                 )}
                                 isLoading={isLoading}
                             />
-                        </View>
+                        </Flex>
                         <FeeOverlay
                             show={showFeeBreakdown}
                             onDismiss={() => setShowFeeBreakdown(false)}
@@ -280,10 +285,6 @@ const styles = (theme: Theme) =>
     StyleSheet.create({
         container: {
             paddingTop: theme.spacing.xl,
-            width: '100%',
             paddingHorizontal: theme.spacing.md,
-        },
-        previewDetails: {
-            width: '100%',
         },
     })

@@ -95,7 +95,7 @@ export const OmniMemberSearch: React.FC<Props> = ({
                         <Text small medium style={style.recentMembersLabel}>
                             {t('words.people')}
                         </Text>
-                        <Flex row style={style.recentMembers}>
+                        <Flex row fullWidth>
                             {recentRoomMembers.map(user => (
                                 <Pressable
                                     key={user.id}
@@ -173,7 +173,7 @@ export const OmniMemberSearch: React.FC<Props> = ({
                     </Pressable>
                 )}
             </SafeAreaView>
-            <Flex grow style={style.content}>
+            <Flex grow fullWidth>
                 {content}
             </Flex>
             <ChatConnectionBadge hide={!query} offset={80} noSafeArea />
@@ -216,9 +216,6 @@ const styles = (theme: Theme, memberCount: number) =>
         errorText: {
             padding: theme.spacing.lg,
         },
-        content: {
-            width: '100%',
-        },
         searchMembersContainer: {
             flex: 1,
         },
@@ -229,9 +226,6 @@ const styles = (theme: Theme, memberCount: number) =>
         recentMembersLabel: {
             marginBottom: theme.spacing.lg,
             color: theme.colors.grey,
-        },
-        recentMembers: {
-            width: '100%',
         },
         recentMember: {
             width: `${100 / memberCount}%`,

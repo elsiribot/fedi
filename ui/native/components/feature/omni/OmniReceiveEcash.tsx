@@ -44,7 +44,12 @@ export default function OmniReceiveEcash({
 
     if (parsed.federation_type === 'joined') {
         return (
-            <Flex grow align="stretch" gap="lg" style={style.container}>
+            <Flex
+                grow
+                align="stretch"
+                gap="lg"
+                fullWidth
+                style={style.container}>
                 <Text style={style.center}>
                     {t('feature.omni.confirm-ecash-token')}
                 </Text>
@@ -108,7 +113,7 @@ export default function OmniReceiveEcash({
     }
 
     return (
-        <Flex grow align="stretch" gap="lg" style={style.container}>
+        <Flex grow align="stretch" gap="lg" fullWidth style={style.container}>
             {renderContent()}
         </Flex>
     )
@@ -119,7 +124,6 @@ const styles = (theme: Theme) =>
         container: {
             paddingTop: theme.spacing.xl,
             paddingHorizontal: theme.spacing.md,
-            width: '100%',
         },
         actionCardContainer: {
             padding: theme.spacing.md,
@@ -136,6 +140,5 @@ const styles = (theme: Theme) =>
         },
         arrowContainer: { marginLeft: 'auto' },
         darkGrey: { color: theme.colors.darkGrey },
-        buttonStyle: { width: '100%' },
         center: { textAlign: 'center' },
     })

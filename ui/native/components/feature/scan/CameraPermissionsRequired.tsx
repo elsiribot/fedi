@@ -114,7 +114,7 @@ const RequestCameraAccess: React.FC<RequestCameraAccessProps> = ({
                 </Text>
                 <Text style={style.subtitleText}>{message}</Text>
             </Flex>
-            <Flex justify="between" style={style.buttonsContainer}>
+            <Flex justify="between" fullWidth style={style.buttonsContainer}>
                 {alternativeActionButton}
                 <Button
                     title={t('phrases.allow-camera-access')}
@@ -132,7 +132,6 @@ const styles = (theme: Theme) =>
             paddingBottom: theme.spacing.xl,
         },
         buttonsContainer: {
-            width: '100%',
             paddingHorizontal: theme.spacing.xl,
         },
         image: {

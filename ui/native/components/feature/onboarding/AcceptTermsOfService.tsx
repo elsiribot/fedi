@@ -26,16 +26,18 @@ const AcceptTermsOfService: React.FC<Props> = ({
     const [isRejecting, setIsRejecting] = useState(false)
     const tosUrl = getFederationTosUrl(federation.meta)
 
+    const style = styles(theme)
+
     return (
-        <Flex grow center style={styles(theme).container}>
-            <Text h2 medium h2Style={styles(theme).title}>
+        <Flex grow center style={style.container}>
+            <Text h2 medium h2Style={style.title}>
                 {t('feature.onboarding.terms-and-conditions')}
             </Text>
 
-            <View style={styles(theme).guidance}>
+            <View style={style.guidance}>
                 <Hyperlink
                     onPress={url => Linking.openURL(url)}
-                    linkStyle={styles(theme).linkText}>
+                    linkStyle={style.linkText}>
                     <Text>
                         {t('feature.onboarding.by-clicking-i-accept', {
                             tos_url: tosUrl,
@@ -44,7 +46,7 @@ const AcceptTermsOfService: React.FC<Props> = ({
                 </Hyperlink>
             </View>
 
-            <View style={styles(theme).buttonsContainer}>
+            <Flex align="center" fullWidth style={style.buttonsContainer}>
                 <Button
                     fullWidth
                     title={t('feature.onboarding.i-accept')}
@@ -56,7 +58,7 @@ const AcceptTermsOfService: React.FC<Props> = ({
                             setIsAccepting(false)
                         }
                     }}
-                    containerStyle={styles(theme).button}
+                    containerStyle={style.button}
                     loading={isAccepting}
                     disabled={isRejecting}
                 />
@@ -69,11 +71,11 @@ const AcceptTermsOfService: React.FC<Props> = ({
                         await onReject()
                         setIsRejecting(false)
                     }}
-                    containerStyle={styles(theme).button}
+                    containerStyle={style.button}
                     loading={isRejecting}
                     disabled={isAccepting}
                 />
-            </View>
+            </Flex>
         </Flex>
     )
 }
@@ -95,9 +97,6 @@ const styles = (theme: Theme) =>
             marginTop: 'auto',
             marginBottom: theme.spacing.lg,
         },
-        termsContainer: {
-            width: '100%',
-        },
         title: {
             marginBottom: theme.spacing.lg,
             textAlign: 'left',
@@ -105,10 +104,6 @@ const styles = (theme: Theme) =>
         },
         linkText: {
             color: theme.colors.link,
-        },
-        content: {
-            textAlign: 'left',
-            lineHeight: 20,
         },
     })
 

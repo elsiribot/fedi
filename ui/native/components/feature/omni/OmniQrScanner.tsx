@@ -61,7 +61,7 @@ export const OmniQrScanner: React.FC<Props> = ({
 
     return (
         <Flex grow gap="lg" style={style.container}>
-            <Flex grow style={style.scanner}>
+            <Flex grow fullWidth style={style.scanner}>
                 {cameraPermission === 'granted' && (
                     <QrCodeScanner
                         processing={isProcessing}
@@ -72,7 +72,11 @@ export const OmniQrScanner: React.FC<Props> = ({
                     <NightHoloGradient
                         style={style.permissionContainer}
                         gradientStyle={style.permissionGradient}>
-                        <Flex center gap="lg" style={style.permissionContent}>
+                        <Flex
+                            center
+                            gap="lg"
+                            fullWidth
+                            style={style.permissionContent}>
                             <SvgImage name="AllowCameraAccessIcon" size={72} />
                             <Text style={style.permissionText} medium>
                                 {permissionView.title}
@@ -105,7 +109,6 @@ const styles = (theme: Theme, insets: EdgeInsets) =>
             paddingBottom: Math.max(theme.spacing.lg, insets.bottom || 0),
         },
         scanner: {
-            width: '100%',
             borderRadius: 20,
             minHeight: height * 0.38, //ensure that on smaller screens we don't get a tiny rectangular window for the scanner.
             overflow: 'hidden',
@@ -121,7 +124,6 @@ const styles = (theme: Theme, insets: EdgeInsets) =>
             alignItems: 'center',
         },
         permissionContent: {
-            width: '100%',
             maxWidth: 260,
         },
         permissionText: {

@@ -117,11 +117,7 @@ export default function AddressBarOverlay({
                         ? { paddingBottom: keyboardHeight + theme.spacing.lg }
                         : {},
                 ]}>
-                <Flex
-                    row
-                    align="center"
-                    gap="md"
-                    style={style.addressInputContainer}>
+                <Flex row align="center" gap="md" fullWidth>
                     <Input
                         inputContainerStyle={style.input}
                         containerStyle={style.inputContainer}
@@ -182,9 +178,6 @@ const styles = (theme: Theme) =>
             height: 40,
             width: 'auto',
             flex: 1,
-        },
-        addressInputContainer: {
-            width: '100%',
         },
         clearIcon: {
             backgroundColor: theme.colors.lightGrey,
