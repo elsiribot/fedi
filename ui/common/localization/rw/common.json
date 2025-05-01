@@ -24,8 +24,8 @@
         "canceled": "Byaharitswe",
         "chat": "Ganira",
         "checking": "Kugenzura ...",
-        "communities": "Imiryango",
-        "community": "Umuryango",
+        "federations": "Imiryango",
+        "federation": "Umuryango",
         "complete": "Cyuzuye",
         "confirm": "Emeza",
         "continue": "Komeza",
@@ -124,7 +124,7 @@
         "you": "Wowe"
     },
     "phrases": {
-        "add-community": "Ongeraho umuganda",
+        "add-federation": "Ongeraho umuganda",
         "add-note": "Ongera ho inyandiko",
         "address-created": "Aderesi Yakozwe",
         "allow-camera-access": "Emera kamera ikoreshwe",
@@ -138,7 +138,7 @@
         "changes-saved": "Impinduka zabitswe",
         "check-incoming-funds": "Reba amafaranga yinjira",
         "click-for-more-details": "Kanda ho urebe ubusobanuro burambuye",
-        "community-default": "Amahitamo asanzwe yumuryango",
+        "federation-default": "Amahitamo asanzwe yumuryango",
         "confirm-chat-send": "Emeza Kohereza Mubiganiro",
         "copied-bitcoin-address": "Aderesi ya bitcoin ikoporowe",
         "copied-ecash-token": "E-cash token yakoporowe",
@@ -249,7 +249,7 @@
         "please-force-quit-the-app": "Hari ikosa rigaragaye, nyabuneka ihutire gufunga iyo porogaramu ubundi wongere kugerageza ",
         "please-grant-permission": "Nyamuneka tanga uruhushya rwo gukuramo iyi dosiye",
         "please-join-a-federation": "Nyamuneka winjire mumuryango mbere yo kwishyura ubwishyu",
-        "please-join-wallet-community": "Nyamuneka winjire mumuryango wimari mbere yo kwishyura",
+        "please-join-wallet-federation": "Nyamuneka winjire mumuryango wimari mbere yo kwishyura",
         "please-select-balance-federation": "Nyamuneka hitamo umuganda ufite amafaranga asigaye yo kwishyura.",
         "receive-ecash-failed": "Yananiwe kwakira amafaranga mu buryo bwa eCash",
         "receive-ecash-failed-claimed": "Kunanirwa kwakira eCash. Iyi eCash yamaze gusabwa",
@@ -426,10 +426,10 @@
             "you-requested-payment": "Wasabye {{fiat}} ({{amount}}) {{memo}}",
             "you-sent-payment": "Wohereje {{fiat}} ({{amount}}) {{memo}}"
         },
-        "community": {
-            "add-community": "Ongeraho umuganda",
-            "join-a-community": "Injira mumuryango",
-            "join-community-guidance": "Injira mumuryango ukunda kugirango ubone amafaranga nibindi byinshi",
+        "federation": {
+            "add-federation": "Ongeraho umuganda",
+            "join-a-federation": "Injira mumuryango",
+            "join-federation-guidance": "Injira mumuryango ukunda kugirango ubone amafaranga nibindi byinshi",
             "or-visit-awesome-fedimint": "cyangwa Sura Fedimint nziza"
         },
         "developer": {

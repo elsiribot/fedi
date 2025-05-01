@@ -24,8 +24,8 @@
         "canceled": "imeghairiwa",
         "chat": "Mazungumzo",
         "checking": "Inakagua...",
-        "communities": "Jumuiya",
-        "community": "Jumuiya",
+        "federations": "Jumuiya",
+        "federation": "Jumuiya",
         "complete": "Kamilisha",
         "confirm": "Hakikisha",
         "continue": "Endelea",
@@ -124,7 +124,7 @@
         "you": "Wewe"
     },
     "phrases": {
-        "add-community": "Ongeza jumuiya",
+        "add-federation": "Ongeza jumuiya",
         "add-note": "Ongeza maelezo",
         "address-created": "Anwani Imetengenezwa",
         "allow-camera-access": "Ruhusu Kamera",
@@ -138,7 +138,7 @@
         "changes-saved": "Mabadiliko yamehifadhiwa",
         "check-incoming-funds": "Kagua pesa zinazoingia",
         "click-for-more-details": "Finya kupa maelezo zaidita",
-        "community-default": "Chaguo-msingi la jumuiya",
+        "federation-default": "Chaguo-msingi la jumuiya",
         "confirm-chat-send": "Thibitisha kutuma gumzo",
         "copied-bitcoin-address": "Anwani ya Biticoin imenakiliwa",
         "copied-ecash-token": "Token ya eCash imenakiliwa",
@@ -250,7 +250,7 @@
         "please-force-quit-the-app": "Shida imetokea, tafadhali funga app na ujaribu tena.",
         "please-grant-permission": "Tafadhali ruhusu idhini ya kupakua faili hii",
         "please-join-a-federation": "Tafadhali jiunge na jumuiya kabla ya kufanya malipo ya gumzo",
-        "please-join-wallet-community": "Tafadhali jiunge na jumuiya kabla ya kufanya malIpo",
+        "please-join-wallet-federation": "Tafadhali jiunge na jumuiya kabla ya kufanya malIpo",
         "please-select-balance-federation": "Tafadhali chagua shirikisho lenye salio la kulipa",
         "receive-ecash-failed": "Imeshindwa kupokea eCash",
         "receive-ecash-failed-claimed": "Imeshindikana kupokea eCash. Hii tayari imedaiwa.",
@@ -427,10 +427,10 @@
             "you-requested-payment": "Uliomba {{fiat}} ({{amount}}) {{memo}}",
             "you-sent-payment": "Ulituma {{fiat}} ({{amount}}) {{memo}}"
         },
-        "community": {
-            "add-community": "Ongeza jumuiya",
-            "join-a-community": "Jiunge na jumuiya",
-            "join-community-guidance": "Jiunge na jumuiya unayopenda ili kupata pesa na zaidi",
+        "federation": {
+            "add-federation": "Ongeza jumuiya",
+            "join-a-federation": "Jiunge na jumuiya",
+            "join-federation-guidance": "Jiunge na jumuiya unayopenda ili kupata pesa na zaidi",
             "or-visit-awesome-fedimint": "au Tembelea Awesome Fedimint"
         },
         "developer": {

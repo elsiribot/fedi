@@ -24,8 +24,8 @@
         "canceled": "Annulé",
         "chat": "Chat",
         "checking": "Vérification en cours...",
-        "communities": "Communautés",
-        "community": "Communauté",
+        "federations": "Communautés",
+        "federation": "Communauté",
         "complete": "Terminer",
         "confirm": "Confirmer",
         "continue": "Continuer",
@@ -124,7 +124,7 @@
         "you": "vous"
     },
     "phrases": {
-        "add-community": "Ajouter une communauté",
+        "add-federation": "Ajouter une communauté",
         "add-note": "Ajouter une note",
         "address-created": "Adresse créée",
         "allow-camera-access": "Autoriser l'accès à la caméra",
@@ -138,7 +138,7 @@
         "changes-saved": "Changements sauvegardés",
         "check-incoming-funds": "Vérifier les fonds entrants",
         "click-for-more-details": "Cliquez pour plus de détails",
-        "community-default": "Communauté par défaut",
+        "federation-default": "Communauté par défaut",
         "confirm-chat-send": "Confirmer l'envoi du chat",
         "copied-bitcoin-address": "Adresse Bitcoin copiée",
         "copied-ecash-token": "Jeton d'argent copié",
@@ -250,7 +250,7 @@
         "please-force-quit-the-app": "Une erreur s'est produite, veuillez forcer la fermeture de l'application et réessayer",
         "please-grant-permission": "Veuillez accorder l’autorisation de télécharger ce fichier",
         "please-join-a-federation": "Veuillez rejoindre une fédération avant d'effectuer des paiements par chat",
-        "please-join-wallet-community": "Veuillez rejoindre une communauté de portefeuille avant d’effectuer des paiements.",
+        "please-join-wallet-federation": "Veuillez rejoindre une communauté de portefeuille avant d’effectuer des paiements.",
         "please-select-balance-federation": "Veuillez sélectionner une fédération avec un solde pour effectuer le paiement.",
         "receive-ecash-failed": "Échec de réception d'eCash",
         "receive-ecash-failed-claimed": "Échec de la réception de l’eCash. Celui-ci a déjà été réclamé.",
@@ -427,10 +427,10 @@
             "you-requested-payment": "Vous avez demandé {{fiat}} ({{amount}}) {{memo}}",
             "you-sent-payment": "Vous avez envoyé {{fiat}} ({{amount}}) {{memo}}"
         },
-        "community": {
-            "add-community": "Ajouter une communauté",
-            "join-a-community": "Rejoignez une communauté",
-            "join-community-guidance": "Rejoignez votre communauté préférée pour accéder à de l'argent et bien plus encore",
+        "federation": {
+            "add-federation": "Ajouter une communauté",
+            "join-a-federation": "Rejoignez une communauté",
+            "join-federation-guidance": "Rejoignez votre communauté préférée pour accéder à de l'argent et bien plus encore",
             "or-visit-awesome-fedimint": "ou visitez Awesome Fedimint"
         },
         "developer": {

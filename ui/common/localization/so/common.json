@@ -24,8 +24,8 @@
         "canceled": "Joojiyay",
         "chat": "Wada hadal",
         "checking": "Hubinta...",
-        "communities": "Bulshooyinka",
-        "community": "Bulshada",
+        "federations": "Bulshooyinka",
+        "federation": "Bulshada",
         "complete": "Dhammaystiran",
         "confirm": "Xaqiijin",
         "continue": "Socda",
@@ -123,7 +123,7 @@
         "you": "Adi"
     },
     "phrases": {
-        "add-community": "Ku dar bulsho",
+        "add-federation": "Ku dar bulsho",
         "add-note": "Ku Dar Qoraal",
         "address-created": "Ciwaanka La Sameeyey",
         "allow-camera-access": "Oggolow gelitaanka kamarada",
@@ -137,7 +137,7 @@
         "changes-saved": "Isbeddellada la keydiyay",
         "check-incoming-funds": "Hubi lacagaha soo gala",
         "click-for-more-details": "Riix si aad faahfaahin dheeraad ah u hesho",
-        "community-default": "Jaceylka bulshada",
+        "federation-default": "Jaceylka bulshada",
         "confirm-chat-send": "Xaqiiji Dirista tan",
         "copied-bitcoin-address": "Ciwaanka Bitcoin Oo La Koobiyey",
         "copied-ecash-token": "La guuriyay eCash token",
@@ -248,7 +248,7 @@
         "please-force-quit-the-app": "Khalad ayaa dhacay, fadlan qasab kaga tag abka oo isku day markale",
         "please-grant-permission": "Fadlan oggolow inaad soo dejiso faylkan",
         "please-join-a-federation": "Fadlan ku biir bulshada ka hor inta aadan bixin lacag-bixinta wada sheekaysiga",
-        "please-join-wallet-community": "Fadlan ku biir bulshada boorsada jeebka ka hor inta aanad lacag bixin",
+        "please-join-wallet-federation": "Fadlan ku biir bulshada boorsada jeebka ka hor inta aanad lacag bixin",
         "please-select-balance-federation": "Fadlan ka dooro bulshada leh hadhaaga aad ka bixinayso.",
         "receive-ecash-failed": "Waa lagu guul daraystay in la helo eCash",
         "receive-ecash-failed-claimed": "Ku guul daraystay helitaanka eCash Lacagtan eCash mar hore ayaa la qaatay.",
@@ -425,10 +425,10 @@
             "you-requested-payment": "Waad codsatay {{fiat}} {{amount}} {{memo}}",
             "you-sent-payment": "Adigaa soo diray {{fiat}} {{amount}}} {{memo}}"
         },
-        "community": {
-            "add-community": "Ku dar bulsho",
-            "join-a-community": "Ku biir bulsho",
-            "join-community-guidance": "Ku biir bulshada aad jeceshahay si aad lacag u hesho iyo wax ka badan",
+        "federation": {
+            "add-federation": "Ku dar bulsho",
+            "join-a-federation": "Ku biir bulsho",
+            "join-federation-guidance": "Ku biir bulshada aad jeceshahay si aad lacag u hesho iyo wax ka badan",
             "or-visit-awesome-fedimint": "ama Booqo Fedimint Awesome"
         },
         "developer": {

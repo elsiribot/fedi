@@ -24,8 +24,8 @@
         "canceled": "Nakansela",
         "chat": "Chat",
         "checking": "Sinusuri ko...",
-        "communities": "Mga Komunidad",
-        "community": "Komunidad",
+        "federations": "Mga Komunidad",
+        "federation": "Komunidad",
         "complete": "Kumpleto",
         "confirm": "Kumpirmahin",
         "continue": "Magpatuloy",
@@ -124,7 +124,7 @@
         "you": "Ikaw"
     },
     "phrases": {
-        "add-community": "Magdagdag ng komunidad",
+        "add-federation": "Magdagdag ng komunidad",
         "add-note": "Magdagdag ng tala",
         "address-created": "Nabuo na ang address",
         "allow-camera-access": "Pahintulutan ang pag-access sa camera",
@@ -138,7 +138,7 @@
         "changes-saved": "Nasave na ang mga pagbabago",
         "check-incoming-funds": "Suriin ang mga papasok na pondo",
         "click-for-more-details": "Mag-click para sa higit pang mga detalye",
-        "community-default": "Default ng komunidad",
+        "federation-default": "Default ng komunidad",
         "confirm-chat-send": "Kumpirmahin ang pagpapadala sa chat",
         "copied-bitcoin-address": "Nakopya ang bitcoin address",
         "copied-ecash-token": "Nakopya ang eCash token",
@@ -250,7 +250,7 @@
         "please-force-quit-the-app": "May nangyaring error, pakipilit isara ang app at subukan ulit",
         "please-grant-permission": "Pakibigyan ng permiso para ma-download ang file na ito",
         "please-join-a-federation": "Sumali muna sa isang komunidad bago mag-chat payment",
-        "please-join-wallet-community": "Sumali muna sa wallet na komunidad bago magbayad",
+        "please-join-wallet-federation": "Sumali muna sa wallet na komunidad bago magbayad",
         "please-select-balance-federation": "Pumili ng federation na may balanse para makapagbayad.",
         "receive-ecash-failed": "Hindi natanggap ang eCash",
         "receive-ecash-failed-claimed": "Hindi natanggap ang eCash. Nakuha na ito.",
@@ -427,10 +427,10 @@
             "you-requested-payment": "Magrequest ka ng {{fiat}} ({{amount}}) {{memo}}",
             "you-sent-payment": "Nagpadala ka ng {{fiat}} ({{amount}}) {{memo}}"
         },
-        "community": {
-            "add-community": "Magdagdag ng komunidad",
-            "join-a-community": "Sumali sa isang komunidad",
-            "join-community-guidance": "Sumali sa paborito mong komunidad para maka-access ng pera at iba pa",
+        "federation": {
+            "add-federation": "Magdagdag ng komunidad",
+            "join-a-federation": "Sumali sa isang komunidad",
+            "join-federation-guidance": "Sumali sa paborito mong komunidad para maka-access ng pera at iba pa",
             "or-visit-awesome-fedimint": "o Bisitahin ang Awesome Fedimint"
         },
         "developer": {

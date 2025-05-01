@@ -72,7 +72,9 @@ export const BitcoinWallet: React.FC = () => {
                     </Button>
                 </Buttons>
             ) : (
-                <Text variant="body">{t('feature.wallet.join-community')}</Text>
+                <Text variant="body">
+                    {t('feature.wallet.join-federation')}
+                </Text>
             )}
             <RequestPaymentDialog
                 open={pathname === '/request'}

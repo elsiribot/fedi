@@ -24,8 +24,8 @@
         "canceled": "Dibatalkan",
         "chat": "Ngobrol",
         "checking": "Memeriksa...",
-        "communities": "Komunitas",
-        "community": "Komunitas",
+        "federations": "Komunitas",
+        "federation": "Komunitas",
         "complete": "Selesai",
         "confirm": "Konfirmasi",
         "continue": "Lanjutkan",
@@ -124,7 +124,7 @@
         "you": "kamu"
     },
     "phrases": {
-        "add-community": "Tambahkan komunitas",
+        "add-federation": "Tambahkan komunitas",
         "add-note": "Tambah catatan",
         "address-created": "Alamat dibuat",
         "allow-camera-access": "Izinkan akses kamera",
@@ -138,7 +138,7 @@
         "changes-saved": "Perubahan tersimpan",
         "check-incoming-funds": "Periksa dana masuk",
         "click-for-more-details": "Klik untuk detail",
-        "community-default": "Default komunitas",
+        "federation-default": "Default komunitas",
         "confirm-chat-send": "Konfirmasi kirim obrolan",
         "copied-bitcoin-address": "Alamat Bitcoin disalin",
         "copied-ecash-token": "Token eCash disalin",
@@ -250,7 +250,7 @@
         "please-force-quit-the-app": "Terjadi kesalahan, silakan tutup aplikasi dan coba lagi",
         "please-grant-permission": "Berikan izin untuk mengunduh file ini",
         "please-join-a-federation": "Silakan bergabung dengan komunitas sebelum melakukan pembayaran melalui chat",
-        "please-join-wallet-community": "Silakan bergabung dengan dompet komunitas sebelum melakukan pembayaran",
+        "please-join-wallet-federation": "Silakan bergabung dengan dompet komunitas sebelum melakukan pembayaran",
         "please-select-balance-federation": "Silakan pilih komunitas dengan saldo yang tersedia untuk melakukan pembayaran.",
         "receive-ecash-failed": "Gagal menerima e-cash",
         "receive-ecash-failed-claimed": "Gagal menerima e-cash. Ini sudah diklaim sebelumnya",
@@ -427,10 +427,10 @@
             "you-requested-payment": "Kamu meminta {{fiat}} ({{amount}}) {{memo}}",
             "you-sent-payment": "Kamu mengirimkan {{fiat}} ({{amount}}) {{memo}}"
         },
-        "community": {
-            "add-community": "Tambahkan komunitas",
-            "join-a-community": "Bergabunglah dengan komunitas",
-            "join-community-guidance": "Gabung ke komunitas favorit kamu untuk mengakses uang dan lainnya.",
+        "federation": {
+            "add-federation": "Tambahkan komunitas",
+            "join-a-federation": "Bergabunglah dengan komunitas",
+            "join-federation-guidance": "Gabung ke komunitas favorit kamu untuk mengakses uang dan lainnya.",
             "or-visit-awesome-fedimint": "atau Kunjungi Awesome Fedimint"
         },
         "developer": {
