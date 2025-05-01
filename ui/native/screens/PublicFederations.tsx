@@ -63,12 +63,12 @@ const PublicFederations: React.FC<Props> = ({ navigation }) => {
         switcherOptions[0]
 
     const createInfoItems: FirstTimeCommunityEntryItem[] = [
-        { icon: 'SocialPeople', text: t('feature.community.create-info-1') },
+        { icon: 'SocialPeople', text: t('feature.federation.create-info-1') },
         {
             icon: 'ShieldHalfFilled',
-            text: t('feature.community.create-info-3'),
+            text: t('feature.federation.create-info-3'),
         },
-        { icon: 'Wallet', text: t('feature.community.create-info-5') },
+        { icon: 'Wallet', text: t('feature.federation.create-info-5') },
     ]
 
     return (

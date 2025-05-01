@@ -426,7 +426,7 @@
             "you-requested-payment": "Wasabye {{fiat}} ({{amount}}) {{memo}}",
             "you-sent-payment": "Wohereje {{fiat}} ({{amount}}) {{memo}}"
         },
-        "community": {
+        "federation": {
             "add-community": "Ongeraho umuganda",
             "join-a-community": "Injira mumuryango",
             "join-community-guidance": "Injira mumuryango ukunda kugirango ubone amafaranga nibindi byinshi",

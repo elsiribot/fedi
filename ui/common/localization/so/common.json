@@ -425,7 +425,7 @@
             "you-requested-payment": "Waad codsatay {{fiat}} {{amount}} {{memo}}",
             "you-sent-payment": "Adigaa soo diray {{fiat}} {{amount}}} {{memo}}"
         },
-        "community": {
+        "federation": {
             "add-community": "Ku dar bulsho",
             "join-a-community": "Ku biir bulsho",
             "join-community-guidance": "Ku biir bulshada aad jeceshahay si aad lacag u hesho iyo wax ka badan",

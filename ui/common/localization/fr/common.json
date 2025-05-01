@@ -427,7 +427,7 @@
             "you-requested-payment": "Vous avez demandé {{fiat}} ({{amount}}) {{memo}}",
             "you-sent-payment": "Vous avez envoyé {{fiat}} ({{amount}}) {{memo}}"
         },
-        "community": {
+        "federation": {
             "add-community": "Ajouter une communauté",
             "join-a-community": "Rejoignez une communauté",
             "join-community-guidance": "Rejoignez votre communauté préférée pour accéder à de l'argent et bien plus encore",

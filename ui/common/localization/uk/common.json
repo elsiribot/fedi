@@ -427,7 +427,7 @@
             "you-requested-payment": "Ви надіслали запит на {{fiat}} ({{amount}}) {{memo}}",
             "you-sent-payment": "Ви надіслали {{fiat}} ({{amount}}) {{memo}}"
         },
-        "community": {
+        "federation": {
             "add-community": "Додати громаду",
             "join-a-community": "Приєднатися до громади",
             "join-community-guidance": "Приєднуйтесь до улюбленої громади, щоб отримати доступ до грошей та іншого",

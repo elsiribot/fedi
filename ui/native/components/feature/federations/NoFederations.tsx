@@ -33,10 +33,10 @@ const NoFederations: React.FC = () => {
             <Image style={style.image} source={Images.AwesomeFedimint} />
             <View style={style.titleContainer}>
                 <Text h2 medium>
-                    {t('feature.community.join-a-community')}
+                    {t('feature.federation.join-a-community')}
                 </Text>
                 <Text style={style.subtitle}>
-                    {t('feature.community.join-community-guidance')}
+                    {t('feature.federation.join-community-guidance')}
                 </Text>
             </View>
             <View style={style.contentContainer}>
@@ -93,7 +93,7 @@ const NoFederations: React.FC = () => {
                             <View style={style.link}>
                                 <Text caption medium>
                                     {t(
-                                        'feature.community.or-visit-awesome-fedimint',
+                                        'feature.federation.or-visit-awesome-fedimint',
                                     )}
                                 </Text>
                                 <SvgImage name="ExternalLink" size={20} />

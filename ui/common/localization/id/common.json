@@ -427,7 +427,7 @@
             "you-requested-payment": "Kamu meminta {{fiat}} ({{amount}}) {{memo}}",
             "you-sent-payment": "Kamu mengirimkan {{fiat}} ({{amount}}) {{memo}}"
         },
-        "community": {
+        "federation": {
             "add-community": "Tambahkan komunitas",
             "join-a-community": "Bergabunglah dengan komunitas",
             "join-community-guidance": "Gabung ke komunitas favorit kamu untuk mengakses uang dan lainnya.",

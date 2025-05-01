@@ -28,7 +28,7 @@ const FederationSelectorPlaceholder: React.FC = () => {
                     adjustsFontSizeToFit
                     minimumFontScale={0.8}
                     style={style.federationName}>
-                    {t('feature.community.join-a-community')}
+                    {t('feature.federation.join-a-community')}
                 </Text>
             </Pressable>
         </HoloGradient>

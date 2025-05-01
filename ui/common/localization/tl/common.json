@@ -427,7 +427,7 @@
             "you-requested-payment": "Magrequest ka ng {{fiat}} ({{amount}}) {{memo}}",
             "you-sent-payment": "Nagpadala ka ng {{fiat}} ({{amount}}) {{memo}}"
         },
-        "community": {
+        "federation": {
             "add-community": "Magdagdag ng komunidad",
             "join-a-community": "Sumali sa isang komunidad",
             "join-community-guidance": "Sumali sa paborito mong komunidad para maka-access ng pera at iba pa",

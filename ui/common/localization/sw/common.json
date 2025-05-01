@@ -427,7 +427,7 @@
             "you-requested-payment": "Uliomba {{fiat}} ({{amount}}) {{memo}}",
             "you-sent-payment": "Ulituma {{fiat}} ({{amount}}) {{memo}}"
         },
-        "community": {
+        "federation": {
             "add-community": "Ongeza jumuiya",
             "join-a-community": "Jiunge na jumuiya",
             "join-community-guidance": "Jiunge na jumuiya unayopenda ili kupata pesa na zaidi",

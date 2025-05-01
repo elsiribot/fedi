@@ -156,7 +156,7 @@ const ConnectedFederationsDrawer: React.FC<DrawerContentComponentProps> = (
                                 medium
                                 adjustsFontSizeToFit
                                 style={style.buttonText}>
-                                {t('feature.community.add-community')}
+                                {t('feature.federation.add-community')}
                             </Text>
                         </>
                     }

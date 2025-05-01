@@ -485,7 +485,7 @@
             "you-requested-payment": "You requested {{fiat}} ({{amount}}) {{memo}}",
             "you-sent-payment": "You sent {{fiat}} ({{amount}}) {{memo}}"
         },
-        "community": {
+        "federation": {
             "add-community": "Add",
             "create-title": "Want to run your own community?",
             "create-my-community": "Create my Community",
