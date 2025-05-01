@@ -245,7 +245,7 @@ const SelectedMessageOverlay: React.FC<{ isPublic?: boolean }> = ({
                             </Text>
                         </Flex>
                     ) : (
-                        <View style={style.optionsContainer}>
+                        <Flex fullWidth>
                             {selectedMessage?.content.msgtype === 'm.text' && (
                                 <>
                                     <Pressable
@@ -295,7 +295,7 @@ const SelectedMessageOverlay: React.FC<{ isPublic?: boolean }> = ({
                                     </Text>
                                 </Pressable>
                             )}
-                        </View>
+                        </Flex>
                     ),
                 buttons: deleteMessage
                     ? [
@@ -318,10 +318,6 @@ const SelectedMessageOverlay: React.FC<{ isPublic?: boolean }> = ({
 
 const styles = (theme: Theme) =>
     StyleSheet.create({
-        optionsContainer: {
-            width: '100%',
-            flexDirection: 'column',
-        },
         action: {
             gap: theme.spacing.lg,
         },

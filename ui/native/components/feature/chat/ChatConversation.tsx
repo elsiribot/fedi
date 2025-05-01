@@ -11,7 +11,6 @@ import {
     NativeSyntheticEvent,
     Pressable,
     StyleSheet,
-    View,
 } from 'react-native'
 
 import { useObserveMatrixRoom } from '@fedi/common/hooks/matrix'
@@ -236,11 +235,14 @@ const ChatConversation: React.FC<MessagesListProps> = ({
                     }
                     ListHeaderComponent={
                         isBlocked ? (
-                            <View style={style.blockedContainer}>
+                            <Flex
+                                align="center"
+                                fullWidth
+                                style={style.blockedContainer}>
                                 <Text tiny style={style.blockedText}>
                                     {t('feature.chat.user-is-blocked-guidance')}
                                 </Text>
-                            </View>
+                            </Flex>
                         ) : undefined
                     }
                     onScroll={handleScroll}
@@ -318,8 +320,6 @@ const styles = (theme: Theme) =>
             color: theme.colors.secondary,
         },
         blockedContainer: {
-            alignItems: 'center',
-            width: '100%',
             marginBottom: theme.spacing.md,
         },
         blockedText: {

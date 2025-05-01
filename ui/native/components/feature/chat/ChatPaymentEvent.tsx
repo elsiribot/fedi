@@ -82,7 +82,12 @@ const ChatPaymentEvent: React.FC<Props> = ({ event }: Props) => {
                     </Flex>
                 )}
                 {buttons.length > 0 && (
-                    <Flex row justify="start" style={style.paymentButtons}>
+                    <Flex
+                        row
+                        justify="start"
+                        gap="md"
+                        fullWidth
+                        style={style.paymentButtons}>
                         {buttons.map(button => (
                             <Button
                                 key={button.label}
@@ -141,8 +146,6 @@ const styles = (theme: Theme) =>
             marginTop: theme.spacing.sm,
         },
         paymentButtons: {
-            gap: 12,
-            width: '100%',
             marginTop: theme.spacing.sm,
         },
         statusText: {

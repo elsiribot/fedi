@@ -21,8 +21,8 @@ import {
 } from '@fedi/common/utils/matrix'
 
 import { useAppSelector } from '../../../state/hooks'
-import ChatMultispendEvent from '../multispend/chat-events/ChatMultispendEvent'
 import Flex from '../../ui/Flex'
+import ChatMultispendEvent from '../multispend/chat-events/ChatMultispendEvent'
 import ChatDeletedEvent from './ChatDeletedEvent'
 import ChatEmbeddedLinkPreview from './ChatEmbeddedLinkPreview'
 import ChatEncryptedEvent from './ChatEncryptedEvent'
@@ -101,11 +101,7 @@ const ChatEvent: React.FC<Props> = ({
                     isQueued && styles(theme).containerQueued,
                 ]}>
                 <Flex row>
-                    <View
-                        style={[
-                            styles(theme).contentContainer,
-                            fullWidth && styles(theme).fullWidth,
-                        ]}>
+                    <Flex align="start" justify="end" fullWidth={fullWidth}>
                         <View style={bubbleContainerStyles}>
                             {isText ? (
                                 <ChatTextEvent
@@ -151,7 +147,7 @@ const ChatEvent: React.FC<Props> = ({
                                 ))}
                             </View>
                         )}
-                    </View>
+                    </Flex>
                 </Flex>
             </View>
         </ErrorBoundary>
@@ -170,14 +166,6 @@ const styles = (theme: Theme) =>
             borderRadius: 16,
             maxWidth: theme.sizes.maxMessageWidth,
             overflow: 'hidden',
-        },
-        contentContainer: {
-            flexDirection: 'column',
-            alignItems: 'flex-start',
-            justifyContent: 'flex-end',
-        },
-        fullWidth: {
-            width: '100%',
         },
         leftAlignedMessage: {
             marginRight: 'auto',

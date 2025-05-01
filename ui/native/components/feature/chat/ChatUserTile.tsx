@@ -54,7 +54,7 @@ const ChatUserTile: React.FC<UserItemProps> = ({
             containerStyle={containerStyle}
             onPress={disabled ? undefined : () => selectUser(user.id)}
             onLongPress={disabled ? undefined : () => selectUser(user.id)}>
-            <Flex grow row align="center" style={style.usernameContainer}>
+            <Flex grow row align="center" fullWidth>
                 <ChatAvatar
                     containerStyle={[style.avatar]}
                     user={avatarUser}
@@ -99,9 +99,6 @@ const styles = (theme: Theme) =>
         },
         adminBadge: {
             marginRight: theme.spacing.xs,
-        },
-        usernameContainer: {
-            width: '100%',
         },
         usernameText: {
             flexShrink: 2,
