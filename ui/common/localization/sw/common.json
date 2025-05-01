@@ -124,7 +124,7 @@
         "you": "Wewe"
     },
     "phrases": {
-        "add-community": "Ongeza jumuiya",
+        "add-federation": "Ongeza jumuiya",
         "add-note": "Ongeza maelezo",
         "address-created": "Anwani Imetengenezwa",
         "allow-camera-access": "Ruhusu Kamera",
@@ -428,7 +428,7 @@
             "you-sent-payment": "Ulituma {{fiat}} ({{amount}}) {{memo}}"
         },
         "federation": {
-            "add-community": "Ongeza jumuiya",
+            "add-federation": "Ongeza jumuiya",
             "join-a-community": "Jiunge na jumuiya",
             "join-community-guidance": "Jiunge na jumuiya unayopenda ili kupata pesa na zaidi",
             "or-visit-awesome-fedimint": "au Tembelea Awesome Fedimint"

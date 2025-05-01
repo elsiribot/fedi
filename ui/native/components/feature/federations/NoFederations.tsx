@@ -78,7 +78,7 @@ const NoFederations: React.FC = () => {
                     <Button
                         title={
                             <Text caption medium style={style.joinButtonText}>
-                                {t('phrases.add-community')}
+                                {t('phrases.add-federation')}
                             </Text>
                         }
                         onPress={() =>

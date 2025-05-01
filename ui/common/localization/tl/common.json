@@ -124,7 +124,7 @@
         "you": "Ikaw"
     },
     "phrases": {
-        "add-community": "Magdagdag ng komunidad",
+        "add-federation": "Magdagdag ng komunidad",
         "add-note": "Magdagdag ng tala",
         "address-created": "Nabuo na ang address",
         "allow-camera-access": "Pahintulutan ang pag-access sa camera",
@@ -428,7 +428,7 @@
             "you-sent-payment": "Nagpadala ka ng {{fiat}} ({{amount}}) {{memo}}"
         },
         "federation": {
-            "add-community": "Magdagdag ng komunidad",
+            "add-federation": "Magdagdag ng komunidad",
             "join-a-community": "Sumali sa isang komunidad",
             "join-community-guidance": "Sumali sa paborito mong komunidad para maka-access ng pera at iba pa",
             "or-visit-awesome-fedimint": "o Bisitahin ang Awesome Fedimint"

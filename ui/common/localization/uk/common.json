@@ -125,7 +125,7 @@
         "you": "ти"
     },
     "phrases": {
-        "add-community": "Додати громаду",
+        "add-federation": "Додати громаду",
         "add-note": "Додати примітку",
         "address-created": "Адресу створено",
         "allow-camera-access": "Дозволити доступ до камери",
@@ -428,7 +428,7 @@
             "you-sent-payment": "Ви надіслали {{fiat}} ({{amount}}) {{memo}}"
         },
         "federation": {
-            "add-community": "Додати громаду",
+            "add-federation": "Додати громаду",
             "join-a-community": "Приєднатися до громади",
             "join-community-guidance": "Приєднуйтесь до улюбленої громади, щоб отримати доступ до грошей та іншого",
             "or-visit-awesome-fedimint": "або відвідайте Awesome Fedimint"

@@ -142,7 +142,7 @@
         "you": "you"
     },
     "phrases": {
-        "add-community": "Add community",
+        "add-federation": "Add federation",
         "add-note": "Add note",
         "add-notes": "Add Notes",
         "address-created": "Address Created",
@@ -486,7 +486,7 @@
             "you-sent-payment": "You sent {{fiat}} ({{amount}}) {{memo}}"
         },
         "federation": {
-            "add-community": "Add",
+            "add-federation": "Add",
             "create-title": "Want to run your own community?",
             "create-my-community": "Create my Community",
             "create-info-1": "A Federation is managed by trusted people called guardians.",

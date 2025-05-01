@@ -124,7 +124,7 @@
         "you": "Tú"
     },
     "phrases": {
-        "add-community": "Agregar comunidad",
+        "add-federation": "Agregar comunidad",
         "add-note": "Agregar una nota",
         "address-created": "Dirección creada",
         "allow-camera-access": "Permitir acceso a la cámara",
@@ -428,7 +428,7 @@
             "you-sent-payment": "Enviaste {{fiat}} ({{amount}}) {{memo}}"
         },
         "federation": {
-            "add-community": "Agrega una comunidad",
+            "add-federation": "Agrega una comunidad",
             "join-a-community": "Únete a una comunidad",
             "join-community-guidance": "Únate a tu comunidad favorita para acceder a dinero y más 💸",
             "or-visit-awesome-fedimint": "o visita Awesome Fedimint"

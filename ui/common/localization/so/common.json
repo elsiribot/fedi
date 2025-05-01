@@ -123,7 +123,7 @@
         "you": "Adi"
     },
     "phrases": {
-        "add-community": "Ku dar bulsho",
+        "add-federation": "Ku dar bulsho",
         "add-note": "Ku Dar Qoraal",
         "address-created": "Ciwaanka La Sameeyey",
         "allow-camera-access": "Oggolow gelitaanka kamarada",
@@ -426,7 +426,7 @@
             "you-sent-payment": "Adigaa soo diray {{fiat}} {{amount}}} {{memo}}"
         },
         "federation": {
-            "add-community": "Ku dar bulsho",
+            "add-federation": "Ku dar bulsho",
             "join-a-community": "Ku biir bulsho",
             "join-community-guidance": "Ku biir bulshada aad jeceshahay si aad lacag u hesho iyo wax ka badan",
             "or-visit-awesome-fedimint": "ama Booqo Fedimint Awesome"

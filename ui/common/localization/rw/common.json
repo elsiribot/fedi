@@ -124,7 +124,7 @@
         "you": "Wowe"
     },
     "phrases": {
-        "add-community": "Ongeraho umuganda",
+        "add-federation": "Ongeraho umuganda",
         "add-note": "Ongera ho inyandiko",
         "address-created": "Aderesi Yakozwe",
         "allow-camera-access": "Emera kamera ikoreshwe",
@@ -427,7 +427,7 @@
             "you-sent-payment": "Wohereje {{fiat}} ({{amount}}) {{memo}}"
         },
         "federation": {
-            "add-community": "Ongeraho umuganda",
+            "add-federation": "Ongeraho umuganda",
             "join-a-community": "Injira mumuryango",
             "join-community-guidance": "Injira mumuryango ukunda kugirango ubone amafaranga nibindi byinshi",
             "or-visit-awesome-fedimint": "cyangwa Sura Fedimint nziza"

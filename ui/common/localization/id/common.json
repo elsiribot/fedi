@@ -124,7 +124,7 @@
         "you": "kamu"
     },
     "phrases": {
-        "add-community": "Tambahkan komunitas",
+        "add-federation": "Tambahkan komunitas",
         "add-note": "Tambah catatan",
         "address-created": "Alamat dibuat",
         "allow-camera-access": "Izinkan akses kamera",
@@ -428,7 +428,7 @@
             "you-sent-payment": "Kamu mengirimkan {{fiat}} ({{amount}}) {{memo}}"
         },
         "federation": {
-            "add-community": "Tambahkan komunitas",
+            "add-federation": "Tambahkan komunitas",
             "join-a-community": "Bergabunglah dengan komunitas",
             "join-community-guidance": "Gabung ke komunitas favorit kamu untuk mengakses uang dan lainnya.",
             "or-visit-awesome-fedimint": "atau Kunjungi Awesome Fedimint"
