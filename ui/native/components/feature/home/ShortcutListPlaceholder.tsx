@@ -59,7 +59,7 @@ const ShortcutsListPlaceholder: React.FC = () => {
     const style = styles(theme)
 
     return (
-        <Flex grow style={style.container}>
+        <Flex grow fullWidth>
             <Text medium style={style.sectionTitle}>
                 {t('feature.home.federation-mods-title')}
             </Text>
@@ -84,7 +84,6 @@ const ShortcutsListPlaceholder: React.FC = () => {
 
 const styles = (theme: Theme) =>
     StyleSheet.create({
-        container: { width: '100%' },
         sectionTitle: {
             color: theme.colors.night,
             letterSpacing: -0.16,

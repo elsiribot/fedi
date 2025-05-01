@@ -33,7 +33,7 @@ const HomeWalletsPlaceholder: React.FC = () => {
         <ScrollView
             contentContainerStyle={style.container}
             alwaysBounceVertical={false}>
-            <Flex gap="lg" style={style.content}>
+            <Flex gap="lg" fullWidth>
                 {pinnedMessage && (
                     <View style={style.section}>
                         <WelcomeMessage message={pinnedMessage} />
@@ -76,9 +76,6 @@ const styles = (theme: Theme) =>
             marginTop: theme.spacing.sm,
             paddingHorizontal: theme.spacing.lg,
             paddingBottom: theme.spacing.xl,
-            width: '100%',
-        },
-        content: {
             width: '100%',
         },
         recovery: {

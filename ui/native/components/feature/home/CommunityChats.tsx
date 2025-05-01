@@ -71,7 +71,7 @@ const CommunityChats = () => {
         return null
 
     return (
-        <Flex gap="sm" style={style.container}>
+        <Flex gap="sm" fullWidth>
             <Text medium style={style.sectionTitle}>
                 {!hasWallet
                     ? t('feature.chat.community-news')
@@ -90,7 +90,6 @@ const CommunityChats = () => {
 
 const styles = (theme: Theme) =>
     StyleSheet.create({
-        container: { width: '100%' },
         sectionTitle: {
             color: theme.colors.night,
             letterSpacing: -0.16,

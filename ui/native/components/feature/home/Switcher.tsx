@@ -24,7 +24,7 @@ export function Switcher<T extends string>({
     const style = styles(theme)
 
     return (
-        <Flex row style={style.container}>
+        <Flex row fullWidth style={style.container}>
             {options.map(option => {
                 const isSelected = selected === option.value
                 return (
@@ -51,7 +51,6 @@ const styles = (theme: Theme) =>
             borderRadius: 20,
             height: 40,
             overflow: 'hidden',
-            width: '100%',
             backgroundColor: theme.colors.extraLightGrey,
         },
         item: {

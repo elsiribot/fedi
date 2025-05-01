@@ -129,7 +129,7 @@ const ShortcutsList: React.FC = () => {
     }
 
     return (
-        <Flex grow style={style.container}>
+        <Flex grow fullWidth>
             <Text style={style.sectionTitle}>
                 {t('feature.home.federation-mods-title')}
             </Text>
@@ -146,9 +146,6 @@ const ShortcutsList: React.FC = () => {
 
 const styles = (theme: Theme, columns: number) =>
     StyleSheet.create({
-        container: {
-            width: '100%',
-        },
         shortcut: {
             width: `${100 / columns}%`,
         },

@@ -40,7 +40,7 @@ const NoFederations: React.FC = () => {
                     {t('feature.federation.join-federation-guidance')}
                 </Text>
             </View>
-            <View style={style.contentContainer}>
+            <Flex gap="xl" fullWidth justify="end">
                 {publicFederations.map(f => {
                     return (
                         <Flex
@@ -80,7 +80,7 @@ const NoFederations: React.FC = () => {
                         </Flex>
                     )
                 })}
-                <View style={style.buttonGroup}>
+                <Flex gap="sm">
                     <Button
                         title={
                             <Text caption medium style={style.joinButtonText}>
@@ -107,8 +107,8 @@ const NoFederations: React.FC = () => {
                         }
                         onPress={() => onOpenAwesomeFedimint()}
                     />
-                </View>
-            </View>
+                </Flex>
+            </Flex>
         </ScrollView>
     )
 }
@@ -140,11 +140,6 @@ const styles = (theme: Theme) =>
             fontFamily: 'Albert Sans',
             letterSpacing: 0.16,
         },
-        contentContainer: {
-            width: '100%',
-            gap: 24,
-            justifyContent: 'flex-end',
-        },
         tileContainer: {
             backgroundColor: theme.colors.offWhite,
             padding: theme.spacing.md,
@@ -154,9 +149,6 @@ const styles = (theme: Theme) =>
         joinButtonText: {
             color: theme.colors.secondary,
             paddingHorizontal: theme.spacing.xs,
-        },
-        buttonGroup: {
-            gap: theme.spacing.sm,
         },
     })
 

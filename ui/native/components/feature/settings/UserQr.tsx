@@ -29,8 +29,13 @@ export const UserQr = ({ matrixUser }: UserQrProps) => {
                 copyValue={qrValue}
                 qrValue={qrValue}
             />
-            <Flex row center gap="xs" style={style.titleContainer}>
-                <Text h2 medium numberOfLines={1} adjustsFontSizeToFit>
+            <Flex row center gap="xs" fullWidth>
+                <Text
+                    h2
+                    medium
+                    numberOfLines={1}
+                    adjustsFontSizeToFit
+                    style={style.title}>
                     {matrixUser?.displayName}
                 </Text>
                 {displayNameSuffix && (
@@ -51,9 +56,9 @@ const styles = (theme: Theme) =>
     StyleSheet.create({
         titleSuffix: {
             color: theme.colors.grey,
-        },
-        titleContainer: {
             textAlign: 'center',
-            width: '100%',
+        },
+        title: {
+            textAlign: 'center',
         },
     })
