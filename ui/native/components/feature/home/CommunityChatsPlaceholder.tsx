@@ -13,7 +13,7 @@ const CommunityChatsPlaceholder: React.FC = () => {
 
     return (
         <View style={stylesPlaceholder.container}>
-            <Text medium style={stylesPlaceholder.sectionTitle}>
+            <Text style={stylesPlaceholder.sectionTitle}>
                 {t('feature.home.federation-news-title')}
             </Text>
             <Pressable
@@ -25,7 +25,7 @@ const CommunityChatsPlaceholder: React.FC = () => {
                     </View>
                 </View>
                 <View style={stylesPlaceholder.textContainer}>
-                    <Text medium style={stylesPlaceholder.text}>
+                    <Text style={stylesPlaceholder.text}>
                         {t('feature.home.federation-updates')}
                     </Text>
                 </View>
