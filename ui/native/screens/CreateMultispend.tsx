@@ -161,7 +161,7 @@ const CreateMultispend: React.FC<Props> = ({ navigation, route }) => {
                             </Text>
                             <Text small style={style.fieldDescription}>
                                 {t(
-                                    'feature.multispend.wallet-community-description',
+                                    'feature.multispend.wallet-federation-description',
                                 )}
                             </Text>
                         </View>
