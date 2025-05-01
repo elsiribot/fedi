@@ -42,23 +42,6 @@ export const NotificationContextProvider: React.FC<{
     useMatrixPushNotifications() // Triggers automatically if permissions are granted
     useUpdateZendeskNotificationCount() //initalise zendesk on startup and start polling for notifcation count. This also takes care of intialising the SDK
 
-    // Prompt for permissions once the user has at least two chats
-    useEffect(() => {
-        if (chatList.length >= 1 && notificationsPermission !== 'granted') {
-            ;(async () => {
-                const { status } = await requestNotifications([
-                    'alert',
-                    'sound',
-                    'badge',
-                ])
-
-                if (status !== 'granted') {
-                    Linking.openSettings()
-                }
-            })()
-        }
-    }, [chatList.length, notificationsPermission])
-
     // Manual trigger for publishing the notification token
     const triggerPushNotificationSetup = useCallback(async () => {
         log.info(
@@ -76,6 +59,25 @@ export const NotificationContextProvider: React.FC<{
         }),
         [notificationsPermission, triggerPushNotificationSetup],
     )
+
+    // Prompt for permissions once the user has at least one chats
+    useEffect(() => {
+        if (chatList.length >= 1 && notificationsPermission !== 'granted') {
+            ;(async () => {
+                const { status } = await requestNotifications([
+                    'alert',
+                    'sound',
+                    'badge',
+                ])
+
+                if (status !== 'granted') {
+                    Linking.openSettings()
+                }
+
+                triggerPushNotificationSetup()
+            })()
+        }
+    }, [chatList.length, notificationsPermission, triggerPushNotificationSetup])
 
     return (
         <NotificationContext.Provider value={value}>
