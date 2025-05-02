@@ -47,13 +47,20 @@ export const useShareLogs = () => {
                     content: jsLogs,
                 })
 
-                const transactions = await fetchTransactions({ limit: 10 })
+                // Ensure this is a federation with a wallet
+                if (activeFederation?.hasWallet) {
+                    const transactions = await fetchTransactions({ limit: 10 })
 
-                // Attach the ten latest transactions to attachmentFiles
-                attachmentFiles.push({
-                    name: 'transactions.json',
-                    content: JSON.stringify(transactions.slice(0, 10), null, 2),
-                })
+                    // Attach the ten latest transactions to attachmentFiles
+                    attachmentFiles.push({
+                        name: 'transactions.json',
+                        content: JSON.stringify(
+                            transactions.slice(0, 10),
+                            null,
+                            2,
+                        ),
+                    })
+                }
 
                 if (npub) {
                     attachmentFiles.push({
