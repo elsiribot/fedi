@@ -63,7 +63,7 @@ function WelcomePage() {
                     <ContentInner>
                         <FediLogo width={50} />
                         <Text variant="h2" weight="medium">
-                            {t('feature.onboarding.welcome-to-fedi')}
+                            {t('feature.onboarding.fedi')}
                         </Text>
                         <Text variant="body">
                             {t('feature.onboarding.empower-tagline')}

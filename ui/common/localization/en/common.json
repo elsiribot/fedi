@@ -714,6 +714,7 @@
             "description-create": "Start your own federation and power your own superwallet.",
             "earn-and-save": "Earn and Save",
             "enter-username": "Enter username",
+            "fedi": "Fedi",
             "get-a-wallet": "Get a Wallet",
             "greeting-image": "Looking good",
             "greeting-instructions": "Now you will be able to send money, communicate with your community, and more with Fedi.",
@@ -741,7 +742,6 @@
             "welcome-instructions-returning": "As a returning member of the federation, your wallet will be restored. This may take a few minutes.",
             "welcome-instructions-unknown": "New members receive a fresh wallet. Returning members will have their old wallet recovered automatically.",
             "welcome-to-federation": "Welcome to {{federation}}",
-            "welcome-to-fedi": "Welcome to Fedi",
             "yes-create-account": "Yes, create an account"
         },
         "parser": {

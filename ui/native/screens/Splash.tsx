@@ -91,6 +91,9 @@ const Splash: React.FC<Props> = ({ navigation }: Props) => {
                     <View style={style.iconContainer}>
                         <SvgImage size={SvgImageSize.lg} name="FediLogoIcon" />
                     </View>
+                    <Text style={style.title}>
+                        {t('feature.onboarding.fedi')}
+                    </Text>
                     <Text style={style.welcomeText}>
                         {t('feature.onboarding.chat-earn-save-spend')}
                     </Text>
@@ -189,6 +192,11 @@ const styles = (theme: Theme, fontScale: number) =>
             height: 32,
             justifyContent: 'center',
             alignItems: 'center',
+        },
+        title: {
+            textAlign: 'center',
+            fontWeight: 700,
+            fontSize: 30,
         },
         welcomeText: {
             textAlign: 'center',
