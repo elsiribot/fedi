@@ -147,6 +147,8 @@ export function OnboardingHome() {
                 </Button>
             </>
         )
+    } else if (activeTab === 'create') {
+        body = <p></p> // coming soon
     } else {
         body = <PublicFederations />
     }
@@ -165,7 +167,11 @@ export function OnboardingHome() {
                         <Text
                             variant="caption"
                             css={{ color: theme.colors.darkGrey }}>
-                            {t('feature.onboarding.description')}
+                            {t(
+                                activeTab === 'join'
+                                    ? 'feature.onboarding.description-join'
+                                    : 'feature.onboarding.description',
+                            )}
                         </Text>
                     </TitleWrapper>
                     <Switcher
