@@ -3,20 +3,28 @@ import { useTranslation } from 'react-i18next'
 
 import ChatIcon from '@fedi/common/assets/svgs/chat.svg'
 import ArrowRightIcon from '@fedi/common/assets/svgs/chevron-right.svg'
+import userProfile from '@fedi/common/assets/svgs/profile.svg'
 import { ErrorBoundary } from '@fedi/common/components/ErrorBoundary'
-import { selectFederations } from '@fedi/common/redux'
+import { useNuxStep } from '@fedi/common/hooks/nux'
+import { selectFederations, selectMatrixAuth } from '@fedi/common/redux'
 
 import { BitcoinWallet } from '../components/BitcoinWallet'
 import { ContentBlock } from '../components/ContentBlock'
 import { FediModTiles } from '../components/FediModTiles'
 import { Icon } from '../components/Icon'
 import * as Layout from '../components/Layout'
+import { Modal } from '../components/Modal'
 import { Text } from '../components/Text'
 import { useAppSelector } from '../hooks'
 import { styled, theme } from '../styles'
 
 function HomePage() {
     const { t } = useTranslation()
+
+    const [hasSeenDisplayName, completeSeenDisplayName] =
+        useNuxStep('displayNameModal')
+    const matrixAuth = useAppSelector(selectMatrixAuth)
+
     const federations = useAppSelector(selectFederations)
 
     return (
@@ -53,6 +61,7 @@ function HomePage() {
                                 </SubTitle>
                             </Section>
                         )}
+
                         <Section>
                             <Title variant="h2">
                                 {t('feature.home.federation-mods-title')}
@@ -69,6 +78,24 @@ function HomePage() {
                     </Content>
                 </Layout.Content>
             </Layout.Root>
+
+            <Modal
+                open={!hasSeenDisplayName && !!matrixAuth?.displayName}
+                onClick={completeSeenDisplayName}>
+                <ModalContent>
+                    <ModalIconWrapper>
+                        <Icon icon={userProfile} size="xl" />
+                    </ModalIconWrapper>
+                    <ModalTextWrapper>
+                        <Text variant="h2">
+                            {t('feature.home.display-name')}
+                        </Text>
+                        <Text variant="h2">
+                            &quot;{matrixAuth?.displayName}&quot;
+                        </Text>
+                    </ModalTextWrapper>
+                </ModalContent>
+            </Modal>
         </ContentBlock>
     )
 }
@@ -117,6 +144,29 @@ const EmptyBlockArrow = styled('div', {
     alignItems: 'center',
     display: 'flex',
     width: 20,
+})
+
+const ModalContent = styled('div', {
+    alignItems: 'center',
+    display: 'flex',
+    flexDirection: 'column',
+    gap: 10,
+    justifyContent: 'center',
+})
+
+const ModalTextWrapper = styled('div', {})
+
+const ModalIconWrapper = styled('div', {
+    alignItems: 'center',
+    borderRadius: '50%',
+    boxSizing: 'border-box',
+    display: 'flex',
+    height: 50,
+    holoGradient: '600',
+    justifyContent: 'center',
+    padding: 5,
+    overflow: 'hidden',
+    width: 50,
 })
 
 export default HomePage
