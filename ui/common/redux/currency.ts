@@ -303,9 +303,7 @@ export const selectFederationCurrencies = (
     const currencies = getSelectableCurrencies()
 
     return Object.fromEntries(
-        Object.entries(currencies)
-            .filter(([a]) => a !== defaultCurrency)
-            .sort(([, a], [, b]) => a.localeCompare(b)),
+        Object.entries(currencies).filter(([a]) => a !== defaultCurrency),
     )
 }
 
