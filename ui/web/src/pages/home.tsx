@@ -6,10 +6,16 @@ import ArrowRightIcon from '@fedi/common/assets/svgs/chevron-right.svg'
 import userProfile from '@fedi/common/assets/svgs/profile.svg'
 import { ErrorBoundary } from '@fedi/common/components/ErrorBoundary'
 import { useNuxStep } from '@fedi/common/hooks/nux'
-import { selectFederations, selectMatrixAuth } from '@fedi/common/redux'
+import {
+    selectActiveFederation,
+    selectActiveFederationChats,
+    selectMatrixAuth,
+} from '@fedi/common/redux'
+import stringUtils from '@fedi/common/utils/StringUtils'
 
 import { BitcoinWallet } from '../components/BitcoinWallet'
 import { ContentBlock } from '../components/ContentBlock'
+import { FederationAvatar } from '../components/FederationAvatar'
 import { FediModTiles } from '../components/FediModTiles'
 import { Icon } from '../components/Icon'
 import * as Layout from '../components/Layout'
@@ -25,7 +31,12 @@ function HomePage() {
         useNuxStep('displayNameModal')
     const matrixAuth = useAppSelector(selectMatrixAuth)
 
-    const federations = useAppSelector(selectFederations)
+    const activeFederation = useAppSelector(selectActiveFederation)
+    const newsItems = useAppSelector(s => selectActiveFederationChats(s))
+
+    // Get first chat message to use as Federation News for now
+    // Improvement: Show carousel of announcements to show multiple news items
+    const newsItem = newsItems.length > 0 ? newsItems[0] : null
 
     return (
         <ContentBlock>
@@ -38,27 +49,67 @@ function HomePage() {
                         <Section>
                             <BitcoinWallet />
                         </Section>
-                        {/* Hide community news section for now until designs and endpoints are are ready */}
-                        {federations.length === 0 && (
+
+                        {!activeFederation && (
                             <Section>
                                 <Title variant="h2">
                                     {t('feature.home.federation-news-title')}
                                 </Title>
-                                <SubTitle variant="body">
-                                    <JoinBlock href="/onboarding">
-                                        <EmptyBlockIcon>
+
+                                <NewsContainer>
+                                    <NewsItem href="/onboarding">
+                                        <NewsItemIcon>
                                             <Icon icon={ChatIcon} />
-                                        </EmptyBlockIcon>
-                                        <EmptyBlockText>
+                                        </NewsItemIcon>
+                                        <NewsItemText>
                                             {t(
                                                 'feature.home.federation-updates',
                                             )}
-                                        </EmptyBlockText>
-                                        <EmptyBlockArrow>
+                                        </NewsItemText>
+                                        <NewsItemArrow>
                                             <Icon icon={ArrowRightIcon} />
-                                        </EmptyBlockArrow>
-                                    </JoinBlock>
-                                </SubTitle>
+                                        </NewsItemArrow>
+                                    </NewsItem>
+                                </NewsContainer>
+                            </Section>
+                        )}
+
+                        {activeFederation && newsItem && (
+                            <Section>
+                                <Title variant="h2">
+                                    {t('feature.home.federation-news-title')}
+                                </Title>
+
+                                <NewsContainer>
+                                    <NewsItem
+                                        href={`/chat/room/${newsItem.id}`}>
+                                        <NewsItemIcon>
+                                            <FederationAvatar
+                                                federation={activeFederation}
+                                                size="sm"
+                                            />
+                                        </NewsItemIcon>
+                                        <NewsItemText>
+                                            <Text variant="body" weight="bold">
+                                                {stringUtils.truncateString(
+                                                    newsItem.name,
+                                                    25,
+                                                )}
+                                            </Text>
+                                            {newsItem.preview && (
+                                                <Text variant="small">
+                                                    {stringUtils.truncateString(
+                                                        newsItem.preview.body,
+                                                        25,
+                                                    )}
+                                                </Text>
+                                            )}
+                                        </NewsItemText>
+                                        <NewsItemArrow>
+                                            <Icon icon={ArrowRightIcon} />
+                                        </NewsItemArrow>
+                                    </NewsItem>
+                                </NewsContainer>
                             </Section>
                         )}
 
@@ -71,7 +122,7 @@ function HomePage() {
                             </SubTitle>
                             <ErrorBoundary fallback={null}>
                                 <FediModTiles
-                                    isFederation={federations.length > 0}
+                                    isFederation={!!activeFederation}
                                 />
                             </ErrorBoundary>
                         </Section>
@@ -116,31 +167,34 @@ const SubTitle = styled(Text, {
     color: theme.colors.darkGrey,
 })
 
-const JoinBlock = styled(Link, {
+const NewsContainer = styled('div', {})
+
+const NewsItem = styled(Link, {
     alignItems: 'center',
-    background: theme.colors.offWhite,
+    background: theme.colors.offWhite100,
     borderRadius: 20,
     boxSizing: 'border-box',
     color: theme.colors.night,
     display: 'flex',
     gap: 10,
-    padding: 20,
+    overflow: 'hidden',
+    padding: 15,
 })
 
-const EmptyBlockIcon = styled('div', {
+const NewsItemIcon = styled('div', {
     alignItems: 'center',
     display: 'flex',
-    width: 30,
+    minWidth: 30,
 })
 
-const EmptyBlockText = styled('div', {
+const NewsItemText = styled('div', {
     display: 'flex',
     flexDirection: 'column',
     flex: 1,
     textAlign: 'left',
 })
 
-const EmptyBlockArrow = styled('div', {
+const NewsItemArrow = styled('div', {
     alignItems: 'center',
     display: 'flex',
     width: 20,
