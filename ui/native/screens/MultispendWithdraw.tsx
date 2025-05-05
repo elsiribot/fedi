@@ -22,6 +22,7 @@ import amountUtils from '@fedi/common/utils/AmountUtils'
 
 import { AmountScreen } from '../components/ui/AmountScreen'
 import Avatar from '../components/ui/Avatar'
+import Flex from '../components/ui/Flex'
 import { useAppSelector } from '../state/hooks'
 import { Sats } from '../types'
 import { RootStackParamList } from '../types/navigation'
@@ -123,16 +124,16 @@ const MultispendWithdraw: React.FC<Props> = ({ route }: Props) => {
                             <Avatar id={roomId} icon="SocialPeople" />
                         </View>
                     )}
-                    <View style={style.balanceWidgetInfo}>
+                    <Flex gap="xs">
                         <Text bold caption>
                             {matrixRoom?.name}
                         </Text>
-                        <View style={style.balanceContainer}>
+                        <Flex row align="center" gap="sm">
                             <Text medium caption color={theme.colors.darkGrey}>
                                 {formattedMultispendBalance}
                             </Text>
-                        </View>
-                    </View>
+                        </Flex>
+                    </Flex>
                 </View>
             }
             notes={notes}

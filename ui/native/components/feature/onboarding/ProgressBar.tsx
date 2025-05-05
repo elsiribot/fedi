@@ -2,6 +2,8 @@ import { Theme, useTheme } from '@rneui/themed'
 import React, { useEffect, useRef } from 'react'
 import { Animated, Easing, StyleSheet, View } from 'react-native'
 
+import Flex from '../../ui/Flex'
+
 type ProgressSectionProps = {
     targetValue?: number
     delay?: number
@@ -13,6 +15,8 @@ const ProgressSection: React.FC<ProgressSectionProps> = ({
 }: ProgressSectionProps) => {
     const { theme } = useTheme()
     const animatedWidth = useRef(new Animated.Value(0)).current
+
+    const style = styles(theme)
 
     useEffect(() => {
         Animated.timing(animatedWidth, {
@@ -30,12 +34,9 @@ const ProgressSection: React.FC<ProgressSectionProps> = ({
     })
 
     return (
-        <View style={[styles(theme).progressBarSection]}>
+        <View style={[style.progressBarSection]}>
             <Animated.View
-                style={[
-                    styles(theme).filledSection,
-                    { width: widthInterpolation },
-                ]}
+                style={[style.filledSection, { width: widthInterpolation }]}
             />
         </View>
     )
@@ -50,8 +51,15 @@ const ProgressBar: React.FC<ProgressBarProps> = ({
 }: ProgressBarProps) => {
     const { theme } = useTheme()
 
+    const style = styles(theme)
+
     return (
-        <View style={styles(theme).container}>
+        <Flex
+            row
+            align="center"
+            justify="evenly"
+            fullWidth
+            style={style.container}>
             {/*
                 Each section animates between 0% width to 50% to 100%
                 depending on which page is selected
@@ -76,7 +84,7 @@ const ProgressBar: React.FC<ProgressBarProps> = ({
                 targetValue={page < 4 ? 0 : page === 4 ? 0.5 : 1}
                 delay={page === 4 ? 100 : 0}
             />
-        </View>
+        </Flex>
     )
 }
 
@@ -85,10 +93,6 @@ const styles = (theme: Theme) =>
         container: {
             marginVertical: 'auto',
             height: theme.sizes.progressBarHeight,
-            width: '100%',
-            flexDirection: 'row',
-            alignItems: 'center',
-            justifyContent: 'space-evenly',
         },
         progressBarSection: {
             flex: 1,

@@ -162,13 +162,6 @@ const styles = (theme: Theme) =>
             marginTop: 'auto',
             width: '100%',
         },
-        instructionsText: {
-            marginVertical: theme.spacing.md,
-            textAlign: 'center',
-        },
-        titleText: {
-            textAlign: 'center',
-        },
         inputWrapper: {
             width: '100%',
             marginTop: theme.spacing.xl,
@@ -198,11 +191,6 @@ const styles = (theme: Theme) =>
             textAlign: 'left',
             marginTop: theme.spacing.xs,
             color: theme.colors.grey,
-        },
-        loadingContainer: {
-            flex: 1,
-            alignItems: 'center',
-            justifyContent: 'center',
         },
     })
 

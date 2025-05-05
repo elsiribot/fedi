@@ -2,9 +2,10 @@ import { Text, useTheme } from '@rneui/themed'
 import { Theme } from '@rneui/themed/dist/config'
 import { useCallback, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { Pressable, StyleSheet, View } from 'react-native'
+import { Pressable, StyleSheet } from 'react-native'
 
 import EditNotesOverlay from '../feature/send/EditNotesOverlay'
+import Flex from './Flex'
 import SvgImage, { SvgImageSize } from './SvgImage'
 
 type NotesInputProps = {
@@ -34,24 +35,29 @@ export default function NotesInput({
     return (
         <>
             <Pressable style={style.container} onPress={handlePressEdit}>
-                <View style={style.content}>
-                    <View style={style.titleRow}>
+                <Flex
+                    align="stretch"
+                    justify="center"
+                    gap="xs"
+                    fullWidth
+                    style={style.content}>
+                    <Flex row grow align="center" justify="between">
                         <Text small bold color={theme.colors.night}>
                             {label ?? t('words.notes')}
                         </Text>
-                        <View style={style.rightContainer}>
+                        <Flex row align="center" gap="xs">
                             <SvgImage name="EditPaper" size={SvgImageSize.sm} />
                             <Text small>
                                 {notes ? t('words.edit') : t('words.add')}
                             </Text>
-                        </View>
-                    </View>
+                        </Flex>
+                    </Flex>
                     {notes && (
                         <Text small color={theme.colors.darkGrey}>
                             {notes}
                         </Text>
                     )}
-                </View>
+                </Flex>
             </Pressable>
             <EditNotesOverlay
                 show={isEditing}
@@ -80,20 +86,7 @@ const styles = (theme: Theme) =>
             alignSelf: 'stretch',
         },
         content: {
-            display: 'flex',
-            flexDirection: 'column',
-            justifyContent: 'center',
-            alignItems: 'stretch',
-            width: '100%',
             paddingHorizontal: theme.spacing.xs,
-            gap: theme.spacing.xs,
-        },
-        titleRow: {
-            display: 'flex',
-            flexDirection: 'row',
-            flexGrow: 1,
-            justifyContent: 'space-between',
-            alignItems: 'center',
         },
         rightContainer: {
             flexDirection: 'row',
