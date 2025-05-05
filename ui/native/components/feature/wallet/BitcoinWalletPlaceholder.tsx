@@ -46,7 +46,10 @@ const BitcoinWalletPlaceholder: React.FC = () => {
                             />
                             <View>
                                 <View style={stylesPlaceholder.row}>
-                                    <Text bold style={stylesPlaceholder.title}>
+                                    <Text
+                                        allowFontScaling={false}
+                                        bold
+                                        style={stylesPlaceholder.title}>
                                         {t('words.bitcoin')}
                                     </Text>
                                 </View>
@@ -59,18 +62,28 @@ const BitcoinWalletPlaceholder: React.FC = () => {
                         />
                     </View>
                     <View style={stylesPlaceholder.balanceContainer}>
-                        <Text medium style={stylesPlaceholder.balanceTextMain}>
+                        <Text
+                            allowFontScaling={false}
+                            medium
+                            style={stylesPlaceholder.balanceTextMain}>
                             {amountUtils.stripTrailingZerosWithSuffix(
                                 formattedPrimaryAmount,
                             )}
                         </Text>
-                        <Text small style={stylesPlaceholder.balanceTextSats}>
+                        <Text
+                            allowFontScaling={false}
+                            small
+                            style={stylesPlaceholder.balanceTextSats}>
                             {formattedSecondaryAmount}
                         </Text>
                     </View>
                 </View>
                 <View style={stylesPlaceholder.buttonsContainer}>
-                    <Text style={stylesPlaceholder.buttonLabel}>
+                    <Text
+                        allowFontScaling={false}
+                        numberOfLines={1}
+                        adjustsFontSizeToFit
+                        style={stylesPlaceholder.buttonLabel}>
                         {t('feature.wallet.join-federation')}
                     </Text>
                 </View>

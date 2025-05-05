@@ -47,7 +47,10 @@ const StabilityWalletPlaceholder: React.FC = () => {
                                 size={SvgImageSize.md}
                                 color={theme.colors.white}
                             />
-                            <Text bold style={stylesPlaceholder.title}>
+                            <Text
+                                allowFontScaling={false}
+                                bold
+                                style={stylesPlaceholder.title}>
                                 {`${toUpper(selectedCurrency)} ${t(
                                     'feature.stabilitypool.stable-balance',
                                 )}`}
@@ -61,7 +64,9 @@ const StabilityWalletPlaceholder: React.FC = () => {
                     </View>
                     {/* Balance on the right */}
                     <View style={stylesPlaceholder.balanceContainer}>
-                        <Text style={stylesPlaceholder.balanceTextMain}>
+                        <Text
+                            allowFontScaling={false}
+                            style={stylesPlaceholder.balanceTextMain}>
                             {amountUtils.stripTrailingZerosWithSuffix(
                                 formattedPrimaryAmount,
                             )}
@@ -69,7 +74,11 @@ const StabilityWalletPlaceholder: React.FC = () => {
                     </View>
                 </View>
                 <View style={stylesPlaceholder.buttonsContainer}>
-                    <Text style={stylesPlaceholder.buttonLabel}>
+                    <Text
+                        allowFontScaling={false}
+                        numberOfLines={1}
+                        adjustsFontSizeToFit
+                        style={stylesPlaceholder.buttonLabel}>
                         {t('feature.wallet.join-federation')}
                     </Text>
                 </View>
@@ -82,7 +91,7 @@ const styles = (theme: Theme) =>
     StyleSheet.create({
         card: {
             backgroundColor: theme.colors.mint,
-            height: 100,
+            height: 99,
         },
         headerContainer: {
             flexDirection: 'row',
