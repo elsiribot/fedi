@@ -571,7 +571,8 @@
             "federation-mods-title": "Federation Mods",
             "federation-services-selected": "Services selected by your Federation.",
             "display-name": "Here's your display name:",
-            "profile-change": "To change, tap the profile"
+            "profile-change": "To change, tap the profile",
+            "profile-change-icon": "To change, tap the <icon /> icon"
         },
         "multispend": {
             "chat-events": {

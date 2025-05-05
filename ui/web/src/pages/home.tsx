@@ -1,8 +1,9 @@
 import Link from 'next/link'
-import { useTranslation } from 'react-i18next'
+import { Trans, useTranslation } from 'react-i18next'
 
 import ChatIcon from '@fedi/common/assets/svgs/chat.svg'
 import ArrowRightIcon from '@fedi/common/assets/svgs/chevron-right.svg'
+import SettingsIcon from '@fedi/common/assets/svgs/cog.svg'
 import userProfile from '@fedi/common/assets/svgs/profile.svg'
 import { ErrorBoundary } from '@fedi/common/components/ErrorBoundary'
 import { useNuxStep } from '@fedi/common/hooks/nux'
@@ -145,6 +146,16 @@ function HomePage() {
                             &quot;{matrixAuth?.displayName}&quot;
                         </Text>
                     </ModalTextWrapper>
+                    <ModalTextWithIcon
+                        variant="body"
+                        css={{ color: theme.colors.darkGrey }}>
+                        <Trans
+                            i18nKey="feature.home.profile-change-icon"
+                            components={{
+                                icon: <ModalIcon icon={SettingsIcon} />,
+                            }}
+                        />
+                    </ModalTextWithIcon>
                 </ModalContent>
             </Modal>
         </ContentBlock>
@@ -204,11 +215,22 @@ const ModalContent = styled('div', {
     alignItems: 'center',
     display: 'flex',
     flexDirection: 'column',
-    gap: 10,
     justifyContent: 'center',
 })
 
-const ModalTextWrapper = styled('div', {})
+const ModalTextWrapper = styled('div', {
+    marginBottom: 10,
+})
+
+const ModalTextWithIcon = styled(Text, {
+    alignItems: 'center',
+    display: 'flex',
+})
+
+const ModalIcon = styled(Icon, {
+    margin: '0 3px',
+    width: 20,
+})
 
 const ModalIconWrapper = styled('div', {
     alignItems: 'center',
