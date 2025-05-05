@@ -3,10 +3,10 @@ import React, { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Linking, Pressable, StyleSheet, View } from 'react-native'
 
-import { selectPaymentFederation } from '@fedi/common/redux'
+import { supportsSafeOnchainDeposit } from '@fedi/common/redux'
 
 import { fedimint } from '../../../bridge'
-import { useAppSelector } from '../../../state/hooks'
+import { useAppDispatch } from '../../../state/hooks'
 import HoloGradient from '../../ui/HoloGradient'
 import SvgImage, { SvgImageName } from '../../ui/SvgImage'
 
@@ -45,9 +45,8 @@ const InfoRow = ({ icon, title, subtitle, right }: RowProps) => {
 }
 
 const OnchainDepositInfo: React.FC = () => {
-    const [supportsSafeOnchainDeposit, setSupportsSafeOnchainDeposit] =
-        useState(false)
-    const paymentFederation = useAppSelector(selectPaymentFederation)
+    const [supportsSafeDeposit, setSupportsSafeOnchainDeposit] = useState(false)
+    const dispatch = useAppDispatch()
     const { t } = useTranslation()
     const { theme } = useTheme()
 
@@ -66,7 +65,7 @@ const OnchainDepositInfo: React.FC = () => {
         },
     ]
 
-    if (!supportsSafeOnchainDeposit) {
+    if (!supportsSafeDeposit) {
         rows.push({
             icon: 'Scale',
             title: t('feature.receive.receive-guidance-title-3'),
@@ -86,12 +85,10 @@ const OnchainDepositInfo: React.FC = () => {
     }
 
     useEffect(() => {
-        if (!paymentFederation) return
-
-        fedimint
-            .supportsSafeOnchainDeposit(paymentFederation.id)
+        dispatch(supportsSafeOnchainDeposit({ fedimint }))
+            .unwrap()
             .then(setSupportsSafeOnchainDeposit)
-    }, [paymentFederation])
+    }, [dispatch])
 
     return (
         <HoloGradient
