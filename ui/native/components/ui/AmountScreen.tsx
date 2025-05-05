@@ -65,7 +65,7 @@ export const AmountScreen: React.FC<Props> = ({
                 </View>
                 <AmountInput {...amountInputProps} />
                 {subContent && <View>{subContent}</View>}
-                <Flex row align="center" fullWidth>
+                <Flex row fullWidth style={style.buttonGroup}>
                     {buttons.map((button, index) => (
                         <Button
                             key={`btn-${index}`}
@@ -97,6 +97,7 @@ const styles = (theme: Theme) =>
         },
         buttonGroup: {
             gap: 20,
+            alignSelf: 'center',
         },
         buttonContainer: {
             flex: 1,

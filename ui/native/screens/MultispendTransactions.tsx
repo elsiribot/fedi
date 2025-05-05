@@ -6,7 +6,7 @@ import { useMultispendTransactions } from '@fedi/common/hooks/multispend'
 import { makeLog } from '@fedi/common/utils/log'
 
 import MultispendTransactionsList from '../components/feature/multispend/MultispendTransactionsList'
-import { SafeAreaContainer } from '../components/ui/SafeArea'
+import Flex from '../components/ui/Flex'
 import { RootStackParamList } from '../types/navigation'
 
 const log = makeLog('MultispendTransactions')
@@ -35,7 +35,7 @@ const MultispendTransactions: React.FC<Props> = ({ route }) => {
     }, [fetchTransactions, t])
 
     return (
-        <SafeAreaContainer edges="notop" style={{ flex: 1 }}>
+        <Flex grow>
             <MultispendTransactionsList
                 roomId={roomId}
                 loading={isLoading}
@@ -43,7 +43,7 @@ const MultispendTransactions: React.FC<Props> = ({ route }) => {
                 refreshTransactions={() => fetchTransactions({ refresh: true })}
                 loadMoreTransactions={() => fetchTransactions({ more: true })}
             />
-        </SafeAreaContainer>
+        </Flex>
     )
 }
 

@@ -85,8 +85,8 @@ const MultispendConfirmWithdraw: React.FC<Props> = ({ route }: Props) => {
 
     return (
         <SafeAreaContainer edges="notop" style={style.container}>
-            <Flex>
-                <View style={style.header}>
+            <Flex grow>
+                <Flex align="center" gap="md" style={style.header}>
                     <Flex row align="center" gap="md">
                         <SvgImage
                             name="DollarCircle"
@@ -98,7 +98,7 @@ const MultispendConfirmWithdraw: React.FC<Props> = ({ route }: Props) => {
                     <Text h1 medium>
                         {formattedFiatAmount}
                     </Text>
-                </View>
+                </Flex>
                 <Flex>
                     <View style={style.row}>
                         <Text caption medium>

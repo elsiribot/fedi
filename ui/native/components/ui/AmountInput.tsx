@@ -154,7 +154,7 @@ const AmountInput: React.FC<Props> = ({
 
     return (
         <Flex grow align="center" fullWidth>
-            <Flex center gap="sm" style={style.amounts}>
+            <Flex center gap="sm" grow style={style.amounts}>
                 <Pressable
                     style={style.primaryAmount}
                     disabled={readOnly || hasNumpad || isSubmitting}
@@ -202,7 +202,7 @@ const AmountInput: React.FC<Props> = ({
                     )}
                 </Flex>
                 {content && (
-                    <Flex align="center" fullWidth>
+                    <Flex align="center" fullWidth style={style.errorContainer}>
                         {content}
                     </Flex>
                 )}
