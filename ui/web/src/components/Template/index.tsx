@@ -21,26 +21,28 @@ interface Props {
 
 export const Template: React.FC<Props> = ({ children }) => {
     const { hideNavigation, isPopupOver } = useNavVisibility()
-    const router = useRouter()
+    const { asPath } = useRouter()
     const syncStatus = useAppSelector(selectMatrixStatus)
 
     const shouldShowChatOffline =
-        syncStatus === MatrixSyncStatus.syncing &&
-        router.asPath.startsWith('/chat')
+        syncStatus === MatrixSyncStatus.syncing && asPath.startsWith('/chat')
 
     return (
         <Container className={hideNavigation ? 'hide-navigation' : ''}>
             {!hideNavigation && <Navigation />}
             <Content>
-                {!hideNavigation && (
-                    <FederationHeader>
-                        <FederationControls>
+                <FederationHeader>
+                    {asPath === '/home' && (
+                        <FederationSelectorWrapper>
                             <FederationSelector />
-                            <PopupFederationCountdown />
-                        </FederationControls>
-                        {shouldShowChatOffline && <ChatOfflineIndicator />}
-                    </FederationHeader>
-                )}
+                        </FederationSelectorWrapper>
+                    )}
+                    <FederationControls>
+                        <PopupFederationCountdown />
+                    </FederationControls>
+                    {shouldShowChatOffline && <ChatOfflineIndicator />}
+                </FederationHeader>
+
                 <Main centered={hideNavigation}>
                     <ErrorBoundary fallback={() => <PageError />}>
                         {isPopupOver ? <PopupFederationOver /> : children}
@@ -146,14 +148,6 @@ const Main = styled('main', {
     },
 })
 
-const FederationControls = styled('div', {
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    width: '100%',
-    gap: 4,
-})
-
 const FederationHeader = styled('div', {
     display: 'flex',
     flexDirection: 'column',
@@ -163,7 +157,19 @@ const FederationHeader = styled('div', {
     padding: 'var(--template-padding) 8px',
 
     '@sm': {
-        padding: '16px 8px',
+        padding: '0',
         gap: theme.space.sm,
     },
+})
+
+const FederationControls = styled('div', {
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    width: '100%',
+    gap: 4,
+})
+
+const FederationSelectorWrapper = styled('div', {
+    padding: '16px 0',
 })
