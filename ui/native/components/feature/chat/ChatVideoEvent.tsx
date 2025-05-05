@@ -26,7 +26,6 @@ import { scaleAttachment } from '@fedi/common/utils/media'
 import { fedimint } from '../../../bridge'
 import { useAppDispatch, useAppSelector } from '../../../state/hooks'
 import { pathJoin, prefixFileUri } from '../../../utils/media'
-import Flex from '../../ui/Flex'
 import SvgImage from '../../ui/SvgImage'
 
 type ChatVideoEventProps = {
@@ -105,12 +104,12 @@ const ChatVideoEvent: React.FC<ChatVideoEventProps> = ({
     return (isLoading && !uri) || isError ? (
         <View style={videoBaseStyle}>
             {isError ? (
-                <Flex align="center" gap="md">
+                <View style={style.videoStyle}>
                     <SvgImage name="VideoOff" color={theme.colors.grey} />
                     <Text caption style={style.errorCaption}>
                         {t('errors.failed-to-load-video')}
                     </Text>
-                </Flex>
+                </View>
             ) : (
                 <ActivityIndicator />
             )}
@@ -163,6 +162,11 @@ const styles = (theme: Theme) =>
             padding: 16,
             display: 'flex',
             justifyContent: 'center',
+            alignItems: 'center',
+        },
+        videoStyle: {
+            flexDirection: 'column',
+            gap: theme.spacing.md,
             alignItems: 'center',
         },
         errorCaption: {

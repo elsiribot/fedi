@@ -1,9 +1,8 @@
 import { Text, TextProps, Theme, useTheme } from '@rneui/themed'
 import React from 'react'
-import { ImageBackground, StyleSheet } from 'react-native'
+import { ImageBackground, StyleSheet, View } from 'react-native'
 
 import { Images } from '../../assets/images'
-import Flex from './Flex'
 
 type HoloGuidanceProps = {
     iconImage?: React.ReactNode | null
@@ -49,7 +48,12 @@ const HoloGuidance: React.FC<HoloGuidanceProps> = ({
     }
 
     return (
-        <Flex center grow={!noFlexContainer}>
+        <View
+            style={
+                noFlexContainer
+                    ? styles(theme).noFlexContainer
+                    : styles(theme).container
+            }>
             <ImageBackground
                 source={Images.HoloBackground}
                 style={[
@@ -73,12 +77,21 @@ const HoloGuidance: React.FC<HoloGuidanceProps> = ({
                     <Text style={styles(theme).message}>{message}</Text>
                 </>
             )}
-        </Flex>
+        </View>
     )
 }
 
 const styles = (theme: Theme) =>
     StyleSheet.create({
+        container: {
+            flex: 1,
+            alignItems: 'center',
+            justifyContent: 'center',
+        },
+        noFlexContainer: {
+            alignItems: 'center',
+            justifyContent: 'center',
+        },
         title: {
             textAlign: 'center',
             marginVertical: theme.spacing.lg,
@@ -113,6 +126,10 @@ const styles = (theme: Theme) =>
         iconImage: {
             height: theme.sizes.lg,
             width: theme.sizes.lg,
+        },
+        continueButton: {
+            width: '100%',
+            marginVertical: theme.spacing.md,
         },
     })
 

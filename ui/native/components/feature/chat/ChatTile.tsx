@@ -9,7 +9,6 @@ import { shouldShowUnreadIndicator } from '@fedi/common/utils/matrix'
 import { DEFAULT_GROUP_NAME } from '../../../constants'
 import { MatrixRoom } from '../../../types'
 import { AvatarSize } from '../../ui/Avatar'
-import Flex from '../../ui/Flex'
 import ChatAvatar from './ChatAvatar'
 
 type ChatTileProps = {
@@ -46,12 +45,10 @@ const ChatTile = ({ room, onSelect, onLongPress }: ChatTileProps) => {
         [room?.preview],
     )
 
-    const style = styles(theme)
-
     return (
         <Pressable
             style={({ pressed }) => [
-                style.container,
+                styles(theme).container,
                 pressed && room
                     ? { backgroundColor: theme.colors.primary05 }
                     : {},
@@ -60,37 +57,36 @@ const ChatTile = ({ room, onSelect, onLongPress }: ChatTileProps) => {
             onLongPress={() => onLongPress(room)}
             delayLongPress={300}
             onPress={() => onSelect(room)}>
-            <View style={style.iconContainer}>
+            <View style={styles(theme).iconContainer}>
                 <View
                     style={[
-                        style.unreadIndicator,
+                        styles(theme).unreadIndicator,
                         showUnreadIndicator ? { opacity: 1 } : { opacity: 0 },
                     ]}
                 />
-                <Flex
-                    row
-                    align="center"
-                    justify="start"
-                    style={style.chatTypeIconContainer}>
+                <View style={styles(theme).chatTypeIconContainer}>
                     <ChatAvatar
                         room={room}
                         size={AvatarSize.md}
                         maxFontSizeMultiplier={1.2}
                     />
-                </Flex>
+                </View>
             </View>
-            <Flex grow row style={style.content}>
-                <Flex grow style={style.preview}>
-                    <Text style={style.namePreview} numberOfLines={1} bold>
+            <View style={styles(theme).content}>
+                <View style={styles(theme).preview}>
+                    <Text
+                        style={styles(theme).namePreview}
+                        numberOfLines={1}
+                        bold>
                         {room.name || DEFAULT_GROUP_NAME}
                     </Text>
                     {previewMessage ? (
                         <Text
                             caption
                             style={[
-                                style.messagePreview,
+                                styles(theme).messagePreview,
                                 showUnreadIndicator
-                                    ? style.messagePreviewUnread
+                                    ? styles(theme).messagePreviewUnread
                                     : undefined,
                             ]}
                             numberOfLines={2}
@@ -100,7 +96,7 @@ const ChatTile = ({ room, onSelect, onLongPress }: ChatTileProps) => {
                     ) : (
                         <Text
                             caption
-                            style={style.emptyMessagePreview}
+                            style={styles(theme).emptyMessagePreview}
                             numberOfLines={2}
                             {...previewTextWeight}>
                             {/* 
@@ -116,12 +112,12 @@ const ChatTile = ({ room, onSelect, onLongPress }: ChatTileProps) => {
                                   : t('feature.chat.no-messages')}
                         </Text>
                     )}
-                </Flex>
-                <Flex align="end" justify="start" gap="xs">
+                </View>
+                <View style={styles(theme).metadata}>
                     {room.preview?.timestamp && (
                         <Text
                             small
-                            style={style.timestamp}
+                            style={styles(theme).timestamp}
                             adjustsFontSizeToFit
                             maxFontSizeMultiplier={1.4}>
                             {dateUtils.formatChatTileTimestamp(
@@ -134,12 +130,12 @@ const ChatTile = ({ room, onSelect, onLongPress }: ChatTileProps) => {
                         <SvgImage
                             name="Pin"
                             size={SvgImageSize.xs}
-                            containerStyle={style.pinIcon}
+                            containerStyle={styles(theme).pinIcon}
                             color={theme.colors.grey}
                         />
                     )} */}
-                </Flex>
-            </Flex>
+                </View>
+            </View>
         </Pressable>
     )
 }
@@ -162,10 +158,20 @@ const styles = (theme: Theme) =>
             flexShrink: 0,
         },
         content: {
+            flex: 1,
+            flexDirection: 'row',
             height: theme.sizes.mediumAvatar,
         },
         preview: {
+            flex: 1,
+            flexDirection: 'column',
             alignSelf: 'center',
+        },
+        metadata: {
+            flexDirection: 'column',
+            alignItems: 'flex-end',
+            justifyContent: 'flex-start',
+            gap: theme.spacing.xs,
         },
         messagePreview: {
             color: theme.colors.darkGrey,
@@ -178,6 +184,9 @@ const styles = (theme: Theme) =>
             fontStyle: 'italic',
         },
         chatTypeIconContainer: {
+            flexDirection: 'row',
+            alignItems: 'center',
+            justifyContent: 'flex-start',
             marginRight: theme.spacing.md,
         },
         pinIcon: {

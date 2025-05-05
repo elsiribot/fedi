@@ -1,9 +1,9 @@
 import { useNavigation } from '@react-navigation/native'
 import type { NativeStackScreenProps } from '@react-navigation/native-stack'
-import { Text, useTheme } from '@rneui/themed'
+import { Text, Theme, useTheme } from '@rneui/themed'
 import React, { useCallback, useEffect, useMemo, useState } from 'react'
 import { Trans, useTranslation } from 'react-i18next'
-import { ActivityIndicator } from 'react-native'
+import { ActivityIndicator, StyleSheet } from 'react-native'
 
 import { useOmniPaymentState } from '@fedi/common/hooks/pay'
 import { useToast } from '@fedi/common/hooks/toast'
@@ -134,6 +134,7 @@ const ConfirmSendLightning: React.FC<Props> = ({ route }: Props) => {
             </>
         )
     }
+    const style = styles(theme)
 
     return (
         <>
@@ -156,7 +157,7 @@ const ConfirmSendLightning: React.FC<Props> = ({ route }: Props) => {
                                       <Text
                                           medium
                                           caption
-                                          color={theme.colors.secondary}>
+                                          style={style.buttonText}>
                                           {t('words.send')}
                                       </Text>
                                   ),
@@ -175,3 +176,10 @@ const ConfirmSendLightning: React.FC<Props> = ({ route }: Props) => {
 }
 
 export default ConfirmSendLightning
+
+const styles = (theme: Theme) =>
+    StyleSheet.create({
+        buttonText: {
+            color: theme.colors.secondary,
+        },
+    })

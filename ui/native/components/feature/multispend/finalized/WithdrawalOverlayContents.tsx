@@ -12,7 +12,6 @@ import { useAppSelector } from '../../../../state/hooks'
 import { MatrixRoomMember, MultispendWithdrawalEvent } from '../../../../types'
 import { AvatarSize } from '../../../ui/Avatar'
 import AvatarStack from '../../../ui/AvatarStack'
-import Flex from '../../../ui/Flex'
 import SvgImage from '../../../ui/SvgImage'
 import ChatAvatar from '../../chat/ChatAvatar'
 
@@ -39,7 +38,7 @@ const WithdrawalOverlayContents: React.FC<{
     const style = styles(theme)
 
     return (
-        <Flex grow gap="md" style={style.container}>
+        <View style={style.container}>
             <Text>
                 <Trans
                     i18nKey="feature.multispend.user-wants-to-withdraw"
@@ -66,13 +65,13 @@ const WithdrawalOverlayContents: React.FC<{
                 status="reject"
             />
             {haveIVoted && (
-                <Flex align="center" style={style.votedContainer}>
+                <View style={style.votedContainer}>
                     <Text style={style.votedText}>
                         {t('feature.multispend.already-voted')}
                     </Text>
-                </Flex>
+                </View>
             )}
-        </Flex>
+        </View>
     )
 }
 
@@ -111,7 +110,7 @@ function VoterDropdown({
                         },
                     )}
                 </Text>
-                <Flex row align="center" gap="sm">
+                <View style={style.dropdownGrouping}>
                     <AvatarStack members={members} />
                     <SvgImage
                         name={
@@ -124,17 +123,17 @@ function VoterDropdown({
                         size={16}
                         color={theme.colors.grey}
                     />
-                </Flex>
+                </View>
             </Pressable>
             {open && (
-                <Flex gap="sm" style={style.dropdownContent}>
+                <View style={style.dropdownContent}>
                     {members.map((member, i) => (
                         <ThinAvatarRow
                             key={`multispend-voter-dropdown-${status}-${i}`}
                             member={member}
                         />
                     ))}
-                </Flex>
+                </View>
             )}
         </View>
     )
@@ -142,9 +141,10 @@ function VoterDropdown({
 
 function ThinAvatarRow({ member }: { member: MatrixRoomMember }) {
     const { theme } = useTheme()
+    const style = styles(theme)
 
     return (
-        <Flex row align="center" gap="sm">
+        <View style={style.voter}>
             <ChatAvatar user={member} size={AvatarSize.sm} />
             <Text caption medium numberOfLines={1}>
                 {member.displayName}{' '}
@@ -152,16 +152,20 @@ function ThinAvatarRow({ member }: { member: MatrixRoomMember }) {
                     {getUserSuffix(member.id)}
                 </Text>
             </Text>
-        </Flex>
+        </View>
     )
 }
 
 const styles = (theme: Theme) =>
     StyleSheet.create({
         container: {
+            flex: 1,
+            flexDirection: 'column',
+            gap: theme.spacing.md,
             padding: theme.spacing.md,
         },
         votedContainer: {
+            alignItems: 'center',
             paddingHorizontal: theme.spacing.md,
             paddingTop: theme.spacing.lg,
         },
@@ -176,8 +180,23 @@ const styles = (theme: Theme) =>
             alignItems: 'center',
             justifyContent: 'space-between',
         },
+        dropdownGrouping: {
+            display: 'flex',
+            flexDirection: 'row',
+            alignItems: 'center',
+            gap: theme.spacing.sm,
+        },
         dropdownContent: {
             paddingVertical: theme.spacing.sm,
+            display: 'flex',
+            flexDirection: 'column',
+            gap: theme.spacing.sm,
+        },
+        voter: {
+            display: 'flex',
+            flexDirection: 'row',
+            alignItems: 'center',
+            gap: theme.spacing.sm,
         },
         votedText: {
             color: theme.colors.grey,

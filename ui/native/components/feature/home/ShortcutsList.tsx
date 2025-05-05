@@ -22,7 +22,6 @@ import {
 import { useAppDispatch, useAppSelector } from '../../../state/hooks'
 import { FediMod, Shortcut } from '../../../types'
 import { NavigationHook } from '../../../types/navigation'
-import Flex from '../../ui/Flex'
 import SvgImage from '../../ui/SvgImage'
 import { Tooltip } from '../../ui/Tooltip'
 import ShortcutTile from './ShortcutTile'
@@ -129,28 +128,41 @@ const ShortcutsList: React.FC = () => {
     }
 
     return (
-        <Flex grow fullWidth>
+        <View style={style.container}>
             <Text style={style.sectionTitle}>
                 {t('feature.home.federation-mods-title')}
             </Text>
             <Text style={style.servicesSelected}>
                 {t('feature.home.federation-services-selected')}
             </Text>
-            <Flex row wrap justify="between" gap="md">
+            <View style={style.listContainer}>
                 {renderFediModShortcuts()}
                 {renderBuffers()}
-            </Flex>
-        </Flex>
+            </View>
+        </View>
     )
 }
 
 const styles = (theme: Theme, columns: number) =>
     StyleSheet.create({
+        container: {
+            flex: 1,
+            width: '100%',
+        },
         shortcut: {
             width: `${100 / columns}%`,
         },
         buffer: {
             height: theme.sizes.lg,
+        },
+        listContainer: {
+            flexDirection: 'row',
+            flexWrap: 'wrap',
+            justifyContent: 'space-between',
+
+            // This is smaller than the designs because
+            // the tiles already have some padding
+            rowGap: theme.spacing.md,
         },
         sectionTitle: {
             color: theme.colors.night,

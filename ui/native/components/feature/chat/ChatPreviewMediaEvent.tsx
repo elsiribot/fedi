@@ -9,7 +9,6 @@ import { MatrixEvent } from '@fedi/common/types'
 import { MatrixEventContentType } from '@fedi/common/utils/matrix'
 import { scaleAttachment } from '@fedi/common/utils/media'
 
-import Flex from '../../ui/Flex'
 import SvgImage from '../../ui/SvgImage'
 
 type ChatImageEventProps = {
@@ -43,12 +42,12 @@ const ChatPreviewMediaEvent: React.FC<ChatImageEventProps> = ({
     return isError ? (
         <View style={containerBaseStyle}>
             {isError ? (
-                <Flex align="center" gap="md">
+                <View style={style.mediaError}>
                     <SvgImage name="ImageOff" color={theme.colors.grey} />
-                    <Text caption color={theme.colors.darkGrey}>
+                    <Text caption style={style.errorCaption}>
                         {t('errors.failed-to-load-image')}
                     </Text>
-                </Flex>
+                </View>
             ) : (
                 <ActivityIndicator />
             )}
@@ -79,10 +78,10 @@ const ChatPreviewMediaEvent: React.FC<ChatImageEventProps> = ({
                 blurAmount={10}
                 reducedTransparencyFallbackColor="white"
             />
-            <Flex center style={[style.absolute]}>
+            <View style={[style.absolute, style.loaderContainer]}>
                 {/* TODO: add progress spinner when bridge functions available */}
                 <ActivityIndicator color="black" />
-            </Flex>
+            </View>
         </View>
     )
 }
@@ -99,12 +98,24 @@ const styles = (theme: Theme) =>
             alignItems: 'center',
             position: 'relative',
         },
+        mediaError: {
+            flexDirection: 'column',
+            gap: theme.spacing.md,
+            alignItems: 'center',
+        },
         absolute: {
             position: 'absolute',
             top: 0,
             left: 0,
             right: 0,
             bottom: 0,
+        },
+        errorCaption: {
+            color: theme.colors.darkGrey,
+        },
+        loaderContainer: {
+            alignItems: 'center',
+            justifyContent: 'center',
         },
     })
 

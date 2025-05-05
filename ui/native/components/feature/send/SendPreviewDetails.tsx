@@ -118,6 +118,7 @@ const styles = (theme: Theme) =>
         detailsGroup: {
             width: '100%',
             marginTop: 'auto',
+            flexDirection: 'column',
         },
         button: {
             marginTop: theme.spacing.lg,
@@ -132,6 +133,7 @@ const styles = (theme: Theme) =>
         detailsContainer: {
             width: '100%',
             opacity: 1,
+            flexDirection: 'column',
         },
         detailItem: {
             flexDirection: 'row',

@@ -1,13 +1,12 @@
 import { Text, Theme, useTheme } from '@rneui/themed'
 import React from 'react'
-import { StyleSheet } from 'react-native'
+import { StyleSheet, View } from 'react-native'
 
 import { selectMatrixRoom } from '@fedi/common/redux'
 
 import { useAppSelector } from '../../../state/hooks'
 import { AvatarSize } from '../../ui/Avatar'
 import CustomOverlay from '../../ui/CustomOverlay'
-import Flex from '../../ui/Flex'
 import HoloLoader from '../../ui/HoloLoader'
 import ChatAvatar from './ChatAvatar'
 import ChatRoomActions from './ChatRoomActions'
@@ -36,7 +35,7 @@ export const ChatRoomActionsOverlay: React.FC<Props> = ({
             onBackdropPress={() => onDismiss()}
             contents={{
                 title: room ? (
-                    <Flex row center gap="xs">
+                    <View style={style.displayInline}>
                         <ChatAvatar
                             containerStyle={[style.avatar]}
                             room={room}
@@ -49,7 +48,7 @@ export const ChatRoomActionsOverlay: React.FC<Props> = ({
                             adjustsFontSizeToFit>
                             {room?.name ?? ''}
                         </Text>
-                    </Flex>
+                    </View>
                 ) : (
                     ''
                 ),
@@ -65,6 +64,12 @@ export const ChatRoomActionsOverlay: React.FC<Props> = ({
 
 const styles = (theme: Theme) =>
     StyleSheet.create({
+        displayInline: {
+            flexDirection: 'row',
+            gap: theme.spacing.xs,
+            alignItems: 'center',
+            justifyContent: 'center',
+        },
         title: {
             textAlign: 'center',
             flexShrink: 1,

@@ -9,7 +9,6 @@ import { hexToRgba } from '@fedi/common/utils/color'
 
 import { useAppSelector } from '../../state/hooks'
 import AmountInput, { Props as AmountInputProps } from './AmountInput'
-import Flex from './Flex'
 import KeyboardAwareWrapper from './KeyboardAwareWrapper'
 import { SafeAreaContainer } from './SafeArea'
 
@@ -65,7 +64,7 @@ export const AmountScreen: React.FC<Props> = ({
                 </View>
                 <AmountInput {...amountInputProps} />
                 {subContent && <View>{subContent}</View>}
-                <Flex row fullWidth style={style.buttonGroup}>
+                <View style={style.buttonGroup}>
                     {buttons.map((button, index) => (
                         <Button
                             key={`btn-${index}`}
@@ -76,7 +75,7 @@ export const AmountScreen: React.FC<Props> = ({
                             {...button}
                         />
                     ))}
-                </Flex>
+                </View>
             </SafeAreaContainer>
         </KeyboardAwareWrapper>
     )
@@ -96,8 +95,10 @@ const styles = (theme: Theme) =>
             textAlign: 'center',
         },
         buttonGroup: {
-            gap: 20,
+            width: '100%',
             alignSelf: 'center',
+            flexDirection: 'row',
+            gap: 20,
         },
         buttonContainer: {
             flex: 1,

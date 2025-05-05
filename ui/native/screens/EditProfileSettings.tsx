@@ -16,7 +16,6 @@ import { makeLog } from '@fedi/common/utils/log'
 
 import { fedimint } from '../bridge'
 import Avatar, { AvatarSize } from '../components/ui/Avatar'
-import Flex from '../components/ui/Flex'
 import { Pressable } from '../components/ui/Pressable'
 import { SafeAreaContainer } from '../components/ui/SafeArea'
 import { useAppDispatch, useAppSelector } from '../state/hooks'
@@ -157,7 +156,7 @@ const EditProfileSettings: React.FC = () => {
                 </Pressable>
             </View>
 
-            <Flex grow style={style.content}>
+            <View style={style.content}>
                 <Text caption style={style.inputLabel}>
                     {t('feature.chat.display-name')}
                 </Text>
@@ -178,7 +177,7 @@ const EditProfileSettings: React.FC = () => {
                         {errorMessage}
                     </Text>
                 )}
-            </Flex>
+            </View>
 
             <View
                 style={[
@@ -202,6 +201,9 @@ const EditProfileSettings: React.FC = () => {
 
 const styles = (theme: Theme) =>
     StyleSheet.create({
+        scrollContainer: {
+            flex: 1,
+        },
         avatar: {
             alignItems: 'center',
             flexDirection: 'column',
@@ -215,6 +217,8 @@ const styles = (theme: Theme) =>
             gap: theme.spacing.md,
         },
         content: {
+            flex: 1,
+            flexDirection: 'column',
             marginTop: theme.spacing.md,
         },
         inputLabel: {

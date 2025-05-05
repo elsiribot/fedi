@@ -1,9 +1,8 @@
 import { useNavigation } from '@react-navigation/native'
 import { Button, Theme, useTheme } from '@rneui/themed'
 import { useTranslation } from 'react-i18next'
-import { StyleSheet } from 'react-native'
+import { StyleSheet, View } from 'react-native'
 
-import Flex from '../../../ui/Flex'
 import { SafeAreaContainer } from '../../../ui/SafeArea'
 import RequestList from './RequestList'
 
@@ -17,7 +16,7 @@ const MultispendFinalized: React.FC<{
     const style = styles(theme)
 
     return (
-        <Flex grow gap="md">
+        <View style={style.container}>
             <RequestList roomId={roomId} />
             <SafeAreaContainer edges="notop" style={style.buttons}>
                 <Button
@@ -36,12 +35,17 @@ const MultispendFinalized: React.FC<{
                     {t('words.withdraw')}
                 </Button>
             </SafeAreaContainer>
-        </Flex>
+        </View>
     )
 }
 
 const styles = (theme: Theme) =>
     StyleSheet.create({
+        container: {
+            flex: 1,
+            flexDirection: 'column',
+            gap: theme.spacing.md,
+        },
         buttons: {
             backgroundColor: theme.colors.white,
             flex: 0,

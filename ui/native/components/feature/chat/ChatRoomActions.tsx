@@ -16,7 +16,6 @@ import SvgImage, { SvgImageName } from '@fedi/native/components/ui/SvgImage'
 import { useAppDispatch, useAppSelector } from '@fedi/native/state/hooks'
 import { resetToChatSettings } from '@fedi/native/state/navigation'
 
-import Flex from '../../ui/Flex'
 import ChatRoomAction from './ChatAction'
 
 export type Props = {
@@ -127,7 +126,7 @@ const ChatRoomActions: React.FC<Props> = ({ room, dismiss }: Props) => {
 
     return (
         <View style={styles(theme).container}>
-            <Flex align="start">
+            <View style={styles(theme).sectionContainer}>
                 <Text
                     caption
                     style={styles(theme).sectionTitle}
@@ -145,8 +144,8 @@ const ChatRoomActions: React.FC<Props> = ({ room, dismiss }: Props) => {
                         onPress={() => action.onPress()}
                     />
                 ))}
-            </Flex>
-            <Flex align="start">
+            </View>
+            <View style={styles(theme).sectionContainer}>
                 <Text
                     caption
                     style={styles(theme).sectionTitle}
@@ -170,7 +169,7 @@ const ChatRoomActions: React.FC<Props> = ({ room, dismiss }: Props) => {
                         }
                     />
                 ))}
-            </Flex>
+            </View>
         </View>
     )
 }
@@ -183,9 +182,35 @@ const styles = (theme: Theme) =>
             padding: theme.spacing.lg,
             paddingTop: 0,
         },
+        profileHeader: {
+            alignItems: 'center',
+            padding: theme.spacing.lg,
+            borderRadius: theme.borders.defaultRadius,
+            borderColor: theme.colors.primaryLight,
+        },
+        actionsContainer: {
+            flexDirection: 'row',
+            justifyContent: 'flex-start',
+            alignSelf: 'flex-start',
+        },
+        sectionContainer: {
+            flexDirection: 'column',
+            alignItems: 'flex-start',
+        },
         sectionTitle: {
             color: theme.colors.primaryLight,
             paddingVertical: theme.spacing.sm,
+        },
+        versionContainer: {
+            alignItems: 'center',
+            justifyContent: 'center',
+            backgroundColor: theme.colors.offWhite,
+            padding: theme.spacing.md,
+            borderRadius: theme.borders.defaultRadius,
+            marginTop: theme.spacing.md,
+        },
+        logo: {
+            marginBottom: theme.spacing.sm,
         },
     })
 

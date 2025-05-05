@@ -10,7 +10,6 @@ import { useDebounce } from '@fedi/common/hooks/util'
 import { setFeatureUnlocked } from '@fedi/common/redux'
 
 import PinDot from '../components/feature/pin/PinDot'
-import Flex from '../components/ui/Flex'
 import { NumpadButton } from '../components/ui/NumpadButton'
 import { usePinContext } from '../state/contexts/PinContext'
 import { useAppDispatch } from '../state/hooks'
@@ -138,9 +137,9 @@ const LockScreen = ({ navigation, route }: Props) => {
     }, [])
 
     return (
-        <Flex grow center style={style.container}>
-            <Flex grow center style={style.content}>
-                <Flex row center style={style.dots}>
+        <View style={style.container}>
+            <View style={style.content}>
+                <View style={style.dots}>
                     {isEnteredPinIncorrect && (
                         <Text style={style.incorrectPin}>
                             {t('feature.pin.pin-doesnt-match')}
@@ -169,9 +168,9 @@ const LockScreen = ({ navigation, route }: Props) => {
                             />
                         </View>
                     )}
-                </Flex>
-            </Flex>
-            <Flex row wrap fullWidth style={style.numpad}>
+                </View>
+            </View>
+            <View style={style.numpad}>
                 {numpadButtons.map(btn => (
                     <NumpadButton
                         key={btn}
@@ -181,35 +180,49 @@ const LockScreen = ({ navigation, route }: Props) => {
                     />
                 ))}
                 {timeoutSeconds > 0 && (
-                    <Flex center style={style.timeoutOverlay}>
+                    <View style={style.timeoutOverlay}>
                         <Text bold h1>
                             0:{String(timeoutSeconds).padStart(2, '0')}
                         </Text>
-                    </Flex>
+                    </View>
                 )}
-            </Flex>
-        </Flex>
+            </View>
+        </View>
     )
 }
 
 export const styles = (theme: Theme, width: number) =>
     StyleSheet.create({
         container: {
+            flex: 1,
+            alignItems: 'center',
+            justifyContent: 'center',
             padding: theme.spacing.xl,
         },
         dots: {
+            flexDirection: 'row',
+            alignItems: 'center',
+            justifyContent: 'center',
             position: 'relative',
         },
         content: {
+            flex: 1,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
             gap: 32,
         },
         numpad: {
+            width: '100%',
             maxWidth: Math.min(400, width),
             paddingHorizontal: theme.spacing.lg,
+            flexDirection: 'row',
+            flexWrap: 'wrap',
             position: 'relative',
         },
         forgotPinButtonContainer: {
             position: 'absolute',
+            display: 'flex',
             top: 54,
         },
         incorrectPin: {
@@ -229,6 +242,10 @@ export const styles = (theme: Theme, width: number) =>
             right: 0,
             bottom: 0,
             backgroundColor: '#fffc',
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            justifyContent: 'center',
         },
     })
 

@@ -3,7 +3,7 @@ import { useNavigation } from '@react-navigation/native'
 import { Button, Card, Text, Theme, useTheme } from '@rneui/themed'
 import React, { useCallback, useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { Dimensions, Share, StyleSheet } from 'react-native'
+import { Dimensions, Share, StyleSheet, View } from 'react-native'
 import QRCode from 'react-native-qrcode-svg'
 
 import { useToast } from '@fedi/common/hooks/toast'
@@ -17,7 +17,6 @@ import { fedimint } from '../../../bridge'
 import { useAppDispatch, useAppSelector } from '../../../state/hooks'
 import { reset } from '../../../state/navigation'
 import { BitcoinOrLightning, BtcLnUri, TransactionEvent } from '../../../types'
-import Flex from '../../ui/Flex'
 import NotesInput from '../../ui/NotesInput'
 import OnchainDepositInfo from './OnchainDepositInfo'
 
@@ -116,24 +115,24 @@ const ReceiveQr: React.FC<ReceiveQrProps> = ({
     const style = styles(theme)
 
     return (
-        <Flex grow justify="between" gap="xl">
-            <Flex grow center gap="lg" style={style.content}>
+        <View style={style.container}>
+            <View style={style.content}>
                 <Card containerStyle={style.qrCard}>
                     {uri.fullString && (
-                        <Flex center>
+                        <View style={style.centered}>
                             <QRCode
                                 value={uri.fullString}
                                 size={QR_CODE_SIZE}
                                 logo={Images.FediQrLogo}
                             />
-                        </Flex>
+                        </View>
                     )}
 
-                    <Flex align="center" style={style.uriContainer}>
+                    <View style={style.uriContainer}>
                         <Text style={style.uri} numberOfLines={1} small>
                             {stringUtils.truncateMiddleOfString(uri.body, 6)}
                         </Text>
-                    </Flex>
+                    </View>
                 </Card>
                 {type === BitcoinOrLightning.bitcoin && (
                     <NotesInput
@@ -143,8 +142,8 @@ const ReceiveQr: React.FC<ReceiveQrProps> = ({
                     />
                 )}
                 {type === BitcoinOrLightning.bitcoin && <OnchainDepositInfo />}
-            </Flex>
-            <Flex row justify="between" fullWidth>
+            </View>
+            <View style={style.buttonsContainer}>
                 <Button
                     title={t('words.share')}
                     onPress={openShareDialog}
@@ -155,15 +154,29 @@ const ReceiveQr: React.FC<ReceiveQrProps> = ({
                     onPress={copyToClipboard}
                     containerStyle={style.button}
                 />
-            </Flex>
-        </Flex>
+            </View>
+        </View>
     )
 }
 
 const styles = (theme: Theme) =>
     StyleSheet.create({
+        container: {
+            justifyContent: 'space-between',
+            flex: 1,
+            gap: theme.spacing.xl,
+        },
         content: {
+            flex: 1,
+            alignItems: 'center',
+            justifyContent: 'center',
+            gap: theme.spacing.lg,
             paddingHorizontal: theme.spacing.lg,
+        },
+        buttonsContainer: {
+            width: '100%',
+            flexDirection: 'row',
+            justifyContent: 'space-between',
         },
         button: {
             width: '48%',
@@ -171,7 +184,9 @@ const styles = (theme: Theme) =>
         uri: {
             lineHeight: 18,
         },
+
         uriContainer: {
+            alignItems: 'center',
             paddingTop: theme.spacing.md,
         },
         qrCard: {
@@ -181,6 +196,10 @@ const styles = (theme: Theme) =>
             paddingHorizontal: theme.spacing.xl,
             paddingTop: theme.spacing.xl,
             paddingBottom: theme.spacing.xs,
+        },
+        centered: {
+            alignItems: 'center',
+            justifyContent: 'center',
         },
     })
 

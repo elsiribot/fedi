@@ -13,7 +13,6 @@ import {
     saveVideo,
     useBackupRecoveryContext,
 } from '../../../state/contexts/BackupRecoveryContext'
-import Flex from '../../ui/Flex'
 
 const log = makeLog('RecordVideo')
 
@@ -103,23 +102,21 @@ const RecordVideo = () => {
         })
     }
 
-    const style = styles(theme)
-
     return (
-        <Flex grow align="center" fullWidth style={style.container}>
+        <View style={styles(theme).container}>
             <ImageBackground
                 source={isRecording ? Images.Red : Images.HoloBackground}
-                style={style.gradient}>
-                <View style={style.cameraRing}>
+                style={styles(theme).gradient}>
+                <View style={styles(theme).cameraRing}>
                     <View
                         style={[
-                            style.cameraContainer,
+                            styles(theme).cameraContainer,
                             isRecording
-                                ? style.recordingActive
-                                : style.recordingInactive,
+                                ? styles(theme).recordingActive
+                                : styles(theme).recordingInactive,
                         ]}>
                         <Camera
-                            style={style.camera}
+                            style={styles(theme).camera}
                             ref={camera}
                             device={device}
                             isActive={true}
@@ -135,45 +132,48 @@ const RecordVideo = () => {
             </ImageBackground>
             <Text
                 style={[
-                    style.instructionsText,
+                    styles(theme).instructionsText,
                     isRecording ? { color: theme.colors.primaryVeryLight } : {},
                 ]}>
                 {t('feature.backup.hold-record-button')}
             </Text>
             <ImageBackground
                 source={Images.HoloBackground}
-                style={style.promptGradient}>
-                <Flex center style={style.promptContainer}>
+                style={styles(theme).promptGradient}>
+                <View style={styles(theme).promptContainer}>
                     <Text medium>
                         {'"'}
                         {t('feature.backup.social-backup-video-prompt')}
                         {'"'}
                     </Text>
-                </Flex>
+                </View>
             </ImageBackground>
-            <Flex center grow>
-                <Text style={style.privacyText}>
+            <View style={styles(theme).privacyNotice}>
+                <Text style={styles(theme).privacyText}>
                     {t('feature.backup.privacy-notice')}
                 </Text>
-            </Flex>
+            </View>
             <Pressable
                 style={[
-                    style.recordButton,
+                    styles(theme).recordButton,
                     isRecording
-                        ? style.recordingActive
-                        : style.recordingInactive,
+                        ? styles(theme).recordingActive
+                        : styles(theme).recordingInactive,
                 ]}
                 onPressOut={stopRecording}
                 onPressIn={startRecording}>
-                <View style={style.innerRecordButton} />
+                <View style={styles(theme).innerRecordButton} />
             </Pressable>
-        </Flex>
+        </View>
     )
 }
 
 const styles = (theme: Theme) =>
     StyleSheet.create({
         container: {
+            flex: 1,
+            alignItems: 'center',
+            width: '100%',
             paddingHorizontal: theme.spacing.md,
         },
         gradient: {
@@ -254,6 +254,15 @@ const styles = (theme: Theme) =>
             padding: 16,
             borderRadius: 12,
             backgroundColor: theme.colors.white,
+            display: 'flex',
+            justifyContent: 'center',
+            alignItems: 'center',
+        },
+        privacyNotice: {
+            flex: 1,
+            display: 'flex',
+            justifyContent: 'center',
+            alignItems: 'center',
         },
         privacyText: {
             color: theme.colors.grey,

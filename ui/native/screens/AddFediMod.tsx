@@ -2,7 +2,7 @@ import { useNavigation } from '@react-navigation/native'
 import { Button, Image, Input, Text, Theme, useTheme } from '@rneui/themed'
 import React, { useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { StyleSheet } from 'react-native'
+import { StyleSheet, View } from 'react-native'
 import { SvgUri } from 'react-native-svg'
 import { useDispatch } from 'react-redux'
 
@@ -16,7 +16,6 @@ import {
     OmniInput,
     OmniInputAction,
 } from '../components/feature/omni/OmniInput'
-import Flex from '../components/ui/Flex'
 import { SafeAreaContainer } from '../components/ui/SafeArea'
 import { ParserDataType } from '../types'
 
@@ -124,7 +123,7 @@ const AddFediMod: React.FC = () => {
 
     return (
         <SafeAreaContainer style={style.container} edges="notop">
-            <Flex grow gap="lg">
+            <View style={style.content}>
                 <Input
                     value={url}
                     onChangeText={setUrl}
@@ -140,7 +139,7 @@ const AddFediMod: React.FC = () => {
                     onChangeText={setTitle}
                     placeholder={t('feature.fedimods.mod-title')}
                     label={
-                        <Flex row align="center" justify="between">
+                        <View style={style.titleLabel}>
                             <Text small>{t('words.title')}</Text>
                             {title.length > 0 && (
                                 <Text
@@ -159,7 +158,7 @@ const AddFediMod: React.FC = () => {
                                           : ''}
                                 </Text>
                             )}
-                        </Flex>
+                        </View>
                     }
                     inputContainerStyle={[
                         style.innerInputContainer,
@@ -207,7 +206,7 @@ const AddFediMod: React.FC = () => {
                     }
                     disabled={isFetching}
                 />
-            </Flex>
+            </View>
             <Button
                 disabled={!canSave}
                 loading={isFetching}
@@ -220,11 +219,24 @@ const AddFediMod: React.FC = () => {
 
 const styles = (theme: Theme) =>
     StyleSheet.create({
+        titleLabel: {
+            flexDirection: 'row',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+        },
         modTitle: {
             alignItems: 'flex-start',
         },
         modTitleContainer: {
             display: 'flex',
+        },
+        omniContainer: {
+            width: '100%',
+            flex: 1,
+        },
+        content: {
+            flexGrow: 1,
+            gap: theme.spacing.lg,
         },
         container: {
             gap: theme.spacing.xs,

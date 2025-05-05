@@ -7,7 +7,6 @@ import { selectMatrixAuth } from '@fedi/common/redux'
 
 import { useAppSelector } from '../../../state/hooks'
 import CenterOverlay from '../../ui/CenterOverlay'
-import Flex from '../../ui/Flex'
 import HoloGradient from '../../ui/HoloGradient'
 import SvgImage, { SvgImageSize } from '../../ui/SvgImage'
 
@@ -26,7 +25,7 @@ const DisplayNameOverlay: React.FC<DisplayNameOverlayProps> = ({
 
     return (
         <CenterOverlay show={show} onBackdropPress={onDismiss}>
-            <Flex align="center">
+            <View style={styles.container}>
                 <HoloGradient level="400" gradientStyle={styles.iconGradient}>
                     <SvgImage name="Profile" size={SvgImageSize.lg} />
                 </HoloGradient>
@@ -39,7 +38,7 @@ const DisplayNameOverlay: React.FC<DisplayNameOverlayProps> = ({
                     “{matrixAuth?.displayName || t('phrases.not-set')}“
                 </Text>
 
-                <Flex row center wrap style={styles.instructionRow}>
+                <View style={styles.instructionRow}>
                     <Text
                         style={[
                             styles.instructionText,
@@ -59,14 +58,17 @@ const DisplayNameOverlay: React.FC<DisplayNameOverlayProps> = ({
                         ]}>
                         {' menu.'}
                     </Text>
-                </Flex>
-            </Flex>
+                </View>
+            </View>
+
             <Button fullWidth title="Continue" onPress={onDismiss} />
         </CenterOverlay>
     )
 }
 
 const styles = StyleSheet.create({
+    container: { alignItems: 'center' },
+
     title: {
         fontSize: 20,
         marginBottom: 8,
@@ -80,7 +82,12 @@ const styles = StyleSheet.create({
         marginBottom: 0,
         textAlign: 'center',
     },
+
     instructionRow: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'center',
+        flexWrap: 'wrap',
         marginTop: 8,
         marginBottom: 18,
     },

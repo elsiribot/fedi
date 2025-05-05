@@ -19,7 +19,6 @@ import {
 import { useUpdatingRef } from '@fedi/common/hooks/util'
 import { getBufferEncoding } from '@fedi/common/utils/istextorbinary'
 
-import Flex from '../../ui/Flex'
 import SvgImage, { SvgImageSize } from '../../ui/SvgImage'
 
 type QrCodeScanner = {
@@ -101,10 +100,10 @@ const QrCodeScanner = ({ processing, onQrCodeDetected }: QrCodeScanner) => {
     const style = styles(theme)
     if (!device)
         return (
-            <Flex center style={style.center}>
+            <View style={style.center}>
                 <SvgImage name="ScanSad" size={SvgImageSize.xl} />
                 <Text medium>{t('errors.camera-unavailable')}</Text>
-            </Flex>
+            </View>
         )
 
     return (
@@ -118,7 +117,7 @@ const QrCodeScanner = ({ processing, onQrCodeDetected }: QrCodeScanner) => {
                     codeScanner={codeScanner}
                 />
             )}
-            {processing && <Flex center style={style.processingCover} />}
+            {processing && <View style={style.processingCover} />}
             {Boolean(progress) && (
                 <View style={style.progressContainer}>
                     <View
@@ -135,7 +134,6 @@ const QrCodeScanner = ({ processing, onQrCodeDetected }: QrCodeScanner) => {
         </View>
     )
 }
-
 const styles = (theme: Theme) =>
     StyleSheet.create({
         container: {
@@ -153,6 +151,8 @@ const styles = (theme: Theme) =>
             left: 0,
             width: '100%',
             height: '100%',
+            alignItems: 'center',
+            justifyContent: 'center',
             backgroundColor: 'rgba(0, 0, 0, 0.2)',
         },
         progressContainer: {
@@ -184,6 +184,8 @@ const styles = (theme: Theme) =>
         center: {
             width: '100%',
             height: '100%',
+            justifyContent: 'center',
+            alignItems: 'center',
         },
     })
 

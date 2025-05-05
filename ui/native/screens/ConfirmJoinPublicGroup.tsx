@@ -2,13 +2,12 @@ import { NativeStackScreenProps } from '@react-navigation/native-stack'
 import { Button, Text } from '@rneui/themed'
 import React, { useCallback, useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { StyleSheet } from 'react-native'
+import { StyleSheet, View } from 'react-native'
 
 import { useMatrixChatInvites } from '@fedi/common/hooks/matrix'
 import { getMatrixRoomPreview, selectGroupPreviews } from '@fedi/common/redux'
 import { MatrixGroupPreview } from '@fedi/common/types'
 
-import Flex from '../components/ui/Flex'
 import HoloGradient from '../components/ui/HoloGradient'
 import { SafeAreaContainer } from '../components/ui/SafeArea'
 import { useAppDispatch, useAppSelector } from '../state/hooks'
@@ -67,7 +66,7 @@ const ConfirmJoinPublicGroup: React.FC<Props> = ({ route, navigation }) => {
 
     return previewGroup === undefined ? null : (
         <SafeAreaContainer padding="xl" edges="notop">
-            <Flex center grow gap="md">
+            <View style={style.content}>
                 <HoloGradient level="400" gradientStyle={style.icon}>
                     <Text style={style.iconText}>👋</Text>
                 </HoloGradient>
@@ -81,7 +80,7 @@ const ConfirmJoinPublicGroup: React.FC<Props> = ({ route, navigation }) => {
                 <Text medium style={style.messageNotice}>
                     {t('feature.chat.public-group-notice')}
                 </Text>
-            </Flex>
+            </View>
             <Button onPress={handleJoinGroup} loading={isJoiningGroup}>
                 {t('words.continue')}
             </Button>
@@ -90,6 +89,14 @@ const ConfirmJoinPublicGroup: React.FC<Props> = ({ route, navigation }) => {
 }
 
 const style = StyleSheet.create({
+    content: {
+        display: 'flex',
+        flexGrow: 1,
+        alignItems: 'center',
+        justifyContent: 'center',
+        flexDirection: 'column',
+        gap: 12,
+    },
     buttonText: {
         textAlign: 'center',
     },

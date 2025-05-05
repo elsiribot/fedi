@@ -2,7 +2,7 @@ import { useNavigation } from '@react-navigation/native'
 import { Button, Text, Theme, useTheme } from '@rneui/themed'
 import React from 'react'
 import { useTranslation } from 'react-i18next'
-import { StyleSheet } from 'react-native'
+import { StyleSheet, View } from 'react-native'
 
 import { useMatrixPaymentEvent } from '@fedi/common/hooks/matrix'
 import { useToast } from '@fedi/common/hooks/toast'
@@ -11,7 +11,6 @@ import amountUtils from '@fedi/common/utils/AmountUtils'
 
 import { fedimint } from '../../../bridge'
 import { NavigationHook } from '../../../types/navigation'
-import Flex from '../../ui/Flex'
 import HoloLoader from '../../ui/HoloLoader'
 import { OptionalGradient } from '../../ui/OptionalGradient'
 import SvgImage, { SvgImageSize } from '../../ui/SvgImage'
@@ -76,18 +75,13 @@ const ChatPaymentEvent: React.FC<Props> = ({ event }: Props) => {
         extra = (
             <>
                 {statusText && (
-                    <Flex row align="center" style={style.paymentResult}>
+                    <View style={style.paymentResult}>
                         {icon}
                         <Text style={style.statusText}>{statusText}</Text>
-                    </Flex>
+                    </View>
                 )}
                 {buttons.length > 0 && (
-                    <Flex
-                        row
-                        justify="start"
-                        gap="md"
-                        fullWidth
-                        style={style.paymentButtons}>
+                    <View style={style.paymentButtons}>
                         {buttons.map(button => (
                             <Button
                                 key={button.label}
@@ -106,7 +100,7 @@ const ChatPaymentEvent: React.FC<Props> = ({ event }: Props) => {
                                 }
                             />
                         ))}
-                    </Flex>
+                    </View>
                 )}
             </>
         )
@@ -116,7 +110,7 @@ const ChatPaymentEvent: React.FC<Props> = ({ event }: Props) => {
         <OptionalGradient
             gradient={bubbleGradient}
             style={[style.bubbleInner, style.orangeBubble]}>
-            <Text color={theme.colors.secondary}>{messageText}</Text>
+            <Text style={style.messageText}>{messageText}</Text>
             {extra || null}
             {isHandlingForeignEcash && (
                 <ReceiveForeignEcashOverlay
@@ -135,6 +129,9 @@ const ChatPaymentEvent: React.FC<Props> = ({ event }: Props) => {
 
 const styles = (theme: Theme) =>
     StyleSheet.create({
+        container: {
+            alignItems: 'flex-start',
+        },
         buttonContainer: {
             flex: 1,
             maxWidth: '50%',
@@ -143,14 +140,23 @@ const styles = (theme: Theme) =>
             paddingHorizontal: theme.spacing.lg,
         },
         paymentResult: {
+            flexDirection: 'row',
+            alignItems: 'center',
             marginTop: theme.spacing.sm,
         },
         paymentButtons: {
+            flexDirection: 'row',
+            justifyContent: 'flex-start',
+            gap: 12,
+            width: '100%',
             marginTop: theme.spacing.sm,
         },
         statusText: {
             color: theme.colors.secondary,
             marginLeft: theme.spacing.sm,
+        },
+        messageText: {
+            color: theme.colors.secondary,
         },
         orangeBubble: {
             backgroundColor: theme.colors.orange,

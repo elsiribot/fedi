@@ -1,6 +1,7 @@
 import type { NativeStackScreenProps } from '@react-navigation/native-stack'
 import React, { useCallback, useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
+import { StyleSheet, View } from 'react-native'
 
 import { useToast } from '@fedi/common/hooks/toast'
 import { inviteUserToMatrixRoom, selectMatrixRoom } from '@fedi/common/redux'
@@ -10,7 +11,6 @@ import { OmniInput } from '../components/feature/omni/OmniInput'
 import CustomOverlay, {
     CustomOverlayContents,
 } from '../components/ui/CustomOverlay'
-import Flex from '../components/ui/Flex'
 import { useAppDispatch, useAppSelector } from '../state/hooks'
 import { ParsedFediChatUser, ParserDataType } from '../types'
 import type { RootStackParamList } from '../types/navigation'
@@ -128,8 +128,10 @@ const ScanMemberCode: React.FC<Props> = ({ navigation, route }: Props) => {
         [setScannedUser, t, handleConfirmation, roomName, scannedUser],
     )
 
+    const style = styles()
+
     return (
-        <Flex grow fullWidth>
+        <View style={style.container}>
             <OmniInput
                 expectedInputTypes={[ParserDataType.FediChatUser]}
                 onExpectedInput={handleScannedData}
@@ -149,8 +151,17 @@ const ScanMemberCode: React.FC<Props> = ({ navigation, route }: Props) => {
                     />
                 </>
             )}
-        </Flex>
+        </View>
     )
 }
+
+const styles = () =>
+    StyleSheet.create({
+        container: {
+            flex: 1,
+            width: '100%',
+            flexDirection: 'column',
+        },
+    })
 
 export default ScanMemberCode

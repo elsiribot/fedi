@@ -14,7 +14,6 @@ import { makeLog } from '@fedi/common/utils/log'
 
 import { fedimint } from '../bridge'
 import CheckBox from '../components/ui/CheckBox'
-import Flex from '../components/ui/Flex'
 import LineBreak from '../components/ui/LineBreak'
 import SvgImage, { SvgImageSize } from '../components/ui/SvgImage'
 import { useAppDispatch, useAppSelector } from '../state/hooks'
@@ -90,15 +89,16 @@ const CompleteRecoveryAssist: React.FC<Props> = ({
         federationId,
     ])
 
-    const style = styles(theme)
-
     return (
-        <ScrollView contentContainerStyle={style.container}>
-            <View style={style.cameraContainer}>
+        <ScrollView contentContainerStyle={styles(theme).container}>
+            <View style={styles(theme).cameraContainer}>
                 <Video
                     ref={videoRef}
                     source={{ uri: prefixFileUri(videoPath) }} // Can be a URL or a local file.
-                    style={[style.video, isPaused ? style.shaded : {}]}
+                    style={[
+                        styles(theme).video,
+                        isPaused ? styles(theme).shaded : {},
+                    ]}
                     paused={isPaused}
                     resizeMode={'contain'}
                     ignoreSilentSwitch={'ignore'}
@@ -109,7 +109,7 @@ const CompleteRecoveryAssist: React.FC<Props> = ({
                 />
                 {isPaused && (
                     <Pressable
-                        style={style.playIconContainer}
+                        style={styles(theme).playIconContainer}
                         onPress={() => {
                             videoRef.current?.seek(0)
                             setIsPaused(false)
@@ -125,22 +125,25 @@ const CompleteRecoveryAssist: React.FC<Props> = ({
 
             <LineBreak />
             <ScrollView>
-                <Text bold style={style.instructionsText}>
+                <Text bold style={styles(theme).instructionsText}>
                     {t(
                         'feature.recovery.recovery-confirm-identity-instructions-1',
                     )}
                 </Text>
                 <LineBreak />
-                <Text bold style={style.instructionsText}>
+                <Text bold style={styles(theme).instructionsText}>
                     {t(
                         'feature.recovery.recovery-confirm-identity-instructions-2',
                     )}
                 </Text>
                 <LineBreak />
-                <Flex grow align="start" style={style.confirmationContainer}>
+                <View style={styles(theme).confirmationContainer}>
                     <CheckBox
                         title={
-                            <Text caption medium style={style.checkboxText}>
+                            <Text
+                                caption
+                                medium
+                                style={styles(theme).checkboxText}>
                                 {t(
                                     'feature.recovery.recovery-confirm-identity-yes',
                                 )}
@@ -156,7 +159,10 @@ const CompleteRecoveryAssist: React.FC<Props> = ({
                     />
                     <CheckBox
                         title={
-                            <Text caption medium style={style.checkboxText}>
+                            <Text
+                                caption
+                                medium
+                                style={styles(theme).checkboxText}>
                                 {t(
                                     'feature.recovery.recovery-confirm-identity-no',
                                 )}
@@ -170,7 +176,7 @@ const CompleteRecoveryAssist: React.FC<Props> = ({
                             setDenialSelected(true)
                         }}
                     />
-                </Flex>
+                </View>
             </ScrollView>
 
             <Button
@@ -184,7 +190,7 @@ const CompleteRecoveryAssist: React.FC<Props> = ({
                 }}
                 loading={approvalInProgress}
                 disabled={!approvalSelected && !denialSelected}
-                containerStyle={style.confirmButton}
+                containerStyle={styles(theme).confirmButton}
             />
         </ScrollView>
     )
@@ -215,6 +221,8 @@ const styles = (theme: Theme) =>
             width: '90%',
         },
         confirmationContainer: {
+            flex: 1,
+            alignItems: 'flex-start',
             paddingHorizontal: theme.spacing.md,
             marginHorizontal: 0,
         },

@@ -1,6 +1,7 @@
 import type { NativeStackScreenProps } from '@react-navigation/native-stack'
 import React, { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
+import { StyleSheet, View } from 'react-native'
 
 import { useToast } from '@fedi/common/hooks/toast'
 import { useTransactionHistory } from '@fedi/common/hooks/transactions'
@@ -8,7 +9,6 @@ import { makeLog } from '@fedi/common/utils/log'
 
 import { fedimint } from '../bridge'
 import TransactionsList from '../components/feature/transaction-history/TransactionsList'
-import Flex from '../components/ui/Flex'
 import type { RootStackParamList } from '../types/navigation'
 
 const log = makeLog('Transactions')
@@ -32,14 +32,20 @@ const Transactions: React.FC<Props> = () => {
     }, [fetchTransactions, t, toast])
 
     return (
-        <Flex grow>
+        <View style={styles.container}>
             <TransactionsList
                 transactions={transactions}
                 loading={transactions.length === 0 && isLoading}
                 loadMoreTransactions={() => fetchTransactions({ more: true })}
             />
-        </Flex>
+        </View>
     )
 }
+
+const styles = StyleSheet.create({
+    container: {
+        flex: 1,
+    },
+})
 
 export default Transactions

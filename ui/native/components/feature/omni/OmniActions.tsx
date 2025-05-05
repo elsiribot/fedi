@@ -59,6 +59,7 @@ const styles = (theme: Theme) =>
     StyleSheet.create({
         container: {
             width: '100%',
+            flexDirection: 'column',
         },
         action: {
             gap: theme.spacing.lg,

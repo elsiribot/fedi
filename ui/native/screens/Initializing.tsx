@@ -1,11 +1,12 @@
 import { useNavigation } from '@react-navigation/native'
 import type { NativeStackScreenProps } from '@react-navigation/native-stack'
+import { Theme, useTheme } from '@rneui/themed'
 import React, { useEffect } from 'react'
+import { StyleSheet, View } from 'react-native'
 
 import { selectHasSetMatrixDisplayName } from '@fedi/common/redux'
 import { selectHasLoadedFromStorage } from '@fedi/common/redux/storage'
 
-import Flex from '../components/ui/Flex'
 import SvgImage, { SvgImageSize } from '../components/ui/SvgImage'
 import { useAppSelector } from '../state/hooks'
 import {
@@ -20,6 +21,7 @@ export type Props = NativeStackScreenProps<RootStackParamList, 'Initializing'>
 // TODO: Replace this entire screen with FediBridgeInitializer
 const Initializing: React.FC<Props> = () => {
     const navigation = useNavigation<NavigationHook>()
+    const { theme } = useTheme()
     const hasSetDisplayName = useAppSelector(selectHasSetMatrixDisplayName)
     const hasStorageLoaded = useAppSelector(selectHasLoadedFromStorage || false)
     const isAppUnlocked = useIsFeatureUnlocked('app')
@@ -65,10 +67,27 @@ const Initializing: React.FC<Props> = () => {
     ])
 
     return (
-        <Flex center style={{ width: '100%', height: '100%' }}>
+        <View style={styles(theme).container}>
             <SvgImage size={SvgImageSize.lg} name="FediLogoIcon" />
-        </Flex>
+        </View>
     )
 }
+
+const styles = (_: Theme) =>
+    StyleSheet.create({
+        container: {
+            height: '100%',
+            width: '100%',
+            alignItems: 'center',
+            justifyContent: 'center',
+        },
+        imageBackground: {
+            position: 'absolute',
+            left: 0,
+            right: 0,
+            top: 0,
+            bottom: 0,
+        },
+    })
 
 export default Initializing

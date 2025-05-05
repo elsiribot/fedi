@@ -3,34 +3,34 @@ import React from 'react'
 import { useTranslation } from 'react-i18next'
 import { StyleSheet, View } from 'react-native'
 
-import Flex from '../../ui/Flex'
 import SvgImage, { SvgImageSize } from '../../ui/SvgImage'
 
 export const HistoryRowError: React.FC = () => {
     const { t } = useTranslation()
     const { theme } = useTheme()
 
-    const style = styles(theme)
-
     return (
-        <Flex row center style={style.container}>
-            <View style={style.leftContainer}>
+        <View style={styles(theme).container}>
+            <View style={styles(theme).leftContainer}>
                 <SvgImage
                     name="Error"
                     color={theme.colors.red}
                     size={SvgImageSize.md}
                 />
             </View>
-            <View style={style.centerContainer}>
+            <View style={styles(theme).centerContainer}>
                 <Text>{t('errors.history-render-error')}</Text>
             </View>
-        </Flex>
+        </View>
     )
 }
 
 const styles = (theme: Theme) =>
     StyleSheet.create({
         container: {
+            flexDirection: 'row',
+            alignItems: 'center',
+            justifyContent: 'center',
             height: 48,
             backgroundColor: theme.colors.secondary,
             paddingHorizontal: theme.spacing.xl,
@@ -42,5 +42,18 @@ const styles = (theme: Theme) =>
         centerContainer: {
             width: '90%',
             paddingHorizontal: theme.spacing.sm,
+            flexDirection: 'column',
+        },
+        rightContainer: {
+            width: '30%',
+            flexDirection: 'column',
+            justifyContent: 'flex-end',
+        },
+        rightAlignedText: {
+            textAlign: 'right',
+        },
+        subText: {
+            fontSize: theme.sizes.xxs,
+            color: theme.colors.primaryLight,
         },
     })

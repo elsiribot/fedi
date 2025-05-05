@@ -3,7 +3,7 @@ import type { NativeStackScreenProps } from '@react-navigation/native-stack'
 import { Input, Text, Theme, useTheme } from '@rneui/themed'
 import React, { useCallback, useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { FlatList, ListRenderItem, StyleSheet } from 'react-native'
+import { FlatList, ListRenderItem, StyleSheet, View } from 'react-native'
 
 import { useMatrixUserSearch } from '@fedi/common/hooks/matrix'
 import { useToast } from '@fedi/common/hooks/toast'
@@ -18,7 +18,6 @@ import { formatErrorMessage } from '@fedi/common/utils/format'
 
 import { ChatSettingsAvatar } from '../components/feature/chat/ChatSettingsAvatar'
 import ChatUserTile from '../components/feature/chat/ChatUserTile'
-import Flex from '../components/ui/Flex'
 import HoloLoader from '../components/ui/HoloLoader'
 import KeyboardAwareWrapper from '../components/ui/KeyboardAwareWrapper'
 import { PressableIcon } from '../components/ui/PressableIcon'
@@ -70,7 +69,7 @@ const ChatRoomInvite: React.FC<Props> = ({ route }: Props) => {
     const renderEmpty = useCallback(() => {
         const style = styles(theme)
         return searchError ? (
-            <Flex grow center style={style.empty}>
+            <View style={style.empty}>
                 <Text color={theme.colors.primaryLight}>
                     {formatErrorMessage(
                         t,
@@ -78,19 +77,19 @@ const ChatRoomInvite: React.FC<Props> = ({ route }: Props) => {
                         'errors.chat-unavailable',
                     )}
                 </Text>
-            </Flex>
+            </View>
         ) : isSearching ? (
-            <Flex grow align="center" style={style.loader}>
+            <View style={style.loader}>
                 <HoloLoader size={48} />
-            </Flex>
+            </View>
         ) : (
-            <Flex grow center style={style.empty}>
+            <View style={style.empty}>
                 <Text color={theme.colors.primaryLight}>
                     {query === ''
                         ? t('feature.chat.enter-a-username')
                         : t('feature.omni.search-no-results', { query })}
                 </Text>
-            </Flex>
+            </View>
         )
     }, [query, isSearching, searchError, theme, t])
 
@@ -165,7 +164,7 @@ const ChatRoomInvite: React.FC<Props> = ({ route }: Props) => {
     return (
         <KeyboardAwareWrapper>
             <SafeAreaContainer style={style.container} edges="notop">
-                <Flex align="center" fullWidth>
+                <View style={style.inputWrapper}>
                     <ChatSettingsAvatar room={room} />
                     <Text bold style={style.inputLabel}>
                         {t('feature.chat.invite-to-group')}
@@ -190,19 +189,22 @@ const ChatRoomInvite: React.FC<Props> = ({ route }: Props) => {
                             />
                         }
                     />
-                </Flex>
+                </View>
                 {searchContent}
             </SafeAreaContainer>
         </KeyboardAwareWrapper>
     )
 }
-
 const styles = (theme: Theme) =>
     StyleSheet.create({
         container: {
             paddingLeft: theme.spacing.xl,
             paddingRight: theme.spacing.xl,
             width: '100%',
+        },
+        inputWrapper: {
+            width: '100%',
+            alignItems: 'center',
         },
         inputLabel: {
             alignSelf: 'flex-start',
@@ -225,9 +227,14 @@ const styles = (theme: Theme) =>
             width: '100%',
         },
         loader: {
+            flex: 1,
+            alignItems: 'center',
             padding: theme.spacing.xl,
         },
         empty: {
+            flex: 1,
+            justifyContent: 'center',
+            alignItems: 'center',
             marginTop: theme.spacing.md,
             borderWidth: 1,
             padding: theme.spacing.xxl,

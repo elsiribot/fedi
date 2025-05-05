@@ -21,7 +21,6 @@ import { fedimint } from '../bridge'
 import { FederationLogo } from '../components/feature/federations/FederationLogo'
 import RecoveryInProgress from '../components/feature/recovery/RecoveryInProgress'
 import FiatAmount from '../components/feature/wallet/FiatAmount'
-import Flex from '../components/ui/Flex'
 import HoloAlert from '../components/ui/HoloAlert'
 import { SafeAreaContainer } from '../components/ui/SafeArea'
 import SvgImage from '../components/ui/SvgImage'
@@ -129,14 +128,14 @@ const ConfirmReceiveOffline: React.FC<Props> = ({
 
     return (
         <SafeAreaContainer edges="notop" style={style.container}>
-            <Flex align="center" fullWidth style={style.content}>
-                <Flex row align="center" gap="sm">
+            <View style={style.content}>
+                <View style={style.receiveIndicator}>
                     <Text maxFontSizeMultiplier={1.5}>
                         {t('feature.receive.receive-ecash-from')}
                     </Text>
                     {ecashFederation &&
                     ecashFederation.init_state === 'ready' ? (
-                        <Flex row align="center" gap="sm">
+                        <View style={style.federationIndicator}>
                             <FederationLogo
                                 federation={ecashFederation}
                                 size={24}
@@ -148,13 +147,13 @@ const ConfirmReceiveOffline: React.FC<Props> = ({
                                 maxFontSizeMultiplier={1.5}>
                                 {ecashFederation.name || ''}
                             </Text>
-                        </Flex>
+                        </View>
                     ) : (
                         <ActivityIndicator />
                     )}
-                </Flex>
-                <Flex center gap="xs" style={style.amountContainer}>
-                    <Flex row align="center">
+                </View>
+                <View style={style.amountContainer}>
+                    <View style={style.satsContainer}>
                         {amountSats ? (
                             <Text
                                 h1>{`${amountUtils.formatNumber(amountSats)} `}</Text>
@@ -162,19 +161,14 @@ const ConfirmReceiveOffline: React.FC<Props> = ({
                             <ActivityIndicator />
                         )}
                         <Text h2>{`${t('words.sats').toUpperCase()}`}</Text>
-                    </Flex>
+                    </View>
                     <FiatAmount amountSats={amountSats} />
-                </Flex>
-            </Flex>
-            <Flex grow justify="end" gap="lg" fullWidth>
+                </View>
+            </View>
+            <View style={style.actionContainer}>
                 {isFederationRecovering && (
                     <HoloAlert>
-                        <Flex
-                            row
-                            align="center"
-                            justify="between"
-                            fullWidth
-                            style={style.recoveryIndicator}>
+                        <View style={style.recoveryIndicator}>
                             <Text>{t('phrases.recovery-in-progress')}</Text>
                             <View style={style.recoverySpinner}>
                                 <RecoveryInProgress
@@ -182,20 +176,20 @@ const ConfirmReceiveOffline: React.FC<Props> = ({
                                     federationId={validatedEcash?.federation_id}
                                 />
                             </View>
-                        </Flex>
+                        </View>
                     </HoloAlert>
                 )}
                 {isOffline && (
                     <HoloAlert>
-                        <Flex center gap="sm">
-                            <Flex row align="center" gap="sm">
+                        <View style={style.offlineIndicator}>
+                            <View style={style.offlineHeader}>
                                 <SvgImage name="Offline" />
                                 <Text bold>{t('phrases.youre-offline')}</Text>
-                            </Flex>
+                            </View>
                             <Text caption>
                                 {t('feature.receive.claim-ecash-online')}
                             </Text>
-                        </Flex>
+                        </View>
                     </HoloAlert>
                 )}
                 <Button
@@ -210,7 +204,7 @@ const ConfirmReceiveOffline: React.FC<Props> = ({
                     disabled={isFederationRecovering}
                     loading={receiving}
                 />
-            </Flex>
+            </View>
         </SafeAreaContainer>
     )
 }
@@ -223,16 +217,57 @@ const styles = (theme: Theme) =>
         },
         content: {
             paddingVertical: theme.spacing.xxl,
+            alignItems: 'center',
+            width: '100%',
         },
         amountContainer: {
+            alignItems: 'center',
+            justifyContent: 'center',
+            gap: theme.spacing.xs,
             paddingVertical: theme.spacing.xxl,
         },
+        actionContainer: {
+            width: '100%',
+            gap: theme.spacing.lg,
+            flex: 1,
+            justifyContent: 'flex-end',
+        },
         recoveryIndicator: {
+            flexDirection: 'row',
+            alignItems: 'center',
+            justifyContent: 'space-between',
             minHeight: 64,
+            width: '100%',
         },
         recoverySpinner: {
             width: 64,
             height: 64,
+        },
+        satsContainer: {
+            flexDirection: 'row',
+            alignItems: 'center',
+        },
+        receiveIndicator: {
+            flexDirection: 'row',
+            alignItems: 'center',
+            gap: theme.spacing.sm,
+        },
+        federationIndicator: {
+            flexDirection: 'row',
+            alignItems: 'center',
+            gap: theme.spacing.sm,
+        },
+        offlineIndicator: {
+            flexDirection: 'column',
+            gap: theme.spacing.sm,
+            alignItems: 'center',
+            justifyContent: 'center',
+        },
+        offlineHeader: {
+            flexDirection: 'row',
+            alignItems: 'center',
+            gap: theme.spacing.sm,
+            width: '100%',
         },
     })
 

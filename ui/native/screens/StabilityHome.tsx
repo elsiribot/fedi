@@ -3,7 +3,7 @@ import { NativeStackScreenProps } from '@react-navigation/native-stack'
 import { Button, Text, Theme, useTheme } from '@rneui/themed'
 import React from 'react'
 import { useTranslation } from 'react-i18next'
-import { StyleSheet, useWindowDimensions } from 'react-native'
+import { StyleSheet, View, useWindowDimensions } from 'react-native'
 import * as Progress from 'react-native-progress'
 import { SafeAreaView } from 'react-native-safe-area-context'
 
@@ -19,7 +19,6 @@ import {
 import { makePendingBalanceText } from '@fedi/common/utils/wallet'
 
 import { StabilityBitcoinBanner } from '../components/feature/wallet/StabilityBitcoinBanner'
-import Flex from '../components/ui/Flex'
 import { useAppSelector, useStabilityPool } from '../state/hooks'
 import type { NavigationHook, RootStackParamList } from '../types/navigation'
 
@@ -49,8 +48,8 @@ const StabilityHome: React.FC<Props> = () => {
             style={style.container}
             edges={{ left: 'additive', right: 'additive', bottom: 'maximum' }}>
             <StabilityBitcoinBanner />
-            <Flex grow center style={style.content}>
-                <Flex grow center fullWidth>
+            <View style={style.content}>
+                <View style={style.balanceContainer}>
                     <Progress.Circle
                         progress={1}
                         color={
@@ -62,7 +61,7 @@ const StabilityHome: React.FC<Props> = () => {
                         size={width - theme.spacing.lg * 2}
                         borderWidth={1}
                     />
-                    <Flex align="center" style={style.balanceTextContainer}>
+                    <View style={style.balanceTextContainer}>
                         <Text h1 h1Style={style.balanceText}>
                             {`${formattedStableBalance}`}
                         </Text>
@@ -75,9 +74,9 @@ const StabilityHome: React.FC<Props> = () => {
                                 )}
                             </Text>
                         )}
-                    </Flex>
-                </Flex>
-                <Flex row fullWidth style={style.buttonContainer}>
+                    </View>
+                </View>
+                <View style={style.buttonContainer}>
                     <Button
                         containerStyle={style.button}
                         onPress={() => {
@@ -146,8 +145,8 @@ const StabilityHome: React.FC<Props> = () => {
                             stableBalance === 0 && stableBalancePending === 0
                         }
                     />
-                </Flex>
-            </Flex>
+                </View>
+            </View>
         </SafeAreaView>
     )
 }
@@ -160,10 +159,21 @@ const styles = (theme: Theme) =>
             flexDirection: 'column',
         },
         content: {
+            flex: 1,
+            alignItems: 'center',
+            justifyContent: 'center',
             padding: theme.spacing.lg,
+        },
+        balanceContainer: {
+            flex: 1,
+            width: '100%',
+            alignItems: 'center',
+            justifyContent: 'center',
         },
         balanceTextContainer: {
             position: 'absolute',
+            flexDirection: 'column',
+            alignItems: 'center',
         },
         balanceText: {
             flex: 1,
@@ -172,6 +182,8 @@ const styles = (theme: Theme) =>
             flex: 1,
         },
         buttonContainer: {
+            width: '100%',
+            flexDirection: 'row',
             marginTop: 'auto',
             gap: 20,
         },

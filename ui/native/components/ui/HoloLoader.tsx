@@ -11,7 +11,6 @@ import {
 import * as Progress from 'react-native-progress'
 
 import { Images } from '../../assets/images'
-import Flex from './Flex'
 
 export type Props = {
     size?: number
@@ -50,7 +49,7 @@ const HoloLoader: React.FC<Props> = ({
     const style = styles(theme, size)
 
     return (
-        <Flex center style={style.container}>
+        <View style={[style.container]}>
             <ImageBackground
                 source={Images.HoloBackgroundStrong}
                 style={style.holoCircle}
@@ -71,7 +70,7 @@ const HoloLoader: React.FC<Props> = ({
             <View style={style.percentLabelContainer}>
                 <Text medium>{label}</Text>
             </View>
-        </Flex>
+        </View>
     )
 }
 
@@ -79,6 +78,8 @@ const styles = (theme: Theme, size: number) =>
     StyleSheet.create({
         container: {
             position: 'relative',
+            alignItems: 'center',
+            justifyContent: 'center',
             height: size,
             width: size,
         },

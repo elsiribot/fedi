@@ -13,7 +13,6 @@ import { FirstTimeCommunityEntryItem } from '../components/feature/federations/F
 import InfoEntryList from '../components/feature/home/InfoEntryList'
 import { Switcher } from '../components/feature/home/Switcher'
 import { OmniInput } from '../components/feature/omni/OmniInput'
-import Flex from '../components/ui/Flex'
 import { useAppSelector } from '../state/hooks'
 import type { RootStackParamList } from '../types/navigation'
 
@@ -73,14 +72,9 @@ const PublicFederations: React.FC<Props> = ({ navigation }) => {
     ]
 
     return (
-        <Flex grow>
+        <View style={{ flex: 1 }}>
             {/* HEADER */}
-            <Flex
-                align="center"
-                justify="evenly"
-                gap="sm"
-                fullWidth
-                style={style.titleContainer}>
+            <View style={style.titleContainer}>
                 <Text h2 medium h2Style={style.title}>
                     {t('feature.onboarding.title')}
                 </Text>
@@ -97,7 +91,7 @@ const PublicFederations: React.FC<Props> = ({ navigation }) => {
                     }}>
                     {selectedOption.subText}
                 </Text>
-            </Flex>
+            </View>
 
             <View style={style.switcherContainer}>
                 <Switcher<Tab>
@@ -112,22 +106,13 @@ const PublicFederations: React.FC<Props> = ({ navigation }) => {
                 contentContainerStyle={style.scrollContainer}
                 overScrollMode="auto">
                 {activeTab === 'discover' && (
-                    <Flex
-                        grow
-                        gap="sm"
-                        fullWidth
-                        style={style.discoverContainer}>
+                    <View style={style.discoverContainer}>
                         {publicFederations.map(f => {
                             const hasJoined = joinedFederationIds.includes(f.id)
                             return (
-                                <Flex
-                                    row
-                                    align="center"
-                                    gap="md"
-                                    key={f.id}
-                                    style={style.tileContainer}>
+                                <View key={f.id} style={style.tileContainer}>
                                     <FederationLogo federation={f} size={40} />
-                                    <Flex grow gap="xs">
+                                    <View style={style.tileTextContainer}>
                                         <Text numberOfLines={1} medium>
                                             {f.name}
                                         </Text>
@@ -138,7 +123,7 @@ const PublicFederations: React.FC<Props> = ({ navigation }) => {
                                             medium>
                                             {f.meta.preview_message}
                                         </Text>
-                                    </Flex>
+                                    </View>
                                     <Button
                                         size="sm"
                                         disabled={hasJoined}
@@ -166,10 +151,10 @@ const PublicFederations: React.FC<Props> = ({ navigation }) => {
                                             </Text>
                                         }
                                     />
-                                </Flex>
+                                </View>
                             )
                         })}
-                    </Flex>
+                    </View>
                 )}
 
                 {activeTab === 'join' && (
@@ -197,7 +182,7 @@ const PublicFederations: React.FC<Props> = ({ navigation }) => {
                                 theme={theme}
                             />
                         </View>
-                        <Flex fullWidth style={style.buttonsContainer}>
+                        <View style={style.buttonsContainer}>
                             <Button
                                 fullWidth
                                 title={'Create My Community'}
@@ -207,7 +192,7 @@ const PublicFederations: React.FC<Props> = ({ navigation }) => {
                                     )
                                 }
                             />
-                        </Flex>
+                        </View>
                     </View>
                 )}
             </ScrollView>
@@ -224,7 +209,7 @@ const PublicFederations: React.FC<Props> = ({ navigation }) => {
                     onPress={() => navigation.navigate('TabsNavigator')}
                 />
             </View>
-        </Flex>
+        </View>
     )
 }
 
@@ -237,11 +222,17 @@ const styles = (theme: Theme) =>
             padding: theme.spacing.lg,
         },
         titleContainer: {
+            width: '100%',
+            alignItems: 'center',
+            justifyContent: 'space-evenly',
+            gap: theme.spacing.sm,
             marginBottom: 10,
             paddingLeft: 10,
             paddingRight: 10,
         },
         buttonsContainer: {
+            width: '100%',
+            flexDirection: 'column',
             marginBottom: theme.spacing.sm,
             marginTop: theme.spacing.lg,
         },
@@ -249,12 +240,23 @@ const styles = (theme: Theme) =>
             textAlign: 'center',
         },
         discoverContainer: {
+            flex: 1,
+            width: '100%',
+            gap: 8,
             alignContent: 'flex-start',
         },
         tileContainer: {
+            flexDirection: 'row',
+            alignItems: 'center',
             backgroundColor: theme.colors.offWhite,
             padding: theme.spacing.md,
             borderRadius: 16,
+            gap: 12,
+        },
+        tileTextContainer: {
+            flex: 1,
+            flexDirection: 'column',
+            gap: theme.spacing.xs,
         },
         previewMessage: {
             color: theme.colors.primaryLight,

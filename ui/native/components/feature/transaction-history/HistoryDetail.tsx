@@ -16,7 +16,6 @@ import { hexToRgba } from '@fedi/common/utils/color'
 
 import { fedimint } from '../../../bridge'
 import { useAppSelector } from '../../../state/hooks'
-import Flex from '../../ui/Flex'
 import SvgImage, { SvgImageSize } from '../../ui/SvgImage'
 import { HistoryDetailItem, HistoryDetailItemProps } from './HistoryDetailItem'
 
@@ -150,7 +149,7 @@ export const HistoryDetail: React.FC<HistoryDetailProps> = ({
                     {amount}
                 </Text>
             )}
-            <Flex gap="xs" fullWidth style={style.detailItemsContainer}>
+            <View style={style.detailItemsContainer}>
                 {items.map((item, idx) => (
                     <HistoryDetailItem
                         key={idx}
@@ -222,7 +221,7 @@ export const HistoryDetail: React.FC<HistoryDetailProps> = ({
                         noBorder
                     />
                 )}
-            </Flex>
+            </View>
             {isOnchain && !hasReceivedBitcoin && (
                 <View style={style.checkFundsContainer}>
                     <Button
@@ -255,6 +254,8 @@ const styles = (theme: Theme) =>
         },
         detailItemsContainer: {
             marginTop: theme.spacing.xl,
+            gap: theme.spacing.xs,
+            width: '100%',
         },
         detailTitle: {
             marginTop: theme.spacing.sm,

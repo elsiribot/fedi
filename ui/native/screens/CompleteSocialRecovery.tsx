@@ -18,7 +18,6 @@ import { makeLog } from '@fedi/common/utils/log'
 
 import { Images } from '../assets/images'
 import { fedimint } from '../bridge'
-import Flex from '../components/ui/Flex'
 import HoloCard from '../components/ui/HoloCard'
 import { useAppDispatch } from '../state/hooks'
 import {
@@ -124,7 +123,7 @@ const CompleteSocialRecovery: React.FC<Props> = ({ navigation }: Props) => {
             approvals &&
             approvals.approvals.map((approval: GuardianApproval, i) => {
                 return (
-                    <Flex row justify="between" key={`gr-${i}`}>
+                    <View style={styles(theme).guardianRow} key={`gr-${i}`}>
                         <Text>{approval.guardianName}</Text>
                         <Text
                             style={
@@ -134,7 +133,7 @@ const CompleteSocialRecovery: React.FC<Props> = ({ navigation }: Props) => {
                                 ? t('words.approved')
                                 : t('words.pending')}
                         </Text>
-                    </Flex>
+                    </View>
                 )
             })
         )
@@ -143,9 +142,9 @@ const CompleteSocialRecovery: React.FC<Props> = ({ navigation }: Props) => {
     // Show loading indicator until we have approvals
     if (approvals == null) {
         return (
-            <Flex grow center>
+            <View style={styles(theme).spinnerContainer}>
                 <ActivityIndicator size="large" />
-            </Flex>
+            </View>
         )
     }
 
@@ -169,13 +168,13 @@ const CompleteSocialRecovery: React.FC<Props> = ({ navigation }: Props) => {
             />
 
             <View style={styles(theme).guardiansContainer}>
-                <Flex row justify="between">
+                <View style={styles(theme).guardianRow}>
                     <Text bold>
                         {t('feature.recovery.guardian-approvals')}
                         {'\n'}
                     </Text>
                     {renderGuardianApprovalStatus()}
-                </Flex>
+                </View>
                 {renderGuardians()}
             </View>
             <Button
@@ -209,6 +208,10 @@ const styles = (theme: Theme) =>
             width: '100%',
             marginVertical: theme.spacing.xl,
         },
+        guardianRow: {
+            flexDirection: 'row',
+            justifyContent: 'space-between',
+        },
         hidden: {
             opacity: 0,
         },
@@ -219,6 +222,11 @@ const styles = (theme: Theme) =>
         },
         openButton: {
             width: '100%',
+        },
+        spinnerContainer: {
+            flex: 1,
+            alignItems: 'center',
+            justifyContent: 'center',
         },
     })
 

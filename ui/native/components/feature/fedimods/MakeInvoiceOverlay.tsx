@@ -1,6 +1,7 @@
-import { useTheme } from '@rneui/themed'
+import { Theme, useTheme } from '@rneui/themed'
 import React, { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
+import { StyleSheet, View } from 'react-native'
 import { RejectionError } from 'webln'
 
 import { useRequestForm } from '@fedi/common/hooks/amount'
@@ -22,7 +23,6 @@ import { fedimint } from '../../../bridge'
 import { useAppDispatch, useAppSelector } from '../../../state/hooks'
 import AmountInput from '../../ui/AmountInput'
 import CustomOverlay from '../../ui/CustomOverlay'
-import Flex from '../../ui/Flex'
 import FederationWalletSelector from '../send/FederationWalletSelector'
 
 const log = makeLog('MakeInvoiceOverlay')
@@ -138,11 +138,7 @@ export const MakeInvoiceOverlay: React.FC<Props> = ({ onReject, onAccept }) => {
                       }),
                 description: requestInvoiceArgs?.defaultMemo || '',
                 body: (
-                    <Flex
-                        grow
-                        align="center"
-                        gap="lg"
-                        style={{ paddingTop: theme.spacing.xl }}>
+                    <View style={styles(theme).container}>
                         <FederationWalletSelector />
                         <AmountInput
                             key={amountInputKey}
@@ -159,7 +155,7 @@ export const MakeInvoiceOverlay: React.FC<Props> = ({ onReject, onAccept }) => {
                             }}
                             error={error}
                         />
-                    </Flex>
+                    </View>
                 ),
                 buttons: [
                     {
@@ -176,3 +172,13 @@ export const MakeInvoiceOverlay: React.FC<Props> = ({ onReject, onAccept }) => {
         />
     )
 }
+
+const styles = (theme: Theme) =>
+    StyleSheet.create({
+        container: {
+            flex: 1,
+            paddingTop: theme.spacing.xl,
+            alignItems: 'center',
+            gap: theme.spacing.lg,
+        },
+    })

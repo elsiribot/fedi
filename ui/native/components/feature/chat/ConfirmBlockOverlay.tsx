@@ -1,13 +1,12 @@
 import { Text, Theme, useTheme } from '@rneui/themed'
 import React from 'react'
 import { useTranslation } from 'react-i18next'
-import { StyleSheet } from 'react-native'
+import { StyleSheet, View } from 'react-native'
 
 import { MatrixRoomMember } from '@fedi/common/types'
 import { getUserSuffix } from '@fedi/common/utils/matrix'
 
 import CustomOverlay from '../../ui/CustomOverlay'
-import Flex from '../../ui/Flex'
 
 interface ConfirmBlockOverlayProps {
     show: boolean
@@ -38,7 +37,7 @@ export const ConfirmBlockOverlay: React.FC<ConfirmBlockOverlayProps> = ({
             loading={confirming}
             contents={{
                 body: (
-                    <Flex align="center" gap="sm">
+                    <View style={style.titleContainer}>
                         <Text
                             medium
                             numberOfLines={2}
@@ -62,7 +61,7 @@ export const ConfirmBlockOverlay: React.FC<ConfirmBlockOverlayProps> = ({
                                 })}
                             </Text>
                         )}
-                    </Flex>
+                    </View>
                 ),
                 icon: 'AlertWarningTriangle',
                 buttons: [
@@ -88,6 +87,8 @@ const styles = (theme: Theme) =>
         titleContainer: {
             paddingTop: theme.spacing.lg,
             paddingHorizontal: theme.spacing.sm,
+            alignItems: 'center',
+            gap: theme.spacing.sm,
         },
         text: {
             textAlign: 'center',

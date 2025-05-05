@@ -2,14 +2,13 @@ import type { NativeStackScreenProps } from '@react-navigation/native-stack'
 import { Text, Theme, useTheme } from '@rneui/themed'
 import React, { useEffect, useState } from 'react'
 import { Trans, useTranslation } from 'react-i18next'
-import { StyleSheet } from 'react-native'
+import { StyleSheet, View } from 'react-native'
 
 import { useToast } from '@fedi/common/hooks/toast'
 import { selectActiveFederationId, uploadBackupFile } from '@fedi/common/redux'
 import { makeLog } from '@fedi/common/utils/log'
 
 import { fedimint } from '../bridge'
-import Flex from '../components/ui/Flex'
 import HoloProgressCircle from '../components/ui/HoloProgressCircle'
 import { useAppDispatch, useAppSelector } from '../state/hooks'
 import type { RootStackParamList } from '../types/navigation'
@@ -82,12 +81,10 @@ const SocialBackupProcessing: React.FC<Props> = ({
         return () => clearInterval(interval)
     }, [navigation, percentComplete])
 
-    const style = styles(theme)
-
     return (
-        <Flex grow center style={style.container}>
+        <View style={styles(theme).container}>
             <HoloProgressCircle percentComplete={percentComplete} />
-            <Text style={style.label}>
+            <Text style={styles(theme).label}>
                 <Trans
                     i18nKey="feature.backup.creating-recovery-file"
                     components={{
@@ -95,13 +92,16 @@ const SocialBackupProcessing: React.FC<Props> = ({
                     }}
                 />
             </Text>
-        </Flex>
+        </View>
     )
 }
 
 const styles = (theme: Theme) =>
     StyleSheet.create({
         container: {
+            flex: 1,
+            alignItems: 'center',
+            justifyContent: 'center',
             padding: theme.spacing.xl,
         },
         label: {

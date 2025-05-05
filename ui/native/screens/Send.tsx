@@ -2,6 +2,7 @@ import { useFocusEffect } from '@react-navigation/native'
 import type { NativeStackScreenProps } from '@react-navigation/native-stack'
 import React, { useCallback, useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
+import { StyleSheet, View } from 'react-native'
 
 import { useSyncCurrencyRatesAndCache } from '@fedi/common/hooks/currency'
 import { useIsOfflineWalletSupported } from '@fedi/common/hooks/federation'
@@ -11,7 +12,6 @@ import {
     OmniInput,
     OmniInputAction,
 } from '../components/feature/omni/OmniInput'
-import Flex from '../components/ui/Flex'
 import { ParserDataType } from '../types'
 import type { RootStackParamList } from '../types/navigation'
 
@@ -42,7 +42,7 @@ const Send: React.FC<Props> = ({ navigation }: Props) => {
     )
 
     return (
-        <Flex grow fullWidth>
+        <View style={styles().container}>
             <OmniInput
                 expectedInputTypes={[
                     ParserDataType.Bolt11,
@@ -70,8 +70,16 @@ const Send: React.FC<Props> = ({ navigation }: Props) => {
                 onUnexpectedSuccess={() => null}
                 customActions={customActions}
             />
-        </Flex>
+        </View>
     )
 }
+
+const styles = () =>
+    StyleSheet.create({
+        container: {
+            flex: 1,
+            width: '100%',
+        },
+    })
 
 export default Send

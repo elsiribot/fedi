@@ -1,10 +1,9 @@
 import { Text, Theme, useTheme } from '@rneui/themed'
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { Pressable, StyleSheet } from 'react-native'
+import { Pressable, StyleSheet, View } from 'react-native'
 
 import CustomOverlay from './CustomOverlay'
-import Flex from './Flex'
 import SvgImage from './SvgImage'
 
 type Props = {
@@ -36,7 +35,7 @@ const OverlaySelect: React.FC<Props> = ({ value, options, onValueChange }) => {
                 onBackdropPress={() => setIsOpen(false)}
                 contents={{
                     body: (
-                        <Flex style={style.options}>
+                        <View style={style.options}>
                             {options.map(option => (
                                 <Pressable
                                     key={option.value}
@@ -51,7 +50,7 @@ const OverlaySelect: React.FC<Props> = ({ value, options, onValueChange }) => {
                                     )}
                                 </Pressable>
                             ))}
-                        </Flex>
+                        </View>
                     ),
                 }}
             />
@@ -72,6 +71,7 @@ const styles = (theme: Theme) =>
             gap: theme.spacing.xs,
         },
         options: {
+            flexDirection: 'column',
             padding: theme.spacing.md,
         },
         option: {

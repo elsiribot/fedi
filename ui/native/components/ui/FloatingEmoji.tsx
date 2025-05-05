@@ -1,10 +1,8 @@
 import { Text, Theme, useTheme } from '@rneui/themed'
 import React from 'react'
-import { StyleSheet } from 'react-native'
+import { StyleSheet, View } from 'react-native'
 
 import { hexToRgba } from '@fedi/common/utils/color'
-
-import Flex from './Flex'
 
 /*
     UI Component: FloatingEmoji
@@ -37,8 +35,7 @@ const FloatingEmoji: React.FC<FloatingEmojiProps> = ({
     const fontSize = size
 
     return (
-        <Flex
-            center
+        <View
             style={[
                 style.container,
                 {
@@ -50,13 +47,15 @@ const FloatingEmoji: React.FC<FloatingEmojiProps> = ({
             <Text style={{ fontSize }} adjustsFontSizeToFit>
                 {emoji}
             </Text>
-        </Flex>
+        </View>
     )
 }
 
 const styles = (theme: Theme) =>
     StyleSheet.create({
         container: {
+            alignItems: 'center',
+            justifyContent: 'center',
             backgroundColor: theme.colors.secondary,
             shadowOffset: { width: 0, height: 16 },
             shadowColor: hexToRgba(theme.colors.blueDropShadow, 0.16),
