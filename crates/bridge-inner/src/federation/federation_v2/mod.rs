@@ -33,10 +33,11 @@ use fedimint_api_client::api::net::Connector;
 use fedimint_api_client::api::{DynGlobalApi, DynModuleApi, FederationApiExt as _, StatusResponse};
 use fedimint_bip39::Bip39RootSecretStrategy;
 use fedimint_client::db::{CachedApiVersionSetKey, ChronologicalOperationLogKey};
-use fedimint_client::meta::{FetchKind, MetaService, MetaSource};
-use fedimint_client::module::recovery::RecoveryProgress;
+use fedimint_client::meta::MetaService;
+use fedimint_client::module::meta::{FetchKind, MetaSource};
+use fedimint_client::module::module::recovery::RecoveryProgress;
+use fedimint_client::module::oplog::{OperationLogEntry, UpdateStreamOrOutcome};
 use fedimint_client::module::ClientModule;
-use fedimint_client::oplog::{OperationLogEntry, UpdateStreamOrOutcome};
 use fedimint_client::secret::RootSecretStrategy;
 use fedimint_client::{Client, ClientBuilder, ClientHandle};
 use fedimint_core::config::{ClientConfig, FederationId};
@@ -454,11 +455,8 @@ impl FederationV2 {
         if should_override_localhost {
             override_localhost_invite_code(&mut invite_code);
         }
-        let api_single_guardian = DynGlobalApi::from_endpoints(
-            invite_code.peers(),
-            &invite_code.api_secret(),
-            &Connector::Tcp,
-        );
+        let api_single_guardian =
+            DynGlobalApi::from_endpoints(invite_code.peers(), &invite_code.api_secret()).await?;
         let client_root_sercet = {
             let federation_id = invite_code.federation_id();
             // We do an additional derivation using `DerivableSecret::federation_key` since
@@ -746,11 +744,7 @@ impl FederationV2 {
             .map(|(&peer_id, endpoint)| {
                 (
                     peer_id,
-                    DynGlobalApi::from_endpoints(
-                        vec![(peer_id, endpoint.clone())],
-                        api_secret,
-                        &Connector::Tcp,
-                    ),
+                    DynGlobalApi::from_endpoints(vec![(peer_id, endpoint.clone())], api_secret),
                 )
             })
             .collect();
@@ -758,6 +752,15 @@ impl FederationV2 {
         let futures = peer_clients
             .into_iter()
             .map(|(guardian, client)| async move {
+                let client = match client.await {
+                    Ok(client) => client,
+                    Err(e) => {
+                        return GuardianStatus::Error {
+                            guardian: guardian.to_string(),
+                            error: e.to_string(),
+                        }
+                    }
+                };
                 let start = fedimint_core::time::now();
                 match timeout(
                     GUARDIAN_STATUS_TIMEOUT,
@@ -1431,10 +1434,13 @@ impl FederationV2 {
                         }
                     });
                 }
+                #[allow(deprecated)]
                 LightningOperationMeta {
-                    variant: LightningOperationMetaVariant::Claim { .. },
+                    variant:
+                        LightningOperationMetaVariant::Claim { .. }
+                        | LightningOperationMetaVariant::RecurringPaymentReceive(_),
                     ..
-                } => unreachable!("claims are not supported"),
+                } => unreachable!("claims and recurring payments are not supported"),
             },
             MINT_OPERATION_TYPE => {
                 let meta = operation.meta::<MintOperationMeta>();
@@ -2517,8 +2523,10 @@ impl FederationV2 {
                                 .map(Into::into),
                         };
                     }
-                    LightningOperationMetaVariant::Claim { .. } => {
-                        unreachable!("claims are not supported")
+                    #[allow(deprecated)]
+                    LightningOperationMetaVariant::Claim { .. }
+                    | LightningOperationMetaVariant::RecurringPaymentReceive(_) => {
+                        unreachable!("claims and recurring payments are not supported")
                     }
                 }
             }
