@@ -9,7 +9,6 @@ import { selectCoreMods } from '@fedi/common/redux/mod'
 
 import { FediModImages } from '../../../assets/images'
 import { FediMod, Shortcut, ShortcutType } from '../../../types'
-import Flex from '../../ui/Flex'
 import ShortcutTile from './ShortcutTile'
 
 const MOD_ORDER = ['catalog', 'lngpt', 'swap'] as const
@@ -56,20 +55,18 @@ const ShortcutsListPlaceholder: React.FC = () => {
 
     const handleHold = undefined
 
-    const style = styles(theme)
-
     return (
-        <Flex grow fullWidth>
-            <Text medium style={style.sectionTitle}>
+        <View style={styles(theme).container}>
+            <Text style={styles(theme).sectionTitle}>
                 {t('feature.home.federation-mods-title')}
             </Text>
-            <Text h4 medium h4Style={style.servicesSelected}>
+            <Text style={styles(theme).servicesSelected}>
                 {t('feature.home.federation-services-selected')}
             </Text>
 
-            <Flex row justify="between" gap="md" wrap>
+            <View style={styles(theme).listContainer}>
                 {shortcuts.map(s => (
-                    <View key={s.title} style={style.shortcut}>
+                    <View key={s.title} style={styles(theme).shortcut}>
                         <ShortcutTile
                             shortcut={s}
                             onSelect={handleSelect}
@@ -77,13 +74,14 @@ const ShortcutsListPlaceholder: React.FC = () => {
                         />
                     </View>
                 ))}
-            </Flex>
-        </Flex>
+            </View>
+        </View>
     )
 }
 
 const styles = (theme: Theme) =>
     StyleSheet.create({
+        container: { flex: 1, width: '100%' },
         sectionTitle: {
             color: theme.colors.night,
             letterSpacing: -0.16,
@@ -98,6 +96,12 @@ const styles = (theme: Theme) =>
             color: theme.colors.darkGrey,
             letterSpacing: -0.14,
             marginBottom: 12,
+        },
+        listContainer: {
+            flexDirection: 'row',
+            flexWrap: 'wrap',
+            justifyContent: 'space-between',
+            rowGap: theme.spacing.md,
         },
         shortcut: {
             width: `${100 / columns}%`,

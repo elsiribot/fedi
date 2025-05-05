@@ -3,7 +3,6 @@ import React from 'react'
 import { ImageBackground, StyleSheet, View } from 'react-native'
 
 import { Images } from '../../assets/images'
-import Flex from './Flex'
 
 export type Props = {
     content: React.ReactNode
@@ -16,8 +15,7 @@ const HoloCircle: React.FC<Props> = ({ content, size }: Props) => {
 
     const style = styles(theme)
     return (
-        <Flex
-            center
+        <View
             style={[
                 style.container,
                 { height: circleSize, width: circleSize },
@@ -43,7 +41,7 @@ const HoloCircle: React.FC<Props> = ({ content, size }: Props) => {
                 ]}
             />
             <View style={style.contentContainer}>{content}</View>
-        </Flex>
+        </View>
     )
 }
 
@@ -51,6 +49,8 @@ const styles = (theme: Theme) =>
     StyleSheet.create({
         container: {
             position: 'relative',
+            alignItems: 'center',
+            justifyContent: 'center',
         },
         holoCircle: {
             position: 'absolute',

@@ -16,7 +16,6 @@ import RecoveryInProgress from '../../../components/feature/recovery/RecoveryInP
 import BitcoinWalletPlaceholder from '../../../components/feature/wallet/BitcoinWalletPlaceholder'
 import StabilityWalletPlaceholder from '../../../components/feature/wallet/StabilityWalletPlaceholder'
 import { useAppSelector } from '../../../state/hooks'
-import Flex from '../../ui/Flex'
 import CommunityChatsPlaceholder from './CommunityChatsPlaceholder'
 
 const HomeWalletsPlaceholder: React.FC = () => {
@@ -33,7 +32,7 @@ const HomeWalletsPlaceholder: React.FC = () => {
         <ScrollView
             contentContainerStyle={style.container}
             alwaysBounceVertical={false}>
-            <Flex gap="lg" fullWidth>
+            <View style={style.content}>
                 {pinnedMessage && (
                     <View style={style.section}>
                         <WelcomeMessage message={pinnedMessage} />
@@ -49,10 +48,10 @@ const HomeWalletsPlaceholder: React.FC = () => {
                             />
                         </View>
                     ) : (
-                        <Flex gap="lg">
+                        <View style={style.wallets}>
                             <BitcoinWalletPlaceholder />
                             <StabilityWalletPlaceholder />
-                        </Flex>
+                        </View>
                     )}
                 </View>
                 <View style={style.section}>
@@ -63,7 +62,7 @@ const HomeWalletsPlaceholder: React.FC = () => {
                         <ShortcutsListPlaceholder />
                     </ErrorBoundary>
                 </View>
-            </Flex>
+            </View>
         </ScrollView>
     )
 }
@@ -78,6 +77,10 @@ const styles = (theme: Theme) =>
             paddingBottom: theme.spacing.xl,
             width: '100%',
         },
+        content: {
+            width: '100%',
+            gap: theme.spacing.lg,
+        },
         recovery: {
             minHeight: theme.sizes.walletCardHeight,
             borderRadius: 20,
@@ -86,6 +89,9 @@ const styles = (theme: Theme) =>
         section: {
             // Uncomment the following line to debug section boundaries:
             // borderWidth: 1,
+        },
+        wallets: {
+            gap: theme.spacing.lg,
         },
     })
 

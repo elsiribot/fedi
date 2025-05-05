@@ -1,14 +1,19 @@
 import { Text, Theme, useTheme } from '@rneui/themed'
 import React, { useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
-import { Insets, SectionList, SectionListData, StyleSheet } from 'react-native'
+import {
+    Insets,
+    SectionList,
+    SectionListData,
+    StyleSheet,
+    View,
+} from 'react-native'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 
 import { MatrixUser } from '@fedi/common/types/matrix'
 import { isValidInternetIdentifier } from '@fedi/common/utils/validation'
 
 import { useHasBottomTabsNavigation } from '../../../utils/hooks'
-import Flex from '../../ui/Flex'
 import { OmniMemberSearchItem } from './OmniMemberSearchItem'
 
 export type OmniMemberSearchListItemType =
@@ -73,13 +78,13 @@ export const OmniMemberSearchList: React.FC<Props> = ({
             contentContainerStyle={style.searchMembersScrollInner}
             ListEmptyComponent={
                 query ? (
-                    <Flex align="center" gap="md" style={style.searchEmpty}>
+                    <View style={style.searchEmpty}>
                         <Text>
                             {t('feature.omni.search-no-results', {
                                 query,
                             })}
                         </Text>
-                    </Flex>
+                    </View>
                 ) : null
             }
         />
@@ -102,6 +107,8 @@ const styles = (theme: Theme, insets: Insets) =>
             color: theme.colors.grey,
         },
         searchEmpty: {
+            alignItems: 'center',
             padding: theme.spacing.lg,
+            gap: theme.spacing.md,
         },
     })

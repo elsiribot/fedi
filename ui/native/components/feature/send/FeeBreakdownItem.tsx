@@ -1,10 +1,8 @@
 import { Text, Theme, useTheme } from '@rneui/themed'
 import React from 'react'
-import { StyleSheet } from 'react-native'
+import { StyleSheet, View } from 'react-native'
 
 import { DetailItem } from '@fedi/common/utils/wallet'
-
-import Flex from '../../ui/Flex'
 
 export type FeeBreakdownItemProps = DetailItem & {
     noBorder?: boolean
@@ -21,12 +19,12 @@ export const FeeBreakdownItem: React.FC<FeeBreakdownItemProps> = props => {
     ]
 
     return (
-        <Flex row align="center" justify="between" style={containerStyle}>
+        <View style={containerStyle}>
             <Text caption bold style={style.labelText}>
                 {props.label}
             </Text>
             <Text caption>{props.value}</Text>
-        </Flex>
+        </View>
     )
 }
 
@@ -34,6 +32,9 @@ const styles = (theme: Theme) =>
     StyleSheet.create({
         container: {
             minHeight: 20,
+            flexDirection: 'row',
+            alignItems: 'center',
+            justifyContent: 'space-between',
         },
         containerBorder: {
             paddingBottom: theme.spacing.md,

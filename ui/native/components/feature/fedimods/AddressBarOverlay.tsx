@@ -26,7 +26,6 @@ import {
 } from '@fedi/common/redux'
 
 import { useAppDispatch, useAppSelector } from '../../../state/hooks'
-import Flex from '../../ui/Flex'
 import { SafeAreaContainer } from '../../ui/SafeArea'
 import SvgImage from '../../ui/SvgImage'
 
@@ -117,7 +116,7 @@ export default function AddressBarOverlay({
                         ? { paddingBottom: keyboardHeight + theme.spacing.lg }
                         : {},
                 ]}>
-                <Flex row align="center" gap="md" fullWidth>
+                <View style={style.addressInputContainer}>
                     <Input
                         inputContainerStyle={style.input}
                         containerStyle={style.inputContainer}
@@ -141,7 +140,7 @@ export default function AddressBarOverlay({
                     <Pressable onPress={close}>
                         <Text caption>{t('words.cancel')}</Text>
                     </Pressable>
-                </Flex>
+                </View>
             </SafeAreaContainer>
         </Overlay>
     )
@@ -178,6 +177,12 @@ const styles = (theme: Theme) =>
             height: 40,
             width: 'auto',
             flex: 1,
+        },
+        addressInputContainer: {
+            flexDirection: 'row',
+            width: '100%',
+            gap: theme.spacing.md,
+            alignItems: 'center',
         },
         clearIcon: {
             backgroundColor: theme.colors.lightGrey,

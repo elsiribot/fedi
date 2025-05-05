@@ -2,7 +2,7 @@ import type { NativeStackScreenProps } from '@react-navigation/native-stack'
 import { Button, Theme, useTheme } from '@rneui/themed'
 import React, { useCallback, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { Alert, Linking, StyleSheet } from 'react-native'
+import { Alert, Linking, StyleSheet, View } from 'react-native'
 
 import { usePopupFederationInfo } from '@fedi/common/hooks/federation'
 import { useToast } from '@fedi/common/hooks/toast'
@@ -15,7 +15,6 @@ import { getFederationTosUrl } from '@fedi/common/utils/FederationUtils'
 
 import { fedimint } from '../bridge'
 import FederationEndedPreview from '../components/feature/federations/EndedPreview'
-import Flex from '../components/ui/Flex'
 import { useAppDispatch, useAppSelector } from '../state/hooks'
 import type { RootStackParamList } from '../types/navigation'
 
@@ -97,17 +96,15 @@ const PopupFederationEnded: React.FC<Props> = ({ navigation }) => {
         )
     }
 
-    const style = styles(theme)
-
     return (
-        <Flex grow center style={style.container}>
+        <View style={styles(theme).container}>
             {activeFederation && (
                 <FederationEndedPreview
                     popupInfo={popupInfo}
                     federation={activeFederation}
                 />
             )}
-            <Flex align="center" fullWidth style={style.buttonsContainer}>
+            <View style={styles(theme).buttonsContainer}>
                 {tosUrl && (
                     <Button
                         fullWidth
@@ -116,24 +113,27 @@ const PopupFederationEnded: React.FC<Props> = ({ navigation }) => {
                         onPress={() => {
                             Linking.openURL(tosUrl)
                         }}
-                        containerStyle={style.button}
+                        containerStyle={styles(theme).button}
                     />
                 )}
                 <Button
                     fullWidth
                     title={t('feature.federations.leave-federation')}
                     onPress={confirmLeaveFederation}
-                    containerStyle={style.button}
+                    containerStyle={styles(theme).button}
                     loading={isLeavingFederation}
                 />
-            </Flex>
-        </Flex>
+            </View>
+        </View>
     )
 }
 
 const styles = (theme: Theme) =>
     StyleSheet.create({
         container: {
+            flex: 1,
+            alignItems: 'center',
+            justifyContent: 'center',
             padding: theme.spacing.xl,
         },
         button: {
@@ -141,6 +141,8 @@ const styles = (theme: Theme) =>
         },
         buttonsContainer: {
             marginTop: 'auto',
+            width: '100%',
+            alignItems: 'center',
         },
     })
 

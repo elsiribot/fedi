@@ -1,6 +1,7 @@
-import { Text, useTheme } from '@rneui/themed'
+import { Text, Theme, useTheme } from '@rneui/themed'
 import React, { useState } from 'react'
 import { Trans, useTranslation } from 'react-i18next'
+import { StyleSheet, View } from 'react-native'
 import { RejectionError } from 'webln'
 
 import { selectNostrUnsignedEvent, selectSiteInfo } from '@fedi/common/redux'
@@ -13,7 +14,6 @@ import { eventHashFromEvent } from '@fedi/injections/src/injectables/nostr/utils
 import { fedimint } from '../../../bridge'
 import { useAppSelector } from '../../../state/hooks'
 import CustomOverlay from '../../ui/CustomOverlay'
-import Flex from '../../ui/Flex'
 
 const log = makeLog('AuthOverlay')
 
@@ -66,6 +66,8 @@ export const NostrSignOverlay: React.FC<Props> = ({ onReject, onAccept }) => {
     // 22242 specifies that the nostr event is an authentication challenge
     const isAuthEvent = unsignedNostrEvent?.kind === 22242
 
+    const style = styles(theme)
+
     return (
         <CustomOverlay
             show={Boolean(unsignedNostrEvent)}
@@ -82,7 +84,7 @@ export const NostrSignOverlay: React.FC<Props> = ({ onReject, onAccept }) => {
                       }),
                 message: display?.kind && !isAuthEvent ? display.kind : '',
                 body: (
-                    <Flex gap="lg">
+                    <View style={style.body}>
                         {isAuthEvent ? (
                             <Text>
                                 <Trans
@@ -110,14 +112,11 @@ export const NostrSignOverlay: React.FC<Props> = ({ onReject, onAccept }) => {
                             </Text>
                         ) : undefined}
                         {error && (
-                            <Text
-                                caption
-                                color={theme.colors.red}
-                                style={{ textAlign: 'center' }}>
+                            <Text caption style={style.error}>
                                 {error}
                             </Text>
                         )}
-                    </Flex>
+                    </View>
                 ),
                 buttons: [
                     {
@@ -134,3 +133,14 @@ export const NostrSignOverlay: React.FC<Props> = ({ onReject, onAccept }) => {
         />
     )
 }
+
+const styles = (theme: Theme) =>
+    StyleSheet.create({
+        body: {
+            gap: theme.spacing.lg,
+        },
+        error: {
+            color: theme.colors.red,
+            textAlign: 'center',
+        },
+    })

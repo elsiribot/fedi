@@ -1,7 +1,7 @@
 import { Text, Theme, useTheme } from '@rneui/themed'
 import React from 'react'
 import { useTranslation } from 'react-i18next'
-import { StyleSheet } from 'react-native'
+import { StyleSheet, View } from 'react-native'
 
 import {
     selectActiveFederation,
@@ -10,7 +10,6 @@ import {
 } from '@fedi/common/redux'
 
 import { useAppSelector } from '../../../state/hooks'
-import Flex from '../../ui/Flex'
 import SvgImage, { SvgImageSize } from '../../ui/SvgImage'
 
 export const StabilityBitcoinBanner: React.FC = () => {
@@ -25,13 +24,7 @@ export const StabilityBitcoinBanner: React.FC = () => {
     const style = styles(theme)
 
     return (
-        <Flex
-            row
-            align="start"
-            justify="center"
-            gap="xs"
-            fullWidth
-            style={style.container}>
+        <View style={style.container}>
             <SvgImage
                 color={theme.colors.night}
                 name="Info"
@@ -42,14 +35,19 @@ export const StabilityBitcoinBanner: React.FC = () => {
                     currency,
                 })}
             </Text>
-        </Flex>
+        </View>
     )
 }
 
 const styles = (theme: Theme) =>
     StyleSheet.create({
         container: {
+            width: '100%',
+            flexDirection: 'row',
+            justifyContent: 'center',
+            alignItems: 'flex-start',
             padding: theme.spacing.sm,
+            gap: theme.spacing.xs,
             backgroundColor: '#FFFAEB', // TODO: add to theme.colors
         },
         text: {

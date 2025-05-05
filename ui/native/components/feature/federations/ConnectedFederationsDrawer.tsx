@@ -15,7 +15,6 @@ import { LoadedFederationListItem } from '@fedi/common/types'
 
 import { useAppSelector } from '../../../state/hooks'
 import { NavigationHook } from '../../../types/navigation'
-import Flex from '../../ui/Flex'
 import HoloGradient from '../../ui/HoloGradient'
 import SvgImage from '../../ui/SvgImage'
 import CommunityTile from './CommunityTile'
@@ -91,7 +90,7 @@ const ConnectedFederationsDrawer: React.FC<DrawerContentComponentProps> = (
                             insets.bottom,
                     },
                 ]}>
-                <Flex grow>
+                <View style={style.content}>
                     <View style={style.topTextContainer}>
                         <Text
                             numberOfLines={1}
@@ -133,7 +132,7 @@ const ConnectedFederationsDrawer: React.FC<DrawerContentComponentProps> = (
                             }
                         })}
                     </View>
-                </Flex>
+                </View>
             </DrawerContentScrollView>
             <View style={style.buttonContainer}>
                 <Button
@@ -173,7 +172,12 @@ const styles = (theme: Theme) =>
         container: {
             padding: 0,
             flex: 0,
+            flexGrow: 1,
+            flexShrink: 0,
             margin: 0,
+        },
+        content: {
+            flex: 1,
         },
         communitiesList: {
             padding: 0,

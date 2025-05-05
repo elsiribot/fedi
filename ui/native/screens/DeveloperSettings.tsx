@@ -47,7 +47,6 @@ import { makeLog } from '@fedi/common/utils/log'
 
 import { fedimint } from '../bridge'
 import CheckBox from '../components/ui/CheckBox'
-import Flex from '../components/ui/Flex'
 import SvgImage from '../components/ui/SvgImage'
 import { version } from '../package.json'
 import { useAppDispatch, useAppSelector } from '../state/hooks'
@@ -365,40 +364,39 @@ const DeveloperSettings: React.FC<Props> = ({ navigation }) => {
             })
     }
 
-    const style = styles(theme)
-
     return (
-        <ScrollView contentContainerStyle={style.container}>
+        <ScrollView contentContainerStyle={styles(theme).container}>
             <SettingsSection title="App info">
-                <Text style={style.version}>{`Version ${version}`}</Text>
+                <Text
+                    style={styles(theme).version}>{`Version ${version}`}</Text>
                 <Button
                     title={t('feature.developer.share-logs')}
-                    containerStyle={style.buttonContainer}
+                    containerStyle={styles(theme).buttonContainer}
                     onPress={handleShareLogs}
                     loading={isSharingLogs}
                 />
                 <Button
                     title={t('feature.developer.share-state')}
-                    containerStyle={style.buttonContainer}
+                    containerStyle={styles(theme).buttonContainer}
                     onPress={handleShareStorage}
                     loading={isSharingState}
                 />
                 <Button
                     title={t('feature.developer.log-fcm-token')}
-                    containerStyle={style.buttonContainer}
+                    containerStyle={styles(theme).buttonContainer}
                     onPress={logFCMToken}
                 />
                 <Button
                     title={t('feature.developer.show-fcm-token')}
-                    containerStyle={style.buttonContainer}
+                    containerStyle={styles(theme).buttonContainer}
                     onPress={fetchAndShowFCMToken}
                 />
-                <View style={style.switchWrapper}>
-                    <View style={style.switchLabelContainer}>
-                        <Text caption style={style.switchLabel}>
+                <View style={styles(theme).switchWrapper}>
+                    <View style={styles(theme).switchLabelContainer}>
+                        <Text caption style={styles(theme).switchLabel}>
                             Enable sensitive logging
                         </Text>
-                        <Text small style={style.switchLabel}>
+                        <Text small style={styles(theme).switchLabel}>
                             This will allow logs to include additional
                             information that could leak private or secure
                             details. Use with caution.
@@ -419,7 +417,7 @@ const DeveloperSettings: React.FC<Props> = ({ navigation }) => {
                             <View key={`outstanding-send-fees-${module}`}>
                                 <Text
                                     style={
-                                        style.version
+                                        styles(theme).version
                                     }>{`Outstanding Send Fees for ${module}: ${fee}`}</Text>
                             </View>
                         ),
@@ -433,7 +431,7 @@ const DeveloperSettings: React.FC<Props> = ({ navigation }) => {
                             <View key={`outstanding-receive-fees-${module}`}>
                                 <Text
                                     style={
-                                        style.version
+                                        styles(theme).version
                                     }>{`Outstanding Receive Fees for ${module}: ${fee}`}</Text>
                             </View>
                         ),
@@ -447,7 +445,7 @@ const DeveloperSettings: React.FC<Props> = ({ navigation }) => {
                             <View key={`pending-send-fees-${module}`}>
                                 <Text
                                     style={
-                                        style.version
+                                        styles(theme).version
                                     }>{`Pending Send Fees for ${module}: ${fee}`}</Text>
                             </View>
                         ),
@@ -461,7 +459,7 @@ const DeveloperSettings: React.FC<Props> = ({ navigation }) => {
                             <View key={`pending-receive-fees-${module}`}>
                                 <Text
                                     style={
-                                        style.version
+                                        styles(theme).version
                                     }>{`Pending Receive Fees for ${module}: ${fee}`}</Text>
                             </View>
                         ),
@@ -471,9 +469,9 @@ const DeveloperSettings: React.FC<Props> = ({ navigation }) => {
                 )}
             </SettingsSection>
             <SettingsSection title={t('feature.fedimods.debug-mode')}>
-                <View style={style.switchWrapper}>
-                    <View style={style.switchLabelContainer}>
-                        <Text small style={style.switchLabel}>
+                <View style={styles(theme).switchWrapper}>
+                    <View style={styles(theme).switchLabelContainer}>
+                        <Text small style={styles(theme).switchLabel}>
                             {t('feature.fedimods.debug-mode-info')}
                         </Text>
                     </View>
@@ -486,20 +484,20 @@ const DeveloperSettings: React.FC<Props> = ({ navigation }) => {
                 </View>
             </SettingsSection>
             <SettingsSection title="Exchange rates">
-                <View style={style.exchangeRate}>
+                <View style={styles(theme).exchangeRate}>
                     <Text caption medium>
                         USD/BTC (Stability pool):
                     </Text>
                     <Text caption>{spBtcUsdPrice || 'N/A'}</Text>
                 </View>
-                <View style={style.exchangeRate}>
+                <View style={styles(theme).exchangeRate}>
                     <Text caption medium>
                         USD/BTC (API):
                     </Text>
                     <Text caption>{apiBtcUsdPrice}</Text>
                 </View>
                 {selectedFiatCurrency !== SupportedCurrency.USD && (
-                    <View style={style.exchangeRate}>
+                    <View style={styles(theme).exchangeRate}>
                         <Text caption medium>
                             {selectedFiatCurrency}/USD (API):{' '}
                         </Text>
@@ -519,22 +517,22 @@ const DeveloperSettings: React.FC<Props> = ({ navigation }) => {
                             uncheckedIcon={<SvgImage name="RadioUnselected" />}
                             title={
                                 <Text
-                                    style={style.checkboxText}
+                                    style={styles(theme).checkboxText}
                                     numberOfLines={1}>
                                     {gw.api}
                                 </Text>
                             }
                             checked={gw.active}
                             onPress={() => handleSelectGateway(gw)}
-                            containerStyle={style.checkboxContainer}
+                            containerStyle={styles(theme).checkboxContainer}
                         />
                     </View>
                 ))}
             </SettingsSection>
             <SettingsSection title={t('words.wallet')}>
-                <View style={style.switchWrapper}>
-                    <View style={style.switchLabelContainer}>
-                        <Text caption style={style.switchLabel}>
+                <View style={styles(theme).switchWrapper}>
+                    <View style={styles(theme).switchLabelContainer}>
+                        <Text caption style={styles(theme).switchLabel}>
                             {t('feature.receive.enable-onchain-deposits')}
                         </Text>
                     </View>
@@ -546,12 +544,12 @@ const DeveloperSettings: React.FC<Props> = ({ navigation }) => {
                     />
                 </View>
                 {stabilityPoolSupported && (
-                    <View style={style.switchWrapper}>
-                        <View style={style.switchLabelContainer}>
-                            <Text caption style={style.switchLabel}>
+                    <View style={styles(theme).switchWrapper}>
+                        <View style={styles(theme).switchLabelContainer}>
+                            <Text caption style={styles(theme).switchLabel}>
                                 {t('feature.fedimods.stable-balance-enabled')}
                             </Text>
-                            <Text small style={style.switchLabel}>
+                            <Text small style={styles(theme).switchLabel}>
                                 {t(
                                     'feature.fedimods.stable-balance-enabled-info',
                                 )}
@@ -565,12 +563,12 @@ const DeveloperSettings: React.FC<Props> = ({ navigation }) => {
                         />
                     </View>
                 )}
-                <View style={style.switchWrapper}>
-                    <View style={style.switchLabelContainer}>
-                        <Text caption style={style.switchLabel}>
+                <View style={styles(theme).switchWrapper}>
+                    <View style={styles(theme).switchLabelContainer}>
+                        <Text caption style={styles(theme).switchLabel}>
                             {t('feature.wallet.show-fiat-txn-amounts')}
                         </Text>
-                        <Text small style={style.switchLabel}>
+                        <Text small style={styles(theme).switchLabel}>
                             {t('feature.wallet.show-fiat-txn-amounts-info')}
                         </Text>
                     </View>
@@ -602,7 +600,7 @@ const DeveloperSettings: React.FC<Props> = ({ navigation }) => {
                     onPress={() => {
                         reduxDispatch(changeAuthenticatedGuardian(null))
                     }}
-                    containerStyle={style.checkboxContainer}
+                    containerStyle={styles(theme).checkboxContainer}
                 />
                 {activeFederation &&
                     activeFederation.hasWallet &&
@@ -632,12 +630,12 @@ const DeveloperSettings: React.FC<Props> = ({ navigation }) => {
                                         changeAuthenticatedGuardian(guardian),
                                     )
                                 }}
-                                containerStyle={style.checkboxContainer}
+                                containerStyle={styles(theme).checkboxContainer}
                             />
                         )
                     })}
                 {authenticatedGuardian && (
-                    <Flex fullWidth>
+                    <View style={styles(theme).passwordContainer}>
                         <Text small>{'Confirm guardian password'}</Text>
                         <Input
                             onChangeText={input => {
@@ -653,7 +651,7 @@ const DeveloperSettings: React.FC<Props> = ({ navigation }) => {
                             autoCapitalize={'none'}
                             autoCorrect={false}
                         />
-                    </Flex>
+                    </View>
                 )}
             </SettingsSection>
 
@@ -664,15 +662,15 @@ const DeveloperSettings: React.FC<Props> = ({ navigation }) => {
 
                     if ('online' in n) {
                         statusText = `Guardian ${n.online.guardian}: Online: ${n.online.latency_ms}ms`
-                        statusStyle = style.onlineStatus
+                        statusStyle = styles(theme).onlineStatus
                     }
                     if ('error' in n) {
                         statusText = `Guardian  ${n.error.guardian} Error: ${n.error.error}`
-                        statusStyle = style.errorStatus
+                        statusStyle = styles(theme).errorStatus
                     }
                     if ('timeout' in n) {
                         statusText = `Guardian  ${n.timeout.guardian} Timeout: ${n.timeout.elapsed}`
-                        statusStyle = style.timeoutStatus
+                        statusStyle = styles(theme).timeoutStatus
                     }
 
                     return (
@@ -686,14 +684,14 @@ const DeveloperSettings: React.FC<Props> = ({ navigation }) => {
             <SettingsSection title="Chat">
                 <Button
                     title={t('feature.developer.create-default-group')}
-                    containerStyle={style.buttonContainer}
+                    containerStyle={styles(theme).buttonContainer}
                     onPress={() => {
                         navigation.navigate('CreateGroup', {
                             defaultGroup: true,
                         })
                     }}
                 />
-                <Text small style={style.switchLabel}>
+                <Text small style={styles(theme).switchLabel}>
                     {t('feature.developer.default-groups-info')}
                 </Text>
             </SettingsSection>
@@ -701,7 +699,7 @@ const DeveloperSettings: React.FC<Props> = ({ navigation }) => {
             <SettingsSection title="Danger zone">
                 <Button
                     title="Reset new user experience"
-                    containerStyle={style.buttonContainer}
+                    containerStyle={styles(theme).buttonContainer}
                     onPress={() => {
                         reduxDispatch(resetNuxSteps())
                         toast.show('NUX reset!')
@@ -709,7 +707,7 @@ const DeveloperSettings: React.FC<Props> = ({ navigation }) => {
                 />
                 <Button
                     title="Evil Spam Invoices"
-                    containerStyle={style.buttonContainer}
+                    containerStyle={styles(theme).buttonContainer}
                     onPress={async () => {
                         if (!activeFederation?.id) return
                         await fedimint.evilSpamInvoices({
@@ -719,7 +717,7 @@ const DeveloperSettings: React.FC<Props> = ({ navigation }) => {
                 />
                 <Button
                     title="Evil Spam Address"
-                    containerStyle={style.buttonContainer}
+                    containerStyle={styles(theme).buttonContainer}
                     onPress={async () => {
                         if (!activeFederation?.id) return
                         await fedimint.evilSpamAddress({
@@ -733,26 +731,26 @@ const DeveloperSettings: React.FC<Props> = ({ navigation }) => {
                 transparent={true}
                 animationType="slide"
                 onRequestClose={() => setIsModalVisible(false)}>
-                <View style={style.modalContainer}>
-                    <View style={style.modalContent}>
-                        <Text style={style.modalTitle}>FCM Token</Text>
-                        <Text selectable style={style.tokenText}>
+                <View style={styles(theme).modalContainer}>
+                    <View style={styles(theme).modalContent}>
+                        <Text style={styles(theme).modalTitle}>FCM Token</Text>
+                        <Text selectable style={styles(theme).tokenText}>
                             {fcmToken}
                         </Text>
                         <Button
                             title="Copy to Clipboard"
                             onPress={copyToClipboard}
-                            containerStyle={style.buttonContainer}
+                            containerStyle={styles(theme).buttonContainer}
                         />
                         <Button
                             title="Send via Email"
                             onPress={sendTokenViaEmail}
-                            containerStyle={style.buttonContainer}
+                            containerStyle={styles(theme).buttonContainer}
                         />
                         <Button
                             title="Close"
                             onPress={() => setIsModalVisible(false)}
-                            containerStyle={style.buttonContainer}
+                            containerStyle={styles(theme).buttonContainer}
                         />
                     </View>
                 </View>
@@ -766,12 +764,9 @@ const SettingsSection: React.FC<{
     children: React.ReactNode
 }> = ({ title, children }) => {
     const { theme } = useTheme()
-
-    const style = styles(theme)
-
     return (
-        <View style={style.section}>
-            <Text bold style={style.sectionTitle}>
+        <View style={styles(theme).section}>
+            <Text bold style={styles(theme).sectionTitle}>
                 {title}
             </Text>
             <View>{children}</View>
@@ -824,8 +819,23 @@ const styles = (theme: Theme) =>
         buttonContainer: {
             marginBottom: theme.spacing.md,
         },
+        guardians: {
+            paddingTop: theme.spacing.lg,
+            flexDirection: 'row',
+            flexWrap: 'wrap',
+        },
+        passwordContainer: {
+            flexDirection: 'column',
+            width: '100%',
+        },
         version: {
             marginBottom: theme.spacing.sm,
+        },
+        fediMod: {
+            flexDirection: 'row',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            marginBottom: theme.spacing.md,
         },
         switchWrapper: {
             width: '100%',

@@ -1,7 +1,7 @@
 import type { NativeStackScreenProps } from '@react-navigation/native-stack'
 import { Text, useTheme } from '@rneui/themed'
 import { useCallback, useEffect, useRef, useState } from 'react'
-import { useWindowDimensions } from 'react-native'
+import { View, useWindowDimensions } from 'react-native'
 
 import { maxPinLength, pinNumbers } from '@fedi/common/constants/security'
 import { numpadButtons } from '@fedi/common/hooks/amount'
@@ -9,7 +9,6 @@ import { useDebounce } from '@fedi/common/hooks/util'
 import { ProtectedFeatures, setFeatureUnlocked } from '@fedi/common/redux'
 
 import PinDot from '../components/feature/pin/PinDot'
-import Flex from '../components/ui/Flex'
 import { NumpadButton } from '../components/ui/NumpadButton'
 import { usePinContext } from '../state/contexts/PinContext'
 import { useAppDispatch } from '../state/hooks'
@@ -132,9 +131,9 @@ const FeatureLockScreen = <T extends keyof RootStackParamList>({
     }, [])
 
     return (
-        <Flex grow center style={style.container}>
-            <Flex grow center style={style.content}>
-                <Flex row center style={style.dots}>
+        <View style={style.container}>
+            <View style={style.content}>
+                <View style={style.dots}>
                     {pinNumbers.map(i => (
                         <PinDot
                             key={i}
@@ -142,9 +141,9 @@ const FeatureLockScreen = <T extends keyof RootStackParamList>({
                             isLast={i === maxPinLength}
                         />
                     ))}
-                </Flex>
-            </Flex>
-            <Flex row wrap style={style.numpad}>
+                </View>
+            </View>
+            <View style={style.numpad}>
                 {numpadButtons.map(btn => (
                     <NumpadButton
                         key={btn}
@@ -154,14 +153,14 @@ const FeatureLockScreen = <T extends keyof RootStackParamList>({
                     />
                 ))}
                 {timeoutSeconds > 0 && (
-                    <Flex center style={style.timeoutOverlay}>
+                    <View style={style.timeoutOverlay}>
                         <Text bold h1>
                             0:{String(timeoutSeconds).padStart(2, '0')}
                         </Text>
-                    </Flex>
+                    </View>
                 )}
-            </Flex>
-        </Flex>
+            </View>
+        </View>
     )
 }
 

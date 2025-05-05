@@ -1,5 +1,5 @@
 import { Text, Theme, useTheme } from '@rneui/themed'
-import { Pressable as NativePressable, StyleSheet } from 'react-native'
+import { Pressable as NativePressable, StyleSheet, View } from 'react-native'
 
 import { useAmountFormatter } from '@fedi/common/hooks/amount'
 import {
@@ -10,7 +10,6 @@ import { shouldShowInviteCode } from '@fedi/common/utils/FederationUtils'
 
 import { useAppSelector } from '../../../state/hooks'
 import { LoadedFederationListItem, MSats } from '../../../types'
-import Flex from '../../ui/Flex'
 import { Pressable } from '../../ui/Pressable'
 import { PressableIcon } from '../../ui/PressableIcon'
 import { FederationLogo } from '../federations/FederationLogo'
@@ -58,14 +57,14 @@ const CommunityTile = ({
                 isActiveCommunity && style.active,
             ]}
             onPress={onSelect}>
-            <Flex row align="center" justify="start" gap="md" shrink>
+            <View style={style.content}>
                 <FederationLogo federation={community} size={48} />
-                <Flex shrink align="start">
+                <View style={style.titleContainer}>
                     <Text style={style.title} bold numberOfLines={1}>
                         {community.name}
                     </Text>
                     {community.hasWallet && (
-                        <Flex row gap="xs">
+                        <View style={style.balanceContainer}>
                             <Text
                                 style={style.balance}
                                 caption
@@ -73,7 +72,7 @@ const CommunityTile = ({
                                 adjustsFontSizeToFit>
                                 {`${formattedPrimaryAmount} (${formattedSecondaryAmount})`}
                             </Text>
-                        </Flex>
+                        </View>
                     )}
                     {/* Hides this tag if there is a local internet problem */}
                     {shouldShowDegradedStatus && (
@@ -84,8 +83,8 @@ const CommunityTile = ({
                             />
                         </NativePressable>
                     )}
-                </Flex>
-            </Flex>
+                </View>
+            </View>
             {showInviteCode && (
                 <PressableIcon
                     hitSlop={10}
@@ -108,6 +107,18 @@ const styles = (theme: Theme) =>
             flexDirection: 'row',
             gap: theme.spacing.lg,
         },
+        content: {
+            gap: theme.spacing.md,
+            justifyContent: 'flex-start',
+            flexDirection: 'row',
+            alignItems: 'center',
+            flexShrink: 1,
+        },
+        titleContainer: {
+            flexDirection: 'column',
+            alignItems: 'flex-start',
+            flexShrink: 1,
+        },
         title: {
             letterSpacing: -0.16,
             lineHeight: 20,
@@ -116,6 +127,10 @@ const styles = (theme: Theme) =>
             fontSize: theme.sizes.xxs,
             letterSpacing: -0.14,
             lineHeight: 20,
+        },
+        balanceContainer: {
+            flexDirection: 'row',
+            gap: theme.spacing.xs,
         },
         qr: {
             paddingHorizontal: 0,

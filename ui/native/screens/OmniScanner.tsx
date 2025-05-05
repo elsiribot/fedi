@@ -1,7 +1,7 @@
 import { BottomTabScreenProps } from '@react-navigation/bottom-tabs'
+import { StyleSheet, View } from 'react-native'
 
 import { OmniInput } from '../components/feature/omni/OmniInput'
-import Flex from '../components/ui/Flex'
 import { RootStackParamList, TabsNavigatorParamList } from '../types/navigation'
 
 export type Props = BottomTabScreenProps<
@@ -10,15 +10,24 @@ export type Props = BottomTabScreenProps<
 >
 
 const OmniScanner: React.FC<Props> = () => {
+    const style = styles()
     return (
-        <Flex grow fullWidth>
+        <View style={style.container}>
             <OmniInput
                 expectedInputTypes={[]}
                 onExpectedInput={() => null}
                 onUnexpectedSuccess={() => null}
             />
-        </Flex>
+        </View>
     )
 }
+
+const styles = () =>
+    StyleSheet.create({
+        container: {
+            flex: 1,
+            width: '100%',
+        },
+    })
 
 export default OmniScanner

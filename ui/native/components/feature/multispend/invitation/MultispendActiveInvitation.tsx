@@ -1,12 +1,12 @@
 import { useNavigation } from '@react-navigation/native'
-import { Button, useTheme } from '@rneui/themed'
+import { Button, Theme, useTheme } from '@rneui/themed'
 import { useTranslation } from 'react-i18next'
+import { StyleSheet, View } from 'react-native'
 
 import { useMultispendVoting } from '@fedi/common/hooks/multispend'
 
 import { fedimint } from '../../../../bridge'
 import CustomOverlay from '../../../ui/CustomOverlay'
-import Flex from '../../../ui/Flex'
 import { SafeAreaContainer } from '../../../ui/SafeArea'
 import GroupVoters from './GroupVoters'
 
@@ -33,11 +33,13 @@ const MultispendActiveInvitation: React.FC<{
         },
     })
 
+    const style = styles(theme)
+
     return (
         <SafeAreaContainer edges="bottom">
             <GroupVoters roomId={roomId} />
             {canAccept && (
-                <Flex gap="md" style={{ paddingHorizontal: theme.spacing.md }}>
+                <View style={style.buttonContainer}>
                     <Button
                         disabled={isLoading}
                         onPress={handleAcceptMultispend}>
@@ -49,10 +51,18 @@ const MultispendActiveInvitation: React.FC<{
                             contents={joinBeforeAcceptContents}
                         />
                     )}
-                </Flex>
+                </View>
             )}
         </SafeAreaContainer>
     )
 }
+
+const styles = (theme: Theme) =>
+    StyleSheet.create({
+        buttonContainer: {
+            gap: theme.spacing.md,
+            paddingHorizontal: theme.spacing.md,
+        },
+    })
 
 export default MultispendActiveInvitation

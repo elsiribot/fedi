@@ -10,7 +10,6 @@ import { getUserSuffix } from '@fedi/common/utils/matrix'
 import { fedimint } from '../../../../bridge'
 import { MultispendWithdrawalEvent } from '../../../../types'
 import { AvatarSize } from '../../../ui/Avatar'
-import Flex from '../../../ui/Flex'
 import SvgImage from '../../../ui/SvgImage'
 import ChatAvatar from '../../chat/ChatAvatar'
 
@@ -53,9 +52,9 @@ const WithdrawalRequest: React.FC<{
 
             <ChatAvatar user={sender} size={AvatarSize.md} />
 
-            <Flex grow gap="sm">
-                <Flex row align="center" justify="between" gap="sm">
-                    <Flex row align="center">
+            <View style={style.content}>
+                <View style={style.contentRow}>
+                    <View style={style.nameContainer}>
                         <Text
                             medium
                             numberOfLines={1}
@@ -66,18 +65,18 @@ const WithdrawalRequest: React.FC<{
                             {' '}
                             {getUserSuffix(sender.id)}
                         </Text>
-                    </Flex>
+                    </View>
 
-                    <Flex row gap="xs" shrink={false} style={style.amount}>
+                    <View style={style.amount}>
                         <Text medium>{formattedFiatAmount}</Text>
                         <Text bold small>
                             {selectedFiatCurrency}
                         </Text>
-                    </Flex>
-                </Flex>
+                    </View>
+                </View>
 
-                <Flex row align="center" justify="between" gap="sm">
-                    <Flex row align="center" gap="sm">
+                <View style={style.contentRow}>
+                    <View style={style.statusContainer}>
                         <View
                             style={[
                                 style.badge,
@@ -100,21 +99,21 @@ const WithdrawalRequest: React.FC<{
                                         : t('words.complete')}
                             </Text>
                         </View>
-                        <Flex row align="center" gap="xs">
+                        <View style={style.voteCount}>
                             <Text small>✅</Text>
                             <Text bold>{approvalCount}</Text>
-                        </Flex>
-                        <Flex row align="center" gap="xs">
+                        </View>
+                        <View style={style.voteCount}>
                             <Text small>❌</Text>
                             <Text bold>{rejectionCount}</Text>
-                        </Flex>
-                    </Flex>
+                        </View>
+                    </View>
 
                     <Text caption color={theme.colors.grey}>
                         {dateUtils.formatChatTileTimestamp(event.time / 1000)}
                     </Text>
-                </Flex>
-            </Flex>
+                </View>
+            </View>
 
             <SvgImage name="ChevronRight" size={16} color={theme.colors.grey} />
         </Pressable>
@@ -138,8 +137,33 @@ const styles = (theme: Theme) =>
             paddingVertical: theme.spacing.xxs,
             overflow: 'hidden',
         },
+        content: {
+            flexDirection: 'column',
+            flex: 1,
+            gap: theme.spacing.sm,
+        },
+        contentRow: {
+            display: 'flex',
+            flexDirection: 'row',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            gap: theme.spacing.sm,
+        },
         amount: {
+            flexDirection: 'row',
+            alignItems: 'baseline',
+            gap: theme.spacing.xs,
             flexShrink: 0,
+        },
+        voteCount: {
+            flexDirection: 'row',
+            alignItems: 'center',
+            gap: theme.spacing.xs,
+        },
+        statusContainer: {
+            flexDirection: 'row',
+            alignItems: 'center',
+            gap: theme.spacing.sm,
         },
         newBadge: {
             position: 'absolute',
@@ -151,6 +175,10 @@ const styles = (theme: Theme) =>
         },
         displayName: {
             flexShrink: 1,
+        },
+        nameContainer: {
+            flexDirection: 'row',
+            alignItems: 'center',
         },
     })
 

@@ -8,7 +8,6 @@ import { useToast } from '@fedi/common/hooks/toast'
 
 import { fedimint } from '../bridge'
 import { FieldInput } from '../components/ui/FieldInput'
-import Flex from '../components/ui/Flex'
 import { PressableIcon } from '../components/ui/PressableIcon'
 import { SafeScrollArea } from '../components/ui/SafeArea'
 import SvgImage from '../components/ui/SvgImage'
@@ -92,13 +91,13 @@ const CreatePoll: React.FC<Props> = ({
                 value={question}
                 onChangeText={setQuestion}
             />
-            <Flex gap="sm">
+            <View style={style.options}>
                 <Text small style={style.optionsLabel}>
                     {t('words.options')}
                 </Text>
-                <Flex gap="sm">
+                <View style={style.optionsContainer}>
                     {options.map(option => (
-                        <Flex row align="center" gap="sm" key={option.id}>
+                        <View style={style.option} key={option.id}>
                             <View style={style.optionInput}>
                                 <FieldInput
                                     value={option.text}
@@ -115,40 +114,40 @@ const CreatePoll: React.FC<Props> = ({
                                 containerStyle={style.deleteOptionIcon}
                                 disabled={options.length < 3}
                             />
-                        </Flex>
+                        </View>
                     ))}
-                </Flex>
-                <Flex row>
+                </View>
+                <View style={style.addOptionContainer}>
                     <Pressable onPress={handleAddOption}>
                         <View style={style.addOptionButton}>
                             <Text>{t('words.add')}</Text>
                             <SvgImage name="PlusCircle" />
                         </View>
                     </Pressable>
-                </Flex>
-            </Flex>
-            <Flex gap="lg">
-                <Flex row align="center" justify="between" gap="sm">
-                    <Flex row align="center" gap="sm">
+                </View>
+            </View>
+            <View style={style.settings}>
+                <View style={style.setting}>
+                    <View style={style.settingLabel}>
                         <SvgImage name="List" />
                         <Text>{t('feature.chat.multiple-choice')}</Text>
-                    </Flex>
+                    </View>
                     <Switch
                         value={isMultipleChoice}
                         onValueChange={setIsMultipleChoice}
                     />
-                </Flex>
-                <Flex row align="center" justify="between" gap="sm">
-                    <Flex row align="center" gap="sm">
+                </View>
+                <View style={style.setting}>
+                    <View style={style.settingLabel}>
                         <SvgImage name="Bolt" />
                         <Text>{t('feature.chat.show-live-results')}</Text>
-                    </Flex>
+                    </View>
                     <Switch
                         value={isDisclosed}
                         onValueChange={setIsDisclosed}
                     />
-                </Flex>
-            </Flex>
+                </View>
+            </View>
             <Button
                 title={t('feature.chat.create-poll')}
                 onPress={handleCreatePoll}
@@ -171,14 +170,34 @@ export const styles = (theme: Theme) =>
             flexDirection: 'column',
             gap: theme.spacing.xl,
         },
+        options: {
+            display: 'flex',
+            flexDirection: 'column',
+            gap: theme.spacing.sm,
+        },
         optionsLabel: {
             paddingLeft: theme.spacing.xs,
+        },
+        optionsContainer: {
+            display: 'flex',
+            flexDirection: 'column',
+            gap: theme.spacing.sm,
+        },
+        option: {
+            display: 'flex',
+            flexDirection: 'row',
+            alignItems: 'center',
+            gap: theme.spacing.sm,
         },
         optionInput: {
             flex: 1,
         },
         deleteOptionIcon: {
             flexShrink: 0,
+        },
+        addOptionContainer: {
+            display: 'flex',
+            flexDirection: 'row',
         },
         addOptionButton: {
             display: 'flex',
@@ -189,6 +208,28 @@ export const styles = (theme: Theme) =>
             paddingHorizontal: 8,
             backgroundColor: theme.colors.offWhite,
             borderRadius: 24,
+        },
+        settings: {
+            display: 'flex',
+            flexDirection: 'column',
+            gap: theme.spacing.lg,
+        },
+        setting: {
+            display: 'flex',
+            flexDirection: 'row',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            gap: theme.spacing.sm,
+        },
+        settingLabel: {
+            display: 'flex',
+            flexDirection: 'row',
+            alignItems: 'center',
+            gap: theme.spacing.sm,
+        },
+        endPollPreview: {
+            alignItems: 'center',
+            gap: theme.spacing.xl,
         },
         pollPreview: {
             backgroundColor: theme.colors.extraLightGrey,

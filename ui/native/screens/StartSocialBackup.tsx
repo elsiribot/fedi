@@ -2,9 +2,8 @@ import type { NativeStackScreenProps } from '@react-navigation/native-stack'
 import { Button, Theme, useTheme } from '@rneui/themed'
 import React from 'react'
 import { useTranslation } from 'react-i18next'
-import { StyleSheet } from 'react-native'
+import { StyleSheet, View } from 'react-native'
 
-import Flex from '../components/ui/Flex'
 import HoloGuidance from '../components/ui/HoloGuidance'
 import SvgImage, { SvgImageSize } from '../components/ui/SvgImage'
 import type { RootStackParamList } from '../types/navigation'
@@ -19,7 +18,7 @@ const StartSocialBackup: React.FC<Props> = ({ navigation }: Props) => {
     const { theme } = useTheme()
 
     return (
-        <Flex grow center style={styles(theme).container}>
+        <View style={styles(theme).container}>
             <HoloGuidance
                 iconImage={
                     <>
@@ -38,13 +37,16 @@ const StartSocialBackup: React.FC<Props> = ({ navigation }: Props) => {
                     navigation.navigate('RecordBackupVideo')
                 }}
             />
-        </Flex>
+        </View>
     )
 }
 
 const styles = (theme: Theme) =>
     StyleSheet.create({
         container: {
+            flex: 1,
+            alignItems: 'center',
+            justifyContent: 'center',
             padding: theme.spacing.xl,
         },
         continueButton: {

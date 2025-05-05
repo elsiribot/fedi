@@ -3,7 +3,6 @@ import React from 'react'
 import { useTranslation } from 'react-i18next'
 import { StyleSheet, View } from 'react-native'
 
-import Flex from '../../ui/Flex'
 import HoloGradient from '../../ui/HoloGradient'
 import { SafeAreaContainer } from '../../ui/SafeArea'
 import SvgImage, { SvgImageName, SvgImageSize } from '../../ui/SvgImage'
@@ -32,7 +31,7 @@ export const PermissionGate: React.FC<Props> = ({
 
     return (
         <SafeAreaContainer style={style.container} edges="notop">
-            <Flex grow center gap="lg">
+            <View style={style.content}>
                 <HoloGradient level="400" gradientStyle={style.iconGradient}>
                     <SvgImage name={icon} size={SvgImageSize.md} />
                 </HoloGradient>
@@ -43,7 +42,7 @@ export const PermissionGate: React.FC<Props> = ({
                     level="100"
                     style={style.descriptionContainer}
                     gradientStyle={style.descriptionGradient}>
-                    <Flex row center gap="sm">
+                    <View style={style.descriptionIcons}>
                         {descriptionIcons.map(name => (
                             <SvgImage
                                 key={name}
@@ -51,7 +50,7 @@ export const PermissionGate: React.FC<Props> = ({
                                 size={SvgImageSize.sm}
                             />
                         ))}
-                    </Flex>
+                    </View>
                     <Text medium style={style.descriptionText}>
                         {descriptionText}
                     </Text>
@@ -59,7 +58,7 @@ export const PermissionGate: React.FC<Props> = ({
                 <Text caption style={style.disclaimer}>
                     {t('feature.permissions.update-later-disclaimer')}
                 </Text>
-            </Flex>
+            </View>
             <View style={style.actions}>
                 {alternativeActionButton}
                 <Button
@@ -76,6 +75,12 @@ const styles = (theme: Theme) =>
     StyleSheet.create({
         container: {
             width: '100%',
+        },
+        content: {
+            flex: 1,
+            gap: theme.spacing.lg,
+            justifyContent: 'center',
+            alignItems: 'center',
         },
         iconGradient: {
             width: 72,
@@ -97,6 +102,12 @@ const styles = (theme: Theme) =>
             alignItems: 'center',
             justifyContent: 'center',
             borderRadius: theme.borders.defaultRadius,
+        },
+        descriptionIcons: {
+            flexDirection: 'row',
+            gap: theme.spacing.sm,
+            justifyContent: 'center',
+            alignItems: 'center',
         },
         descriptionText: {
             textAlign: 'center',

@@ -1,7 +1,8 @@
 import { NativeStackScreenProps } from '@react-navigation/native-stack'
-import { Text, useTheme } from '@rneui/themed'
+import { Text, Theme, useTheme } from '@rneui/themed'
 import React from 'react'
 import { useTranslation } from 'react-i18next'
+import { StyleSheet } from 'react-native'
 
 import amountUtils from '@fedi/common/utils/AmountUtils'
 
@@ -19,7 +20,7 @@ const SendSuccess: React.FC<Props> = ({ route }: Props) => {
         <Success
             message={
                 <>
-                    <Text h2 style={{ marginTop: theme.spacing.md }}>
+                    <Text h2 style={styles(theme).messageText}>
                         {t('feature.send.you-sent')}
                     </Text>
                     <Text h2>
@@ -32,5 +33,12 @@ const SendSuccess: React.FC<Props> = ({ route }: Props) => {
         />
     )
 }
+
+const styles = (theme: Theme) =>
+    StyleSheet.create({
+        messageText: {
+            marginTop: theme.spacing.md,
+        },
+    })
 
 export default SendSuccess

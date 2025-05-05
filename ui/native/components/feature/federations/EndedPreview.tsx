@@ -5,7 +5,6 @@ import { StyleSheet, View } from 'react-native'
 import { usePopupFederationInfo } from '@fedi/common/hooks/federation'
 
 import { JoinPreview, LoadedFederationListItem } from '../../../types'
-import Flex from '../../ui/Flex'
 import { FederationLogo } from './FederationLogo'
 
 export default function FederationEndedPreview({
@@ -21,7 +20,7 @@ export default function FederationEndedPreview({
     const style = styles(theme)
 
     return (
-        <Flex grow center style={style.content}>
+        <View style={style.content}>
             <View style={style.contentSpacing}>
                 <FederationLogo federation={federation} size={72} />
             </View>
@@ -43,13 +42,17 @@ export default function FederationEndedPreview({
                     />
                 )}
             </Text>
-        </Flex>
+        </View>
     )
 }
 
 const styles = (theme: Theme) =>
     StyleSheet.create({
         content: {
+            flex: 1,
+            flexDirection: 'column',
+            alignItems: 'center',
+            justifyContent: 'center',
             width: '90%',
             maxWidth: 280,
             margin: 'auto',

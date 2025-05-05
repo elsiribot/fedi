@@ -13,7 +13,6 @@ import {
     resetVideo,
     useBackupRecoveryContext,
 } from '../../../state/contexts/BackupRecoveryContext'
-import Flex from '../../ui/Flex'
 import SvgImage, { SvgImageSize } from '../../ui/SvgImage'
 
 const log = makeLog('ReviewVideo')
@@ -52,19 +51,17 @@ const ReviewVideo = () => {
         }
     }, [confirmingVideo, navigation, videoFile])
 
-    const style = styles(theme)
-
     return (
-        <Flex grow align="center" justify="evenly" fullWidth>
+        <View style={styles(theme).container}>
             <ImageBackground
                 source={Images.HoloBackground}
-                style={style.gradient}>
-                <View style={style.cameraRing}>
-                    <View style={style.cameraContainer}>
+                style={styles(theme).gradient}>
+                <View style={styles(theme).cameraRing}>
+                    <View style={styles(theme).cameraContainer}>
                         <Video
                             ref={videoRef}
                             source={{ uri: videoFile?.path }} // Can be a URL or a local file.
-                            style={style.video}
+                            style={styles(theme).video}
                             paused={isPaused}
                             ignoreSilentSwitch={'ignore'}
                             resizeMode={'cover'}
@@ -75,7 +72,7 @@ const ReviewVideo = () => {
                         />
                         {isPaused && (
                             <Pressable
-                                style={style.playIconContainer}
+                                style={styles(theme).playIconContainer}
                                 onPress={() => {
                                     videoRef.current?.seek(0)
                                     setIsPaused(false)
@@ -91,11 +88,11 @@ const ReviewVideo = () => {
                 </View>
             </ImageBackground>
 
-            <Text style={style.instructionsText}>
+            <Text style={styles(theme).instructionsText}>
                 {t('feature.backup.please-review-backup-video')}
             </Text>
 
-            <Flex align="center" fullWidth style={style.buttonsContainer}>
+            <View style={styles(theme).buttonsContainer}>
                 <Button
                     title={t('feature.backup.record-again')}
                     onPress={() => dispatch(resetVideo())}
@@ -105,17 +102,25 @@ const ReviewVideo = () => {
                 <Button
                     title={t('feature.backup.confirm-backup-video')}
                     onPress={() => setConfirmingVideo(true)}
-                    containerStyle={style.confirmButton}
+                    containerStyle={styles(theme).confirmButton}
                 />
-            </Flex>
-        </Flex>
+            </View>
+        </View>
     )
 }
 
 const styles = (theme: Theme) =>
     StyleSheet.create({
+        container: {
+            flex: 1,
+            alignItems: 'center',
+            justifyContent: 'space-evenly',
+            width: '100%',
+        },
         buttonsContainer: {
             marginTop: 'auto',
+            alignItems: 'center',
+            width: '100%',
         },
         confirmButton: {
             marginTop: theme.spacing.md,
@@ -139,6 +144,20 @@ const styles = (theme: Theme) =>
             borderWidth: 0,
             borderRadius: 1024,
             overflow: 'hidden',
+        },
+        camera: {
+            height: '100%',
+            width: '100%',
+        },
+        confirmationContainer: {
+            flex: 1,
+            alignItems: 'flex-start',
+            paddingHorizontal: 0,
+            marginHorizontal: 0,
+        },
+        checkboxText: {
+            paddingHorizontal: theme.spacing.md,
+            textAlign: 'left',
         },
         instructionsText: {
             textAlign: 'center',

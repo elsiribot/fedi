@@ -11,7 +11,6 @@ import {
 import { useToast } from '@fedi/common/hooks/toast'
 import { makeLog } from '@fedi/common/utils/log'
 
-import Flex from './Flex'
 import SvgImage, { SvgImageSize } from './SvgImage'
 
 const log = makeLog('Attachments')
@@ -53,7 +52,7 @@ export const Attachments: React.FC<Props> = ({
     }
 
     return (
-        <Flex row gap="lg" wrap>
+        <View style={style.container}>
             {attachments.map(asset => (
                 <View key={asset.uri} style={style.asset}>
                     {asset.type?.startsWith('image') ? (
@@ -67,13 +66,13 @@ export const Attachments: React.FC<Props> = ({
                             resizeMode="cover"
                         />
                     ) : asset.type?.startsWith('video') ? (
-                        <Flex center style={style.preview}>
+                        <View style={style.preview}>
                             <SvgImage name="Video" />
-                        </Flex>
+                        </View>
                     ) : (
-                        <Flex center style={style.preview}>
+                        <View style={style.preview}>
                             <SvgImage name="File" />
-                        </Flex>
+                        </View>
                     )}
                     <Pressable
                         style={style.removeButton}
@@ -100,12 +99,17 @@ export const Attachments: React.FC<Props> = ({
                     onPress={handleAddAttachment}
                 />
             )}
-        </Flex>
+        </View>
     )
 }
 
 const styles = (theme: Theme) =>
     StyleSheet.create({
+        container: {
+            flexDirection: 'row',
+            flexWrap: 'wrap',
+            gap: theme.spacing.lg,
+        },
         asset: {
             position: 'relative',
             width: 48,
@@ -139,6 +143,9 @@ const styles = (theme: Theme) =>
             backgroundColor: theme.colors.extraLightGrey,
             width: '100%',
             height: '100%',
+            display: 'flex',
+            justifyContent: 'center',
+            alignItems: 'center',
             borderRadius: 8,
         },
     })

@@ -7,7 +7,6 @@ import { Image, ScrollView, StyleSheet, View } from 'react-native'
 import { useLatestPublicFederations } from '@fedi/common/hooks/federation'
 import { Images } from '@fedi/native/assets/images'
 
-import Flex from '../../ui/Flex'
 import SvgImage from '../../ui/SvgImage'
 import { FederationLogo } from './FederationLogo'
 
@@ -40,19 +39,14 @@ const NoFederations: React.FC = () => {
                     {t('feature.federation.join-federation-guidance')}
                 </Text>
             </View>
-            <Flex gap="xl" fullWidth justify="end">
+            <View style={style.contentContainer}>
                 {publicFederations.map(f => {
                     return (
-                        <Flex
-                            row
-                            align="center"
-                            gap="md"
-                            key={f.id}
-                            style={style.tileContainer}>
+                        <View key={f.id} style={style.tileContainer}>
                             <View style={{}}>
                                 <FederationLogo federation={f} size={40} />
                             </View>
-                            <Flex grow gap="xs">
+                            <View style={style.tileTextContainer}>
                                 <Text numberOfLines={1} medium>
                                     {f.name}
                                 </Text>
@@ -63,7 +57,7 @@ const NoFederations: React.FC = () => {
                                     medium>
                                     {f.meta.preview_message}
                                 </Text>
-                            </Flex>
+                            </View>
                             <Button
                                 size="sm"
                                 onPress={() =>
@@ -77,10 +71,10 @@ const NoFederations: React.FC = () => {
                                     </Text>
                                 }
                             />
-                        </Flex>
+                        </View>
                     )
                 })}
-                <Flex gap="sm">
+                <View style={style.buttonGroup}>
                     <Button
                         title={
                             <Text caption medium style={style.joinButtonText}>
@@ -96,19 +90,19 @@ const NoFederations: React.FC = () => {
                     <Button
                         type="clear"
                         title={
-                            <Flex row align="center" gap="sm">
+                            <View style={style.link}>
                                 <Text caption medium>
                                     {t(
                                         'feature.federation.or-visit-awesome-fedimint',
                                     )}
                                 </Text>
                                 <SvgImage name="ExternalLink" size={20} />
-                            </Flex>
+                            </View>
                         }
                         onPress={() => onOpenAwesomeFedimint()}
                     />
-                </Flex>
-            </Flex>
+                </View>
+            </View>
         </ScrollView>
     )
 }
@@ -140,15 +134,36 @@ const styles = (theme: Theme) =>
             fontFamily: 'Albert Sans',
             letterSpacing: 0.16,
         },
+        contentContainer: {
+            width: '100%',
+            gap: 24,
+            justifyContent: 'flex-end',
+        },
         tileContainer: {
+            flexDirection: 'row',
+            alignItems: 'center',
             backgroundColor: theme.colors.offWhite,
             padding: theme.spacing.md,
             borderRadius: 16,
+            gap: 12,
+        },
+        tileTextContainer: {
+            flex: 1,
+            flexDirection: 'column',
+            gap: theme.spacing.xs,
         },
         previewMessage: { color: theme.colors.primaryLight },
         joinButtonText: {
             color: theme.colors.secondary,
             paddingHorizontal: theme.spacing.xs,
+        },
+        link: {
+            alignItems: 'center',
+            flexDirection: 'row',
+            gap: 8,
+        },
+        buttonGroup: {
+            gap: theme.spacing.sm,
         },
     })
 

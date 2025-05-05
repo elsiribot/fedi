@@ -17,7 +17,6 @@ import { useToast } from '@fedi/common/hooks/toast'
 import { selectToast } from '@fedi/common/redux'
 
 import { useAppSelector } from '../../state/hooks'
-import Flex from './Flex'
 import SvgImage from './SvgImage'
 
 const nightGradient = [...fediTheme.nightHoloAmbientGradient]
@@ -129,7 +128,7 @@ export default function ToastManager() {
                                                       : '⚠️'}
                                             </Text>
                                         </View>
-                                        <Flex grow basis={false}>
+                                        <View style={style.toastContent}>
                                             <Text
                                                 style={style.toastText}
                                                 maxFontSizeMultiplier={
@@ -138,7 +137,7 @@ export default function ToastManager() {
                                                 adjustsFontSizeToFit>
                                                 {cachedToast?.content}
                                             </Text>
-                                        </Flex>
+                                        </View>
                                         <View>
                                             <Pressable
                                                 onPress={() =>
@@ -168,6 +167,7 @@ const styles = (theme: Theme) =>
             top: 0,
             left: 40,
             width: '100%',
+            display: 'flex',
             backgroundColor: theme.colors.black,
             borderRadius: 16,
             elevation: 4,
@@ -220,6 +220,10 @@ const styles = (theme: Theme) =>
         },
         toastIcon: {
             fontSize: 20,
+        },
+        toastContent: {
+            flexGrow: 1,
+            flexBasis: 0,
         },
         toastText: {
             color: theme.colors.white,

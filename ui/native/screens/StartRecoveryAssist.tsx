@@ -2,9 +2,8 @@ import type { NativeStackScreenProps } from '@react-navigation/native-stack'
 import { Button, Text, Theme, useTheme } from '@rneui/themed'
 import React from 'react'
 import { useTranslation } from 'react-i18next'
-import { StyleSheet } from 'react-native'
+import { StyleSheet, View } from 'react-native'
 
-import Flex from '../components/ui/Flex'
 import HoloCard from '../components/ui/HoloCard'
 import LineBreak from '../components/ui/LineBreak'
 import SvgImage from '../components/ui/SvgImage'
@@ -19,11 +18,9 @@ const StartRecoveryAssist: React.FC<Props> = ({ navigation }: Props) => {
     const { t } = useTranslation()
     const { theme } = useTheme()
 
-    const style = styles(theme)
-
     return (
-        <Flex grow align="center" justify="start" style={style.container}>
-            <Text style={style.instructionsText}>
+        <View style={styles(theme).container}>
+            <Text style={styles(theme).instructionsText}>
                 {t('feature.recovery.recovery-assist-description')}
             </Text>
             <HoloCard
@@ -31,7 +28,7 @@ const StartRecoveryAssist: React.FC<Props> = ({ navigation }: Props) => {
                 title={t('feature.recovery.recovery-assist-process')}
                 body={
                     <>
-                        <Flex fullWidth>
+                        <View style={styles(theme).textContainer}>
                             <Text>
                                 {t(
                                     'feature.recovery.recovery-assist-instructions-1',
@@ -62,24 +59,27 @@ const StartRecoveryAssist: React.FC<Props> = ({ navigation }: Props) => {
                                 )}
                             </Text>
                             <LineBreak />
-                        </Flex>
+                        </View>
                     </>
                 }
             />
             <Button
                 title={t('words.continue')}
-                containerStyle={style.continueButton}
+                containerStyle={styles(theme).continueButton}
                 onPress={() => {
                     navigation.navigate('ConfirmRecoveryAssist')
                 }}
             />
-        </Flex>
+        </View>
     )
 }
 
 const styles = (theme: Theme) =>
     StyleSheet.create({
         container: {
+            flex: 1,
+            alignItems: 'center',
+            justifyContent: 'flex-start',
             padding: theme.spacing.xl,
         },
         continueButton: {
@@ -91,6 +91,9 @@ const styles = (theme: Theme) =>
             paddingHorizontal: theme.spacing.xl,
             marginBottom: theme.spacing.md,
             fontWeight: '400',
+        },
+        textContainer: {
+            width: '100%',
         },
     })
 

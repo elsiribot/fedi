@@ -9,6 +9,7 @@ import {
     ScrollView,
     StyleSheet,
     TextInput,
+    View,
 } from 'react-native'
 
 import { useToast } from '@fedi/common/hooks/toast'
@@ -17,7 +18,6 @@ import stringUtils from '@fedi/common/utils/StringUtils'
 
 import { fedimint } from '../bridge'
 import SeedWordInput from '../components/feature/recovery/SeedWordInput'
-import Flex from '../components/ui/Flex'
 import { BIP39_WORD_LIST } from '../constants'
 import { usePinContext } from '../state/contexts/PinContext'
 import { reset } from '../state/navigation'
@@ -122,33 +122,31 @@ const ResetPin: React.FC<Props> = ({ navigation }: Props) => {
         ))
     }
 
-    const style = styles(theme)
-
     return (
         <ScrollView
             keyboardShouldPersistTaps="handled"
             contentContainerStyle={[
-                style.container,
+                styles(theme).container,
                 keyboardHeight > 0 && Platform.OS === 'ios'
                     ? { paddingBottom: keyboardHeight + theme.spacing.xl }
                     : {},
             ]}>
-            <Text style={style.instructionsText}>
+            <Text style={styles(theme).instructionsText}>
                 {t('feature.recovery.personal-recovery-instructions')}
             </Text>
-            <Card containerStyle={style.roundedCardContainer}>
-                <Flex row>
-                    <Flex grow align="start">
+            <Card containerStyle={styles(theme).roundedCardContainer}>
+                <View style={styles(theme).twoColumnContainer}>
+                    <View style={styles(theme).seedWordsContainer}>
                         {renderFirstSixSeedWords()}
-                    </Flex>
-                    <Flex grow align="start">
+                    </View>
+                    <View style={styles(theme).seedWordsContainer}>
                         {renderLastSixSeedWords()}
-                    </Flex>
-                </Flex>
+                    </View>
+                </View>
             </Card>
             <Button
                 title={t('feature.recovery.recover-wallet')}
-                containerStyle={style.continueButton}
+                containerStyle={styles(theme).continueButton}
                 onPress={handleResetPin}
                 disabled={seedWords.some(s => !isValidSeedWord(s))}
             />
@@ -174,6 +172,13 @@ const styles = (theme: Theme) =>
             width: '100%',
             marginHorizontal: 0,
             padding: theme.spacing.lg,
+        },
+        seedWordsContainer: {
+            flex: 1,
+            alignItems: 'flex-start',
+        },
+        twoColumnContainer: {
+            flexDirection: 'row',
         },
     })
 

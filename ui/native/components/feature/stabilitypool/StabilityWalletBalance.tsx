@@ -2,12 +2,11 @@ import type { Theme } from '@rneui/themed'
 import { Text, useTheme } from '@rneui/themed'
 import React from 'react'
 import { useTranslation } from 'react-i18next'
-import { StyleSheet } from 'react-native'
+import { StyleSheet, View } from 'react-native'
 
 import { selectStableBalancePending } from '@fedi/common/redux/wallet'
 
 import { useAppSelector, useStabilityPool } from '../../../state/hooks'
-import Flex from '../../ui/Flex'
 
 const Balance: React.FC = () => {
     const { t } = useTranslation()
@@ -23,8 +22,8 @@ const Balance: React.FC = () => {
     const style = styles(theme)
 
     return (
-        <Flex row align="center" gap="lg">
-            <Flex gap="xxs">
+        <View style={style.container}>
+            <View style={style.balanceContainer}>
                 <Text
                     medium
                     style={style.balanceText}
@@ -43,13 +42,22 @@ const Balance: React.FC = () => {
                         })}
                     </Text>
                 )}
-            </Flex>
-        </Flex>
+            </View>
+        </View>
     )
 }
 
 const styles = (theme: Theme) =>
     StyleSheet.create({
+        container: {
+            display: 'flex',
+            flexDirection: 'row',
+            alignItems: 'center',
+            gap: theme.spacing.lg,
+        },
+        balanceContainer: {
+            gap: theme.spacing.xxs,
+        },
         balanceText: {
             textAlign: 'right',
             color: theme.colors.secondary,

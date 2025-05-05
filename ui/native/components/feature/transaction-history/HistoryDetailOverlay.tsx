@@ -1,13 +1,12 @@
 import { Theme, useTheme } from '@rneui/themed'
 import React, { useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { StyleSheet, Text } from 'react-native'
+import { StyleSheet, Text, View } from 'react-native'
 
 import { ErrorBoundary } from '@fedi/common/components/ErrorBoundary'
 import { FeeItem } from '@fedi/common/hooks/transactions'
 
 import CenterOverlay from '../../ui/CenterOverlay'
-import Flex from '../../ui/Flex'
 import SvgImage, { SvgImageSize } from '../../ui/SvgImage'
 import { FeeBreakdown } from '../send/FeeBreakdown'
 import { HistoryDetail, HistoryDetailProps } from './HistoryDetail'
@@ -69,7 +68,7 @@ const HistoryDetailOverlay: React.FC<HistoryDetailOverlayProps> = ({
             overlayStyle={style.overlayStyle}>
             <ErrorBoundary
                 fallback={
-                    <Flex center style={style.overlayErrorContainer}>
+                    <View style={style.overlayErrorContainer}>
                         <SvgImage
                             name="Error"
                             color={theme.colors.red}
@@ -78,7 +77,7 @@ const HistoryDetailOverlay: React.FC<HistoryDetailOverlayProps> = ({
                         <Text style={style.overlayErrorText}>
                             {t('errors.history-render-error')}
                         </Text>
-                    </Flex>
+                    </View>
                 }>
                 {content}
             </ErrorBoundary>
@@ -96,6 +95,9 @@ const styles = (theme: Theme) =>
         },
         overlayErrorContainer: {
             paddingVertical: theme.spacing.xl,
+            flexDirection: 'column',
+            alignItems: 'center',
+            justifyContent: 'center',
         },
         overlayErrorText: {
             marginTop: theme.spacing.lg,

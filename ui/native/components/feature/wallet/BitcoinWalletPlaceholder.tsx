@@ -11,7 +11,6 @@ import { MSats } from '@fedi/common/types'
 import amountUtils from '@fedi/common/utils/AmountUtils'
 
 import { BubbleCard } from '../../ui/BubbleView'
-import Flex from '../../ui/Flex'
 import SvgImage, { SvgImageSize } from '../../ui/SvgImage'
 
 const BitcoinWalletPlaceholder: React.FC = () => {
@@ -37,33 +36,29 @@ const BitcoinWalletPlaceholder: React.FC = () => {
             <BubbleCard
                 linearGradientProps={gradientProps}
                 containerStyle={[stylesPlaceholder.card, { height: 99 }]}>
-                <Flex
-                    row
-                    align="center"
-                    justify="between"
-                    style={stylesPlaceholder.headerContainer}>
-                    <Flex row align="center" gap="sm">
-                        <Flex row align="center" gap="sm">
+                <View style={stylesPlaceholder.headerContainer}>
+                    <View style={stylesPlaceholder.leftGroup}>
+                        <View style={stylesPlaceholder.titleContainer}>
                             <SvgImage
                                 name="BitcoinCircle"
                                 size={SvgImageSize.md}
                                 color={theme.colors.white}
                             />
                             <View>
-                                <Flex row align="center" gap="sm">
+                                <View style={stylesPlaceholder.row}>
                                     <Text bold style={stylesPlaceholder.title}>
                                         {t('words.bitcoin')}
                                     </Text>
-                                </Flex>
+                                </View>
                             </View>
-                        </Flex>
+                        </View>
                         <SvgImage
                             name="ChevronRightSmall"
                             color={theme.colors.secondary}
                             dimensions={{ width: 6, height: 12 }}
                         />
-                    </Flex>
-                    <Flex align="end">
+                    </View>
+                    <View style={stylesPlaceholder.balanceContainer}>
                         <Text medium style={stylesPlaceholder.balanceTextMain}>
                             {amountUtils.stripTrailingZerosWithSuffix(
                                 formattedPrimaryAmount,
@@ -72,17 +67,13 @@ const BitcoinWalletPlaceholder: React.FC = () => {
                         <Text small style={stylesPlaceholder.balanceTextSats}>
                             {formattedSecondaryAmount}
                         </Text>
-                    </Flex>
-                </Flex>
-                <Flex
-                    row
-                    justify="between"
-                    gap="md"
-                    style={stylesPlaceholder.buttonsContainer}>
+                    </View>
+                </View>
+                <View style={stylesPlaceholder.buttonsContainer}>
                     <Text style={stylesPlaceholder.buttonLabel}>
                         {t('feature.wallet.join-federation')}
                     </Text>
-                </Flex>
+                </View>
             </BubbleCard>
         </Pressable>
     )
@@ -95,9 +86,22 @@ const styles = (theme: Theme) =>
             height: 99,
         },
         headerContainer: {
+            flexDirection: 'row',
+            justifyContent: 'space-between',
+            alignItems: 'center',
             marginBottom: theme.spacing.lg,
         },
+        leftGroup: {
+            flexDirection: 'row',
+            alignItems: 'center',
+            gap: theme.spacing.sm,
+        },
         titleContainer: {
+            flexDirection: 'row',
+            alignItems: 'center',
+            gap: theme.spacing.sm,
+        },
+        row: {
             flexDirection: 'row',
             alignItems: 'center',
             gap: theme.spacing.sm,
@@ -110,6 +114,9 @@ const styles = (theme: Theme) =>
             color: theme.colors.secondary,
             fontSize: 12,
         },
+        balanceContainer: {
+            alignItems: 'flex-end',
+        },
         balanceTextMain: {
             color: theme.colors.white,
             fontSize: 18,
@@ -121,6 +128,9 @@ const styles = (theme: Theme) =>
         },
         buttonsContainer: {
             top: -20,
+            flexDirection: 'row',
+            justifyContent: 'space-between',
+            gap: theme.spacing.lg,
         },
         buttonLabel: {
             textAlign: 'center',

@@ -1,6 +1,7 @@
 import { useTheme } from '@rneui/themed'
 import React, { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
+import { View } from 'react-native'
 import { RejectionError } from 'webln'
 
 import { useMinMaxSendAmount, useRequestForm } from '@fedi/common/hooks/amount'
@@ -18,7 +19,6 @@ import { fedimint } from '../../../bridge'
 import { useAppDispatch, useAppSelector } from '../../../state/hooks'
 import AmountInput from '../../ui/AmountInput'
 import CustomOverlay from '../../ui/CustomOverlay'
-import Flex from '../../ui/Flex'
 
 const log = makeLog('MakeInvoiceOverlay')
 
@@ -110,12 +110,12 @@ export const GenerateEcashOverlay: React.FC<Props> = ({
             contents={{
                 title: t('feature.stabilitypool.enter-deposit-amount'),
                 body: (
-                    <Flex
-                        grow
-                        align="center"
-                        gap="lg"
+                    <View
                         style={{
+                            flex: 1,
                             paddingTop: theme.spacing.xl,
+                            alignItems: 'center',
+                            gap: theme.spacing.lg,
                         }}>
                         <AmountInput
                             key={amountInputKey}
@@ -132,7 +132,7 @@ export const GenerateEcashOverlay: React.FC<Props> = ({
                             }}
                             error={error}
                         />
-                    </Flex>
+                    </View>
                 ),
                 buttons: [
                     {

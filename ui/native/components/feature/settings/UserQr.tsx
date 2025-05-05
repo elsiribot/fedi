@@ -1,13 +1,12 @@
 import { Text, Theme, useTheme } from '@rneui/themed'
 import { useTranslation } from 'react-i18next'
-import { StyleSheet } from 'react-native'
+import { StyleSheet, View } from 'react-native'
 
 import { selectMatrixDisplayNameSuffix } from '@fedi/common/redux/matrix'
 import { MatrixAuth } from '@fedi/common/types'
 import { encodeFediMatrixUserUri } from '@fedi/common/utils/matrix'
 
 import { useAppSelector } from '../../../state/hooks'
-import Flex from '../../ui/Flex'
 import QRCodeContainer from '../../ui/QRCodeContainer'
 
 type UserQrProps = {
@@ -23,19 +22,14 @@ export const UserQr = ({ matrixUser }: UserQrProps) => {
     const displayNameSuffix = useAppSelector(selectMatrixDisplayNameSuffix)
 
     return (
-        <Flex align="center" gap="lg">
+        <View style={style.qrCode}>
             <QRCodeContainer
                 copyMessage={t('phrases.copied-member-code')}
                 copyValue={qrValue}
                 qrValue={qrValue}
             />
-            <Flex row center gap="xs" fullWidth>
-                <Text
-                    h2
-                    medium
-                    numberOfLines={1}
-                    adjustsFontSizeToFit
-                    style={style.title}>
+            <View style={style.titleContainer}>
+                <Text h2 medium numberOfLines={1} adjustsFontSizeToFit>
                     {matrixUser?.displayName}
                 </Text>
                 {displayNameSuffix && (
@@ -47,18 +41,26 @@ export const UserQr = ({ matrixUser }: UserQrProps) => {
                         {displayNameSuffix}
                     </Text>
                 )}
-            </Flex>
-        </Flex>
+            </View>
+        </View>
     )
 }
 
 const styles = (theme: Theme) =>
     StyleSheet.create({
+        qrCode: {
+            alignItems: 'center',
+            gap: theme.spacing.lg,
+        },
         titleSuffix: {
             color: theme.colors.grey,
-            textAlign: 'center',
         },
-        title: {
+        titleContainer: {
             textAlign: 'center',
+            justifyContent: 'center',
+            flexDirection: 'row',
+            alignItems: 'center',
+            width: '100%',
+            gap: theme.spacing.xs,
         },
     })

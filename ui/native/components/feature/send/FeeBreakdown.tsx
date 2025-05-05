@@ -4,7 +4,6 @@ import { StyleSheet, View } from 'react-native'
 
 import { DetailItem } from '@fedi/common/utils/wallet'
 
-import Flex from '../../ui/Flex'
 import { PressableIcon } from '../../ui/PressableIcon'
 import { SvgImageSize } from '../../ui/SvgImage'
 import { FeeBreakdownItem } from './FeeBreakdownItem'
@@ -33,7 +32,7 @@ export const FeeBreakdown: React.FC<FeeBreakdownProps> = ({
     const style = styles(theme)
 
     return (
-        <Flex align="center" fullWidth>
+        <View style={style.container}>
             <View style={style.headerButtons}>
                 <PressableIcon
                     svgName="ChevronLeft"
@@ -55,7 +54,7 @@ export const FeeBreakdown: React.FC<FeeBreakdownProps> = ({
             <Text h2 h2Style={style.detailTitle}>
                 {title}
             </Text>
-            <Flex gap="xs" fullWidth style={style.detailItemsContainer}>
+            <View style={style.detailItemsContainer}>
                 {feeItems.map((item, idx) => (
                     <FeeBreakdownItem
                         key={idx}
@@ -70,13 +69,17 @@ export const FeeBreakdown: React.FC<FeeBreakdownProps> = ({
                         {guidanceText}
                     </Text>
                 )}
-            </Flex>
-        </Flex>
+            </View>
+        </View>
     )
 }
 
 const styles = (theme: Theme) =>
     StyleSheet.create({
+        container: {
+            alignItems: 'center',
+            width: '100%',
+        },
         closeIconContainer: {
             position: 'absolute',
             top: -5,
@@ -89,6 +92,8 @@ const styles = (theme: Theme) =>
         },
         detailItemsContainer: {
             marginTop: theme.spacing.xl,
+            gap: theme.spacing.xs,
+            width: '100%',
         },
         detailTitle: {
             marginTop: theme.spacing.sm,

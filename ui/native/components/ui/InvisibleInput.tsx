@@ -22,18 +22,16 @@ const InvisibleInput: React.FC<Props> = ({
 }) => {
     const { theme } = useTheme()
 
-    const style = styles(theme)
-
     return (
-        <Pressable disabled={readOnly}>
+        <Pressable style={styles(theme).container} disabled={readOnly}>
             <Pressable
-                style={style.interactionContainer}
+                style={styles(theme).interactionContainer}
                 disabled={readOnly}
                 onPress={() => inputRef.current?.focus()}>
                 <Text h1 numberOfLines={1}>
                     {value}
                 </Text>
-                <Text h2 numberOfLines={1} h2Style={style.labelText}>
+                <Text h2 numberOfLines={1} h2Style={styles(theme).labelText}>
                     {label}
                 </Text>
             </Pressable>
@@ -45,7 +43,7 @@ const InvisibleInput: React.FC<Props> = ({
                 keyboardType="numeric"
                 returnKeyType="done"
                 maxLength={17}
-                style={style.invisible}
+                style={styles(theme).invisible}
             />
         </Pressable>
     )
@@ -53,6 +51,7 @@ const InvisibleInput: React.FC<Props> = ({
 
 const styles = (theme: Theme) =>
     StyleSheet.create({
+        container: {},
         interactionContainer: {
             marginTop: 'auto',
             flexDirection: 'row',
@@ -71,6 +70,7 @@ const styles = (theme: Theme) =>
             marginBottom: 3,
             fontSize: 20,
         },
+        offset: {},
     })
 
 export default InvisibleInput

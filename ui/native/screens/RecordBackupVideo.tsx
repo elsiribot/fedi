@@ -2,13 +2,12 @@ import type { NativeStackScreenProps } from '@react-navigation/native-stack'
 import { Theme, useTheme } from '@rneui/themed'
 import React from 'react'
 import { useTranslation } from 'react-i18next'
-import { ActivityIndicator, StyleSheet } from 'react-native'
+import { ActivityIndicator, StyleSheet, View } from 'react-native'
 import { ScrollView } from 'react-native-gesture-handler'
 import { useCameraDevice } from 'react-native-vision-camera'
 
 import BackupVideoRecorder from '../components/feature/backup/BackupVideoRecorder'
 import CameraPermissionsRequired from '../components/feature/scan/CameraPermissionsRequired'
-import Flex from '../components/ui/Flex'
 import type { RootStackParamList } from '../types/navigation'
 
 export type Props = NativeStackScreenProps<
@@ -30,9 +29,9 @@ const RecordBackupVideo: React.FC<Props> = () => {
             message={t('feature.backup.camera-access-information')}>
             <ScrollView contentContainerStyle={styles(theme).container}>
                 {!device ? (
-                    <Flex center grow>
+                    <View style={styles(theme).loader}>
                         <ActivityIndicator size="large" />
-                    </Flex>
+                    </View>
                 ) : (
                     //@ts-ignore
                     <BackupVideoRecorder device={device} />
@@ -48,6 +47,11 @@ const styles = (theme: Theme) =>
             flex: 1,
             alignItems: 'center',
             paddingVertical: theme.spacing.xl,
+        },
+        loader: {
+            flex: 1,
+            justifyContent: 'center',
+            alignItems: 'center',
         },
     })
 

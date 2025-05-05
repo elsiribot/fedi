@@ -1,7 +1,8 @@
 import { useNavigation } from '@react-navigation/native'
 import type { NativeStackScreenProps } from '@react-navigation/native-stack'
+import { Theme, useTheme } from '@rneui/themed'
 import React, { useCallback, useEffect, useState } from 'react'
-import { ActivityIndicator } from 'react-native'
+import { ActivityIndicator, StyleSheet, View } from 'react-native'
 
 import {
     selectMatrixAuth,
@@ -13,7 +14,6 @@ import { ChatType } from '@fedi/common/types'
 import MessageInput from '../components/feature/chat/MessageInput'
 import NoMessagesNotice from '../components/feature/chat/NoMessagesNotice'
 import SelectedMessageOverlay from '../components/feature/chat/SelectedMessageOverlay'
-import Flex from '../components/ui/Flex'
 import { useAppDispatch, useAppSelector } from '../state/hooks'
 import { resetToDirectChat } from '../state/navigation'
 import type { NavigationHook, RootStackParamList } from '../types/navigation'
@@ -24,6 +24,7 @@ export type Props = NativeStackScreenProps<
 >
 
 const ChatUserConversation: React.FC<Props> = ({ route }: Props) => {
+    const { theme } = useTheme()
     const navigation = useNavigation<NavigationHook>()
 
     const { userId } = route.params
@@ -66,12 +67,12 @@ const ChatUserConversation: React.FC<Props> = ({ route }: Props) => {
     )
 
     return (
-        <Flex grow center>
+        <View style={styles(theme).container}>
             <>
                 {isSending ? (
-                    <Flex grow justify="center">
+                    <View style={styles(theme).center}>
                         <ActivityIndicator size="large" />
-                    </Flex>
+                    </View>
                 ) : (
                     <NoMessagesNotice />
                 )}
@@ -83,8 +84,24 @@ const ChatUserConversation: React.FC<Props> = ({ route }: Props) => {
                 />
             </>
             <SelectedMessageOverlay isPublic={false} />
-        </Flex>
+        </View>
     )
 }
+
+const styles = (_: Theme) =>
+    StyleSheet.create({
+        container: {
+            flex: 1,
+            alignItems: 'center',
+            justifyContent: 'center',
+        },
+        centeredText: {
+            textAlign: 'center',
+        },
+        center: {
+            flex: 1,
+            justifyContent: 'center',
+        },
+    })
 
 export default ChatUserConversation

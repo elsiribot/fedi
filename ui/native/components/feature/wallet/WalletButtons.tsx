@@ -2,7 +2,7 @@ import { useNavigation } from '@react-navigation/native'
 import { Button, Text, Theme, useTheme } from '@rneui/themed'
 import React from 'react'
 import { useTranslation } from 'react-i18next'
-import { StyleSheet } from 'react-native'
+import { StyleSheet, View } from 'react-native'
 
 import { useToast } from '@fedi/common/hooks/toast'
 import {
@@ -14,7 +14,6 @@ import {
 
 import { useAppDispatch, useAppSelector } from '../../../state/hooks'
 import { NavigationHook } from '../../../types/navigation'
-import Flex from '../../ui/Flex'
 import SvgImage from '../../ui/SvgImage'
 
 type Override = {
@@ -70,7 +69,7 @@ const WalletButtons: React.FC<WalletButtonsProps> = ({
     }
 
     return (
-        <Flex row gap="lg">
+        <View style={style.container}>
             <Button
                 bubble
                 disabled={leftDisabled}
@@ -96,22 +95,26 @@ const WalletButtons: React.FC<WalletButtonsProps> = ({
                 disabled={rightDisabled}
                 onPress={handleRight}
                 title={
-                    <Flex row center gap="sm">
+                    <View style={style.buttonRow}>
                         <SvgImage name="ArrowUpRight" />
                         <Text bold caption numberOfLines={1}>
                             {right.label ?? t('words.send')}
                         </Text>
-                    </Flex>
+                    </View>
                 }
                 containerStyle={style.buttonContainer}
                 buttonStyle={style.button}
             />
-        </Flex>
+        </View>
     )
 }
 
 const styles = (theme: Theme) =>
     StyleSheet.create({
+        container: {
+            flexDirection: 'row',
+            gap: theme.spacing.lg,
+        },
         buttonContainer: {
             flex: 1,
         },
@@ -120,6 +123,12 @@ const styles = (theme: Theme) =>
             letterSpacing: -0.14,
             paddingLeft: theme.spacing.xl,
             gap: theme.spacing.xl,
+        },
+        buttonRow: {
+            flexDirection: 'row',
+            alignItems: 'center',
+            justifyContent: 'center',
+            gap: theme.spacing.sm,
         },
         button: {
             gap: theme.spacing.sm,

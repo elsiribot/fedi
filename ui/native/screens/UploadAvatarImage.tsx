@@ -2,7 +2,7 @@ import type { NativeStackScreenProps } from '@react-navigation/native-stack'
 import { Button, Text, Theme, useTheme } from '@rneui/themed'
 import React, { useCallback, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { StyleSheet } from 'react-native'
+import { StyleSheet, View } from 'react-native'
 import RNFS from 'react-native-fs'
 import { launchImageLibrary } from 'react-native-image-picker'
 
@@ -15,7 +15,6 @@ import {
 import { fedimint } from '../bridge'
 import { StoragePermissionGate } from '../components/feature/permissions/StoragePermissionGate'
 import Avatar, { AvatarSize } from '../components/ui/Avatar'
-import Flex from '../components/ui/Flex'
 import { SafeAreaContainer } from '../components/ui/SafeArea'
 import { useAppDispatch, useAppSelector } from '../state/hooks'
 import type { RootStackParamList } from '../types/navigation'
@@ -82,7 +81,7 @@ const UploadAvatarImage: React.FC<Props> = ({ navigation }: Props) => {
 
     const renderPreUploadButtons = () => {
         return (
-            <Flex gap="sm" fullWidth style={style.buttonContainer}>
+            <View style={style.buttonContainer}>
                 <Button
                     titleStyle={style.skipButtonText}
                     color={theme.colors.offWhite100}
@@ -99,19 +98,19 @@ const UploadAvatarImage: React.FC<Props> = ({ navigation }: Props) => {
                     disabled={isUploading || didUpload}
                     loading={isUploading}
                 />
-            </Flex>
+            </View>
         )
     }
 
     const renderPostUploadButtons = () => {
         return (
-            <Flex gap="sm" fullWidth style={style.buttonContainer}>
+            <View style={style.buttonContainer}>
                 <Button
                     fullWidth
                     title={t('words.continue')}
                     onPress={finishStep}
                 />
-            </Flex>
+            </View>
         )
     }
 
@@ -128,7 +127,7 @@ const UploadAvatarImage: React.FC<Props> = ({ navigation }: Props) => {
     return (
         <StoragePermissionGate>
             <SafeAreaContainer style={style.container} edges="notop">
-                <Flex align="center" gap="sm" style={style.avatarContainer}>
+                <View style={style.avatarContainer}>
                     <Avatar
                         id={matrixAuth?.userId || ''}
                         url={imageUri}
@@ -137,7 +136,7 @@ const UploadAvatarImage: React.FC<Props> = ({ navigation }: Props) => {
                     />
 
                     <Text h2>{greeting}</Text>
-                </Flex>
+                </View>
 
                 {didUpload
                     ? renderPostUploadButtons()
@@ -154,10 +153,14 @@ const styles = (theme: Theme) =>
             justifyContent: 'flex-start',
         },
         avatarContainer: {
+            alignItems: 'center',
+            gap: theme.spacing.sm,
             paddingTop: theme.spacing.xxl,
         },
         buttonContainer: {
+            gap: theme.spacing.sm,
             marginTop: 'auto',
+            width: '100%',
         },
         skipButtonText: {
             color: theme.colors.black,

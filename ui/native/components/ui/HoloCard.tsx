@@ -1,9 +1,8 @@
 import { Text, Theme, useTheme } from '@rneui/themed'
 import React from 'react'
-import { ImageBackground, StyleSheet } from 'react-native'
+import { ImageBackground, StyleSheet, View } from 'react-native'
 
 import { Images } from '../../assets/images'
-import Flex from './Flex'
 
 type HoloCardProps = {
     iconImage?: React.ReactNode | null
@@ -18,23 +17,21 @@ const HoloCard: React.FC<HoloCardProps> = ({
 }: HoloCardProps) => {
     const { theme } = useTheme()
 
-    const style = styles(theme)
-
     return (
         <ImageBackground
             source={Images.HoloBackground}
-            style={style.container}
-            imageStyle={style.roundedBorder}>
-            <Flex align="center" fullWidth style={style.innerContainer}>
+            style={styles(theme).container}
+            imageStyle={styles(theme).roundedBorder}>
+            <View style={styles(theme).innerContainer}>
                 {iconImage}
 
                 {title && (
-                    <Text bold style={style.titleText}>
+                    <Text bold style={styles(theme).titleText}>
                         {title}
                     </Text>
                 )}
                 {body}
-            </Flex>
+            </View>
         </ImageBackground>
     )
 }
@@ -51,6 +48,8 @@ const styles = (theme: Theme) =>
             width: theme.sizes.sm,
         },
         innerContainer: {
+            width: '100%',
+            alignItems: 'center',
             padding: theme.spacing.xl,
         },
         roundedBorder: {

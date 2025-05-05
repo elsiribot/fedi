@@ -5,45 +5,47 @@ import React from 'react'
 import { StyleSheet, View, Pressable } from 'react-native'
 
 import SvgImage, { SvgImageSize } from '../../../components/ui/SvgImage'
-import Flex from '../../ui/Flex'
 
 const CommunityChatsPlaceholder: React.FC = () => {
     const { theme } = useTheme()
+    const stylesPlaceholder = styles(theme)
     const navigation = useNavigation()
 
-    const style = styles(theme)
-
     return (
-        <Flex grow fullWidth>
-            <Text medium style={style.sectionTitle}>
+        <View style={stylesPlaceholder.container}>
+            <Text style={stylesPlaceholder.sectionTitle}>
                 {t('feature.home.federation-news-title')}
             </Text>
             <Pressable
-                style={style.tile}
+                style={stylesPlaceholder.tile}
                 onPress={() => navigation.navigate('PublicFederations')}>
-                <View style={style.iconContainer}>
-                    <View style={style.bubbleContainer}>
+                <View style={stylesPlaceholder.iconContainer}>
+                    <View style={stylesPlaceholder.bubbleContainer}>
                         <SvgImage name="Chat" size={SvgImageSize.md} />
                     </View>
                 </View>
-                <Flex grow style={style.textContainer}>
-                    <Text style={style.text}>
+                <View style={stylesPlaceholder.textContainer}>
+                    <Text style={stylesPlaceholder.text}>
                         {t('feature.home.federation-updates')}
                     </Text>
-                </Flex>
+                </View>
                 <SvgImage
                     name="ChevronRightSmall"
                     dimensions={{ width: 10, height: 18 }}
                     color={theme.colors.grey}
-                    containerStyle={style.chevron}
+                    containerStyle={stylesPlaceholder.chevron}
                 />
             </Pressable>
-        </Flex>
+        </View>
     )
 }
 
 const styles = (theme: Theme) =>
     StyleSheet.create({
+        container: {
+            flex: 1,
+            width: '100%',
+        },
         sectionTitle: {
             color: theme.colors.night,
             letterSpacing: -0.16,
@@ -73,6 +75,7 @@ const styles = (theme: Theme) =>
             justifyContent: 'center',
         },
         textContainer: {
+            flex: 1,
             marginLeft: 4,
         },
         text: {

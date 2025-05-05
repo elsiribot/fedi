@@ -25,7 +25,6 @@ import { useAppDispatch, useAppSelector } from '../../../state/hooks'
 import { useDownloadPermission } from '../../../utils/hooks'
 import { pathJoin, prefixFileUri } from '../../../utils/media'
 import CustomOverlay from '../../ui/CustomOverlay'
-import Flex from '../../ui/Flex'
 import { Pressable } from '../../ui/Pressable'
 import SvgImage from '../../ui/SvgImage'
 import ChatEvent from './ChatEvent'
@@ -213,15 +212,8 @@ const SelectedMessageOverlay: React.FC<{ isPublic?: boolean }> = ({
             contents={{
                 body:
                     deleteMessage && selectedMessage ? (
-                        <Flex
-                            align="center"
-                            gap="xl"
-                            style={style.confirmDeleteContainer}>
-                            <Flex
-                                row
-                                align="start"
-                                justify="center"
-                                style={style.previewMessageContainer}>
+                        <View style={style.confirmDeleteContainer}>
+                            <View style={style.previewMessageContainer}>
                                 <ChatEvent
                                     event={
                                         selectedMessage as MatrixEvent<
@@ -239,13 +231,13 @@ const SelectedMessageOverlay: React.FC<{ isPublic?: boolean }> = ({
                                 />
                                 {/* prevent user from interacting with the chat event */}
                                 <View style={style.previewMessageOverlay} />
-                            </Flex>
+                            </View>
                             <Text medium>
                                 {t('feature.chat.confirm-delete-message')}
                             </Text>
-                        </Flex>
+                        </View>
                     ) : (
-                        <Flex fullWidth>
+                        <View style={style.optionsContainer}>
                             {selectedMessage?.content.msgtype === 'm.text' && (
                                 <>
                                     <Pressable
@@ -290,12 +282,12 @@ const SelectedMessageOverlay: React.FC<{ isPublic?: boolean }> = ({
                                         color={theme.colors.red}
                                         name="Trash"
                                     />
-                                    <Text bold color={theme.colors.red}>
+                                    <Text bold style={style.danger}>
                                         {t('words.delete')}
                                     </Text>
                                 </Pressable>
                             )}
-                        </Flex>
+                        </View>
                     ),
                 buttons: deleteMessage
                     ? [
@@ -318,8 +310,15 @@ const SelectedMessageOverlay: React.FC<{ isPublic?: boolean }> = ({
 
 const styles = (theme: Theme) =>
     StyleSheet.create({
+        optionsContainer: {
+            width: '100%',
+            flexDirection: 'column',
+        },
         action: {
             gap: theme.spacing.lg,
+        },
+        danger: {
+            color: theme.colors.red,
         },
         messageBubble: {
             padding: 10,
@@ -331,13 +330,20 @@ const styles = (theme: Theme) =>
             borderRadius: 16,
             borderBottomRightRadius: 4,
             overflow: 'hidden',
+            display: 'flex',
+            flexDirection: 'row',
+            alignItems: 'flex-start',
+            justifyContent: 'center',
             maxWidth: theme.sizes.maxMessageWidth,
         },
         outgoingText: {
             color: theme.colors.secondary,
         },
         confirmDeleteContainer: {
+            flexDirection: 'column',
+            alignItems: 'center',
             paddingVertical: theme.spacing.lg,
+            gap: theme.spacing.xl,
         },
         previewMessageOverlay: {
             position: 'absolute',

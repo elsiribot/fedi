@@ -1,7 +1,7 @@
 import { RouteProp, useNavigation, useRoute } from '@react-navigation/native'
 import { Text, Theme, useTheme } from '@rneui/themed'
 import React, { useCallback, useMemo } from 'react'
-import { Pressable, StyleSheet } from 'react-native'
+import { Pressable, StyleSheet, View } from 'react-native'
 
 import {
     selectGroupPreview,
@@ -14,7 +14,6 @@ import { useAppSelector } from '../../../state/hooks'
 import { resetToChatsScreen } from '../../../state/navigation'
 import { RootStackParamList } from '../../../types/navigation'
 import Avatar, { AvatarSize } from '../../ui/Avatar'
-import Flex from '../../ui/Flex'
 import Header from '../../ui/Header'
 import ChatAvatar from './ChatAvatar'
 import { ChatConnectionBadge } from './ChatConnectionBadge'
@@ -80,7 +79,7 @@ const ChatConversationHeader: React.FC = () => {
                 }}>
                 <>
                     {avatar}
-                    <Flex row align="center">
+                    <View style={style.textContainer}>
                         <Text
                             bold
                             numberOfLines={1}
@@ -103,7 +102,7 @@ const ChatConversationHeader: React.FC = () => {
                                 {getUserSuffix(room.directUserId)}
                             </Text>
                         )}
-                    </Flex>
+                    </View>
                 </>
             </Pressable>
         )
@@ -143,6 +142,10 @@ const styles = (theme: Theme) =>
             flexDirection: 'row',
             alignItems: 'center',
             justifyContent: 'center',
+        },
+        textContainer: {
+            flexDirection: 'row',
+            alignItems: 'center',
         },
         shortIdText: {
             marginLeft: theme.spacing.xs,
