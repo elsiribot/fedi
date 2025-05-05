@@ -95,7 +95,7 @@ const Splash: React.FC<Props> = ({ navigation }: Props) => {
                         {t('feature.onboarding.fedi')}
                     </Text>
                     <Text style={style.welcomeText}>
-                        {t('feature.onboarding.chat-earn-save-spend')}
+                        {t('feature.onboarding.tagline')}
                     </Text>
                 </View>
 

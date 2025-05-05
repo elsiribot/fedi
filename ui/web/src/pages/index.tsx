@@ -66,7 +66,7 @@ function WelcomePage() {
                             {t('feature.onboarding.fedi')}
                         </Text>
                         <Text variant="body">
-                            {t('feature.onboarding.empower-tagline')}
+                            {t('feature.onboarding.tagline')}
                         </Text>
                     </ContentInner>
                 </Layout.Content>
