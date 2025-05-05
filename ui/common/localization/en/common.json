@@ -427,7 +427,7 @@
             "member-not-found": "Could not find a member with the username '{{username}}'",
             "message-deleted": "This message was deleted",
             "message-private": "This message is private",
-            "multiple-choice": "Multiple choice",
+            "multiple-choice": "Multi-Select",
             "need-registration-description": "Set your display name to be able to send and receive with other users.",
             "need-registration-title": "Get ready to chat",
             "new-chat": "New chat",
