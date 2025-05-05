@@ -309,6 +309,21 @@ export const {
 
 /*** Async thunk actions */
 
+export const supportsSafeOnchainDeposit = createAsyncThunk<
+    boolean,
+    { fedimint: FedimintBridge },
+    { state: CommonState }
+>(
+    'federation/supportsSafeOnchainDeposit',
+    async ({ fedimint }, { getState }) => {
+        const paymentFederation = selectPaymentFederation(getState())
+
+        if (!paymentFederation) return false
+
+        return await fedimint.supportsSafeOnchainDeposit(paymentFederation.id)
+    },
+)
+
 export const refreshFederations = createAsyncThunk<
     FederationListItem[],
     FedimintBridge,

@@ -1,8 +1,12 @@
 import { Text, Theme, useTheme } from '@rneui/themed'
-import React from 'react'
+import React, { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Linking, Pressable, StyleSheet, View } from 'react-native'
 
+import { supportsSafeOnchainDeposit } from '@fedi/common/redux'
+
+import { fedimint } from '../../../bridge'
+import { useAppDispatch } from '../../../state/hooks'
 import HoloGradient from '../../ui/HoloGradient'
 import SvgImage, { SvgImageName } from '../../ui/SvgImage'
 
@@ -41,12 +45,14 @@ const InfoRow = ({ icon, title, subtitle, right }: RowProps) => {
 }
 
 const OnchainDepositInfo: React.FC = () => {
+    const [supportsSafeDeposit, setSupportsSafeOnchainDeposit] = useState(false)
+    const dispatch = useAppDispatch()
     const { t } = useTranslation()
     const { theme } = useTheme()
 
     const style = styles(theme)
 
-    const rows = [
+    const rows: Array<RowProps> = [
         {
             icon: 'Network',
             title: t('feature.receive.receive-guidance-title-1'),
@@ -57,7 +63,10 @@ const OnchainDepositInfo: React.FC = () => {
             title: t('feature.receive.receive-guidance-title-2'),
             subtitle: t('feature.receive.receive-guidance-subtitle-2'),
         },
-        {
+    ]
+
+    if (!supportsSafeDeposit) {
+        rows.push({
             icon: 'Scale',
             title: t('feature.receive.receive-guidance-title-3'),
             subtitle: t('feature.receive.receive-guidance-subtitle-3'),
@@ -72,8 +81,14 @@ const OnchainDepositInfo: React.FC = () => {
                     />
                 </Pressable>
             ),
-        },
-    ] satisfies RowProps[]
+        })
+    }
+
+    useEffect(() => {
+        dispatch(supportsSafeOnchainDeposit({ fedimint }))
+            .unwrap()
+            .then(setSupportsSafeOnchainDeposit)
+    }, [dispatch])
 
     return (
         <HoloGradient
