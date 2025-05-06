@@ -68,7 +68,7 @@ const WithdrawalRequest: React.FC<{
                         </Text>
                     </Flex>
 
-                    <Flex row gap="xs" shrink={false} style={style.amount}>
+                    <Flex row gap="xs" align="center" shrink={false}>
                         <Text medium>{formattedFiatAmount}</Text>
                         <Text bold small>
                             {selectedFiatCurrency}
@@ -137,9 +137,6 @@ const styles = (theme: Theme) =>
             paddingHorizontal: theme.spacing.sm,
             paddingVertical: theme.spacing.xxs,
             overflow: 'hidden',
-        },
-        amount: {
-            flexShrink: 0,
         },
         newBadge: {
             position: 'absolute',
