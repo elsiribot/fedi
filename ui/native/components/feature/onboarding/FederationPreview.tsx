@@ -306,7 +306,7 @@ const styles = (theme: Theme) =>
             fontSize: 16,
             lineHeight: 20,
             letterSpacing: -0.16,
-            textAlign: 'justify',
+            textAlign: 'left',
         },
         scrollTos: { flexGrow: 1, flexShrink: 1, width: '100%' },
         unsupportedContainer: {
