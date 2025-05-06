@@ -39,8 +39,16 @@ async function fedimintRpc<Type = void>(
     const jsonPayload = JSON.stringify(payload)
     const json = await workerRequest<string>(method, jsonPayload)
     const parsed = JSON.parse(json)
+
     if (parsed.error) {
         log.error(method, parsed)
+
+        // Ignore matrixObservableCancel errors
+        // due to potential race condition
+        if (method === 'matrixObservableCancel') {
+            return parsed
+        }
+
         throw new BridgeError(parsed)
     } else {
         log.info(
