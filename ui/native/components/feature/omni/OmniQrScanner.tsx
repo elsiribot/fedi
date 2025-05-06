@@ -83,6 +83,7 @@ export const OmniQrScanner: React.FC<Props> = ({
                             </Text>
                             <Button
                                 day
+                                style={style.continueButton}
                                 fullWidth
                                 onPress={permissionView.buttonOnPress}
                                 title={
@@ -107,6 +108,10 @@ const styles = (theme: Theme, insets: EdgeInsets) =>
             paddingLeft: theme.spacing.lg + (insets.left || 0),
             paddingRight: theme.spacing.lg + (insets.right || 0),
             paddingBottom: Math.max(theme.spacing.lg, insets.bottom || 0),
+        },
+        continueButton: {
+            paddingLeft: theme.spacing.lg,
+            paddingRight: theme.spacing.lg,
         },
         scanner: {
             borderRadius: 20,
