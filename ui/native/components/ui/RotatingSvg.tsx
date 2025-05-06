@@ -9,7 +9,7 @@ type RotatingSvgProps = Omit<SvgImageProps, 'name'> & {
 
 const RotatingSvg: React.FC<RotatingSvgProps> = ({
     name,
-    size = SvgImageSize.lg,
+    size = SvgImageSize.md,
     containerStyle,
     color,
     dimensions,

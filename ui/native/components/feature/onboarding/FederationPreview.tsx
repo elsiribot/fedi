@@ -53,7 +53,7 @@ const FederationPreview: React.FC<Props> = ({ federation, onJoin, onBack }) => {
             <View style={s.loadingContainer}>
                 <RotatingSvg
                     name="FediLogoIcon"
-                    size={SvgImageSize.xl}
+                    size={SvgImageSize.md}
                     containerStyle={s.loadingIcon}
                 />
             </View>
