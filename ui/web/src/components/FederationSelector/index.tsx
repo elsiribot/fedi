@@ -116,7 +116,7 @@ const Container = styled('div', {
 const Wrapper = styled('div', {
     background: theme.colors.white,
     borderRadius: 9999,
-    padding: '3px 12px',
+    padding: '5px 12px',
     '& > button': {
         display: 'block',
     },
