@@ -78,6 +78,7 @@ export const FederationSelector: React.FC = () => {
 
     return (
         <Container>
+            <Wrapper>
             <Popover
                 content={federationList}
                 sideOffset={10}
@@ -96,19 +97,35 @@ export const FederationSelector: React.FC = () => {
                     </IconWrapper>
                 </ActiveFederation>
             </Popover>
+            </Wrapper>
         </Container>
     )
 }
 
 const Container = styled('div', {
+    alignItems: 'center',
+    boxSizing: 'border-box',
+    borderRadius: 9999,
+    display: 'flex',
+    holoGradient: '600',
+    justifyContent: 'center',
+    padding: 2,
+    overflow: 'none',
+})
+
+
+const Wrapper = styled('div', {
+    background: theme.colors.white,
+    borderRadius: 9999,
+    padding: '3px 12px',
     '& > button': {
         display: 'block',
     },
 })
 
 const ActiveFederation = styled('div', {
-    display: 'flex',
     alignItems: 'center',
+    display: 'flex',
     gap: 8,
 })
 
@@ -116,7 +133,6 @@ const IconWrapper = styled('div', {
     display: 'flex',
     justifyContent: 'center',
     alignItems: 'center',
-    marginLeft: -4,
     transition: 'transform 100ms ease',
 
     variants: {
