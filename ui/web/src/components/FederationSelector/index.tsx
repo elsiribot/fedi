@@ -78,37 +78,53 @@ export const FederationSelector: React.FC = () => {
 
     return (
         <Container>
-            <Popover
-                content={federationList}
-                sideOffset={10}
-                open={isSelectorOpen}
-                onOpenChange={setIsSelectorOpen}>
-                <ActiveFederation key={activeFederation?.id}>
-                    <FederationAvatar
-                        federation={activeFederation}
-                        size={isSmall ? 'xs' : 'sm'}
-                    />
-                    <Text variant="caption" weight="bold">
-                        {activeFederation.name}
-                    </Text>
-                    <IconWrapper isOpen={isSelectorOpen}>
-                        <Icon size="xs" icon={ChevronRightIcon} />
-                    </IconWrapper>
-                </ActiveFederation>
-            </Popover>
+            <Wrapper>
+                <Popover
+                    content={federationList}
+                    sideOffset={10}
+                    open={isSelectorOpen}
+                    onOpenChange={setIsSelectorOpen}>
+                    <ActiveFederation key={activeFederation?.id}>
+                        <FederationAvatar
+                            federation={activeFederation}
+                            size={isSmall ? 'xs' : 'sm'}
+                        />
+                        <Text variant="caption" weight="bold">
+                            {activeFederation.name}
+                        </Text>
+                        <IconWrapper isOpen={isSelectorOpen}>
+                            <Icon size="xs" icon={ChevronRightIcon} />
+                        </IconWrapper>
+                    </ActiveFederation>
+                </Popover>
+            </Wrapper>
         </Container>
     )
 }
 
 const Container = styled('div', {
+    alignItems: 'center',
+    boxSizing: 'border-box',
+    borderRadius: 9999,
+    display: 'flex',
+    holoGradient: '600',
+    justifyContent: 'center',
+    padding: 2,
+    overflow: 'none',
+})
+
+const Wrapper = styled('div', {
+    background: theme.colors.white,
+    borderRadius: 9999,
+    padding: '5px 12px',
     '& > button': {
         display: 'block',
     },
 })
 
 const ActiveFederation = styled('div', {
-    display: 'flex',
     alignItems: 'center',
+    display: 'flex',
     gap: 8,
 })
 
@@ -116,7 +132,6 @@ const IconWrapper = styled('div', {
     display: 'flex',
     justifyContent: 'center',
     alignItems: 'center',
-    marginLeft: -4,
     transition: 'transform 100ms ease',
 
     variants: {
