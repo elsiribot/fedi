@@ -117,6 +117,43 @@ const FederationPreview: React.FC<Props> = ({ federation, onJoin, onBack }) => {
         }
     }
 
+    const JoinButtons = () => {
+        if (tosUrl) {
+            return (
+                <View style={s.buttonsContainer}>
+                    <Button
+                        fullWidth
+                        title={t('feature.onboarding.i-accept')}
+                        onPress={handleJoin}
+                        containerStyle={s.button}
+                        disabled={isJoining}
+                        loading={isJoining}
+                    />
+                    <Button
+                        fullWidth
+                        type="clear"
+                        title={t('feature.onboarding.i-do-not-accept')}
+                        onPress={navigation.goBack}
+                        containerStyle={s.button}
+                    />
+                </View>
+            )
+        }
+
+        return (
+            <View style={s.buttonsContainer}>
+                <Button
+                    fullWidth
+                    title={t('phrases.join-community')}
+                    onPress={handleJoin}
+                    containerStyle={s.button}
+                    disabled={isJoining}
+                    loading={isJoining}
+                />
+            </View>
+        )
+    }
+
     const welcomeTitle = federation?.name
     const welcomeInstructions =
         federation.hasWallet &&
@@ -204,23 +241,7 @@ const FederationPreview: React.FC<Props> = ({ federation, onJoin, onBack }) => {
                     </View>
                 )}
 
-                <View style={s.buttonsContainer}>
-                    <Button
-                        fullWidth
-                        title={t('feature.onboarding.i-accept')}
-                        onPress={handleJoin}
-                        containerStyle={s.button}
-                        disabled={isJoining}
-                        loading={isJoining}
-                    />
-                    <Button
-                        fullWidth
-                        type="clear"
-                        title={t('feature.onboarding.i-do-not-accept')}
-                        onPress={navigation.goBack}
-                        containerStyle={s.button}
-                    />
-                </View>
+                <JoinButtons />
             </View>
         </View>
     )
