@@ -134,6 +134,7 @@ const AddFediMod: React.FC = () => {
                     containerStyle={style.inputContainer}
                     keyboardType="url"
                     autoCapitalize="none"
+                    returnKeyType="done"
                 />
                 <Input
                     value={title}
@@ -161,17 +162,10 @@ const AddFediMod: React.FC = () => {
                             )}
                         </Flex>
                     }
-                    inputContainerStyle={[
-                        style.innerInputContainer,
-                        style.modTitle,
-                    ]}
-                    containerStyle={[
-                        style.inputContainer,
-                        style.modTitleContainer,
-                    ]}
-                    inputStyle={{ paddingTop: theme.spacing.sm }}
+                    inputContainerStyle={style.innerInputContainer}
+                    containerStyle={style.inputContainer}
                     disabled={isFetching}
-                    multiline
+                    returnKeyType="done"
                 />
                 <Input
                     value={imageUrl}
@@ -206,6 +200,7 @@ const AddFediMod: React.FC = () => {
                         )
                     }
                     disabled={isFetching}
+                    returnKeyType="done"
                 />
             </Flex>
             <Button
@@ -220,12 +215,6 @@ const AddFediMod: React.FC = () => {
 
 const styles = (theme: Theme) =>
     StyleSheet.create({
-        modTitle: {
-            alignItems: 'flex-start',
-        },
-        modTitleContainer: {
-            display: 'flex',
-        },
         container: {
             gap: theme.spacing.xs,
         },
