@@ -79,24 +79,24 @@ export const FederationSelector: React.FC = () => {
     return (
         <Container>
             <Wrapper>
-            <Popover
-                content={federationList}
-                sideOffset={10}
-                open={isSelectorOpen}
-                onOpenChange={setIsSelectorOpen}>
-                <ActiveFederation key={activeFederation?.id}>
-                    <FederationAvatar
-                        federation={activeFederation}
-                        size={isSmall ? 'xs' : 'sm'}
-                    />
-                    <Text variant="caption" weight="bold">
-                        {activeFederation.name}
-                    </Text>
-                    <IconWrapper isOpen={isSelectorOpen}>
-                        <Icon size="xs" icon={ChevronRightIcon} />
-                    </IconWrapper>
-                </ActiveFederation>
-            </Popover>
+                <Popover
+                    content={federationList}
+                    sideOffset={10}
+                    open={isSelectorOpen}
+                    onOpenChange={setIsSelectorOpen}>
+                    <ActiveFederation key={activeFederation?.id}>
+                        <FederationAvatar
+                            federation={activeFederation}
+                            size={isSmall ? 'xs' : 'sm'}
+                        />
+                        <Text variant="caption" weight="bold">
+                            {activeFederation.name}
+                        </Text>
+                        <IconWrapper isOpen={isSelectorOpen}>
+                            <Icon size="xs" icon={ChevronRightIcon} />
+                        </IconWrapper>
+                    </ActiveFederation>
+                </Popover>
             </Wrapper>
         </Container>
     )
@@ -112,7 +112,6 @@ const Container = styled('div', {
     padding: 2,
     overflow: 'none',
 })
-
 
 const Wrapper = styled('div', {
     background: theme.colors.white,
