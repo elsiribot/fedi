@@ -46,10 +46,6 @@ const Mods: React.FC = () => {
 
     const modsFirstTimeOverlayItems: FirstTimeCommunityEntryItem[] = [
         { icon: 'Apps', text: t('feature.fedimods.first-entry-option-1') },
-        {
-            icon: 'StarOutline',
-            text: t('feature.fedimods.first-entry-option-2'),
-        },
     ]
 
     const onSelectFediMod = (shortcut: Shortcut) => {
