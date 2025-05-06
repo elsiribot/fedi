@@ -28,7 +28,6 @@ import { HoloLoader } from '../HoloLoader'
 import { Header, Title } from '../Layout'
 import { OmniInput } from '../OmniInput'
 import { Text } from '../Text'
-import { TermsOfService } from './TermsOfService'
 import {
     OnboardingActions,
     OnboardingContainer,
@@ -41,7 +40,7 @@ export const JoinFederation: React.FC = () => {
     const dispatch = useAppDispatch()
 
     const { t } = useTranslation()
-    const { push, query } = useRouter()
+    const { back, push, query } = useRouter()
     const toast = useToast()
 
     const federationIds = useAppSelector(selectFederationIds)
@@ -49,7 +48,6 @@ export const JoinFederation: React.FC = () => {
 
     const [isJoining, setIsJoining] = useState(false)
     const [isFetchingPreview, setIsFetchingPreview] = useState<boolean>(false)
-    const [isShowingTos, setIsShowingTos] = useState(false)
     const [federationPreview, setFederationPreview] = useState<JoinPreview>()
 
     const popupInfo = usePopupFederationInfo(federationPreview?.meta)
@@ -175,8 +173,6 @@ export const JoinFederation: React.FC = () => {
                 </Button>
             </>
         )
-    } else if (tosUrl && isShowingTos) {
-        return <TermsOfService tosUrl={tosUrl} onAccept={handleJoin} />
     } else if (popupInfo?.ended) {
         content = (
             <FederationPreviewOuter>
@@ -209,14 +205,6 @@ export const JoinFederation: React.FC = () => {
             ? federationPreview.returningMemberStatus.type
             : undefined
 
-        const welcomeTitle =
-            memberStatus === 'returningMember'
-                ? t('feature.onboarding.welcome-back-to-federation', {
-                      federation: federationPreview.name,
-                  })
-                : t('feature.onboarding.welcome-to-federation', {
-                      federation: federationPreview.name,
-                  })
         const welcomeInstructions =
             memberStatus === 'newMember'
                 ? t('feature.onboarding.welcome-instructions-new')
@@ -237,7 +225,7 @@ export const JoinFederation: React.FC = () => {
                         />
                     </AvatarWrapper>
                     <Text variant="h2" weight="medium">
-                        {welcomeTitle}
+                        {federationPreview.name}
                     </Text>
                     {welcomeMessage ? (
                         <CustomWelcomeMessage>
@@ -254,18 +242,44 @@ export const JoinFederation: React.FC = () => {
 
         actions = (
             <>
-                <Button
-                    width="full"
-                    onClick={() => {
-                        if (tosUrl) {
-                            setIsShowingTos(true)
-                        } else {
-                            handleJoin()
-                        }
-                    }}
-                    loading={isJoining}>
-                    {t('words.continue')}
-                </Button>
+                {tosUrl ? (
+                    <>
+                        <Text
+                            variant="small"
+                            css={{
+                                color: theme.colors.grey,
+                                textAlign: 'left',
+                            }}>
+                            <Trans
+                                i18nKey="feature.onboarding.terms-url"
+                                components={{
+                                    url: (
+                                        <Link target="_blank" href={tosUrl}>
+                                            {tosUrl}
+                                        </Link>
+                                    ),
+                                }}
+                            />
+                        </Text>
+
+                        <Button
+                            width="full"
+                            onClick={handleJoin}
+                            loading={isJoining}>
+                            {t('feature.onboarding.i-accept')}
+                        </Button>
+                        <Button variant="tertiary" onClick={() => back()}>
+                            {t('feature.onboarding.i-do-not-accept')}
+                        </Button>
+                    </>
+                ) : (
+                    <Button
+                        width="full"
+                        onClick={handleJoin}
+                        loading={isJoining}>
+                        {t('phrases.join-community')}
+                    </Button>
+                )}
             </>
         )
     }
@@ -274,9 +288,7 @@ export const JoinFederation: React.FC = () => {
         <OnboardingContainer>
             {isSm && (
                 <Header back>
-                    <Title subheader>
-                        {t('feature.federations.join-federation')}
-                    </Title>
+                    <Title subheader>{t('words.welcome')}</Title>
                 </Header>
             )}
             <OnboardingContent fullWidth={!federationPreview}>
@@ -297,10 +309,9 @@ const ScanWrap = styled('div', {
 
 const previewRadius = 20
 const previewPadding = 2
+
 const FederationPreviewOuter = styled('div', {
     padding: previewPadding,
-    borderRadius: previewRadius,
-    holoGradient: '900',
 })
 
 const FederationPreviewInner = styled('div', {
@@ -315,7 +326,7 @@ const FederationPreviewInner = styled('div', {
 })
 
 const CustomWelcomeMessage = styled('div', {
-    holoGradient: '400',
+    background: theme.colors.offWhite100,
     padding: 16,
     borderRadius: 16,
     textAlign: 'center',
@@ -332,4 +343,8 @@ const UnsupportedBadge = styled('div', {
     color: theme.colors.white,
     borderRadius: 16,
     padding: `${theme.space.xs} ${theme.space.sm}`,
+})
+
+const Link = styled('a', {
+    color: theme.colors.link,
 })
