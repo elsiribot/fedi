@@ -22,11 +22,17 @@ import {
     refreshActiveStabilityPool,
     resetNuxSteps,
     selectActiveFederation,
+    selectFediModShowClearCacheButton,
+    selectFediModCacheEnabled,
+    selectFediModCacheMode,
     selectFediModDebugMode,
     selectOnchainDepositsEnabled,
     selectShowFiatTxnAmounts,
     selectStabilityPoolCycleStartPrice,
     selectStableBalanceEnabled,
+    setFediModShowClearCacheButton,
+    setFediModCacheEnabled,
+    setFediModCacheMode,
     setFediModDebugMode,
     setOnchainDepositsEnabled,
     setShowFiatTxnAmounts,
@@ -34,6 +40,7 @@ import {
 } from '@fedi/common/redux'
 import { selectCurrency } from '@fedi/common/redux/currency'
 import {
+    FediModCacheMode,
     Guardian,
     LightningGateway,
     SupportedCurrency,
@@ -85,6 +92,11 @@ const DeveloperSettings: React.FC<Props> = ({ navigation }) => {
     >([])
     const selectedFiatCurrency = useAppSelector(selectCurrency)
     const fediModDebugMode = useAppSelector(selectFediModDebugMode)
+    const fediModCacheEnabled = useAppSelector(selectFediModCacheEnabled)
+    const showClearCacheButton = useAppSelector(
+        selectFediModShowClearCacheButton,
+    )
+    const fediModCacheMode = useAppSelector(selectFediModCacheMode)
     const onchainDepositsEnabled = useAppSelector(selectOnchainDepositsEnabled)
     const stabilityPoolSupported = useIsStabilityPoolSupported()
     const stableBalanceEnabled = useAppSelector(selectStableBalanceEnabled)
@@ -482,6 +494,69 @@ const DeveloperSettings: React.FC<Props> = ({ navigation }) => {
                         }}
                     />
                 </View>
+            </SettingsSection>
+            <SettingsSection title={t('feature.fedimods.cache-clear')}>
+                <View style={styles(theme).switchWrapper}>
+                    <View style={styles(theme).switchLabelContainer}>
+                        <Text small style={styles(theme).switchLabel}>
+                            {t('feature.fedimods.cache-clear-info')}
+                        </Text>
+                    </View>
+                    <Switch
+                        value={showClearCacheButton}
+                        onValueChange={value => {
+                            reduxDispatch(setFediModShowClearCacheButton(value))
+                        }}
+                    />
+                </View>
+            </SettingsSection>
+            <SettingsSection title={t('feature.fedimods.cache-enabled')}>
+                <View style={styles(theme).switchWrapper}>
+                    <View style={styles(theme).switchLabelContainer}>
+                        <Text small style={styles(theme).switchLabel}>
+                            {t('feature.fedimods.cache-enabled-info')}
+                        </Text>
+                    </View>
+                    <Switch
+                        value={fediModCacheEnabled}
+                        onValueChange={value => {
+                            reduxDispatch(setFediModCacheEnabled(value))
+                        }}
+                    />
+                </View>
+            </SettingsSection>
+            <SettingsSection title={t('feature.fedimods.cache-mode')}>
+                <View style={styles(theme).switchLabelContainer}>
+                    <Text small style={styles(theme).switchLabel}>
+                        {t('feature.fedimods.cache-mode-info')}
+                    </Text>
+                </View>
+                {[
+                    'LOAD_DEFAULT' as const,
+                    'LOAD_CACHE_ONLY' as const,
+                    'LOAD_CACHE_ELSE_NETWORK' as const,
+                    'LOAD_NO_CACHE' as const,
+                ].map((mode: FediModCacheMode, index: number) => (
+                    <View key={mode}>
+                        <CheckBox
+                            key={index}
+                            checkedIcon={<SvgImage name="RadioSelected" />}
+                            uncheckedIcon={<SvgImage name="RadioUnselected" />}
+                            title={
+                                <Text
+                                    style={styles(theme).checkboxText}
+                                    numberOfLines={1}>
+                                    {mode}
+                                </Text>
+                            }
+                            checked={mode === fediModCacheMode}
+                            onPress={() =>
+                                reduxDispatch(setFediModCacheMode(mode))
+                            }
+                            containerStyle={styles(theme).checkboxContainer}
+                        />
+                    </View>
+                ))}
             </SettingsSection>
             <SettingsSection title="Exchange rates">
                 <View style={styles(theme).exchangeRate}>
