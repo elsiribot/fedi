@@ -4,10 +4,13 @@ import { useTranslation } from 'react-i18next'
 import { Linking } from 'react-native'
 
 import { useToast } from '@fedi/common/hooks/toast'
-import { selectIsActiveFederationRecovering } from '@fedi/common/redux'
+import {
+    selectActiveFederationId,
+    selectIsActiveFederationRecovering,
+} from '@fedi/common/redux'
 import { lnurlAuth } from '@fedi/common/utils/lnurl'
 import {
-    ALLOWED_PARSER_TYPES_BEFORE_FEDERATION,
+    BLOCKED_PARSER_TYPES_BEFORE_FEDERATION,
     BLOCKED_PARSER_TYPES_DURING_RECOVERY,
 } from '@fedi/common/utils/parser'
 
@@ -40,6 +43,7 @@ export const OmniConfirmation = <T extends AnyParsedData>({
     const toast = useToast()
     const navigation = useNavigation()
     const [isLoading, setIsLoading] = useState(false)
+    const activeFederationId = useAppSelector(selectActiveFederationId)
     const recoveryInProgress = useAppSelector(
         selectIsActiveFederationRecovering,
     )
@@ -100,7 +104,10 @@ export const OmniConfirmation = <T extends AnyParsedData>({
         continueOnPress?: (() => void) | null
     } => {
         // If they're not yet a member of a federation, they can only scan certain codes.
-        if (!ALLOWED_PARSER_TYPES_BEFORE_FEDERATION.includes(parsedData.type)) {
+        if (
+            BLOCKED_PARSER_TYPES_BEFORE_FEDERATION.includes(parsedData.type) &&
+            !activeFederationId
+        ) {
             return {
                 contents: {
                     icon: 'ScanSad',
