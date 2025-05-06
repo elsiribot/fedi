@@ -1,7 +1,7 @@
 import { Theme, useTheme } from '@rneui/themed'
 import React, { useEffect, useMemo, useState } from 'react'
 import { Trans, useTranslation } from 'react-i18next'
-import { StyleSheet, View } from 'react-native'
+import { StyleSheet } from 'react-native'
 import { RejectionError } from 'webln'
 
 import { useSendForm } from '@fedi/common/hooks/amount'
@@ -28,6 +28,7 @@ import { useAppDispatch, useAppSelector } from '../../../state/hooks'
 import { MSats, ParserDataType } from '../../../types'
 import AmountInput from '../../ui/AmountInput'
 import CustomOverlay from '../../ui/CustomOverlay'
+import Flex from '../../ui/Flex'
 import LineBreak from '../../ui/LineBreak'
 import SvgImage from '../../ui/SvgImage'
 import FederationWalletSelector from '../send/FederationWalletSelector'
@@ -204,7 +205,12 @@ export const SendPaymentOverlay: React.FC<Props> = ({ onReject, onAccept }) => {
                     fediMod: siteInfo?.title,
                 }),
                 body: (
-                    <View style={style.container}>
+                    <Flex
+                        grow
+                        align="center"
+                        gap="lg"
+                        fullWidth
+                        style={style.container}>
                         <FederationWalletSelector />
                         <AmountInput
                             key={amountInputKey}
@@ -221,7 +227,7 @@ export const SendPaymentOverlay: React.FC<Props> = ({ onReject, onAccept }) => {
                             }}
                             error={error}
                         />
-                        <View style={style.previewDetails}>
+                        <Flex fullWidth>
                             <SendPreviewDetails
                                 onPressFees={() => setShowFeeBreakdown(true)}
                                 formattedTotalFee={formattedTotalFee}
@@ -230,7 +236,7 @@ export const SendPaymentOverlay: React.FC<Props> = ({ onReject, onAccept }) => {
                                 )}
                                 isLoading={isLoading}
                             />
-                        </View>
+                        </Flex>
                         <FeeOverlay
                             show={showFeeBreakdown}
                             onDismiss={() => setShowFeeBreakdown(false)}
@@ -253,7 +259,7 @@ export const SendPaymentOverlay: React.FC<Props> = ({ onReject, onAccept }) => {
                                 />
                             }
                         />
-                    </View>
+                    </Flex>
                 ),
                 buttons: [
                     {
@@ -278,15 +284,7 @@ export const SendPaymentOverlay: React.FC<Props> = ({ onReject, onAccept }) => {
 const styles = (theme: Theme) =>
     StyleSheet.create({
         container: {
-            flex: 1,
-            flexDirection: 'column',
             paddingTop: theme.spacing.xl,
-            alignItems: 'center',
-            gap: theme.spacing.lg,
-            width: '100%',
             paddingHorizontal: theme.spacing.md,
-        },
-        previewDetails: {
-            width: '100%',
         },
     })

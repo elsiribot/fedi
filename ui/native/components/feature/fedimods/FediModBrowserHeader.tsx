@@ -2,7 +2,7 @@ import { useNavigation } from '@react-navigation/native'
 import { Text, Theme, useTheme } from '@rneui/themed'
 import React, { MutableRefObject, useEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { Animated, Alert, StyleSheet, View } from 'react-native'
+import { Alert, Animated, StyleSheet } from 'react-native'
 import { Pressable } from 'react-native-gesture-handler'
 import WebView from 'react-native-webview'
 
@@ -13,6 +13,7 @@ import {
 } from '@fedi/common/redux'
 
 import { useAppDispatch, useAppSelector } from '../../../state/hooks'
+import Flex from '../../ui/Flex'
 import { PressableIcon } from '../../ui/PressableIcon'
 
 type FediModBrowserHeaderProps = {
@@ -60,8 +61,8 @@ const FediModBrowserHeader: React.FC<FediModBrowserHeaderProps> = ({
     }, [isBrowserLoading, animatedOpacity])
 
     return (
-        <View style={style.container}>
-            <View style={style.iconContainer}>
+        <Flex row align="center" gap="sm" grow={false} style={style.container}>
+            <Flex row gap="xs">
                 <PressableIcon
                     svgName="ChevronLeft"
                     hitSlop={10}
@@ -72,7 +73,7 @@ const FediModBrowserHeader: React.FC<FediModBrowserHeaderProps> = ({
                     hitSlop={10}
                     onPress={() => webViewRef.current.goForward()}
                 />
-            </View>
+            </Flex>
             <Pressable
                 style={[style.addressInput]}
                 disabled={isBrowserLoading && browserLoadProgress < 1}
@@ -87,7 +88,7 @@ const FediModBrowserHeader: React.FC<FediModBrowserHeaderProps> = ({
                     }}
                 />
             </Pressable>
-            <View style={style.iconContainer}>
+            <Flex row gap="xs">
                 <PressableIcon
                     svgName="Close"
                     hitSlop={10}
@@ -153,18 +154,14 @@ const FediModBrowserHeader: React.FC<FediModBrowserHeaderProps> = ({
                         }}
                     />
                 )}
-            </View>
-        </View>
+            </Flex>
+        </Flex>
     )
 }
 
 const styles = (theme: Theme) =>
     StyleSheet.create({
         container: {
-            flexDirection: 'row',
-            flex: 0,
-            gap: theme.spacing.sm,
-            alignContent: 'center',
             paddingVertical: theme.spacing.md,
             paddingHorizontal: theme.spacing.sm,
             borderTopWidth: 1,
@@ -179,10 +176,6 @@ const styles = (theme: Theme) =>
             alignItems: 'center',
             position: 'relative',
             overflow: 'hidden',
-        },
-        iconContainer: {
-            flexDirection: 'row',
-            gap: theme.spacing.xs,
         },
         progressBar: {
             position: 'absolute',

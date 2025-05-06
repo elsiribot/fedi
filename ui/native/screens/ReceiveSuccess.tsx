@@ -2,11 +2,12 @@ import type { NativeStackScreenProps } from '@react-navigation/native-stack'
 import { Text, Theme, useTheme } from '@rneui/themed'
 import React from 'react'
 import { useTranslation } from 'react-i18next'
-import { StyleSheet, View } from 'react-native'
+import { StyleSheet } from 'react-native'
 
 import amountUtils from '@fedi/common/utils/AmountUtils'
 import { makeReceiveSuccessMessage } from '@fedi/common/utils/wallet'
 
+import Flex from '../components/ui/Flex'
 import Success from '../components/ui/Success'
 import type { RootStackParamList } from '../types/navigation'
 
@@ -23,7 +24,7 @@ const ReceiveSuccess: React.FC<Props> = ({ route }: Props) => {
     return (
         <Success
             message={
-                <View style={style.textContainer}>
+                <Flex align="center" gap="sm" style={style.textContainer}>
                     <Text h2Style={style.successMessage} h2>
                         {message}
                     </Text>
@@ -33,7 +34,7 @@ const ReceiveSuccess: React.FC<Props> = ({ route }: Props) => {
                             amountUtils.msatToSat(tx.amount),
                         )} ${t('words.sats').toUpperCase()}`}
                     </Text>
-                </View>
+                </Flex>
             }
             buttonText={t('words.done')}
         />
@@ -45,8 +46,6 @@ const styles = (theme: Theme) =>
         textContainer: {
             marginVertical: theme.spacing.md,
             width: '80%',
-            alignItems: 'center',
-            gap: theme.spacing.sm,
         },
         successMessage: {
             textAlign: 'center',

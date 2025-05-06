@@ -5,7 +5,6 @@ import { Trans, useTranslation } from 'react-i18next'
 import {
     ImageBackground,
     StyleSheet,
-    View,
     useWindowDimensions,
     Linking,
 } from 'react-native'
@@ -24,6 +23,7 @@ import { makeLog } from '@fedi/common/utils/log'
 
 import { Images } from '../assets/images'
 import { fedimint } from '../bridge'
+import Flex from '../components/ui/Flex'
 import SvgImage, { SvgImageSize } from '../components/ui/SvgImage'
 import { usePinContext } from '../state/contexts/PinContext'
 import { useAppDispatch, useAppSelector } from '../state/hooks'
@@ -87,19 +87,28 @@ const Splash: React.FC<Props> = ({ navigation }: Props) => {
             source={Images.WelcomeBackground}
             style={style.container}>
             <SafeAreaView style={style.content}>
-                <View style={style.welcomeContainer}>
-                    <View style={style.iconContainer}>
+                <Flex
+                    grow
+                    shrink
+                    center
+                    gap="sm"
+                    fullWidth
+                    style={style.welcomeContainer}>
+                    <Flex center style={style.iconContainer}>
                         <SvgImage size={SvgImageSize.lg} name="FediLogoIcon" />
-                    </View>
-                    <Text style={style.title}>
+                    </Flex>
+                    <Text style={style.welcomeText}>
                         {t('feature.onboarding.fedi')}
                     </Text>
-                    <Text style={style.welcomeText}>
-                        {t('feature.onboarding.tagline')}
-                    </Text>
-                </View>
+                </Flex>
 
-                <View style={style.buttonsContainer}>
+                <Flex
+                    grow={false}
+                    shrink
+                    align="center"
+                    justify="evenly"
+                    gap="md"
+                    fullWidth>
                     <Button
                         fullWidth
                         testID="JoinFederationButton"
@@ -139,7 +148,7 @@ const Splash: React.FC<Props> = ({ navigation }: Props) => {
                             }}
                         />
                     </Text>
-                </View>
+                </Flex>
             </SafeAreaView>
         </ImageBackground>
     )
@@ -157,41 +166,15 @@ const styles = (theme: Theme, fontScale: number) =>
             justifyContent: 'flex-end',
             padding: theme.spacing.xl,
         },
-        buttonsContainer: {
-            flexGrow: 0,
-            flexShrink: 1,
-            width: '100%',
-            alignItems: 'center',
-            justifyContent: 'space-evenly',
-            gap: theme.spacing.md,
-        },
         welcomeContainer: {
-            flexGrow: 1,
-            flexShrink: 1,
             flexBasis: 'auto',
-            width: '100%',
             maxWidth: 320 * Math.max(fontScale, 1),
-            alignItems: 'center',
-            justifyContent: 'center',
-            gap: theme.spacing.sm,
             paddingHorizontal: theme.spacing.xl,
-        },
-        overlayContainer: {
-            width: '100%',
-            alignItems: 'center',
-            gap: 16,
-        },
-        overlayButtonsContainer: {
-            marginTop: theme.spacing.lg,
-            width: '100%',
-            gap: 16,
         },
         iconContainer: {
             marginBottom: theme.spacing.lg,
             width: 32,
             height: 32,
-            justifyContent: 'center',
-            alignItems: 'center',
         },
         title: {
             textAlign: 'center',

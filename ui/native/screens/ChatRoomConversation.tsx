@@ -1,8 +1,6 @@
 import type { NativeStackScreenProps } from '@react-navigation/native-stack'
-import { Theme, useTheme } from '@rneui/themed'
 import React, { useCallback, useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { StyleSheet, View } from 'react-native'
 
 import { useMultispendDisplayUtils } from '@fedi/common/hooks/multispend'
 import { useToast } from '@fedi/common/hooks/toast'
@@ -21,6 +19,7 @@ import ChatPreviewConversation from '../components/feature/chat/ChatPreviewConve
 import MessageInput from '../components/feature/chat/MessageInput'
 import SelectedMessageOverlay from '../components/feature/chat/SelectedMessageOverlay'
 import MultispendChatBanner from '../components/feature/multispend/MultispendChatBanner'
+import Flex from '../components/ui/Flex'
 import HoloLoader from '../components/ui/HoloLoader'
 import { useAppDispatch, useAppSelector } from '../state/hooks'
 import type { RootStackParamList } from '../types/navigation'
@@ -36,7 +35,6 @@ export type Props = NativeStackScreenProps<
 
 const ChatRoomConversation: React.FC<Props> = ({ route }: Props) => {
     const { t } = useTranslation()
-    const { theme } = useTheme()
     const dispatch = useAppDispatch()
     const { roomId, chatType = ChatType.group } = route.params
     const [isSending, setIsSending] = useState(false)
@@ -133,8 +131,6 @@ const ChatRoomConversation: React.FC<Props> = ({ route }: Props) => {
         shouldShowHeader,
     ])
 
-    const style = useMemo(() => styles(theme), [theme])
-
     if (!room) {
         if (groupPreview) {
             return (
@@ -143,29 +139,20 @@ const ChatRoomConversation: React.FC<Props> = ({ route }: Props) => {
         }
 
         return (
-            <View style={style.loader}>
+            <Flex align="center">
                 <HoloLoader size={28} />
-            </View>
+            </Flex>
         )
     }
 
     return (
         <>
-            <View style={style.container}>{content}</View>
+            <Flex grow basis={false}>
+                {content}
+            </Flex>
             <SelectedMessageOverlay isPublic={!!room.isPublic} />
         </>
     )
 }
-
-const styles = (_: Theme) =>
-    StyleSheet.create({
-        container: {
-            flex: 1,
-            flexDirection: 'column',
-        },
-        loader: {
-            alignItems: 'center',
-        },
-    })
 
 export default ChatRoomConversation

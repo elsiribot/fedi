@@ -17,6 +17,7 @@ import { Sats } from '@fedi/common/types'
 import amountUtils from '@fedi/common/utils/AmountUtils'
 import { makeLog } from '@fedi/common/utils/log'
 
+import Flex from './Flex'
 import InvisibleInput from './InvisibleInput'
 import NotesInput from './NotesInput'
 import { NumpadButton } from './NumpadButton'
@@ -152,8 +153,8 @@ const AmountInput: React.FC<Props> = ({
         : `${fiatValue} ${currency}`
 
     return (
-        <View style={style.container}>
-            <View style={style.amounts}>
+        <Flex grow align="center" fullWidth>
+            <Flex center gap="sm" grow style={style.amounts}>
                 <Pressable
                     style={style.primaryAmount}
                     disabled={readOnly || hasNumpad || isSubmitting}
@@ -191,7 +192,7 @@ const AmountInput: React.FC<Props> = ({
                         )}
                     </Pressable>
                 )}
-                <View style={style.errorContainer}>
+                <Flex center fullWidth>
                     {customError ? (
                         <Text style={style.error} caption>
                             {customError}
@@ -199,9 +200,11 @@ const AmountInput: React.FC<Props> = ({
                     ) : (
                         error
                     )}
-                </View>
+                </Flex>
                 {content && (
-                    <View style={style.contentContainer}>{content}</View>
+                    <Flex align="center" fullWidth style={style.errorContainer}>
+                        {content}
+                    </Flex>
                 )}
                 {setNotes && (
                     <View style={style.notesContainer}>
@@ -212,9 +215,9 @@ const AmountInput: React.FC<Props> = ({
                         />
                     </View>
                 )}
-            </View>
+            </Flex>
             {hasNumpad && (
-                <View style={style.numpad}>
+                <Flex row wrap fullWidth style={style.numpad}>
                     {numpadButtons.map(btn => (
                         <NumpadButton
                             key={btn}
@@ -229,31 +232,19 @@ const AmountInput: React.FC<Props> = ({
                             disabled={isSubmitting}
                         />
                     ))}
-                </View>
+                </Flex>
             )}
-        </View>
+        </Flex>
     )
 }
 
 const styles = (theme: Theme, width: number) =>
     StyleSheet.create({
-        container: {
-            flex: 1,
-            width: '100%',
-            alignItems: 'center',
-        },
         amounts: {
-            flex: 1,
-            alignItems: 'center',
-            justifyContent: 'center',
-            gap: theme.spacing.sm,
             paddingHorizontal: theme.spacing.lg,
         },
         errorContainer: {
-            width: '100%',
             maxHeight: 60,
-            alignItems: 'center',
-            justifyContent: 'center',
             paddingHorizontal: theme.spacing.lg,
         },
         primaryAmount: {
@@ -281,20 +272,11 @@ const styles = (theme: Theme, width: number) =>
             textDecorationLine: 'underline',
         },
         numpad: {
-            width: '100%',
             maxWidth: Math.min(400, width),
             paddingHorizontal: theme.spacing.lg,
-            flexDirection: 'row',
-            flexWrap: 'wrap',
         },
         notesContainer: {
             width: '100%',
-        },
-        contentContainer: {
-            width: '100%',
-            display: 'flex',
-            flexDirection: 'column',
-            alignItems: 'center',
         },
     })
 

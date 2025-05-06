@@ -3,7 +3,7 @@ import { Text, Theme, useTheme } from '@rneui/themed'
 import toUpper from 'lodash/toUpper'
 import React from 'react'
 import { useTranslation } from 'react-i18next'
-import { StyleSheet, View } from 'react-native'
+import { StyleSheet } from 'react-native'
 import { Pressable } from 'react-native-gesture-handler'
 import { LinearGradientProps } from 'react-native-linear-gradient'
 
@@ -14,6 +14,7 @@ import amountUtils from '@fedi/common/utils/AmountUtils'
 
 import { useAppSelector } from '../../../state/hooks'
 import { BubbleCard } from '../../ui/BubbleView'
+import Flex from '../../ui/Flex'
 import SvgImage, { SvgImageSize } from '../../ui/SvgImage'
 
 const StabilityWalletPlaceholder: React.FC = () => {
@@ -39,9 +40,13 @@ const StabilityWalletPlaceholder: React.FC = () => {
             <BubbleCard
                 linearGradientProps={gradientProps}
                 containerStyle={[stylesPlaceholder.card, { height: 100 }]}>
-                <View style={stylesPlaceholder.headerContainer}>
-                    <View style={stylesPlaceholder.leftGroup}>
-                        <View style={stylesPlaceholder.titleContainer}>
+                <Flex
+                    row
+                    align="center"
+                    justify="between"
+                    style={stylesPlaceholder.headerContainer}>
+                    <Flex row align="center" gap="sm">
+                        <Flex row align="center" gap="sm">
                             <SvgImage
                                 name="UsdCircle"
                                 size={SvgImageSize.md}
@@ -55,33 +60,31 @@ const StabilityWalletPlaceholder: React.FC = () => {
                                     'feature.stabilitypool.stable-balance',
                                 )}`}
                             </Text>
-                        </View>
+                        </Flex>
                         <SvgImage
                             name="ChevronRightSmall"
                             color={theme.colors.secondary}
                             dimensions={{ width: 6, height: 12 }}
                         />
-                    </View>
+                    </Flex>
                     {/* Balance on the right */}
-                    <View style={stylesPlaceholder.balanceContainer}>
-                        <Text
-                            allowFontScaling={false}
-                            style={stylesPlaceholder.balanceTextMain}>
+                    <Flex align="end">
+                        <Text style={stylesPlaceholder.balanceTextMain}>
                             {amountUtils.stripTrailingZerosWithSuffix(
                                 formattedPrimaryAmount,
                             )}
                         </Text>
-                    </View>
-                </View>
-                <View style={stylesPlaceholder.buttonsContainer}>
-                    <Text
-                        allowFontScaling={false}
-                        numberOfLines={1}
-                        adjustsFontSizeToFit
-                        style={stylesPlaceholder.buttonLabel}>
+                    </Flex>
+                </Flex>
+                <Flex
+                    row
+                    justify="between"
+                    gap="lg"
+                    style={stylesPlaceholder.buttonsContainer}>
+                    <Text style={stylesPlaceholder.buttonLabel}>
                         {t('feature.wallet.join-federation')}
                     </Text>
-                </View>
+                </Flex>
             </BubbleCard>
         </Pressable>
     )
@@ -94,27 +97,11 @@ const styles = (theme: Theme) =>
             height: 99,
         },
         headerContainer: {
-            flexDirection: 'row',
-            justifyContent: 'space-between',
-            alignItems: 'center',
             marginBottom: theme.spacing.lg,
-        },
-        leftGroup: {
-            flexDirection: 'row',
-            alignItems: 'center',
-            gap: theme.spacing.sm,
-        },
-        titleContainer: {
-            flexDirection: 'row',
-            alignItems: 'center',
-            gap: theme.spacing.sm,
         },
         title: {
             color: theme.colors.secondary,
             fontSize: 16,
-        },
-        balanceContainer: {
-            alignItems: 'flex-end',
         },
         balanceTextMain: {
             color: theme.colors.white,
@@ -126,9 +113,6 @@ const styles = (theme: Theme) =>
         },
         buttonsContainer: {
             top: -20,
-            flexDirection: 'row',
-            justifyContent: 'space-between',
-            gap: theme.spacing.lg,
         },
         buttonLabel: {
             textAlign: 'center',
