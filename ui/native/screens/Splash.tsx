@@ -97,8 +97,11 @@ const Splash: React.FC<Props> = ({ navigation }: Props) => {
                     <Flex center style={style.iconContainer}>
                         <SvgImage size={SvgImageSize.lg} name="FediLogoIcon" />
                     </Flex>
-                    <Text style={style.welcomeText}>
+                    <Text style={style.title}>
                         {t('feature.onboarding.fedi')}
+                    </Text>
+                    <Text style={style.welcomeText}>
+                        {t('feature.onboarding.tagline')}
                     </Text>
                 </Flex>
 
