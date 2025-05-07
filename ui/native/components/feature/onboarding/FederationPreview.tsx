@@ -1,6 +1,6 @@
 import { useNavigation } from '@react-navigation/native'
 import { Button, Card, Switch, Text, Theme, useTheme } from '@rneui/themed'
-import React, { useEffect, useState } from 'react'
+import React, { useLayoutEffect, useState } from 'react'
 import { Trans, useTranslation } from 'react-i18next'
 import { Linking, ScrollView, StyleSheet, View } from 'react-native'
 import Hyperlink from 'react-native-hyperlink'
@@ -43,9 +43,12 @@ const FederationPreview: React.FC<Props> = ({ federation, onJoin, onBack }) => {
         federation.hasWallet &&
         federation.returningMemberStatus.type === 'returningMember'
 
-    useEffect(() => {
+    useLayoutEffect(() => {
         navigation.setOptions({ headerShown: !isJoining })
-    }, [isJoining, navigation])
+        return () => {
+            navigation.setOptions({ headerShown: true })
+        }
+    }, [navigation, isJoining])
 
     const s = styles(theme)
 
