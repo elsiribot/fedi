@@ -1059,12 +1059,12 @@
             "you-withdrew": "Sacou"
         },
         "support": {
-            "effective-support-1a": "Ao continuar, você concorda que a Fedi pode coletar algumas\n",
+            "effective-support-1a": "Ao continuar, você concorda que a Fedi pode coletar algumas ",
             "effective-support-1b": " apenas para oferecer a você o melhor suporte possível.",
-            "effective-support-2a": " Prefere não compartilhar? Sem problema! Você sempre pode explorar nossa",
+            "effective-support-2a": " Prefere não compartilhar? Sem problema! Você sempre pode explorar nossa ",
             "effective-support-2b": " para acessar um vasto conhecimento sobre a Fedi.\n",
-            "effective-support-help-center": " Central de Ajuda",
-            "effective-support-info": " informações",
+            "effective-support-help-center": "Central de Ajuda",
+            "effective-support-info": "informações",
             "enter-ticket-number": "Insira o número do ticket fornecido pela nossa equipe.",
             "friendly-request": "Um Aviso Rápido",
             "how-to-launch": "Se você precisar de ajuda, pode pedir ajuda à nossa equipe clicando no botão abaixo.",
