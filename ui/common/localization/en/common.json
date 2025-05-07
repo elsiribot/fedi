@@ -583,6 +583,9 @@
             "federation-updates": "Get updates by joining a Federation.",
             "federation-mods-title": "Federation Mods",
             "federation-services-selected": "Services selected by your Federation.",
+            "community-news-title": "Community News",
+            "community-mods-title": "Community Mods",
+            "community-services-selected": "Services selected by your Community.",
             "display-name": "Here's your display name:",
             "profile-change": "To change, tap the profile",
             "profile-change-icon": "To change, tap the <icon /> icon"

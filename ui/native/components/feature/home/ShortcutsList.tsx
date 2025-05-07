@@ -13,7 +13,10 @@ import {
 } from 'react-native'
 
 import { useCommonSelector } from '@fedi/common/hooks/redux'
-import { selectActiveFederationId } from '@fedi/common/redux'
+import {
+    selectActiveFederationId,
+    selectActiveFederationHasWallet,
+} from '@fedi/common/redux'
 import {
     selectVisibleCommunityMods,
     setModVisibility,
@@ -39,6 +42,8 @@ const ShortcutsList: React.FC = () => {
     const [federationId] = useState(activeFederationId)
     const columns = width / fontScale < 300 ? 2 : 3
     const style = styles(theme, columns)
+
+    const isFederation = useAppSelector(selectActiveFederationHasWallet)
 
     const onSelectFediMod = (shortcut: Shortcut) => {
         const fediMod = shortcut as FediMod
@@ -131,10 +136,14 @@ const ShortcutsList: React.FC = () => {
     return (
         <Flex grow fullWidth>
             <Text style={style.sectionTitle}>
-                {t('feature.home.federation-mods-title')}
+                {isFederation
+                    ? t('feature.home.federation-mods-title')
+                    : t('feature.home.community-mods-title')}
             </Text>
             <Text style={style.servicesSelected}>
-                {t('feature.home.federation-services-selected')}
+                {isFederation
+                    ? t('feature.home.federation-services-selected')
+                    : t('feature.home.community-services-selected')}
             </Text>
             <Flex
                 row

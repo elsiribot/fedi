@@ -7,6 +7,7 @@ import { StyleSheet } from 'react-native'
 import {
     selectActiveFederation,
     selectActiveFederationChats,
+    selectActiveFederationHasWallet,
 } from '@fedi/common/redux'
 import { ChatType, MatrixRoom } from '@fedi/common/types'
 import { getFederationGroupChats } from '@fedi/common/utils/FederationUtils'
@@ -26,7 +27,7 @@ const CommunityChats = () => {
         ? getFederationGroupChats(activeFederation.meta).length
         : 0
     const [hasTimedOut, setHasTimedOut] = useState(false)
-    const hasWallet = activeFederation?.hasWallet
+    const isFederation = useAppSelector(selectActiveFederationHasWallet)
 
     useEffect(() => {
         // After 3s, we assume the loading chats have timed out
@@ -73,7 +74,7 @@ const CommunityChats = () => {
     return (
         <Flex gap="sm" fullWidth>
             <Text medium style={style.sectionTitle}>
-                {!hasWallet
+                {!isFederation
                     ? t('feature.chat.community-news')
                     : t('feature.chat.federation-news')}
             </Text>
