@@ -15,7 +15,7 @@ const CommunityChatsPlaceholder: React.FC = () => {
 
     return (
         <Flex grow fullWidth>
-            <Text medium style={style.sectionTitle}>
+            <Text style={style.sectionTitle}>
                 {t('feature.home.federation-news-title')}
             </Text>
             <Pressable

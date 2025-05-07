@@ -60,10 +60,10 @@ const ShortcutsListPlaceholder: React.FC = () => {
 
     return (
         <Flex grow fullWidth>
-            <Text medium style={style.sectionTitle}>
+            <Text style={style.sectionTitle}>
                 {t('feature.home.federation-mods-title')}
             </Text>
-            <Text h4 medium h4Style={style.servicesSelected}>
+            <Text style={style.servicesSelected}>
                 {t('feature.home.federation-services-selected')}
             </Text>
 

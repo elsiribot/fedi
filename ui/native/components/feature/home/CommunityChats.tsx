@@ -73,7 +73,7 @@ const CommunityChats = () => {
 
     return (
         <Flex gap="sm" fullWidth>
-            <Text medium style={style.sectionTitle}>
+            <Text style={style.sectionTitle}>
                 {!isFederation
                     ? t('feature.chat.community-news')
                     : t('feature.chat.federation-news')}
