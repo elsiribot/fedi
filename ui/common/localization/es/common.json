@@ -1059,12 +1059,12 @@
             "you-withdrew": "Retiraste"
         },
         "support": {
-            "effective-support-1a": "Al proceder, aceptas que Fedi recopile cierta",
+            "effective-support-1a": "Al proceder, aceptas que Fedi recopile cierta ",
             "effective-support-1b": " con el único fin de brindarte el mejor soporte posible.",
-            "effective-support-2a": " ¿Prefieres no compartir? ¡No hay problema! Siempre puedes explorar nuestro",
+            "effective-support-2a": " ¿Prefieres no compartir? ¡No hay problema! Siempre puedes explorar nuestro ",
             "effective-support-2b": " para obtener información valiosa sobre Fedi.",
-            "effective-support-help-center": " Centro de Ayuda",
-            "effective-support-info": " información",
+            "effective-support-help-center": "Centro de Ayuda",
+            "effective-support-info": "información",
             "enter-ticket-number": "Ingresa el número de ticket que nuestro equipo te designó.",
             "friendly-request": "Una Nota Rápida",
             "how-to-launch": "Si necesitas ayuda, puedes pedirle ayuda a nuestro equipo haciendo clic en el botón de abajo.",
