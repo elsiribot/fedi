@@ -43,12 +43,14 @@ function HomePage() {
     // Improvement: Show carousel of announcements to show multiple news items
     const newsItem = newsItems.length > 0 ? newsItems[0] : null
 
+    const showBitcoinWallet = !activeFederation || isFederation
+
     return (
         <ContentBlock>
             <Layout.Root>
                 <Layout.Content>
                     <Content>
-                        {isFederation && (
+                        {showBitcoinWallet && (
                             <Section>
                                 <BitcoinWallet />
                             </Section>
