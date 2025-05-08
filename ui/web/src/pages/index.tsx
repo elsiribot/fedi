@@ -55,7 +55,7 @@ function WelcomePage() {
         <ContentBlock
             css={{
                 backgroundImage: `url(${welcomeBackground.src})`,
-                backgroundPosition: 'center -40px',
+                backgroundPosition: 'center center',
                 backgroundSize: 'cover',
             }}>
             <Layout.Root>
@@ -77,15 +77,15 @@ function WelcomePage() {
                         loading={loading}>
                         {t('words.continue')}
                     </Button>
-
-                    {!inviteCode && (
+                    {/* Hide for now until issues with recovery on the backend can be investigated further */}
+                    {/* {!inviteCode && (
                         <Button
                             width="full"
                             href="/onboarding/recover"
                             variant="secondary">
                             {t('phrases.recover-my-account')}
                         </Button>
-                    )}
+                    )} */}
 
                     <TextWrapper>
                         <Text
