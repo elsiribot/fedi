@@ -11,6 +11,7 @@ import {
     selectActiveFederation,
     selectActiveFederationChats,
     selectMatrixAuth,
+    selectActiveFederationHasWallet,
 } from '@fedi/common/redux'
 import stringUtils from '@fedi/common/utils/StringUtils'
 
@@ -35,6 +36,9 @@ function HomePage() {
     const activeFederation = useAppSelector(selectActiveFederation)
     const newsItems = useAppSelector(s => selectActiveFederationChats(s))
 
+    // Federations have wallets, communities do not
+    const isFederation = useAppSelector(selectActiveFederationHasWallet)
+
     // Get first chat message to use as Federation News for now
     // Improvement: Show carousel of announcements to show multiple news items
     const newsItem = newsItems.length > 0 ? newsItems[0] : null
@@ -42,19 +46,22 @@ function HomePage() {
     return (
         <ContentBlock>
             <Layout.Root>
-                <Layout.Header>
-                    <Layout.Title>{t('words.home')}</Layout.Title>
-                </Layout.Header>
                 <Layout.Content>
                     <Content>
-                        <Section>
-                            <BitcoinWallet />
-                        </Section>
+                        {isFederation && (
+                            <Section>
+                                <BitcoinWallet />
+                            </Section>
+                        )}
 
                         {!activeFederation && (
                             <Section>
                                 <Title variant="h2">
-                                    {t('feature.home.federation-news-title')}
+                                    {t(
+                                        isFederation
+                                            ? 'feature.home.federation-news-title'
+                                            : 'feature.home.community-news-title',
+                                    )}
                                 </Title>
 
                                 <NewsContainer>
@@ -78,7 +85,11 @@ function HomePage() {
                         {activeFederation && newsItem && (
                             <Section>
                                 <Title variant="h2">
-                                    {t('feature.home.federation-news-title')}
+                                    {t(
+                                        isFederation
+                                            ? 'feature.home.federation-news-title'
+                                            : 'feature.home.community-news-title',
+                                    )}
                                 </Title>
 
                                 <NewsContainer>
@@ -116,10 +127,18 @@ function HomePage() {
 
                         <Section>
                             <Title variant="h2">
-                                {t('feature.home.federation-mods-title')}
+                                {t(
+                                    isFederation
+                                        ? 'feature.home.federation-mods-title'
+                                        : 'feature.home.community-mods-title',
+                                )}
                             </Title>
                             <SubTitle variant="body">
-                                {t('feature.home.federation-services-selected')}
+                                {t(
+                                    isFederation
+                                        ? 'feature.home.federation-services-selected'
+                                        : 'feature.home.community-services-selected',
+                                )}
                             </SubTitle>
                             <ErrorBoundary fallback={null}>
                                 <FediModTiles
