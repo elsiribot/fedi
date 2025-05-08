@@ -69,6 +69,7 @@ const MessageContents: React.FC<MessageContentsProps> = ({
         text = (
             <View>
                 {messageElements.map((m: string, i: number) => {
+                    if (!m) return null
                     const isMatrixChatGroupCode = m.startsWith('fedi:room:')
                     if (isMatrixChatGroupCode) {
                         const groupId = decodeFediMatrixRoomUri(m)
