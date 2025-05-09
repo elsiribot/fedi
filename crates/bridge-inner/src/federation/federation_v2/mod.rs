@@ -96,8 +96,8 @@ use rpc_types::{
 use runtime::bridge_runtime::Runtime;
 use runtime::constants::{
     ECASH_AUTO_CANCEL_DURATION, LIGHTNING_OPERATION_TYPE, MILLION, MINT_OPERATION_TYPE,
-    PAY_INVOICE_TIMEOUT, REISSUE_ECASH_TIMEOUT, STABILITY_POOL_OPERATION_TYPE,
-    STABILITY_POOL_V2_OPERATION_TYPE, WALLET_OPERATION_TYPE,
+    REISSUE_ECASH_TIMEOUT, STABILITY_POOL_OPERATION_TYPE, STABILITY_POOL_V2_OPERATION_TYPE,
+    WALLET_OPERATION_TYPE,
 };
 use runtime::db::FederationPendingRejoinFromScratchKey;
 use runtime::features::{StabilityPoolV2FeatureConfig, StabilityPoolV2FeatureConfigState};
@@ -1176,12 +1176,9 @@ impl FederationV2 {
                 Amount::from_msats(est_total_spend),
             )
             .await;
-        let response = timeout(
-            PAY_INVOICE_TIMEOUT,
-            self.subscribe_to_ln_pay(payment_type, extra_meta, invoice.clone()),
-        )
-        .await
-        .context(ErrorCode::Timeout)??;
+        let response = self
+            .subscribe_to_ln_pay(payment_type, extra_meta, invoice.clone())
+            .await?;
 
         Ok(response)
     }
