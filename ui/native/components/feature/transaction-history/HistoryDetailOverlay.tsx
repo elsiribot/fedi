@@ -1,4 +1,4 @@
-import { Theme, useTheme } from '@rneui/themed'
+import { Theme, useTheme, Button } from '@rneui/themed'
 import React, { useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { StyleSheet, Text } from 'react-native'
@@ -6,6 +6,7 @@ import { StyleSheet, Text } from 'react-native'
 import { ErrorBoundary } from '@fedi/common/components/ErrorBoundary'
 import { FeeItem } from '@fedi/common/hooks/transactions'
 
+import { useLaunchZendesk } from '../../../utils/hooks/support'
 import CenterOverlay from '../../ui/CenterOverlay'
 import Flex from '../../ui/Flex'
 import SvgImage, { SvgImageSize } from '../../ui/SvgImage'
@@ -28,6 +29,8 @@ const HistoryDetailOverlay: React.FC<HistoryDetailOverlayProps> = ({
     const [showFeeBreakdown, setShowFeeBreakdown] = useState(false)
 
     const style = styles(theme)
+
+    const { launchZendesk } = useLaunchZendesk()
 
     const content = useMemo(() => {
         if (!itemDetails) return <></>
@@ -82,6 +85,26 @@ const HistoryDetailOverlay: React.FC<HistoryDetailOverlayProps> = ({
                 }>
                 {content}
             </ErrorBoundary>
+            <Button
+                fullWidth
+                title={
+                    <Flex row gap="sm" align="center">
+                        <SvgImage
+                            name="SmileMessage"
+                            color={theme.colors.white}
+                            size={SvgImageSize.sm}
+                        />
+                        <Text style={style.askFediText}>
+                            {t('feature.support.title')}
+                        </Text>
+                    </Flex>
+                }
+                onPress={() => {
+                    launchZendesk()
+                    itemDetails.onClose()
+                }}
+                containerStyle={{ marginTop: theme.spacing.lg }}
+            />
         </CenterOverlay>
     )
 }
@@ -100,5 +123,10 @@ const styles = (theme: Theme) =>
         overlayErrorText: {
             marginTop: theme.spacing.lg,
             textAlign: 'center',
+        },
+        askFediText: {
+            color: theme.colors.white,
+            fontSize: 16,
+            fontWeight: 500,
         },
     })
