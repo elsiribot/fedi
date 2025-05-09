@@ -9,7 +9,7 @@ import {
     selectFederationIds,
     setActiveFederationId,
 } from '@fedi/common/redux'
-import { JoinPreview, ParserDataType } from '@fedi/common/types'
+import { JoinPreview } from '@fedi/common/types'
 import {
     getFederationTosUrl,
     getFederationWelcomeMessage,
@@ -26,7 +26,7 @@ import { FederationAvatar } from '../FederationAvatar'
 import FederationEndedPreview from '../FederationEndedPreview'
 import { HoloLoader } from '../HoloLoader'
 import { Header, Title } from '../Layout'
-import { OmniInput } from '../OmniInput'
+import { Redirect } from '../Redirect'
 import { Text } from '../Text'
 import {
     OnboardingActions,
@@ -47,26 +47,22 @@ export const JoinFederation: React.FC = () => {
     const isSm = useMediaQuery(config.media.sm)
 
     const [isJoining, setIsJoining] = useState(false)
-    const [isFetchingPreview, setIsFetchingPreview] = useState<boolean>(false)
+    const [isFetchingPreview, setIsFetchingPreview] = useState<boolean>(true)
     const [federationPreview, setFederationPreview] = useState<JoinPreview>()
 
     const popupInfo = usePopupFederationInfo(federationPreview?.meta)
 
-    const handleCode = useCallback(
-        async (invite_code: string) => {
+    const handleCode = useCallback(async (invite_code: string) => {
+        try {
             setIsFetchingPreview(true)
-
-            try {
-                const fed = await previewInvite(fedimint, invite_code)
-                setFederationPreview(fed)
-            } catch (err) {
-                log.error('handleCode', err)
-                toast.error(t, err, 'errors.invalid-federation-code')
-            }
+            const fed = await previewInvite(fedimint, invite_code)
+            setFederationPreview(fed)
+        } catch (err) {
+            log.error('handleCode', err)
+        } finally {
             setIsFetchingPreview(false)
-        },
-        [t, toast],
-    )
+        }
+    }, [])
 
     const handleJoin = useCallback(async () => {
         setIsJoining(true)
@@ -110,29 +106,20 @@ export const JoinFederation: React.FC = () => {
     let actions: React.ReactNode
 
     if (isFetchingPreview) {
-        content = <HoloLoader size={'xl'} />
-    } else if (!federationPreview) {
-        content = (
-            <ScanWrap>
-                <Text variant="h2" weight="medium">
-                    {t('feature.federations.scan-federation-invite')}
-                </Text>
-                <OmniInput
-                    expectedInputTypes={[ParserDataType.FedimintInvite]}
-                    onExpectedInput={({ data }) => {
-                        if (isJoining) return
-                        handleCode(data.invite)
-                    }}
-                    onUnexpectedSuccess={() => null}
-                    inputLabel={t('feature.federations.enter-federation-code')}
-                    inputPlaceholder="fed1..."
-                    pasteLabel={t('feature.federations.paste-federation-code')}
-                    loading={isFetchingPreview}
-                    defaultToScan
-                />
-            </ScanWrap>
+        return (
+            <OnboardingContainer>
+                <OnboardingContent fullWidth={true}>
+                    <HoloLoader size={'xl'} />
+                </OnboardingContent>
+            </OnboardingContainer>
         )
-    } else if (!getIsFederationSupported(federationPreview)) {
+    }
+
+    if (!federationPreview) {
+        return <Redirect path="/onboarding" />
+    }
+
+    if (!getIsFederationSupported(federationPreview)) {
         content = (
             <FederationPreviewOuter>
                 <FederationPreviewInner>
@@ -298,14 +285,6 @@ export const JoinFederation: React.FC = () => {
         </OnboardingContainer>
     )
 }
-
-const ScanWrap = styled('div', {
-    flex: 1,
-    display: 'flex',
-    flexDirection: 'column',
-    width: '100%',
-    gap: 16,
-})
 
 const previewRadius = 20
 const previewPadding = 2
