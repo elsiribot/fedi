@@ -79,24 +79,21 @@ const MessageContents: React.FC<MessageContentsProps> = ({
                                 groupId={groupId}
                             />
                         )
-                    } else if (m) {
-                        return (
-                            <Text
-                                key={`mi-t-${i}`}
-                                caption
-                                style={[
-                                    ...textStyles,
-                                    i !== 0 ? styles(theme).topPaddedText : {},
-                                    i !== messageElements.length - 1
-                                        ? styles(theme).bottomPaddedText
-                                        : {},
-                                ]}>
-                                {m.trim()}
-                            </Text>
-                        )
-                    } else {
-                        return null
                     }
+                    return (
+                        <Text
+                            key={`mi-t-${i}`}
+                            caption
+                            style={[
+                                ...textStyles,
+                                i !== 0 ? styles(theme).topPaddedText : {},
+                                i !== messageElements.length - 1
+                                    ? styles(theme).bottomPaddedText
+                                    : {},
+                            ]}>
+                            {m.trim()}
+                        </Text>
+                    )
                 })}
             </View>
         )
