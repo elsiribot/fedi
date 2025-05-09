@@ -6,7 +6,6 @@ import { Linking, ScrollView, StyleSheet, View } from 'react-native'
 import Hyperlink from 'react-native-hyperlink'
 
 import { usePopupFederationInfo } from '@fedi/common/hooks/federation'
-import { useToast } from '@fedi/common/hooks/toast'
 import { JoinPreview } from '@fedi/common/types'
 import {
     getFederationTosUrl,
@@ -43,8 +42,6 @@ const FederationPreview: React.FC<Props> = ({ federation, onJoin, onBack }) => {
     const isReturningMember =
         federation.hasWallet &&
         federation.returningMemberStatus.type === 'returningMember'
-
-    const toast = useToast()
 
     useLayoutEffect(() => {
         navigation.setOptions({ headerShown: !isJoining })
@@ -137,7 +134,7 @@ const FederationPreview: React.FC<Props> = ({ federation, onJoin, onBack }) => {
                     <Button
                         fullWidth
                         title={t('feature.onboarding.i-accept')}
-                        onPress={() => toast.show('Test')}
+                        onPress={handleJoin}
                         containerStyle={s.button}
                         disabled={isJoining}
                         loading={isJoining}
