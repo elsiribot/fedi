@@ -7,6 +7,7 @@ import {
     StyleSheet,
     useWindowDimensions,
     Linking,
+    Pressable,
 } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 
@@ -28,6 +29,7 @@ import SvgImage, { SvgImageSize } from '../components/ui/SvgImage'
 import { usePinContext } from '../state/contexts/PinContext'
 import { useAppDispatch, useAppSelector } from '../state/hooks'
 import { RootStackParamList } from '../types/navigation'
+import { useLaunchZendesk } from '../utils/hooks/support'
 
 const log = makeLog('Splash')
 
@@ -43,6 +45,7 @@ const Splash: React.FC<Props> = ({ navigation }: Props) => {
     const toast = useToast()
     const isMatrixReady = useAppSelector(selectIsMatrixReady)
     const hasSetDisplayName = useAppSelector(selectHasSetMatrixDisplayName)
+    const { launchZendesk } = useLaunchZendesk()
 
     const generateAndSetUsername = async () => {
         try {
@@ -112,18 +115,6 @@ const Splash: React.FC<Props> = ({ navigation }: Props) => {
                     justify="evenly"
                     gap="md"
                     fullWidth>
-                    <Button
-                        fullWidth
-                        testID="JoinFederationButton"
-                        title={t('feature.onboarding.get-a-wallet')}
-                        onPress={handleContinue}
-                    />
-                    <Button
-                        fullWidth
-                        onPress={handleReturningUser}
-                        day
-                        title={t('phrases.recover-my-account')}
-                    />
                     <Text style={style.agreementText} small>
                         <Trans
                             i18nKey="feature.onboarding.agree-terms-privacy"
@@ -151,6 +142,36 @@ const Splash: React.FC<Props> = ({ navigation }: Props) => {
                             }}
                         />
                     </Text>
+                    <Button
+                        fullWidth
+                        testID="JoinFederationButton"
+                        title={t('feature.onboarding.get-a-wallet')}
+                        onPress={handleContinue}
+                    />
+                    <Button
+                        fullWidth
+                        onPress={handleReturningUser}
+                        day
+                        title={t('phrases.recover-my-account')}
+                    />
+                    <Flex align="center" justify="evenly" gap="xs" row>
+                        <Text style={style.helpText}>{'Need Help?'}</Text>
+                        <Pressable
+                            style={{
+                                flexDirection: 'row',
+                                alignContent: 'center',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                            }}
+                            onPress={() => launchZendesk()}>
+                            <SvgImage
+                                color={theme.colors.night}
+                                size={SvgImageSize.xs}
+                                name="SmileMessage"
+                            />
+                            <Text style={style.askFediText}>{'Ask Fedi'}</Text>
+                        </Pressable>
+                    </Flex>
                 </Flex>
             </SafeAreaView>
         </ImageBackground>
@@ -193,6 +214,23 @@ const styles = (theme: Theme, fontScale: number) =>
         agreementText: {
             textAlign: 'center',
             width: '70%',
+            color: theme.colors.darkGrey,
+            fontSize: 12,
+            fontWeight: 400,
+        },
+        helpText: {
+            fontSize: 14,
+            color: theme.colors.darkGrey,
+            lineHeight: 16,
+            fontWeight: 400,
+            marginRight: 2,
+        },
+        askFediText: {
+            fontSize: 14,
+            fontWeight: 500,
+            color: theme.colors.night,
+            lineHeight: 20,
+            marginLeft: 4,
         },
     })
 

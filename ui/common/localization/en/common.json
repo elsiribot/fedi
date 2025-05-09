@@ -717,7 +717,7 @@
             "unsupported-unknown": "Hmm, that's not a format we recognize. Sorry!"
         },
         "onboarding": {
-            "agree-terms-privacy": "By continuing, you agree to our <termsLink>Terms of Use</termsLink> & <privacyLink>Privacy Policy</privacyLink>.",
+            "agree-terms-privacy": "By continuing, you agree to our\n<termsLink>Terms of Use</termsLink> & <privacyLink>Privacy Policy</privacyLink>.",
             "are-you-new": "Are you new to Fedi?",
             "by-clicking-i-accept": "By clicking 'I accept' you agree to the terms of service at {{tos_url}}",
             "terms-url": "By clicking 'I accept' you agree to the terms of service at <url />",
