@@ -32,6 +32,7 @@ import HoloLoader from '../components/ui/HoloLoader'
 import { useAppDispatch, useAppSelector } from '../state/hooks'
 import { resetToChatsScreen } from '../state/navigation'
 import type { RootStackParamList } from '../types/navigation'
+import { useLaunchZendesk } from '../utils/hooks/support'
 
 export type Props = NativeStackScreenProps<RootStackParamList, 'RoomSettings'>
 
@@ -70,12 +71,9 @@ const RoomSettings: React.FC<Props> = ({ navigation, route }: Props) => {
     )
 
     const isIgnored = !!room?.isBlocked
+    const { launchZendesk } = useLaunchZendesk()
 
     const leaveChat = useCallback(async () => {
-        // Immediately navigate and replace navigation stack on leave
-        // attempt, otherwise pressing the back button or useEffects in
-        // backgrounded screens may attempt to re-join the group right
-        // after we leave it.
         try {
             navigation.dispatch(resetToChatsScreen())
             await dispatch(leaveMatrixRoom({ roomId })).unwrap()
@@ -197,9 +195,6 @@ const RoomSettings: React.FC<Props> = ({ navigation, route }: Props) => {
     const settingsItems = useMemo(() => {
         const items: SettingsItemProps[] = []
         if (isGroupChat) {
-            // don't show members list for direct chats
-            // admins can always see the members list
-            // non-default groups: anyone can see members list
             if (isAdmin || !isDefaultGroup) {
                 items.push({
                     icon: 'SocialPeople',
@@ -281,6 +276,11 @@ const RoomSettings: React.FC<Props> = ({ navigation, route }: Props) => {
                 },
             )
         }
+        items.push({
+            icon: 'SmileMessage',
+            label: t('feature.support.title'),
+            onPress: () => launchZendesk(),
+        })
         return items
     }, [
         handleNavigateToMultispend,
@@ -303,6 +303,7 @@ const RoomSettings: React.FC<Props> = ({ navigation, route }: Props) => {
         multispendStatus,
         isMultispendEnabled,
         myMultispendRole,
+        launchZendesk,
     ])
 
     if (!room) return <HoloLoader />
@@ -345,16 +346,15 @@ const RoomSettings: React.FC<Props> = ({ navigation, route }: Props) => {
 const styles = (theme: Theme) =>
     StyleSheet.create({
         container: {
-            justifyContent: 'space-evenly',
             padding: theme.spacing.lg,
         },
         settingsItems: {
-            backgroundColor: theme.colors.offWhite100,
+            backgroundColor: theme.colors.white,
             borderRadius: theme.borders.settingsRadius,
             padding: theme.spacing.xs,
         },
         content: {
-            height: '100%',
+            flexGrow: 1,
         },
         switch: {
             position: 'absolute',
