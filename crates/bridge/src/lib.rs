@@ -30,6 +30,7 @@ use fedimint_mint_client::OOBNotes;
 use futures::StreamExt as _;
 use nostr::nips::nip44;
 use nostr::secp256k1::Message;
+use nostril::Nostril;
 use rpc_types::error::ErrorCode;
 use rpc_types::event::SocialRecoveryEvent;
 use rpc_types::{
@@ -60,6 +61,8 @@ pub struct BridgeFull {
     pub matrix: OnceCell<Arc<Matrix>>,
     pub multispend_services: Arc<MultispendServices>,
     pub device_registration_service: Mutex<DeviceRegistrationService>,
+    // TODO: remove Option when nostr feature flag is removed
+    pub nostril: Option<Nostril>,
 }
 
 #[derive(Debug)]
@@ -112,6 +115,17 @@ impl BridgeFull {
         ));
         federations.load_joined_federations_in_background().await;
 
+        let nostril = if let Some(nostr_catalog) = &runtime.feature_catalog.nostr {
+            Nostril::new(&runtime, nostr_catalog)
+                .await
+                .inspect_err(|err| {
+                    tracing::error!(?err, "nostril failed to start");
+                })
+                .ok()
+        } else {
+            None
+        };
+
         Ok(Self {
             runtime,
             federations,
@@ -119,6 +133,7 @@ impl BridgeFull {
             matrix: Default::default(),
             device_registration_service,
             multispend_services,
+            nostril,
         })
     }
 
@@ -740,7 +755,7 @@ pub trait RuntimeExt: Deref<Target = Runtime> {
     async fn nostr_pubkey(&self) -> XOnlyPublicKey {
         let global_root_secret = self.app_state.root_secret().await;
         let secp = Secp256k1::new();
-        let nostr_secret = global_root_secret.child_key(ChildId(NOSTR_CHILD_ID));
+        let nostr_secret = global_root_secret.child_key(NOSTR_CHILD_ID);
         let nostr_keypair = nostr_secret.to_secp_key(&secp);
 
         nostr_keypair.x_only_public_key().0
@@ -761,7 +776,7 @@ pub trait RuntimeExt: Deref<Target = Runtime> {
         secp: &Secp256k1<Ctx>,
     ) -> anyhow::Result<Keypair> {
         let global_root_secret = self.app_state.root_secret().await;
-        let nostr_secret = global_root_secret.child_key(ChildId(NOSTR_CHILD_ID));
+        let nostr_secret = global_root_secret.child_key(NOSTR_CHILD_ID);
         let nostr_keypair = nostr_secret.to_secp_key(secp);
 
         Ok(nostr_keypair)
@@ -770,7 +785,7 @@ pub trait RuntimeExt: Deref<Target = Runtime> {
     async fn sign_nostr_event(&self, event_hash: String) -> Result<String> {
         let global_root_secret = self.app_state.root_secret().await;
         let secp = Secp256k1::new();
-        let nostr_secret = global_root_secret.child_key(ChildId(NOSTR_CHILD_ID));
+        let nostr_secret = global_root_secret.child_key(NOSTR_CHILD_ID);
         let nostr_keypair = nostr_secret.to_secp_key(&secp);
         let data = &hex::decode(event_hash)?;
         let message = Message::from_digest_slice(data)?;
