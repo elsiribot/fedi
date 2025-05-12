@@ -743,6 +743,8 @@
             "i-accept": "I accept",
             "i-do-not-accept": "I do not accept",
             "im-returning": "I'm returning",
+            "network-error": "Please ensure you are online to continue",
+            "need-help": "Need Help?",
             "new-users-disabled-notice": "Sorry, this federation is not accepting new users",
             "nice-to-meet-you": "Nice to meet you, {{username}}",
             "one-time-modal-title": "You’re in! What’s next?",

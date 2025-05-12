@@ -58,11 +58,10 @@ const Splash: React.FC<Props> = ({ navigation }: Props) => {
                 await dispatch(
                     setMatrixDisplayName({ displayName: name }),
                 ).unwrap()
-                //  dispatch(flagUserCreatedOnThisDevice())
             }
             return true
         } catch (error) {
-            toast.show('Please ensure you are online to continue')
+            toast.show(t('feature.onboarding.network-error'))
             return false
         }
     }
@@ -155,7 +154,9 @@ const Splash: React.FC<Props> = ({ navigation }: Props) => {
                         title={t('phrases.recover-my-account')}
                     />
                     <Flex align="center" justify="evenly" gap="xs" row>
-                        <Text style={style.helpText}>{'Need Help?'}</Text>
+                        <Text style={style.helpText}>
+                            {t('feature.onboarding.need-help')}
+                        </Text>
                         <Pressable
                             style={{
                                 flexDirection: 'row',
@@ -169,7 +170,9 @@ const Splash: React.FC<Props> = ({ navigation }: Props) => {
                                 size={SvgImageSize.xs}
                                 name="SmileMessage"
                             />
-                            <Text style={style.askFediText}>{'Ask Fedi'}</Text>
+                            <Text style={style.askFediText}>
+                                {t('feature.support.title')}
+                            </Text>
                         </Pressable>
                     </Flex>
                 </Flex>
