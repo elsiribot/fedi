@@ -148,31 +148,36 @@ export default function ToastManager() {
                                                 />
                                             </Pressable>
                                         </View>
-                                        <Pressable
-                                            style={style.actionButton}
-                                            android_ripple={{
-                                                color:
-                                                    theme.colors.white + '20',
-                                            }}
-                                            onPress={handleActionPress}>
-                                            <Flex
-                                                row
-                                                align="center"
-                                                justify="center"
-                                                gap="sm">
-                                                <SvgImage
-                                                    name="SmileMessage"
-                                                    size={SvgImageSize.xs}
-                                                    color={theme.colors.white}
-                                                />
-                                                <Text
-                                                    style={
-                                                        style.actionButtonText
-                                                    }>
-                                                    {actionLabel}
-                                                </Text>
-                                            </Flex>
-                                        </Pressable>
+                                        {cachedToast?.status === 'error' && (
+                                            <Pressable
+                                                style={style.actionButton}
+                                                android_ripple={{
+                                                    color:
+                                                        theme.colors.white +
+                                                        '20',
+                                                }}
+                                                onPress={handleActionPress}>
+                                                <Flex
+                                                    row
+                                                    align="center"
+                                                    justify="center"
+                                                    gap="sm">
+                                                    <SvgImage
+                                                        name="SmileMessage"
+                                                        size={SvgImageSize.xs}
+                                                        color={
+                                                            theme.colors.white
+                                                        }
+                                                    />
+                                                    <Text
+                                                        style={
+                                                            style.actionButtonText
+                                                        }>
+                                                        {actionLabel}
+                                                    </Text>
+                                                </Flex>
+                                            </Pressable>
+                                        )}
                                     </LinearGradient>
                                 </LinearGradient>
                             </View>
@@ -193,7 +198,8 @@ const styles = (theme: Theme) =>
             width: '100%',
             backgroundColor: theme.colors.black,
             borderRadius: 16,
-            elevation: 4,
+            elevation: 10,
+            zIndex: 10,
         },
         toastShadow1: {
             shadowColor: theme.colors.black,
