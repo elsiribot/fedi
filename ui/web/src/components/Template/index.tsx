@@ -2,27 +2,32 @@ import { useRouter } from 'next/router'
 import React from 'react'
 
 import { ErrorBoundary } from '@fedi/common/components/ErrorBoundary'
+import { usePopupFederationInfo } from '@fedi/common/hooks/federation'
 import { selectMatrixStatus } from '@fedi/common/redux'
 import { MatrixSyncStatus } from '@fedi/common/types'
 
-import { useAppSelector } from '../../hooks'
-import { styled, theme } from '../../styles'
+import { useAppSelector, useMediaQuery } from '../../hooks'
+import { config, styled, theme } from '../../styles'
+import { shouldHideNavigation } from '../../utils/nav'
 import { ChatOfflineIndicator } from '../Chat/ChatOfflineIndicator'
 import { FederationSelector } from '../FederationSelector'
 import { PageError } from '../PageError'
 import { PopupFederationOver } from '../PopupFederationOver'
 import { Navigation } from './Navigation'
 import { PopupFederationCountdown } from './PopupFederationCountdown'
-import { useNavVisibility } from './navConfig'
 
 interface Props {
     children: React.ReactNode
 }
 
 export const Template: React.FC<Props> = ({ children }) => {
-    const { hideNavigation, isPopupOver } = useNavVisibility()
+    const popupInfo = usePopupFederationInfo()
+    const isPopupOver = !!popupInfo && popupInfo.secondsLeft <= 0
     const { asPath } = useRouter()
     const syncStatus = useAppSelector(selectMatrixStatus)
+
+    const isSm = useMediaQuery(config.media.sm)
+    const hideNavigation = shouldHideNavigation(asPath, isSm) || isPopupOver
 
     const shouldShowChatOffline =
         syncStatus === MatrixSyncStatus.syncing && asPath.startsWith('/chat')
