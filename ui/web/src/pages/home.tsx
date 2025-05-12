@@ -37,20 +37,20 @@ function HomePage() {
     const newsItems = useAppSelector(s => selectActiveFederationChats(s))
 
     // Federations have wallets, communities do not
-    const isFederation = useAppSelector(selectActiveFederationHasWallet)
+    const hasWallet = useAppSelector(selectActiveFederationHasWallet)
 
     // Get first chat message to use as Federation News for now
     // Improvement: Show carousel of announcements to show multiple news items
     const newsItem = newsItems.length > 0 ? newsItems[0] : null
 
-    const showBitcoinWallet = !activeFederation || isFederation
+    const showFederation = !activeFederation || hasWallet
 
     return (
         <ContentBlock>
             <Layout.Root>
                 <Layout.Content>
                     <Content>
-                        {showBitcoinWallet && (
+                        {showFederation && (
                             <Section>
                                 <BitcoinWallet />
                             </Section>
@@ -60,7 +60,7 @@ function HomePage() {
                             <Section>
                                 <Title variant="h2">
                                     {t(
-                                        isFederation
+                                        showFederation
                                             ? 'feature.home.federation-news-title'
                                             : 'feature.home.community-news-title',
                                     )}
@@ -88,7 +88,7 @@ function HomePage() {
                             <Section>
                                 <Title variant="h2">
                                     {t(
-                                        isFederation
+                                        showFederation
                                             ? 'feature.home.federation-news-title'
                                             : 'feature.home.community-news-title',
                                     )}
@@ -130,14 +130,14 @@ function HomePage() {
                         <Section>
                             <Title variant="h2">
                                 {t(
-                                    isFederation
+                                    showFederation
                                         ? 'feature.home.federation-mods-title'
                                         : 'feature.home.community-mods-title',
                                 )}
                             </Title>
                             <SubTitle variant="body">
                                 {t(
-                                    isFederation
+                                    showFederation
                                         ? 'feature.home.federation-services-selected'
                                         : 'feature.home.community-services-selected',
                                 )}
