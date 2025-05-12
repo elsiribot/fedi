@@ -259,7 +259,11 @@ const FederationPreview: React.FC<Props> = ({ federation, onJoin, onBack }) => {
 
 const styles = (theme: Theme) =>
     StyleSheet.create({
-        loadingContainer: { paddingHorizontal: theme.spacing.lg },
+        loadingContainer: {
+            paddingHorizontal: theme.spacing.lg,
+            paddingTop: 3,
+            paddingBottom: 3,
+        },
         loadingIcon: { marginBottom: theme.spacing.md },
         loadingTitle: {
             fontSize: 16,
