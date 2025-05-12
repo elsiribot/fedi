@@ -261,7 +261,7 @@ const styles = (theme: Theme) =>
         actionButtonText: {
             color: theme.colors.white,
             fontSize: 13,
-            fontWeight: 500,
+            fontWeight: '500',
             fontFamily: 'AlbertSans-Medium',
             textAlign: 'center',
         },

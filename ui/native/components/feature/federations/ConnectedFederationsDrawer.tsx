@@ -205,7 +205,7 @@ const styles = (theme: Theme) =>
         },
         drawerTitle: {
             fontSize: 16,
-            fontWeight: 600,
+            fontWeight: '600',
         },
         drawerSubtitle: {
             fontSize: 14,

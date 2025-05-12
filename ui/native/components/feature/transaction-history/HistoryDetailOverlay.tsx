@@ -127,6 +127,6 @@ const styles = (theme: Theme) =>
         askFediText: {
             color: theme.colors.white,
             fontSize: 16,
-            fontWeight: 500,
+            fontWeight: '500',
         },
     })

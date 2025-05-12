@@ -202,7 +202,7 @@ const styles = (theme: Theme, fontScale: number) =>
         },
         title: {
             textAlign: 'center',
-            fontWeight: 700,
+            fontWeight: '700',
             fontSize: 30,
         },
         welcomeText: {
@@ -216,18 +216,18 @@ const styles = (theme: Theme, fontScale: number) =>
             width: '70%',
             color: theme.colors.darkGrey,
             fontSize: 12,
-            fontWeight: 400,
+            fontWeight: '400',
         },
         helpText: {
             fontSize: 14,
             color: theme.colors.darkGrey,
             lineHeight: 16,
-            fontWeight: 400,
+            fontWeight: '400',
             marginRight: 2,
         },
         askFediText: {
             fontSize: 14,
-            fontWeight: 500,
+            fontWeight: '500',
             color: theme.colors.night,
             lineHeight: 20,
             marginLeft: 4,
