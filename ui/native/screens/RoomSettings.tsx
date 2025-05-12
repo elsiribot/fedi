@@ -41,6 +41,7 @@ const RoomSettings: React.FC<Props> = ({ navigation, route }: Props) => {
     const { t } = useTranslation()
     const { theme } = useTheme()
     const { show } = useToast()
+    const { launchZendesk } = useLaunchZendesk()
     const toast = useToast()
     const { roomId } = route.params
     const room = useAppSelector(s => selectMatrixRoom(s, roomId))
@@ -71,9 +72,12 @@ const RoomSettings: React.FC<Props> = ({ navigation, route }: Props) => {
     )
 
     const isIgnored = !!room?.isBlocked
-    const { launchZendesk } = useLaunchZendesk()
 
     const leaveChat = useCallback(async () => {
+        // Immediately navigate and replace navigation stack on leave
+        // attempt, otherwise pressing the back button or useEffects in
+        // backgrounded screens may attempt to re-join the group right
+        // after we leave it.
         try {
             navigation.dispatch(resetToChatsScreen())
             await dispatch(leaveMatrixRoom({ roomId })).unwrap()
@@ -195,6 +199,9 @@ const RoomSettings: React.FC<Props> = ({ navigation, route }: Props) => {
     const settingsItems = useMemo(() => {
         const items: SettingsItemProps[] = []
         if (isGroupChat) {
+            // don't show members list for direct chats
+            // admins can always see the members list
+            // non-default groups: anyone can see members list
             if (isAdmin || !isDefaultGroup) {
                 items.push({
                     icon: 'SocialPeople',
@@ -289,6 +296,7 @@ const RoomSettings: React.FC<Props> = ({ navigation, route }: Props) => {
         handleLeaveChat,
         handleToggleBroadcastOnly,
         handleViewMembers,
+        launchZendesk,
         isAdmin,
         isDefaultGroup,
         isGroupChat,
@@ -303,7 +311,6 @@ const RoomSettings: React.FC<Props> = ({ navigation, route }: Props) => {
         multispendStatus,
         isMultispendEnabled,
         myMultispendRole,
-        launchZendesk,
     ])
 
     if (!room) return <HoloLoader />
@@ -346,15 +353,16 @@ const RoomSettings: React.FC<Props> = ({ navigation, route }: Props) => {
 const styles = (theme: Theme) =>
     StyleSheet.create({
         container: {
+            justifyContent: 'space-evenly',
             padding: theme.spacing.lg,
         },
         settingsItems: {
-            backgroundColor: theme.colors.white,
+            backgroundColor: theme.colors.offWhite100,
             borderRadius: theme.borders.settingsRadius,
             padding: theme.spacing.xs,
         },
         content: {
-            flexGrow: 1,
+            height: '100%',
         },
         switch: {
             position: 'absolute',
