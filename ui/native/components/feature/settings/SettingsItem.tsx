@@ -59,9 +59,9 @@ const SettingsItem = ({
                     />
                     <Text
                         color={color || theme.colors.primary}
-                        adjustsFontSizeToFit
-                        maxFontSizeMultiplier={1.6}
-                        numberOfLines={1}>
+                        style={style.text}
+                        numberOfLines={2}
+                        ellipsizeMode="tail">
                         {label}
                     </Text>
                     {adornment ? <>{adornment}</> : null}
@@ -93,6 +93,11 @@ const styles = (theme: Theme) =>
         },
         disabled: {
             opacity: 0.3,
+        },
+        text: {
+            flex: 1,
+            flexWrap: 'wrap',
+            flexShrink: 1,
         },
     })
 
