@@ -154,7 +154,11 @@ const FederationPreview: React.FC<Props> = ({ federation, onJoin, onBack }) => {
             <View style={s.buttonsContainer}>
                 <Button
                     fullWidth
-                    title={t('phrases.join-community')}
+                    title={
+                        federation.hasWallet
+                            ? t('phrases.join-federation')
+                            : t('phrases.join-community')
+                    }
                     onPress={handleJoin}
                     containerStyle={s.button}
                     disabled={isJoining}
