@@ -100,8 +100,11 @@ const HistoryDetailOverlay: React.FC<HistoryDetailOverlayProps> = ({
                     </Flex>
                 }
                 onPress={() => {
-                    launchZendesk()
                     itemDetails.onClose()
+                    //stops Zendesk closing automatically
+                    setTimeout(() => {
+                        launchZendesk()
+                    }, 300)
                 }}
                 containerStyle={{ marginTop: theme.spacing.lg }}
             />
