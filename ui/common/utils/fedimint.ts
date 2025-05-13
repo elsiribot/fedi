@@ -425,6 +425,20 @@ export class FedimintBridge {
         })
     }
 
+    async nostrEncrypt(pubkey: string, plaintext: string) {
+        return this.rpcTyped('nostrEncrypt', {
+            pubkey,
+            plaintext,
+        })
+    }
+
+    async nostrDecrypt(pubkey: string, ciphertext: string) {
+        return this.rpcTyped('nostrDecrypt', {
+            pubkey,
+            ciphertext,
+        })
+    }
+
     async listGateways(federationId: string) {
         return this.rpcTyped('listGateways', { federationId })
     }
