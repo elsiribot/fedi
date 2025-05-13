@@ -215,6 +215,8 @@ export function useMultispendVoting({
         hasRejected,
         isActive: multispendStatus?.status === 'activeInvitation',
         isFinalized: multispendStatus?.status === 'finalized',
+        canVote:
+            myMultispendRole === 'proposer' || myMultispendRole === 'voter',
         isProposer,
         isLoading,
         isConfirmingAbort,

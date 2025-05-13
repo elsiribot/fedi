@@ -32,6 +32,7 @@ const MultispendWalletHeader: React.FC<Props> = ({ roomId }) => {
     const insets = useSafeAreaInsets()
     const {
         isProposer,
+        canVote,
         isActive,
         isFinalized,
         isConfirmingAbort,
@@ -65,7 +66,7 @@ const MultispendWalletHeader: React.FC<Props> = ({ roomId }) => {
 
     const actionButtons = (
         <>
-            {isActive && !hasRejected ? (
+            {isActive && !hasRejected && canVote ? (
                 <Pressable onPress={() => setIsConfirmingAbort(true)}>
                     <Text color={theme.colors.red} medium>
                         {t(isProposer ? 'words.abort' : 'words.reject')}
