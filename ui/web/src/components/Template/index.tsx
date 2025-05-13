@@ -39,7 +39,7 @@ export const Template: React.FC<Props> = ({ children }) => {
                 <FederationHeader>
                     {asPath === '/home' && (
                         <FederationSelectorWrapper>
-                            <FederationSelector />
+                            <FederationSelector joinable />
                         </FederationSelectorWrapper>
                     )}
                     <FederationControls>
