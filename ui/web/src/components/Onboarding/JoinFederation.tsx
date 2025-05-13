@@ -264,7 +264,9 @@ export const JoinFederation: React.FC = () => {
                         width="full"
                         onClick={handleJoin}
                         loading={isJoining}>
-                        {t('phrases.join-community')}
+                        {federationPreview.hasWallet
+                            ? t('phrases.join-federation')
+                            : t('phrases.join-community')}
                     </Button>
                 )}
             </>
