@@ -13,6 +13,7 @@ import { styled, theme } from '../../styles'
 import { CircularLoader } from '../CircularLoader'
 import { EmptyState } from '../EmptyState'
 import { Icon, IconProps } from '../Icon'
+import * as Layout from '../Layout'
 import { ShadowScroller } from '../ShadowScroller'
 import { Text } from '../Text'
 import { ChatAvatar } from './ChatAvatar'
@@ -72,6 +73,11 @@ export const ChatUserSearch: React.FC<Props> = ({ action }) => {
 
     return (
         <Container>
+            <Layout.Header back="/chat">
+                <Layout.Title subheader>
+                    {t('feature.chat.new-message')}
+                </Layout.Title>
+            </Layout.Header>
             <SearchHeader>
                 <SearchPrefix>{t('words.to')}:</SearchPrefix>
                 <SearchInput
@@ -151,9 +157,10 @@ const SearchHeader = styled('div', {
     alignItems: 'center',
     padding: 24,
     borderBottom: `1px solid ${theme.colors.extraLightGrey}`,
+    borderTop: `1px solid ${theme.colors.extraLightGrey}`,
 
     '@sm': {
-        padding: '16px 24px',
+        padding: '8px 24px',
     },
 })
 
