@@ -18,10 +18,8 @@ import {
     ReceiveSuccessStatus,
     ReceiveSuccessData,
     Sats,
-    MatrixEvent,
     UsdCents,
 } from '@fedi/common/types'
-import { MatrixEventContentType } from '@fedi/common/utils/matrix'
 
 import { MSats } from '.'
 
@@ -74,7 +72,6 @@ export type RootStackParamList = {
     MigratedDevice: undefined
     MigratedDeviceSuccess: undefined
     CreatePoll: { roomId: string }
-    EditPoll: { event: MatrixEvent<MatrixEventContentType<'m.poll'>> }
     FederationCurrency: { federationId: string }
     GlobalCurrency: undefined
     GroupMultispend: { roomId: string }

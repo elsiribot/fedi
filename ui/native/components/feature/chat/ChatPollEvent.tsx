@@ -1,8 +1,7 @@
-import { useNavigation } from '@react-navigation/native'
 import { CheckBox, Theme, useTheme, Text, Button } from '@rneui/themed'
 import { Dispatch, SetStateAction, useCallback, useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { Pressable, StyleSheet, View } from 'react-native'
+import { Alert, Pressable, StyleSheet, View } from 'react-native'
 
 import {
     selectMatrixAuth,
@@ -30,7 +29,6 @@ const ChatPollEvent: React.FC<Props> = ({ event }) => {
     const { theme } = useTheme()
     const { t } = useTranslation()
     const dispatch = useAppDispatch()
-    const navigation = useNavigation()
     const matrixAuth = useAppSelector(selectMatrixAuth)
     const isReadOnly = useAppSelector(s =>
         selectMatrixRoomIsReadOnly(s, event.roomId),
@@ -71,6 +69,30 @@ const ChatPollEvent: React.FC<Props> = ({ event }) => {
         )
     }, [event.roomId, event.eventId, selections])
 
+    const handleEndPoll = useCallback(async () => {
+        Alert.alert(
+            t('feature.chat.end-poll-title'),
+            t('feature.chat.confirm-end-poll'),
+            [
+                {
+                    text: t('words.cancel'),
+                    style: 'cancel',
+                },
+                {
+                    text: t('feature.chat.end-poll-confirmation'),
+                    onPress: async () => {
+                        if (!event.eventId) return
+
+                        await fedimint.matrixEndPoll(
+                            event.roomId,
+                            event.eventId,
+                        )
+                    },
+                },
+            ],
+        )
+    }, [event, t])
+
     const style = styles(theme)
     const headerTextStyle = isMe
         ? style.outgoingHeaderText
@@ -94,12 +116,9 @@ const ChatPollEvent: React.FC<Props> = ({ event }) => {
                             {t('words.finished')}
                         </Text>
                     ) : isMe ? (
-                        <Pressable
-                            onPress={() =>
-                                navigation.navigate('EditPoll', { event })
-                            }>
+                        <Pressable onPress={handleEndPoll}>
                             <Text style={headerTextStyle} small medium>
-                                {t('words.edit').toUpperCase()}
+                                {t('words.end').toUpperCase()}
                             </Text>
                         </Pressable>
                     ) : hasVoted ? (

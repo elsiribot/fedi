@@ -2,7 +2,7 @@ import { NativeStackScreenProps } from '@react-navigation/native-stack'
 import { Button, Switch, Text, Theme, useTheme } from '@rneui/themed'
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { Pressable, StyleSheet, View } from 'react-native'
+import { Pressable, StyleSheet } from 'react-native'
 
 import { useToast } from '@fedi/common/hooks/toast'
 
@@ -99,14 +99,14 @@ const CreatePoll: React.FC<Props> = ({
                 <Flex gap="sm">
                     {options.map(option => (
                         <Flex row align="center" gap="sm" key={option.id}>
-                            <View style={style.optionInput}>
+                            <Flex grow>
                                 <FieldInput
                                     value={option.text}
                                     onChangeText={text =>
                                         handleOptionChange(option, text)
                                     }
                                 />
-                            </View>
+                            </Flex>
                             <PressableIcon
                                 svgName="Trash"
                                 onPress={() => {
@@ -120,10 +120,14 @@ const CreatePoll: React.FC<Props> = ({
                 </Flex>
                 <Flex row>
                     <Pressable onPress={handleAddOption}>
-                        <View style={style.addOptionButton}>
+                        <Flex
+                            row
+                            align="center"
+                            gap="sm"
+                            style={style.addOptionButton}>
                             <Text>{t('words.add')}</Text>
                             <SvgImage name="PlusCircle" />
-                        </View>
+                        </Flex>
                     </Pressable>
                 </Flex>
             </Flex>
@@ -174,34 +178,17 @@ export const styles = (theme: Theme) =>
         optionsLabel: {
             paddingLeft: theme.spacing.xs,
         },
-        optionInput: {
-            flex: 1,
-        },
         deleteOptionIcon: {
             flexShrink: 0,
         },
         addOptionButton: {
-            display: 'flex',
-            flexDirection: 'row',
-            alignItems: 'center',
-            gap: theme.spacing.sm,
             paddingVertical: 4,
             paddingHorizontal: 8,
             backgroundColor: theme.colors.offWhite,
             borderRadius: 24,
         },
-        pollPreview: {
-            backgroundColor: theme.colors.extraLightGrey,
-            width: '100%',
-            borderRadius: 8,
-            padding: theme.spacing.lg,
-            alignItems: 'center',
-        },
         submitButton: {
             marginTop: 'auto',
-        },
-        endButton: {
-            backgroundColor: theme.colors.red,
         },
     })
 
