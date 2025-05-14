@@ -631,6 +631,7 @@
             "join-federation": "Join {{federation}}",
             "join-federation-notice": "In order to approve this multispend invitation, you must join the {{federation}} federation.",
             "learn-more": "LEARN MORE",
+            "leave-group-message": "You can't leave a multispend group if you are a voter or admin",
             "max-threshold-n": "The max approval threshold you can set is {{n}}",
             "multispend-group": "Multispend Group",
             "multispend-title": "<bold>Multispend</bold>: Simple Way to Manage Shared Money",

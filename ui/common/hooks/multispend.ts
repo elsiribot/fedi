@@ -237,6 +237,9 @@ export function useMultispendDisplayUtils(t: TFunction, roomId: RpcRoomId) {
     const multispendStatus = useCommonSelector(s =>
         selectMatrixRoomMultispendStatus(s, roomId),
     )
+    const myMultispendRole = useCommonSelector(s =>
+        selectMyMultispendRole(s, roomId),
+    )
     const formattedMultispendBalance = useCommonSelector(s =>
         selectFormattedMultispendBalance(s, roomId),
     )
@@ -248,11 +251,16 @@ export function useMultispendDisplayUtils(t: TFunction, roomId: RpcRoomId) {
 
     const shouldShowVoters = isActiveInvitation
 
+    const shouldBlockLeaveRoom =
+        multispendStatus &&
+        (myMultispendRole === 'voter' || myMultispendRole === 'proposer')
+
     const walletHeader = makeMultispendWalletHeader(t, multispendStatus)
 
     return {
         shouldShowHeader,
         shouldShowVoters,
+        shouldBlockLeaveRoom,
         walletHeader,
         formattedMultispendBalance,
         selectedCurrency,

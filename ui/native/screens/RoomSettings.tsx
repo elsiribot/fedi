@@ -4,6 +4,7 @@ import React, { useCallback, useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Alert, ScrollView, StyleSheet, View } from 'react-native'
 
+import { useMultispendDisplayUtils } from '@fedi/common/hooks/multispend'
 import { useNuxStep } from '@fedi/common/hooks/nux'
 import { useToast } from '@fedi/common/hooks/toast'
 import {
@@ -52,6 +53,7 @@ const RoomSettings: React.FC<Props> = ({ navigation, route }: Props) => {
         selectMatrixRoomSelfPowerLevel(s, roomId || ''),
     )
     const isAdmin = myPowerLevel >= MatrixPowerLevel.Admin
+    const { shouldBlockLeaveRoom } = useMultispendDisplayUtils(t, roomId)
     const multispendStatus = useAppSelector(s =>
         selectMatrixRoomMultispendStatus(s, roomId),
     )
@@ -87,6 +89,15 @@ const RoomSettings: React.FC<Props> = ({ navigation, route }: Props) => {
     }, [dispatch, navigation, roomId, t, toast])
 
     const handleLeaveChat = useCallback(() => {
+        if (shouldBlockLeaveRoom) {
+            toast.show({
+                content: t('feature.multispend.leave-group-message'),
+                status: 'error',
+            })
+
+            return
+        }
+
         Alert.alert(
             isGroupChat
                 ? t('feature.chat.leave-group')
@@ -104,7 +115,7 @@ const RoomSettings: React.FC<Props> = ({ navigation, route }: Props) => {
                 },
             ],
         )
-    }, [isGroupChat, leaveChat, t])
+    }, [isGroupChat, leaveChat, t, shouldBlockLeaveRoom, toast])
 
     const handleChangeGroupName = useCallback(() => {
         navigation.navigate('EditGroup', { roomId })
