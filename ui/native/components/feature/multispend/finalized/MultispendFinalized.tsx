@@ -3,6 +3,9 @@ import { Button, Theme, useTheme } from '@rneui/themed'
 import { useTranslation } from 'react-i18next'
 import { StyleSheet } from 'react-native'
 
+import { selectMultispendBalanceCents } from '@fedi/common/redux'
+
+import { useAppSelector } from '../../../../state/hooks'
 import Flex from '../../../ui/Flex'
 import { SafeAreaContainer } from '../../../ui/SafeArea'
 import RequestList from './RequestList'
@@ -13,6 +16,9 @@ const MultispendFinalized: React.FC<{
     const { theme } = useTheme()
     const { t } = useTranslation()
     const navigation = useNavigation()
+    const multispendBalanceCents = useAppSelector(s =>
+        selectMultispendBalanceCents(s, roomId),
+    )
 
     const style = styles(theme)
 
@@ -30,6 +36,7 @@ const MultispendFinalized: React.FC<{
                 </Button>
                 <Button
                     containerStyle={style.button}
+                    disabled={multispendBalanceCents === 0}
                     onPress={() =>
                         navigation.navigate('MultispendWithdraw', { roomId })
                     }>
