@@ -503,7 +503,10 @@ export function useMultispendWithdrawalRequests({
         }
     }, [selectedWithdrawalId, roomId, t, toast, fedimint])
 
-    const filterOptions = [
+    const filterOptions: Array<{
+        value: MultispendFilterOption
+        label: string
+    }> = [
         { value: 'all', label: t('words.all') },
         { value: 'pending', label: t('words.pending') },
         { value: 'approved', label: t('words.approved') },

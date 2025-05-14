@@ -1,4 +1,5 @@
 import { Text, Theme, useTheme } from '@rneui/themed'
+import { ResourceKey } from 'i18next'
 import { useCallback, useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { ListRenderItem, StyleSheet, FlatList } from 'react-native'
@@ -75,6 +76,13 @@ const RequestList: React.FC<{ roomId: string }> = ({ roomId }) => {
 
     const style = styles(theme)
 
+    const filterMessageMap: Record<MultispendFilterOption, ResourceKey> = {
+        pending: 'feature.multispend.no-pending-withdrawal-requests',
+        approved: 'feature.multispend.no-approved-withdrawal-requests',
+        rejected: 'feature.multispend.no-rejected-withdrawal-requests',
+        all: 'feature.multispend.no-withdrawal-requests',
+    }
+
     return (
         <Flex grow>
             <Flex
@@ -112,9 +120,11 @@ const RequestList: React.FC<{ roomId: string }> = ({ roomId }) => {
                             name="MultispendGroup"
                         />
                         <Text medium style={style.emptyTitle}>
-                            {t('feature.multispend.no-verb-requests', {
-                                verb: selectedFilterOption?.label,
-                            })}
+                            {t(
+                                filterMessageMap[
+                                    selectedFilterOption?.value ?? 'all'
+                                ],
+                            )}
                         </Text>
                         <Text small style={style.emptyDescription}>
                             {t('feature.multispend.no-requests-notice')}
