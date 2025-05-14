@@ -52,7 +52,7 @@ use fedimint_core::module::{ApiRequestErased, ApiVersion};
 use fedimint_core::task::{timeout, MaybeSend, MaybeSync, TaskGroup};
 use fedimint_core::timing::TimeReporter;
 use fedimint_core::util::backoff_util::{aggressive_backoff, background_backoff};
-use fedimint_core::util::retry;
+use fedimint_core::util::{retry, SafeUrl};
 use fedimint_core::{maybe_add_send_sync, Amount, PeerId, TransactionId};
 use fedimint_derive_secret::{ChildId, DerivableSecret};
 use fedimint_ln_client::pay::GatewayPayError;
@@ -96,8 +96,8 @@ use rpc_types::{
 use runtime::bridge_runtime::Runtime;
 use runtime::constants::{
     ECASH_AUTO_CANCEL_DURATION, LIGHTNING_OPERATION_TYPE, MILLION, MINT_OPERATION_TYPE,
-    REISSUE_ECASH_TIMEOUT, STABILITY_POOL_OPERATION_TYPE, STABILITY_POOL_V2_OPERATION_TYPE,
-    WALLET_OPERATION_TYPE,
+    RECURRINGD_API_META, REISSUE_ECASH_TIMEOUT, STABILITY_POOL_OPERATION_TYPE,
+    STABILITY_POOL_V2_OPERATION_TYPE, WALLET_OPERATION_TYPE,
 };
 use runtime::db::FederationPendingRejoinFromScratchKey;
 use runtime::features::{StabilityPoolV2FeatureConfig, StabilityPoolV2FeatureConfigState};
@@ -1022,6 +1022,38 @@ impl FederationV2 {
         Ok(())
     }
 
+    pub async fn subscribe_recurring_payment_receive(
+        &self,
+        operation_id: OperationId,
+    ) -> Result<()> {
+        self.spawn_cancellable("subscribe invoice", move |fed| async move {
+            let Ok(ln) = fed.client.ln() else {
+                error!("Lightning module not found!");
+                return;
+            };
+            let Ok(updates) = ln.subscribe_ln_recurring_receive(operation_id).await else {
+                error!("Lightning operation with ID {:?} not found!", operation_id);
+                return;
+            };
+            let mut updates = updates.into_stream();
+            while let Some(update) = updates.next().await {
+                info!("Update: {:?}", update);
+                fed.update_operation_state(operation_id, update.clone())
+                    .await;
+                match update {
+                    LnReceiveState::Claimed => {
+                        fed.send_transaction_event(operation_id).await;
+                    }
+                    LnReceiveState::Canceled { .. } => {
+                        fed.send_transaction_event(operation_id).await;
+                    }
+                    _ => {}
+                }
+            }
+        });
+        Ok(())
+    }
+
     /// Decodes the given lightning invoice (as String) into an RpcInvoice
     /// whilst attaching federation-specific fee details to the response
     pub async fn decode_invoice(&self, invoice: String) -> Result<RpcInvoice> {
@@ -1431,11 +1463,24 @@ impl FederationV2 {
                         }
                     });
                 }
+                LightningOperationMeta {
+                    variant: LightningOperationMetaVariant::RecurringPaymentReceive { .. },
+                    ..
+                } => {
+                    self.spawn_cancellable(
+                        "subscribe_to_recurring_payment_receive",
+                        move |fed| async move {
+                            if let Err(e) =
+                                fed.subscribe_recurring_payment_receive(operation_id).await
+                            {
+                                warn!("subscribe_to_ln_receive error: {e:?}")
+                            }
+                        },
+                    );
+                }
                 #[allow(deprecated)]
                 LightningOperationMeta {
-                    variant:
-                        LightningOperationMetaVariant::Claim { .. }
-                        | LightningOperationMetaVariant::RecurringPaymentReceive(_),
+                    variant: LightningOperationMetaVariant::Claim { .. },
                     ..
                 } => unreachable!("claims and recurring payments are not supported"),
             },
@@ -2534,9 +2579,30 @@ impl FederationV2 {
                                 .map(Into::into),
                         };
                     }
+                    LightningOperationMetaVariant::RecurringPaymentReceive(payment) => {
+                        transaction_amount = RpcAmount(Amount {
+                            msats: payment.invoice.amount_milli_satoshis().unwrap(),
+                        });
+                        // no frontend meta for recurring payments
+                        frontend_metadata = None;
+                        transaction_kind = RpcTransactionKind::LnRecurringdReceive {
+                            state: self
+                                .get_client_operation_outcome(
+                                    operation_id,
+                                    entry,
+                                    |op_id| async move {
+                                        self.client
+                                            .ln()?
+                                            .subscribe_ln_recurring_receive(op_id)
+                                            .await
+                                    },
+                                )
+                                .await
+                                .map(Into::into),
+                        };
+                    }
                     #[allow(deprecated)]
-                    LightningOperationMetaVariant::Claim { .. }
-                    | LightningOperationMetaVariant::RecurringPaymentReceive(_) => {
+                    LightningOperationMetaVariant::Claim { .. } => {
                         unreachable!("claims and recurring payments are not supported")
                     }
                 }
@@ -4266,6 +4332,37 @@ impl FederationV2 {
     ) -> anyhow::Result<SyncResponse> {
         let spv2 = self.client.spv2()?;
         Ok(spv2.api.account_sync(account_id).await?)
+    }
+
+    pub async fn get_recurringd_api(&self) -> Option<SafeUrl> {
+        self.client
+            .meta_service()
+            .get_field::<SafeUrl>(self.client.db(), RECURRINGD_API_META)
+            .await
+            .and_then(|x| x.value)
+    }
+
+    /// Either register or get the lnurl.
+    pub async fn get_recurringd_lnurl(&self, recurringd_api: SafeUrl) -> anyhow::Result<String> {
+        let ln = self.client.ln()?;
+        if let Some(payment_code) = ln
+            .list_recurring_payment_codes()
+            .await
+            .into_values()
+            .find(|x| x.recurringd_api == recurringd_api)
+        {
+            return Ok(payment_code.code);
+        }
+
+        let payment_code = ln
+            .register_recurring_payment_code(
+                fedimint_ln_client::recurring::RecurringPaymentProtocol::LNURL,
+                recurringd_api,
+                "", // TODO: what do I put in meta?
+            )
+            .await?;
+
+        Ok(payment_code.code)
     }
 }
 

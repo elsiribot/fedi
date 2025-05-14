@@ -90,7 +90,8 @@ export type ErrorCode =
   | "noLnGatewayAvailable"
   | { moduleNotFound: string }
   | { federationPendingRejoinFromScratch: string }
-  | "invalidMsEvent";
+  | "invalidMsEvent"
+  | "recurringdMetaNotFound";
 
 export type Event =
   | { transaction: TransactionEvent }
@@ -625,6 +626,8 @@ export type RpcMethods = {
   ];
   approveSocialRecoveryRequest: [approveSocialRecoveryRequest, null];
   signLnurlMessage: [signLnurlMessage, RpcSignedLnurlMessage];
+  supportsRecurringdLnurl: [supportsRecurringdLnurl, boolean];
+  getRecurringdLnurl: [getRecurringdLnurl, string];
   backupStatus: [backupStatus, BackupServiceStatus];
   getNostrPubkey: [getNostrPubkey, RpcNostrPubkey];
   getNostrSecret: [getNostrSecret, RpcNostrSecret];
@@ -1090,6 +1093,7 @@ export type RpcTransaction = {
       state: RpcLnPayState | null;
     }
   | { kind: "lnReceive"; ln_invoice: string; state: RpcLnReceiveState | null }
+  | { kind: "lnRecurringdReceive"; state: RpcLnReceiveState | null }
   | {
       kind: "onchainWithdraw";
       onchain_address: string;
@@ -1125,6 +1129,7 @@ export type RpcTransactionKind =
       state: RpcLnPayState | null;
     }
   | { kind: "lnReceive"; ln_invoice: string; state: RpcLnReceiveState | null }
+  | { kind: "lnRecurringdReceive"; state: RpcLnReceiveState | null }
   | {
       kind: "onchainWithdraw";
       onchain_address: string;
@@ -1167,6 +1172,7 @@ export type RpcTransactionListEntry = {
       state: RpcLnPayState | null;
     }
   | { kind: "lnReceive"; ln_invoice: string; state: RpcLnReceiveState | null }
+  | { kind: "lnRecurringdReceive"; state: RpcLnReceiveState | null }
   | {
       kind: "onchainWithdraw";
       onchain_address: string;
@@ -1475,6 +1481,8 @@ export type getPrevPayInvoiceResult = {
   federationId: RpcFederationId;
   invoice: string;
 };
+
+export type getRecurringdLnurl = { federationId: RpcFederationId };
 
 export type getSensitiveLog = {};
 
@@ -1876,6 +1884,8 @@ export type stabilityPoolWithdraw = {
   unlockedAmount: RpcAmount;
   lockedBps: number;
 };
+
+export type supportsRecurringdLnurl = { federationId: RpcFederationId };
 
 export type supportsSafeOnchainDeposit = { federationId: RpcFederationId };
 

@@ -648,6 +648,23 @@ async fn signLnurlMessage(
 }
 
 #[macro_rules_derive(federation_rpc_method!)]
+async fn supportsRecurringdLnurl(federation: Arc<FederationV2>) -> anyhow::Result<bool> {
+    Ok(federation.get_recurringd_api().await.is_some())
+}
+
+#[macro_rules_derive(federation_rpc_method!)]
+async fn getRecurringdLnurl(federation: Arc<FederationV2>) -> anyhow::Result<String> {
+    federation
+        .get_recurringd_lnurl(
+            federation
+                .get_recurringd_api()
+                .await
+                .context(ErrorCode::RecurringdMetaNotFound)?,
+        )
+        .await
+}
+
+#[macro_rules_derive(federation_rpc_method!)]
 async fn backupNow(federation: Arc<FederationV2>) -> anyhow::Result<()> {
     federation.backup().await?;
     Ok(())
@@ -1986,6 +2003,8 @@ rpc_methods!(RpcMethods {
     approveSocialRecoveryRequest,
     // LNURL
     signLnurlMessage,
+    supportsRecurringdLnurl,
+    getRecurringdLnurl,
     // backup
     backupStatus,
     // Nostr
@@ -2659,6 +2678,7 @@ pub mod tests {
             tests_names,
             test_fee_remittance_post_successful_tx
         );
+        spawn_and_attach_name!(dev_fed, tests_set, tests_names, test_recurring_lnurl);
 
         while let Some(res) = tests_set.join_next_with_id().await {
             match res {
@@ -4772,6 +4792,20 @@ pub mod tests {
         assert_eq!(Amount::ZERO, federation.get_pending_fedi_fees().await);
         assert_eq!(Amount::ZERO, federation.get_outstanding_fedi_fees().await);
 
+        Ok(())
+    }
+
+    async fn test_recurring_lnurl(dev_fed: DevFed) -> anyhow::Result<()> {
+        let (_bridge, federation) = setup().await?;
+        let lnurl1 = federation
+            .get_recurringd_lnurl(dev_fed.recurringd.api_url.clone())
+            .await?;
+        assert!(lnurl1.starts_with("lnurl"));
+        let lnurl2 = federation
+            .get_recurringd_lnurl(dev_fed.recurringd.api_url.clone())
+            .await?;
+        // lnurl must stay same if safe url is same
+        assert_eq!(lnurl1, lnurl2);
         Ok(())
     }
 
