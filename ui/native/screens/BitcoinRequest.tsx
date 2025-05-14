@@ -28,7 +28,7 @@ const BitcoinRequest: React.FC<Props> = ({ route }: Props) => {
     const { t } = useTranslation()
     const federationId = useAppSelector(selectActiveFederationId)
     const dispatch = useAppDispatch()
-    const { uri } = route.params
+    const { uri, lockRequestType } = route.params
     const isOnchainSupported = useIsOnchainDepositSupported()
 
     const [isLoading, setIsLoading] = useState<boolean>(false)
@@ -142,7 +142,7 @@ const BitcoinRequest: React.FC<Props> = ({ route }: Props) => {
             contentContainerStyle={style.container}
             edges="all"
             padding="xl">
-            {showOnchainDeposits && (
+            {showOnchainDeposits && !lockRequestType && (
                 <RequestTypeSwitcher
                     requestType={requestType}
                     onSwitch={() => {

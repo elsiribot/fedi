@@ -11,6 +11,7 @@ import { v4 as uuidv4 } from 'uuid'
 
 import {
     CommonState,
+    selectActiveFederation,
     selectBtcUsdExchangeRate,
     selectGlobalCommunityMeta,
     selectLoadedFederation,
@@ -1260,6 +1261,52 @@ export const rejectMatrixPaymentRequest = createAsyncThunk<
         status: MatrixPaymentStatus.rejected,
     })
 })
+
+export const checkBolt11PaymentResult = createAsyncThunk<
+    void,
+    { fedimint: FedimintBridge; event: MatrixPaymentEvent },
+    { state: CommonState }
+>(
+    'matrix/checkBolt11PaymentResult',
+    async ({ fedimint, event }, { getState }) => {
+        try {
+            log.info(
+                'calling checkBolt11PaymentResult for',
+                JSON.stringify(event.content),
+            )
+            const matrixAuth = selectMatrixAuth(getState())
+            if (!matrixAuth) throw new Error('Not authenticated')
+
+            const client = getMatrixClient()
+            if (!event.content.bolt11) return
+            // if request is canceled, rejected, or received, we can skip this check
+            if (event.content.status !== MatrixPaymentStatus.requested) return
+            // Only the sender will get a completed result from the RPC
+            if (event.senderId !== matrixAuth?.userId) return
+
+            const activeFederation = selectActiveFederation(getState())
+            if (!activeFederation || !activeFederation.hasWallet) return
+            const result = await fedimint.getPrevPayInvoiceResult(
+                event.content.bolt11,
+                activeFederation.id,
+            )
+            log.info(
+                `bolt11 payment result for ${event.content.bolt11}: `,
+                result,
+            )
+            if (result.completed) {
+                await client.sendMessage(event.roomId, {
+                    ...event.content,
+                    body: `Payment successful.`, // TODO: i18n?
+                    status: MatrixPaymentStatus.received,
+                    senderId: matrixAuth.userId,
+                })
+            }
+        } catch (error) {
+            log.error('checkBolt11PaymentResult', error)
+        }
+    },
+)
 
 export const searchMatrixUsers = createAsyncThunk<MatrixSearchResults, string>(
     'matrix/searchMatrixUsers',

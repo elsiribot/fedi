@@ -8,6 +8,7 @@ import { MatrixEvent } from '@fedi/common/types'
 import { deriveUrlsFromText } from '@fedi/common/utils/chat'
 import {
     arePollEventsEqual,
+    isBolt11PaymentEvent,
     isDeletedEvent,
     isEncryptedEvent,
     isFileEvent,
@@ -23,6 +24,7 @@ import {
 import { useAppSelector } from '../../../state/hooks'
 import Flex from '../../ui/Flex'
 import ChatMultispendEvent from '../multispend/chat-events/ChatMultispendEvent'
+import ChatBolt11PaymentEvent from './ChatBolt11PaymentEvent'
 import ChatDeletedEvent from './ChatDeletedEvent'
 import ChatEmbeddedLinkPreview from './ChatEmbeddedLinkPreview'
 import ChatEncryptedEvent from './ChatEncryptedEvent'
@@ -110,6 +112,8 @@ const ChatEvent: React.FC<Props> = ({
                                 />
                             ) : isEncryptedEvent(event) ? (
                                 <ChatEncryptedEvent event={event} />
+                            ) : isBolt11PaymentEvent(event) ? (
+                                <ChatBolt11PaymentEvent event={event} />
                             ) : isPaymentEvent(event) ? (
                                 <ChatPaymentEvent event={event} />
                             ) : isImageEvent(event) ? (

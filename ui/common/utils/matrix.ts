@@ -36,6 +36,7 @@ import {
     MultispendListedEvent,
 } from '../types/bindings'
 import { makeLog } from './log'
+import { isBolt11 } from './parser'
 
 const log = makeLog('common/utils/matrix')
 
@@ -520,6 +521,7 @@ export const makeMatrixPaymentText = ({
             recipientId: paymentRecipientId,
             senderId: paymentSenderId,
             amount,
+            bolt11,
         },
     } = event
 
@@ -536,7 +538,11 @@ export const makeMatrixPaymentText = ({
         memo: '',
     }
 
-    if (eventSenderId === paymentRecipientId) {
+    if (bolt11) {
+        return t('feature.chat.lightning-invoice-chat', {
+            amountString: `${formattedPrimaryAmount} (${formattedSecondaryAmount})`,
+        })
+    } else if (eventSenderId === paymentRecipientId) {
         if (eventSenderId === myId) {
             return t('feature.chat.you-requested-payment', previewStringParams)
         } else {
@@ -576,6 +582,15 @@ export function isPaymentEvent(
     event: MatrixEvent,
 ): event is MatrixPaymentEvent {
     return event.content.msgtype === 'xyz.fedi.payment'
+}
+
+export function isBolt11PaymentEvent(
+    event: MatrixEvent,
+): event is MatrixPaymentEvent {
+    return (
+        (isPaymentEvent(event) && !!event.content.bolt11) ||
+        isBolt11(event.content.body)
+    )
 }
 
 export function getReceivablePaymentEvents(

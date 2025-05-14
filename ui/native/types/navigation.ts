@@ -58,7 +58,7 @@ export type TabsNavigatorParamList = {
 }
 export type RootStackParamList = {
     AddFediMod: undefined
-    BitcoinRequest: { uri: string }
+    BitcoinRequest: { uri: string; lockRequestType?: boolean }
     BugReportSuccess: undefined
     CameraPermission: { nextScreen: keyof RootStackParamList } | undefined
     ChatImageViewer: { uri: string }

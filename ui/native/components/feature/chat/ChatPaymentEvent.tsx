@@ -21,6 +21,98 @@ import ReceiveForeignEcashOverlay from './ReceiveForeignEcashOverlay'
 type Props = {
     event: MatrixPaymentEvent
 }
+type PaymentEventButton = {
+    label: string
+    handler: () => void
+    disabled?: boolean
+    loading?: boolean
+}
+
+export const PaymentEventStatus = ({
+    statusIcon = undefined,
+    statusText,
+}: {
+    statusIcon: string | undefined
+    statusText: string
+}) => {
+    const { theme } = useTheme()
+    const style = styles(theme)
+
+    const iconProps = {
+        size: SvgImageSize.xs,
+        color: theme.colors.secondary,
+    }
+    const icon =
+        statusIcon === 'x' ? (
+            <SvgImage {...iconProps} name={'Close'} />
+        ) : statusIcon === 'reject' ? (
+            <SvgImage {...iconProps} name={'BrokenHeart'} />
+        ) : statusIcon === 'check' ? (
+            <SvgImage {...iconProps} name={'Check'} />
+        ) : statusIcon === 'error' ? (
+            <SvgImage {...iconProps} name={'Error'} />
+        ) : statusIcon === 'loading' ? (
+            <HoloLoader size={4} />
+        ) : null
+
+    return (
+        <Flex row align="center" style={style.paymentResult}>
+            {icon}
+            <Text style={style.statusText}>{statusText}</Text>
+        </Flex>
+    )
+}
+
+export const PaymentEventButtons = ({
+    buttons,
+}: {
+    buttons: PaymentEventButton[]
+}) => {
+    const { theme } = useTheme()
+    const style = styles(theme)
+
+    return (
+        <Flex
+            row
+            justify="start"
+            gap="md"
+            fullWidth
+            style={style.paymentButtons}>
+            {buttons.map(button => (
+                <Button
+                    key={button.label}
+                    color={theme.colors.secondary}
+                    size="sm"
+                    onPress={button.handler}
+                    loading={button.loading}
+                    disabled={button.disabled}
+                    title={
+                        <Text medium caption style={style.buttonText}>
+                            {button.label}
+                        </Text>
+                    }
+                />
+            ))}
+        </Flex>
+    )
+}
+
+export const PaymentEventContainer = ({
+    children,
+}: {
+    children: React.ReactNode
+}) => {
+    const { theme } = useTheme()
+    const style = styles(theme)
+
+    return (
+        <OptionalGradient
+            gradient={bubbleGradient}
+            style={[style.bubbleInner, style.orangeBubble]}>
+            {children}
+        </OptionalGradient>
+    )
+}
 
 const ChatPaymentEvent: React.FC<Props> = ({ event }: Props) => {
     const { t } = useTranslation()
@@ -53,69 +145,25 @@ const ChatPaymentEvent: React.FC<Props> = ({ event }: Props) => {
         },
     })
 
-    const style = styles(theme)
-
     let extra: React.ReactNode = null
     if (statusText || statusIcon || buttons.length > 0) {
-        const iconProps = {
-            size: SvgImageSize.xs,
-            color: theme.colors.secondary,
-        }
-        const icon =
-            statusIcon === 'x' ? (
-                <SvgImage {...iconProps} name={'Close'} />
-            ) : statusIcon === 'reject' ? (
-                <SvgImage {...iconProps} name={'BrokenHeart'} />
-            ) : statusIcon === 'check' ? (
-                <SvgImage {...iconProps} name={'Check'} />
-            ) : statusIcon === 'error' ? (
-                <SvgImage {...iconProps} name={'Error'} />
-            ) : statusIcon === 'loading' ? (
-                <HoloLoader size={4} />
-            ) : null
         extra = (
             <>
                 {statusText && (
-                    <Flex row align="center" style={style.paymentResult}>
-                        {icon}
-                        <Text style={style.statusText}>{statusText}</Text>
-                    </Flex>
+                    <PaymentEventStatus
+                        statusIcon={statusIcon}
+                        statusText={statusText}
+                    />
                 )}
                 {buttons.length > 0 && (
-                    <Flex
-                        row
-                        justify="start"
-                        gap="md"
-                        fullWidth
-                        style={style.paymentButtons}>
-                        {buttons.map(button => (
-                            <Button
-                                key={button.label}
-                                color={theme.colors.secondary}
-                                size="sm"
-                                onPress={button.handler}
-                                loading={button.loading}
-                                disabled={button.disabled}
-                                title={
-                                    <Text
-                                        medium
-                                        caption
-                                        style={style.buttonText}>
-                                        {button.label}
-                                    </Text>
-                                }
-                            />
-                        ))}
-                    </Flex>
+                    <PaymentEventButtons buttons={buttons} />
                 )}
             </>
         )
     }
 
     return (
-        <OptionalGradient
-            gradient={bubbleGradient}
-            style={[style.bubbleInner, style.orangeBubble]}>
+        <PaymentEventContainer>
             <Text color={theme.colors.secondary}>{messageText}</Text>
             {extra || null}
             {isHandlingForeignEcash && (
@@ -129,7 +177,7 @@ const ChatPaymentEvent: React.FC<Props> = ({ event }: Props) => {
                     }}
                 />
             )}
-        </OptionalGradient>
+        </PaymentEventContainer>
     )
 }
 

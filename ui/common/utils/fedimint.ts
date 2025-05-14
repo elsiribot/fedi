@@ -293,6 +293,13 @@ export class FedimintBridge {
         })
     }
 
+    async getPrevPayInvoiceResult(invoice: string, federationId: string) {
+        return this.rpcTyped('getPrevPayInvoiceResult', {
+            invoice,
+            federationId,
+        })
+    }
+
     async generateAddress(
         federationId: string,
         frontendMetadata: FrontendMetadata = {
