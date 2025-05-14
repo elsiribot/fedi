@@ -869,7 +869,7 @@ impl FederationV2 {
         self.write_pending_receive_fedi_fee_ppm(operation_id, fedi_fee_ppm)
             .await?;
 
-        self.subscribe_deposit(operation_id).await?;
+        self.subscribe_deposit(operation_id);
 
         Ok(address.to_string())
     }
@@ -924,7 +924,7 @@ impl FederationV2 {
         })
     }
 
-    async fn subscribe_deposit(&self, operation_id: OperationId) -> Result<()> {
+    fn subscribe_deposit(&self, operation_id: OperationId) {
         self.spawn_cancellable("subscribe deposit", move |fed| async move {
             let Ok(wallet) = fed.client.wallet() else {
                 error!("Wallet module not present!");
@@ -971,7 +971,6 @@ impl FederationV2 {
                 }
             }
         });
-        Ok(())
     }
 
     pub async fn recheck_pegin_address(&self, operation_id: OperationId) -> Result<()> {
@@ -1369,6 +1368,7 @@ impl FederationV2 {
                 );
             }
         }
+        self.subscribe_to_onchain_addresses().await;
         info!(
             "subscribe_to_all_operations took {:?}",
             fedimint_core::time::now().duration_since(start)
@@ -1470,7 +1470,7 @@ impl FederationV2 {
                         variant: WalletOperationMetaVariant::Deposit { .. },
                         ..
                     } => {
-                        self.subscribe_deposit(operation_id).await?;
+                        // see subscribe_to_onchain_addresses
                     }
                     _ => {
                         tracing::debug!(
@@ -1540,6 +1540,20 @@ impl FederationV2 {
         }
 
         Ok(())
+    }
+
+    pub async fn subscribe_to_onchain_addresses(&self) {
+        let Ok(wallet) = self.client.wallet() else {
+            return;
+        };
+        let Ok(tweak_idxes) = wallet.list_peg_in_tweak_idxes().await else {
+            // failed to get peg in tweak idxes
+            return;
+        };
+
+        for tweak_data in tweak_idxes.into_values() {
+            self.subscribe_deposit(tweak_data.operation_id);
+        }
     }
 
     pub async fn subscribe_to_ln_pay(
