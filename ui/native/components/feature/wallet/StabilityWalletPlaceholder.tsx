@@ -40,13 +40,9 @@ const StabilityWalletPlaceholder: React.FC = () => {
             <BubbleCard
                 linearGradientProps={gradientProps}
                 containerStyle={[stylesPlaceholder.card, { height: 100 }]}>
-                <Flex
-                    row
-                    align="center"
-                    justify="between"
-                    style={stylesPlaceholder.headerContainer}>
-                    <Flex row align="center" gap="sm">
-                        <Flex row align="center" gap="sm">
+                <Flex style={stylesPlaceholder.headerContainer}>
+                    <Flex style={stylesPlaceholder.leftGroup}>
+                        <Flex style={stylesPlaceholder.titleContainer}>
                             <SvgImage
                                 name="UsdCircle"
                                 size={SvgImageSize.md}
@@ -67,21 +63,22 @@ const StabilityWalletPlaceholder: React.FC = () => {
                             dimensions={{ width: 6, height: 12 }}
                         />
                     </Flex>
-                    {/* Balance on the right */}
-                    <Flex align="end">
-                        <Text style={stylesPlaceholder.balanceTextMain}>
+                    <Flex style={stylesPlaceholder.balanceContainer}>
+                        <Text
+                            allowFontScaling={false}
+                            style={stylesPlaceholder.balanceTextMain}>
                             {amountUtils.stripTrailingZerosWithSuffix(
                                 formattedPrimaryAmount,
                             )}
                         </Text>
                     </Flex>
                 </Flex>
-                <Flex
-                    row
-                    justify="between"
-                    gap="lg"
-                    style={stylesPlaceholder.buttonsContainer}>
-                    <Text style={stylesPlaceholder.buttonLabel}>
+                <Flex style={stylesPlaceholder.buttonsContainer}>
+                    <Text
+                        allowFontScaling={false}
+                        numberOfLines={1}
+                        adjustsFontSizeToFit
+                        style={stylesPlaceholder.buttonLabel}>
                         {t('feature.wallet.join-federation')}
                     </Text>
                 </Flex>
@@ -97,22 +94,38 @@ const styles = (theme: Theme) =>
             height: 99,
         },
         headerContainer: {
+            flexDirection: 'row',
+            justifyContent: 'space-between',
+            alignItems: 'center',
             marginBottom: theme.spacing.lg,
+        },
+        leftGroup: {
+            flexDirection: 'row',
+            alignItems: 'center',
+            gap: theme.spacing.sm,
+        },
+        titleContainer: {
+            flexDirection: 'row',
+            alignItems: 'center',
+            gap: theme.spacing.sm,
         },
         title: {
             color: theme.colors.secondary,
             fontSize: 16,
+        },
+        balanceContainer: {
+            alignItems: 'flex-end',
         },
         balanceTextMain: {
             color: theme.colors.white,
             fontSize: 18,
             fontWeight: 'bold',
         },
-        svgStyle: {
-            /* no longer used after row alignment */
-        },
         buttonsContainer: {
             top: -20,
+            flexDirection: 'row',
+            justifyContent: 'space-between',
+            gap: theme.spacing.lg,
         },
         buttonLabel: {
             textAlign: 'center',

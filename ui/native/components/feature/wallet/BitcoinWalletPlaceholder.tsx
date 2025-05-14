@@ -2,7 +2,7 @@ import { useNavigation } from '@react-navigation/native'
 import { Text, Theme, useTheme } from '@rneui/themed'
 import React from 'react'
 import { useTranslation } from 'react-i18next'
-import { StyleSheet, View } from 'react-native'
+import { StyleSheet } from 'react-native'
 import { Pressable } from 'react-native-gesture-handler'
 import { LinearGradientProps } from 'react-native-linear-gradient'
 
@@ -37,25 +37,24 @@ const BitcoinWalletPlaceholder: React.FC = () => {
             <BubbleCard
                 linearGradientProps={gradientProps}
                 containerStyle={[stylesPlaceholder.card, { height: 99 }]}>
-                <Flex
-                    row
-                    align="center"
-                    justify="between"
-                    style={stylesPlaceholder.headerContainer}>
-                    <Flex row align="center" gap="sm">
-                        <Flex row align="center" gap="sm">
+                <Flex style={stylesPlaceholder.headerContainer}>
+                    <Flex style={stylesPlaceholder.leftGroup}>
+                        <Flex style={stylesPlaceholder.titleContainer}>
                             <SvgImage
                                 name="BitcoinCircle"
                                 size={SvgImageSize.md}
                                 color={theme.colors.white}
                             />
-                            <View>
-                                <Flex row align="center" gap="sm">
-                                    <Text bold style={stylesPlaceholder.title}>
+                            <Flex>
+                                <Flex style={stylesPlaceholder.row}>
+                                    <Text
+                                        allowFontScaling={false}
+                                        bold
+                                        style={stylesPlaceholder.title}>
                                         {t('words.bitcoin')}
                                     </Text>
                                 </Flex>
-                            </View>
+                            </Flex>
                         </Flex>
                         <SvgImage
                             name="ChevronRightSmall"
@@ -63,8 +62,11 @@ const BitcoinWalletPlaceholder: React.FC = () => {
                             dimensions={{ width: 6, height: 12 }}
                         />
                     </Flex>
-                    <Flex align="end">
-                        <Text medium style={stylesPlaceholder.balanceTextMain}>
+                    <Flex style={stylesPlaceholder.balanceContainer}>
+                        <Text
+                            allowFontScaling={false}
+                            medium
+                            style={stylesPlaceholder.balanceTextMain}>
                             {amountUtils.stripTrailingZerosWithSuffix(
                                 formattedPrimaryAmount,
                             )}
@@ -77,12 +79,12 @@ const BitcoinWalletPlaceholder: React.FC = () => {
                         </Text>
                     </Flex>
                 </Flex>
-                <Flex
-                    row
-                    justify="between"
-                    gap="md"
-                    style={stylesPlaceholder.buttonsContainer}>
-                    <Text style={stylesPlaceholder.buttonLabel}>
+                <Flex style={stylesPlaceholder.buttonsContainer}>
+                    <Text
+                        allowFontScaling={false}
+                        numberOfLines={1}
+                        adjustsFontSizeToFit
+                        style={stylesPlaceholder.buttonLabel}>
                         {t('feature.wallet.join-federation')}
                     </Text>
                 </Flex>
@@ -98,9 +100,22 @@ const styles = (theme: Theme) =>
             height: 99,
         },
         headerContainer: {
+            flexDirection: 'row',
+            justifyContent: 'space-between',
+            alignItems: 'center',
             marginBottom: theme.spacing.lg,
         },
+        leftGroup: {
+            flexDirection: 'row',
+            alignItems: 'center',
+            gap: theme.spacing.sm,
+        },
         titleContainer: {
+            flexDirection: 'row',
+            alignItems: 'center',
+            gap: theme.spacing.sm,
+        },
+        row: {
             flexDirection: 'row',
             alignItems: 'center',
             gap: theme.spacing.sm,
@@ -113,6 +128,9 @@ const styles = (theme: Theme) =>
             color: theme.colors.secondary,
             fontSize: 12,
         },
+        balanceContainer: {
+            alignItems: 'flex-end',
+        },
         balanceTextMain: {
             color: theme.colors.white,
             fontSize: 18,
@@ -124,6 +142,9 @@ const styles = (theme: Theme) =>
         },
         buttonsContainer: {
             top: -20,
+            flexDirection: 'row',
+            justifyContent: 'space-between',
+            gap: theme.spacing.lg,
         },
         buttonLabel: {
             textAlign: 'center',
