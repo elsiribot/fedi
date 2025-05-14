@@ -3198,6 +3198,7 @@ pub mod tests {
         let fee_ppm_values = vec![(0, 0), (10, 5), (100, 50)];
         for (send_ppm, receive_ppm) in fee_ppm_values {
             test_on_chain_with_fedi_fees(send_ppm, receive_ppm).await?;
+            test_on_chain_with_fedi_fees_with_restart(send_ppm, receive_ppm).await?;
         }
 
         Ok(())
@@ -3218,6 +3219,110 @@ pub mod tests {
 
         let address = generateAddress(federation.clone(), FrontendMetadata::default()).await?;
         bitcoin_cli_send_to_address(&address, "0.1").await?;
+
+        assert!(matches!(
+            listTransactions(federation.clone(), None, None).await?[0]
+                .transaction
+                .kind,
+            RpcTransactionKind::OnchainDeposit {
+                state: Some(RpcOnchainDepositState::WaitingForTransaction),
+                ..
+            }
+        ));
+        // check for event of type transaction that has onchain_state of
+        // DepositState::Claimed
+        'check: loop {
+            let events = bridge.runtime.event_sink.events();
+            for (_, ev_body) in events
+                .iter()
+                .rev()
+                .filter(|(kind, _)| kind == "transaction")
+            {
+                let ev_body = serde_json::from_str::<TransactionEvent>(ev_body).unwrap();
+                let transaction = ev_body.transaction;
+                if matches!(
+                    transaction.kind,
+                    RpcTransactionKind::OnchainDeposit {
+                        onchain_address,
+                        state: Some(RpcOnchainDepositState::Claimed(_)),
+                        ..
+                    } if onchain_address == address
+                ) {
+                    break 'check;
+                }
+            }
+            fedimint_core::task::sleep_in_test(
+                "waiting for generate to address",
+                Duration::from_secs(1),
+            )
+            .await;
+        }
+        assert!(matches!(
+            listTransactions(federation.clone(), None, None).await?[0]
+                .transaction
+                .kind,
+            RpcTransactionKind::OnchainDeposit {
+                state: Some(RpcOnchainDepositState::Claimed(_)),
+                ..
+            }
+        ),);
+
+        let btc_amount = Amount::from_sats(10_000_000);
+        let pegin_fees = federation.client.wallet()?.get_fee_consensus().peg_in_abs;
+        let receive_fedi_fee = Amount::from_msats(
+            ((btc_amount.msats - pegin_fees.msats) * fedi_fees_receive_ppm).div_ceil(MILLION),
+        );
+        assert_eq!(
+            btc_amount,
+            federation.get_balance().await + receive_fedi_fee + pegin_fees,
+        );
+
+        Ok(())
+    }
+
+    async fn test_on_chain_with_fedi_fees_with_restart(
+        fedi_fees_send_ppm: u64,
+        fedi_fees_receive_ppm: u64,
+    ) -> anyhow::Result<()> {
+        let device_identifier = "bridge_1:test:add59709-395e-4563-9cbd-b34ab20dea75".to_string();
+        let (address, federation_id, data_dir);
+        {
+            // setup, generate address, shutdown
+            let (bridge, federation) = setup_custom(
+                device_identifier.clone(),
+                Arc::new(MockFediApi::default()),
+                FeatureCatalog::new(RuntimeEnvironment::Dev).into(),
+            )
+            .await?;
+            setWalletModuleFediFeeSchedule(
+                &bridge,
+                federation.rpc_federation_id(),
+                fedi_fees_send_ppm,
+                fedi_fees_receive_ppm,
+            )
+            .await?;
+
+            address = generateAddress(federation.clone(), FrontendMetadata::default()).await?;
+            federation_id = federation.federation_id();
+            data_dir = bridge.runtime.storage.platform_path(Path::new(""));
+            bridge
+                .runtime
+                .task_group
+                .clone()
+                .shutdown_join_all(Duration::from_secs(5))
+                .await?;
+        }
+        bitcoin_cli_send_to_address(&address, "0.1").await?;
+
+        // restart bridge using same data dir
+        let bridge = setup_bridge_custom_with_data_dir(
+            device_identifier,
+            Arc::new(MockFediApi::default()),
+            FeatureCatalog::new(RuntimeEnvironment::Dev).into(),
+            data_dir,
+        )
+        .await?;
+        let federation = wait_for_federation_loading(&bridge, &federation_id.to_string()).await?;
 
         assert!(matches!(
             listTransactions(federation.clone(), None, None).await?[0]
