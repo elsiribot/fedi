@@ -5,6 +5,7 @@ import { useTranslation } from 'react-i18next'
 import { useMultispendTransactions } from '@fedi/common/hooks/multispend'
 import { makeLog } from '@fedi/common/utils/log'
 
+import MultispendFederationGate from '../components/feature/multispend/MultispendFederationGate'
 import MultispendTransactionsList from '../components/feature/multispend/MultispendTransactionsList'
 import Flex from '../components/ui/Flex'
 import { RootStackParamList } from '../types/navigation'
@@ -35,15 +36,21 @@ const MultispendTransactions: React.FC<Props> = ({ route }) => {
     }, [fetchTransactions, t])
 
     return (
-        <Flex grow>
-            <MultispendTransactionsList
-                roomId={roomId}
-                loading={isLoading}
-                transactions={transactions}
-                refreshTransactions={() => fetchTransactions({ refresh: true })}
-                loadMoreTransactions={() => fetchTransactions({ more: true })}
-            />
-        </Flex>
+        <MultispendFederationGate roomId={roomId}>
+            <Flex grow>
+                <MultispendTransactionsList
+                    roomId={roomId}
+                    loading={isLoading}
+                    transactions={transactions}
+                    refreshTransactions={() =>
+                        fetchTransactions({ refresh: true })
+                    }
+                    loadMoreTransactions={() =>
+                        fetchTransactions({ more: true })
+                    }
+                />
+            </Flex>
+        </MultispendFederationGate>
     )
 }
 

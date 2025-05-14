@@ -5,7 +5,7 @@ import { useObserveMultispendAccountInfo } from '@fedi/common/hooks/matrix'
 import { useMultispendDisplayUtils } from '@fedi/common/hooks/multispend'
 import { selectMatrixRoomMultispendStatus } from '@fedi/common/redux'
 
-import FederationGate from '../components/feature/federations/FederationGate'
+import MultispendFederationGate from '../components/feature/multispend/MultispendFederationGate'
 import MultispendWalletHeader from '../components/feature/multispend/MultispendWalletHeader'
 import MultispendFinalized from '../components/feature/multispend/finalized/MultispendFinalized'
 import MultispendActiveInvitation from '../components/feature/multispend/invitation/MultispendActiveInvitation'
@@ -32,13 +32,8 @@ const GroupMultispend: React.FC<Props> = ({ route }: Props) => {
 
     if (!multispendStatus) return null
 
-    const inviteCode =
-        multispendStatus.status === 'activeInvitation'
-            ? multispendStatus.state.invitation.federationInviteCode
-            : multispendStatus.finalized_group.invitation.federationInviteCode
-
     return (
-        <FederationGate inviteCode={inviteCode}>
+        <MultispendFederationGate roomId={roomId}>
             <Flex grow>
                 {shouldShowHeader && <MultispendWalletHeader roomId={roomId} />}
                 {multispendStatus.status === 'activeInvitation' && (
@@ -48,7 +43,7 @@ const GroupMultispend: React.FC<Props> = ({ route }: Props) => {
                     <MultispendFinalized roomId={roomId} />
                 )}
             </Flex>
-        </FederationGate>
+        </MultispendFederationGate>
     )
 }
 
