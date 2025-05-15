@@ -48,11 +48,11 @@ const MultispendTransactionsList = ({
                 amountState: makeMultispendTxnAmountStateText(txn),
             })}
             makeDetailProps={txn => ({
-                id: txn.id,
                 title: '',
                 items: makeMultispendTxnDetailItems(txn),
                 amount: makeMultispendTxnAmountText(txn, true),
                 notes: makeMultispendTxnNotesText(txn),
+                txn,
             })}
             onRefresh={refreshTransactions}
             onEndReached={loadMoreTransactions}

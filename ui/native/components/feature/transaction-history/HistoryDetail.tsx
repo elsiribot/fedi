@@ -1,5 +1,5 @@
 import { Text, Theme, useTheme, Button, Input } from '@rneui/themed'
-import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import React, { useCallback, useEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import {
     Keyboard,
@@ -16,12 +16,13 @@ import { hexToRgba } from '@fedi/common/utils/color'
 
 import { fedimint } from '../../../bridge'
 import { useAppSelector } from '../../../state/hooks'
+import { TransactionListEntry } from '../../../types'
 import Flex from '../../ui/Flex'
 import SvgImage, { SvgImageSize } from '../../ui/SvgImage'
 import { HistoryDetailItem, HistoryDetailItemProps } from './HistoryDetailItem'
 
 export type HistoryDetailProps = {
-    id: string
+    txn: TransactionListEntry
     icon: React.ReactNode
     title: React.ReactNode
     amount: string
@@ -34,12 +35,12 @@ export type HistoryDetailProps = {
 }
 
 export const HistoryDetail: React.FC<HistoryDetailProps> = ({
-    id,
     icon,
     title,
     amount,
     items,
     fees,
+    txn: { id, ...txn },
     onPressFees = () => null,
     notes: propsNotes,
     onSaveNotes,
@@ -61,27 +62,6 @@ export const HistoryDetail: React.FC<HistoryDetailProps> = ({
         }
     }, [propsNotes])
 
-    const isOnchain = useMemo(
-        () =>
-            items.some(
-                item =>
-                    item.label === t('words.type') &&
-                    item.value === t('words.onchain'),
-            ),
-        [items, t],
-    )
-
-    const hasReceivedBitcoin = useMemo(
-        () =>
-            isOnchain &&
-            items.some(
-                item =>
-                    item.label === t('words.status') &&
-                    item.value === t('phrases.received-bitcoin'),
-            ),
-        [items, t, isOnchain],
-    )
-
     const handleNotesInputChanged = useCallback(
         (input: string) => {
             setNotes(input)
@@ -101,8 +81,10 @@ export const HistoryDetail: React.FC<HistoryDetailProps> = ({
     }, [handleSaveNotes, onClose])
 
     const checkAndToastOnchainReceiveStatus = useCallback(async () => {
+        if (txn.kind !== 'onchainDeposit') return
+
         handleClose()
-        if (hasReceivedBitcoin) {
+        if (txn.state?.type === 'claimed') {
             toast.show({
                 status: 'success',
                 content: t('feature.receive.onchain-funds-received'),
@@ -113,7 +95,7 @@ export const HistoryDetail: React.FC<HistoryDetailProps> = ({
                 content: t('feature.receive.no-incoming-funds-detected'),
             })
         }
-    }, [t, toast, hasReceivedBitcoin, handleClose])
+    }, [t, toast, txn, handleClose])
 
     const handleCheckIncomingFunds = useCallback(async () => {
         if (!activeFederationId) return
@@ -223,19 +205,20 @@ export const HistoryDetail: React.FC<HistoryDetailProps> = ({
                     />
                 )}
             </Flex>
-            {isOnchain && !hasReceivedBitcoin && (
-                <View style={style.checkFundsContainer}>
-                    <Button
-                        title={
-                            checkLoading
-                                ? t('words.checking')
-                                : t('phrases.check-incoming-funds')
-                        }
-                        onPress={handleCheckIncomingFunds}
-                        disabled={checkLoading}
-                    />
-                </View>
-            )}
+            {txn.kind === 'onchainDeposit' &&
+                txn.state?.type === 'waitingForTransaction' && (
+                    <View style={style.checkFundsContainer}>
+                        <Button
+                            title={
+                                checkLoading
+                                    ? t('words.checking')
+                                    : t('phrases.check-incoming-funds')
+                            }
+                            onPress={handleCheckIncomingFunds}
+                            disabled={checkLoading}
+                        />
+                    </View>
+                )}
         </Pressable>
     )
 }
