@@ -854,7 +854,7 @@ export const selectActiveFederationChats = (s: CommonState) => {
 
 export const selectMaxStableBalanceSats = createSelector(
     selectFederationMetadata,
-    (metadata): Sats => {
+    (metadata): Sats | undefined => {
         const maxStableBalanceMsats =
             metadata && getFederationMaxStableBalanceMsats(metadata)
 
@@ -862,7 +862,7 @@ export const selectMaxStableBalanceSats = createSelector(
 
         return maxStableBalanceMsats
             ? amountUtils.msatToSat(maxStableBalanceMsats)
-            : (0 as Sats)
+            : undefined
     },
 )
 

@@ -699,8 +699,14 @@ export function useMinMaxDepositAmount() {
         balanceSats,
         // Available liquidity in the stability pool
         availableLiquiditySats,
-        // Maximum stable balance allowed minus the user's current stable balance
-        maxStableBalanceSats - stableBalanceSats,
+        // Maximum stable balance allowed as defined in meta minus the user's
+        // current stable balance
+        maxStableBalanceSats === undefined
+            ? // If maxStableBalanceSats is not defined in metadata, this makes sure it
+              // is never selected by Math.min()
+              Number.MAX_SAFE_INTEGER
+            : // subtract user balance but make sure we don't go negative if maxStableBalanceSats is 0
+              Math.max(0, maxStableBalanceSats - stableBalanceSats),
     ) as Sats
 
     return { minimumAmount, maximumAmount }
