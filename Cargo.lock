@@ -3135,6 +3135,7 @@ dependencies = [
  "fedimint-core",
  "futures",
  "gloo-file",
+ "gloo-utils",
  "imbl 4.0.1",
  "js-sys",
  "rexie",
@@ -3149,6 +3150,7 @@ dependencies = [
  "wasm-bindgen",
  "wasm-bindgen-futures",
  "wasm-bindgen-test",
+ "web-sys",
 ]
 
 [[package]]
@@ -5795,7 +5797,7 @@ dependencies = [
  "once_cell",
  "socket2",
  "tracing",
- "windows-sys 0.52.0",
+ "windows-sys 0.59.0",
 ]
 
 [[package]]
