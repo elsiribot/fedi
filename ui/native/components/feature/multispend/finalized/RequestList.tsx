@@ -8,9 +8,11 @@ import {
     useMultispendTransactions,
     useMultispendWithdrawalRequests,
 } from '@fedi/common/hooks/multispend'
+import { selectMyMultispendRole } from '@fedi/common/redux'
 import { makeLog } from '@fedi/common/utils/log'
 
 import { fedimint } from '../../../../bridge'
+import { useAppSelector } from '../../../../state/hooks'
 import {
     MultispendFilterOption,
     MultispendWithdrawalEvent,
@@ -43,6 +45,12 @@ const RequestList: React.FC<{ roomId: string }> = ({ roomId }) => {
         setFilter,
     } = useMultispendWithdrawalRequests({ t, fedimint, roomId })
     const { fetchTransactions } = useMultispendTransactions(t, roomId)
+    const myMultispendRole = useAppSelector(s =>
+        selectMyMultispendRole(s, roomId),
+    )
+
+    const canIVote =
+        myMultispendRole === 'proposer' || myMultispendRole === 'voter'
 
     useEffect(() => {
         setIsLoading(true)
@@ -143,21 +151,22 @@ const RequestList: React.FC<{ roomId: string }> = ({ roomId }) => {
                             roomId={roomId}
                         />
                     ),
-                    buttons: haveIVoted
-                        ? undefined
-                        : [
-                              {
-                                  text: t('words.reject'),
-                                  onPress: handleRejectRequest,
-                                  disabled: isVoting,
-                              },
-                              {
-                                  text: t('words.approve'),
-                                  onPress: handleApproveRequest,
-                                  primary: true,
-                                  disabled: isVoting,
-                              },
-                          ],
+                    buttons:
+                        haveIVoted || !canIVote
+                            ? undefined
+                            : [
+                                  {
+                                      text: t('words.reject'),
+                                      onPress: handleRejectRequest,
+                                      disabled: isVoting,
+                                  },
+                                  {
+                                      text: t('words.approve'),
+                                      onPress: handleApproveRequest,
+                                      primary: true,
+                                      disabled: isVoting,
+                                  },
+                              ],
                 }}
             />
         </Flex>
