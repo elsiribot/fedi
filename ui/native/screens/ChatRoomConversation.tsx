@@ -1,6 +1,7 @@
 import type { NativeStackScreenProps } from '@react-navigation/native-stack'
 import React, { useCallback, useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
+import { Image } from 'react-native-compressor'
 
 import { useMultispendDisplayUtils } from '@fedi/common/hooks/multispend'
 import { useToast } from '@fedi/common/hooks/toast'
@@ -78,9 +79,11 @@ const ChatRoomConversation: React.FC<Props> = ({ route }: Props) => {
                         ? resolvedUri.slice(7)
                         : resolvedUri
 
+                    const compressed = await Image.compress(filePath)
+
                     await fedimint.matrixSendAttachment({
                         roomId,
-                        filename: att.fileName,
+                        filename: compressed,
                         params: {
                             mimeType: att.mimeType,
                             width: 'width' in att ? att.width : null,
