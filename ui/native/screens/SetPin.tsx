@@ -44,7 +44,7 @@ const SetPin: React.FC<Props> = ({ navigation }: Props) => {
     const style = styles(theme, width)
 
     const handleNumpadPress = useCallback(
-        (btn: (typeof numpadButtons)[number]) => {
+        (btn: number | 'backspace') => {
             if (btn === null) return
 
             if (isReEnteringPin) {
@@ -174,13 +174,22 @@ const SetPin: React.FC<Props> = ({ navigation }: Props) => {
                 </Flex>
             </Flex>
             <Flex row wrap fullWidth style={style.numpad}>
-                {numpadButtons.map(btn => (
-                    <NumpadButton
-                        key={btn}
-                        btn={btn}
-                        onPress={() => handleNumpadPress(btn)}
-                    />
-                ))}
+                {numpadButtons
+                    .filter(
+                        (
+                            btn,
+                        ): btn is Exclude<
+                            (typeof numpadButtons)[number],
+                            '.'
+                        > => btn !== '.',
+                    )
+                    .map(btn => (
+                        <NumpadButton
+                            key={btn}
+                            btn={btn}
+                            onPress={() => handleNumpadPress(btn)}
+                        />
+                    ))}
             </Flex>
         </Flex>
     )

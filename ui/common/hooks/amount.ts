@@ -1,5 +1,5 @@
 import { TFunction } from 'i18next'
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { RequestInvoiceArgs } from 'webln'
 
 import { FiatFXInfo } from '@fedi/common/types/bindings'
@@ -77,7 +77,7 @@ export const numpadButtons = [
     1, 2, 3,
     4, 5, 6,
     7, 8, 9,
-    null, 0, 'backspace',
+    '.', 0, 'backspace',
 ] as const
 
 export type NumpadButtonValue = (typeof numpadButtons)[number]
@@ -304,9 +304,14 @@ export function useAmountInput(
     )
     const [fiatValue, setFiatValue] = useState<string>(
         amountUtils.formatFiat(
-            amountUtils.satToFiat(amount, btcToFiatRate),
+            Math.floor(amountUtils.satToFiat(amount, btcToFiatRate)),
             currency,
-            { symbolPosition: 'none', locale: currencyLocale },
+            {
+                symbolPosition: 'none',
+                locale: currencyLocale,
+                minimumFractionDigits: 0,
+                maximumFractionDigits: 0,
+            },
         ),
     )
 
@@ -351,36 +356,46 @@ export function useAmountInput(
 
     const handleChangeFiat = useCallback(
         (value: string) => {
-            let fiat = amountUtils.parseFiatString(value, {
-                locale: currencyLocale,
-            })
-            if (Number.isNaN(fiat) || fiat < 0) {
-                fiat = 0
-            }
-
-            // If they've added or removed a sigdig, offset all numbers by a tens place
-            const decimals = amountUtils.getCurrencyDecimals(currency, {
-                locale: currencyLocale,
-            })
             const decimalSeparator = amountUtils.getDecimalSeparator({
                 locale: currencyLocale,
             })
-            const valueDecimals = value.split(decimalSeparator)[1]?.length || 0
-            if (valueDecimals > decimals) {
-                fiat = fiat * 10
-            } else if (valueDecimals < decimals) {
-                fiat = fiat / 10
+            let fiat: number
+
+            // If the input is empty, default to 0.
+            if (value === '') {
+                fiat = 0
+            } else if (!value.includes(decimalSeparator)) {
+                // If there's no decimal separator, parse as whole units.
+                fiat = parseInt(value, 10)
+                if (Number.isNaN(fiat) || fiat < 0) fiat = 0
+            } else {
+                // Otherwise, handle it as a normal fiat string with decimals.
+                fiat = amountUtils.parseFiatString(value, {
+                    locale: currencyLocale,
+                })
+                if (Number.isNaN(fiat) || fiat < 0) {
+                    fiat = 0
+                }
+
+                // Adjust for sig digs if user changed decimal places
+                const decimals = amountUtils.getCurrencyDecimals(currency, {
+                    locale: currencyLocale,
+                })
+                const valueDecimals =
+                    value.split(decimalSeparator)[1]?.length || 0
+                if (valueDecimals > decimals) {
+                    fiat = fiat * 10
+                } else if (valueDecimals < decimals) {
+                    fiat = fiat / 10
+                }
             }
 
+            // Convert to sats and clamp
             let sats = clampSats(
                 amountUtils.btcToSat((fiat / btcToFiatRateRef.current) as Btc),
             )
 
-            // If the amount is being entered as fiat, the equivalent amount in sats
-            // will sometimes be slightly above or below the min/max (in sats)
-            // UX expectation is that the entered amount is exactly equal to the min/max amount
-            // This logic ensures to round the min/max (in fiat) down to the nearest 0.01 to
-            // include the entered amount into the rounding threshold to qualify as a min/max input
+            // Preserve UX for exact min/max entries when entered as fiat
             if (typeof minimumAmount === 'number') {
                 const minFiat =
                     amountUtils.satToBtc(minimumAmount as Sats) *
@@ -396,7 +411,6 @@ export function useAmountInput(
                 const maxFiat =
                     amountUtils.satToBtc(maximumAmount as Sats) *
                     btcToFiatRateRef.current
-
                 if (
                     Number(maxFiat.toFixed(2)) === Number(fiat.toFixed(2)) &&
                     fiat > 0
@@ -405,12 +419,21 @@ export function useAmountInput(
                 }
             }
 
+            // Notify parent and update display values
             onChangeAmount && onChangeAmount(sats)
             setFiatValue(
-                amountUtils.formatFiat(fiat, currency, {
-                    symbolPosition: 'none',
-                    locale: currencyLocale,
-                }),
+                // Format without decimals if user didn't type a separator
+                !value.includes(decimalSeparator)
+                    ? amountUtils.formatFiat(fiat, currency, {
+                          symbolPosition: 'none',
+                          locale: currencyLocale,
+                          minimumFractionDigits: 0,
+                          maximumFractionDigits: 0,
+                      })
+                    : amountUtils.formatFiat(fiat, currency, {
+                          symbolPosition: 'none',
+                          locale: currencyLocale,
+                      }),
             )
             setSatsValue(amountUtils.formatSats(sats))
         },
@@ -425,24 +448,127 @@ export function useAmountInput(
         ],
     )
 
+    const fractionIndexRef = useRef(0)
+
     const handleNumpadPress = useCallback(
         (button: (typeof numpadButtons)[number]) => {
             if (button === null) return
-            const value = isFiat ? fiatValue : satsValue
-            const handleChange = isFiat ? handleChangeFiat : handleChangeSats
-            const maxSatLength = maximumAmount?.toString().length
-            const satsValueLength = satsValue
-                .split('')
-                .filter(c => /[0-9]/.test(c)).length
+            const decimalSeparator = amountUtils.getDecimalSeparator({
+                locale: currencyLocale,
+            })
 
-            if (button === 'backspace') {
-                handleChange(value.slice(0, -1))
-            } else if (
-                typeof maxSatLength === 'number'
-                    ? satsValueLength <= maxSatLength
-                    : true
-            ) {
-                handleChange(`${value}${button}`)
+            if (isFiat) {
+                const maxDecimals = amountUtils.getCurrencyDecimals(currency, {
+                    locale: currencyLocale,
+                })
+                const rawValue = fiatValue.replace(
+                    new RegExp(`[^0-9${decimalSeparator}]`, 'g'),
+                    '',
+                )
+
+                // --- No decimal currencies (e.g., JPY) ---
+                if (maxDecimals === 0) {
+                    if (button === 'backspace') {
+                        handleChangeFiat(rawValue.slice(0, -1) || '0')
+                    } else if (button === decimalSeparator) {
+                        return
+                    } else {
+                        handleChangeFiat(
+                            rawValue === '0'
+                                ? String(button)
+                                : rawValue + String(button),
+                        )
+                    }
+                    return
+                }
+
+                // --- Decimals (e.g., USD, EUR, KWD, etc.) ---
+                if (button === decimalSeparator) {
+                    if (!rawValue.includes(decimalSeparator)) {
+                        handleChangeFiat(
+                            rawValue +
+                                decimalSeparator +
+                                '0'.repeat(maxDecimals),
+                        )
+                    }
+                    fractionIndexRef.current = 0
+                    return
+                }
+
+                if (button === 'backspace') {
+                    if (rawValue.includes(decimalSeparator)) {
+                        const [whole, fractionRaw = ''] =
+                            rawValue.split(decimalSeparator)
+                        const fractionArr = (
+                            fractionRaw + '0'.repeat(maxDecimals)
+                        )
+                            .slice(0, maxDecimals)
+                            .split('')
+
+                        // move one position left (but not past the first)
+                        if (fractionIndexRef.current > 0) {
+                            fractionIndexRef.current -= 1
+                        }
+
+                        // clear that position
+                        fractionArr[fractionIndexRef.current] = '0'
+                        const newFraction = fractionArr.join('')
+
+                        // If all decimals are now zero **and** we're at the first slot,
+                        // keep the whole part unchanged and drop the decimal section.
+                        if (
+                            newFraction === '0'.repeat(maxDecimals) &&
+                            fractionIndexRef.current === 0
+                        ) {
+                            handleChangeFiat(whole)
+                        } else {
+                            handleChangeFiat(
+                                `${whole}${decimalSeparator}${newFraction}`,
+                            )
+                        }
+                    } else {
+                        const newWhole = rawValue.slice(0, -1) || '0'
+                        handleChangeFiat(newWhole)
+                    }
+                    return
+                }
+
+                // Digit pressed
+                if (rawValue.includes(decimalSeparator)) {
+                    const [whole, fractionRaw = ''] =
+                        rawValue.split(decimalSeparator)
+                    const fractionArr = (fractionRaw + '0'.repeat(maxDecimals))
+                        .slice(0, maxDecimals)
+                        .split('')
+
+                    if (fractionIndexRef.current < maxDecimals) {
+                        fractionArr[fractionIndexRef.current] = String(button)
+                        fractionIndexRef.current += 1
+                    } else {
+                        fractionArr[maxDecimals - 1] = String(button)
+                    }
+
+                    handleChangeFiat(
+                        `${whole}${decimalSeparator}${fractionArr.join('')}`,
+                    )
+                } else {
+                    handleChangeFiat(
+                        rawValue === '0'
+                            ? String(button)
+                            : rawValue + String(button),
+                    )
+                }
+            } else {
+                const rawSats = satsValue.replace(/[^0-9]/g, '')
+                if (button === 'backspace') {
+                    handleChangeSats(rawSats.slice(0, -1))
+                } else {
+                    handleChangeSats(
+                        rawSats === '0'
+                            ? String(button)
+                            : rawSats + String(button),
+                    )
+                }
             }
         },
         [
@@ -451,7 +577,8 @@ export function useAmountInput(
             satsValue,
             handleChangeFiat,
             handleChangeSats,
-            maximumAmount,
+            currencyLocale,
+            currency,
         ],
     )
 

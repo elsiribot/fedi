@@ -63,7 +63,7 @@ const LockScreen = ({ navigation, route }: Props) => {
     }, [])
 
     const handleNumpadPress = useCallback(
-        (btn: (typeof numpadButtons)[number]) => {
+        (btn: number | 'backspace') => {
             if (btn === null || pin.status !== 'set') return
 
             if (btn === 'backspace') {
@@ -172,14 +172,16 @@ const LockScreen = ({ navigation, route }: Props) => {
                 </Flex>
             </Flex>
             <Flex row wrap fullWidth style={style.numpad}>
-                {numpadButtons.map(btn => (
-                    <NumpadButton
-                        key={btn}
-                        btn={btn}
-                        onPress={() => handleNumpadPress(btn)}
-                        disabled={timeoutSeconds > 0}
-                    />
-                ))}
+                {numpadButtons
+                    .filter(btn => btn !== '.')
+                    .map(btn => (
+                        <NumpadButton
+                            key={btn}
+                            btn={btn}
+                            onPress={() => handleNumpadPress(btn)}
+                            disabled={timeoutSeconds > 0}
+                        />
+                    ))}
                 {timeoutSeconds > 0 && (
                     <Flex center style={style.timeoutOverlay}>
                         <Text bold h1>

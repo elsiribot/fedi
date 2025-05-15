@@ -63,15 +63,15 @@ const FeatureLockScreen = <T extends keyof RootStackParamList>({
     }, [])
 
     const handleNumpadPress = useCallback(
-        (btn: (typeof numpadButtons)[number]) => {
-            if (btn === null || pin.status !== 'set') return
+        (btn: number | 'backspace') => {
+            if (pin.status !== 'set') return
 
             if (btn === 'backspace') {
                 setPinDigits(pinDigits.slice(0, pinDigits.length - 1))
             } else if (pinDigits.length < maxPinLength) {
                 const updatedDigits = [...pinDigits, btn]
 
-                // If adding pressing this numpad causes the PIN to be incorrect
+                // If adding this digit causes the PIN to be incorrect, increase attempts.
                 if (
                     pinDigits.length === maxPinLength - 1 &&
                     !pin.check(updatedDigits)
@@ -145,14 +145,18 @@ const FeatureLockScreen = <T extends keyof RootStackParamList>({
                 </Flex>
             </Flex>
             <Flex row wrap style={style.numpad}>
-                {numpadButtons.map(btn => (
-                    <NumpadButton
-                        key={btn}
-                        btn={btn}
-                        onPress={() => handleNumpadPress(btn)}
-                        disabled={timeoutSeconds > 0}
-                    />
-                ))}
+                {numpadButtons
+                    .filter(btn => btn !== '.')
+                    .map(btn => (
+                        <NumpadButton
+                            key={btn}
+                            btn={btn}
+                            onPress={() =>
+                                handleNumpadPress(btn as number | 'backspace')
+                            }
+                            disabled={timeoutSeconds > 0}
+                        />
+                    ))}
                 {timeoutSeconds > 0 && (
                     <Flex center style={style.timeoutOverlay}>
                         <Text bold h1>
