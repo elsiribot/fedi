@@ -111,6 +111,7 @@ export const consolidatePaymentEvents = (events: MatrixEvent[]) => {
 export const filterMultispendEvents = (events: MatrixEvent[]) => {
     return events.filter(
         event =>
+            !isMultispendReannounceEvent(event) &&
             !isMultispendInvitationCancelEvent(event) &&
             !isMultispendWithdrawalResponseEvent(event) &&
             !isMultispendInvitationVoteEvent(event),
@@ -171,6 +172,16 @@ const multispendEventSchemas = {
         invitation: z.string(),
     }) satisfies z.ZodType<
         Extract<MultispendEvent, { kind: 'groupInvitationCancel' }>
+    >,
+    groupReannounce: z.object({
+        kind: z.literal('groupReannounce'),
+        invitationId: z.string(),
+        invitation: groupInvitationSchema,
+        proposer: z.string(),
+        pubkeys: z.record(z.string(), z.string().optional()),
+        rejections: z.array(z.string()),
+    }) satisfies z.ZodType<
+        Extract<MultispendEvent, { kind: 'groupReannounce' }>
     >,
     depositNotification: z.object({
         kind: z.literal('depositNotification'),
@@ -346,6 +357,7 @@ const contentSchemas = {
                 multispendEventSchemas.groupInvitation,
                 multispendEventSchemas.groupInvitationVote,
                 multispendEventSchemas.groupInvitationCancel,
+                multispendEventSchemas.groupReannounce,
                 multispendEventSchemas.depositNotification,
                 multispendEventSchemas.withdrawalRequest,
                 multispendEventSchemas.withdrawalResponse,
@@ -834,6 +846,15 @@ export function isMultispendInvitationCancelEvent(
     return (
         event.content.msgtype === 'xyz.fedi.multispend' &&
         event.content.kind === 'groupInvitationCancel'
+    )
+}
+
+export function isMultispendReannounceEvent(
+    event: MatrixEvent,
+): event is MatrixEvent<MultispendEventContentType<'groupReannounce'>> {
+    return (
+        event.content.msgtype === 'xyz.fedi.multispend' &&
+        event.content.kind === 'groupReannounce'
     )
 }
 
