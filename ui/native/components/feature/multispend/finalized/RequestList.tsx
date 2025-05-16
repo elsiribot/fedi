@@ -6,13 +6,12 @@ import { ListRenderItem, StyleSheet, FlatList } from 'react-native'
 
 import {
     useMultispendTransactions,
+    useMultispendVoting,
     useMultispendWithdrawalRequests,
 } from '@fedi/common/hooks/multispend'
-import { selectMyMultispendRole } from '@fedi/common/redux'
 import { makeLog } from '@fedi/common/utils/log'
 
 import { fedimint } from '../../../../bridge'
-import { useAppSelector } from '../../../../state/hooks'
 import {
     MultispendFilterOption,
     MultispendWithdrawalEvent,
@@ -45,12 +44,7 @@ const RequestList: React.FC<{ roomId: string }> = ({ roomId }) => {
         setFilter,
     } = useMultispendWithdrawalRequests({ t, fedimint, roomId })
     const { fetchTransactions } = useMultispendTransactions(t, roomId)
-    const myMultispendRole = useAppSelector(s =>
-        selectMyMultispendRole(s, roomId),
-    )
-
-    const canIVote =
-        myMultispendRole === 'proposer' || myMultispendRole === 'voter'
+    const { canVote } = useMultispendVoting({ t, fedimint, roomId })
 
     useEffect(() => {
         setIsLoading(true)
@@ -152,7 +146,7 @@ const RequestList: React.FC<{ roomId: string }> = ({ roomId }) => {
                         />
                     ),
                     buttons:
-                        haveIVoted || !canIVote
+                        haveIVoted || !canVote
                             ? undefined
                             : [
                                   {
