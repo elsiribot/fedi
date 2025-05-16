@@ -1,6 +1,6 @@
 import type { NativeStackScreenProps } from '@react-navigation/native-stack'
 import { Button, Text, Theme, useTheme } from '@rneui/themed'
-import React, { useCallback, useEffect, useRef } from 'react'
+import React, { useEffect } from 'react'
 import { Trans, useTranslation } from 'react-i18next'
 import {
     ImageBackground,
@@ -46,9 +46,8 @@ const Splash: React.FC<Props> = ({ navigation }: Props) => {
     const isMatrixReady = useAppSelector(selectIsMatrixReady)
     const hasSetDisplayName = useAppSelector(selectHasSetMatrixDisplayName)
     const { launchZendesk } = useLaunchZendesk()
-    const hasRun = useRef(false)
 
-    const generateAndSetUsername = useCallback(async () => {
+    const generateAndSetUsername = async () => {
         try {
             if (!isMatrixReady) {
                 await dispatch(startMatrixClient({ fedimint })).unwrap()
@@ -60,25 +59,21 @@ const Splash: React.FC<Props> = ({ navigation }: Props) => {
                     setMatrixDisplayName({ displayName: name }),
                 ).unwrap()
             }
+            return true
         } catch (error) {
             toast.show(t('feature.onboarding.network-error'))
+            return false
         }
-    }, [dispatch, isMatrixReady, hasSetDisplayName, toast, t])
+    }
 
     const handleContinue = async () => {
         navigation.navigate('PublicFederations')
+        await generateAndSetUsername()
     }
     const handleReturningUser = async () => {
         navigation.navigate('ChooseRecoveryMethod')
     }
 
-    //Generate username as soon as app starts
-    useEffect(() => {
-        if (hasRun.current) return
-        hasRun.current = true
-
-        generateAndSetUsername()
-    }, [generateAndSetUsername])
     // PINs are stored in the keychain and persist between app installs
     // so if we are on the Splash screen and a PIN is set, we need to clear it
     useEffect(() => {
