@@ -78,17 +78,38 @@ const ChatRoomConversation: React.FC<Props> = ({ route }: Props) => {
                     const resolvedUri = decodeURI(att.uri)
                     const filePath = stripFileUriPrefix(resolvedUri)
 
-                    const compressed = att.mimeType.startsWith('image')
-                        ? await Image.compress(filePath)
-                        : await Video.compress(filePath)
+                    const width = 'width' in att ? att.width : null
+                    const height = 'height' in att ? att.height : null
+
+                    const isImage = att.mimeType.startsWith('image')
+                    const isVideo = att.mimeType.startsWith('video')
+                    const isJpgOrPng =
+                        isImage && /(png|jpg|jpeg)/i.test(att.mimeType)
+
+                    let compressed: string = filePath
+
+                    if (isImage && isJpgOrPng) {
+                        compressed = await Image.compress(filePath, {
+                            compressionMethod: 'manual',
+                            quality: 1,
+                            maxWidth: width ?? undefined,
+                            maxHeight: height ?? undefined,
+                        })
+                    }
+
+                    if (isVideo) {
+                        compressed = await Video.compress(filePath, {
+                            compressionMethod: 'manual',
+                        })
+                    }
 
                     await fedimint.matrixSendAttachment({
                         roomId,
                         filename: att.fileName,
                         params: {
                             mimeType: att.mimeType,
-                            width: 'width' in att ? att.width : null,
-                            height: 'height' in att ? att.height : null,
+                            width,
+                            height,
                         },
                         filePath: stripFileUriPrefix(compressed),
                     })
