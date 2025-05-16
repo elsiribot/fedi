@@ -644,6 +644,7 @@
             "n-voters-selected-max": "<bold>{{count}}</bold> voters selected (Max: 21)",
             "no-withdrawal-requests": "No withdrawal requests",
             "no-pending-withdrawal-requests": "No pending withdrawal requests",
+            "no-permission-to-vote": "You do not have permission to vote on Withdrawal Requests",
             "no-approved-withdrawal-requests": "No approved withdrawal requests",
             "no-rejected-withdrawal-requests": "No rejected withdrawal requests",
             "no-requests-notice": "Deposit funds to grow the shared pool or request a withdrawal if you need funds.",
