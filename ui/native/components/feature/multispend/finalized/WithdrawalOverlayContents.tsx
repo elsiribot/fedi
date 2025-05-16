@@ -3,7 +3,10 @@ import { useState } from 'react'
 import { Trans, useTranslation } from 'react-i18next'
 import { Pressable, StyleSheet, View } from 'react-native'
 
-import { useMultispendWithdrawalRequests } from '@fedi/common/hooks/multispend'
+import {
+    useMultispendVoting,
+    useMultispendWithdrawalRequests,
+} from '@fedi/common/hooks/multispend'
 import { selectMatrixRoomMembers } from '@fedi/common/redux'
 import { getUserSuffix } from '@fedi/common/utils/matrix'
 
@@ -31,6 +34,8 @@ const WithdrawalOverlayContents: React.FC<{
 
     const { sender, approvals, rejections, formattedFiatAmountWithCurrency } =
         getWithdrawalRequest(selectedWithdrawal)
+
+    const { canVote } = useMultispendVoting({ t, fedimint, roomId })
 
     const haveIVoted = selectedWithdrawal
         ? haveIVotedForWithdrawal(selectedWithdrawal)
@@ -65,10 +70,14 @@ const WithdrawalOverlayContents: React.FC<{
                 userIds={rejections}
                 status="reject"
             />
-            {haveIVoted && (
+            {(haveIVoted || !canVote) && (
                 <Flex align="center" style={style.votedContainer}>
                     <Text style={style.votedText}>
-                        {t('feature.multispend.already-voted')}
+                        {t(
+                            haveIVoted
+                                ? 'feature.multispend.already-voted'
+                                : 'feature.multispend.no-permission-to-vote',
+                        )}
                     </Text>
                 </Flex>
             )}

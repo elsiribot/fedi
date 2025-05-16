@@ -6,6 +6,7 @@ import { ListRenderItem, StyleSheet, FlatList } from 'react-native'
 
 import {
     useMultispendTransactions,
+    useMultispendVoting,
     useMultispendWithdrawalRequests,
 } from '@fedi/common/hooks/multispend'
 import { makeLog } from '@fedi/common/utils/log'
@@ -43,6 +44,7 @@ const RequestList: React.FC<{ roomId: string }> = ({ roomId }) => {
         setFilter,
     } = useMultispendWithdrawalRequests({ t, fedimint, roomId })
     const { fetchTransactions } = useMultispendTransactions(t, roomId)
+    const { canVote } = useMultispendVoting({ t, fedimint, roomId })
 
     useEffect(() => {
         setIsLoading(true)
@@ -143,21 +145,22 @@ const RequestList: React.FC<{ roomId: string }> = ({ roomId }) => {
                             roomId={roomId}
                         />
                     ),
-                    buttons: haveIVoted
-                        ? undefined
-                        : [
-                              {
-                                  text: t('words.reject'),
-                                  onPress: handleRejectRequest,
-                                  disabled: isVoting,
-                              },
-                              {
-                                  text: t('words.approve'),
-                                  onPress: handleApproveRequest,
-                                  primary: true,
-                                  disabled: isVoting,
-                              },
-                          ],
+                    buttons:
+                        haveIVoted || !canVote
+                            ? undefined
+                            : [
+                                  {
+                                      text: t('words.reject'),
+                                      onPress: handleRejectRequest,
+                                      disabled: isVoting,
+                                  },
+                                  {
+                                      text: t('words.approve'),
+                                      onPress: handleApproveRequest,
+                                      primary: true,
+                                      disabled: isVoting,
+                                  },
+                              ],
                 }}
             />
         </Flex>
