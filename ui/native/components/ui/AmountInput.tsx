@@ -39,6 +39,7 @@ export type Props = {
     error?: string | null
     notes?: string
     notesLabel?: string
+    notesOptional?: boolean
     setNotes?: (notes: string) => void
     content?: React.ReactNode | null
 }
@@ -58,6 +59,7 @@ const AmountInput: React.FC<Props> = ({
     notes = '',
     notesLabel,
     setNotes,
+    notesOptional = true,
     content = null,
 }) => {
     const { t } = useTranslation()
@@ -212,6 +214,7 @@ const AmountInput: React.FC<Props> = ({
                             label={notesLabel}
                             notes={notes}
                             setNotes={setNotes}
+                            isOptional={notesOptional}
                         />
                     </View>
                 )}

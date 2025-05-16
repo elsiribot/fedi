@@ -12,6 +12,7 @@ type EditNotesOverlayProps = {
     dismiss: () => void
     setNotes: (notes: string) => void
     notes: string
+    isOptional?: boolean
 }
 
 const EditNotesOverlay = ({
@@ -19,6 +20,7 @@ const EditNotesOverlay = ({
     dismiss,
     setNotes,
     notes,
+    isOptional = true,
 }: EditNotesOverlayProps) => {
     const { t } = useTranslation()
     const { theme } = useTheme()
@@ -53,7 +55,11 @@ const EditNotesOverlay = ({
                         placeholder={t('feature.send.edit-notes-placeholder')}
                         label={
                             <Text small style={style.label}>
-                                {t('feature.send.edit-notes-label')}
+                                {t(
+                                    isOptional
+                                        ? 'feature.send.edit-notes-label'
+                                        : 'feature.send.edit-notes-label-required',
+                                )}
                             </Text>
                         }
                         inputStyle={style.inputStyle}

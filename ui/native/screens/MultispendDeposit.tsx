@@ -162,6 +162,7 @@ const MultispendDeposit: React.FC<Props> = ({ route }: Props) => {
                 }
                 notes={notes}
                 setNotes={setNotes}
+                notesOptional={false}
                 buttons={[
                     {
                         title: `${t('words.deposit')}`,

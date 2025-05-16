@@ -13,6 +13,7 @@ type NotesInputProps = {
     setNotes: (notes: string) => void
     label?: string
     onSave?: () => void
+    isOptional?: boolean
 }
 
 export default function NotesInput({
@@ -20,6 +21,7 @@ export default function NotesInput({
     setNotes,
     onSave,
     label,
+    isOptional = true,
 }: NotesInputProps) {
     const { theme } = useTheme()
 
@@ -63,6 +65,7 @@ export default function NotesInput({
                 show={isEditing}
                 notes={notes}
                 setNotes={setNotes}
+                isOptional={isOptional}
                 dismiss={() => {
                     onSave && onSave()
                     setIsEditing(false)
