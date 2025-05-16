@@ -12,8 +12,8 @@ WASM_BUILD_PROFILE=release $REPO_ROOT/scripts/ui/install-wasm.sh
 vercel pull --yes --environment=staging --token=$VERCEL_TOKEN
 
 # Build Project Artifacts
-vercel build --token=$VERCEL_TOKEN
+vercel build --target=staging --token=$VERCEL_TOKEN
 
 # Deploy Project Artifacts to Vercel
-url=$(vercel deploy --prebuilt --token="$VERCEL_TOKEN")
+url=$(vercel deploy --prebuilt --target=staging --token="$VERCEL_TOKEN")
 echo "url=$url" >> "$GITHUB_OUTPUT"
