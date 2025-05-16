@@ -14,6 +14,7 @@ import {
     SelectableCurrency,
     MultispendTransactionListEntry,
     MatrixRoomMember,
+    Sats,
 } from '../types'
 import {
     StabilityPoolWithdrawalEvent,
@@ -22,9 +23,10 @@ import {
     RpcStabilityPoolAccountInfo,
     RpcLockedSeek,
     SPv2WithdrawalEvent,
+    FiatFXInfo,
 } from '../types/bindings'
 import { StabilityPoolState } from '../types/wallet'
-import amountUtils, { FIAT_MAX_DECIMAL_PLACES } from './AmountUtils'
+import amountUtils from './AmountUtils'
 import dateUtils from './DateUtils'
 import { getCurrencyCode } from './currency'
 import { FedimintBridge } from './fedimint'
@@ -158,6 +160,8 @@ export const makeTxnAmountText = (
     showFiatTxnAmounts: boolean,
     // we use the opposite signs on the stabilitypool txn list
     flipSign: boolean,
+    includeCurrency: boolean,
+    preferredCurrency: string,
     makeFormattedAmountsFromMSats: (
         amt: MSats,
         symbolPosition?: AmountSymbolPosition,
@@ -166,23 +170,29 @@ export const makeTxnAmountText = (
         amt: UsdCents,
         symbolPosition?: AmountSymbolPosition,
     ) => string,
+    convertSatsToFormattedFiat: (
+        amt: Sats,
+        symbolPosition?: AmountSymbolPosition,
+        txDateFiatInfo?: FiatFXInfo,
+    ) => string,
 ): string => {
     const { amount } = txn
     const direction = getTxnDirection(txn)
     const isPlus = !flipSign ? direction === 'receive' : direction === 'send'
     let sign = direction ? (isPlus ? `+` : `-`) : ''
     let formattedAmount: string
-    // amount may be zero for onchain pending receives or for pending stabilitypool withdrawals
+    let currency = preferredCurrency
+
     // If fiat amounts should be shown and historical info is present, use it:
     if (showFiatTxnAmounts && txn.txDateFiatInfo) {
-        const historicalRate = txn.txDateFiatInfo.btcToFiatHundredths / 100
-        const btc = amountUtils.msatToBtc(amount)
-        // Format the fiat value using the historical rate
-        formattedAmount =
-            amountUtils
-                .btcToFiat(btc, historicalRate)
-                .toFixed(FIAT_MAX_DECIMAL_PLACES) +
-            ` ${txn.txDateFiatInfo.fiatCode}`
+        const sats = amountUtils.msatToSat(txn.amount)
+        // Use the historical exchange rate from txDateFiatInfo:
+        formattedAmount = convertSatsToFormattedFiat(
+            sats,
+            'none',
+            txn.txDateFiatInfo,
+        ).split(' ')[0]
+        currency = txn.txDateFiatInfo.fiatCode
     } else {
         // Fallback: use the default conversion based on MSats
         const { formattedPrimaryAmount } = makeFormattedAmountsFromMSats(
@@ -258,7 +268,7 @@ export const makeTxnAmountText = (
         sign = ''
     }
 
-    return `${sign}${formattedAmount}`
+    return `${sign}${formattedAmount}${includeCurrency ? ` ${currency}` : ''}`
 }
 
 export const makeTxnStatusText = (

@@ -135,29 +135,16 @@ export function useTxnDisplayUtils(t: TFunction, isStabilityPool = false) {
 
     const makeTxnAmountText = useCallback(
         (txn: TransactionListEntry, includeCurrency = false) => {
-            if (showFiatTxnAmounts && txn.txDateFiatInfo) {
-                const sats = amountUtils.msatToSat(txn.amount)
-                // Use the historical exchange rate from txDateFiatInfo:
-                const formattedFiat = convertSatsToFormattedFiat(
-                    sats,
-                    'none', // or another symbolPosition if desired
-                    txn.txDateFiatInfo,
-                )
-                // Optionally include the currency code from the transaction's historical info.
-                const result = includeCurrency
-                    ? `${formattedFiat} ${txn.txDateFiatInfo.fiatCode}`
-                    : formattedFiat.split(' ')[0]
-                return result
-            } else {
-                // Fallback to the existing conversion that uses the MSats-based helper.
-                return `${makeTxnAmountTextUtil(
-                    txn,
-                    showFiatTxnAmounts,
-                    isStabilityPool,
-                    makeFormattedAmountsFromMSats, // Use the helper that expects an amount in MSats
-                    convertCentsToFormattedFiat,
-                )}${includeCurrency ? ` ${preferredCurrency}` : ''}`
-            }
+            return `${makeTxnAmountTextUtil(
+                txn,
+                showFiatTxnAmounts,
+                isStabilityPool,
+                includeCurrency,
+                preferredCurrency,
+                makeFormattedAmountsFromMSats, // Use the helper that expects an amount in MSats
+                convertCentsToFormattedFiat,
+                convertSatsToFormattedFiat,
+            )}${includeCurrency ? ` ${preferredCurrency}` : ''}`
         },
         [
             convertCentsToFormattedFiat,
