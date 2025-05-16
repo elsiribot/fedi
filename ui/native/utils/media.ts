@@ -50,6 +50,12 @@ export const prefixFileUri = (uri: string) =>
     uri.startsWith('file://') ? uri : `file://${uri}`
 
 /**
+ * Strips off file:// from a file URI if it is present.
+ */
+export const stripFileUriPrefix = (uri: string) =>
+    uri.startsWith('file://') ? uri.slice(7) : uri
+
+/**
  * Joins paths together with a forward slash.
  */
 export function pathJoin(...paths: string[]): string {

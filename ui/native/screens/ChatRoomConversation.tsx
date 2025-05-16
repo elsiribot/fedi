@@ -1,7 +1,7 @@
 import type { NativeStackScreenProps } from '@react-navigation/native-stack'
 import React, { useCallback, useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { Image } from 'react-native-compressor'
+import { Image, Video } from 'react-native-compressor'
 
 import { useMultispendDisplayUtils } from '@fedi/common/hooks/multispend'
 import { useToast } from '@fedi/common/hooks/toast'
@@ -24,6 +24,7 @@ import Flex from '../components/ui/Flex'
 import HoloLoader from '../components/ui/HoloLoader'
 import { useAppDispatch, useAppSelector } from '../state/hooks'
 import type { RootStackParamList } from '../types/navigation'
+import { stripFileUriPrefix } from '../utils/media'
 
 const log = makeLog('ChatRoomConversation')
 
@@ -75,21 +76,21 @@ const ChatRoomConversation: React.FC<Props> = ({ route }: Props) => {
 
                 for (const att of attachments) {
                     const resolvedUri = decodeURI(att.uri)
-                    const filePath = resolvedUri.startsWith('file://')
-                        ? resolvedUri.slice(7)
-                        : resolvedUri
+                    const filePath = stripFileUriPrefix(resolvedUri)
 
-                    const compressed = await Image.compress(filePath)
+                    const compressed = att.mimeType.startsWith('image')
+                        ? await Image.compress(filePath)
+                        : await Video.compress(filePath)
 
                     await fedimint.matrixSendAttachment({
                         roomId,
-                        filename: compressed,
+                        filename: att.fileName,
                         params: {
                             mimeType: att.mimeType,
                             width: 'width' in att ? att.width : null,
                             height: 'height' in att ? att.height : null,
                         },
-                        filePath,
+                        filePath: stripFileUriPrefix(compressed),
                     })
                 }
             } catch (err) {
