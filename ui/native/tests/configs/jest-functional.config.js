@@ -1,15 +1,16 @@
-/** @type {import('@jest/types').Config.InitialOptions} */
 module.exports = {
     preset: 'react-native',
     rootDir: '..',
-    testMatch: ['<rootDir>/**/*.test.ts'],
+    testMatch: [
+        '<rootDir>/native/tests/**/*.test.ts',
+        '<rootDir>/native/tests/**/*.test.tsx',
+    ],
     testPathIgnorePatterns: ['<rootDir>/detox/*'],
     moduleFileExtensions: ['ts', 'tsx', 'js', 'jsx', 'json', 'node'],
     transform: {
-        '^.+\\.(js|jsx|ts|tsx)$': [
-            'babel-jest',
-            { configFile: './babel.config.js' },
-        ],
+        '^.+\\.[jt]sx?$': 'babel-jest',
     },
+    extensionsToTreatAsEsm: ['.ts', '.tsx'],
+    transformIgnorePatterns: ['node_modules/(?!uuid)'],
     passWithNoTests: true,
 }

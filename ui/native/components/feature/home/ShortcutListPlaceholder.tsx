@@ -8,25 +8,23 @@ import { useSelector } from 'react-redux'
 import { selectCoreMods } from '@fedi/common/redux/mod'
 
 import { FediModImages } from '../../../assets/images'
-import { FediMod, Shortcut, ShortcutType } from '../../../types'
+import { FediMod, ShortcutType } from '../../../types'
 import Flex from '../../ui/Flex'
 import ShortcutTile from './ShortcutTile'
 
 const MOD_ORDER = ['catalog', 'lngpt', 'swap'] as const
 const columns = 3
 
-const isFediMod = (s: Shortcut): s is FediMod => 'url' in s
-
 const ShortcutsListPlaceholder: React.FC = () => {
     const { theme } = useTheme()
     const { t } = useTranslation()
     const navigation = useNavigation()
 
-    // Fetch core mods from redux
     const coreMods = useSelector(selectCoreMods) as FediMod[] | undefined
 
-    const shortcuts = useMemo<Shortcut[]>(() => {
+    const shortcuts = useMemo<FediMod[]>(() => {
         if (!coreMods?.length) return []
+        // sort by MOD_ORDER
         const sorted = [...coreMods].sort((a, b) => {
             const idxA = MOD_ORDER.indexOf(a.id as (typeof MOD_ORDER)[number])
             const idxB = MOD_ORDER.indexOf(b.id as (typeof MOD_ORDER)[number])
@@ -35,26 +33,28 @@ const ShortcutsListPlaceholder: React.FC = () => {
             if (idxB === -1) return -1
             return idxA - idxB
         })
-        return sorted.map(m => ({
-            id: m.id,
-            title: m.title,
-            type: ShortcutType.fediMod,
-            url: m.url,
-            icon: {
-                image: FediModImages[m.id] ?? { uri: m.imageUrl },
-            },
-        }))
+
+        return sorted.map(
+            m =>
+                new FediMod({
+                    id: m.id,
+                    title: m.title,
+                    type: ShortcutType.fediMod,
+                    url: m.url,
+                    icon: { image: FediModImages[m.id] ?? { uri: m.imageUrl } },
+                }),
+        )
     }, [coreMods])
 
-    if (!shortcuts.length) return null
-
-    const handleSelect = (shortcut: Shortcut) => {
-        if (isFediMod(shortcut)) {
-            navigation.navigate('FediModBrowser', { url: shortcut.url })
-        }
+    if (!shortcuts.length) {
+        return null
     }
 
-    const handleHold = undefined
+    const handleSelect = (mod: FediMod) => {
+        navigation.navigate('FediModBrowser', { url: mod.url })
+    }
+
+    const handleHold: ((mod: FediMod) => void) | undefined = undefined
 
     const style = styles(theme)
 
@@ -73,7 +73,7 @@ const ShortcutsListPlaceholder: React.FC = () => {
                 wrap
                 style={{ rowGap: theme.spacing.md }}>
                 {shortcuts.map(s => (
-                    <View key={s.title} style={style.shortcut}>
+                    <View key={s.id} style={style.shortcut}>
                         <ShortcutTile
                             shortcut={s}
                             onSelect={handleSelect}
