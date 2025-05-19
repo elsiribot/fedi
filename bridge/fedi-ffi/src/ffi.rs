@@ -14,7 +14,7 @@ pub use runtime::event::IEventSink as EventSink;
 use runtime::features::{FeatureCatalog, RuntimeEnvironment};
 use runtime::storage::IStorage;
 use tokio::sync::Mutex;
-use tracing::{error, info, warn};
+use tracing::{error, info};
 
 use super::logging;
 pub use super::rpc::FedimintError;
@@ -87,17 +87,9 @@ pub async fn fedimint_initialize_inner(
         return fedimint_remote_initialize(event_sink).await;
     }
     if let Some(bridge) = BRIDGE.lock().await.clone() {
-        match init_opts.app_flavor {
-            RpcAppFlavor::Dev => {
-                // reset observables
-                bridge.runtime().observable_pool.reset().await;
-            }
-            RpcAppFlavor::Nightly => {
-                panic!("reinitializing bridge is only allowed during development");
-            }
-            RpcAppFlavor::Bravo => {
-                warn!("reinitializing bridge is only allowed during development, ignoring request");
-            }
+        if let RpcAppFlavor::Dev = init_opts.app_flavor {
+            // reset observables
+            bridge.runtime().observable_pool.reset().await;
         }
         return Ok(());
     }
