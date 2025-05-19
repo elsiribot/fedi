@@ -688,7 +688,11 @@ export const selectPaymentFederation = createSelector(
         payFromFederationId,
     ): LoadedFederation | undefined => {
         if (!payFromFederationId) {
-            return activeFederation?.hasWallet ? activeFederation : undefined
+            if (activeFederation?.hasWallet) return activeFederation
+
+            if (federations.length > 0) return federations[0]
+
+            return undefined
         }
 
         return federations.find(f => f.id === payFromFederationId)
