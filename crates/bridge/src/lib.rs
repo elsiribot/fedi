@@ -609,8 +609,9 @@ impl Bridge {
             .app_state
             // did we ever setup matrix?
             .with_read_lock(|x| {
-                x.matrix_session_sliding_sync_proxy.is_some()
-                    || x.matrix_session_native_sync.is_some()
+                #[allow(deprecated)]
+                let value = x.matrix_session.is_some() || x.matrix_session_native_sync.is_some();
+                value
             })
             .await;
         let device_index_assignment_status =
