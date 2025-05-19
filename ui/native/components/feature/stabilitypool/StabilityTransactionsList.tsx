@@ -32,6 +32,7 @@ const StabilityTransactionsList = ({
     const {
         makeStabilityTxnDetailItems,
         getCurrencyText,
+        getShowAskFedi,
         makeStabilityTxnFeeDetailItems,
         makeTxnAmountText,
         makeTxnTypeText,
@@ -45,6 +46,7 @@ const StabilityTransactionsList = ({
             rows={transactions}
             loading={loading}
             makeIcon={txn => <TransactionIcon txn={txn} />}
+            makeShowAskFedi={txn => getShowAskFedi(txn)}
             makeRowProps={txn => ({
                 status: makeTxnStatusText(txn),
                 notes: makeTxnNotesText(txn),

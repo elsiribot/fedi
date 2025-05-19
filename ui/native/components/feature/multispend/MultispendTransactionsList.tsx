@@ -1,6 +1,9 @@
 import { useTranslation } from 'react-i18next'
 
-import { useMultispendTxnDisplayUtils } from '@fedi/common/hooks/transactions'
+import {
+    useMultispendTxnDisplayUtils,
+    useTxnDisplayUtils,
+} from '@fedi/common/hooks/transactions'
 import { RpcRoomId } from '@fedi/common/types/bindings'
 import { MultispendTransactionListEntry } from '@fedi/common/types/fedimint'
 
@@ -33,11 +36,14 @@ const MultispendTransactionsList = ({
         makeMultispendTxnDetailItems,
     } = useMultispendTxnDisplayUtils(t, roomId)
 
+    const { getShowAskFedi } = useTxnDisplayUtils(t)
+
     return (
         <HistoryList
             rows={transactions}
             loading={loading}
             makeIcon={txn => <TransactionIcon txn={txn} />}
+            makeShowAskFedi={txn => getShowAskFedi(txn)}
             makeRowProps={txn => ({
                 status: makeMultispendTxnStatusText(txn),
                 notes: makeMultispendTxnNotesText(txn),

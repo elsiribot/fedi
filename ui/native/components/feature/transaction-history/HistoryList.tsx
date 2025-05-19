@@ -24,6 +24,7 @@ interface Props<T extends { id: string }> {
     makeRowProps: (item: T) => Omit<HistoryRowProps, 'icon' | 'onSelect'>
     makeDetailProps: (item: T) => Omit<HistoryDetailProps, 'icon' | 'onClose'>
     makeFeeItems: (item: T) => FeeItem[]
+    makeShowAskFedi: (item: T) => boolean
     makeIcon: (item: T) => React.ReactNode
     onEndReached?: () => void
     onRefresh?: () => void
@@ -35,6 +36,7 @@ export function HistoryList<T extends { id: string }>({
     makeRowProps,
     makeDetailProps,
     makeFeeItems,
+    makeShowAskFedi,
     makeIcon,
     onEndReached,
     onRefresh,
@@ -120,6 +122,9 @@ export function HistoryList<T extends { id: string }>({
                     }
                 }
                 feeItems={feeItems}
+                showAskFedi={
+                    selectedItem ? makeShowAskFedi(selectedItem) : false
+                }
             />
         </SafeAreaContainer>
     )

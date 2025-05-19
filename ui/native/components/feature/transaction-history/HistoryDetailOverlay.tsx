@@ -17,19 +17,20 @@ type HistoryDetailOverlayProps = {
     show: boolean
     itemDetails?: HistoryDetailProps
     feeItems: FeeItem[]
+    showAskFedi: boolean
 }
 
 const HistoryDetailOverlay: React.FC<HistoryDetailOverlayProps> = ({
     show,
     itemDetails,
     feeItems,
+    showAskFedi,
 }) => {
     const { theme } = useTheme()
     const { t } = useTranslation()
     const [showFeeBreakdown, setShowFeeBreakdown] = useState(false)
 
     const style = styles(theme)
-
     const { launchZendesk } = useLaunchZendesk()
 
     const content = useMemo(() => {
@@ -60,13 +61,13 @@ const HistoryDetailOverlay: React.FC<HistoryDetailOverlayProps> = ({
                 onClose={() => setShowFeeBreakdown(false)}
             />
         )
-    }, [t, theme, itemDetails, showFeeBreakdown, setShowFeeBreakdown, feeItems])
+    }, [t, theme, itemDetails, showFeeBreakdown, feeItems])
 
     if (!itemDetails) return <></>
 
     return (
         <CenterOverlay
-            key={'detail-overlay'}
+            key="detail-overlay"
             show={show}
             onBackdropPress={itemDetails.onClose}
             overlayStyle={style.overlayStyle}>
@@ -85,29 +86,28 @@ const HistoryDetailOverlay: React.FC<HistoryDetailOverlayProps> = ({
                 }>
                 {content}
             </ErrorBoundary>
-            <Button
-                fullWidth
-                title={
-                    <Flex row gap="sm" align="center">
-                        <SvgImage
-                            name="SmileMessage"
-                            color={theme.colors.white}
-                            size={SvgImageSize.sm}
-                        />
-                        <Text style={style.askFediText}>
-                            {t('feature.support.title')}
-                        </Text>
-                    </Flex>
-                }
-                onPress={() => {
-                    itemDetails.onClose()
-                    //stops Zendesk closing automatically
-                    setTimeout(() => {
-                        launchZendesk()
-                    }, 300)
-                }}
-                containerStyle={{ marginTop: theme.spacing.lg }}
-            />
+            {showAskFedi && (
+                <Button
+                    fullWidth
+                    title={
+                        <Flex row gap="sm" align="center">
+                            <SvgImage
+                                name="SmileMessage"
+                                color={theme.colors.white}
+                                size={SvgImageSize.sm}
+                            />
+                            <Text style={style.askFediText}>
+                                {t('feature.support.title')}
+                            </Text>
+                        </Flex>
+                    }
+                    onPress={() => {
+                        itemDetails.onClose()
+                        setTimeout(() => launchZendesk(), 300)
+                    }}
+                    containerStyle={{ marginTop: theme.spacing.lg }}
+                />
+            )}
         </CenterOverlay>
     )
 }

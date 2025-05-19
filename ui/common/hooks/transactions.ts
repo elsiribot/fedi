@@ -14,6 +14,7 @@ import {
     makeStabilityTxnDetailTitleText as makeStabilityTxnDetailTitleTextUtil,
     makeMultispendTxnDetailItems as makeMultispendTxnDetailItemsUtil,
     makeTransactionAmountState,
+    shouldShowAskFedi,
 } from '@fedi/common/utils/wallet'
 
 import {
@@ -97,6 +98,11 @@ export function useTxnDisplayUtils(t: TFunction, isStabilityPool = false) {
     const preferredCurrency = showFiatTxnAmounts
         ? selectedCurrency
         : t('words.sats').toUpperCase()
+
+    const getShowAskFedi = useCallback(
+        (txn: TransactionListEntry): boolean => shouldShowAskFedi(txn),
+        [],
+    )
 
     const getCurrencyText = useCallback(
         (txn: TransactionListEntry): string =>
@@ -213,6 +219,7 @@ export function useTxnDisplayUtils(t: TFunction, isStabilityPool = false) {
     return {
         preferredCurrency,
         getCurrencyText,
+        getShowAskFedi,
         makeTxnDetailItems,
         makeTxnFeeDetailItems,
         makeTxnAmountText,
