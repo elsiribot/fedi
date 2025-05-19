@@ -24,7 +24,7 @@ import Flex from '../components/ui/Flex'
 import HoloLoader from '../components/ui/HoloLoader'
 import { useAppDispatch, useAppSelector } from '../state/hooks'
 import type { RootStackParamList } from '../types/navigation'
-import { stripFileUriPrefix } from '../utils/media'
+import { isMimeTypeCompressableImage, stripFileUriPrefix } from '../utils/media'
 
 const log = makeLog('ChatRoomConversation')
 
@@ -81,14 +81,14 @@ const ChatRoomConversation: React.FC<Props> = ({ route }: Props) => {
                     const width = 'width' in att ? att.width : null
                     const height = 'height' in att ? att.height : null
 
-                    const isImage = att.mimeType.startsWith('image')
                     const isVideo = att.mimeType.startsWith('video')
-                    const isJpgOrPng =
-                        isImage && /(png|jpg|jpeg)/i.test(att.mimeType)
+                    const canBeImageCompressed = isMimeTypeCompressableImage(
+                        att.mimeType,
+                    )
 
                     let compressed: string = filePath
 
-                    if (isImage && isJpgOrPng) {
+                    if (canBeImageCompressed) {
                         compressed = await Image.compress(filePath, {
                             compressionMethod: 'manual',
                             quality: 1,

@@ -2,46 +2,9 @@ import { DocumentPickerResponse } from 'react-native-document-picker'
 import RNFS from 'react-native-fs'
 
 import { makeLog } from '@fedi/common/utils/log'
+import { isMimeTypeImage } from '@fedi/common/utils/media'
 
 const log = makeLog('utils/media')
-
-/**
- * Scales an image to fit within a given maxWidth and maxHeight while maintaining its aspect ratio.
- */
-export const scaleAttachment = (
-    originalWidth: number,
-    originalHeight: number,
-    maxWidth: number,
-    maxHeight: number,
-) => {
-    let width = originalWidth
-    let height = originalHeight
-
-    // Calculate scaling factors
-    const widthScale = maxWidth / originalWidth
-    const heightScale = maxHeight / originalHeight
-
-    // Check which dimension exceeds the limit and scale accordingly
-    if (width > maxWidth && height > maxHeight) {
-        if (widthScale < heightScale) {
-            // Limit by width
-            width = maxWidth
-            height *= widthScale // Apply scale to maintain aspect ratio
-        } else {
-            // Limit by height
-            height = maxHeight
-            width *= heightScale // Apply scale to maintain aspect ratio
-        }
-    } else if (width > maxWidth) {
-        width = maxWidth
-        height *= widthScale
-    } else if (height > maxHeight) {
-        height = maxHeight
-        width *= heightScale
-    }
-
-    return { width, height }
-}
 
 /**
  * Ensures that the file URI is prefixed with `file://` if it is not already.
@@ -61,6 +24,12 @@ export const stripFileUriPrefix = (uri: string) =>
 export function pathJoin(...paths: string[]): string {
     return paths.join('/').replace(/\/+/g, '/')
 }
+
+/**
+ * Determines if the given MIME type is an image can be compressed with `react-native-compressor`.
+ */
+export const isMimeTypeCompressableImage = (mimeType: string) =>
+    isMimeTypeImage(mimeType) && /(png|jpg|jpeg)/i.test(mimeType)
 
 /**
  * Converts a DocumentPickerResponse to a file URI.

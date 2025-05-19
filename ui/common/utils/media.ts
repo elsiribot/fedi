@@ -56,6 +56,12 @@ export const scaleAttachment = (
     return { width, height }
 }
 
+export const isMimeTypeImage = (mimeType: string) =>
+    mimeType.startsWith('image')
+
+export const isMimeTypeVideo = (mimeType: string) =>
+    mimeType.startsWith('video')
+
 export const matrixUrlMetadataSchema = z.object({
     'matrix:image:size': z.number().nullish(),
     'og:description': z.string().nullish(),

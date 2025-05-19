@@ -9,10 +9,10 @@ import {
 } from 'react-native'
 
 import { useMatrixUrlPreview } from '@fedi/common/hooks/matrix'
+import { scaleAttachment } from '@fedi/common/utils/media'
 
 import { fedimint } from '../../../bridge'
 import { useMatrixFile } from '../../../utils/hooks/media'
-import { scaleAttachment } from '../../../utils/media'
 import Flex from '../../ui/Flex'
 
 type Props = {
