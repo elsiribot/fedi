@@ -1409,14 +1409,20 @@ export type WithdrawRequestWithApprovals = {
   description: string;
   signatures: { [key in RpcUserId]?: RpcSignature };
   rejections: Array<RpcUserId>;
-  completed: RpcTransactionId | null;
+  txSubmissionStatus: WithdrawTxSubmissionStatus;
   sender: RpcUserId;
 };
+
+export type WithdrawTxSubmissionStatus =
+  | "unknown"
+  | { accepted: { txid: RpcTransactionId } }
+  | { rejected: { error: string } };
 
 export type WithdrawalResponseType =
   | { kind: "approve"; signature: RpcSignature }
   | { kind: "reject" }
-  | { kind: "complete"; fiatAmount: RpcFiatAmount; txid: RpcTransactionId };
+  | { kind: "complete"; fiatAmount: RpcFiatAmount; txid: RpcTransactionId }
+  | { kind: "txRejected"; error: string };
 
 export type approveSocialRecoveryRequest = {
   federationId: RpcFederationId;
