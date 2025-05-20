@@ -7,7 +7,7 @@ on:
     push:
         branches-ignore:
             - master
-            - vercel/production
+            - web/release/*
         paths:
             - .github/workflows/vercel-preview.yml
             - scripts/ci/vercel-preview.sh
