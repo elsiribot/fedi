@@ -126,4 +126,75 @@ describe('fedimods', () => {
             expect(result.unwrapOr(null)).toEqual(sampleValidData)
         })
     })
+
+    describe('additional edge-case tests', () => {
+        it('should accept a URL instance in constructUrl', () => {
+            const input = new URL(validDataUrl)
+            constructUrl(input).match(
+                ok => expect(ok.href).toBe(input.href),
+                () => fail('Expected Ok'),
+            )
+        })
+
+        it('should return Ok(Response) with status 404 (fetch doesn’t reject)', async () => {
+            server.use(
+                rest.get(validDataUrl, (_req, res, ctx) =>
+                    res(ctx.status(404), ctx.body('Not found')),
+                ),
+            )
+
+            const result = await fetchResult(validDataUrl)
+            expect(result.isOk()).toBe(true)
+
+            result.match(
+                ok => {
+                    expect(ok.status).toBe(404)
+                    expect(ok.ok).toBe(false)
+                },
+                () => fail('Expected Ok'),
+            )
+        })
+
+        it('should return Err<MalformedDataError> when thenJson hits non-JSON on 404', async () => {
+            server.use(
+                rest.get(validDataUrl, (_req, res, ctx) =>
+                    res(ctx.status(404), ctx.body('Not JSON')),
+                ),
+            )
+
+            const result = await fetchResult(validDataUrl).andThen(thenJson)
+            expect(result.isErr()).toBe(true)
+
+            result.match(
+                () => fail('Expected Err'),
+                err => {
+                    expect(err._tag).toBe('MalformedDataError')
+                },
+            )
+        })
+
+        it('should short-circuit to a SchemaValidationError when JSON shape is wrong', async () => {
+            server.use(
+                rest.get(validDataUrl, (_req, res, ctx) =>
+                    res(
+                        ctx.status(200),
+                        ctx.set('Content-Type', 'application/json'),
+                        ctx.body(JSON.stringify(sampleInvalidData)),
+                    ),
+                ),
+            )
+
+            const result = await fetchResult(validDataUrl)
+                .andThen(thenJson)
+                .andThen(throughZodSchema(testSchema))
+
+            expect(result.isErr()).toBe(true)
+            result.match(
+                () => fail('Expected Err'),
+                err => {
+                    expect(err._tag).toBe('SchemaValidationError')
+                },
+            )
+        })
+    })
 })
