@@ -169,6 +169,10 @@ const RoomSettings: React.FC<Props> = ({ navigation, route }: Props) => {
             toast.error(t, 'errors.default-groups-must-be-broadcast')
             return
         }
+        if (multispendStatus) {
+            toast.error(t, 'errors.multispend-cannot-be-broadcast')
+            return
+        }
         setIsTogglingBroadcastOnly(true)
         try {
             await dispatch(
@@ -181,7 +185,15 @@ const RoomSettings: React.FC<Props> = ({ navigation, route }: Props) => {
             toast.error(t, 'errors.unknown-error')
         }
         setIsTogglingBroadcastOnly(false)
-    }, [isDefaultGroup, isTogglingBroadcastOnly, room, dispatch, toast, t])
+    }, [
+        isDefaultGroup,
+        isTogglingBroadcastOnly,
+        room,
+        dispatch,
+        toast,
+        t,
+        multispendStatus,
+    ])
 
     const handleNavigateToMultispend = useCallback(() => {
         if (!multispendStatus && isAdmin) {

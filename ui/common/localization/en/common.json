@@ -286,6 +286,7 @@
         "invalid-username": "Must be 21 characters or less and cannot include uppercase letters",
         "invalid-username-banned": "Please enter a different display name",
         "invoice-already-paid": "This invoice has already been paid.",
+        "multispend-cannot-be-broadcast": "Broadcast-only cannot be enabled in a Multispend group.",
         "multispend-notes-required": "Please enter a purpose for this withdrawal",
         "no-address-lnurlp": "This address does not support lightning payments",
         "no-lightning-gateways": "No lightning gateways found for this user",
