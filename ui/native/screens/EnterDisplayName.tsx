@@ -106,10 +106,14 @@ const EnterDisplayName: React.FC<Props> = ({ navigation }: Props) => {
                             event.nativeEvent.layout.y,
                     )
                 }}>
-                <Text caption style={style.inputLabel}>
+                <Text
+                    caption
+                    style={style.inputLabel}
+                    testID="DisplayNameLabel">
                     {t('feature.chat.display-name')}
                 </Text>
                 <Input
+                    testID="DisplayNameInput"
                     onChangeText={input => {
                         handleChangeUsername(input)
                     }}
@@ -139,6 +143,7 @@ const EnterDisplayName: React.FC<Props> = ({ navigation }: Props) => {
                     setButtonYPosition(event.nativeEvent.layout.y)
                 }}>
                 <Button
+                    testID="ContinueButton"
                     fullWidth
                     title={t('words.continue')}
                     onPress={handleSubmit}

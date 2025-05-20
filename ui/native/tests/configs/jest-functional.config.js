@@ -5,7 +5,7 @@ module.exports = {
         '<rootDir>/native/tests/**/*.test.ts',
         '<rootDir>/native/tests/**/*.test.tsx',
     ],
-    testPathIgnorePatterns: ['<rootDir>/detox/*'],
+    testPathIgnorePatterns: ['<rootDir>/detox/*', '<rootDir>/appium/*'],
     moduleFileExtensions: ['ts', 'tsx', 'js', 'jsx', 'json', 'node'],
     transform: {
         '^.+\\.[jt]sx?$': 'babel-jest',

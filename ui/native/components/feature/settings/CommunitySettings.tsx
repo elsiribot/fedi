@@ -26,6 +26,7 @@ import SettingsItem from './SettingsItem'
 
 type CommunityMenuProps = {
     community: LoadedFederation
+    testID: string
 }
 
 export const CommunitySettings = ({ community }: CommunityMenuProps) => {

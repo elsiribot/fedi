@@ -63,6 +63,7 @@ export const PermissionGate: React.FC<Props> = ({
             <View style={style.actions}>
                 {alternativeActionButton}
                 <Button
+                    testID="ContinueButton"
                     fullWidth
                     title={t('words.continue')}
                     onPress={() => onContinue()}

@@ -143,7 +143,7 @@ const Splash: React.FC<Props> = ({ navigation }: Props) => {
                     </Text>
                     <Button
                         fullWidth
-                        testID="JoinFederationButton"
+                        // testID="JoinFederationButton"
                         title={t('feature.onboarding.get-a-wallet')}
                         onPress={handleContinue}
                     />

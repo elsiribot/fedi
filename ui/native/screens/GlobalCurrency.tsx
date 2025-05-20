@@ -83,6 +83,7 @@ function CurrencyItem({ currency }: { currency: SelectableCurrency }) {
 
     return (
         <Pressable
+            testID={currency}
             key={currency}
             onPress={() => dispatch(changeOverrideCurrency(currency))}
             style={style.currencyItem}>

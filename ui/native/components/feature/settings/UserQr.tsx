@@ -12,6 +12,7 @@ import QRCodeContainer from '../../ui/QRCodeContainer'
 
 type UserQrProps = {
     matrixUser: MatrixAuth | null
+    testID?: string
 }
 
 export const UserQr = ({ matrixUser }: UserQrProps) => {

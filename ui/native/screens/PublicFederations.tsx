@@ -140,6 +140,9 @@ const PublicFederations: React.FC<Props> = ({ navigation }) => {
                                         </Text>
                                     </Flex>
                                     <Button
+                                        testID={f.name
+                                            .concat('JoinButton')
+                                            .replaceAll(' ', '')}
                                         size="sm"
                                         disabled={hasJoined}
                                         onPress={() =>
@@ -214,6 +217,7 @@ const PublicFederations: React.FC<Props> = ({ navigation }) => {
 
             <View style={style.footerContainer}>
                 <Button
+                    testID="MaybeLaterButton"
                     fullWidth
                     type="clear"
                     title={

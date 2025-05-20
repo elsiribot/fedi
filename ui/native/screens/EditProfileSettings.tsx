@@ -158,10 +158,14 @@ const EditProfileSettings: React.FC = () => {
             </View>
 
             <Flex grow style={style.content}>
-                <Text caption style={style.inputLabel}>
+                <Text
+                    testID="DisplayNameLabel"
+                    caption
+                    style={style.inputLabel}>
                     {t('feature.chat.display-name')}
                 </Text>
                 <Input
+                    testID="DisplayNameInput"
                     onChangeText={input => {
                         handleChangeUsername(input)
                     }}

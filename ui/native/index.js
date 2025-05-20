@@ -8,6 +8,7 @@ import {
     AppState,
     NativeEventEmitter,
     NativeModules,
+    LogBox,
 } from 'react-native'
 import 'react-native-gesture-handler'
 import 'react-native-get-random-values'
@@ -207,6 +208,11 @@ initializePushNotificationListeners()
 //end startup code
 // Register the app component
 AppRegistry.registerComponent(appName, () => App)
+
+// Prevent RN logs from obscuring buttons
+if (process.env.RUN_TESTS === '1') {
+    LogBox.ignoreAllLogs()
+}
 
 // Configure logging to use native storage, and to save logs before close.
 configureLogging(storage)

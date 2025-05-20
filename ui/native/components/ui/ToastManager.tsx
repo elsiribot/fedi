@@ -117,6 +117,15 @@ export default function ToastManager() {
                                         end={{ x: 1, y: 0.95 }}>
                                         <View style={style.contentRow}>
                                             <Text
+                                                testID={
+                                                    cachedToast?.status ===
+                                                    'success'
+                                                        ? 'SuccessToast'
+                                                        : cachedToast?.status ===
+                                                            'info'
+                                                          ? 'InfoToast'
+                                                          : 'ErrorToast'
+                                                }
                                                 style={style.toastIcon}
                                                 maxFontSizeMultiplier={
                                                     maxMultiplier

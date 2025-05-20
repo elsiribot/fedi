@@ -38,7 +38,9 @@ const Settings: React.FC<Props> = () => {
     )
 
     return (
-        <ScrollView contentContainerStyle={style.container}>
+        <ScrollView
+            testID="UserQrContainer"
+            contentContainerStyle={style.container}>
             {hasSetMatrixDisplayName && <UserQr matrixUser={matrixAuth} />}
             <View style={style.section}>
                 <Text color={theme.colors.night} style={style.sectionTitle}>
@@ -53,6 +55,7 @@ const Settings: React.FC<Props> = () => {
                     </Text>
                     {sortedFederations.map(federation => (
                         <CommunitySettings
+                            testID={federation.name}
                             key={federation.id}
                             community={federation}
                         />
