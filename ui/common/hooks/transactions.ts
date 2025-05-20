@@ -141,7 +141,7 @@ export function useTxnDisplayUtils(t: TFunction, isStabilityPool = false) {
 
     const makeTxnAmountText = useCallback(
         (txn: TransactionListEntry, includeCurrency = false) => {
-            return `${makeTxnAmountTextUtil(
+            return makeTxnAmountTextUtil(
                 txn,
                 showFiatTxnAmounts,
                 isStabilityPool,
@@ -150,7 +150,7 @@ export function useTxnDisplayUtils(t: TFunction, isStabilityPool = false) {
                 makeFormattedAmountsFromMSats, // Use the helper that expects an amount in MSats
                 convertCentsToFormattedFiat,
                 convertSatsToFormattedFiat,
-            )}${includeCurrency ? ` ${preferredCurrency}` : ''}`
+            )
         },
         [
             convertCentsToFormattedFiat,
