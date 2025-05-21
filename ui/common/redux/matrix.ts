@@ -555,9 +555,10 @@ export const matrixSlice = createSlice({
             },
         )
 
-        builder.addCase(loadFromStorage.fulfilled, (_state, action) => {
+        builder.addCase(loadFromStorage.fulfilled, (state, action) => {
             if (!action.payload) return
             // state.auth = action.payload.matrixAuth
+            state.drafts = action.payload.chatDrafts
         })
 
         builder.addCase(

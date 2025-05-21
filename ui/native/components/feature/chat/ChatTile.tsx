@@ -3,10 +3,12 @@ import { useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Pressable, StyleSheet, View } from 'react-native'
 
+import { selectChatDrafts } from '@fedi/common/redux'
 import dateUtils from '@fedi/common/utils/DateUtils'
 import { shouldShowUnreadIndicator } from '@fedi/common/utils/matrix'
 
 import { DEFAULT_GROUP_NAME } from '../../../constants'
+import { useAppSelector } from '../../../state/hooks'
 import { MatrixRoom } from '../../../types'
 import { AvatarSize } from '../../ui/Avatar'
 import Flex from '../../ui/Flex'
@@ -22,6 +24,8 @@ const ChatTile = ({ room, onSelect, onLongPress }: ChatTileProps) => {
     const { theme } = useTheme()
     const { t } = useTranslation()
 
+    const chatDrafts = useAppSelector(selectChatDrafts)
+    const draftMessage = chatDrafts[room.id] ?? null
     const showUnreadIndicator = useMemo(
         () =>
             shouldShowUnreadIndicator(
@@ -34,13 +38,14 @@ const ChatTile = ({ room, onSelect, onLongPress }: ChatTileProps) => {
         () => (showUnreadIndicator ? { medium: true } : {}),
         [showUnreadIndicator],
     )
-    const previewMessage = useMemo(
-        () =>
-            room.isBlocked
-                ? t('feature.chat.user-is-blocked')
-                : room?.preview?.body,
-        [room?.preview, room.isBlocked, t],
-    )
+    const previewMessage = useMemo(() => {
+        if (room.isBlocked) return t('feature.chat.user-is-blocked')
+        if (draftMessage)
+            return t('feature.chat.draft-text', { text: draftMessage })
+
+        return room?.preview?.body
+    }, [room, draftMessage, t])
+
     const previewMessageIsDeleted = useMemo(
         () => room?.preview?.isDeleted,
         [room?.preview],
