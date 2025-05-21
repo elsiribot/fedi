@@ -3383,6 +3383,7 @@ impl FederationV2 {
             self.spv2_feature_state().is_some(),
             ErrorCode::ModuleNotFound(STABILITY_POOL_V2_OPERATION_TYPE.to_string())
         );
+        ensure!(to_account.acc_type() == AccountType::Seeker);
         let spv2 = self.client.spv2()?;
 
         let request = TransferRequest::new(

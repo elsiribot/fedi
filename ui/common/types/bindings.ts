@@ -164,6 +164,11 @@ export type FeatureCatalog = {
    * in future.
    */
   nostr_client: NostrClientFeatureCatalog | null;
+  /**
+   * figure out stable format for account id, that includes the federation id
+   * prefix
+   */
+  spv2_stable_account_id: boolean;
 };
 
 export type FiatFXInfo = {
@@ -666,6 +671,9 @@ export type RpcMethods = {
   spv2WithdrawAll: [spv2WithdrawAll, RpcOperationId];
   spv2AverageFeeRate: [spv2AverageFeeRate, bigint];
   spv2AvailableLiquidity: [spv2AvailableLiquidity, RpcAmount];
+  spv2OurAccountId: [spv2OurAccountId, string];
+  spv2ParseAccountId: [spv2ParseAccountId, null];
+  spv2Transfer: [spv2Transfer, RpcOperationId];
   getSensitiveLog: [getSensitiveLog, boolean];
   setSensitiveLog: [setSensitiveLog, null];
   setMintModuleFediFeeSchedule: [setMintModuleFediFeeSchedule, null];
@@ -1860,6 +1868,17 @@ export type spv2NextCycleStartTime = { federationId: RpcFederationId };
 export type spv2ObserveAccountInfo = {
   federationId: RpcFederationId;
   observableId: number;
+};
+
+export type spv2OurAccountId = { federationId: RpcFederationId };
+
+export type spv2ParseAccountId = { accountId: string };
+
+export type spv2Transfer = {
+  federationId: RpcFederationId;
+  to: string;
+  amount: RpcFiatAmount;
+  frontendMeta: FrontendMetadata;
 };
 
 export type spv2Withdraw = {
