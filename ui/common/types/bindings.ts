@@ -162,7 +162,7 @@ export type FeatureCatalog = {
    * This allows relays to be configured using a remote feature flag service
    * in future.
    */
-  nostr: NostrFeatureCatalog | null;
+  nostr_client: NostrClientFeatureCatalog | null;
 };
 
 export type FiatFXInfo = {
@@ -304,7 +304,7 @@ export type NetworkError = Record<string, never>;
  */
 export type NonceReuseCheckFailedEvent = { federationId: RpcFederationId };
 
-export type NostrFeatureCatalog = { relays: Array<string> };
+export type NostrClientFeatureCatalog = { relays: Array<string> };
 
 /**
  * An Observable contains a value that updates over time.

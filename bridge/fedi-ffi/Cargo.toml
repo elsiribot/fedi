@@ -61,6 +61,7 @@ runtime = { workspace = true }
 bridge = { workspace = true }
 communities = { workspace = true }
 rpc-types = { workspace = true }
+nostril = { workspace = true }
 
 [target.'cfg(target_family = "wasm")'.dependencies]
 ring = { version = "0.17.14", features = ["wasm32_unknown_unknown_js"] }

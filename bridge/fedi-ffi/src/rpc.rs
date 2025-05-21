@@ -41,6 +41,7 @@ use matrix_sdk::ruma::events::room::MediaSource;
 use matrix_sdk::ruma::OwnedEventId;
 use matrix_sdk::RoomInfo;
 use mime::Mime;
+use nostril::{RpcNostrPubkey, RpcNostrSecret};
 use rpc_types::error::{ErrorCode, RpcError};
 use rpc_types::event::{Event, EventSink, PanicEvent, SocialRecoveryEvent, TypedEventExt};
 use rpc_types::{
@@ -48,8 +49,8 @@ use rpc_types::{
     RpcDeviceIndexAssignmentStatus, RpcEcashInfo, RpcEventId, RpcFederation, RpcFederationId,
     RpcFederationMaybeLoading, RpcFederationPreview, RpcFeeDetails, RpcFiatAmount,
     RpcGenerateEcashResponse, RpcInvoice, RpcLightningGateway, RpcMediaUploadParams,
-    RpcNostrPubkey, RpcNostrSecret, RpcOperationId, RpcPayAddressResponse, RpcPayInvoiceResponse,
-    RpcPeerId, RpcPrevPayInvoiceResult, RpcPublicKey, RpcRecoveryId, RpcRegisteredDevice,
+    RpcOperationId, RpcPayAddressResponse, RpcPayInvoiceResponse, RpcPeerId,
+    RpcPrevPayInvoiceResult, RpcPublicKey, RpcRecoveryId, RpcRegisteredDevice,
     RpcSPv2CachedSyncResponse, RpcSPv2SyncResponse, RpcSignature, RpcSignedLnurlMessage,
     RpcStabilityPoolAccountInfo, RpcTransaction, RpcTransactionDirection, RpcTransactionListEntry,
     SocialRecoveryQr,
@@ -664,36 +665,36 @@ async fn fedimintVersion(_bridge: &Bridge) -> anyhow::Result<String> {
 }
 
 #[macro_rules_derive(rpc_method!)]
-async fn getNostrSecret(runtime: Arc<Runtime>) -> anyhow::Result<RpcNostrSecret> {
-    runtime.get_nostr_secret().await
+async fn getNostrSecret(bridge: &BridgeFull) -> anyhow::Result<RpcNostrSecret> {
+    bridge.nostril.get_secret_key().await
 }
 
 #[macro_rules_derive(rpc_method!)]
-async fn getNostrPubkey(runtime: Arc<Runtime>) -> anyhow::Result<RpcNostrPubkey> {
-    runtime.get_nostr_pubkey().await
+async fn getNostrPubkey(bridge: &BridgeFull) -> anyhow::Result<RpcNostrPubkey> {
+    bridge.nostril.get_pub_key().await
 }
 
 #[macro_rules_derive(rpc_method!)]
-async fn signNostrEvent(runtime: Arc<Runtime>, event_hash: String) -> anyhow::Result<String> {
-    runtime.sign_nostr_event(event_hash).await
+async fn signNostrEvent(bridge: &BridgeFull, event_hash: String) -> anyhow::Result<String> {
+    bridge.nostril.sign_nostr_event(event_hash).await
 }
 
 #[macro_rules_derive(rpc_method!)]
 async fn nostrEncrypt(
-    runtime: Arc<Runtime>,
+    bridge: &BridgeFull,
     pubkey: String,
     plaintext: String,
 ) -> anyhow::Result<String> {
-    runtime.nip44_encrypt(pubkey, plaintext).await
+    bridge.nostril.nip44_encrypt(pubkey, plaintext).await
 }
 
 #[macro_rules_derive(rpc_method!)]
 async fn nostrDecrypt(
-    runtime: Arc<Runtime>,
+    bridge: &BridgeFull,
     pubkey: String,
     ciphertext: String,
 ) -> anyhow::Result<String> {
-    runtime.nip44_decrypt(pubkey, ciphertext).await
+    bridge.nostril.nip44_decrypt(pubkey, ciphertext).await
 }
 
 #[macro_rules_derive(federation_rpc_method!)]
@@ -954,7 +955,7 @@ async fn matrixInit(bridge: &BridgeFull) -> anyhow::Result<()> {
     if bridge.matrix.initialized() {
         return Ok(());
     }
-    let nostr_pubkey = bridge.runtime.get_nostr_pubkey().await?.npub;
+    let nostr_pubkey = bridge.nostril.get_pub_key().await?.npub;
     let matrix_secret = bridge.runtime.get_matrix_secret().await;
     let matrix = Matrix::init(
         bridge.runtime.clone(),
@@ -5005,16 +5006,12 @@ pub mod tests {
 
         let other_nsec = "nsec1u66skyesf45vd9w0u63q7qhfj2wnhjplxkympvh5t2q28h0lvz8qgglls9";
         let other_npub = "npub1e9uht8sv5msnz7gwartsntt0w2v8tzxyrzemk793lzs0ulegr4es0fafdx";
-        let our_npub = getNostrPubkey(bridge.runtime.clone()).await?.npub;
+        let our_npub = getNostrPubkey(&bridge).await?.npub;
 
         // Simulate us sending a message to other
         let our_plaintext = "Hey, Fedi is cool!";
-        let ciphertext = nostrEncrypt(
-            bridge.runtime.clone(),
-            other_npub.to_string(),
-            our_plaintext.to_string(),
-        )
-        .await?;
+        let ciphertext =
+            nostrEncrypt(&bridge, other_npub.to_string(), our_plaintext.to_string()).await?;
 
         // Other decrypts our encrypted message
         let other_decrypted = nip44::decrypt(
@@ -5035,8 +5032,7 @@ pub mod tests {
         )?;
 
         // We decrypt other's message
-        let our_decrypted =
-            nostrDecrypt(bridge.runtime.clone(), other_npub.to_string(), ciphertext).await?;
+        let our_decrypted = nostrDecrypt(&bridge, other_npub.to_string(), ciphertext).await?;
         assert_eq!(other_plaintext, our_decrypted);
 
         Ok(())

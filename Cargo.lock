@@ -3067,6 +3067,7 @@ dependencies = [
  "mime",
  "mockito",
  "nostr",
+ "nostril",
  "rand 0.8.5",
  "ring 0.17.14",
  "rolling-file",
@@ -7479,6 +7480,7 @@ dependencies = [
  "serde_json",
  "tokio",
  "tracing",
+ "ts-rs",
 ]
 
 [[package]]

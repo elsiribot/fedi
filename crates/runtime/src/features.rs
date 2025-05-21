@@ -77,7 +77,7 @@ pub struct FeatureCatalog {
     ///
     /// This allows relays to be configured using a remote feature flag service
     /// in future.
-    pub nostr: Option<NostrFeatureCatalog>,
+    pub nostr_client: Option<NostrClientFeatureCatalog>,
 }
 
 #[derive(Debug, Clone, TS, Serialize)]
@@ -98,7 +98,7 @@ pub struct StabilityPoolV2FeatureConfig {
 
 #[derive(Debug, Clone, TS, Serialize)]
 #[ts(export)]
-pub struct NostrFeatureCatalog {
+pub struct NostrClientFeatureCatalog {
     #[ts(type = "Array<string>")]
     pub relays: Vec<Url>,
 }
@@ -128,7 +128,7 @@ impl FeatureCatalog {
             stability_pool_v2: Some(StabilityPoolV2FeatureConfig {
                 state: StabilityPoolV2FeatureConfigState::Multispend,
             }),
-            nostr: None,
+            nostr_client: None,
         }
     }
 
@@ -139,7 +139,7 @@ impl FeatureCatalog {
             stability_pool_v2: Some(StabilityPoolV2FeatureConfig {
                 state: StabilityPoolV2FeatureConfigState::Multispend,
             }),
-            nostr: None,
+            nostr_client: None,
         }
     }
 
@@ -150,7 +150,7 @@ impl FeatureCatalog {
             stability_pool_v2: Some(StabilityPoolV2FeatureConfig {
                 state: StabilityPoolV2FeatureConfigState::SpV2Only,
             }),
-            nostr: None,
+            nostr_client: None,
         }
     }
 }
