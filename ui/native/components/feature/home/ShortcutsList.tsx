@@ -71,6 +71,12 @@ const ShortcutsList: React.FC = () => {
             .map(s => new FediMod(s))
     }
 
+    const totalMods = getValidFediMods().length
+
+    if (totalMods === 0) {
+        return null
+    }
+
     const renderFediModShortcuts = () => {
         const fediModShortcuts = getValidFediMods()
 
@@ -110,8 +116,7 @@ const ShortcutsList: React.FC = () => {
     // while also left-justifying rows with 1 or 2 tiles so we just
     // make sure to fill the remaining space with invisible elements
     const renderBuffers = () => {
-        const totalShortcuts = getValidFediMods().length
-        const bufferCount = (columns - (totalShortcuts % columns)) % columns
+        const bufferCount = (columns - (totalMods % columns)) % columns
 
         return new Array(bufferCount).fill('').map((_, i) => {
             return (
