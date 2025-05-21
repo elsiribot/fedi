@@ -60,3 +60,5 @@ pub const GLOBAL_MATRIX_SERVER: &str = "https://m1.8fa.in";
 pub const GLOBAL_MATRIX_SLIDING_SYNC_PROXY: &str = "https://sliding.m1.8fa.in";
 
 pub const COMMUNITY_INVITE_CODE_HRP: Hrp = Hrp::parse_unchecked("fedi:community");
+
+pub const RECURRINGD_API_META: &str = "recurringd_api";

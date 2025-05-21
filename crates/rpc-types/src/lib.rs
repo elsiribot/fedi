@@ -509,6 +509,9 @@ pub enum RpcTransactionKind {
         ln_invoice: String,
         state: Option<RpcLnReceiveState>,
     },
+    LnRecurringdReceive {
+        state: Option<RpcLnReceiveState>,
+    },
     OnchainWithdraw {
         onchain_address: String,
         onchain_txid: String,
