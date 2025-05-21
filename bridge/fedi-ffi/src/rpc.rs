@@ -713,6 +713,23 @@ async fn nostrDecrypt(
 ) -> anyhow::Result<String> {
     bridge.nostril.nip44_decrypt(pubkey, ciphertext).await
 }
+#[macro_rules_derive(rpc_method!)]
+async fn nostrEncrypt04(
+    bridge: &BridgeFull,
+    pubkey: String,
+    plaintext: String,
+) -> anyhow::Result<String> {
+    bridge.nostril.nip04_encrypt(pubkey, plaintext).await
+}
+
+#[macro_rules_derive(rpc_method!)]
+async fn nostrDecrypt04(
+    bridge: &BridgeFull,
+    pubkey: String,
+    ciphertext: String,
+) -> anyhow::Result<String> {
+    bridge.nostril.nip04_decrypt(pubkey, ciphertext).await
+}
 
 #[macro_rules_derive(federation_rpc_method!)]
 async fn stabilityPoolAccountInfo(
@@ -2014,6 +2031,8 @@ rpc_methods!(RpcMethods {
     signNostrEvent,
     nostrEncrypt,
     nostrDecrypt,
+    nostrEncrypt04,
+    nostrDecrypt04,
     // Stability Pool
     stabilityPoolAccountInfo,
     stabilityPoolNextCycleStartTime,

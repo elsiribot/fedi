@@ -100,6 +100,28 @@ impl Nostril {
             .await?)
     }
 
+    /// Given a recipient's pubkey and plaintext content, encrypts and returns
+    /// the ciphertext as per NIP04.
+    pub async fn nip04_encrypt(&self, pubkey: String, plaintext: String) -> anyhow::Result<String> {
+        Ok(self
+            .keys
+            .nip04_encrypt(&PublicKey::parse(&pubkey)?, &plaintext)
+            .await?)
+    }
+
+    /// Given a recipient's pubkey and ciphertext content, decrypts and returns
+    /// the plaintext as per NIP04.
+    pub async fn nip04_decrypt(
+        &self,
+        pubkey: String,
+        ciphertext: String,
+    ) -> anyhow::Result<String> {
+        Ok(self
+            .keys
+            .nip04_decrypt(&PublicKey::parse(&pubkey)?, &ciphertext)
+            .await?)
+    }
+
     /// Rate a federation
     ///
     /// ref: https://github.com/nostr-protocol/nips/pull/1110/files
