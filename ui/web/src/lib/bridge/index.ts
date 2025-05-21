@@ -149,7 +149,7 @@ export async function writeBridgeFile(path: string, data: Uint8Array) {
 }
 
 export async function getBridgeLogs() {
-    const response = workerRequest<Blob>('getLogs')
+    const response = workerRequest<FileSystemFileHandle[]>('getLogs')
 
     if (typeof response === 'string') {
         let errMsg: string

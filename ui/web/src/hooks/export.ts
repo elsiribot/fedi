@@ -103,10 +103,18 @@ export const useShareLogs = () => {
                 }
 
                 // Bridge logs
-                const bridgeLogsBlob = await getBridgeLogs()
+                const bridgeLogFiles = await getBridgeLogs()
                 attachmentFiles.push({
                     name: 'bridge.log',
-                    content: await bridgeLogsBlob.text(),
+                    content: await Promise.allSettled(
+                        bridgeLogFiles.map(
+                            async x => await (await x.getFile()).text(),
+                        ),
+                    ).then(results =>
+                        results
+                            .map(x => (x.status == 'fulfilled' ? x.value : ''))
+                            .join(''),
+                    ),
                 })
 
                 // Add device info
