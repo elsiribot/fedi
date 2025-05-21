@@ -1,3 +1,4 @@
+use reqwest::Url;
 use serde::Serialize;
 use ts_rs::TS;
 
@@ -71,6 +72,12 @@ pub struct FeatureCatalog {
     /// the federation's module availability determines the availability of
     /// the feature.
     pub stability_pool_v2: Option<StabilityPoolV2FeatureConfig>,
+
+    /// Enable Nostr client for Rate federation feature.
+    ///
+    /// This allows relays to be configured using a remote feature flag service
+    /// in future.
+    pub nostr_client: Option<NostrClientFeatureCatalog>,
 }
 
 #[derive(Debug, Clone, TS, Serialize)]
@@ -87,6 +94,13 @@ pub struct OverrideLocalhostFeatureConfig {}
 #[ts(export)]
 pub struct StabilityPoolV2FeatureConfig {
     pub state: StabilityPoolV2FeatureConfigState,
+}
+
+#[derive(Debug, Clone, TS, Serialize)]
+#[ts(export)]
+pub struct NostrClientFeatureCatalog {
+    #[ts(type = "Array<string>")]
+    pub relays: Vec<Url>,
 }
 
 #[derive(Debug, Clone, TS, Serialize, PartialEq, Eq)]
@@ -114,6 +128,7 @@ impl FeatureCatalog {
             stability_pool_v2: Some(StabilityPoolV2FeatureConfig {
                 state: StabilityPoolV2FeatureConfigState::Multispend,
             }),
+            nostr_client: None,
         }
     }
 
@@ -124,6 +139,7 @@ impl FeatureCatalog {
             stability_pool_v2: Some(StabilityPoolV2FeatureConfig {
                 state: StabilityPoolV2FeatureConfigState::Multispend,
             }),
+            nostr_client: None,
         }
     }
 
@@ -134,6 +150,7 @@ impl FeatureCatalog {
             stability_pool_v2: Some(StabilityPoolV2FeatureConfig {
                 state: StabilityPoolV2FeatureConfigState::SpV2Only,
             }),
+            nostr_client: None,
         }
     }
 }

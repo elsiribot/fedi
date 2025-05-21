@@ -25,6 +25,7 @@ members = [
   "crates/modules/stability-pool/common",
   "crates/modules/stability-pool/server",
   "crates/modules/stability-pool/tests",
+  "crates/nostril",
   "crates/remote-server",
   "crates/rpc-types",
   "crates/runtime",
@@ -74,6 +75,7 @@ fedi-ffi = { path = "bridge/fedi-ffi" }
 fedi-social-client = { path = "crates/modules/fedi-social/client" }
 fedi-social-common = { path = "crates/modules/fedi-social/common" }
 fedi-social-server = { path = "crates/modules/fedi-social/server" }
+nostril = { path = "crates/nostril" }
 stability-pool-client-old = { path = "crates/modules/stability-pool-old/client" }
 stability-pool-common-old = { path = "crates/modules/stability-pool-old/common" }
 stability-pool-server-old = { path = "crates/modules/stability-pool-old/server" }

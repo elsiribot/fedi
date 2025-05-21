@@ -156,6 +156,13 @@ export type FeatureCatalog = {
    * the feature.
    */
   stability_pool_v2: StabilityPoolV2FeatureConfig | null;
+  /**
+   * Enable Nostr client for Rate federation feature.
+   *
+   * This allows relays to be configured using a remote feature flag service
+   * in future.
+   */
+  nostr_client: NostrClientFeatureCatalog | null;
 };
 
 export type FiatFXInfo = {
@@ -296,6 +303,8 @@ export type NetworkError = Record<string, never>;
  * reuse check and must be rejoined using a recovery-from-scratch.
  */
 export type NonceReuseCheckFailedEvent = { federationId: RpcFederationId };
+
+export type NostrClientFeatureCatalog = { relays: Array<string> };
 
 /**
  * An Observable contains a value that updates over time.
