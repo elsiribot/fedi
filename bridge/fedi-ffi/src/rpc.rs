@@ -64,7 +64,7 @@ use runtime::observable::{Observable, ObservableVec};
 use runtime::storage::{DeviceIdentifier, FiatFXInfo, Storage};
 use serde::de::DeserializeOwned;
 use serde::{Deserialize, Serialize};
-use stability_pool_client::common::{FiatAmount, FiatOrAll};
+use stability_pool_client::common::{AccountId, AccountType, FiatAmount, FiatOrAll};
 pub use tokio;
 use tracing::{error, info, instrument, Level};
 
@@ -839,6 +839,51 @@ async fn spv2WithdrawAll(
 ) -> anyhow::Result<RpcOperationId> {
     federation
         .spv2_withdraw(FiatOrAll::All, frontend_meta)
+        .await
+        .map(Into::into)
+}
+
+#[macro_rules_derive(federation_rpc_method!)]
+async fn spv2OurAccountId(federation: Arc<FederationV2>) -> anyhow::Result<String> {
+    if !federation.runtime.feature_catalog.spv2_stable_account_id {
+        anyhow::bail!("Figure out format for spv2 account id");
+    }
+    Ok(federation
+        .client
+        .spv2()?
+        .our_account(AccountType::Seeker)
+        .id()
+        .to_string())
+}
+
+#[macro_rules_derive(rpc_method!)]
+async fn spv2ParseAccountId(runtime: Arc<Runtime>, account_id: String) -> anyhow::Result<()> {
+    if !runtime.feature_catalog.spv2_stable_account_id {
+        anyhow::bail!("Figure out format for spv2 account id");
+    }
+    let account_id = account_id.parse::<AccountId>()?;
+    anyhow::ensure!(
+        account_id.acc_type() == AccountType::Seeker,
+        "invalid account type"
+    );
+    Ok(())
+}
+
+#[macro_rules_derive(federation_rpc_method!)]
+async fn spv2Transfer(
+    federation: Arc<FederationV2>,
+    to: String,
+    amount: RpcFiatAmount,
+    frontend_meta: FrontendMetadata,
+) -> anyhow::Result<RpcOperationId> {
+    federation
+        .spv2_simple_transfer(
+            to.parse()?,
+            FiatAmount(amount.0),
+            rpc_types::SPv2TransferMetadata::StableBalance {
+                frontend_metadata: Some(frontend_meta),
+            },
+        )
         .await
         .map(Into::into)
 }
@@ -2031,6 +2076,9 @@ rpc_methods!(RpcMethods {
     spv2WithdrawAll,
     spv2AverageFeeRate,
     spv2AvailableLiquidity,
+    spv2OurAccountId,
+    spv2ParseAccountId,
+    spv2Transfer,
     // Developer
     getSensitiveLog,
     setSensitiveLog,
