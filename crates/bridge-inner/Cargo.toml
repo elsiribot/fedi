@@ -29,7 +29,7 @@ serde = { workspace = true }
 serde_json = { workspace = true }
 rand = { workspace = true }
 bitcoin = { workspace = true }
-lightning-invoice = "0.32.0"
+lightning-invoice = "0.33.0"
 futures = "0.3"
 tracing = { workspace = true }
 thiserror = "2.0.8"
@@ -47,7 +47,7 @@ matrix-sdk = { workspace = true, default-features = false, features = [
   "rustls-tls",
   "e2e-encryption",
 ] }
-imbl = { version = "4", features = ["serde"] }
+imbl = { version = "5", features = ["serde"] }
 async-recursion = "1.1.0"
 async-stream.workspace = true
 runtime = { workspace = true }

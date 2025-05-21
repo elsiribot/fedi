@@ -1077,7 +1077,8 @@ export type RpcTimelineItem =
   | { kind: "event"; value: RpcTimelineItemEvent }
   | { kind: "dateDivider"; value: number }
   | { kind: "readMarker" }
-  | { kind: "unknown" };
+  | { kind: "unknown" }
+  | { kind: "timelineStart" };
 
 export type RpcTimelineItemContent =
   | { kind: "message"; value: JSONObject }

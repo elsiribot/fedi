@@ -5,7 +5,6 @@
 
 use std::collections::hash_map::Entry;
 use std::collections::HashMap;
-use std::ops::ControlFlow;
 use std::sync::Arc;
 
 use anyhow::Context;
@@ -13,6 +12,7 @@ use async_stream::stream;
 use fedimint_core::db::{DatabaseTransaction, IDatabaseTransactionOpsCoreTyped as _};
 use futures::Stream;
 use matrix_sdk::deserialized_responses::TimelineEvent;
+use matrix_sdk::event_cache::EventCacheError;
 use matrix_sdk::locks::RwLock;
 use matrix_sdk::ruma::events::{AnySyncTimelineEvent, SyncMessageLikeEvent};
 use matrix_sdk::ruma::{OwnedEventId, OwnedRoomId, RoomId};
@@ -334,8 +334,11 @@ pub async fn all_message_since(
             .as_ref()
             .is_some_and(|last_event| last_event.0 == event_id)
     };
-    let (room_event_cache, _tasks) = room.event_cache().await?;
-    let (mut loaded_events, _) = room_event_cache.subscribe().await?;
+    let (room_event_cache, _tasks) = room
+        .event_cache()
+        .await
+        .map_err(event_cache_error_to_anyhow)?;
+    let (mut loaded_events, _) = room_event_cache.subscribe().await;
     if let Some(idx) = loaded_events
         .iter()
         .position(|event| event.event_id().is_some_and(is_last_seen_event))
@@ -351,42 +354,42 @@ pub async fn all_message_since(
     let mut timestamp_hack_used = false;
     // Paginate backward to find events that aren't loaded yet
     const BATCH_SIZE: u16 = 20;
-    let start_reached = room_event_cache
-        .pagination()
-        .run_backwards(BATCH_SIZE, |outcome, _| {
-            // Stop if we've reached the start of the timeline
-            if outcome.reached_start || outcome.events.is_empty() {
-                return std::future::ready(ControlFlow::Break(true));
+    let start_reached = loop {
+        let outcome = room_event_cache
+            .pagination()
+            .run_backwards_once(BATCH_SIZE)
+            .await
+            .map_err(event_cache_error_to_anyhow)?;
+        // Stop if we've reached the start of the timeline
+        if outcome.reached_start {
+            break true;
+        }
+        // HACK: stop if we find event older than release of multispend feature
+        // date +%s -d "2025-03-12" --utc
+        // TODO: bump when releasing
+        const MULTISPEND_RELEASE_TIMESTAMP: u64 = 1741737600;
+
+        if outcome.events.iter().any(|event| {
+            if event.event_id().is_some_and(is_last_seen_event) {
+                true
             }
-            // HACK: stop if we find event older than release of multispend feature
-            // date +%s -d "2025-03-12" --utc
-            // TODO: bump when releasing
-            const MULTISPEND_RELEASE_TIMESTAMP: u64 = 1741737600;
-
-            if outcome.events.iter().any(|event| {
-                if event.event_id().is_some_and(is_last_seen_event) {
-                    true
-                }
-                // don't use hack in case of incremental scan
-                else if last_seen_event.is_none()
-                    && event.raw().deserialize().is_ok_and(|event| {
-                        u64::from(event.origin_server_ts().as_secs()) < MULTISPEND_RELEASE_TIMESTAMP
-                    })
-                {
-                    timestamp_hack_used = true;
-                    true
-                } else {
-                    false
-                }
-            }) {
-                return std::future::ready(ControlFlow::Break(false));
+            // don't use hack in case of incremental scan
+            else if last_seen_event.is_none()
+                && event.raw().deserialize().is_ok_and(|event| {
+                    u64::from(event.origin_server_ts().as_secs()) < MULTISPEND_RELEASE_TIMESTAMP
+                })
+            {
+                timestamp_hack_used = true;
+                true
+            } else {
+                false
             }
+        }) {
+            break false;
+        }
+    };
 
-            std::future::ready(ControlFlow::Continue(()))
-        })
-        .await?;
-
-    let (mut loaded_events, _) = room_event_cache.subscribe().await?;
+    let (mut loaded_events, _) = room_event_cache.subscribe().await;
 
     if let Some(idx) = loaded_events
         .iter()
@@ -407,4 +410,13 @@ pub async fn all_message_since(
         }
         Ok(loaded_events)
     }
+}
+
+// event cache error is not send on wasm
+fn event_cache_error_to_anyhow(error: EventCacheError) -> anyhow::Error {
+    #[cfg(not(target_family = "wasm"))]
+    return error.into();
+
+    #[cfg(target_family = "wasm")]
+    return anyhow::format_err!("{error}");
 }
