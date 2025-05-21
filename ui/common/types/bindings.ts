@@ -643,6 +643,8 @@ export type RpcMethods = {
   signNostrEvent: [signNostrEvent, string];
   nostrEncrypt: [nostrEncrypt, string];
   nostrDecrypt: [nostrDecrypt, string];
+  nostrEncrypt04: [nostrEncrypt04, string];
+  nostrDecrypt04: [nostrDecrypt04, string];
   stabilityPoolAccountInfo: [
     stabilityPoolAccountInfo,
     RpcStabilityPoolAccountInfo,
@@ -1750,7 +1752,11 @@ export type matrixUserProfile = { userId: RpcUserId };
 
 export type nostrDecrypt = { pubkey: string; ciphertext: string };
 
+export type nostrDecrypt04 = { pubkey: string; ciphertext: string };
+
 export type nostrEncrypt = { pubkey: string; plaintext: string };
+
+export type nostrEncrypt04 = { pubkey: string; plaintext: string };
 
 export type onAppForeground = {};
 
