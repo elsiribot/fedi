@@ -189,7 +189,6 @@ const styles = (theme: Theme) =>
         },
         requestListContainer: {
             flexDirection: 'column',
-            flex: 1,
         },
     })
 
