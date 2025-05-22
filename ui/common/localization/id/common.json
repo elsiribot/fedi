@@ -457,7 +457,7 @@
             "select-or-start": "Pilih obrolan, atau mulai obrolan baru",
             "show-live-results": "Tampilkan hasil live",
             "start-the-conversation": "Mulailah percakapan.",
-            "they-requested-payment": "{{nama}} meminta {{fiat}} ({{amount}}) {{memo}}",
+            "they-requested-payment": "{{name}} meminta {{fiat}} ({{amount}}) {{memo}}",
             "they-sent-payment": "{{name}} mengirim {{fiat}} ({{amount}}) {{memo}}",
             "try-inviting-someone": "Coba undang seseorang.",
             "type-to-search-members": "Ketik untuk mencari anggota di grup ini",
