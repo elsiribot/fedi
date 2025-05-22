@@ -5,6 +5,7 @@ import { AppiumTestBase } from '../../configs/appium/AppiumTestBase'
 export class OnboardingTest extends AppiumTestBase {
     async execute(): Promise<void> {
         console.log('Starting Onboarding Test')
+        await new Promise(resolve => setTimeout(resolve, 10000)) // waiting for 10 seconds for the username to generate
         await this.clickElementByKey('Get a Wallet')
         await this.clickElementByKey('FediTestnetJoinButton')
         await this.clickElementByKey('Join Federation')
