@@ -83,7 +83,7 @@ export function useMultispendVoting({
         )
             return false
 
-        const hasApproved = Object.values(
+        const hasApproved = Object.keys(
             multispendStatus.state.pubkeys,
         ).includes(myId)
 
