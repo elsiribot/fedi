@@ -205,20 +205,19 @@ export const HistoryDetail: React.FC<HistoryDetailProps> = ({
                     />
                 )}
             </Flex>
-            {txn.kind === 'onchainDeposit' &&
-                txn.state?.type === 'waitingForTransaction' && (
-                    <View style={style.checkFundsContainer}>
-                        <Button
-                            title={
-                                checkLoading
-                                    ? t('words.checking')
-                                    : t('phrases.check-incoming-funds')
-                            }
-                            onPress={handleCheckIncomingFunds}
-                            disabled={checkLoading}
-                        />
-                    </View>
-                )}
+            {txn.kind === 'onchainDeposit' && (
+                <View style={style.checkFundsContainer}>
+                    <Button
+                        title={
+                            checkLoading
+                                ? t('words.checking')
+                                : t('phrases.check-incoming-funds')
+                        }
+                        onPress={handleCheckIncomingFunds}
+                        disabled={checkLoading}
+                    />
+                </View>
+            )}
         </Pressable>
     )
 }
