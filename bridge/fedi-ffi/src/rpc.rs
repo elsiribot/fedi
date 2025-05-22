@@ -13,6 +13,7 @@ use bitcoin::Amount;
 use bridge::{Bridge, BridgeFull, RpcBridgeStatus, RuntimeExt as _};
 use bridge_inner::federation::federation_sm::FederationState;
 use bridge_inner::federation::federation_v2::client::ClientExt;
+use bridge_inner::federation::federation_v2::spv2_pay_address::Spv2PaymentAddress;
 use bridge_inner::federation::federation_v2::{BackupServiceStatus, FederationV2};
 use bridge_inner::federation::Federations;
 use bridge_inner::matrix::multispend::db::RpcMultispendGroupStatus;
@@ -63,7 +64,7 @@ use runtime::observable::{Observable, ObservableVec};
 use runtime::storage::{DeviceIdentifier, FiatFXInfo, Storage};
 use serde::de::DeserializeOwned;
 use serde::{Deserialize, Serialize};
-use stability_pool_client::common::{AccountId, AccountType, FiatAmount, FiatOrAll};
+use stability_pool_client::common::{AccountType, FiatAmount, FiatOrAll};
 pub use tokio;
 use tracing::{error, info, instrument, Level};
 
@@ -844,41 +845,59 @@ async fn spv2WithdrawAll(
 }
 
 #[macro_rules_derive(federation_rpc_method!)]
-async fn spv2OurAccountId(federation: Arc<FederationV2>) -> anyhow::Result<String> {
-    if !federation.runtime.feature_catalog.spv2_stable_account_id {
-        anyhow::bail!("Figure out format for spv2 account id");
-    }
-    Ok(federation
-        .client
-        .spv2()?
-        .our_account(AccountType::Seeker)
-        .id()
-        .to_string())
+async fn spv2OurPaymentAddress(federation: Arc<FederationV2>) -> anyhow::Result<String> {
+    let address = Spv2PaymentAddress {
+        account_id: federation
+            .client
+            .spv2()?
+            .our_account(AccountType::Seeker)
+            .id(),
+        federation_id_prefix: federation.federation_id().to_prefix(),
+    };
+    Ok(address.to_string())
+}
+
+#[derive(TS, Serialize, Deserialize)]
+#[ts(export)]
+struct RpcSpv2ParsedPaymentAddress {
+    /// do we know about the federation
+    federation_id: Option<RpcFederationId>,
 }
 
 #[macro_rules_derive(rpc_method!)]
-async fn spv2ParseAccountId(runtime: Arc<Runtime>, account_id: String) -> anyhow::Result<()> {
-    if !runtime.feature_catalog.spv2_stable_account_id {
-        anyhow::bail!("Figure out format for spv2 account id");
-    }
-    let account_id = account_id.parse::<AccountId>()?;
+async fn spv2ParsePaymentAddress(
+    federations: &Federations,
+    address: String,
+) -> anyhow::Result<RpcSpv2ParsedPaymentAddress> {
+    let payment_address = address.parse::<Spv2PaymentAddress>()?;
     anyhow::ensure!(
-        account_id.acc_type() == AccountType::Seeker,
+        payment_address.account_id.acc_type() == AccountType::Seeker,
         "invalid account type"
     );
-    Ok(())
+    let federation_id = federations
+        .find_federation_id_for_prefix(payment_address.federation_id_prefix)
+        .map(RpcFederationId);
+
+    Ok(RpcSpv2ParsedPaymentAddress { federation_id })
 }
 
-#[macro_rules_derive(federation_rpc_method!)]
+#[macro_rules_derive(rpc_method!)]
 async fn spv2Transfer(
-    federation: Arc<FederationV2>,
-    to: String,
+    federations: &Federations,
+    payment_address: String,
     amount: RpcFiatAmount,
     frontend_meta: FrontendMetadata,
 ) -> anyhow::Result<RpcOperationId> {
+    let payment_address = payment_address.parse::<Spv2PaymentAddress>()?;
+    let federation_id = federations
+        .find_federation_id_for_prefix(payment_address.federation_id_prefix)
+        .context(ErrorCode::UnknownFederation)?;
+    let federation = federations
+        .get_federation(&federation_id)
+        .context(ErrorCode::UnknownFederation)?;
     federation
         .spv2_simple_transfer(
-            to.parse()?,
+            payment_address.account_id,
             FiatAmount(amount.0),
             rpc_types::SPv2TransferMetadata::StableBalance {
                 frontend_metadata: Some(frontend_meta),
@@ -2076,8 +2095,8 @@ rpc_methods!(RpcMethods {
     spv2WithdrawAll,
     spv2AverageFeeRate,
     spv2AvailableLiquidity,
-    spv2OurAccountId,
-    spv2ParseAccountId,
+    spv2OurPaymentAddress,
+    spv2ParsePaymentAddress,
     spv2Transfer,
     // Developer
     getSensitiveLog,

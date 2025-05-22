@@ -56,6 +56,8 @@ pub enum ErrorCode {
     InvalidMsEvent,
     #[error("Recurringd api not set in federation meta")]
     RecurringdMetaNotFound,
+    #[error("Unknown federation")]
+    UnknownFederation,
 }
 
 #[derive(Debug, Serialize, Deserialize, TS)]

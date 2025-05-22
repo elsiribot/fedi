@@ -91,7 +91,8 @@ export type ErrorCode =
   | { moduleNotFound: string }
   | { federationPendingRejoinFromScratch: string }
   | "invalidMsEvent"
-  | "recurringdMetaNotFound";
+  | "recurringdMetaNotFound"
+  | "unknownFederation";
 
 export type Event =
   | { transaction: TransactionEvent }
@@ -664,8 +665,8 @@ export type RpcMethods = {
   spv2WithdrawAll: [spv2WithdrawAll, RpcOperationId];
   spv2AverageFeeRate: [spv2AverageFeeRate, bigint];
   spv2AvailableLiquidity: [spv2AvailableLiquidity, RpcAmount];
-  spv2OurAccountId: [spv2OurAccountId, string];
-  spv2ParseAccountId: [spv2ParseAccountId, null];
+  spv2OurAccountTicket: [spv2OurAccountTicket, string];
+  spv2ParseAccountTicket: [spv2ParseAccountTicket, RpcParsedAccountTicket];
   spv2Transfer: [spv2Transfer, RpcOperationId];
   getSensitiveLog: [getSensitiveLog, boolean];
   setSensitiveLog: [setSensitiveLog, null];
@@ -873,6 +874,13 @@ export type RpcOperationFediFeeStatus =
   | { type: "failedReceive"; fedi_fee_ppm: number };
 
 export type RpcOperationId = string;
+
+export type RpcParsedAccountTicket = {
+  /**
+   * do we know about the federation
+   */
+  federation_id: RpcFederationId | null;
+};
 
 export type RpcPayAddressResponse = { txid: string };
 
@@ -1859,13 +1867,12 @@ export type spv2ObserveAccountInfo = {
   observableId: number;
 };
 
-export type spv2OurAccountId = { federationId: RpcFederationId };
+export type spv2OurAccountTicket = { federationId: RpcFederationId };
 
-export type spv2ParseAccountId = { accountId: string };
+export type spv2ParseAccountTicket = { accountTicket: string };
 
 export type spv2Transfer = {
-  federationId: RpcFederationId;
-  to: string;
+  accountTicket: string;
   amount: RpcFiatAmount;
   frontendMeta: FrontendMetadata;
 };
