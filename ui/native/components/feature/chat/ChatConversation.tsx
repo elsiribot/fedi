@@ -259,8 +259,7 @@ const ChatConversation: React.FC<MessagesListProps> = ({
                         autoscrollToTopThreshold: 100,
                     }}
                     scrollsToTop={false}
-                    // Enable better scroll performance
-                    removeClippedSubviews={true}
+                    removeClippedSubviews={false}
                     maxToRenderPerBatch={10}
                     windowSize={10}
                     initialNumToRender={10}
