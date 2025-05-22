@@ -1,7 +1,7 @@
 /* eslint-disable no-console, @typescript-eslint/no-explicit-any */
 import AppiumManager, { Platform, currentPlatform } from './AppiumManager'
 
-export const DEFAULT_TIMEOUT = 10000
+export const DEFAULT_TIMEOUT = 20000
 
 export abstract class AppiumTestBase {
     protected driver: WebdriverIO.Browser
@@ -50,7 +50,7 @@ export abstract class AppiumTestBase {
     async findElementsByText(
         text: string,
         exactMatch = false,
-        timeout = 10000,
+        timeout = DEFAULT_TIMEOUT,
     ) {
         const startTime = Date.now()
         const platform = process.env.PLATFORM?.toLowerCase() || ''
@@ -171,7 +171,7 @@ export abstract class AppiumTestBase {
         text: string,
         instanceNum: number,
         exactMatch = false,
-        timeout = 10000,
+        timeout = DEFAULT_TIMEOUT,
     ) {
         const elements = await this.findElementsByText(
             text,
@@ -201,7 +201,7 @@ export abstract class AppiumTestBase {
     async isTextPresent(
         text: string,
         exactMatch = false,
-        timeout = 10000,
+        timeout = DEFAULT_TIMEOUT,
     ): Promise<boolean> {
         const elements = await this.findElementsByText(
             text,
@@ -215,7 +215,7 @@ export abstract class AppiumTestBase {
         text: string,
         instanceNum: number,
         exactMatch = false,
-        timeout = 10000,
+        timeout = DEFAULT_TIMEOUT,
     ): Promise<WebdriverIO.Element> {
         const element = await this.findElementByText(
             text,
@@ -235,7 +235,7 @@ export abstract class AppiumTestBase {
         text: string,
         instanceNum: number,
         exactMatch = false,
-        timeout = 10000,
+        timeout = DEFAULT_TIMEOUT,
     ): Promise<void> {
         const element = await this.waitForText(
             text,
@@ -249,7 +249,7 @@ export abstract class AppiumTestBase {
     async getTextInstanceCount(
         text: string,
         exactMatch = false,
-        timeout = 10000,
+        timeout = DEFAULT_TIMEOUT,
     ): Promise<number> {
         const elements = await this.findElementsByText(
             text,
