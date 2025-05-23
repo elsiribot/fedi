@@ -945,9 +945,12 @@ export class MatrixChatClient {
 
     // TODO: get type for this from bridge?
     private serializeRoomInfo(room: any): MatrixRoom {
-        const avatarUrl = room.base_info.avatar?.Original?.content?.url
         const directUserId = room.base_info.dm_targets?.[0]
 
+        // Use the Hero avatar for DMs, otherwise use the room avatar
+        const avatarUrl = directUserId
+            ? room.summary?.room_heroes?.[0]?.avatar_url
+            : room.base_info.avatar?.Original?.content?.url
         let preview: MatrixRoom['preview']
         if (room.latest_event) {
             const { event, sender_profile } = room.latest_event
@@ -997,6 +1000,7 @@ export class MatrixChatClient {
         // but since it is a newer field we leave the base_info.name as a fallback temporarily
         const roomName =
             room.cached_display_name?.Calculated ||
+            room.cached_display_name?.EmptyWas ||
             room.base_info.name?.Original?.content?.name
 
         return {
