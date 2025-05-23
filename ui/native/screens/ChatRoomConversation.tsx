@@ -1,6 +1,7 @@
 import type { NativeStackScreenProps } from '@react-navigation/native-stack'
 import React, { useCallback, useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
+import { Image, Video } from 'react-native-compressor'
 
 import { useMultispendDisplayUtils } from '@fedi/common/hooks/multispend'
 import { useToast } from '@fedi/common/hooks/toast'
@@ -23,6 +24,7 @@ import Flex from '../components/ui/Flex'
 import HoloLoader from '../components/ui/HoloLoader'
 import { useAppDispatch, useAppSelector } from '../state/hooks'
 import type { RootStackParamList } from '../types/navigation'
+import { isMimeTypeCompressableImage, stripFileUriPrefix } from '../utils/media'
 
 const log = makeLog('ChatRoomConversation')
 
@@ -74,19 +76,42 @@ const ChatRoomConversation: React.FC<Props> = ({ route }: Props) => {
 
                 for (const att of attachments) {
                     const resolvedUri = decodeURI(att.uri)
-                    const filePath = resolvedUri.startsWith('file://')
-                        ? resolvedUri.slice(7)
-                        : resolvedUri
+                    const filePath = stripFileUriPrefix(resolvedUri)
+
+                    const width = 'width' in att ? att.width : null
+                    const height = 'height' in att ? att.height : null
+
+                    const isVideo = att.mimeType.startsWith('video')
+                    const canBeImageCompressed = isMimeTypeCompressableImage(
+                        att.mimeType,
+                    )
+
+                    let compressed: string = filePath
+
+                    if (canBeImageCompressed) {
+                        compressed = await Image.compress(filePath, {
+                            compressionMethod: 'manual',
+                            quality: 1,
+                            maxWidth: width ?? undefined,
+                            maxHeight: height ?? undefined,
+                        })
+                    }
+
+                    if (isVideo) {
+                        compressed = await Video.compress(filePath, {
+                            compressionMethod: 'manual',
+                        })
+                    }
 
                     await fedimint.matrixSendAttachment({
                         roomId,
                         filename: att.fileName,
                         params: {
                             mimeType: att.mimeType,
-                            width: 'width' in att ? att.width : null,
-                            height: 'height' in att ? att.height : null,
+                            width,
+                            height,
                         },
-                        filePath,
+                        filePath: stripFileUriPrefix(compressed),
                     })
                 }
             } catch (err) {
