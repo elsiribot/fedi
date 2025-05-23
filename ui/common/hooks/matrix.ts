@@ -45,8 +45,9 @@ import {
     isValidMatrixUserId,
     makeMatrixPaymentText,
     matrixIdToUsername,
+    MatrixUrlMetadata,
+    matrixUrlMetadataSchema,
 } from '../utils/matrix'
-import { MatrixUrlMetadata, matrixUrlMetadataSchema } from '../utils/media'
 import { useAmountFormatter } from './amount'
 import { useCommonDispatch, useCommonSelector } from './redux'
 import { useToast } from './toast'
