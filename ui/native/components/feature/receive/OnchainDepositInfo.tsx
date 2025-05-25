@@ -32,7 +32,7 @@ const InfoRow = ({ icon, title, subtitle, right }: RowProps) => {
                 size={theme.sizes.md}
                 containerStyle={style.icon}
             />
-            <Flex justify="center" gap="xs">
+            <Flex justify="center" gap="xs" grow shrink>
                 <Text small bold color={theme.colors.darkGrey}>
                     {title}
                 </Text>
@@ -96,7 +96,7 @@ const OnchainDepositInfo: React.FC = () => {
             level="900"
             style={style.gradientContainer}
             gradientStyle={style.gradient}>
-            <Flex gap="xs" style={style.content}>
+            <Flex gap="md" style={style.content}>
                 {rows.map((row, idx) => (
                     <InfoRow key={`info-row-onchain-${idx}`} {...row} />
                 ))}
@@ -130,6 +130,7 @@ const styles = (theme: Theme) =>
         },
         icon: {
             padding: theme.spacing.sm,
+            flexShrink: 0,
         },
         text: {
             lineHeight: 15,
