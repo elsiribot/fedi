@@ -2163,7 +2163,7 @@ export const selectLatestMultispendTxnInRoom = createSelector(
     },
 )
 
-export const selectMultispendBalanceCents = createSelector(
+export const selectMultispendBalance = createSelector(
     selectMatrixRoomMultispendAccountInfo,
     accountInfo => {
         if (!accountInfo || 'Err' in accountInfo) return 0 as UsdCents
@@ -2171,13 +2171,19 @@ export const selectMultispendBalanceCents = createSelector(
         const { lockedBalance, currCycleStartPrice } = accountInfo.Ok
 
         const balanceMsats = lockedBalance
-        const balanceCents = Number(
-            amountUtils
-                .msatToFiat(balanceMsats, currCycleStartPrice)
-                .toFixed(0),
-        ) as UsdCents
+        const balanceBtc = amountUtils.msatToBtc(balanceMsats)
+        const balanceCentsPrecise = balanceBtc * currCycleStartPrice
 
-        return balanceCents
+        return balanceCentsPrecise
+    },
+)
+
+export const selectMultispendBalanceCents = createSelector(
+    selectMultispendBalance,
+    balanceCentsPrecise => {
+        if (!balanceCentsPrecise) return 0 as UsdCents
+
+        return Number(balanceCentsPrecise.toFixed(0)) as UsdCents
     },
 )
 

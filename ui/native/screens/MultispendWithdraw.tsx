@@ -5,20 +5,15 @@ import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { View } from 'react-native'
 
-import { useWithdrawForm } from '@fedi/common/hooks/amount'
+import { useMultispendWithdrawForm } from '@fedi/common/hooks/amount'
+import { useMultispendDisplayUtils } from '@fedi/common/hooks/multispend'
 import { useToast } from '@fedi/common/hooks/toast'
 import {
-    selectBtcExchangeRate,
-    selectBtcUsdExchangeRate,
     selectCurrency,
-    selectCurrencyLocale,
     selectFederation,
     selectMatrixRoom,
     selectMatrixRoomMultispendStatus,
-    selectMultispendBalanceCents,
-    selectMultispendBalanceSats,
 } from '@fedi/common/redux'
-import amountUtils from '@fedi/common/utils/AmountUtils'
 
 import { AmountScreen } from '../components/ui/AmountScreen'
 import Avatar from '../components/ui/Avatar'
@@ -45,8 +40,10 @@ const MultispendWithdraw: React.FC<Props> = ({ route }: Props) => {
     const {
         inputAmountCents,
         inputAmount: amount,
+        minimumAmount,
+        maximumAmount,
         setInputAmount: setAmount,
-    } = useWithdrawForm()
+    } = useMultispendWithdrawForm(roomId)
     const [submitAttempts, setSubmitAttempts] = useState(0)
     const [notes, setNotes] = useState<string>('')
     const matchingFederation = useAppSelector(s =>
@@ -58,16 +55,8 @@ const MultispendWithdraw: React.FC<Props> = ({ route }: Props) => {
         ),
     )
     const matrixRoom = useAppSelector(s => selectMatrixRoom(s, roomId))
-    const multispendBalance = useAppSelector(s =>
-        selectMultispendBalanceCents(s, roomId),
-    )
     const selectedFiatCurrency = useAppSelector(selectCurrency)
-    const currencyLocale = useAppSelector(selectCurrencyLocale)
-    const btcUsdExchangeRate = useAppSelector(selectBtcUsdExchangeRate)
-    const btcExchangeRate = useAppSelector(selectBtcExchangeRate)
-    const multispendBalanceSats = useAppSelector(s =>
-        selectMultispendBalanceSats(s, roomId),
-    )
+    const { formattedMultispendBalance } = useMultispendDisplayUtils(t, roomId)
     const toast = useToast()
 
     const onChangeAmount = (updatedValue: Sats) => {
@@ -80,8 +69,7 @@ const MultispendWithdraw: React.FC<Props> = ({ route }: Props) => {
             toast.error(t, 'errors.multispend-notes-required')
             return
         }
-
-        if (amount > multispendBalanceSats || amount <= 0) {
+        if (amount > maximumAmount || amount < minimumAmount) {
             return
         }
 
@@ -92,27 +80,14 @@ const MultispendWithdraw: React.FC<Props> = ({ route }: Props) => {
         })
     }
 
-    const formattedMultispendBalance = amountUtils.formatFiat(
-        amountUtils.convertCentsToOtherFiat(
-            multispendBalance,
-            btcUsdExchangeRate,
-            btcExchangeRate,
-        ),
-        selectedFiatCurrency,
-        {
-            symbolPosition: 'end',
-            locale: currencyLocale,
-        },
-    )
-
     const style = styles(theme)
 
     return (
         <AmountScreen
             amount={amount}
             onChangeAmount={onChangeAmount}
-            minimumAmount={0 as Sats}
-            maximumAmount={multispendBalanceSats}
+            minimumAmount={minimumAmount}
+            maximumAmount={maximumAmount}
             submitAttempts={submitAttempts}
             switcherEnabled={false}
             lockToFiat
@@ -130,7 +105,7 @@ const MultispendWithdraw: React.FC<Props> = ({ route }: Props) => {
                         </Text>
                         <Flex row align="center" gap="sm">
                             <Text medium caption color={theme.colors.darkGrey}>
-                                {formattedMultispendBalance}
+                                {`${formattedMultispendBalance} ${selectedFiatCurrency}`}
                             </Text>
                         </Flex>
                     </Flex>

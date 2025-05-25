@@ -2,7 +2,7 @@ import { TFunction } from 'i18next'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { RequestInvoiceArgs } from 'webln'
 
-import { FiatFXInfo } from '@fedi/common/types/bindings'
+import { FiatFXInfo, RpcRoomId } from '@fedi/common/types/bindings'
 
 import {
     selectAmountInputType,
@@ -15,6 +15,7 @@ import {
     selectMaxStableBalanceSats,
     selectMinimumDepositAmount,
     selectMinimumWithdrawAmountMsats,
+    selectMultispendBalance,
     selectPaymentFederation,
     selectPaymentFederationBalance,
     selectShowFiatTxnAmounts,
@@ -93,6 +94,13 @@ export const useBtcFiatPrice = (currency?: SelectableCurrency) => {
     const fiatCurrency = currency ?? selectedFiatCurrency
 
     return {
+        convertCentsToSats: useCallback(
+            (cents: UsdCents) => {
+                // since we are passing cents, the exchange rate should also be in cents
+                return amountUtils.fiatToSat(cents, btcUsdExchangeRate * 100)
+            },
+            [btcUsdExchangeRate],
+        ),
         convertCentsToFormattedFiat: useCallback(
             (cents: UsdCents, symbolPosition: AmountSymbolPosition = 'end') => {
                 const amount = amountUtils.convertCentsToOtherFiat(
@@ -1123,6 +1131,33 @@ export function useDepositForm() {
         minimumAmount,
         maximumAmount,
         maximumFiatAmount,
+    }
+}
+
+/**
+ * Provide all the state necessary to implement a multispend withdrawal form
+ * that transfers stable balance from a multispend account to a personal account
+ */
+export function useMultispendWithdrawForm(roomId: RpcRoomId) {
+    const { inputAmount, inputAmountCents, setInputAmount } = useWithdrawForm()
+    const { convertCentsToSats } = useBtcFiatPrice()
+    const multispendBalance = useCommonSelector(s =>
+        selectMultispendBalance(s, roomId),
+    )
+    // TODO: Allow full withdrawals of multispend balance
+    // see https://github.com/fedibtc/fedi/issues/7223#issuecomment-2907830916
+    // Since we don't have sub-cent precision for multispend withdrawals,
+    // we round down from the total balance so the request doesn't get stuck
+    // in the approved state then convert to sats to adapt it to the AmountInput component
+    const maximumAmountCents = Math.floor(multispendBalance) as UsdCents
+    const maximumAmountSats = convertCentsToSats(maximumAmountCents)
+
+    return {
+        inputAmount,
+        inputAmountCents,
+        setInputAmount,
+        minimumAmount: 0 as Sats,
+        maximumAmount: maximumAmountSats as Sats,
     }
 }
 
