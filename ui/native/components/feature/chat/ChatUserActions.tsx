@@ -113,7 +113,7 @@ const ChatUserActions: React.FC<Props> = ({
             })
         } catch (err) {
             log.error("Failed to update user's power level", err)
-            error(t, 'feature.chat.change-role-failure')
+            error(t, err, 'feature.chat.change-role-failure')
         }
         setLoadingAction(null)
         dismiss()

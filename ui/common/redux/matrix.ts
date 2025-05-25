@@ -958,10 +958,23 @@ export const setMatrixRoomMemberPowerLevel = createAsyncThunk<
         roomId: MatrixRoom['id']
         userId: MatrixUser['id']
         powerLevel: MatrixPowerLevel
-    }
+    },
+    { state: CommonState }
 >(
     'matrix/setMatrixRoomMemberPowerLevel',
-    async ({ roomId, userId, powerLevel }) => {
+    async ({ roomId, userId, powerLevel }, { getState }) => {
+        const roomMultispendStatus = selectMatrixRoomMultispendStatus(
+            getState(),
+            roomId,
+        )
+
+        if (
+            powerLevel === MatrixPowerLevel.Admin &&
+            roomMultispendStatus?.status === 'activeInvitation'
+        ) {
+            throw new Error('errors.admin-promotion-pending-multispend')
+        }
+
         const client = getMatrixClient()
         return client.setRoomMemberPowerLevel(roomId, userId, powerLevel)
     },
