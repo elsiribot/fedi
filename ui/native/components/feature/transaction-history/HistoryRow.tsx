@@ -77,7 +77,7 @@ export const HistoryRow: React.FC<HistoryRowProps> = memo(
                         {status}
                     </Text>
                     <Text small numberOfLines={1} style={style.subText}>
-                        {type} {notes ? `(${notes})` : ''}
+                        {type} {notes ? `(${notes.replace(/\n/g, ' ')})` : ''}
                     </Text>
                 </Flex>
 
