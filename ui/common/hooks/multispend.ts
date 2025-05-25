@@ -556,7 +556,9 @@ const extractInvitationData = (
             : undefined
 
     const activeInvitationId =
-        roomStatus?.status === 'activeInvitation'
+        roomStatus?.status === 'activeInvitation' &&
+        // Assume failed if there are rejections
+        roomStatus.state.rejections.length === 0
             ? roomStatus.active_invite_id
             : undefined
 
