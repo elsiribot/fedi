@@ -50,12 +50,14 @@ export const getTxnDirection = (txn: TransactionListEntry): string => {
         case 'oobSend':
         case 'spDeposit':
         case 'sPV2Deposit':
+        case 'sPV2TransferOut':
             return TransactionDirection.send
         case 'lnReceive':
         case 'onchainDeposit':
         case 'oobReceive':
         case 'spWithdraw':
         case 'sPV2Withdrawal':
+        case 'sPV2TransferIn':
             return TransactionDirection.receive
         default:
             return TransactionDirection.send
@@ -78,6 +80,9 @@ export const makeTxnTypeText = (
         case 'sPV2Deposit':
         case 'sPV2Withdrawal':
             return t('feature.stabilitypool.stable-balance')
+        case 'sPV2TransferIn':
+        case 'sPV2TransferOut':
+            return t('words.multispend')
         case 'oobSend':
         case 'oobReceive':
             return t('words.ecash')
@@ -111,7 +116,11 @@ export const makeTxnDetailTitleText = (
 
     const direction = getTxnDirection(txn)
     if (direction === TransactionDirection.send) {
-        return t('feature.send.you-sent')
+        if (txn.kind === 'sPV2TransferOut') {
+            return t('feature.stabilitypool.you-deposited')
+        } else {
+            return t('feature.send.you-sent')
+        }
     }
     if (txn.kind === 'lnReceive') {
         switch (txn.state?.type) {
@@ -143,6 +152,8 @@ export const makeTxnDetailTitleText = (
             default:
                 return t('phrases.receive-pending')
         }
+    } else if (txn.kind === 'sPV2TransferIn') {
+        return t('feature.stabilitypool.you-withdrew')
     } else {
         return t('feature.receive.you-received')
     }
@@ -178,7 +189,13 @@ export const makeTxnAmountText = (
 ): string => {
     const { amount } = txn
     const direction = getTxnDirection(txn)
-    const isPlus = !flipSign ? direction === 'receive' : direction === 'send'
+    const isTransfer =
+        txn.kind === 'sPV2TransferIn' || txn.kind === 'sPV2TransferOut'
+
+    // Don't flip the sign for transfers
+    const isPlus = !(flipSign && !isTransfer)
+        ? direction === 'receive'
+        : direction === 'send'
     let sign = direction ? (isPlus ? `+` : `-`) : ''
     let formattedAmount: string
     let currency = preferredCurrency
@@ -243,6 +260,17 @@ export const makeTxnAmountText = (
                 'fiat_amount' in txn.state
             ) {
                 // TODO: validate this unit is correct
+                const fiatAmount = Number(txn.state.fiat_amount) as UsdCents
+                formattedAmount = convertCentsToFormattedFiat(
+                    fiatAmount,
+                    'none',
+                )
+            } else if (
+                (txn.kind === 'sPV2TransferIn' ||
+                    txn.kind === 'sPV2TransferOut') &&
+                txn.state &&
+                'fiat_amount' in txn.state
+            ) {
                 const fiatAmount = Number(txn.state.fiat_amount) as UsdCents
                 formattedAmount = convertCentsToFormattedFiat(
                     fiatAmount,
@@ -454,6 +482,8 @@ export const makeTxnStatusText = (
                     default:
                         return t('words.deposit')
                 }
+            } else if (txn.kind === 'sPV2TransferOut') {
+                return t('words.deposit')
             } else {
                 return t('words.sent')
             }
@@ -513,6 +543,8 @@ export const makeTxnStatusText = (
                     default:
                         return ''
                 }
+            } else if (txn.kind === 'sPV2TransferIn') {
+                return t('words.withdrawal')
             } else {
                 return t('words.received')
             }
@@ -588,6 +620,9 @@ export const makeTxnStatusBadge = (
                     default:
                         break
                 }
+            } else if (txn.kind === 'sPV2TransferOut') {
+                badge = 'outgoing'
+                break
             }
             break
         case TransactionDirection.receive:
@@ -637,6 +672,9 @@ export const makeTxnStatusBadge = (
                         badge = 'pending'
                         break
                 }
+            } else if (txn.kind === 'sPV2TransferIn') {
+                badge = 'incoming'
+                break
             } else if (txn.kind === 'oobReceive') {
                 switch (txn.state?.type) {
                     case 'done':
@@ -894,9 +932,15 @@ export const makeStabilityTxnDetailTitleText = (
     t: TFunction,
     txn: TransactionListEntry,
 ) => {
-    return txn.kind === 'spDeposit' || txn.kind === 'sPV2Deposit'
+    return txn.kind === 'spDeposit' ||
+        txn.kind === 'sPV2Deposit' ||
+        txn.kind === 'sPV2TransferOut'
         ? t('feature.stabilitypool.you-deposited')
-        : t('feature.stabilitypool.you-withdrew')
+        : txn.kind === 'sPV2Withdrawal' ||
+            txn.kind === 'spWithdraw' ||
+            txn.kind === 'sPV2TransferIn'
+          ? t('feature.stabilitypool.you-withdrew')
+          : ''
 }
 
 export const makeStabilityTxnDetailItems = (
@@ -911,9 +955,15 @@ export const makeStabilityTxnDetailItems = (
     if (txn.amount !== 0) {
         items.push({
             label:
-                txn.kind === 'spDeposit' || txn.kind === 'sPV2Deposit'
+                txn.kind === 'spDeposit' ||
+                txn.kind === 'sPV2Deposit' ||
+                txn.kind === 'sPV2TransferIn'
                     ? t('feature.stabilitypool.deposit-amount')
-                    : t('feature.stabilitypool.withdrawal-amount'),
+                    : txn.kind === 'spWithdraw' ||
+                        txn.kind === 'sPV2Withdrawal' ||
+                        txn.kind === 'sPV2TransferOut'
+                      ? t('feature.stabilitypool.withdrawal-amount')
+                      : '',
             value: formattedSats,
         })
     }
