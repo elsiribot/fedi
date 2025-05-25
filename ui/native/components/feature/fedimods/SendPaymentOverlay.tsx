@@ -27,6 +27,7 @@ import { fedimint } from '../../../bridge'
 import { useAppDispatch, useAppSelector } from '../../../state/hooks'
 import { MSats, ParserDataType } from '../../../types'
 import AmountInput from '../../ui/AmountInput'
+import AmountInputDisplay from '../../ui/AmountInputDisplay'
 import CustomOverlay from '../../ui/CustomOverlay'
 import Flex from '../../ui/Flex'
 import LineBreak from '../../ui/LineBreak'
@@ -212,21 +213,24 @@ export const SendPaymentOverlay: React.FC<Props> = ({ onReject, onAccept }) => {
                         fullWidth
                         style={style.container}>
                         <FederationWalletSelector />
-                        <AmountInput
-                            key={amountInputKey}
-                            amount={inputAmount}
-                            isSubmitting={isLoading}
-                            submitAttempts={submitAttempts}
-                            minimumAmount={minimumAmount}
-                            maximumAmount={maximumAmount}
-                            readOnly={!!exactAmount}
-                            verb={t('words.send')}
-                            onChangeAmount={amount => {
-                                setSubmitAttempts(0)
-                                setInputAmount(amount)
-                            }}
-                            error={error}
-                        />
+                        {exactAmount ? (
+                            <AmountInputDisplay amount={inputAmount} />
+                        ) : (
+                            <AmountInput
+                                key={amountInputKey}
+                                amount={inputAmount}
+                                isSubmitting={isLoading}
+                                submitAttempts={submitAttempts}
+                                minimumAmount={minimumAmount}
+                                maximumAmount={maximumAmount}
+                                verb={t('words.send')}
+                                onChangeAmount={amt => {
+                                    setSubmitAttempts(0)
+                                    setInputAmount(amt)
+                                }}
+                                error={error}
+                            />
+                        )}
                         <Flex fullWidth>
                             <SendPreviewDetails
                                 onPressFees={() => setShowFeeBreakdown(true)}

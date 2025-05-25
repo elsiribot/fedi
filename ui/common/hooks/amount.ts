@@ -302,13 +302,34 @@ export function useAmountInput(
     const [satsValue, setSatsValue] = useState<string>(
         amountUtils.formatSats(amount),
     )
+
     const [fiatValue, setFiatValue] = useState<string>(
         amountUtils.formatFiat(
+            /*
+             *     Math.floor = Truncate (DON’T round) the float returned by satToFiat.
+             *     Example: 123.999 → 123
+             *     This avoids showing an inflated balance if the value would have
+             *     rounded up when we later format it with zero fraction digits.
+             *     i.e - accidental round-up (e.g. 123.999 becoming 124)
+             */
             Math.floor(amountUtils.satToFiat(amount, btcToFiatRate)),
             currency,
             {
                 symbolPosition: 'none',
                 locale: currencyLocale,
+                /*
+                 *      Force the *initial* string to be a whole number:
+                 *      minimumFractionDigits: 0  → at least 0 decimals (never less)
+                 *      maximumFractionDigits: 0  → at most 0 decimals (never more)
+                 *
+                 *     Setting both to zero means “always show exactly zero decimal
+                 *     digits” – no trailing .00 or ,00.  We only apply this on the
+                 *     very first render; once the user starts typing (and may add a
+                 *     decimal separator) we call formatFiat again **without** these
+                 *     overrides so the normal currency-specific decimals (2 for
+                 *     USD/EUR, 0 for VND …) appear.
+                 *     i.e - guarantees the very first string that appears in the input is a clean whole-number
+                 */
                 minimumFractionDigits: 0,
                 maximumFractionDigits: 0,
             },
@@ -395,7 +416,11 @@ export function useAmountInput(
                 amountUtils.btcToSat((fiat / btcToFiatRateRef.current) as Btc),
             )
 
-            // Preserve UX for exact min/max entries when entered as fiat
+            // If the amount is being entered as fiat, the equivalent amount in sats
+            // will sometimes be slightly above or below the min/max (in sats)
+            // UX expectation is that the entered amount is exactly equal to the min/max amount
+            // This logic ensures to round the min/max (in fiat) down to the nearest 0.01 to
+            // include the entered amount into the rounding threshold to qualify as a min/max input
             if (typeof minimumAmount === 'number') {
                 const minFiat =
                     amountUtils.satToBtc(minimumAmount as Sats) *
@@ -448,92 +473,124 @@ export function useAmountInput(
         ],
     )
 
+    // Keeps track of the current index (cursor) within the fractional part of the number
     const fractionIndexRef = useRef(0)
 
+    /**
+     * Handles presses on the on‑screen num‑pad (digits, decimal separator or backspace).
+     *
+     * Locale quirks handled:
+     * ──────────────────────────────────────────────────────────────
+     * Some hardware / soft keyboards always emit a dot ('.') regardless of locale.
+     * When the active locale’s decimal separator is a comma (','), we translate that
+     * dot into a comma so the rest of the logic can stay locale‑agnostic.
+     */
     const handleNumpadPress = useCallback(
-        (button: (typeof numpadButtons)[number]) => {
-            if (button === null) return
+        (
+            /** The raw button value coming from the on‑screen key */
+            rawBtn: (typeof numpadButtons)[number],
+        ) => {
+            //guard - ignore nulls (should never happen)
+            if (rawBtn === null) return
+
+            // Locale‑aware decimal separator ('.' for en‑US, ',' for de‑DE …)
             const decimalSeparator = amountUtils.getDecimalSeparator({
                 locale: currencyLocale,
             })
 
-            if (isFiat) {
-                const maxDecimals = amountUtils.getCurrencyDecimals(currency, {
-                    locale: currencyLocale,
-                })
-                const rawValue = fiatValue.replace(
-                    new RegExp(`[^0-9${decimalSeparator}]`, 'g'),
-                    '',
-                )
+            /*
+             * Map hardware dot to the locale separator when they differ.
+             * Some keyboards always emit '.', even on comma locales.
+             */
+            const button =
+                rawBtn === '.' && decimalSeparator !== '.'
+                    ? (decimalSeparator as typeof rawBtn)
+                    : rawBtn
 
-                // --- No decimal currencies (e.g., JPY) ---
-                if (maxDecimals === 0) {
-                    if (button === 'backspace') {
-                        handleChangeFiat(rawValue.slice(0, -1) || '0')
-                    } else if (button === decimalSeparator) {
-                        return
-                    } else {
-                        handleChangeFiat(
-                            rawValue === '0'
-                                ? String(button)
-                                : rawValue + String(button),
-                        )
-                    }
-                    return
-                }
+            /**
+             * ----------------------------------------------------------------------------
+             * Sanitize input: keep *only* digits and the locale decimal separator
+             * ----------------------------------------------------------------------------
+             * Regex: /[^0-9${decimalSeparator}]/g
+             *   [^ … ]  → "any char *not* inside this set"
+             *   0-9     → digits 0 through 9 stay untouched
+             *   ${decimalSeparator} → the active separator ('.' or ',') is kept
+             *   g‑flag → replace *all* unwanted chars, not just the first one
+             * The result is a clean string that contains at most one separator
+             * (we control insertion elsewhere) and only numeric characters.
+             */
+            const sanitise = (v: string) =>
+                v.replace(new RegExp(`[^0-9${decimalSeparator}]`, 'g'), '')
 
-                // --- Decimals (e.g., USD, EUR, KWD, etc.) ---
-                if (button === decimalSeparator) {
-                    if (!rawValue.includes(decimalSeparator)) {
-                        handleChangeFiat(
-                            rawValue +
-                                decimalSeparator +
-                                '0'.repeat(maxDecimals),
-                        )
-                    }
-                    fractionIndexRef.current = 0
-                    return
-                }
-
+            const handleNoDecimals = (rawValue: string) => {
                 if (button === 'backspace') {
-                    if (rawValue.includes(decimalSeparator)) {
-                        const [whole, fractionRaw = ''] =
-                            rawValue.split(decimalSeparator)
-                        const fractionArr = (
-                            fractionRaw + '0'.repeat(maxDecimals)
-                        )
-                            .slice(0, maxDecimals)
-                            .split('')
-
-                        // move one position left (but not past the first)
-                        if (fractionIndexRef.current > 0) {
-                            fractionIndexRef.current -= 1
-                        }
-
-                        // clear that position
-                        fractionArr[fractionIndexRef.current] = '0'
-                        const newFraction = fractionArr.join('')
-
-                        // If all decimals are now zero **and** we're at the first slot,
-                        // keep the whole part unchanged and drop the decimal section.
-                        if (
-                            newFraction === '0'.repeat(maxDecimals) &&
-                            fractionIndexRef.current === 0
-                        ) {
-                            handleChangeFiat(whole)
-                        } else {
-                            handleChangeFiat(
-                                `${whole}${decimalSeparator}${newFraction}`,
-                            )
-                        }
-                    } else {
-                        const newWhole = rawValue.slice(0, -1) || '0'
-                        handleChangeFiat(newWhole)
-                    }
-                    return
+                    handleChangeFiat(rawValue.slice(0, -1) || '0')
+                } else if (button === decimalSeparator) {
+                    return // separator not allowed
+                } else {
+                    handleChangeFiat(
+                        rawValue === '0' ? String(button) : rawValue + button,
+                    )
                 }
+            }
 
-                // Digit pressed
+            const handleSeparator = (rawValue: string, maxDecimals: number) => {
+                if (!rawValue.includes(decimalSeparator)) {
+                    handleChangeFiat(
+                        rawValue + decimalSeparator + '0'.repeat(maxDecimals),
+                    )
+                }
+                // place cursor at first decimal slot
+                fractionIndexRef.current = 0
+            }
+
+            const handleBackspace = (rawValue: string, maxDecimals: number) => {
+                if (rawValue.includes(decimalSeparator)) {
+                    const [whole, fractionRaw = ''] =
+                        rawValue.split(decimalSeparator)
+                    const fractionArr = (fractionRaw + '0'.repeat(maxDecimals))
+                        .slice(0, maxDecimals)
+                        .split('')
+
+                    /*
+                     * When switching from sats → fiat the cursor may still be
+                     * at 0 while both fraction digits are non‑zero.  In that
+                     * case start deleting from the *rightmost* digit.
+                     */
+                    if (
+                        fractionIndexRef.current === 0 &&
+                        fractionArr.some(d => d !== '0')
+                    ) {
+                        fractionIndexRef.current = maxDecimals
+                    }
+
+                    // Move cursor one step left (but not below 0)
+                    if (fractionIndexRef.current > 0)
+                        fractionIndexRef.current -= 1
+
+                    // Zero‑out the digit under the cursor
+                    fractionArr[fractionIndexRef.current] = '0'
+                    const newFraction = fractionArr.join('')
+
+                    if (
+                        newFraction === '0'.repeat(maxDecimals) &&
+                        fractionIndexRef.current === 0
+                    ) {
+                        // drop decimal section entirely
+                        handleChangeFiat(whole)
+                    } else {
+                        handleChangeFiat(
+                            `${whole}${decimalSeparator}${newFraction}`,
+                        )
+                    }
+                } else {
+                    // Deleting in the whole part
+                    const newWhole = rawValue.slice(0, -1) || '0'
+                    handleChangeFiat(newWhole)
+                }
+            }
+
+            const handleDigit = (rawValue: string, maxDecimals: number) => {
                 if (rawValue.includes(decimalSeparator)) {
                     const [whole, fractionRaw = ''] =
                         rawValue.split(decimalSeparator)
@@ -553,22 +610,40 @@ export function useAmountInput(
                     )
                 } else {
                     handleChangeFiat(
-                        rawValue === '0'
-                            ? String(button)
-                            : rawValue + String(button),
+                        rawValue === '0' ? String(button) : rawValue + button,
                     )
                 }
+            }
+
+            /*
+             * Main decision tree
+             */
+
+            //Fiat Mode
+            if (isFiat) {
+                // Maximum number of decimals allowed for this currency
+                const maxDecimals = amountUtils.getCurrencyDecimals(currency, {
+                    locale: currencyLocale,
+                })
+
+                const rawValue = sanitise(fiatValue)
+
+                if (maxDecimals === 0) return handleNoDecimals(rawValue)
+                if (button === decimalSeparator)
+                    return handleSeparator(rawValue, maxDecimals)
+                if (button === 'backspace')
+                    return handleBackspace(rawValue, maxDecimals)
+                return handleDigit(rawValue, maxDecimals) // finished fiat branch
+            }
+
+            //Int only BTC Modes
+            const rawSats = satsValue.replace(/[^0-9]/g, '')
+            if (button === 'backspace') {
+                handleChangeSats(rawSats.slice(0, -1))
             } else {
-                const rawSats = satsValue.replace(/[^0-9]/g, '')
-                if (button === 'backspace') {
-                    handleChangeSats(rawSats.slice(0, -1))
-                } else {
-                    handleChangeSats(
-                        rawSats === '0'
-                            ? String(button)
-                            : rawSats + String(button),
-                    )
-                }
+                handleChangeSats(
+                    rawSats === '0' ? String(button) : rawSats + button,
+                )
             }
         },
         [
