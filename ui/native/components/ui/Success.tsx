@@ -2,18 +2,13 @@ import { useNavigation } from '@react-navigation/native'
 import { Button, Text, Theme, useTheme } from '@rneui/themed'
 import React from 'react'
 import { useTranslation } from 'react-i18next'
-import {
-    Dimensions,
-    ImageBackground,
-    ImageSourcePropType,
-    StyleSheet,
-    View,
-} from 'react-native'
+import { Dimensions, ImageSourcePropType, StyleSheet } from 'react-native'
 
-import { Images } from '../../assets/images'
 import { reset } from '../../state/navigation'
 import type { NavigationHook, RootStackParamList } from '../../types/navigation'
 import Flex from './Flex'
+import HoloCircle from './HoloCircle'
+import { SafeAreaContainer } from './SafeArea'
 import SvgImage from './SvgImage'
 
 interface SuccessBase {
@@ -57,24 +52,25 @@ const Success: React.FC<SuccessProps> = ({
     const style = styles(theme)
 
     return (
-        <ImageBackground source={Images.HoloBackground} style={style.container}>
-            <Flex center style={style.detailsContainer}>
-                <SvgImage
-                    name="Check"
-                    svgProps={{
-                        height: theme.sizes.md,
-                        width: theme.sizes.md,
-                    }}
+        <SafeAreaContainer edges="all">
+            <Flex center grow>
+                <HoloCircle
+                    size={CIRCLE_SIZE}
+                    content={
+                        <Flex gap="sm" center grow fullWidth>
+                            <SvgImage name="Check" size={theme.sizes.md} />
+                            {message ? (
+                                message
+                            ) : (
+                                <Text h2 h2Style={style.successMessage}>
+                                    {messageText}
+                                </Text>
+                            )}
+                        </Flex>
+                    }
                 />
-                {message ? (
-                    message
-                ) : (
-                    <Text h2 h2Style={style.successMessage}>
-                        {messageText}
-                    </Text>
-                )}
             </Flex>
-            <View style={style.buttonContainer}>
+            <Flex fullWidth>
                 {button ? (
                     button
                 ) : (
@@ -87,8 +83,8 @@ const Success: React.FC<SuccessProps> = ({
                         }}
                     />
                 )}
-            </View>
-        </ImageBackground>
+            </Flex>
+        </SafeAreaContainer>
     )
 }
 

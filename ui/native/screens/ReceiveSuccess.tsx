@@ -1,8 +1,7 @@
 import type { NativeStackScreenProps } from '@react-navigation/native-stack'
-import { Text, Theme, useTheme } from '@rneui/themed'
+import { Text } from '@rneui/themed'
 import React from 'react'
 import { useTranslation } from 'react-i18next'
-import { StyleSheet } from 'react-native'
 
 import amountUtils from '@fedi/common/utils/AmountUtils'
 import { makeReceiveSuccessMessage } from '@fedi/common/utils/wallet'
@@ -15,21 +14,19 @@ export type Props = NativeStackScreenProps<RootStackParamList, 'ReceiveSuccess'>
 
 const ReceiveSuccess: React.FC<Props> = ({ route }: Props) => {
     const { t } = useTranslation()
-    const { theme } = useTheme()
     const { tx, status = 'success' } = route.params
 
-    const style = styles(theme)
     const { message, subtext } = makeReceiveSuccessMessage(t, tx, status)
 
     return (
         <Success
             message={
-                <Flex align="center" gap="sm" style={style.textContainer}>
-                    <Text h2Style={style.successMessage} h2>
+                <Flex align="center" gap="sm">
+                    <Text center h2>
                         {message}
                     </Text>
                     {subtext && <Text caption>{subtext}</Text>}
-                    <Text h2Style={style.successMessage} h2>
+                    <Text center h2>
                         {`${amountUtils.formatNumber(
                             amountUtils.msatToSat(tx.amount),
                         )} ${t('words.sats').toUpperCase()}`}
@@ -40,16 +37,5 @@ const ReceiveSuccess: React.FC<Props> = ({ route }: Props) => {
         />
     )
 }
-
-const styles = (theme: Theme) =>
-    StyleSheet.create({
-        textContainer: {
-            marginVertical: theme.spacing.md,
-            width: '80%',
-        },
-        successMessage: {
-            textAlign: 'center',
-        },
-    })
 
 export default ReceiveSuccess

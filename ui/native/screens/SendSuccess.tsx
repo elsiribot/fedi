@@ -1,5 +1,5 @@
 import { NativeStackScreenProps } from '@react-navigation/native-stack'
-import { Text, useTheme } from '@rneui/themed'
+import { Text } from '@rneui/themed'
 import React from 'react'
 import { useTranslation } from 'react-i18next'
 
@@ -12,16 +12,13 @@ export type Props = NativeStackScreenProps<RootStackParamList, 'SendSuccess'>
 
 const SendSuccess: React.FC<Props> = ({ route }: Props) => {
     const { t } = useTranslation()
-    const { theme } = useTheme()
     const { amount, unit } = route.params
 
     return (
         <Success
             message={
                 <>
-                    <Text h2 style={{ marginTop: theme.spacing.md }}>
-                        {t('feature.send.you-sent')}
-                    </Text>
+                    <Text h2>{t('feature.send.you-sent')}</Text>
                     <Text h2>
                         {`${amountUtils.formatNumber(
                             amountUtils.msatToSat(amount),

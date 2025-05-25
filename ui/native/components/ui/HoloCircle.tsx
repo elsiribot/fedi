@@ -42,7 +42,15 @@ const HoloCircle: React.FC<Props> = ({ content, size }: Props) => {
                     },
                 ]}
             />
-            <View style={style.contentContainer}>{content}</View>
+            <Flex
+                center
+                style={{
+                    // Draws the largest possible square that fits in the circle
+                    width: (circleSize - 3) / Math.sqrt(2),
+                    height: (circleSize - 3) / Math.sqrt(2),
+                }}>
+                {content}
+            </Flex>
         </Flex>
     )
 }
@@ -55,9 +63,6 @@ const styles = (theme: Theme) =>
         holoCircle: {
             position: 'absolute',
             opacity: 1,
-        },
-        contentContainer: {
-            position: 'absolute',
         },
         innerCircle: {
             position: 'absolute',
