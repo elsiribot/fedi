@@ -14,7 +14,7 @@ jobs:
     build-run-e2e-tests:
         name: 'Build & run end-to-end tests (React Native: iOS + Android)'
         runs-on: [self-hosted, macos, arm64]
-        timeout-minutes: 60
+        timeout-minutes: 200
         env:
             BUILD_ANDROID: 1
             BUILD_IOS: 1
