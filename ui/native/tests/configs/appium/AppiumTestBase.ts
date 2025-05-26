@@ -22,7 +22,12 @@ export abstract class AppiumTestBase {
                 `android=new UiSelector().resourceId("${key}")`,
             ]
         } else {
-            return [`accessibility id:${key}`, `id:${key}`]
+            return [
+                `accessibility id:${key}`,
+                `id:${key}`,
+                // `label == "${key}" OR name == "${key}" OR value == "${key}"`,
+                // `label CONTAINS "${key}" OR name CONTAINS "${key}" OR value CONTAINS "${key}"`, test to see how this works
+            ]
         }
     }
 
@@ -286,7 +291,13 @@ export abstract class AppiumTestBase {
 
             await new Promise(resolve => setTimeout(resolve, 500))
         }
-
+        if (currentPlatform === Platform.IOS) {
+            // Android doesn't have this yet
+            console.log('Dumping XML tree')
+            await this.driver.executeScript('mobile: source', [
+                { format: 'xml' },
+            ])
+        }
         throw new Error(
             `Element with key "${key}" not displayed after ${timeout}ms. Tried strategies: ${strategies.join(', ')}. Errors: ${errors.map(e => e.message).join('; ')}`,
         )
