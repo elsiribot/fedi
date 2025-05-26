@@ -12,7 +12,7 @@ import {
     submitBugReport,
     uploadBugReportLogs,
 } from '@fedi/common/utils/bug-report'
-import { exportLogs, makeLog } from '@fedi/common/utils/log'
+import { exportUiLogs, makeLog } from '@fedi/common/utils/log'
 import { makeTarGz } from '@fedi/common/utils/targz'
 
 import { useAppDispatch, useAppSelector } from '../hooks'
@@ -40,7 +40,7 @@ export const useShareLogs = () => {
 
             setStatus('loading')
             try {
-                const jsLogs = await exportLogs()
+                const jsLogs = await exportUiLogs()
 
                 attachmentFiles.push({
                     name: 'app.log',

@@ -27,6 +27,7 @@ import {
 import App from './App'
 import { name as appName } from './app.json'
 import i18next from './localization/i18n'
+import { logFileApi } from './utils/logfile'
 import {
     handleBackgroundFCMReceived,
     handleBackgroundNotificationUpdate,
@@ -34,7 +35,6 @@ import {
     getNotificationBackgroundColor,
     dispatchNotification,
 } from './utils/notifications'
-import { storage } from './utils/storage'
 import {
     launchZendeskSupport,
     zendeskCloseMessagingView,
@@ -214,8 +214,8 @@ if (process.env.RUN_TESTS === '1') {
     LogBox.ignoreAllLogs()
 }
 
-// Configure logging to use native storage, and to save logs before close.
-configureLogging(storage)
+// Configure logging to use native logFileApi, and to save logs before close.
+configureLogging(logFileApi)
 AppState.addEventListener('change', state => {
     if (state === 'background' || state === 'inactive') {
         saveLogsToStorage()
