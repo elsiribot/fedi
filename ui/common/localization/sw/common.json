@@ -700,12 +700,12 @@
             "unsupported-unknown": "Hmm, huo si muundo tunaotambua. Samahani!"
         },
         "onboarding": {
-            "agree-terms-privacy": "Kwa kuendelea, unakubali <termsLink>Sheria na Masharti</termsLink> na <privacyLink>Sera ya Faragha</privacyLink>.",
+            "agree-terms-privacy": "Kwa kuendelea, unakubali \n<termsLink>Sheria na Masharti</termsLink> na <privacyLink>Sera ya Faragha</privacyLink>.",
             "agreement-text": "Kwa kuendelea, unakubali {{tos_url}} na {{privacy_url}}.",
             "are-you-new": "Je, wewe ni mpya kwenye Fedi?",
             "by-clicking-i-accept": "Kwa kubofya 'Nakubali' unakubaliana na masharti ya huduma kwenye {{tos_url}}",
             "by-clicking-you-agree-user-agreement": "Kwa kubofya 'Endelea' unakubali <anchor>Sheria na Masharti ya Fedi</anchor>",
-            "chat-earn-save-spend": "Pochi yako kuu.\nInaendeshwa na jumuiya.",
+            "tagline": "Pochi yako kuu.\nInaendeshwa na jumuiya.",
             "community-first": "Jumuiya kwanza",
             "continue-to-fedi": "Endelea kwa Fedi",
             "description": "Mashirikisho ni vyumba za pochi zako za kibinafsi. Anza kwa kujiunga na mashirikisho ya wazi.",

@@ -700,12 +700,12 @@
             "unsupported-unknown": "Hmm, ce n'est pas un format que nous reconnaissons. Désolé!"
         },
         "onboarding": {
-            "agree-terms-privacy": "En continuant, vous acceptez nos <termsLink>Conditions d'utilisation</termsLink> et notre <privacyLink>Politique de confidentialité</privacyLink>.",
+            "agree-terms-privacy": "En continuant, vous acceptez nos \n<termsLink>Conditions d'utilisation</termsLink> et notre <privacyLink>Politique de confidentialité</privacyLink>.",
             "agreement-text": "En continuant, vous acceptez nos {{tos_url}} et {{privacy_url}}.",
             "are-you-new": "Êtes-vous nouveau sur Fedi?",
             "by-clicking-i-accept": "En cliquant sur 'J'accepte' vous acceptez les conditions d'utilisation sur {{tos_url}}",
             "by-clicking-you-agree-user-agreement": "En cliquant sur 'Rejoindre une Communauté', vous acceptez les <anchor>Accord utilisateur</anchor>",
-            "chat-earn-save-spend": "Votre super portefeuille.\nSuralimenté par la communauté.",
+            "tagline": "Votre super portefeuille.\nSuralimenté par la communauté.",
             "community-first": "La communauté d'abord",
             "continue-to-fedi": "Continuer vers Fedi",
             "description": "Les fédérations abritent vos portefeuilles personnels. Rejoignez des fédérations ouvertes publiques ou privées.",

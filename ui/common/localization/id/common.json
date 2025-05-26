@@ -694,12 +694,12 @@
             "unsupported-unknown": "Hmm, itu bukan format yang kami kenali. Maaf!\""
         },
         "onboarding": {
-            "agree-terms-privacy": "Dengan melanjutkan, kamu menyetujui <termsLink>Ketentuan Penggunaan</termsLink> & <privacyLink>Kebijakan Privasi</privacyLink> kami.",
+            "agree-terms-privacy": "Dengan melanjutkan, kamu menyetujui \n<termsLink>Ketentuan Penggunaan</termsLink> & <privacyLink>Kebijakan Privasi</privacyLink> kami.",
             "agreement-text": "Dengan melanjutkan, kamu menyetujui {{tos_url}} & {{privacy_url}} kami.",
             "are-you-new": "Apakah kamu baru di Fedi?",
             "by-clicking-i-accept": "Dengan mengeklik 'Saya setuju', kamu menyetujui persyaratan layanan di {{tos_url}}",
             "by-clicking-you-agree-user-agreement": "Dengan melanjutkan, kamu menyetujui <anchor>Perjanjian pengguna</anchor> & Kebijakan privasi </anchor>",
-            "chat-earn-save-spend": "Dompet Supermu.\\nDijalankan oleh komunitas",
+            "tagline": "Dompet Supermu.\\nDijalankan oleh komunitas",
             "community-first": "Komunitas terlebih dahulu",
             "continue-to-fedi": "Lanjut ke Fedi",
             "description": "Federasi adalah rumah bagi dompet pribadimu. Mulailah dengan federasi terbuka.",

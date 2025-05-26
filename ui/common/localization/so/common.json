@@ -696,12 +696,12 @@
             "unsupported-unknown": "Hmm, taasi maaha qaab aan aqoonsannahay. Waan ka xumahay!"
         },
         "onboarding": {
-            "agree-terms-privacy": "Markaad sii waddo, waxaad ogolaatay <termsLink>Shuruudaha Isticmaalka</termsLink> & <privacyLink>Siyaasadda Qarsoonnimada</privacyLink>.",
+            "agree-terms-privacy": "Markaad sii waddo, waxaad ogolaatay \n<termsLink>Shuruudaha Isticmaalka</termsLink> & <privacyLink>Siyaasadda Qarsoonnimada</privacyLink>.",
             "agreement-text": "Markaad sii waddo, waxaad ogolaatay {{tos_url}} iyo {{privacy_url}}.",
             "are-you-new": "Ma ku cusub tahay Fedi?",
             "by-clicking-i-accept": "Markaad gujiso 'waan aqbalay' waxaad ogolaatay shuruudaha adeega {{tos_url}}",
             "by-clicking-you-agree-user-agreement": "Markaad sii waddo, waxaad ogolaatay \n<anchor>Shuruudaha Isticmaalka</anchor> & <anchor>Siyaasadda Qarsoonnimada</anchor>",
-            "chat-earn-save-spend": "Walletkaaga weyn.\nWaxa awood geliyey bulshada",
+            "tagline": "Walletkaaga weyn.\nWaxa awood geliyey bulshada",
             "community-first": "bulshada marka hore",
             "continue-to-fedi": "ku soco fedi",
             "description": "Federaaladu waa guryaha boorsooyinkaaga gaarka ah. Ku biir xiriirada guud ama kuwa gaarka ah.",

@@ -700,12 +700,12 @@
             "unsupported-unknown": "Хм, це невідомий формат. Вибачте!"
         },
         "onboarding": {
-            "agree-terms-privacy": "Продовжуючи, ви приймаєте наші <termsLink>Умови використання</termsLink> і <privacyLink>Політику конфіденційності</privacyLink>.",
+            "agree-terms-privacy": "Продовжуючи, ви приймаєте наші \n<termsLink>Умови використання</termsLink> і <privacyLink>Політику конфіденційності</privacyLink>.",
             "agreement-text": "Продовжуючи, ви приймаєте наші {{tos_url}} і {{privacy_url}}.",
             "are-you-new": "Чи ви користуєтесь Fedi в перший раз?",
             "by-clicking-i-accept": "Натискаючи 'Приймаю', ви погоджуєтесь з умовами обслуговування на {{tos_url}}",
             "by-clicking-you-agree-user-agreement": "Натискаючи 'Далі', ви погоджуєтесь з <anchor>умовами обслуговування Fedi</anchor>",
-            "chat-earn-save-spend": "Твій супергаманець.\nЗаряджений громадою.",
+            "tagline": "Твій супергаманець.\nЗаряджений громадою.",
             "community-first": "Громада передусім",
             "continue-to-fedi": "Продовжити до Fedi",
             "description": "Федерації - це домівки для ваших особистих гаманців. Почніть роботу, долучившись до однієї з публічних федерацій.",

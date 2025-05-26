@@ -698,12 +698,12 @@
             "unsupported-unknown": "Hmm, ubu si bwo buryo tuzi. Ihangane"
         },
         "onboarding": {
-            "agree-terms-privacy": "Mugukomeza, wemera <termsLink> Amasezerano yo gukoresha </termsLink> & <privacyLink> Politiki Yibanga </privacyLink>.",
+            "agree-terms-privacy": "Mugukomeza, wemera \n<termsLink> Amasezerano yo gukoresha </termsLink> & <privacyLink> Politiki Yibanga </privacyLink>.",
             "agreement-text": "Mugukomeza, wemera {{tos_url}} & {{privacy_url}}.",
             "are-you-new": "Waba mushya kuri Fedi?",
             "by-clicking-i-accept": "Nukanda kuri \" Ndemeye\" uraba wemeye amabwiriza agenga uyu murimo kuri {{tos_url}}",
             "by-clicking-you-agree-user-agreement": "Mugukomeza, wemera\n<anchor>Amasezerano yo gukoresha</anchor> & <anchor>Politiki Yibanga</anchor>",
-            "chat-earn-save-spend": "Umufuka wawe ukomeye.\nImbaraga zabaturage.",
+            "tagline": "Umufuka wawe ukomeye.\nImbaraga zabaturage.",
             "community-first": "Mbere ya byose umuryango",
             "continue-to-fedi": "Komeza kuri Fedi",
             "description": "Federasiyo ni amazu yumufuka wawe. Injira muri federasiyo ya leta cyangwa yigenga.",

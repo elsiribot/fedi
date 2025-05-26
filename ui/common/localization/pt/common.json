@@ -700,12 +700,12 @@
             "unsupported-unknown": "Hmm, esse não é um formato que reconhecemos. Lamentamos!"
         },
         "onboarding": {
-            "agree-terms-privacy": "Ao continuar, você concorda com nossos <termsLink>Termos de Uso</termsLink> e <privacyLink>Política de Privacidade</privacyLink>.",
+            "agree-terms-privacy": "Ao continuar, você concorda com nossos \n<termsLink>Termos de Uso</termsLink> e <privacyLink>Política de Privacidade</privacyLink>.",
             "agreement-text": "Ao continuar, você concorda com nossos {{tos_url}} e {{privacy_url}}.",
             "are-you-new": "Você é novo no Fedi?",
             "by-clicking-i-accept": "Ao clicar em 'Aceito' você aceita os termos de serviço em {{tos_url}}",
             "by-clicking-you-agree-user-agreement": "Ao clicar em 'Continuar' você concorda com os <anchor>termos de serviço da Fedi</anchor>",
-            "chat-earn-save-spend": "Conversar, ganhar, poupar e gastar dinheiro de forma privada com a sua comunidade",
+            "tagline": "Conversar, ganhar, poupar e gastar dinheiro de forma privada com a sua comunidade",
             "community-first": "Comunidade em primeiro lugar",
             "continue-to-fedi": "Continuar no Fedi",
             "description": "As federações são os lares das suas carteiras pessoais. Junte-se a federações públicas ou privadas abertas.",
