@@ -191,7 +191,7 @@ jobs:
                   echo "No com.fedi detected. Continuing..."
                 fi
                 nix develop -c yarn install
-                PLATFORM=android DEVICE_ID=emulator-5554 BUNDLE_PATH="./ui/native/testArtifacts/app-production-debug.apk" nix develop -c yarn run ts-node ./native/tests/appium/runner.ts all
+                PLATFORM=android DEVICE_ID=emulator-5554 BUNDLE_PATH="./ui/native/android/app/build/outputs/apk/production/debug/app-production-debug.apk" nix develop -c yarn run ts-node ./native/tests/appium/runner.ts all
                 echo "status=$?" >> $GITHUB_OUTPUT
                 popd
 
@@ -206,7 +206,7 @@ jobs:
                   echo "No com.fedi detected. Continuing..."
                 fi
                 nix develop -c yarn install
-                PLATFORM=android DEVICE_ID=emulator-5556 BUNDLE_PATH="./ui/native/testArtifacts/app-production-debug.apk" nix develop -c yarn run ts-node ./native/tests/appium/runner.ts all
+                PLATFORM=android DEVICE_ID=emulator-5556 BUNDLE_PATH="./ui/native/android/app/build/outputs/apk/production/debug/app-production-debug.apk" nix develop -c yarn run ts-node ./native/tests/appium/runner.ts all
                 echo "status=$?" >> $GITHUB_OUTPUT
                 popd
 
@@ -217,7 +217,7 @@ jobs:
                 pushd ui
                 xcrun simctl uninstall $IOS_15_UDID org.fedi.alpha
                 nix develop -c yarn install
-                PLATFORM=ios DEVICE_ID=$IOS_15_UDID BUNDLE_PATH="./ui/native/testArtifacts/FediReactNative.app" nix develop -c yarn run ts-node ./native/tests/appium/runner.ts all
+                PLATFORM=ios DEVICE_ID=$IOS_15_UDID BUNDLE_PATH="./ui/native/ios/build/Build/Products/Debug-iphonesimulator/FediReactNative.app" nix develop -c yarn run ts-node ./native/tests/appium/runner.ts all
                 echo "status=$?" >> $GITHUB_OUTPUT
                 popd
 
@@ -228,7 +228,7 @@ jobs:
                 pushd ui
                 xcrun simctl uninstall $IOS_15_UDID org.fedi.alpha
                 nix develop -c yarn install
-                PLATFORM=ios DEVICE_ID=$IOS_18_UDID BUNDLE_PATH="./ui/native/testArtifacts/FediReactNative.app" nix develop -c yarn run ts-node ./native/tests/appium/runner.ts all
+                PLATFORM=ios DEVICE_ID=$IOS_18_UDID BUNDLE_PATH="./ui/native/ios/build/Build/Products/Debug-iphonesimulator/FediReactNative.app" nix develop -c yarn run ts-node ./native/tests/appium/runner.ts all
                 echo "status=$?" >> $GITHUB_OUTPUT
                 popd
 
