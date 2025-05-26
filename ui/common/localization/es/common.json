@@ -700,12 +700,12 @@
             "unsupported-unknown": "Hmm, este no es un formato reconocido. ¡Lo siento!"
         },
         "onboarding": {
-            "agree-terms-privacy": "Al continuar, aceptas nuestras <termsLink>Condiciones de Uso</termsLink> y nuestra <privacyLink>Política de Privacidad</privacyLink>.",
+            "agree-terms-privacy": "Al continuar, aceptas nuestras \n<termsLink>Condiciones de Uso</termsLink> y nuestra <privacyLink>Política de Privacidad</privacyLink>.",
             "agreement-text": "Al continuar, aceptas nuestras {{tos_url}} y {{privacy_url}}.",
             "are-you-new": "¿Eres nuevo en Fedi?",
             "by-clicking-i-accept": "Al hacer clic en 'Acepto', aceptas los términos de servicio en {{tos_url}}",
             "by-clicking-you-agree-user-agreement": "Al continuar, aceptas los términos del <anchor>Acuerdo de usuario</anchor> & <anchor>Política de Privacidad</anchor>",
-            "chat-earn-save-spend": "Tu Superbilletera.\nRespaldada por tu comunidad.",
+            "tagline": "Tu Superbilletera.\nRespaldada por tu comunidad.",
             "community-first": "Primero la comunidad",
             "continue-to-fedi": "Continua a Fedi",
             "description": "Las federaciones son el hogar de tus billeteras personales. Únete a federaciones abiertas públicas o privadas.",

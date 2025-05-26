@@ -700,12 +700,12 @@
             "unsupported-unknown": "Hmm, hindi namin kilala ang format na 'yan. Pasensya na!"
         },
         "onboarding": {
-            "agree-terms-privacy": "Sa pagpapatuloy, sumasang-ayon ka sa aming <termsLink>Mga Tuntunin ng Paggamit</termsLink> at <privacyLink>Patakaran sa Privacy</privacyLink>.",
+            "agree-terms-privacy": "Sa pagpapatuloy, sumasang-ayon ka sa aming \n<termsLink>Mga Tuntunin ng Paggamit</termsLink> at <privacyLink>Patakaran sa Privacy</privacyLink>.",
             "agreement-text": "Sa pagpapatuloy, sumasang-ayon ka sa aming {{tos_url}} at {{privacy_url}}.",
             "are-you-new": "Bago ka ba sa Fedi?",
             "by-clicking-i-accept": "Sa pag-click ng 'Tinatanggap ko' sumasang-ayon ka sa mga tuntunin ng serbisyo sa {{tos_url}}",
             "by-clicking-you-agree-user-agreement": "Sa pag-click ng 'Continue', sumasang-ayon ka sa <anchor>Fedi Terms of Service</anchor>",
-            "chat-earn-save-spend": "Ang iyong superwallet.\nPinapatakbo ng komunidad.",
+            "tagline": "Ang iyong superwallet.\nPinapatakbo ng komunidad.",
             "community-first": "Komunidad muna",
             "continue-to-fedi": "Magpatuloy sa Fedi",
             "description": "Ang mga pederasyon ay ang mga tahanan para sa iyong mga personal na pitaka. Magsimula sa mga bukas na pederasyon.",
