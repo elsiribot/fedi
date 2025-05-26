@@ -8,9 +8,16 @@ import {
     StyleSheet,
     TextInput,
     TextStyle,
+    Vibration,
     View,
     useWindowDimensions,
 } from 'react-native'
+import Animated, {
+    useSharedValue,
+    useAnimatedStyle,
+    withSequence,
+    withTiming,
+} from 'react-native-reanimated'
 
 import { useAmountInput } from '@fedi/common/hooks/amount'
 import { Sats } from '@fedi/common/types'
@@ -86,10 +93,6 @@ const AmountInput: React.FC<Props> = ({
         if (lockToFiat) setIsFiat(true)
     }, [lockToFiat, setIsFiat])
 
-    // For some reason the TextInput inside InvisibleInput does not
-    // automatically blur the input when the keyboard is dismissed
-    // which causes the .focus() event to have no effect so here we
-    // force the blur to make sure .isFocused() returns false
     useEffect(() => {
         const keyboardHiddenListener = Keyboard.addListener(
             'keyboardDidHide',
@@ -100,7 +103,6 @@ const AmountInput: React.FC<Props> = ({
         }
     }, [])
 
-    // Check validation for errors to render with suggestion for amount.
     let error: React.ReactNode | undefined
     if (
         validation &&
@@ -114,8 +116,6 @@ const AmountInput: React.FC<Props> = ({
         if (!readOnly) {
             suggestionStyle.push(style.clickableSuggestion)
         }
-        // TODO: Make only underlined suggestion pressable, <Trans /> doesn't like <Pressable /> as a component
-        // TODO: Make this wiggle when submitAttempts is incremented
         error = (
             <Pressable onPress={handlePressSuggestion} disabled={readOnly}>
                 <Text style={style.error} caption>
@@ -154,25 +154,42 @@ const AmountInput: React.FC<Props> = ({
         ? `${satsValue} ${t('words.sats').toUpperCase()}`
         : `${fiatValue} ${currency}`
 
+    const shake = useSharedValue(0)
+    const onRejectedPress = () => {
+        Vibration.vibrate(40) // ← added
+        shake.value = withSequence(
+            withTiming(8, { duration: 50 }),
+            withTiming(-8, { duration: 50 }),
+            withTiming(0, { duration: 50 }),
+        )
+    }
+    const animatedStyle = useAnimatedStyle(() => ({
+        transform: [{ translateX: shake.value }],
+    }))
+
     return (
         <Flex grow align="center" fullWidth>
             <Flex center gap="sm" grow style={style.amounts}>
-                <Pressable
-                    style={style.primaryAmount}
-                    disabled={readOnly || hasNumpad || isSubmitting}
-                    onPress={() => inputRef?.current?.focus()}>
-                    <InvisibleInput
-                        inputRef={inputRef}
-                        value={isFiat ? fiatValue : satsValue}
-                        label={
-                            isFiat ? currency : t('words.sats').toUpperCase()
-                        }
-                        onChangeText={
-                            isFiat ? handleChangeFiat : handleChangeSats
-                        }
-                        readOnly={readOnly || hasNumpad || isSubmitting}
-                    />
-                </Pressable>
+                <Animated.View style={animatedStyle}>
+                    <Pressable
+                        style={style.primaryAmount}
+                        disabled={readOnly || hasNumpad || isSubmitting}
+                        onPress={() => inputRef?.current?.focus()}>
+                        <InvisibleInput
+                            inputRef={inputRef}
+                            value={isFiat ? fiatValue : satsValue}
+                            label={
+                                isFiat
+                                    ? currency
+                                    : t('words.sats').toUpperCase()
+                            }
+                            onChangeText={
+                                isFiat ? handleChangeFiat : handleChangeSats
+                            }
+                            readOnly={readOnly || hasNumpad || isSubmitting}
+                        />
+                    </Pressable>
+                </Animated.View>
                 {switcherEnabled && (
                     <Pressable
                         style={style.symbolSwitcher}
@@ -227,7 +244,8 @@ const AmountInput: React.FC<Props> = ({
                             btn={btn}
                             onPress={() => {
                                 try {
-                                    handleNumpadPress(btn)
+                                    const rejected = handleNumpadPress(btn)
+                                    if (rejected) onRejectedPress()
                                 } catch (err) {
                                     log.error('handleNumpadPress', err)
                                 }

@@ -484,6 +484,11 @@ export function useAmountInput(
     // Keeps track of the current index (cursor) within the fractional part of the number
     const fractionIndexRef = useRef(0)
 
+    const rejectExtraKey = (): boolean => {
+        /* pure helper – no platform code */
+        return true
+    }
+
     /**
      * Handles presses on the on‑screen num‑pad (digits, decimal separator or backspace).
      *
@@ -499,7 +504,7 @@ export function useAmountInput(
             rawBtn: (typeof numpadButtons)[number],
         ) => {
             //guard - ignore nulls (should never happen)
-            if (rawBtn === null) return
+            if (rawBtn === null) return false
 
             // Locale‑aware decimal separator ('.' for en‑US, ',' for de‑DE …)
             const decimalSeparator = amountUtils.getDecimalSeparator({
@@ -533,13 +538,15 @@ export function useAmountInput(
             const handleNoDecimals = (rawValue: string) => {
                 if (button === 'backspace') {
                     handleChangeFiat(rawValue.slice(0, -1) || '0')
-                } else if (button === decimalSeparator) {
-                    return // separator not allowed
-                } else {
-                    handleChangeFiat(
-                        rawValue === '0' ? String(button) : rawValue + button,
-                    )
+                    return false
                 }
+                if (button === decimalSeparator) {
+                    return rejectExtraKey() // separator not allowed
+                }
+                handleChangeFiat(
+                    rawValue === '0' ? String(button) : rawValue + button,
+                )
+                return false
             }
 
             const handleSeparator = (rawValue: string, maxDecimals: number) => {
@@ -550,6 +557,7 @@ export function useAmountInput(
                 }
                 // place cursor at first decimal slot
                 fractionIndexRef.current = 0
+                return false
             }
 
             const handleBackspace = (rawValue: string, maxDecimals: number) => {
@@ -562,7 +570,7 @@ export function useAmountInput(
 
                     /*
                      * When switching from sats → fiat the cursor may still be
-                     * at 0 while both fraction digits are non‑zero.  In that
+                     * at 0 while both fraction digits are non‑zero. In that
                      * case start deleting from the *rightmost* digit.
                      */
                     if (
@@ -596,10 +604,17 @@ export function useAmountInput(
                     const newWhole = rawValue.slice(0, -1) || '0'
                     handleChangeFiat(newWhole)
                 }
+
+                return false
             }
 
             const handleDigit = (rawValue: string, maxDecimals: number) => {
                 if (rawValue.includes(decimalSeparator)) {
+                    /* Already have a separator → edit the fraction part */
+                    if (fractionIndexRef.current >= maxDecimals) {
+                        return rejectExtraKey() // reject when precision limit hit
+                    }
+
                     const [whole, fractionRaw = ''] =
                         rawValue.split(decimalSeparator)
                     const fractionArr = (fractionRaw + '0'.repeat(maxDecimals))
@@ -621,6 +636,7 @@ export function useAmountInput(
                         rawValue === '0' ? String(button) : rawValue + button,
                     )
                 }
+                return false
             }
 
             /*
@@ -636,7 +652,9 @@ export function useAmountInput(
 
                 const rawValue = sanitise(fiatValue)
 
-                if (maxDecimals === 0) return handleNoDecimals(rawValue)
+                if (maxDecimals === 0) {
+                    return handleNoDecimals(rawValue)
+                }
                 if (button === decimalSeparator)
                     return handleSeparator(rawValue, maxDecimals)
                 if (button === 'backspace')
@@ -653,6 +671,7 @@ export function useAmountInput(
                     rawSats === '0' ? String(button) : rawSats + button,
                 )
             }
+            return false
         },
         [
             isFiat,
