@@ -242,7 +242,7 @@
         "yes-unblock": "Yes, Unblock"
     },
     "errors": {
-        "admin-promotion-pending-multispend": "Cannot promote admins while multispend invite is pending",
+        "admin-promotion-pending-multispend": "You cannot promote group members to admins while Multispend invitation is in progress.",
         "bad-connection": "Your network connection may be unstable. Please try again later or connect to another network.",
         "browser-feature-not-supported": "Your browser does not support this feature.",
         "camera-unavailable": "Failed to access your camera.",
@@ -287,7 +287,7 @@
         "invalid-username": "Must be 21 characters or less and cannot include uppercase letters",
         "invalid-username-banned": "Please enter a different display name",
         "invoice-already-paid": "This invoice has already been paid.",
-        "multispend-cannot-be-broadcast": "Broadcast-only cannot be enabled in a Multispend group.",
+        "multispend-cannot-be-broadcast": "Multispend groups cannot be Broadcast-only.",
         "multispend-notes-required": "Please enter a purpose for this withdrawal",
         "no-address-lnurlp": "This address does not support lightning payments",
         "no-lightning-gateways": "No lightning gateways found for this user",
