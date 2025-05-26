@@ -136,3 +136,7 @@ jest.mock('react-native-quick-base64', () => ({
         fromBase64: jest.fn(() => new Uint8Array([1, 2, 3])),
     },
 }))
+
+jest.mock('js-lnurl', () => ({
+    getParams: jest.fn(() => Promise.resolve({})),
+}))
