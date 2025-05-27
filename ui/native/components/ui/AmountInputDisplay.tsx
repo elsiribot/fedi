@@ -1,8 +1,9 @@
 import { Text, Theme, useTheme } from '@rneui/themed'
-import React, { useMemo } from 'react'
+import React from 'react'
 import { useTranslation } from 'react-i18next'
 import { StyleSheet, View } from 'react-native'
 
+import { useFormattedFiatSats } from '@fedi/common/hooks/amount'
 import { useCommonSelector } from '@fedi/common/hooks/redux'
 import {
     selectBtcExchangeRate,
@@ -11,7 +12,6 @@ import {
     selectAmountInputType,
 } from '@fedi/common/redux'
 import { Sats } from '@fedi/common/types'
-import amountUtils from '@fedi/common/utils/AmountUtils'
 
 import Flex from './Flex'
 
@@ -31,23 +31,15 @@ const AmountInputDisplay: React.FC<AmountInputDisplayProps> = ({
     const currency = useCommonSelector(selectCurrency)
     const currencyLocale = useCommonSelector(selectCurrencyLocale)
     const lastInputType = useCommonSelector(selectAmountInputType)
-
     const isFiat = showFiat ?? lastInputType !== 'sats'
 
-    const { fiatString, satsString } = useMemo(() => {
-        const satsFmt = amountUtils.formatSats(amount)
-        const fiatRaw = amountUtils.satToBtc(amount) * btcToFiatRate
-        const decimals = amountUtils.getCurrencyDecimals(currency, {
-            locale: currencyLocale,
-        })
-        const fiatFmt = amountUtils.formatFiat(fiatRaw, currency, {
-            locale: currencyLocale,
-            symbolPosition: 'none',
-            minimumFractionDigits: decimals,
-            maximumFractionDigits: decimals,
-        })
-        return { fiatString: fiatFmt, satsString: satsFmt }
-    }, [amount, btcToFiatRate, currency, currencyLocale])
+    const { formattedFiat: fiatString, formattedSats: satsString } =
+        useFormattedFiatSats(
+            amount,
+            btcToFiatRate,
+            currency,
+            currencyLocale || 'en-US',
+        )
 
     const primary = isFiat ? fiatString : satsString
     const secondary = isFiat
