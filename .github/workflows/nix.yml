@@ -190,7 +190,7 @@ jobs:
         if: >
             needs.precheck.outputs.HAS_NON_UI_CHANGES == '1' ||
             needs.precheck.outputs.IS_PUSH_TO_MASTER == '1'
-        runs-on: [self-hosted, linux, legacy]
+        runs-on: [self-hosted, linux ]
         timeout-minutes: 60
         steps:
             - uses: actions/checkout@v4
@@ -354,7 +354,7 @@ jobs:
       name: Status
       needs: [lint, build-workspace, build-linux, build-android, build-ios, shell]
       if: ${{ always() }}
-      runs-on: [self-hosted, linux, legacy]
+      runs-on: [self-hosted, linux ]
       steps:
         - name: Check status of all jobs
           if: >-
