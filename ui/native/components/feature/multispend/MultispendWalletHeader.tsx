@@ -2,7 +2,7 @@ import { useNavigation } from '@react-navigation/native'
 import { Text, Theme, useTheme } from '@rneui/themed'
 import { useCallback, useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
-import { Linking, StatusBar, StyleSheet, View } from 'react-native'
+import { Linking, Platform, StatusBar, StyleSheet, View } from 'react-native'
 import { Pressable } from 'react-native-gesture-handler'
 import LinearGradient from 'react-native-linear-gradient'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
@@ -65,9 +65,11 @@ const MultispendWalletHeader: React.FC<Props> = ({ roomId }) => {
     }, [])
 
     useEffect(() => {
-        StatusBar.setBackgroundColor('transparent')
-        StatusBar.setTranslucent(true)
-        StatusBar.setBarStyle('dark-content')
+        if (Platform.OS === 'android') {
+            StatusBar.setBackgroundColor('transparent')
+            StatusBar.setTranslucent(true)
+            StatusBar.setBarStyle('dark-content')
+        }
     }, [])
 
     const actionButtons = (
