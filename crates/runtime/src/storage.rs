@@ -6,6 +6,7 @@ use std::sync::Arc;
 use std::time::SystemTime;
 
 use anyhow::{anyhow, bail, ensure, Context};
+use either::Either;
 use fedi_social_client::SocialRecoveryState;
 use fedimint_aead::{decrypt, LessSafeKey};
 use fedimint_bip39::Bip39RootSecretStrategy;
@@ -159,6 +160,17 @@ pub struct AppStateRaw {
     /// the BTC -> display currency exchange rate. This cached info is used
     /// to attach historical fiat values to TXs as they are recorded.
     pub cached_fiat_fx_info: Option<FiatFXInfo>,
+    /// Have we committed to this seed? blocks all future recoverFromMnemonic
+    /// attempts
+    ///
+    /// defaults to None for old installs - meaning bridge doesn't know.
+    /// changes to Some(_) after first launch with frontend help
+    ///
+    /// defaults to Some(false) for new install: meaning not committed, and we
+    /// will commit in future
+    ///
+    /// transitions to Some(true) on recoverFromMnemonic or commitToSeed rpc
+    seed_committed: Option<bool>,
 }
 
 #[derive(Debug, Clone, PartialEq)]
@@ -381,122 +393,29 @@ pub struct FiatFXInfo {
     pub btc_to_fiat_hundredths: u64,
 }
 
+// base for both AppState and AppStateSeedUncommitted
 #[derive(Clone)]
-pub struct AppState {
+struct AppStateStore {
     // Arc surrounding RwLock<AppStateRaw> is required to be able to move the (owned) write lock
     // within the spawn_blocking task in the with_write_lock() function.
     raw: Arc<RwLock<AppStateRaw>>,
     storage: Storage,
 }
 
-impl AppState {
-    /// Loads from existing file if present. If not, attempts to read from
-    /// legacy global DB and writes to a new file (migration). If migration
-    /// results in error, just loads a default empty file.
-    pub async fn load(
-        storage: Storage,
-        new_identifier_v2: DeviceIdentifier,
-    ) -> anyhow::Result<Self> {
-        if let Some(state) =
-            AppState::existing_from_storage(storage.clone(), new_identifier_v2.clone()).await?
-        {
-            Ok(state)
-        } else {
-            Self::default_with_storage(storage, new_identifier_v2).await
-        }
-    }
+#[derive(Clone)]
+// allows clone because transition to seed_committed = true -> false is not
+// allowed
+pub struct AppState {
+    // invariant: seed_committed = Some(true)
+    inner: AppStateStore,
+}
 
-    async fn existing_from_storage(
-        storage: Storage,
-        device_identifier_v2: DeviceIdentifier,
-    ) -> anyhow::Result<Option<Self>> {
-        let Some(app_state_raw) = storage.read_file(Path::new(FEDI_FILE_PATH)).await? else {
-            return Ok(None);
-        };
+// invariant: seed_committed = Some(false)
+pub struct AppStateUncommittedSeed {
+    inner: AppStateStore,
+}
 
-        let Some(value) = Self::parse(app_state_raw)? else {
-            return Ok(None);
-        };
-
-        let app_state = Self {
-            raw: RwLock::new(value).into(),
-            storage,
-        };
-
-        app_state
-            .with_write_lock(|state| {
-                // If encrypted_device_identifier_v2 is missing in JSON file on disk,
-                // immediately fill it in and write it to disk
-                if state.encrypted_device_identifier_v2.is_none() {
-                    let root_secret =
-                        Bip39RootSecretStrategy::<12>::to_root_secret(&state.root_mnemonic);
-                    let encrypted_device_identifier = device_identifier_v2
-                        .encrypt_and_hex_encode(&root_secret)
-                        .context("Encrypting a valid device identifier must not fail")?;
-                    state.encrypted_device_identifier_v2 = Some(encrypted_device_identifier)
-                }
-
-                Ok::<_, anyhow::Error>(())
-            })
-            .await??;
-
-        Ok(Some(app_state))
-    }
-
-    fn parse(app_state_raw: Vec<u8>) -> Result<Option<AppStateRaw>, anyhow::Error> {
-        #[derive(Clone, Deserialize)]
-        struct HasFormatVersion {
-            #[allow(unused)]
-            format_version: u32,
-        }
-        if let Err(err) = serde_json::from_slice::<HasFormatVersion>(&app_state_raw) {
-            error!(%err, "invalid fedi file");
-            return Ok(None);
-        }
-        Ok(Some(serde_json::from_slice(&app_state_raw)?))
-    }
-
-    async fn default_with_storage(
-        storage: Storage,
-        device_identifier_v2: DeviceIdentifier,
-    ) -> anyhow::Result<Self> {
-        let root_mnemonic = Bip39RootSecretStrategy::<12>::random(&mut OsRng);
-        let root_secret = Bip39RootSecretStrategy::<12>::to_root_secret(&root_mnemonic);
-        let encrypted_device_identifier = device_identifier_v2
-            .encrypt_and_hex_encode(&root_secret)
-            .context("Encrypting a valid device identifier must not fail")?;
-        #[allow(deprecated)]
-        let app_state = Self {
-            raw: RwLock::new(AppStateRaw {
-                format_version: 0,
-                root_mnemonic,
-                joined_federations: BTreeMap::new(),
-                joined_communities: BTreeMap::new(),
-                social_recovery_state: None,
-                sensitive_log: None,
-                matrix_session: None,
-                matrix_session_native_sync: None,
-                device_identifier: (),
-                // When setting up a new AppState (fresh install), set
-                // encrypted_device_identifier_v1 as None which marks the transfer of ownership as
-                // complete.
-                encrypted_device_identifier_v1: None,
-                encrypted_device_identifier_v2: Some(encrypted_device_identifier),
-                device_index: default_device_index(),
-                last_device_registration_timestamp: None,
-                next_federation_db_prefix: default_next_federation_prefix(),
-                matrix_display_name: None,
-                cached_fiat_fx_info: None,
-            })
-            .into(),
-            storage,
-        };
-
-        // Write immediately before returning
-        app_state.with_write_lock(|_| ()).await?;
-        Ok(app_state)
-    }
-
+impl AppStateStore {
     pub async fn with_read_lock<T, F>(&self, closure: F) -> T
     where
         F: FnOnce(&AppStateRaw) -> T,
@@ -547,15 +466,138 @@ impl AppState {
         Ok(result)
     }
 
+    // resolve the value of seed committed
+    async fn resolve_seed_committed(&self) -> anyhow::Result<bool> {
+        self.with_write_lock(|app_state| {
+            let seed_committed = if let Some(value) = app_state.seed_committed {
+                value
+            } else {
+                // Infer from state: if we have matrix sessions or joined federations, seed must
+                // be committed
+                #[allow(deprecated)]
+                let has_matrix = app_state.matrix_session_sliding_sync_proxy.is_some()
+                    || app_state.matrix_session_native_sync.is_some();
+                let has_federations = !app_state.joined_federations.is_empty();
+
+                has_matrix || has_federations
+            };
+
+            app_state.seed_committed = Some(seed_committed);
+            seed_committed
+        })
+        .await
+    }
+
+    pub async fn root_secret(&self) -> DerivableSecret {
+        self.with_read_lock(|state| {
+            Bip39RootSecretStrategy::<12>::to_root_secret(&state.root_mnemonic)
+        })
+        .await
+    }
+}
+
+impl AppState {
+    /// Loads from existing file if present. If not, attempts to read from
+    /// legacy global DB and writes to a new file (migration). If migration
+    /// results in error, just loads a default empty file.
+    pub async fn load(
+        storage: Storage,
+        new_identifier_v2: DeviceIdentifier,
+    ) -> anyhow::Result<Either<AppState, AppStateUncommittedSeed>> {
+        if let Some(state) =
+            AppState::existing_from_storage(storage.clone(), new_identifier_v2.clone()).await?
+        {
+            Ok(state)
+        } else {
+            Ok(Either::Right(
+                AppStateUncommittedSeed::write_new(storage, new_identifier_v2).await?,
+            ))
+        }
+    }
+
+    async fn existing_from_storage(
+        storage: Storage,
+        device_identifier_v2: DeviceIdentifier,
+    ) -> anyhow::Result<Option<Either<AppState, AppStateUncommittedSeed>>> {
+        let Some(app_state_raw) = storage.read_file(Path::new(FEDI_FILE_PATH)).await? else {
+            return Ok(None);
+        };
+
+        let Some(value) = Self::parse(app_state_raw)? else {
+            return Ok(None);
+        };
+
+        let app_state_base = AppStateStore {
+            raw: RwLock::new(value).into(),
+            storage,
+        };
+
+        app_state_base
+            .with_write_lock(|state| {
+                // If encrypted_device_identifier_v2 is missing in JSON file on disk,
+                // immediately fill it in and write it to disk
+                if state.encrypted_device_identifier_v2.is_none() {
+                    let root_secret =
+                        Bip39RootSecretStrategy::<12>::to_root_secret(&state.root_mnemonic);
+                    let encrypted_device_identifier = device_identifier_v2
+                        .encrypt_and_hex_encode(&root_secret)
+                        .context("Encrypting a valid device identifier must not fail")?;
+                    state.encrypted_device_identifier_v2 = Some(encrypted_device_identifier)
+                }
+
+                Ok::<_, anyhow::Error>(())
+            })
+            .await??;
+
+        let state = if app_state_base.resolve_seed_committed().await? {
+            Either::Left(AppState {
+                inner: app_state_base,
+            })
+        } else {
+            Either::Right(AppStateUncommittedSeed {
+                inner: app_state_base,
+            })
+        };
+        Ok(Some(state))
+    }
+
+    fn parse(app_state_raw: Vec<u8>) -> Result<Option<AppStateRaw>, anyhow::Error> {
+        #[derive(Clone, Deserialize)]
+        struct HasFormatVersion {
+            #[allow(unused)]
+            format_version: u32,
+        }
+        if let Err(err) = serde_json::from_slice::<HasFormatVersion>(&app_state_raw) {
+            error!(%err, "invalid fedi file");
+            return Ok(None);
+        }
+        Ok(Some(serde_json::from_slice(&app_state_raw)?))
+    }
+
+    pub async fn with_read_lock<T, F>(&self, closure: F) -> T
+    where
+        F: FnOnce(&AppStateRaw) -> T,
+    {
+        self.inner.with_read_lock(closure).await
+    }
+
+    pub async fn with_write_lock<F, T>(&self, closure: F) -> anyhow::Result<T>
+    where
+        F: FnOnce(&mut AppStateRaw) -> T,
+    {
+        self.inner.with_write_lock(closure).await
+    }
+
     pub async fn device_identifier(&self) -> DeviceIdentifier {
-        let root_secret = self.root_secret().await;
+        let root_secret = self.inner.root_secret().await;
         let enc = self.encrypted_device_identifier().await;
         DeviceIdentifier::from_encrypted_string(&enc, &root_secret)
             .expect("Device ID decryption from disk must never fail")
     }
 
     pub async fn encrypted_device_identifier(&self) -> String {
-        self.with_read_lock(|state| state.encrypted_device_identifier_v2.clone())
+        self.inner
+            .with_read_lock(|state| state.encrypted_device_identifier_v2.clone())
             .await
             .expect("encrypted_device_identifier_v2 must exist in AppState")
     }
@@ -563,14 +605,16 @@ impl AppState {
     #[deprecated = "Only use as part of v1->v2 registration migration"]
     pub async fn encrypted_device_identifier_v1(&self) -> Option<String> {
         #[allow(deprecated)]
-        self.with_read_lock(|state| state.encrypted_device_identifier_v1.clone())
+        self.inner
+            .with_read_lock(|state| state.encrypted_device_identifier_v1.clone())
             .await
     }
 
     #[deprecated = "Only use as part of v1->v2 registration migration"]
     pub async fn clear_encrypted_device_identifier_v1(&self) -> anyhow::Result<()> {
         #[allow(deprecated)]
-        self.with_write_lock(|state| state.encrypted_device_identifier_v1 = None)
+        self.inner
+            .with_write_lock(|state| state.encrypted_device_identifier_v1 = None)
             .await
     }
 
@@ -582,84 +626,141 @@ impl AppState {
     }
 
     pub async fn device_index(&self) -> Option<u8> {
-        self.with_read_lock(|state| state.device_index).await
+        self.inner.with_read_lock(|state| state.device_index).await
     }
 
     pub async fn set_device_index(&self, index: u8) -> anyhow::Result<()> {
-        self.with_write_lock(|state| {
-            if !state.joined_federations.is_empty() {
-                bail!("joined federations is not empty")
-            } else {
-                state.device_index = Some(index);
-                Ok(())
-            }
-        })
-        .await?
+        self.inner
+            .with_write_lock(|state| {
+                if !state.joined_federations.is_empty() {
+                    bail!("joined federations is not empty")
+                } else {
+                    state.device_index = Some(index);
+                    Ok(())
+                }
+            })
+            .await?
     }
 
     pub async fn root_mnemonic(&self) -> bip39::Mnemonic {
-        self.with_read_lock(|state| state.root_mnemonic.clone())
+        self.inner
+            .with_read_lock(|state| state.root_mnemonic.clone())
             .await
     }
 
     pub async fn root_secret(&self) -> DerivableSecret {
-        self.with_read_lock(|state| {
-            Bip39RootSecretStrategy::<12>::to_root_secret(&state.root_mnemonic)
-        })
-        .await
-    }
-
-    /// Recover to a seed, fails if state has joined any federation.
-    /// Also resets the device index.
-    pub async fn recover_mnemonic(&self, mnemonic: bip39::Mnemonic) -> anyhow::Result<()> {
-        let old_root_secret = self.root_secret().await;
-        self.with_write_lock(|state| {
-            if !state.joined_federations.is_empty() {
-                bail!("Cannot recover while joined federations exist");
-            }
-
-            // Update mnemonic
-            state.root_mnemonic = mnemonic;
-
-            // Re-encrypt device identifier using new root secret
-            let device_identifier = DeviceIdentifier::from_encrypted_string(
-                &state
-                    .encrypted_device_identifier_v2
-                    .clone()
-                    .expect("encrypted_device_identifier_v2 must exist in AppState"),
-                &old_root_secret,
-            )?;
-
-            let new_root_secret =
-                Bip39RootSecretStrategy::<12>::to_root_secret(&state.root_mnemonic);
-            state.encrypted_device_identifier_v2 =
-                Some(device_identifier.encrypt_and_hex_encode(&new_root_secret)?);
-
-            // Device index needs to be cleared, one will be assigned at the end of the
-            // recovery flow
-            state.device_index = None;
-            Ok(())
-        })
-        .await??;
-        Ok(())
+        self.inner.root_secret().await
     }
 
     /// Get a new prefix for joining a federation.
     pub async fn new_federation_db_prefix(&self) -> anyhow::Result<u64> {
-        self.with_write_lock(|x| {
-            let value = x.next_federation_db_prefix;
-            x.next_federation_db_prefix += 1;
-            value
-        })
-        .await
+        self.inner
+            .with_write_lock(|x| {
+                let value = x.next_federation_db_prefix;
+                x.next_federation_db_prefix += 1;
+                value
+            })
+            .await
     }
 
     pub async fn get_cached_fiat_fx_info(&self) -> Option<FiatFXInfo> {
-        self.with_read_lock(|state| state.cached_fiat_fx_info.clone())
+        self.inner
+            .with_read_lock(|state| state.cached_fiat_fx_info.clone())
             .await
     }
 }
 
+impl AppStateUncommittedSeed {
+    async fn write_new(
+        storage: Storage,
+        device_identifier_v2: DeviceIdentifier,
+    ) -> anyhow::Result<AppStateUncommittedSeed> {
+        let root_mnemonic = Bip39RootSecretStrategy::<12>::random(&mut OsRng);
+        let root_secret = Bip39RootSecretStrategy::<12>::to_root_secret(&root_mnemonic);
+        let encrypted_device_identifier = device_identifier_v2
+            .encrypt_and_hex_encode(&root_secret)
+            .context("Encrypting a valid device identifier must not fail")?;
+        #[allow(deprecated)]
+        let app_state_base = AppStateStore {
+            raw: RwLock::new(AppStateRaw {
+                format_version: 0,
+                root_mnemonic,
+                joined_federations: BTreeMap::new(),
+                joined_communities: BTreeMap::new(),
+                social_recovery_state: None,
+                sensitive_log: None,
+                matrix_session: None,
+                matrix_session_native_sync: None,
+                device_identifier: (),
+                // When setting up a new AppState (fresh install), set
+                // encrypted_device_identifier_v1 as None which marks the transfer of ownership as
+                // complete.
+                encrypted_device_identifier_v1: None,
+                encrypted_device_identifier_v2: Some(encrypted_device_identifier),
+                device_index: default_device_index(),
+                last_device_registration_timestamp: None,
+                next_federation_db_prefix: default_next_federation_prefix(),
+                matrix_display_name: None,
+                cached_fiat_fx_info: None,
+                seed_committed: Some(false), // not committed for new users
+            })
+            .into(),
+            storage,
+        };
+
+        // Write immediately before returning
+        app_state_base.with_write_lock(|_| ()).await?;
+        // invariant: held above in default value
+        Ok(AppStateUncommittedSeed {
+            inner: app_state_base,
+        })
+    }
+}
+
+impl AppStateUncommittedSeed {
+    /// Call this to finalize the seed and move self to AppState
+    pub async fn commit_to_seed(self) -> AppState {
+        self.inner
+            .with_write_lock(|state| {
+                // meet the invariant
+                state.seed_committed = Some(true);
+            })
+            .await
+            .expect("failed to write to storage");
+        AppState { inner: self.inner }
+    }
+
+    /// Restore the seed.
+    pub async fn restore_mnemonic(&self, mnemonic: bip39::Mnemonic) -> anyhow::Result<()> {
+        let old_root_secret = self.inner.root_secret().await;
+        self.inner
+            .with_write_lock(|state| {
+                // Update mnemonic
+                state.root_mnemonic = mnemonic;
+
+                // Re-encrypt device identifier using new root secret
+                let device_identifier = DeviceIdentifier::from_encrypted_string(
+                    &state
+                        .encrypted_device_identifier_v2
+                        .clone()
+                        .expect("encrypted_device_identifier_v2 must exist in AppState"),
+                    &old_root_secret,
+                )?;
+
+                let new_root_secret =
+                    Bip39RootSecretStrategy::<12>::to_root_secret(&state.root_mnemonic);
+                state.encrypted_device_identifier_v2 =
+                    Some(device_identifier.encrypt_and_hex_encode(&new_root_secret)?);
+
+                // Device index needs to be cleared, one will be assigned at the end of the
+                // recovery flow
+                state.device_index = None;
+                anyhow::Ok(())
+            })
+            .await??;
+        Ok(())
+    }
+}
 #[cfg(test)]
 mod tests {
     use super::*;

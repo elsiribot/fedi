@@ -1,8 +1,9 @@
 use std::fmt::Display;
+use std::mem;
 use std::ops::Deref;
 use std::path::PathBuf;
 use std::str::FromStr;
-use std::sync::Arc;
+use std::sync::{Arc, OnceLock, RwLock};
 use std::time::Duration;
 
 use anyhow::{anyhow, bail, Context, Result};
@@ -14,6 +15,7 @@ use bridge_inner::matrix::multispend::services::MultispendServices;
 use bridge_inner::matrix::Matrix;
 use communities::Communities;
 use device_registration::DeviceRegistrationService;
+use either::Either;
 use fedi_social_client::{
     self, FediSocialCommonGen, RecoveryFile, SocialRecoveryClient, SocialRecoveryState,
 };
@@ -37,10 +39,15 @@ use rpc_types::{
     RpcNostrPubkey, RpcNostrSecret, RpcPeerId, RpcPublicKey, RpcRecoveryId, RpcRegisteredDevice,
     RpcSignedLnurlMessage, SocialRecoveryApproval, SocialRecoveryQr,
 };
+use runtime::api::IFediApi;
 use runtime::bridge_runtime::Runtime;
 use runtime::constants::{LNURL_CHILD_ID, MATRIX_CHILD_ID, NOSTR_CHILD_ID};
 use runtime::db::FederationPendingRejoinFromScratchKeyPrefix;
-use runtime::storage::{DeviceIdentifier, FiatFXInfo, ModuleFediFeeSchedule};
+use runtime::event::EventSink;
+use runtime::features::FeatureCatalog;
+use runtime::storage::{
+    AppState, AppStateUncommittedSeed, DeviceIdentifier, FiatFXInfo, ModuleFediFeeSchedule, Storage,
+};
 use runtime::utils::required_threashold_of;
 use serde::{Deserialize, Serialize};
 use tokio::sync::{Mutex, OnceCell};
@@ -272,20 +279,6 @@ impl BridgeFull {
         }
     }
 
-    // FIXME: this function has weird name now that it doesn't do any recovery
-    pub async fn recover_from_mnemonic(
-        &self,
-        mnemonic: bip39::Mnemonic,
-    ) -> Result<Vec<RpcRegisteredDevice>> {
-        self.device_registration_service
-            .lock()
-            .await
-            .stop_ongoing_periodic_registration()
-            .await?;
-        self.runtime.app_state.recover_mnemonic(mnemonic).await?;
-        self.fetch_registered_devices().await
-    }
-
     pub async fn upload_backup_file(
         &self,
         federation_id: RpcFederationId,
@@ -403,10 +396,7 @@ impl BridgeFull {
     }
 
     pub async fn complete_social_recovery(&self) -> Result<Vec<RpcRegisteredDevice>> {
-        let recovery_client = self.social_recovery_client_continue().await?;
-        let seed_phrase = recovery_client.combine_recovered_user_phrase()?;
-        let root_mnemonic = bip39::Mnemonic::parse(seed_phrase.0)?;
-        self.recover_from_mnemonic(root_mnemonic).await
+        todo!()
     }
 
     async fn social_recovery_client_continue(&self) -> anyhow::Result<SocialRecoveryClient> {
@@ -561,40 +551,143 @@ impl BridgeFull {
 /// This is instantiated once as a global. When RPC commands come in, this
 /// struct is used as a router to look up the federation and handle the RPC
 /// command using it.
-///
-/// Bridge is not always guaranteed to exist as "Full", for
-/// example if the device index has been taken over by another device.
-/// There may also be other scenarios for these services to not be
-/// available. In such scenarios only the Runtime is available.
-pub enum Bridge {
+pub struct Bridge {
+    // the read lock is only held for very small time
+    // write lock is held during commitToSeed.
+    state: RwLock<BridgeState>,
+    // after runtime is ready it is saved in OnceLock to avoid holding lock to get reference to it.
+    runtime: OnceLock<Arc<Runtime>>,
+    // after bridge full is ready it is saved in OnceLock to avoid holding lock to get reference to
+    // it.
+    full: OnceLock<Arc<BridgeFull>>,
+}
+
+// allow transitions:
+// start -> RuntimeOnly
+// start -> Uncommited
+// start -> Full
+// Uncommited -> RuntimeOnly
+// Uncommited -> Full
+enum BridgeState {
+    /// Bridge is not always guaranteed to exist as "Full", for
+    /// example if the device index has been taken over by another device.
+    /// There may also be other scenarios for these services to not be
+    /// available. In such scenarios only the Runtime is available.
     RuntimeOnly {
         runtime: Arc<Runtime>,
         error: BridgeFullInitError,
     },
+    /// Bridge has not been committed to a seed yet, and seed can be changed
+    /// using restoreMnemonic
+    ///
+    /// This can transition into full or runtime only after commiting to a seed.
+    Uncommitted {
+        state: AppStateUncommittedSeed,
+        fedi_api: Arc<dyn IFediApi>,
+        // saved for transitioning into full
+        storage: Storage,
+        event_sink: EventSink,
+        feature_catalog: Arc<FeatureCatalog>,
+        device_identifier: DeviceIdentifier,
+    },
+    /// No errors during startup and we have a committed seed, this bridge is
+    /// full.
     Full(Arc<BridgeFull>),
+    /// A dead state that is never held.
+    Null,
 }
 
 impl Bridge {
-    pub async fn new(runtime: Arc<Runtime>, device_identifier: DeviceIdentifier) -> Arc<Self> {
-        match BridgeFull::new(runtime.clone(), device_identifier).await {
-            Ok(full) => Self::Full(Arc::new(full)),
-            Err(error) => Self::RuntimeOnly { runtime, error },
-        }
-        .into()
+    pub async fn new(
+        storage: Storage,
+        event_sink: EventSink,
+        fedi_api: Arc<dyn IFediApi>,
+        feature_catalog: Arc<FeatureCatalog>,
+        device_identifier: DeviceIdentifier,
+    ) -> anyhow::Result<Self> {
+        let state = match AppState::load(storage.clone(), device_identifier.clone())
+            .await
+            .context("failed to load state")?
+        {
+            Either::Left(state) => {
+                Self::try_load_bridge_full(
+                    storage,
+                    event_sink,
+                    fedi_api,
+                    state,
+                    feature_catalog,
+                    device_identifier,
+                )
+                .await?
+            }
+            Either::Right(state) => BridgeState::Uncommitted {
+                state,
+                fedi_api,
+                feature_catalog,
+                event_sink,
+                storage,
+                device_identifier,
+            },
+        };
+        Ok(Self {
+            state: RwLock::new(state),
+            runtime: OnceLock::default(),
+            full: OnceLock::default(),
+        })
     }
 
-    pub fn runtime(&self) -> &Arc<Runtime> {
-        match self {
-            Bridge::RuntimeOnly { runtime, error: _ } => runtime,
-            Bridge::Full(bridge_full) => &bridge_full.runtime,
+    async fn try_load_bridge_full(
+        storage: Storage,
+        event_sink: EventSink,
+        fedi_api: Arc<dyn IFediApi>,
+        app_state: AppState,
+        feature_catalog: Arc<FeatureCatalog>,
+        device_identifier: DeviceIdentifier,
+    ) -> anyhow::Result<BridgeState> {
+        let runtime = Runtime::new(storage, event_sink, fedi_api, app_state, feature_catalog)
+            .await
+            .context("Failed to create runtime for bridge")?;
+        let runtime = Arc::new(runtime);
+        match BridgeFull::new(runtime.clone(), device_identifier).await {
+            Ok(full) => Ok(BridgeState::Full(Arc::new(full))),
+            Err(error) => Ok(BridgeState::RuntimeOnly { runtime, error }),
         }
+    }
+
+    pub fn is_commited(&self) -> bool {
+        !matches!(
+            &*self.state.read().expect("poison"),
+            BridgeState::Uncommitted { .. }
+        )
+    }
+
+    pub fn runtime(&self) -> anyhow::Result<&Arc<Runtime>> {
+        // no try_get_or_init in OnceLock
+        if let Some(runtime) = self.runtime.get() {
+            return Ok(runtime);
+        }
+        let runtime = match &*self.state.read().expect("poison") {
+            BridgeState::RuntimeOnly { runtime, error: _ } => runtime.clone(),
+            BridgeState::Full(bridge_full) => bridge_full.runtime.clone(),
+            BridgeState::Uncommitted { .. } => bail!("commit the seed first"),
+            BridgeState::Null => bail!("null state must not be visible outside"),
+        };
+        // racy, but fine because all thread will try to set the same value. so doesn't
+        // matter which one wins
+        Ok(self.runtime.get_or_init(|| runtime))
     }
 
     pub fn full(&self) -> anyhow::Result<&Arc<BridgeFull>> {
-        match self {
-            Bridge::RuntimeOnly { runtime: _, error } => Err(anyhow!(error.to_string())),
-            Bridge::Full(bridge_full) => Ok(bridge_full),
+        if let Some(full) = self.full.get() {
+            return Ok(full);
         }
+        let full = match &*self.state.read().expect("poison") {
+            BridgeState::RuntimeOnly { runtime: _, error } => bail!(error.to_string()),
+            BridgeState::Full(bridge_full) => bridge_full.clone(),
+            BridgeState::Uncommitted { .. } => bail!("commit the seed first"),
+            BridgeState::Null => bail!("null state must not be visible outside"),
+        };
+        Ok(self.full.get_or_init(|| full))
     }
 
     pub fn on_app_foreground(&self) {
@@ -604,8 +697,13 @@ impl Bridge {
     }
 
     pub async fn bridge_status(&self) -> anyhow::Result<RpcBridgeStatus> {
-        let matrix_setup = self
-            .runtime()
+        let (runtime, bridge_full_init_error) = match &*self.state.read().expect("poison") {
+            BridgeState::Uncommitted { .. } => return Ok(RpcBridgeStatus::SeedUncommitted {}),
+            BridgeState::Null => bail!("null state must not be visible outside"),
+            BridgeState::RuntimeOnly { error, runtime } => (runtime.clone(), Some(error.into())),
+            BridgeState::Full(full) => (full.runtime.clone(), None),
+        };
+        let matrix_setup = runtime
             .app_state
             // did we ever setup matrix?
             .with_read_lock(|x| {
@@ -614,27 +712,66 @@ impl Bridge {
                 value
             })
             .await;
-        let device_index_assignment_status =
-            self.runtime().device_index_assignment_status().await?;
-        let bridge_full_init_error = match self {
-            Bridge::RuntimeOnly { error, .. } => Some(error.into()),
-            Bridge::Full(_) => None,
-        };
-        Ok(RpcBridgeStatus {
+        let device_index_assignment_status = runtime.device_index_assignment_status().await?;
+        Ok(RpcBridgeStatus::SeedCommitted {
             matrix_setup,
             device_index_assignment_status,
             bridge_full_init_error,
         })
     }
+
+    /// commit to a random seed or the given seed
+    pub async fn commit_to_seed(&self, mnemonic: Option<bip39::Mnemonic>) -> Result<()> {
+        // steal the bridge state
+        let bridge_state = {
+            let mut wlock = self.state.write().expect("poison");
+            mem::replace(&mut *wlock, BridgeState::Null)
+        };
+        let new_bridge_state = match bridge_state {
+            BridgeState::Uncommitted {
+                state,
+                event_sink,
+                storage,
+                fedi_api,
+                feature_catalog,
+                device_identifier,
+            } => {
+                if let Some(mnemonic) = mnemonic {
+                    state.restore_mnemonic(mnemonic).await?;
+                }
+                let app_state = state.commit_to_seed().await;
+                Self::try_load_bridge_full(
+                    storage,
+                    event_sink,
+                    fedi_api,
+                    app_state,
+                    feature_catalog,
+                    device_identifier,
+                )
+                .await?
+            }
+            _ => {
+                panic!("invalid call to commit_to_seed when already committed to seed");
+            }
+        };
+
+        *self.state.write().expect("poison") = new_bridge_state;
+        Ok(())
+    }
 }
 
 #[derive(Debug, Serialize, Deserialize, TS)]
 #[serde(rename_all = "camelCase")]
+#[serde(tag = "type")]
 #[ts(export)]
-pub struct RpcBridgeStatus {
-    pub matrix_setup: bool,
-    pub device_index_assignment_status: RpcDeviceIndexAssignmentStatus,
-    pub bridge_full_init_error: Option<RpcBridgeFullInitError>,
+pub enum RpcBridgeStatus {
+    SeedCommitted {
+        matrix_setup: bool,
+
+        device_index_assignment_status: RpcDeviceIndexAssignmentStatus,
+        bridge_full_init_error: Option<RpcBridgeFullInitError>,
+    },
+    SeedUncommitted {},
 }
 
 #[derive(Debug, Serialize, Deserialize, TS)]

@@ -405,11 +405,14 @@ export type RpcBridgeFullInitError =
   | { type: "v2IdentifierMismatch"; existing: string; new: string }
   | ({ type: "other" } & string);
 
-export type RpcBridgeStatus = {
-  matrixSetup: boolean;
-  deviceIndexAssignmentStatus: RpcDeviceIndexAssignmentStatus;
-  bridgeFullInitError: RpcBridgeFullInitError | null;
-};
+export type RpcBridgeStatus =
+  | {
+      type: "seedCommitted";
+      matrix_setup: boolean;
+      device_index_assignment_status: RpcDeviceIndexAssignmentStatus;
+      bridge_full_init_error: RpcBridgeFullInitError | null;
+    }
+  | { type: "seedUncommitted" };
 
 export type RpcCommunity = {
   inviteCode: string;
@@ -621,7 +624,7 @@ export type RpcMethods = {
   backupNow: [backupNow, null];
   getMnemonic: [getMnemonic, Array<string>];
   checkMnemonic: [checkMnemonic, boolean];
-  recoverFromMnemonic: [recoverFromMnemonic, Array<RpcRegisteredDevice>];
+  commitToSeed: [commitToSeed, null];
   generateReusedEcashProofs: [generateReusedEcashProofs, RpcReusedEcashProofs];
   uploadBackupFile: [uploadBackupFile, string];
   locateRecoveryFile: [locateRecoveryFile, string];
@@ -1444,6 +1447,8 @@ export type cancelSocialRecovery = {};
 
 export type checkMnemonic = { mnemonic: Array<string> };
 
+export type commitToSeed = { mnemonic: Array<string> | null };
+
 export type communityPreview = { inviteCode: string };
 
 export type completeSocialRecovery = {};
@@ -1804,8 +1809,6 @@ export type recheckPeginAddress = {
   federationId: RpcFederationId;
   operationId: RpcOperationId;
 };
-
-export type recoverFromMnemonic = { mnemonic: Array<string> };
 
 export type recoveryQr = {};
 

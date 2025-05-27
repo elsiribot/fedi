@@ -27,3 +27,4 @@ communities = { workspace = true }
 runtime = { workspace = true }
 rpc-types = { workspace = true }
 device-registration = { workspace = true }
+either = "1.15.0"
