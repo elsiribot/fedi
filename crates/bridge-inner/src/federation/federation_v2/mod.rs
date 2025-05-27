@@ -87,11 +87,12 @@ use rpc_types::{
     LightningSendMetadata, OperationFediFeeStatus, RpcAmount, RpcFederation, RpcFederationId,
     RpcFederationMaybeLoading, RpcFederationPreview, RpcFeeDetails, RpcGenerateEcashResponse,
     RpcInvoice, RpcJsonClientConfig, RpcLightningGateway, RpcOperationFediFeeStatus,
-    RpcPayAddressResponse, RpcPayInvoiceResponse, RpcPeerId, RpcPrevPayInvoiceResult, RpcPublicKey,
-    RpcReturningMemberStatus, RpcSPDepositState, RpcSPV2DepositState, RpcSPV2TransferInState,
-    RpcSPV2TransferOutState, RpcSPV2WithdrawalState, RpcSPWithdrawState, RpcSPv2CachedSyncResponse,
-    RpcTransaction, RpcTransactionDirection, RpcTransactionKind, RpcTransactionListEntry,
-    SPv2DepositMetadata, SPv2TransferMetadata, SPv2WithdrawMetadata,
+    RpcOperationId, RpcPayAddressResponse, RpcPayInvoiceResponse, RpcPeerId,
+    RpcPrevPayInvoiceResult, RpcPublicKey, RpcReturningMemberStatus, RpcSPDepositState,
+    RpcSPV2DepositState, RpcSPV2TransferInState, RpcSPV2TransferOutState, RpcSPV2WithdrawalState,
+    RpcSPWithdrawState, RpcSPv2CachedSyncResponse, RpcTransaction, RpcTransactionDirection,
+    RpcTransactionKind, RpcTransactionListEntry, SPv2DepositMetadata, SPv2TransferMetadata,
+    SPv2WithdrawMetadata,
 };
 use runtime::bridge_runtime::Runtime;
 use runtime::constants::{
@@ -2111,6 +2112,7 @@ impl FederationV2 {
         Ok(RpcGenerateEcashResponse {
             ecash: notes.to_string(),
             cancel_at: to_unix_time(cancel_time)?,
+            operation_id: RpcOperationId(operation_id),
         })
     }
 

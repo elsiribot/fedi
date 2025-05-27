@@ -348,6 +348,7 @@ pub struct RpcGenerateEcashResponse {
     pub ecash: String,
     #[ts(type = "number")]
     pub cancel_at: u64,
+    pub operation_id: RpcOperationId,
 }
 
 #[derive(Debug, Serialize, TS)]

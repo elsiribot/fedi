@@ -485,7 +485,11 @@ export type RpcFeeDetails = {
 
 export type RpcFiatAmount = number;
 
-export type RpcGenerateEcashResponse = { ecash: string; cancelAt: number };
+export type RpcGenerateEcashResponse = {
+  ecash: string;
+  cancelAt: number;
+  operationId: RpcOperationId;
+};
 
 export type RpcInitOpts = {
   dataDir: string | null;
