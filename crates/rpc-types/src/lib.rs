@@ -440,6 +440,22 @@ impl fmt::Display for RpcPeerId {
 #[ts(export)]
 pub struct RpcPublicKey(#[ts(type = "string")] pub bitcoin::secp256k1::PublicKey);
 
+#[derive(Debug, Serialize, Deserialize, Clone, TS)]
+#[serde(rename_all = "camelCase")]
+#[ts(export)]
+pub struct RpcNostrSecret {
+    pub hex: String,
+    pub nsec: String,
+}
+
+#[derive(Debug, Serialize, Deserialize, Clone, TS)]
+#[serde(rename_all = "camelCase")]
+#[ts(export)]
+pub struct RpcNostrPubkey {
+    pub hex: String,
+    pub npub: String,
+}
+
 #[derive(Debug, Serialize, TS)]
 #[serde(rename_all = "camelCase")]
 #[ts(export)]

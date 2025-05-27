@@ -158,13 +158,6 @@ export type FeatureCatalog = {
    */
   stability_pool_v2: StabilityPoolV2FeatureConfig | null;
   /**
-   * Enable Nostr client for Rate federation feature.
-   *
-   * This allows relays to be configured using a remote feature flag service
-   * in future.
-   */
-  nostr_client: NostrClientFeatureCatalog | null;
-  /**
    * figure out stable format for account id, that includes the federation id
    * prefix
    */
@@ -309,8 +302,6 @@ export type NetworkError = Record<string, never>;
  * reuse check and must be rejoined using a recovery-from-scratch.
  */
 export type NonceReuseCheckFailedEvent = { federationId: RpcFederationId };
-
-export type NostrClientFeatureCatalog = { relays: Array<string> };
 
 /**
  * An Observable contains a value that updates over time.
@@ -648,8 +639,6 @@ export type RpcMethods = {
   signNostrEvent: [signNostrEvent, string];
   nostrEncrypt: [nostrEncrypt, string];
   nostrDecrypt: [nostrDecrypt, string];
-  nostrEncrypt04: [nostrEncrypt04, string];
-  nostrDecrypt04: [nostrDecrypt04, string];
   stabilityPoolAccountInfo: [
     stabilityPoolAccountInfo,
     RpcStabilityPoolAccountInfo,
@@ -1760,11 +1749,7 @@ export type matrixUserProfile = { userId: RpcUserId };
 
 export type nostrDecrypt = { pubkey: string; ciphertext: string };
 
-export type nostrDecrypt04 = { pubkey: string; ciphertext: string };
-
 export type nostrEncrypt = { pubkey: string; plaintext: string };
-
-export type nostrEncrypt04 = { pubkey: string; plaintext: string };
 
 export type onAppForeground = {};
 
