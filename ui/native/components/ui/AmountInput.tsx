@@ -93,6 +93,10 @@ const AmountInput: React.FC<Props> = ({
         if (lockToFiat) setIsFiat(true)
     }, [lockToFiat, setIsFiat])
 
+    // For some reason the TextInput inside InvisibleInput does not
+    // automatically blur the input when the keyboard is dismissed
+    // which causes the .focus() event to have no effect so here we
+    // force the blur to make sure .isFocused() returns false
     useEffect(() => {
         const keyboardHiddenListener = Keyboard.addListener(
             'keyboardDidHide',
@@ -102,7 +106,7 @@ const AmountInput: React.FC<Props> = ({
             keyboardHiddenListener.remove()
         }
     }, [])
-
+    // Check validation for errors to render with suggestion for amount.
     let error: React.ReactNode | undefined
     if (
         validation &&
@@ -116,6 +120,8 @@ const AmountInput: React.FC<Props> = ({
         if (!readOnly) {
             suggestionStyle.push(style.clickableSuggestion)
         }
+        // TODO: Make only underlined suggestion pressable, <Trans /> doesn't like <Pressable /> as a component
+        // TODO: Make this wiggle when submitAttempts is incremented
         error = (
             <Pressable onPress={handlePressSuggestion} disabled={readOnly}>
                 <Text style={style.error} caption>
