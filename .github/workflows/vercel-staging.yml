@@ -16,7 +16,7 @@ on:
             - ui/common/**
 jobs:
     Deploy-Staging:
-        runs-on: [self-hosted, linux, legacy]
+        runs-on: [self-hosted, linux]
         environment:
             name: Staging
             url: ${{steps.deploy.outputs.url}}
