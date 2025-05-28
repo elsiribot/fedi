@@ -143,6 +143,7 @@ use crate::matrix::multispend::services::MultispendServices;
 
 mod backup_service;
 mod ln_gateway_service;
+pub mod spv2_pay_address;
 mod spv2_sweeper_service;
 mod stability_pool_sweeper_service;
 
