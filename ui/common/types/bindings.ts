@@ -665,8 +665,11 @@ export type RpcMethods = {
   spv2WithdrawAll: [spv2WithdrawAll, RpcOperationId];
   spv2AverageFeeRate: [spv2AverageFeeRate, bigint];
   spv2AvailableLiquidity: [spv2AvailableLiquidity, RpcAmount];
-  spv2OurAccountTicket: [spv2OurAccountTicket, string];
-  spv2ParseAccountTicket: [spv2ParseAccountTicket, RpcParsedAccountTicket];
+  spv2OurPaymentAddress: [spv2OurPaymentAddress, string];
+  spv2ParsePaymentAddress: [
+    spv2ParsePaymentAddress,
+    RpcSpv2ParsedPaymentAddress,
+  ];
   spv2Transfer: [spv2Transfer, RpcOperationId];
   getSensitiveLog: [getSensitiveLog, boolean];
   setSensitiveLog: [setSensitiveLog, null];
@@ -875,13 +878,6 @@ export type RpcOperationFediFeeStatus =
 
 export type RpcOperationId = string;
 
-export type RpcParsedAccountTicket = {
-  /**
-   * do we know about the federation
-   */
-  federation_id: RpcFederationId | null;
-};
-
 export type RpcPayAddressResponse = { txid: string };
 
 export type RpcPayInvoiceResponse = { preimage: string };
@@ -1025,6 +1021,13 @@ export type RpcSPv2SyncResponse = {
 export type RpcSignature = string;
 
 export type RpcSignedLnurlMessage = { signature: string; pubkey: RpcPublicKey };
+
+export type RpcSpv2ParsedPaymentAddress = {
+  /**
+   * do we know about the federation
+   */
+  federation_id: RpcFederationId | null;
+};
 
 export type RpcStabilityPoolAccountInfo = {
   idleBalance: RpcAmount;
@@ -1867,12 +1870,12 @@ export type spv2ObserveAccountInfo = {
   observableId: number;
 };
 
-export type spv2OurAccountTicket = { federationId: RpcFederationId };
+export type spv2OurPaymentAddress = { federationId: RpcFederationId };
 
-export type spv2ParseAccountTicket = { accountTicket: string };
+export type spv2ParsePaymentAddress = { address: string };
 
 export type spv2Transfer = {
-  accountTicket: string;
+  paymentAddress: string;
   amount: RpcFiatAmount;
   frontendMeta: FrontendMetadata;
 };
