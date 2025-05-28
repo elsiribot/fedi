@@ -6,6 +6,7 @@
   replaceGitHash,
   profiles,
   craneMultiBuild,
+  androidSdk,
 }:
 let
   system = pkgs.system;
@@ -335,6 +336,62 @@ in
         "fedi-ffi"
       ];
     };
+
+    fedi-android-bridge-libs-depsOnly = toolchains."all".craneLib.buildDepsOnly {
+      pname = "fedi-android-bridge-libs-deps";
+      version = "0.1.0";
+
+      src = rustSrc;
+
+      nativeBuildInputs = commonArgs.nativeBuildInputs;
+
+      # Set up Android environment variables
+      ANDROID_SDK_ROOT = "${androidSdk}/share/android-sdk";
+
+      buildPhaseCargoCommand = ''
+
+        mkdir -p scripts/bridge
+        cp ${../scripts/bridge/build-bridge-android-nix.sh} ./scripts/bridge/build-bridge-android-nix.sh
+        cp ${../scripts/common.sh} ./scripts/common.sh
+        patchShebangs ./scripts
+
+        export REPO_ROOT=$(pwd)
+        export HOME=$(pwd)
+
+        env FM_BUILD_BRIDGE_ANDROID_LIBS_DEPS_ONLY=1 \
+          ./scripts/bridge/build-bridge-android-nix.sh
+      '';
+    };
+
+    fedi-android-bridge-libs = toolchains."all".craneLib.mkCargoDerivation (
+      {
+        pname = "fedi-android-bridge-libs";
+        version = "0.1.0";
+        cargoArtifacts = fedi-android-bridge-libs-depsOnly;
+        doInstallCargoArtifacts = false;
+
+        src = rustSrc;
+
+        nativeBuildInputs = commonArgs.nativeBuildInputs;
+
+        # Set up Android environment variables
+        ANDROID_SDK_ROOT = "${androidSdk}/share/android-sdk";
+
+        buildPhaseCargoCommand = ''
+          mkdir -p scripts/bridge
+          cp ${../scripts/bridge/build-bridge-android-nix.sh} ./scripts/bridge/build-bridge-android-nix.sh
+          cp ${../scripts/common.sh} ./scripts/common.sh
+          patchShebangs ./scripts
+
+          export REPO_ROOT=$(pwd)
+          export HOME=$(pwd)
+
+          env FM_BUILD_BRIDGE_ANDROID_LIBS_OUT=$out/share/fedi-android/ \
+            ./scripts/bridge/build-bridge-android-nix.sh
+        '';
+      }
+      // commonEnvsShell
+    );
 
     testStabilityPool = craneLib.buildCommand (
       commonTestArgs
