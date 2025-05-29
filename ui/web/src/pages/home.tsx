@@ -154,8 +154,10 @@ function HomePage() {
 
             <Modal
                 open={!hasSeenDisplayName && !!matrixAuth?.displayName}
-                onClick={completeSeenDisplayName}>
-                <ModalContent>
+                onClick={completeSeenDisplayName}
+                title={t('feature.home.display-name')}
+                description={matrixAuth?.displayName}>
+                <ModalContent aria-label="test">
                     <ModalIconWrapper>
                         <Icon icon={userProfile} size="xl" />
                     </ModalIconWrapper>
