@@ -1,7 +1,8 @@
 import type { BottomTabScreenProps } from '@react-navigation/bottom-tabs'
+import { useIsFocused } from '@react-navigation/native'
 import type { Theme } from '@rneui/themed'
 import { useTheme } from '@rneui/themed'
-import React, { useEffect, useState } from 'react'
+import React, { useRef } from 'react'
 import { useTranslation } from 'react-i18next'
 import { ScrollView, StyleSheet, View } from 'react-native'
 
@@ -40,6 +41,7 @@ export type Props = BottomTabScreenProps<
 const Home: React.FC<Props> = ({ offline }) => {
     const { t } = useTranslation()
     const { theme } = useTheme()
+    const isFocused = useIsFocused()
 
     const federations = useCommonSelector(selectFederations)
     const recoveryInProgress = useCommonSelector(
@@ -58,20 +60,45 @@ const Home: React.FC<Props> = ({ offline }) => {
         },
     ]
 
+    // NUX steps
     const [hasSeenDisplayName, completeSeenDisplayName] =
         useNuxStep('displayNameModal')
     const [hasSeenCommunity, completeSeenCommunity] =
         useNuxStep('communityModal')
-    const [showCommunityOverlay, setShowCommunityOverlay] = useState(false)
 
-    // Chain community overlay after display name is seen
-    // After display name overlay is dismissed, trigger community overlay
-    useEffect(() => {
-        if (hasSeenDisplayName && !hasSeenCommunity) {
-            const timer = setTimeout(() => setShowCommunityOverlay(true), 550)
-            return () => clearTimeout(timer)
-        }
-    }, [hasSeenDisplayName, hasSeenCommunity])
+    /**
+     * Guards against showing more than one overlay during the current focus.
+     * Reset happens synchronously on the first render **after** focus changes to
+     * true, ensuring the next overlay can be evaluated in that same render.
+     */
+    const overlayShownThisFocus = useRef(false)
+    const prevIsFocused = useRef(isFocused)
+
+    // Detect focus gain **before** deciding what to show.
+    if (isFocused && !prevIsFocused.current) {
+        overlayShownThisFocus.current = false
+    }
+    prevIsFocused.current = isFocused
+
+    // Decide which overlay (if any) to show for this render.
+    const showCommunityOverlay =
+        !hasSeenCommunity && !overlayShownThisFocus.current
+    const showDisplayNameOverlay =
+        hasSeenCommunity &&
+        !hasSeenDisplayName &&
+        !overlayShownThisFocus.current
+
+    // Wrapper handlers: mark overlay as handled once dismissed so nothing else
+    // can appear during the same focus.
+    const handleCommunityDismiss = () => {
+        overlayShownThisFocus.current = true
+        completeSeenCommunity()
+    }
+
+    const handleDisplayNameDismiss = () => {
+        overlayShownThisFocus.current = true
+        completeSeenDisplayName()
+    }
 
     // Show placeholder wallet if no federations
     if (federations.length === 0) {
@@ -79,6 +106,7 @@ const Home: React.FC<Props> = ({ offline }) => {
     }
 
     const style = styles(theme)
+
     return (
         <View>
             <ScrollView
@@ -119,18 +147,15 @@ const Home: React.FC<Props> = ({ offline }) => {
 
             {/* Overlays */}
             <DisplayNameOverlay
-                show={!hasSeenDisplayName}
-                onDismiss={completeSeenDisplayName}
+                show={showDisplayNameOverlay}
+                onDismiss={handleDisplayNameDismiss}
             />
 
             <FirstTimeCommunityEntryOverlay
                 overlayItems={homeFirstTimeOverlayItems}
                 title={t('feature.onboarding.one-time-modal-title')}
-                show={showCommunityOverlay && !hasSeenCommunity}
-                onDismiss={() => {
-                    completeSeenCommunity()
-                    setShowCommunityOverlay(false)
-                }}
+                show={showCommunityOverlay}
+                onDismiss={handleCommunityDismiss}
             />
         </View>
     )

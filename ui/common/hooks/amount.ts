@@ -44,7 +44,8 @@ import {
 import amountUtils from '../utils/AmountUtils'
 import stringUtils from '../utils/StringUtils'
 import { MeltSummary } from '../utils/cashu'
-import { BridgeError, FedimintBridge } from '../utils/fedimint'
+import { BridgeError } from '../utils/errors'
+import { FedimintBridge } from '../utils/fedimint'
 import { useCommonDispatch, useCommonSelector } from './redux'
 import { useUpdatingRef } from './util'
 

@@ -1,4 +1,4 @@
-import { shouldHideNavigation } from '../../src/utils/nav'
+import { shouldHideNavigation } from '../../utils/nav'
 
 describe('utils/nav', () => {
     describe('shouldHideNavigation', () => {

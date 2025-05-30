@@ -10,12 +10,13 @@ import {
     selectWalletFederations,
     selectRoomMultispendFinancialTransactions,
     fetchMultispendTransactions,
-    selectFormattedMultispendBalance,
+    selectMultispendBalance,
     selectCurrency,
     selectMatrixRoomMembers,
     selectMultispendInvitationEvent,
     selectMatrixRoomMember,
     selectMatrixRoomMultispendEvent,
+    selectCurrencyLocale,
 } from '../redux'
 import {
     MatrixEvent,
@@ -26,6 +27,7 @@ import {
     MultispendListedInvitationEvent,
 } from '../types'
 import { RpcMultispendGroupStatus, RpcRoomId } from '../types/bindings'
+import amountUtils from '../utils/AmountUtils'
 import { FedimintBridge } from '../utils/fedimint'
 import {
     getMultispendInvite,
@@ -234,14 +236,20 @@ export function useMultispendVoting({
 
 export function useMultispendDisplayUtils(t: TFunction, roomId: RpcRoomId) {
     const selectedCurrency = useCommonSelector(selectCurrency)
+    const currencyLocale = useCommonSelector(selectCurrencyLocale)
     const multispendStatus = useCommonSelector(s =>
         selectMatrixRoomMultispendStatus(s, roomId),
     )
     const myMultispendRole = useCommonSelector(s =>
         selectMyMultispendRole(s, roomId),
     )
-    const formattedMultispendBalance = useCommonSelector(s =>
-        selectFormattedMultispendBalance(s, roomId),
+    const multispendBalance = useCommonSelector(s =>
+        selectMultispendBalance(s, roomId),
+    )
+    const formattedMultispendBalance = amountUtils.formatFiat(
+        multispendBalance,
+        selectedCurrency,
+        { symbolPosition: 'none', locale: currencyLocale },
     )
 
     const isActiveInvitation = multispendStatus?.status === 'activeInvitation'
