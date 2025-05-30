@@ -849,12 +849,14 @@ export const selectActiveFederationCustomFediMods = (s: CommonState) => {
         : []
 }
 
-export const selectActiveFederationChats = (s: CommonState) => {
-    const activeFederation = selectActiveFederation(s)
-    return activeFederation
-        ? s.federation.defaultCommunityChats[activeFederation.id] || []
-        : []
-}
+export const selectActiveFederationChats = createSelector(
+    selectActiveFederation,
+    (s: CommonState) => s.federation.defaultCommunityChats,
+    (activeFederation, defaultCommunityChats) =>
+        activeFederation
+            ? defaultCommunityChats[activeFederation.id] || []
+            : [],
+)
 
 export const selectMaxStableBalanceSats = createSelector(
     selectFederationMetadata,
