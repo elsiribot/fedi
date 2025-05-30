@@ -2240,6 +2240,7 @@ pub mod tests {
     use std::path::Path;
     use std::str::{self, FromStr};
     use std::sync::Once;
+    use std::thread::available_parallelism;
     use std::time::Duration;
 
     use anyhow::{anyhow, bail};
@@ -2271,6 +2272,7 @@ pub mod tests {
     };
     use runtime::constants::{COMMUNITY_INVITE_CODE_HRP, FEDI_FILE_PATH, MILLION};
     use runtime::envs::USE_UPSTREAM_FEDIMINTD_ENV;
+    use tokio::sync::Semaphore;
     use tokio::task::JoinSet;
     use tracing::{debug, info, trace};
 
@@ -2398,8 +2400,17 @@ pub mod tests {
     }
 
     macro_rules! spawn_and_attach_name {
-        ($dev_fed:ident, $tests_set:expr, $tests_names:expr, $test_name:ident) => {
-            let id = $tests_set.spawn($test_name($dev_fed.clone())).id();
+        ($dev_fed:ident, $tests_set:expr, $sem:ident, $tests_names:expr, $test_name:ident) => {
+            let id = $tests_set
+                .spawn({
+                    let sem = $sem.clone();
+                    let dev_fed = $dev_fed.clone();
+                    async move {
+                        let _permit = sem.acquire().await.unwrap();
+                        $test_name(dev_fed).await
+                    }
+                })
+                .id();
             $tests_names.insert(id, stringify!($test_name).to_owned());
         };
     }
@@ -2408,70 +2419,97 @@ pub mod tests {
     async fn tests_wrapper_for_bridge() -> anyhow::Result<()> {
         let dev_fed = dev_fed().await?;
         let mut tests_set = JoinSet::new();
+        let sem = Arc::new(Semaphore::new(available_parallelism()?.into()));
         let mut tests_names: HashMap<tokio::task::Id, String> = HashMap::new();
         spawn_and_attach_name!(
             dev_fed,
             tests_set,
+            sem,
             tests_names,
             test_join_and_leave_and_join
         );
-        spawn_and_attach_name!(dev_fed, tests_set, tests_names, test_join_concurrent);
+        spawn_and_attach_name!(dev_fed, tests_set, sem, tests_names, test_join_concurrent);
         // TODO: re-enable
         // spawn_and_attach_name!(tests_set, tests_names,
         // test_lightning_send_and_receive);
-        spawn_and_attach_name!(dev_fed, tests_set, tests_names, test_ecash);
-        spawn_and_attach_name!(dev_fed, tests_set, tests_names, test_ecash_overissue);
-        spawn_and_attach_name!(dev_fed, tests_set, tests_names, test_on_chain);
-        spawn_and_attach_name!(dev_fed, tests_set, tests_names, test_ecash_cancel);
-        spawn_and_attach_name!(dev_fed, tests_set, tests_names, test_backup_and_recovery);
+        spawn_and_attach_name!(dev_fed, tests_set, sem, tests_names, test_ecash);
+        spawn_and_attach_name!(dev_fed, tests_set, sem, tests_names, test_ecash_overissue);
+        spawn_and_attach_name!(dev_fed, tests_set, sem, tests_names, test_on_chain);
+        spawn_and_attach_name!(dev_fed, tests_set, sem, tests_names, test_ecash_cancel);
         spawn_and_attach_name!(
             dev_fed,
             tests_set,
+            sem,
+            tests_names,
+            test_backup_and_recovery
+        );
+        spawn_and_attach_name!(
+            dev_fed,
+            tests_set,
+            sem,
             tests_names,
             test_backup_and_recovery_from_scratch
         );
-        spawn_and_attach_name!(dev_fed, tests_set, tests_names, test_validate_ecash);
+        spawn_and_attach_name!(dev_fed, tests_set, sem, tests_names, test_validate_ecash);
         spawn_and_attach_name!(
             dev_fed,
             tests_set,
+            sem,
             tests_names,
             test_social_backup_and_recovery
         );
-        spawn_and_attach_name!(dev_fed, tests_set, tests_names, test_stability_pool);
-        spawn_and_attach_name!(dev_fed, tests_set, tests_names, test_spv2);
-        spawn_and_attach_name!(dev_fed, tests_set, tests_names, test_lnurl_sign_message);
-        spawn_and_attach_name!(dev_fed, tests_set, tests_names, test_federation_preview);
+        spawn_and_attach_name!(dev_fed, tests_set, sem, tests_names, test_stability_pool);
+        spawn_and_attach_name!(dev_fed, tests_set, sem, tests_names, test_spv2);
         spawn_and_attach_name!(
             dev_fed,
             tests_set,
+            sem,
+            tests_names,
+            test_lnurl_sign_message
+        );
+        spawn_and_attach_name!(
+            dev_fed,
+            tests_set,
+            sem,
+            tests_names,
+            test_federation_preview
+        );
+        spawn_and_attach_name!(
+            dev_fed,
+            tests_set,
+            sem,
             tests_names,
             test_join_fails_post_recovery_index_unassigned
         );
         spawn_and_attach_name!(
             dev_fed,
             tests_set,
+            sem,
             tests_names,
             test_transfer_device_registration_post_recovery
         );
         spawn_and_attach_name!(
             dev_fed,
             tests_set,
+            sem,
             tests_names,
             test_new_device_registration_post_recovery
         );
         spawn_and_attach_name!(
             dev_fed,
             tests_set,
+            sem,
             tests_names,
             test_fee_remittance_on_startup
         );
         spawn_and_attach_name!(
             dev_fed,
             tests_set,
+            sem,
             tests_names,
             test_fee_remittance_post_successful_tx
         );
-        spawn_and_attach_name!(dev_fed, tests_set, tests_names, test_recurring_lnurl);
+        spawn_and_attach_name!(dev_fed, tests_set, sem, tests_names, test_recurring_lnurl);
 
         while let Some(res) = tests_set.join_next_with_id().await {
             match res {
