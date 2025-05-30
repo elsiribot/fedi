@@ -1,4 +1,5 @@
-import { BridgeError, FedimintBridge } from '@fedi/common/utils/fedimint'
+import { BridgeError } from '@fedi/common/utils/errors'
+import { FedimintBridge } from '@fedi/common/utils/fedimint'
 import { makeLog } from '@fedi/common/utils/log'
 
 const log = makeLog('web/lib/bridge')
