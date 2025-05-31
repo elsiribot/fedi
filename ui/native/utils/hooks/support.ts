@@ -100,7 +100,9 @@ export function useLaunchZendesk() {
     const launchZendesk = useCallback(
         async (newlyGranted = false) => {
             if (!supportPermissionGranted && !newlyGranted) {
-                return navigation.navigate('HelpCentre')
+                return navigation.navigate('HelpCentre', {
+                    fromOnboarding: false,
+                })
             }
 
             if (!zendeskInitialized) {

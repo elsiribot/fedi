@@ -1,6 +1,6 @@
 import type { NativeStackScreenProps } from '@react-navigation/native-stack'
 import { Button, Text, Theme, useTheme } from '@rneui/themed'
-import React, { useEffect } from 'react'
+import React, { useEffect, useState } from 'react'
 import { Trans, useTranslation } from 'react-i18next'
 import {
     ImageBackground,
@@ -45,6 +45,9 @@ const Splash: React.FC<Props> = ({ navigation }: Props) => {
     const toast = useToast()
     const isMatrixReady = useAppSelector(selectIsMatrixReady)
     const hasSetDisplayName = useAppSelector(selectHasSetMatrixDisplayName)
+
+    const [hasNavigatedToHelpCentre, setHasNavigatedToHelpCentre] =
+        useState<boolean>(false)
     const { launchZendesk } = useLaunchZendesk()
 
     const generateAndSetUsername = async () => {
@@ -164,7 +167,17 @@ const Splash: React.FC<Props> = ({ navigation }: Props) => {
                                 alignItems: 'center',
                                 justifyContent: 'center',
                             }}
-                            onPress={() => launchZendesk()}>
+                            onPress={() => {
+                                if (hasNavigatedToHelpCentre) {
+                                    launchZendesk()
+                                } else {
+                                    setHasNavigatedToHelpCentre(true)
+                                    navigation.navigate({
+                                        name: 'HelpCentre',
+                                        params: { fromOnboarding: true },
+                                    })
+                                }
+                            }}>
                             <SvgImage
                                 color={theme.colors.night}
                                 size={SvgImageSize.xs}
