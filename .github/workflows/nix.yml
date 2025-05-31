@@ -238,7 +238,7 @@ jobs:
                     - linux
                     - macos-arm64
                 include:
-                    - on: linux
+                    - host: linux
                       runs-on: [self-hosted, linux]
                       build-in-pr: true
                       timeout: 30
