@@ -14,7 +14,7 @@
         "dev:ios": "bash scripts/run-ios.sh",
         "dev:android": "bash scripts/run-android.sh",
         "test": "yarn run test:functional",
-        "test:functional": "jest --config=tests/configs/jest-functional.config.js",
+        "test:functional": "jest --config='tests/configs/jest-functional.config.js'",
         "test:android:regtest": "bash scripts/run-detox-tests-android.sh -n regtest",
         "test:android:mainnet": "bash scripts/run-detox-tests-android.sh -n mainnet",
         "test:ios:regtest": "bash scripts/run-detox-tests-ios.sh -n regtest",

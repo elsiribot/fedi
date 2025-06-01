@@ -5,6 +5,9 @@ type LogLevel = 'debug' | 'info' | 'warn' | 'error'
 
 const MAX_MESSAGE_LENGTH = 1000
 const MAX_ERROR_MESSAGE_LENGTH = 2000
+export const QUICK_SAVE_THRESHOLD = 20
+export const QUICK_SAVE_DELAY = 1
+export const DEBOUNCE_DELAY = 100
 
 export interface LogFileApi {
     saveLogs(logs: string): Promise<void>
@@ -154,10 +157,10 @@ function innerLog(
     // - The 1ms delay is a compromise - it yields to the UI thread but doesn't guarantee
     // cancellation of all previous timeouts like a true debouncer should
     clearTimeout(saveTimeout)
-    if (cachedLogsCount >= 20) {
-        saveTimeout = setTimeout(saveLogsToStorage, 1)
+    if (cachedLogsCount >= QUICK_SAVE_THRESHOLD) {
+        saveTimeout = setTimeout(saveLogsToStorage, QUICK_SAVE_DELAY)
     } else {
-        saveTimeout = setTimeout(saveLogsToStorage, 100)
+        saveTimeout = setTimeout(saveLogsToStorage, DEBOUNCE_DELAY)
     }
 }
 

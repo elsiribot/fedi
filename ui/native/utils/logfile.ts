@@ -5,7 +5,7 @@ const logFileName = (i: number) =>
 
 const MAX_LOG_SIZE = 5 * 1024 * 1024 // 5MB
 
-async function maybeLogFileRollOver() {
+async function attemptLogFileRollover() {
     try {
         const stat = await RNFS.stat(logFileName(0))
         // on disk we retain 2 * MAX_LOG_SIZE to efficiently roll log files
@@ -33,14 +33,19 @@ async function maybeLogFileRollOver() {
 }
 
 // we only roll once per app launch to improve performance
-let maybeLogFileRollOverOncePromise: null | Promise<void> = null
+let attemptLogFileRolloverOncePromise: null | Promise<void> = null
+
+// Reset function for testing
+export function resetLogFileRollover() {
+    attemptLogFileRolloverOncePromise = null
+}
 
 export const logFileApi = {
     async saveLogs(logs: string) {
-        if (maybeLogFileRollOverOncePromise === null) {
-            maybeLogFileRollOverOncePromise = maybeLogFileRollOver()
+        if (attemptLogFileRolloverOncePromise === null) {
+            attemptLogFileRolloverOncePromise = attemptLogFileRollover()
         }
-        await maybeLogFileRollOverOncePromise
+        await attemptLogFileRolloverOncePromise
         await RNFS.appendFile(logFileName(0), logs)
     },
     async readLogs() {
