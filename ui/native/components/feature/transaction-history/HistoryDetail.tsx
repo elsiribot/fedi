@@ -110,7 +110,7 @@ export const HistoryDetail: React.FC<HistoryDetailProps> = ({
             // Needs to be called in a different callback since `hasReceivedBitcoin` points to the value at the time of the function call
             checkAndToastOnchainReceiveStatus()
             setCheckLoading(false)
-        }, 1000)
+        }, 10000)
     }, [activeFederationId, id, checkAndToastOnchainReceiveStatus])
 
     const style = styles(theme)
