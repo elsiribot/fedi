@@ -5,9 +5,7 @@ use std::str::FromStr;
 use std::sync::{Arc, Mutex as StdMutex, OnceLock};
 
 use anyhow::{anyhow, bail, Context, Result};
-use bech32::Bech32;
-use bitcoin::key::{Keypair, Secp256k1};
-use bitcoin::XOnlyPublicKey;
+use bitcoin::key::Secp256k1;
 use bridge_inner::federation::Federations;
 use bridge_inner::matrix::multispend::services::MultispendServices;
 use bridge_inner::matrix::Matrix;
@@ -19,16 +17,16 @@ use fedimint_core::db::IDatabaseTransactionOpsCoreTyped as _;
 use fedimint_derive_secret::{ChildId, DerivableSecret};
 use fedimint_mint_client::OOBNotes;
 use futures::StreamExt as _;
-use nostr::nips::nip44;
 use nostr::secp256k1::Message;
+use nostril::Nostril;
 use onboarding::{BridgeOnboarding, RpcOnboardingStage};
 use rpc_types::{
-    RpcAmount, RpcEcashInfo, RpcFederationId, RpcNostrPubkey, RpcNostrSecret, RpcPeerId,
-    RpcPublicKey, RpcRecoveryId, RpcSignedLnurlMessage,
+    RpcAmount, RpcEcashInfo, RpcFederationId, RpcPeerId, RpcPublicKey, RpcRecoveryId,
+    RpcSignedLnurlMessage,
 };
 use runtime::api::IFediApi;
 use runtime::bridge_runtime::Runtime;
-use runtime::constants::{LNURL_CHILD_ID, MATRIX_CHILD_ID, NOSTR_CHILD_ID};
+use runtime::constants::{LNURL_CHILD_ID, MATRIX_CHILD_ID};
 use runtime::db::FederationPendingRejoinFromScratchKeyPrefix;
 use runtime::event::EventSink;
 use runtime::features::FeatureCatalog;
@@ -54,6 +52,7 @@ pub struct BridgeFull {
     pub matrix: OnceCell<Arc<Matrix>>,
     pub multispend_services: Arc<MultispendServices>,
     pub device_registration_service: Mutex<DeviceRegistrationService>,
+    pub nostril: Nostril,
 }
 
 #[derive(Debug)]
@@ -106,6 +105,8 @@ impl BridgeFull {
         ));
         federations.load_joined_federations_in_background().await;
 
+        let nostril = Nostril::new(&runtime).await;
+
         Ok(Self {
             runtime,
             federations,
@@ -113,6 +114,7 @@ impl BridgeFull {
             matrix: Default::default(),
             device_registration_service,
             multispend_services,
+            nostril,
         })
     }
 
@@ -524,57 +526,6 @@ pub trait RuntimeExt: Deref<Target = Runtime> {
         })
     }
 
-    async fn get_nostr_pubkey(&self) -> Result<RpcNostrPubkey> {
-        let nostr_pubkey = self.nostr_pubkey().await;
-        let hrp = bech32::Hrp::parse_unchecked("npub");
-        Ok(RpcNostrPubkey {
-            npub: bech32::encode::<Bech32>(hrp, &nostr_pubkey.serialize())?,
-            hex: nostr_pubkey.to_string(),
-        })
-    }
-
-    async fn nostr_pubkey(&self) -> XOnlyPublicKey {
-        let global_root_secret = self.app_state.root_secret().await;
-        let secp = Secp256k1::new();
-        let nostr_secret = global_root_secret.child_key(ChildId(NOSTR_CHILD_ID));
-        let nostr_keypair = nostr_secret.to_secp_key(&secp);
-
-        nostr_keypair.x_only_public_key().0
-    }
-
-    async fn get_nostr_secret(&self) -> Result<RpcNostrSecret> {
-        let secp = Secp256k1::new();
-        let bytes = self.nostr_secret_key(&secp).await?.secret_bytes();
-        let hrp = bech32::Hrp::parse_unchecked("nsec");
-        let nsec = bech32::encode::<Bech32>(hrp, &bytes)?;
-        let hex = hex::encode(bytes);
-
-        Ok(RpcNostrSecret { hex, nsec })
-    }
-
-    async fn nostr_secret_key<Ctx: bitcoin::secp256k1::Context + bitcoin::secp256k1::Signing>(
-        &self,
-        secp: &Secp256k1<Ctx>,
-    ) -> anyhow::Result<Keypair> {
-        let global_root_secret = self.app_state.root_secret().await;
-        let nostr_secret = global_root_secret.child_key(ChildId(NOSTR_CHILD_ID));
-        let nostr_keypair = nostr_secret.to_secp_key(secp);
-
-        Ok(nostr_keypair)
-    }
-
-    async fn sign_nostr_event(&self, event_hash: String) -> Result<String> {
-        let global_root_secret = self.app_state.root_secret().await;
-        let secp = Secp256k1::new();
-        let nostr_secret = global_root_secret.child_key(ChildId(NOSTR_CHILD_ID));
-        let nostr_keypair = nostr_secret.to_secp_key(&secp);
-        let data = &hex::decode(event_hash)?;
-        let message = Message::from_digest_slice(data)?;
-        let sig = secp.sign_schnorr(&message, &nostr_keypair);
-        // Return hex-encoded string
-        Ok(format!("{}", sig))
-    }
-
     async fn get_matrix_secret(&self) -> DerivableSecret {
         let global_root_secret = self.app_state.root_secret().await;
         global_root_secret.child_key(ChildId(MATRIX_CHILD_ID))
@@ -598,31 +549,6 @@ pub trait RuntimeExt: Deref<Target = Runtime> {
             .map(|(key, _)| key.invite_code_str)
             .collect::<Vec<_>>()
             .await
-    }
-
-    /// Given a recipient's pubkey and plaintext content, encrypts and returns
-    /// the ciphertext as per NIP44.
-    async fn nip44_encrypt(&self, pubkey: String, plaintext: String) -> Result<String> {
-        let secp = Secp256k1::new();
-        let secret_key = self.nostr_secret_key(&secp).await?.secret_key();
-        Ok(nip44::encrypt(
-            &nostr::SecretKey::from(secret_key),
-            &nostr::PublicKey::parse(&pubkey)?,
-            plaintext,
-            nip44::Version::V2,
-        )?)
-    }
-
-    /// Given a recipient's pubkey and ciphertext content, decrypts and returns
-    /// the plaintext as per NIP44.
-    async fn nip44_decrypt(&self, pubkey: String, ciphertext: String) -> Result<String> {
-        let secp = Secp256k1::new();
-        let secret_key = self.nostr_secret_key(&secp).await?.secret_key();
-        Ok(nip44::decrypt(
-            &nostr::SecretKey::from(secret_key),
-            &nostr::PublicKey::parse(&pubkey)?,
-            ciphertext,
-        )?)
     }
 }
 
