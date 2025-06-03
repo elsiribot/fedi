@@ -116,7 +116,7 @@ const Sidebar = styled('div', {
         isHidden: {
             true: {
                 '@sm': {
-                    transform: 'translateX(-100vw)',
+                    display: 'none',
                 },
             },
         },
@@ -154,14 +154,14 @@ const Content = styled('div', {
         right: 0,
         bottom: 0,
         width: '100%',
-        transform: 'translateX(100vw)',
+        display: 'none',
     },
 
     variants: {
         isShowing: {
             true: {
                 '@sm': {
-                    transform: 'translateX(0)',
+                    display: 'flex',
                 },
             },
         },
