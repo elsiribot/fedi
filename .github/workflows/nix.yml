@@ -214,7 +214,7 @@ jobs:
         if: >
             needs.precheck.outputs.HAS_NON_UI_CHANGES == '1' ||
             needs.precheck.outputs.IS_PUSH_TO_MASTER == '1'
-        runs-on: [self-hosted, macos, arm64]
+        runs-on: [self-hosted, macos, arm64, legacy]
         timeout-minutes: 60
         steps:
             - uses: actions/checkout@v4
@@ -244,7 +244,7 @@ jobs:
                       timeout: 30
                       system: x86_64-linux
                     - host: macos-arm64
-                      runs-on: [self-hosted, macos, arm64]
+                      runs-on: [self-hosted, macos, arm64, legacy]
                       os: macOS
                       build-in-pr: true
                       timeout: 45
