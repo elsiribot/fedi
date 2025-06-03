@@ -137,7 +137,7 @@ impl FeatureCatalog {
             encrypted_sync: None,
             override_localhost: None,
             stability_pool_v2: Some(StabilityPoolV2FeatureConfig {
-                state: StabilityPoolV2FeatureConfigState::SpV2Only,
+                state: StabilityPoolV2FeatureConfigState::Multispend,
             }),
             spv2_stable_account_id: false,
         }
