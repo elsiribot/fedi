@@ -10,13 +10,13 @@ import {
     selectWalletFederations,
     selectRoomMultispendFinancialTransactions,
     fetchMultispendTransactions,
-    selectMultispendBalance,
     selectCurrency,
     selectMatrixRoomMembers,
     selectMultispendInvitationEvent,
     selectMatrixRoomMember,
     selectMatrixRoomMultispendEvent,
     selectCurrencyLocale,
+    selectMultispendBalanceFiat,
 } from '../redux'
 import {
     MatrixEvent,
@@ -243,11 +243,11 @@ export function useMultispendDisplayUtils(t: TFunction, roomId: RpcRoomId) {
     const myMultispendRole = useCommonSelector(s =>
         selectMyMultispendRole(s, roomId),
     )
-    const multispendBalance = useCommonSelector(s =>
-        selectMultispendBalance(s, roomId),
+    const multispendBalanceFiat = useCommonSelector(s =>
+        selectMultispendBalanceFiat(s, roomId),
     )
     const formattedMultispendBalance = amountUtils.formatFiat(
-        multispendBalance,
+        multispendBalanceFiat,
         selectedCurrency,
         { symbolPosition: 'none', locale: currencyLocale },
     )

@@ -1161,7 +1161,7 @@ export function useDepositForm() {
 export function useMultispendWithdrawForm(roomId: RpcRoomId) {
     const { inputAmount, inputAmountCents, setInputAmount } = useWithdrawForm()
     const { convertCentsToSats } = useBtcFiatPrice()
-    const multispendBalance = useCommonSelector(s =>
+    const multispendBalancePrecise = useCommonSelector(s =>
         selectMultispendBalance(s, roomId),
     )
     // TODO: Allow full withdrawals of multispend balance
@@ -1169,7 +1169,7 @@ export function useMultispendWithdrawForm(roomId: RpcRoomId) {
     // Since we don't have sub-cent precision for multispend withdrawals,
     // we round down from the total balance so the request doesn't get stuck
     // in the approved state then convert to sats to adapt it to the AmountInput component
-    const maximumAmountCents = Math.floor(multispendBalance) as UsdCents
+    const maximumAmountCents = Math.floor(multispendBalancePrecise) as UsdCents
     const maximumAmountSats = convertCentsToSats(maximumAmountCents)
 
     return {

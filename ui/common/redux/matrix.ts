@@ -2176,7 +2176,9 @@ export const selectLatestMultispendTxnInRoom = createSelector(
     },
 )
 
-export const selectMultispendBalanceUsd = createSelector(
+// Returns the multispend balance in cents without any rounding
+// so other selectors can round sub-cent values up or down as needed
+export const selectMultispendBalance = createSelector(
     selectMatrixRoomMultispendAccountInfo,
     accountInfo => {
         if (!accountInfo || 'Err' in accountInfo) return 0 as UsdCents
@@ -2192,7 +2194,7 @@ export const selectMultispendBalanceUsd = createSelector(
 )
 
 export const selectMultispendBalanceCents = createSelector(
-    selectMultispendBalanceUsd,
+    selectMultispendBalance,
     balanceCentsPrecise => {
         if (!balanceCentsPrecise) return 0 as UsdCents
 
@@ -2200,8 +2202,8 @@ export const selectMultispendBalanceCents = createSelector(
     },
 )
 
-// Converts the multispend balance in cents to the selected currency
-export const selectMultispendBalance = createSelector(
+// Converts the multispend balance in cents to the selected fiat currency
+export const selectMultispendBalanceFiat = createSelector(
     selectMultispendBalanceCents,
     (s: CommonState) => selectBtcUsdExchangeRate(s),
     (balanceCents, btcUsdExchangeRate) => {
