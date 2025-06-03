@@ -1,6 +1,10 @@
-name: Renew iOS Credentials
+name: Renew Expired iOS Certificates
 on:
     workflow_dispatch:
+
+# This workflow is used to renew expired iOS certificates
+# It is only meant to be run manually by developers and should run
+# on the same MacOS runner that deploys builds to TestFlight
 
 jobs:
     renew-ios-certs:
@@ -26,12 +30,22 @@ jobs:
                   ASC_API_KEY_JSON_CREDENTIALS_ENCODED: ${{ secrets.ASC_API_KEY_JSON_CREDENTIALS_ENCODED }}
               run: nix develop -c ./scripts/ci/make-testflight-creds.sh
 
-            - name: Renew certificates with fastlane
+            # Check & renew nightly first, in case something fails or goes wrong
+            - name: Check iOS certificates for Nightly & renew if expired
               env:
                   GH_PAT_FEDI_FETCH_IOS_CERTS: ${{ secrets.GH_PAT_FEDI_FETCH_IOS_CERTS }}
+                  GH_PAT_FEDI_WRITE_IOS_CERTS: ${{ secrets.GH_PAT_FEDI_WRITE_IOS_CERTS }}
                   MATCH_KEYCHAIN_NAME: ${{ secrets.APP_STORE_CONNECT_KEYCHAIN_NAME }}
                   MATCH_PASSWORD: ${{ secrets.APP_STORE_CONNECT_KEYCHAIN_PASSWORD }}
-                  # test with nightly first
                   FLAVOR: 'nightly'
+              run: |
+                  nix develop .#xcode -c ./scripts/ci/renew-appstore-certs.sh
+
+            - name: Check iOS certificates & renew if expired
+              env:
+                  GH_PAT_FEDI_FETCH_IOS_CERTS: ${{ secrets.GH_PAT_FEDI_FETCH_IOS_CERTS }}
+                  GH_PAT_FEDI_WRITE_IOS_CERTS: ${{ secrets.GH_PAT_FEDI_WRITE_IOS_CERTS }}
+                  MATCH_KEYCHAIN_NAME: ${{ secrets.APP_STORE_CONNECT_KEYCHAIN_NAME }}
+                  MATCH_PASSWORD: ${{ secrets.APP_STORE_CONNECT_KEYCHAIN_PASSWORD }}
               run: |
                   nix develop .#xcode -c ./scripts/ci/renew-appstore-certs.sh
