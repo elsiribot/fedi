@@ -952,8 +952,7 @@ impl FederationV2 {
                     | DepositStateV2::Claimed { btc_deposited, .. } => {
                         let federation_fees = wallet.get_fee_consensus().peg_in_abs;
                         let amount = Amount::from_sats(btc_deposited.to_sat())
-                            .checked_sub(federation_fees)
-                            .expect("'Can't fail");
+                            .saturating_sub(federation_fees);
                         // FIXME: add fedi fees once fedimint await primary module outputs
                         if let DepositStateV2::Claimed { .. } = &update {
                             fed.write_success_receive_fedi_fee(operation_id, amount)
@@ -2949,9 +2948,7 @@ impl FederationV2 {
                                     .map(|w| w.get_fee_consensus().peg_in_abs)
                                     .unwrap_or(Amount::ZERO);
                                 RpcAmount(
-                                    Amount::from_sats(btc_deposited.to_sat())
-                                        .checked_sub(fees)
-                                        .expect("Can't fail"),
+                                    Amount::from_sats(btc_deposited.to_sat()).saturating_sub(fees),
                                 )
                             }
                             _ => RpcAmount(Amount::ZERO),
