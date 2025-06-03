@@ -133,6 +133,7 @@ const ChatVideoEvent: React.FC<ChatVideoEventProps> = ({
                     videoRef.current?.seek(0)
                     dispatch(matchAndRemovePreviewMedia(event.content))
                 }}
+                resizeMode="cover"
             />
             <TouchableOpacity
                 style={style.overlay}
