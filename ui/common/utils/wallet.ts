@@ -15,6 +15,8 @@ import {
     MultispendTransactionListEntry,
     MatrixRoomMember,
     Sats,
+    MultispendActiveInvitation,
+    MultispendFinalized,
 } from '../types'
 import {
     StabilityPoolWithdrawalEvent,
@@ -31,7 +33,7 @@ import dateUtils from './DateUtils'
 import { getCurrencyCode } from './currency'
 import { FedimintBridge } from './fedimint'
 import { makeLog } from './log'
-import { makeNameWithSuffix } from './matrix'
+import { getMultispendInvite, makeNameWithSuffix } from './matrix'
 
 const log = makeLog('common/utils/wallet')
 
@@ -61,6 +63,20 @@ export const getTxnDirection = (txn: TransactionListEntry): string => {
             return TransactionDirection.receive
         default:
             return TransactionDirection.send
+    }
+}
+
+export const makeMultispendTxnTypeText = (
+    txn: MultispendTransactionListEntry,
+    t: TFunction,
+): string => {
+    switch (txn.state) {
+        case 'withdrawal':
+            return t('phrases.multispend-withdrawal')
+        case 'deposit':
+            return t('phrases.multispend-deposit')
+        default:
+            return t('words.unknown')
     }
 }
 
@@ -1033,6 +1049,49 @@ export const makeStabilityTxnFeeDetails = (
     items.push(totalFees)
 
     return items
+}
+
+export const makeMultispendTxnStatusText = (
+    t: TFunction,
+    txn: MultispendTransactionListEntry,
+    multispendStatus:
+        | MultispendActiveInvitation
+        | MultispendFinalized
+        | undefined,
+    // allows for minor tweaks to txn status when exporting to CSV
+    // for major changes, please create a new makeMultispendTxnCsvStatusText function
+    csvExport?: boolean,
+): string => {
+    if (
+        // there should always be a state, but return unknown just in case
+        !txn.state ||
+        txn.state === 'invalid' ||
+        // group should always be finalized at this point
+        !multispendStatus ||
+        multispendStatus.status !== 'finalized'
+    )
+        return t('words.unknown')
+
+    if ('depositNotification' in txn.event)
+        return csvExport ? t('words.complete') : t('words.deposit')
+    if ('withdrawalRequest' in txn.event) {
+        const withdrawalRequest = txn.event.withdrawalRequest
+        const invitation = getMultispendInvite(multispendStatus)
+        // finalized multispends should always have an invitation
+        if (!invitation) return t('words.unknown')
+
+        if (withdrawalRequest.completed) {
+            return csvExport ? t('words.complete') : t('words.withdrawal')
+        } else if (
+            withdrawalRequest.rejections.length >
+            invitation.signers.length - Number(invitation.threshold)
+        ) {
+            return t('words.failed')
+        } else {
+            return t('words.pending')
+        }
+    }
+    return t('words.unknown')
 }
 
 export const makeMultispendTxnDetailItems = (

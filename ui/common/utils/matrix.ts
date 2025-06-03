@@ -15,6 +15,7 @@ import {
     MatrixPaymentEvent,
     MatrixPaymentStatus,
     MatrixRoom,
+    MatrixRoomMember,
     MatrixRoomPowerLevels,
     MatrixTimelineItem,
     MatrixUser,
@@ -1023,6 +1024,14 @@ export const coerceMultispendTxn = (
 
 export const makeNameWithSuffix = (user: MatrixUser) => {
     return `${user.displayName} ${getUserSuffix(user.id)}`
+}
+
+export const findUserDisplayName = (
+    userId: MatrixUser['id'],
+    roomMembers: MatrixRoomMember[],
+) => {
+    const user = roomMembers.find(m => m.id === userId)
+    return user ? makeNameWithSuffix(user) : userId
 }
 
 export function isMultispendFinancialTransaction(

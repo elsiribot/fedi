@@ -555,14 +555,7 @@ export const MainNavigator = () => {
                                             name="MultispendTransactions"
                                             component={MultispendTransactions}
                                             options={() => ({
-                                                header: () => (
-                                                    <CenteredHeader
-                                                        backButton
-                                                        title={t(
-                                                            'words.transactions',
-                                                        )}
-                                                    />
-                                                ),
+                                                header: () => null,
                                             })}
                                         />
                                         <Stack.Screen

@@ -36,7 +36,7 @@ export const CommunitySettings = ({ community }: CommunityMenuProps) => {
     const dispatch = useAppDispatch()
     const navigation = useNavigation()
 
-    const { exportTransactionsAsCsv, exportingFederationId } = useNativeExport()
+    const { exportTransactionsAsCsv, isExporting } = useNativeExport()
     const { confirmLeaveFederation } = useNativeLeaveFederation()
 
     const [isExpanded, setIsExpanded] = useState(false)
@@ -149,7 +149,7 @@ export const CommunitySettings = ({ community }: CommunityMenuProps) => {
                                 'feature.backup.export-transactions-to-csv',
                             )}
                             onPress={() => exportTransactionsAsCsv(community)}
-                            disabled={!!exportingFederationId}
+                            disabled={!!isExporting}
                         />
                     )}
                     <SettingsItem
