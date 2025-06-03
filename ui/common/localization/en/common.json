@@ -955,7 +955,7 @@
             "confirm-send": "Confirm Send",
             "copied-offline-payment": "Copied offline payment",
             "ecash-recipient-notice": "Recipient must come online to claim eCash. Cancel Send will prevent claiming eCash.",
-            "edit-notes-label": "Notes (Optional)",
+            "edit-notes-label": "Notes",
             "edit-notes-label-required": "Notes (Required)",
             "edit-notes-placeholder": "Leave a note for this transaction.",
             "i-have-sent-payment": "I have sent payment",
