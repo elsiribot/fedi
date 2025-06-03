@@ -7,15 +7,6 @@ import HomePage from '../../pages/home'
 import { AppState, setupStore } from '../../state/store'
 import { renderWithProviders } from '../../utils/test-utils/render'
 
-jest.mock('next/router', () => ({
-    useRouter() {
-        return {
-            pathname: '',
-            push: jest.fn(),
-        }
-    },
-}))
-
 const mockFederation: FederationListItem = {
     status: 'online',
     init_state: 'ready',

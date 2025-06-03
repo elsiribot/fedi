@@ -14,6 +14,15 @@ Object.defineProperty(window, 'matchMedia', {
     })),
 })
 
+jest.mock('next/router', () => ({
+    useRouter() {
+        return {
+            pathname: '',
+            push: jest.fn(),
+        }
+    },
+}))
+
 global.ResizeObserver = jest.fn().mockImplementation(() => ({
     observe: jest.fn(),
     unobserve: jest.fn(),
