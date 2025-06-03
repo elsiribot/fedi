@@ -999,7 +999,8 @@ export const selectDoesFederationHaveMultispend = (
 
 export const selectShouldShowMultispend = createSelector(
     (s: CommonState) => selectIsMultispendFeatureEnabled(s),
-    isMultispendEnabled => {
-        return isMultispendEnabled
+    (s: CommonState) => selectDoesAnyFederationHaveMultispend(s),
+    (isMultispendEnabled, doesAnyFederationHaveMultispend) => {
+        return isMultispendEnabled && doesAnyFederationHaveMultispend
     },
 )

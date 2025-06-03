@@ -11,12 +11,12 @@ import {
     ignoreUser,
     leaveMatrixRoom,
     selectIsDefaultGroup,
-    selectIsMultispendFeatureEnabled,
     selectMatrixRoom,
     selectMatrixRoomMembersCount,
     selectMatrixRoomMultispendStatus,
     selectMatrixRoomSelfPowerLevel,
     selectMyMultispendRole,
+    selectShouldShowMultispend,
     setMatrixRoomBroadcastOnly,
     unignoreUser,
 } from '@fedi/common/redux'
@@ -60,7 +60,7 @@ const RoomSettings: React.FC<Props> = ({ navigation, route }: Props) => {
     const myMultispendRole = useAppSelector(s =>
         selectMyMultispendRole(s, roomId),
     )
-    const isMultispendEnabled = useAppSelector(selectIsMultispendFeatureEnabled)
+    const shouldShowMultispend = useAppSelector(selectShouldShowMultispend)
     const isDefaultGroup = useAppSelector(s => selectIsDefaultGroup(s, roomId))
     const isGroupChat = room?.directUserId === undefined
     const [isTogglingBroadcastOnly, setIsTogglingBroadcastOnly] =
@@ -271,7 +271,7 @@ const RoomSettings: React.FC<Props> = ({ navigation, route }: Props) => {
             )
 
             if (
-                isMultispendEnabled &&
+                shouldShowMultispend &&
                 isGroupChat &&
                 !room?.isPublic &&
                 !room?.broadcastOnly
@@ -332,7 +332,7 @@ const RoomSettings: React.FC<Props> = ({ navigation, route }: Props) => {
         theme.colors.red,
         isIgnored,
         multispendStatus,
-        isMultispendEnabled,
+        shouldShowMultispend,
         myMultispendRole,
     ])
 
