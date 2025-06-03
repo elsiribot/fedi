@@ -1,0 +1,37 @@
+name: Renew iOS Credentials
+on:
+    workflow_dispatch:
+
+jobs:
+    renew-ios-certs:
+        name: Renew certificates for Apple App Store Connect
+        timeout-minutes: 90
+        runs-on: [self-hosted, macos, arm64, legacy]
+        steps:
+            - name: Checkout repo
+              uses: actions/checkout@v4
+
+            - uses: cachix/install-nix-action@v30
+              with:
+                  nix_path: nixpkgs=channel:nixos-22.05
+
+            - uses: cachix/cachix-action@v15
+              with:
+                  name: fedibtc
+                  authToken: '${{ secrets.CACHIX_AUTH_TOKEN }}'
+              continue-on-error: true
+
+            - name: Generate JSON credentials file
+              env:
+                  ASC_API_KEY_JSON_CREDENTIALS_ENCODED: ${{ secrets.ASC_API_KEY_JSON_CREDENTIALS_ENCODED }}
+              run: nix develop -c ./scripts/ci/make-testflight-creds.sh
+
+            - name: Renew certificates with fastlane
+              env:
+                  GH_PAT_FEDI_FETCH_IOS_CERTS: ${{ secrets.GH_PAT_FEDI_FETCH_IOS_CERTS }}
+                  MATCH_KEYCHAIN_NAME: ${{ secrets.APP_STORE_CONNECT_KEYCHAIN_NAME }}
+                  MATCH_PASSWORD: ${{ secrets.APP_STORE_CONNECT_KEYCHAIN_PASSWORD }}
+                  # test with nightly first
+                  FLAVOR: 'nightly'
+              run: |
+                  nix develop .#xcode -c ./scripts/ci/renew-appstore-certs.sh
