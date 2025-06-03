@@ -222,6 +222,12 @@ export type GuardianStatus =
 
 export type LogEvent = { log: string };
 
+export type MatrixInitializeStatus =
+  | { type: "starting" }
+  | { type: "loggingIn" }
+  | { type: "success" }
+  | { type: "error"; error: RpcError };
+
 /**
  * Collected details for a given event id.
  */
@@ -711,7 +717,10 @@ export type RpcMethods = {
     null,
   ];
   matrixObservableCancel: [matrixObservableCancel, null];
-  matrixInit: [matrixInit, null];
+  matrixInitializeStatus: [
+    matrixInitializeStatus,
+    Observable<MatrixInitializeStatus>,
+  ];
   matrixGetAccountSession: [matrixGetAccountSession, RpcMatrixAccountSession];
   matrixObserveSyncIndicator: [
     matrixObserveSyncIndicator,
@@ -1592,7 +1601,7 @@ export type matrixGetMediaPreview = { url: string };
 
 export type matrixIgnoreUser = { userId: RpcUserId };
 
-export type matrixInit = {};
+export type matrixInitializeStatus = { observableId: number };
 
 export type matrixListIgnoredUsers = {};
 

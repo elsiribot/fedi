@@ -5,6 +5,7 @@ use std::time::Duration;
 
 use anyhow::{Context as _, Result};
 use bitcoin::secp256k1;
+use bridge_inner::matrix::bg_matrix::MatrixInitializeStatus;
 use bridge_inner::matrix::multispend::MultispendGroupVoteType;
 // nosemgrep: ban-wildcard-imports
 use bridge_inner::matrix::*;
@@ -30,7 +31,7 @@ use runtime::storage::state::DeviceIdentifier;
 use runtime::storage::{AppState, OnboardingCompletionMethod};
 use stability_pool_client::common::{AccountType, AccountUnchecked};
 use tempfile::TempDir;
-use tokio::sync::mpsc;
+use tokio::sync::{mpsc, watch};
 use tracing::{error, info, warn};
 
 use crate::ffi::PathBasedStorage;
@@ -77,6 +78,7 @@ async fn mk_matrix_login(
     .await?;
     let runtime = Arc::new(runtime);
     let multispend_services = MultispendServices::new(runtime.clone());
+    let sender = watch::Sender::new(MatrixInitializeStatus::Starting);
     let matrix = Matrix::init(
         runtime,
         tmp_dir.as_ref(),
@@ -84,6 +86,7 @@ async fn mk_matrix_login(
         user_name,
         format!("https://{TEST_HOME_SERVER}"),
         multispend_services,
+        &sender,
     )
     .await?;
     Ok((matrix, event_rx, tmp_dir))

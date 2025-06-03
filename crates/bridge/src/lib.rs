@@ -7,8 +7,8 @@ use std::sync::{Arc, Mutex as StdMutex, OnceLock};
 use anyhow::{anyhow, bail, Context, Result};
 use bitcoin::key::Secp256k1;
 use bridge_inner::federation::Federations;
+use bridge_inner::matrix::bg_matrix::BgMatrix;
 use bridge_inner::matrix::multispend::services::MultispendServices;
-use bridge_inner::matrix::Matrix;
 use communities::Communities;
 use device_registration::DeviceRegistrationService;
 use either::Either;
@@ -34,7 +34,7 @@ use runtime::storage::state::{DeviceIdentifier, FiatFXInfo, ModuleFediFeeSchedul
 use runtime::storage::{AppState, OnboardingCompletionMethod, Storage};
 use runtime::utils::PoisonedLockExt;
 use serde::{Deserialize, Serialize};
-use tokio::sync::{Mutex, OnceCell};
+use tokio::sync::Mutex;
 use ts_rs::TS;
 
 pub mod onboarding;
@@ -49,7 +49,7 @@ pub struct BridgeFull {
     pub runtime: Arc<Runtime>,
     pub federations: Arc<Federations>,
     pub communities: Arc<Communities>,
-    pub matrix: OnceCell<Arc<Matrix>>,
+    pub matrix: Arc<BgMatrix>,
     pub multispend_services: Arc<MultispendServices>,
     pub device_registration_service: Mutex<DeviceRegistrationService>,
     pub nostril: Nostril,
@@ -106,19 +106,27 @@ impl BridgeFull {
         federations.load_joined_federations_in_background().await;
 
         let nostril = Nostril::new(&runtime).await;
+        let nostr_pubkey = nostril.get_pub_key().await.unwrap().npub;
 
-        Ok(Self {
+        let matrix = BgMatrix::new(runtime.clone(), nostr_pubkey, multispend_services.clone());
+
+        let bridge = Self {
             runtime,
             federations,
             communities,
-            matrix: Default::default(),
+            matrix,
             device_registration_service,
             multispend_services,
             nostril,
-        })
+        };
+
+        bridge.start_bg().await;
+
+        Ok(bridge)
     }
 
-    pub fn start_multispend_services(&self, matrix: Arc<Matrix>) {
+    pub async fn start_bg(&self) {
+        let matrix = self.matrix.clone();
         let runtime = self.runtime.clone();
         let federations = self.federations.clone();
         let multispend_services = self.multispend_services.clone();
@@ -136,7 +144,7 @@ impl BridgeFull {
             async move {
                 multispend_services
                     .completion_notification
-                    .run_continuously(&matrix)
+                    .run_continuously(matrix.wait().await)
                     .await
             },
         );

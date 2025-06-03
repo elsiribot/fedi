@@ -1496,7 +1496,7 @@ dependencies = [
  "fedimint-mint-client",
  "futures",
  "hex",
- "nostr",
+ "nostr 0.42.1",
  "nostril",
  "rpc-types",
  "runtime",
@@ -1548,6 +1548,7 @@ dependencies = [
  "stability-pool-client-old",
  "thiserror 2.0.12",
  "tokio",
+ "tokio-stream",
  "tracing",
  "ts-rs",
  "url",
@@ -3178,7 +3179,7 @@ dependencies = [
  "matrix-sdk",
  "mime",
  "mockito",
- "nostr",
+ "nostr 0.42.1",
  "nostril",
  "rand 0.8.5",
  "ring 0.17.14",
@@ -7419,11 +7420,35 @@ dependencies = [
 
 [[package]]
 name = "nostr"
+version = "0.41.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "95d3f2f0d564cce3ebe09bb1343af67d88c60108cedc518a307dfdf6e3f503b6"
+dependencies = [
+ "aes",
+ "base64 0.22.1",
+ "bech32",
+ "bip39",
+ "bitcoin_hashes 0.14.0",
+ "cbc",
+ "chacha20",
+ "chacha20poly1305",
+ "getrandom 0.2.16",
+ "instant",
+ "regex",
+ "scrypt",
+ "secp256k1",
+ "serde",
+ "serde_json",
+ "unicode-normalization",
+ "url",
+]
+
+[[package]]
+name = "nostr"
 version = "0.42.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "c9c1891da0e58e7eb48a1d2cd704a16f39a61bac3564a1426b26621e21073594"
 dependencies = [
- "aes",
  "base64 0.22.1",
  "bech32",
  "bip39",
@@ -7449,7 +7474,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "de6dc456a11d26f99a932b6531d94c20cb2e274ada6eab1d2438e2fb9c944af5"
 dependencies = [
  "lru 0.13.0",
- "nostr",
+ "nostr 0.41.0",
  "tokio",
 ]
 
@@ -7465,7 +7490,7 @@ dependencies = [
  "lru 0.13.0",
  "negentropy 0.3.1",
  "negentropy 0.5.0",
- "nostr",
+ "nostr 0.41.0",
  "nostr-database",
  "tokio",
  "tracing",
@@ -7478,7 +7503,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "58d201c49818ef560a67f9c26c415007da38b007943e7d1644ac55aa98c55a42"
 dependencies = [
  "async-utility",
- "nostr",
+ "nostr 0.41.0",
  "nostr-database",
  "nostr-relay-pool",
  "tokio",
@@ -7490,10 +7515,10 @@ name = "nostril"
 version = "0.3.0"
 dependencies = [
  "anyhow",
- "bech32 0.11.0",
+ "bech32",
  "futures",
  "nostr-sdk",
- "reqwest 0.12.15",
+ "reqwest 0.12.18",
  "rpc-types",
  "runtime",
  "serde",
@@ -10923,12 +10948,12 @@ checksum = "7a9daff607c6d2bf6c16fd681ccb7eecc83e4e2cdc1ca067ffaadfca5de7f084"
 dependencies = [
  "futures-util",
  "log",
- "rustls 0.23.26",
+ "rustls 0.23.27",
  "rustls-pki-types",
  "tokio",
  "tokio-rustls 0.26.2",
  "tungstenite 0.26.2",
- "webpki-roots 0.26.8",
+ "webpki-roots 0.26.11",
 ]
 
 [[package]]
@@ -12147,7 +12172,7 @@ dependencies = [
  "httparse",
  "log",
  "rand 0.9.1",
- "rustls 0.23.26",
+ "rustls 0.23.27",
  "rustls-pki-types",
  "sha1",
  "thiserror 2.0.12",
