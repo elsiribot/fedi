@@ -309,8 +309,7 @@ impl FederationV2 {
         self.spawn_cancellable("send_meta_updates", |fed| async move {
             fed.client.meta_service().wait_initialization().await;
             fed.send_federation_event().await;
-            let mut subscribe_to_updates =
-                std::pin::pin!(fed.client.meta_service().subscribe_to_updates());
+            let mut subscribe_to_updates = pin!(fed.client.meta_service().subscribe_to_updates());
             while subscribe_to_updates.next().await.is_some() {
                 fed.send_federation_event().await;
             }
@@ -2453,6 +2452,33 @@ impl FederationV2 {
     }
 
     async fn get_transaction_inner(
+        &self,
+        operation_id: OperationId,
+        entry: OperationLogEntry,
+    ) -> Option<RpcTransaction> {
+        let meta = entry.meta::<serde_json::Value>();
+        let module = entry.operation_module_kind().to_owned();
+        let mut inner = pin!(self.get_transaction_really_inner(operation_id, entry));
+        let sleep = fedimint_core::task::sleep(Duration::from_secs(30));
+        tokio::select! {
+            biased;
+            value = &mut inner => {
+                value
+            },
+            () = sleep => {
+                let meta = serde_json::to_string_pretty(&meta).unwrap();
+                error!(
+                    op = %operation_id.fmt_short(),
+                    module,
+                    meta,
+                    "found transaction slow culprit"
+                );
+                inner.await
+            },
+        }
+    }
+
+    async fn get_transaction_really_inner(
         &self,
         operation_id: OperationId,
         entry: OperationLogEntry,
