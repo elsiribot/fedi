@@ -113,7 +113,10 @@ function HomePage() {
                                             {newsItem.preview && (
                                                 <Text variant="small">
                                                     {stringUtils.truncateString(
-                                                        newsItem.preview.body,
+                                                        stringUtils.stripNewLines(
+                                                            newsItem.preview
+                                                                .body,
+                                                        ),
                                                         25,
                                                     )}
                                                 </Text>
