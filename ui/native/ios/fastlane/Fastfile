@@ -27,6 +27,8 @@ platform :ios do
       verbose: true,
       git_url: "https://x-access-token:#{ENV['GH_PAT_FEDI_FETCH_IOS_CERTS']}@github.com/fedibtc/fedi-alpha-react-native-certs",
       storage_mode: 'git',
+      keychain_name: ENV['MATCH_KEYCHAIN_NAME'],
+      keychain_password: ENV['MATCH_PASSWORD'],
       api_key_path: 'fastlane/../decoded-asc-api-key-credentials.json'
     )
     # these steps are the same as standard beta lane
@@ -100,6 +102,8 @@ platform :ios do
       verbose: true,
       git_url: "https://x-access-token:#{ENV['GH_PAT_FEDI_FETCH_IOS_CERTS']}@github.com/fedibtc/fedi-nightly-react-native-certs",
       storage_mode: 'git',
+      keychain_name: ENV['MATCH_KEYCHAIN_NAME'],
+      keychain_password: ENV['MATCH_PASSWORD'],
       api_key_path: 'fastlane/../decoded-asc-api-key-credentials.json'
     )
 
