@@ -1,9 +1,10 @@
 import { create as createQrCode } from 'qrcode'
 import React, { useEffect, useState } from 'react'
 
+import { renderStyledQrSvg } from '@fedi/common/utils/qrcode'
+
 import { useMediaQuery } from '../hooks'
 import { config, keyframes, styled, theme } from '../styles'
-import { renderStyledQrSvg } from '../utils/qrcode'
 import { HoloLoader } from './HoloLoader'
 
 interface Props {

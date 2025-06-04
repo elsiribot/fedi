@@ -4,7 +4,6 @@ import { Button, Card, Text, Theme, useTheme } from '@rneui/themed'
 import React, { useCallback, useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Dimensions, Share, StyleSheet } from 'react-native'
-import QRCode from 'react-native-qrcode-svg'
 
 import { useToast } from '@fedi/common/hooks/toast'
 import { selectActiveFederationId } from '@fedi/common/redux'
@@ -12,13 +11,13 @@ import { updateTransactionNotes } from '@fedi/common/redux/transactions'
 import stringUtils from '@fedi/common/utils/StringUtils'
 import { makeLog } from '@fedi/common/utils/log'
 
-import { Images } from '../../../assets/images'
 import { fedimint } from '../../../bridge'
 import { useAppDispatch, useAppSelector } from '../../../state/hooks'
 import { reset } from '../../../state/navigation'
 import { BitcoinOrLightning, BtcLnUri, TransactionEvent } from '../../../types'
 import Flex from '../../ui/Flex'
 import NotesInput from '../../ui/NotesInput'
+import QRCode from '../../ui/QRCode'
 import OnchainDepositInfo from './OnchainDepositInfo'
 
 const log = makeLog('ReceiveQr')
@@ -124,7 +123,6 @@ const ReceiveQr: React.FC<ReceiveQrProps> = ({
                             <QRCode
                                 value={uri.fullString}
                                 size={QR_CODE_SIZE}
-                                logo={Images.FediQrLogo}
                             />
                         </Flex>
                     )}
