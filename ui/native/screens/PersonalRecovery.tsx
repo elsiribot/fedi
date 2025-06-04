@@ -11,9 +11,9 @@ import {
     TextInput,
 } from 'react-native'
 
+import { useInternetConnectivity } from '@fedi/common/hooks/environment'
 import { usePersonalRecovery } from '@fedi/common/hooks/recovery'
 import { useToast } from '@fedi/common/hooks/toast'
-import { selectNetworkInfo } from '@fedi/common/redux'
 import type { SeedWords } from '@fedi/common/types'
 import stringUtils from '@fedi/common/utils/StringUtils'
 
@@ -22,7 +22,6 @@ import SeedWordInput from '../components/feature/recovery/SeedWordInput'
 import Flex from '../components/ui/Flex'
 import { BIP39_WORD_LIST } from '../constants'
 import { usePinContext } from '../state/contexts/PinContext'
-import { useAppSelector } from '../state/hooks'
 import { resetAfterPersonalRecovery } from '../state/navigation'
 import type { RootStackParamList } from '../types/navigation'
 
@@ -44,7 +43,7 @@ const PersonalRecovery: React.FC<Props> = ({ navigation }: Props) => {
         t,
         fedimint,
     )
-    const networkInfo = useAppSelector(selectNetworkInfo)
+    const { isOffline } = useInternetConnectivity()
     const [seedWords, setSeedWords] = useState<SeedWords>(
         new Array(12).fill(''),
     )
@@ -72,7 +71,7 @@ const PersonalRecovery: React.FC<Props> = ({ navigation }: Props) => {
     }, [])
 
     const handleRecovery = useCallback(() => {
-        if (!networkInfo || !networkInfo.isInternetReachable) {
+        if (isOffline) {
             toast.error(t, t('errors.recovery-failed-connection'))
             return
         }
@@ -81,7 +80,7 @@ const PersonalRecovery: React.FC<Props> = ({ navigation }: Props) => {
             if (pin.status === 'set') pin.unset()
             navigation.dispatch(resetAfterPersonalRecovery())
         })
-    }, [attemptRecovery, navigation, seedWords, pin, networkInfo, t, toast])
+    }, [attemptRecovery, navigation, seedWords, pin, isOffline, t, toast])
 
     const handleInputUpdate = (inputValue: string, index: number) => {
         const validatedInput = stringUtils.keepOnlyLowercaseLetters(inputValue)
