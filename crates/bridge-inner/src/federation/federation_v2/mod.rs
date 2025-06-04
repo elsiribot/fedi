@@ -932,10 +932,10 @@ impl FederationV2 {
                 error!("Wallet module not present!");
                 return;
             };
-            let Ok(mut updates) = wallet
+            // don't keep emit events if outcome is already cached.
+            let Ok(UpdateStreamOrOutcome::UpdateStream(mut updates)) = wallet
                 .subscribe_deposit(operation_id)
                 .await
-                .map(|x| x.into_stream())
                 .inspect_err(|e| {
                     warn!("subscribing to 0.3 deposits is not implemented: {e}");
                 })
