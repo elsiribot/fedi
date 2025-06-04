@@ -134,6 +134,8 @@ const ChatVideoEvent: React.FC<ChatVideoEventProps> = ({
                     dispatch(matchAndRemovePreviewMedia(event.content))
                 }}
                 resizeMode="cover"
+                // Prevents videos from being layered over each other
+                useTextureView
             />
             <TouchableOpacity
                 style={style.overlay}
