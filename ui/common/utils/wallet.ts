@@ -33,7 +33,11 @@ import dateUtils from './DateUtils'
 import { getCurrencyCode } from './currency'
 import { FedimintBridge } from './fedimint'
 import { makeLog } from './log'
-import { getMultispendInvite, makeNameWithSuffix } from './matrix'
+import {
+    getMultispendInvite,
+    isWithdrawalRequestRejected,
+    makeNameWithSuffix,
+} from './matrix'
 
 const log = makeLog('common/utils/wallet')
 
@@ -713,6 +717,27 @@ export const makeTxnStatusBadge = (
             badge = 'incoming'
     }
 
+    if (txn.kind === 'multispend') {
+        if (txn.state === 'invalid') return 'failed'
+
+        if ('depositNotification' in txn.event) {
+            badge = 'incoming'
+        } else if ('withdrawalRequest' in txn.event) {
+            const txStatus = txn.event.withdrawalRequest.txSubmissionStatus
+            if (txStatus === 'unknown') {
+                badge = 'pending'
+            } else if ('accepted' in txStatus) {
+                badge = 'outgoing'
+            } else if ('rejected' in txStatus) {
+                badge = 'failed'
+            } else {
+                badge = 'pending'
+            }
+        } else {
+            badge = 'pending'
+        }
+    }
+
     return badge
 }
 
@@ -1060,21 +1085,22 @@ export const makeMultispendTxnStatusText = (
     if ('depositNotification' in txn.event)
         return csvExport ? t('words.complete') : t('words.deposit')
     if ('withdrawalRequest' in txn.event) {
-        const withdrawalRequest = txn.event.withdrawalRequest
+        const txStatus = txn.event.withdrawalRequest.txSubmissionStatus
+
+        if (txStatus === 'unknown') return t('words.pending')
+        if ('accepted' in txStatus)
+            return csvExport ? t('words.complete') : t('words.withdrawal')
+        if ('rejected' in txStatus) return t('words.failed')
+
         const invitation = getMultispendInvite(multispendStatus)
+
         // finalized multispends should always have an invitation
         if (!invitation) return t('words.unknown')
 
-        if (withdrawalRequest.completed) {
-            return csvExport ? t('words.complete') : t('words.withdrawal')
-        } else if (
-            withdrawalRequest.rejections.length >
-            invitation.signers.length - Number(invitation.threshold)
-        ) {
+        if (isWithdrawalRequestRejected(txn, multispendStatus))
             return t('words.failed')
-        } else {
-            return t('words.pending')
-        }
+
+        return t('words.pending')
     }
     return t('words.unknown')
 }

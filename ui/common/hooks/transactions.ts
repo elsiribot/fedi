@@ -16,6 +16,7 @@ import {
     makeMultispendTxnDetailItems as makeMultispendTxnDetailItemsUtil,
     makeTransactionAmountState,
     shouldShowAskFedi,
+    makeTxnStatusBadge,
 } from '@fedi/common/utils/wallet'
 
 import {
@@ -46,7 +47,6 @@ import {
     Sats,
     SupportedCurrency,
     TransactionListEntry,
-    TransactionStatusBadge,
     UsdCents,
 } from '../types'
 import { RpcFeeDetails, RpcRoomId } from '../types/bindings'
@@ -58,7 +58,10 @@ import {
     makeMultispendTransactionHistoryCSV,
 } from '../utils/csv'
 import { FedimintBridge } from '../utils/fedimint'
-import { coerceMultispendTxn, getMultispendInvite } from '../utils/matrix'
+import {
+    coerceMultispendTxn,
+    isWithdrawalRequestRejected,
+} from '../utils/matrix'
 import { useAmountFormatter, useBtcFiatPrice } from './amount'
 import { useCommonDispatch, useCommonSelector } from './redux'
 
@@ -257,9 +260,8 @@ export function useMultispendTxnDisplayUtils(t: TFunction, roomId: RpcRoomId) {
     )
 
     const makeMultispendTxnStatusText = useCallback(
-        (txn: MultispendTransactionListEntry) => {
-            return makeMultispendTxnStatusTextUtil(t, txn, multispendStatus)
-        },
+        (txn: MultispendTransactionListEntry) =>
+            makeMultispendTxnStatusTextUtil(t, txn, multispendStatus),
         [multispendStatus, t],
     )
 
@@ -297,30 +299,6 @@ export function useMultispendTxnDisplayUtils(t: TFunction, roomId: RpcRoomId) {
         [convertCentsToFormattedFiat, preferredCurrency],
     )
 
-    const isTxnRejected = useCallback(
-        (txn: MultispendTransactionListEntry) => {
-            if (
-                multispendStatus &&
-                txn.state !== 'invalid' &&
-                'withdrawalRequest' in txn.event
-            ) {
-                const withdrawalRequest = txn.event.withdrawalRequest
-                const invitation = getMultispendInvite(multispendStatus)
-
-                if (
-                    !invitation ||
-                    withdrawalRequest.rejections.length >
-                        invitation.signers.length - Number(invitation.threshold)
-                ) {
-                    return true
-                }
-            }
-
-            return false
-        },
-        [multispendStatus],
-    )
-
     const makeMultispendTxnCurrencyText = useCallback(() => {
         return preferredCurrency ?? SupportedCurrency.USD
     }, [preferredCurrency])
@@ -334,11 +312,15 @@ export function useMultispendTxnDisplayUtils(t: TFunction, roomId: RpcRoomId) {
 
     const makeMultispendTxnAmountStateText = useCallback(
         (txn: MultispendTransactionListEntry) => {
-            if (isTxnRejected(txn)) return 'failed'
+            if (
+                multispendStatus &&
+                isWithdrawalRequestRejected(txn, multispendStatus)
+            )
+                return 'failed'
 
             return makeTransactionAmountState(txn)
         },
-        [isTxnRejected],
+        [multispendStatus],
     )
 
     const makeMultispendTxnDetailItems = useCallback(
@@ -355,27 +337,15 @@ export function useMultispendTxnDisplayUtils(t: TFunction, roomId: RpcRoomId) {
 
     const makeMultispendTxnStatusBadge = useCallback(
         (txn: MultispendTransactionListEntry) => {
-            let badge: TransactionStatusBadge
+            if (
+                multispendStatus &&
+                isWithdrawalRequestRejected(txn, multispendStatus)
+            )
+                return 'failed'
 
-            if (txn.state === 'invalid') return 'failed'
-            if (isTxnRejected(txn)) return 'failed'
-
-            if ('depositNotification' in txn.event) {
-                badge = 'incoming'
-            } else if ('withdrawalRequest' in txn.event) {
-                const withdrawalRequest = txn.event.withdrawalRequest
-                if (withdrawalRequest.completed) {
-                    badge = 'outgoing'
-                } else {
-                    badge = 'pending'
-                }
-            } else {
-                badge = 'pending'
-            }
-
-            return badge
+            return makeTxnStatusBadge(txn)
         },
-        [isTxnRejected],
+        [multispendStatus],
     )
 
     return {

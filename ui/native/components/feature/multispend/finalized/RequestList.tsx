@@ -82,6 +82,7 @@ const RequestList: React.FC<{ roomId: string }> = ({ roomId }) => {
         pending: 'feature.multispend.no-pending-withdrawal-requests',
         approved: 'feature.multispend.no-approved-withdrawal-requests',
         rejected: 'feature.multispend.no-rejected-withdrawal-requests',
+        failed: 'feature.multispend.no-failed-withdrawal-requests',
         all: 'feature.multispend.no-withdrawal-requests',
     }
 

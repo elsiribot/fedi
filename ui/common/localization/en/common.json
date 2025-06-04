@@ -622,7 +622,8 @@
                 "withdrawal-requested": "requested a withdrawal of",
                 "withdrawal-approved-body": "has withdrawn",
                 "withdrawal-approved": "✅ Approved",
-                "withdrawal-rejected": "❌ Rejected"
+                "withdrawal-rejected": "❌ Rejected",
+                "withdrawal-failed": "❌ Failed"
             },
             "abort-multispend-setup": "Abort Multispend Setup?",
             "abort-group-message": "The Multispend Group setup will be cancelled, all pending invitations will be deleted, and you'll need to restart the setup from the beginning.",
@@ -662,6 +663,7 @@
             "no-pending-withdrawal-requests": "No pending withdrawal requests",
             "no-permission-to-vote": "You do not have permission to vote on Withdrawal Requests",
             "no-approved-withdrawal-requests": "No approved withdrawal requests",
+            "no-failed-withdrawal-requests": "No failed withdrawal requests",
             "no-rejected-withdrawal-requests": "No rejected withdrawal requests",
             "no-requests-notice": "Deposit funds to grow the shared pool or request a withdrawal if you need funds.",
             "purpose-of-deposit": "Purpose of Deposit",

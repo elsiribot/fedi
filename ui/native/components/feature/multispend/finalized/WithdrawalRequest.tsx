@@ -1,4 +1,5 @@
 import { Text, Theme, useTheme } from '@rneui/themed'
+import { useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Pressable, StyleSheet, View } from 'react-native'
 
@@ -21,11 +22,8 @@ const WithdrawalRequest: React.FC<{
 }> = ({ event, onSelect, roomId }) => {
     const { theme } = useTheme()
     const { t } = useTranslation()
-    const {
-        haveIVotedForWithdrawal,
-        getWithdrawalStatus,
-        getWithdrawalRequest,
-    } = useMultispendWithdrawalRequests({ t, fedimint, roomId })
+    const { haveIVotedForWithdrawal, getWithdrawalRequest } =
+        useMultispendWithdrawalRequests({ t, fedimint, roomId })
 
     useObserveMultispendEvent(event.id, roomId)
 
@@ -35,10 +33,31 @@ const WithdrawalRequest: React.FC<{
         rejectionCount,
         formattedFiatAmount,
         selectedFiatCurrency,
+        status,
     } = getWithdrawalRequest(event)
 
-    const withdrawalStatus = getWithdrawalStatus(event)
     const haveIVoted = haveIVotedForWithdrawal(event)
+
+    const badge = useMemo(() => {
+        let color = theme.colors.orange100
+        let text = t('words.pending')
+
+        if (status === 'rejected') {
+            color = theme.colors.red100
+            text = t('words.rejected')
+        } else if (status === 'failed') {
+            color = theme.colors.red100
+            text = t('words.failed')
+        } else if (status === 'completed') {
+            color = theme.colors.green100
+            text = t('words.complete')
+        } else if (status === 'approved') {
+            color = theme.colors.green100
+            text = t('words.approved')
+        }
+
+        return { color, text }
+    }, [theme, status, t])
 
     // don't show the request if sender is not a member of the group
     if (!sender) return null
@@ -47,7 +66,7 @@ const WithdrawalRequest: React.FC<{
 
     return (
         <Pressable onPress={onSelect} style={style.container}>
-            {!haveIVoted && withdrawalStatus === 'pending' && (
+            {!haveIVoted && status === 'pending' && (
                 <View style={style.newBadge} />
             )}
 
@@ -82,22 +101,11 @@ const WithdrawalRequest: React.FC<{
                             style={[
                                 style.badge,
                                 {
-                                    backgroundColor:
-                                        withdrawalStatus === 'pending'
-                                            ? theme.colors.orange100
-                                            : withdrawalStatus === 'rejected'
-                                              ? theme.colors.red100
-                                              : theme.colors.green100,
+                                    backgroundColor: badge.color,
                                 },
                             ]}>
                             <Text small medium>
-                                {withdrawalStatus === 'pending'
-                                    ? t('words.pending')
-                                    : withdrawalStatus === 'rejected'
-                                      ? t('words.rejected')
-                                      : withdrawalStatus === 'approved'
-                                        ? t('words.approved')
-                                        : t('words.complete')}
+                                {badge.text}
                             </Text>
                         </View>
                         <Flex row align="center" gap="xs">
