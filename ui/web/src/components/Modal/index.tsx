@@ -88,10 +88,11 @@ const Content = styled(RadixAlertDialog.Content, {
     display: 'flex',
     flexDirection: 'column',
     gap: 30,
+    maxWidth: '400px',
     overflow: 'hidden',
     padding: 20,
     position: 'relative',
-    width: '90vw',
+    width: '90%',
 })
 
 const Children = styled('div', {})
