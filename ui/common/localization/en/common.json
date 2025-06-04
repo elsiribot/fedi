@@ -669,6 +669,7 @@
             "review-withdrawal-request": "Review Withdrawal request",
             "stable-balance-info": "Deposits are made from your <boldlink>Stable Balance</boldlink>",
             "topup-stable-balance": "Deposits are made from your Stable Balance. The amount you entered exceeds your available balance. Please top up your balance to continue.",
+            "two-voters-required": "At least 2 voters are required to create a multispend group",
             "user-wants-to-withdraw": "<bold>{{user}}</bold> wants to withdraw <bold>{{amount}}</bold> for this reason:",
             "waiting-for-approval": "Waiting for approval",
             "wallet-federation-description": "Your group's money is linked to a wallet federation. You need this to send or receive money.",
