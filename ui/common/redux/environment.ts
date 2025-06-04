@@ -1,10 +1,4 @@
-import { NetInfoState } from '@react-native-community/netinfo'
-import {
-    createAsyncThunk,
-    createSelector,
-    createSlice,
-    PayloadAction,
-} from '@reduxjs/toolkit'
+import { createAsyncThunk, createSlice, PayloadAction } from '@reduxjs/toolkit'
 import type { i18n } from 'i18next'
 
 import {
@@ -30,7 +24,7 @@ const log = makeLog('redux/environment')
 /*** Initial State ***/
 
 const initialState = {
-    networkInfo: null as NetInfoState | null,
+    isInternetUnreachable: false,
     developerMode: false,
     fedimodDebugMode: false,
     fedimodCacheEnabled: true,
@@ -59,8 +53,8 @@ export const environmentSlice = createSlice({
     name: 'environment',
     initialState,
     reducers: {
-        setNetworkInfo(state, action: PayloadAction<NetInfoState>) {
-            state.networkInfo = action.payload
+        setIsInternetUnreachable(state, action: PayloadAction<boolean>) {
+            state.isInternetUnreachable = action.payload
         },
         setDeveloperMode(state, action: PayloadAction<boolean>) {
             state.developerMode = action.payload
@@ -157,7 +151,7 @@ export const environmentSlice = createSlice({
 /*** Basic actions ***/
 
 export const {
-    setNetworkInfo,
+    setIsInternetUnreachable,
     setDeveloperMode,
     setFediModDebugMode,
     setFediModCacheEnabled,
@@ -330,23 +324,8 @@ export const initializeFeatureFlags = createAsyncThunk<
 
 /*** Selectors ***/
 
-export const selectNetworkInfo = (s: CommonState) => s.environment.networkInfo
-
-/*
- * This seemingly complex selector is necessary because we want certainty that
- * either there is no network connection or the internet is definitely unreachable.
- */
-export const selectIsInternetUnreachable = createSelector(
-    selectNetworkInfo,
-    networkInfo => {
-        if (!networkInfo) return false
-        if (networkInfo.isConnected === false) return true
-        // sometimes isInternetReachable is null which does not definitively
-        // mean the internet is unreachable so explicitly check for false
-        if (networkInfo.isInternetReachable === false) return true
-        else return false
-    },
-)
+export const selectIsInternetUnreachable = (s: CommonState) =>
+    s.environment.isInternetUnreachable
 
 export const selectDeveloperMode = (s: CommonState) =>
     s.environment.developerMode
