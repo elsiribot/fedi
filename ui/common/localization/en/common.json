@@ -646,6 +646,8 @@
             "n-approvals": "{{n}} Approvals",
             "n-rejections": "{{n}} Rejections",
             "message-header": "📢 Multispend Group",
+            "multispend-unavailable": "Multispend Unavailable",
+            "multispend-unavailable-description": "The Multispend feature has not been enabled in this group",
             "n-voters-selected": "{{count}} voters selected",
             "n-voters-selected-max": "<bold>{{count}}</bold> voters selected (Max: 21)",
             "no-withdrawal-requests": "No withdrawal requests",
