@@ -4,17 +4,20 @@ import React, { useCallback, useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { ActivityIndicator } from 'react-native'
 
+import { useInternetConnectivity } from '@fedi/common/hooks/environment'
 import { useOmniPaymentState } from '@fedi/common/hooks/pay'
 import { useToast } from '@fedi/common/hooks/toast'
 import { selectPaymentFederation } from '@fedi/common/redux'
 import amountUtils from '@fedi/common/utils/AmountUtils'
 
 import { fedimint } from '../bridge'
+import InternetUnreachableBanner from '../components/feature/environment/InternetUnreachableBanner'
 import FederationWalletSelector from '../components/feature/send/FederationWalletSelector'
 import { AmountScreen } from '../components/ui/AmountScreen'
 import { useAppSelector } from '../state/hooks'
 import { ParserDataType } from '../types'
 import type { NavigationHook, RootStackParamList } from '../types/navigation'
+import { useRecheckInternet } from '../utils/hooks/environment'
 
 export type Props = NativeStackScreenProps<
     RootStackParamList,
@@ -28,6 +31,8 @@ const SendOnChainAmount: React.FC<Props> = ({ route }: Props) => {
     const paymentFederation = useAppSelector(selectPaymentFederation)
     const { parsedData } = route.params
     const [notes, setNotes] = useState<string>('')
+    const { isOffline } = useInternetConnectivity()
+    const recheckConnection = useRecheckInternet()
 
     const {
         isReadyToPay,
@@ -55,6 +60,13 @@ const SendOnChainAmount: React.FC<Props> = ({ route }: Props) => {
         )
             return
 
+        const conn = await recheckConnection()
+
+        if (conn.isOffline) {
+            toast.error(t, t('errors.actions-require-internet'))
+            return
+        }
+
         try {
             await fedimint.previewPayAddress(
                 parsedData.data.address,
@@ -76,6 +88,7 @@ const SendOnChainAmount: React.FC<Props> = ({ route }: Props) => {
             toast.error(t, err)
         }
     }, [
+        recheckConnection,
         inputAmount,
         minimumAmount,
         maximumAmount,
@@ -90,24 +103,28 @@ const SendOnChainAmount: React.FC<Props> = ({ route }: Props) => {
     if (!isReadyToPay) return <ActivityIndicator />
 
     return (
-        <AmountScreen
-            subHeader={<FederationWalletSelector />}
-            amount={inputAmount}
-            onChangeAmount={setInputAmount}
-            minimumAmount={minimumAmount}
-            maximumAmount={maximumAmount}
-            submitAttempts={submitAttempts}
-            // Readonly For Bip21 URIs
-            readOnly={!!exactAmount}
-            buttons={[
-                {
-                    title: t('words.continue'),
-                    onPress: handleContinue,
-                },
-            ]}
-            notes={notes}
-            setNotes={setNotes}
-        />
+        <>
+            {isOffline && <InternetUnreachableBanner />}
+            <AmountScreen
+                subHeader={<FederationWalletSelector />}
+                amount={inputAmount}
+                onChangeAmount={setInputAmount}
+                minimumAmount={minimumAmount}
+                maximumAmount={maximumAmount}
+                submitAttempts={submitAttempts}
+                // Readonly For Bip21 URIs
+                readOnly={!!exactAmount}
+                buttons={[
+                    {
+                        title: t('words.continue'),
+                        onPress: handleContinue,
+                        disabled: isOffline,
+                    },
+                ]}
+                notes={notes}
+                setNotes={setNotes}
+            />
+        </>
     )
 }
 
