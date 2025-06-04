@@ -247,6 +247,7 @@
     },
     "errors": {
         "admin-promotion-pending-multispend": "You cannot promote group members to admins while Multispend invitation is in progress.",
+        "actions-require-internet": "You're offline. Some actions require an internet connection.",
         "bad-connection": "Your network connection may be unstable. Please try again later or connect to another network.",
         "browser-feature-not-supported": "Your browser does not support this feature.",
         "camera-unavailable": "Failed to access your camera.",
