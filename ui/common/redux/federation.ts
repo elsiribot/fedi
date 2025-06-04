@@ -619,12 +619,39 @@ export const selectFederations = createSelector(
             .filter(f => f.init_state !== 'failed'),
 )
 
+export const selectCommunities = createSelector(
+    selectFederations,
+    federations => federations.filter(f => !f.hasWallet),
+)
+
 export const selectAlphabeticallySortedFederations = createSelector(
     selectLoadedFederations,
     federations => {
         return orderBy(
             federations,
             federation => federation.name?.toLowerCase() || '',
+            'asc',
+        )
+    },
+)
+
+export const selectAlphabeticallySortedWalletFederations = createSelector(
+    selectWalletFederations,
+    federations => {
+        return orderBy(
+            federations,
+            federation => federation.name?.toLowerCase() || '',
+            'asc',
+        )
+    },
+)
+
+export const selectAlphabeticallySortedCommunities = createSelector(
+    selectCommunities,
+    communities => {
+        return orderBy(
+            communities,
+            community => community.name?.toLowerCase() || '',
             'asc',
         )
     },

@@ -30,6 +30,7 @@
         "canceled": "Canceled",
         "chat": "Chat",
         "checking": "Checking...",
+        "communities": "Communities",
         "federations": "Federations",
         "federation": "Federation",
         "complete": "Complete",
@@ -523,6 +524,12 @@
             "share-logs": "Share logs",
             "share-state": "Share app state",
             "show-fcm-token": "Show FCM token"
+        },
+        "communities": {
+            "community-details": "Community Details",
+            "community-mods": "Community Mods",
+            "community-terms": "Community Terms",
+            "leave-community": "Leave Community"
         },
         "federations": {
             "add-federation": "Add a Federation",
