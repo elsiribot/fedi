@@ -138,10 +138,7 @@ const BitcoinRequest: React.FC<Props> = ({ route }: Props) => {
     const style = styles(theme)
 
     return (
-        <SafeScrollArea
-            contentContainerStyle={style.container}
-            edges="all"
-            padding="xl">
+        <SafeScrollArea contentContainerStyle={style.container} edges="all">
             {showOnchainDeposits && !lockRequestType && (
                 <RequestTypeSwitcher
                     requestType={requestType}
