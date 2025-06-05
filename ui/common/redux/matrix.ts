@@ -2202,19 +2202,6 @@ export const selectMultispendBalanceCents = createSelector(
     },
 )
 
-// Converts the multispend balance in cents to the selected fiat currency
-export const selectMultispendBalanceFiat = createSelector(
-    selectMultispendBalanceCents,
-    (s: CommonState) => selectBtcUsdExchangeRate(s),
-    (balanceCents, btcUsdExchangeRate) => {
-        return amountUtils.convertCentsToOtherFiat(
-            balanceCents,
-            btcUsdExchangeRate,
-            btcUsdExchangeRate,
-        )
-    },
-)
-
 export const selectMultispendBalanceSats = createSelector(
     selectMultispendBalanceCents,
     (s: CommonState) => selectBtcUsdExchangeRate(s),
