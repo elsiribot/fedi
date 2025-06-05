@@ -7,7 +7,7 @@ import {
     MalformedDataError,
     MissingDataError,
     SchemaValidationError,
-    UrlParseError,
+    UrlConstructError,
 } from '../types/errors'
 import { makeError, tryTag, UnexpectedError } from './errors'
 import {
@@ -48,7 +48,7 @@ const tryGetHtmlTitle = (
 const tryGetManifestUrl = (
     html: string,
     urlOrigin: string,
-): Result<URL, MissingDataError | UrlParseError | UnexpectedError> => {
+): Result<URL, MissingDataError | UrlConstructError | UnexpectedError> => {
     const manifestLink = html
         .match(/<link[^>]*rel="manifest"[^>]*>/gi)?.[0]
         ?.match(/href="([^"]*)"/i)?.[1]
@@ -87,7 +87,10 @@ const getHtmlIconUrls = (html: string, urlOrigin: string): URL[] => {
 const tryFetchFirstHtmlIcon = (
     html: string,
     urlOrigin: string,
-): ResultAsync<URL, UnexpectedError | FetchError | MissingDataError> => {
+): ResultAsync<
+    URL,
+    UnexpectedError | UrlConstructError | FetchError | MissingDataError
+> => {
     const iconUrls = getHtmlIconUrls(html, urlOrigin)
 
     // Ensures that the http response of an icon, given its URL, is ok
@@ -105,7 +108,10 @@ const tryFetchFirstHtmlIcon = (
     // Attempts to fetch icon URLs until one is valid
     return iconUrls.reduce(
         (prev, curr) => prev.orElse(() => isUrlOk(curr)),
-        errAsync<URL, UnexpectedError | FetchError | MissingDataError>(
+        errAsync<
+            URL,
+            UnexpectedError | UrlConstructError | MissingDataError | FetchError
+        >(
             makeError(
                 new Error('expected at least one icon'),
                 'MissingDataError',
@@ -139,7 +145,10 @@ const tryFetchManifestMetadata = (
     manifestUrl: URL,
 ): ResultAsync<
     { title: string; icon: string },
-    SchemaValidationError | FetchError | MalformedDataError | UnexpectedError
+    | SchemaValidationError
+    | UrlConstructError
+    | MalformedDataError
+    | UnexpectedError
 > => {
     return fetchResult(manifestUrl.toString())
         .andThen(thenJson)
@@ -181,7 +190,7 @@ export function tryFetchUrlMetadata(
     url: URL,
 ): ResultAsync<
     { icon: string; title: string },
-    FetchError | MalformedDataError | UnexpectedError
+    UrlConstructError | FetchError | MalformedDataError | UnexpectedError
 > {
     return fetchResult(url.toString())
         .andThrough(res =>
