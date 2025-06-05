@@ -3,15 +3,16 @@ import React from 'react'
 
 import { makeTxnStatusBadge } from '@fedi/common/utils/wallet'
 
-import { TransactionListEntry } from '../../../types'
+import { TransactionListEntry, TransactionStatusBadge } from '../../../types'
 import SvgImage, { SvgImageName } from '../../ui/SvgImage'
 import { HistoryIcon } from './HistoryIcon'
 
 interface Props {
     txn: TransactionListEntry
+    customBadge?: TransactionStatusBadge
 }
 
-const getTxnIcon = (
+export const getTxnIcon = (
     txn: TransactionListEntry,
     theme: Theme,
 ): React.ReactNode => {
@@ -30,9 +31,17 @@ const getTxnIcon = (
         color = theme.colors.moneyGreen
     } else if (txn.kind === 'oobSend' || txn.kind === 'oobReceive')
         icon = 'ChatPaymentCircle'
-    else if (txn.kind === 'lnPay' || txn.kind === 'lnReceive')
+    else if (
+        txn.kind === 'lnPay' ||
+        txn.kind === 'lnReceive' ||
+        txn.kind === 'lnRecurringdReceive'
+    )
         icon = 'LightningCircle'
-    else if (txn.kind === 'sPV2TransferIn' || txn.kind === 'sPV2TransferOut') {
+    else if (
+        txn.kind === 'sPV2TransferIn' ||
+        txn.kind === 'sPV2TransferOut' ||
+        txn.kind === 'multispend'
+    ) {
         icon = 'MultispendGroupCircle'
         color = theme.colors.moneyGreen
     } else {
@@ -43,10 +52,10 @@ const getTxnIcon = (
     return <SvgImage name={icon} color={color} size={theme.sizes.historyIcon} />
 }
 
-export const TransactionIcon: React.FC<Props> = ({ txn }) => {
+export const TransactionIcon: React.FC<Props> = ({ txn, customBadge }) => {
     const { theme } = useTheme()
 
-    const badge = makeTxnStatusBadge(txn)
+    const badge = customBadge ?? makeTxnStatusBadge(txn)
 
     const icon = getTxnIcon(txn, theme)
 

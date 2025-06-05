@@ -46,6 +46,7 @@ import {
     Sats,
     SupportedCurrency,
     TransactionListEntry,
+    TransactionStatusBadge,
     UsdCents,
 } from '../types'
 import { RpcFeeDetails, RpcRoomId } from '../types/bindings'
@@ -57,7 +58,7 @@ import {
     makeMultispendTransactionHistoryCSV,
 } from '../utils/csv'
 import { FedimintBridge } from '../utils/fedimint'
-import { coerceMultispendTxn } from '../utils/matrix'
+import { coerceMultispendTxn, getMultispendInvite } from '../utils/matrix'
 import { useAmountFormatter, useBtcFiatPrice } from './amount'
 import { useCommonDispatch, useCommonSelector } from './redux'
 
@@ -296,6 +297,30 @@ export function useMultispendTxnDisplayUtils(t: TFunction, roomId: RpcRoomId) {
         [convertCentsToFormattedFiat, preferredCurrency],
     )
 
+    const isTxnRejected = useCallback(
+        (txn: MultispendTransactionListEntry) => {
+            if (
+                multispendStatus &&
+                txn.state !== 'invalid' &&
+                'withdrawalRequest' in txn.event
+            ) {
+                const withdrawalRequest = txn.event.withdrawalRequest
+                const invitation = getMultispendInvite(multispendStatus)
+
+                if (
+                    !invitation ||
+                    withdrawalRequest.rejections.length >
+                        invitation.signers.length - Number(invitation.threshold)
+                ) {
+                    return true
+                }
+            }
+
+            return false
+        },
+        [multispendStatus],
+    )
+
     const makeMultispendTxnCurrencyText = useCallback(() => {
         return preferredCurrency ?? SupportedCurrency.USD
     }, [preferredCurrency])
@@ -309,9 +334,11 @@ export function useMultispendTxnDisplayUtils(t: TFunction, roomId: RpcRoomId) {
 
     const makeMultispendTxnAmountStateText = useCallback(
         (txn: MultispendTransactionListEntry) => {
+            if (isTxnRejected(txn)) return 'failed'
+
             return makeTransactionAmountState(txn)
         },
-        [],
+        [isTxnRejected],
     )
 
     const makeMultispendTxnDetailItems = useCallback(
@@ -326,6 +353,31 @@ export function useMultispendTxnDisplayUtils(t: TFunction, roomId: RpcRoomId) {
         [convertCentsToFormattedFiat, roomMembers, t],
     )
 
+    const makeMultispendTxnStatusBadge = useCallback(
+        (txn: MultispendTransactionListEntry) => {
+            let badge: TransactionStatusBadge
+
+            if (txn.state === 'invalid') return 'failed'
+            if (isTxnRejected(txn)) return 'failed'
+
+            if ('depositNotification' in txn.event) {
+                badge = 'incoming'
+            } else if ('withdrawalRequest' in txn.event) {
+                const withdrawalRequest = txn.event.withdrawalRequest
+                if (withdrawalRequest.completed) {
+                    badge = 'outgoing'
+                } else {
+                    badge = 'pending'
+                }
+            } else {
+                badge = 'pending'
+            }
+
+            return badge
+        },
+        [isTxnRejected],
+    )
+
     return {
         preferredCurrency,
         makeMultispendTxnStatusText,
@@ -335,6 +387,7 @@ export function useMultispendTxnDisplayUtils(t: TFunction, roomId: RpcRoomId) {
         makeMultispendTxnTimestampText,
         makeMultispendTxnAmountStateText,
         makeMultispendTxnDetailItems,
+        makeMultispendTxnStatusBadge,
     }
 }
 

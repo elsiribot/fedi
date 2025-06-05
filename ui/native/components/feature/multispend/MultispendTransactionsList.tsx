@@ -34,6 +34,7 @@ const MultispendTransactionsList = ({
         makeMultispendTxnTimestampText,
         makeMultispendTxnAmountStateText,
         makeMultispendTxnDetailItems,
+        makeMultispendTxnStatusBadge,
     } = useMultispendTxnDisplayUtils(t, roomId)
 
     const { getShowAskFedi } = useTxnDisplayUtils(t)
@@ -42,8 +43,13 @@ const MultispendTransactionsList = ({
         <HistoryList
             rows={transactions}
             loading={loading}
-            makeIcon={txn => <TransactionIcon txn={txn} />}
             makeShowAskFedi={txn => getShowAskFedi(txn)}
+            makeIcon={txn => (
+                <TransactionIcon
+                    txn={txn}
+                    customBadge={makeMultispendTxnStatusBadge(txn)}
+                />
+            )}
             makeRowProps={txn => ({
                 status: makeMultispendTxnStatusText(txn),
                 notes: makeMultispendTxnNotesText(txn),
