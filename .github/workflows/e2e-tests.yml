@@ -13,7 +13,7 @@ on:
 jobs:
     build-run-e2e-tests:
         name: 'Build & run end-to-end tests (React Native: iOS + Android)'
-        runs-on: [self-hosted, macos, arm64]
+        runs-on: [self-hosted, macos, arm64, legacy]
         timeout-minutes: 200
         env:
             BUILD_ANDROID: 1
@@ -234,7 +234,7 @@ jobs:
 
     cleanup-environment:
         needs: [build-run-e2e-tests]
-        runs-on: [self-hosted, macos, arm64]
+        runs-on: [self-hosted, macos, arm64, legacy]
         if: always()
         steps:
           - name: Stop Android emulators
