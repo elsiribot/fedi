@@ -3,7 +3,7 @@ import { ErrorCode, RpcError } from '../types/bindings'
 import { ErrorTag, TaggedError } from '../types/errors'
 
 /**
- * Used when a fedimint bridge rpc call fails
+ * Specific error type used when a fedimint bridge rpc call fails
  */
 export class BridgeError extends Error {
     public _tag = 'BridgeError' as const
@@ -26,7 +26,7 @@ export class BridgeError extends Error {
 }
 
 /**
- * Used when a TaggedError fails to be be constructed from an unknown value
+ * Specific error type used when a TaggedError fails to be be constructed from an unknown value
  */
 export class UnexpectedError extends Error {
     public _tag = 'UnexpectedError' as const
@@ -65,8 +65,8 @@ export function makeError<T extends ErrorTag>(e: unknown, tag: T) {
  * ```typescript
  * ResultAsync.fromPromise(
  *   promise,
- *   // URLParseError | UnexpectedError
- *   tryTag('UrlParseError')
+ *   // UrlConstructError | UnexpectedError
+ *   tryTag('UrlConstructError')
  * )
  * ```
  */
