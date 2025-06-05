@@ -1091,17 +1091,16 @@
         "nixpkgs": "nixpkgs_7"
       },
       "locked": {
-        "lastModified": 1730704348,
-        "narHash": "sha256-5mQFZ9aMDt4M0Dnom7YZkqGP21wflpP41QdElKPFANk=",
+        "lastModified": 1749157500,
         "owner": "fedibtc",
         "repo": "fs-dir-cache",
-        "rev": "e9752d00ee16778c9d3d0b93a09c49c44013ac17",
+        "rev": "906f5557941f07630dcbd8f615b0ac1e173a5d68",
         "type": "github"
       },
       "original": {
         "owner": "fedibtc",
         "repo": "fs-dir-cache",
-        "rev": "e9752d00ee16778c9d3d0b93a09c49c44013ac17",
+        "rev": "906f5557941f07630dcbd8f615b0ac1e173a5d68",
         "type": "github"
       }
     },
