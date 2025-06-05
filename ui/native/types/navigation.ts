@@ -138,7 +138,7 @@ export type RootStackParamList = {
     PublicFederations: undefined
     LocateSocialRecovery: undefined
     Receive: undefined
-    ReceiveLightning: { parsedData?: ParsedLnurlWithdraw } | undefined
+    ReceiveLightning: undefined
     ReceiveSuccess: {
         tx: ReceiveSuccessData
         status?: ReceiveSuccessStatus
@@ -154,6 +154,7 @@ export type RootStackParamList = {
     RecoveryWalletTransfer: undefined
     RecoveryNewWallet: undefined
     RecoveryDeviceSelection: undefined
+    RedeemLnurlWithdraw: { parsedData: ParsedLnurlWithdraw }
     LegacyChat: undefined
     LockedDevice: undefined
     RecordBackupVideo: undefined

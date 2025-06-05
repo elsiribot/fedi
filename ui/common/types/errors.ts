@@ -11,5 +11,6 @@ export type MissingDataError = TaggedError<'MissingDataError'>
 export type MalformedDataError = TaggedError<'MalformedDataError'>
 export type SchemaValidationError = TaggedError<'SchemaValidationError'>
 export type FetchError = TaggedError<'FetchError'>
+export type TimeoutError = TaggedError<'TimeoutError'>
 
 export type ErrorTag = keyof typeof TagToErrorConstructorMap

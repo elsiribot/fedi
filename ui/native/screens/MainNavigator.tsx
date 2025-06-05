@@ -150,6 +150,7 @@ import RecoveryNewWallet from './RecoveryNewWallet'
 import RecoveryWalletOptions from './RecoveryWalletOptions'
 import RecoveryWalletTransfer from './RecoveryWalletTransfer'
 import RecoveryWords from './RecoveryWords'
+import RedeemLnurlWithdraw from './RedeemLnurlWithdraw'
 import ResetPin from './ResetPin'
 import ResetPinStart from './ResetPinStart'
 import RoomSettings from './RoomSettings'
@@ -741,6 +742,20 @@ export const MainNavigator = () => {
                                 component={ReceiveLightning}
                                 options={() => ({
                                     header: () => <ReceiveLightningHeader />,
+                                })}
+                            />
+                            <Stack.Screen
+                                name="RedeemLnurlWithdraw"
+                                component={RedeemLnurlWithdraw}
+                                options={() => ({
+                                    header: () => (
+                                        <CenteredHeader
+                                            backButton
+                                            title={t(
+                                                'feature.receive.redeem-lnurl-withdraw',
+                                            )}
+                                        />
+                                    ),
                                 })}
                             />
                             <Stack.Screen

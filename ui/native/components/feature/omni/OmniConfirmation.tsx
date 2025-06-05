@@ -159,7 +159,7 @@ export const OmniConfirmation = <T extends AnyParsedData>({
                         title: t('feature.omni.confirm-lightning-withdraw'),
                     },
                     continueOnPress: () =>
-                        handleNavigate('ReceiveLightning', { parsedData }),
+                        handleNavigate('RedeemLnurlWithdraw', { parsedData }),
                 }
             case ParserDataType.FedimintInvite:
                 return {

@@ -10,4 +10,5 @@ export const TagToErrorConstructorMap = {
     MalformedDataError: Error,
     FetchError: Error,
     SchemaValidationError: ZodError,
+    TimeoutError: Error,
 }

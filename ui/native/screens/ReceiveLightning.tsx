@@ -15,7 +15,6 @@ import {
     selectActiveFederation,
 } from '@fedi/common/redux'
 import amountUtils from '@fedi/common/utils/AmountUtils'
-import { lnurlWithdraw } from '@fedi/common/utils/lnurl'
 import { makeLog } from '@fedi/common/utils/log'
 
 import { fedimint } from '../bridge'
@@ -34,8 +33,7 @@ export type Props = NativeStackScreenProps<
     'ReceiveLightning'
 >
 
-const ReceiveLightning: React.FC<Props> = ({ navigation, route }: Props) => {
-    const lnurlWithdrawal = route.params?.parsedData?.data
+const ReceiveLightning: React.FC<Props> = ({ navigation }: Props) => {
     const { t } = useTranslation()
     const dispatch = useAppDispatch()
     const activeFederationId = useAppSelector(selectActiveFederation)?.id
@@ -46,9 +44,7 @@ const ReceiveLightning: React.FC<Props> = ({ navigation, route }: Props) => {
         memo,
         minimumAmount,
         maximumAmount,
-    } = useRequestForm({
-        lnurlWithdrawal,
-    })
+    } = useRequestForm({})
     const toast = useToast()
     const [invoice, setInvoice] = useState<string>('')
     const [generatingInvoice, setGeneratingInvoice] = useState<boolean>(false)
@@ -175,46 +171,14 @@ const ReceiveLightning: React.FC<Props> = ({ navigation, route }: Props) => {
         setAmount(updatedValue)
     }
 
-    const handleLnurlWithdraw = async () => {
-        setGeneratingInvoice(true)
-        try {
-            if (!activeFederationId || !lnurlWithdrawal) throw new Error()
-            const lnurlInvoice = await lnurlWithdraw(
-                fedimint,
-                activeFederationId,
-                lnurlWithdrawal,
-                amountUtils.satToMsat(amount),
-                memo,
-            )
-            navigation.navigate('BitcoinRequest', {
-                uri: `lightning:${lnurlInvoice}`,
-            })
-            // TODO: Better UI for this? We want to show them the QR code in case
-            // the payment doesn't go through, but we also want to let them know
-            // that LNURL _should_ handle the payment.
-            toast.show({
-                content: t('feature.receive.awaiting-withdrawal-from', {
-                    domain: lnurlWithdrawal.domain,
-                }),
-            })
-        } catch (err) {
-            toast.error(t, err)
-        }
-        setGeneratingInvoice(false)
-    }
-
     const handleSubmit = () => {
         setSubmitAttempts(attempts => attempts + 1)
         if (amount > maximumAmount || amount < minimumAmount) {
             return
         }
 
-        if (lnurlWithdrawal) {
-            handleLnurlWithdraw()
-        } else {
-            setGeneratingInvoice(true)
-            Keyboard.dismiss()
-        }
+        setGeneratingInvoice(true)
+        Keyboard.dismiss()
     }
 
     return (
