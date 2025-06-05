@@ -2,7 +2,7 @@ import fetchMock from 'jest-fetch-mock'
 import { rest } from 'msw'
 import { setupServer } from 'msw/node'
 
-import { fetchMetadataFromUrl } from '../../utils/fedimods'
+import { tryFetchUrlMetadata } from '../../utils/fedimods'
 
 fetchMock.enableMocks()
 
@@ -18,6 +18,8 @@ const appNameTitle = 'https://app-name.example.com'
 const appleMobileWebAppTitle = 'https://apple-mobile-web-app-title.example.com'
 const standardTitle = 'https://standard-title.example.com'
 const noTags = 'https://no-tags.example.com'
+const withManifest = 'https://with-manifest.example.com'
+const withManifestNoMaskable = 'https://with-manifest-no-maskable.example.com'
 
 describe('fedimods', () => {
     // --- Mock API for LNURLs ---
@@ -181,6 +183,87 @@ describe('fedimods', () => {
                 ctx.body('<head></head>'),
             )
         }),
+
+        rest.get(`${withManifest}`, (_req, res, ctx) => {
+            return res(
+                ctx.status(200),
+                ctx.set('Content-Type', 'text/html'),
+                ctx.body(
+                    '<head><link rel="manifest" href="manifest.json"/><title>Test Application Name</head>',
+                ),
+            )
+        }),
+
+        rest.get(`${withManifest}/manifest.json`, (_req, res, ctx) => {
+            return res(
+                ctx.status(200),
+                ctx.set('Content-Type', 'application/json'),
+                ctx.body(
+                    JSON.stringify({
+                        name: 'Test Manifest Name',
+                        icons: [
+                            {
+                                src: 'test-icon-link-128-any.png',
+                                sizes: '128x128',
+                                purpose: 'any',
+                            },
+                            {
+                                src: 'test-icon-link-32-any.png',
+                                sizes: '32x32',
+                                purpose: 'any',
+                            },
+                            {
+                                src: 'test-icon-link-16-maskable.png',
+                                sizes: '16x16',
+                                purpose: 'maskable',
+                            },
+                            {
+                                src: 'test-icon-link-64-maskable.png',
+                                sizes: '64x64',
+                                purpose: 'maskable',
+                            },
+                        ],
+                    }),
+                ),
+            )
+        }),
+
+        rest.get(`${withManifestNoMaskable}`, (_req, res, ctx) => {
+            return res(
+                ctx.status(200),
+                ctx.set('Content-Type', 'text/html'),
+                ctx.body(
+                    '<head><link rel="manifest" href="manifest.json"/><title>Test Application Name</head>',
+                ),
+            )
+        }),
+
+        rest.get(
+            `${withManifestNoMaskable}/manifest.json`,
+            (_req, res, ctx) => {
+                return res(
+                    ctx.status(200),
+                    ctx.set('Content-Type', 'application/json'),
+                    ctx.body(
+                        JSON.stringify({
+                            name: 'Test Manifest Name',
+                            icons: [
+                                {
+                                    src: 'test-icon-link-128-any.png',
+                                    sizes: '128x128',
+                                    purpose: 'any',
+                                },
+                                {
+                                    src: 'test-icon-link-32-any.png',
+                                    sizes: '32x32',
+                                    purpose: 'any',
+                                },
+                            ],
+                        }),
+                    ),
+                )
+            },
+        ),
     )
 
     beforeEach(() => server.listen())
@@ -188,60 +271,91 @@ describe('fedimods', () => {
     afterAll(() => server.close())
 
     it('should return the /favicon.ico as a fallback', async () => {
-        const metadata = await fetchMetadataFromUrl(`${rootFaviconFallback}`)
-        expect(metadata.fetchedIcon).toBe(`${rootFaviconFallback}/favicon.ico`)
+        const metadata = await tryFetchUrlMetadata(new URL(rootFaviconFallback))
+        expect(metadata._unsafeUnwrap().icon).toBe(
+            `${rootFaviconFallback}/favicon.ico`,
+        )
     })
 
     it('should return an empty string favicon with no links or favicon.ico fallback', async () => {
-        const metadata = await fetchMetadataFromUrl(`${noFavicon}`)
-        expect(metadata.fetchedIcon).toBe('')
+        const metadata = await tryFetchUrlMetadata(new URL(noFavicon))
+        expect(metadata._unsafeUnwrap().icon).toBe('')
     })
 
     it('should return the apple touch icon as the favicon', async () => {
-        const metadata = await fetchMetadataFromUrl(`${appleTouchIconLink}`)
-        expect(metadata.fetchedIcon).toBe(
+        const metadata = await tryFetchUrlMetadata(new URL(appleTouchIconLink))
+        expect(metadata._unsafeUnwrap().icon).toBe(
             `${appleTouchIconLink}/test-apple-touch-icon.png`,
         )
     })
 
     it('should return the icon link as the favicon', async () => {
-        const metadata = await fetchMetadataFromUrl(`${iconLink}`)
-        expect(metadata.fetchedIcon).toBe(`${iconLink}/test-icon-link.png`)
+        const metadata = await tryFetchUrlMetadata(new URL(iconLink))
+        expect(metadata._unsafeUnwrap().icon).toBe(
+            `${iconLink}/test-icon-link.png`,
+        )
     })
 
     it('should return the shortcut icon link as the favicon', async () => {
-        const metadata = await fetchMetadataFromUrl(`${shortcutIconLink}`)
-        expect(metadata.fetchedIcon).toBe(
+        const metadata = await tryFetchUrlMetadata(new URL(shortcutIconLink))
+        expect(metadata._unsafeUnwrap().icon).toBe(
             `${shortcutIconLink}/test-shortcut-icon-link.png`,
         )
     })
 
     it('should return the favicon.ico fallback if link is found but refs a 404', async () => {
-        const metadata = await fetchMetadataFromUrl(
-            `${appleTouchFaviconFallback}`,
+        const metadata = await tryFetchUrlMetadata(
+            new URL(appleTouchFaviconFallback),
         )
-        expect(metadata.fetchedIcon).toBe(
+        expect(metadata._unsafeUnwrap().icon).toBe(
             `${appleTouchFaviconFallback}/favicon.ico`,
         )
     })
 
-    it('should return an empty string title on non-200 status code', async () => {
-        const metadata = await fetchMetadataFromUrl(`${notFound}`)
-        expect(metadata.fetchedTitle).toBe('')
+    it('should return an Err on non-200 status code', async () => {
+        const metadata = await tryFetchUrlMetadata(new URL(notFound))
+        expect(metadata.isOk()).toBe(false)
+        expect(metadata.isErr()).toBe(true)
+        expect(metadata._unsafeUnwrapErr()._tag).toBe('FetchError')
     })
 
     it('should return the application name as the title', async () => {
-        const metadata = await fetchMetadataFromUrl(`${appNameTitle}`)
-        expect(metadata.fetchedTitle).toBe('Test Application Name')
+        const metadata = await tryFetchUrlMetadata(new URL(appNameTitle))
+        expect(metadata._unsafeUnwrap().title).toBe('Test Application Name')
     })
 
     it('should return the apple mobile web app title as the title', async () => {
-        const metadata = await fetchMetadataFromUrl(`${appleMobileWebAppTitle}`)
-        expect(metadata.fetchedTitle).toBe('Test Apple Mobile Web App Title')
+        const metadata = await tryFetchUrlMetadata(
+            new URL(appleMobileWebAppTitle),
+        )
+        expect(metadata._unsafeUnwrap().title).toBe(
+            'Test Apple Mobile Web App Title',
+        )
     })
 
     it('should return hostname if no tags are found', async () => {
-        const metadata = await fetchMetadataFromUrl(`${noTags}`)
-        expect(metadata.fetchedTitle).toBe(noTags.split('https://')[1])
+        const metadata = await tryFetchUrlMetadata(new URL(noTags))
+        expect(metadata._unsafeUnwrap().title).toBe(noTags.split('https://')[1])
+    })
+
+    it('should prioritize the manifest name over the html title', async () => {
+        const metadata = await tryFetchUrlMetadata(new URL(withManifest))
+        expect(metadata._unsafeUnwrap().title).toBe('Test Manifest Name')
+    })
+
+    it('should select the largest maskable icon from the manifest', async () => {
+        const metadata = await tryFetchUrlMetadata(new URL(withManifest))
+        expect(metadata._unsafeUnwrap().icon).toBe(
+            `${withManifest}/test-icon-link-64-maskable.png`,
+        )
+    })
+
+    it('should fall back to the largest icon from the manifest if no maskable icon is found', async () => {
+        const metadata = await tryFetchUrlMetadata(
+            new URL(withManifestNoMaskable),
+        )
+        expect(metadata._unsafeUnwrap().icon).toBe(
+            `${withManifestNoMaskable}/test-icon-link-128-any.png`,
+        )
     })
 })
