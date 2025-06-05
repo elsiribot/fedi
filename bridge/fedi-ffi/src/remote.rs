@@ -43,7 +43,7 @@ impl Client {
         #[cfg(not(target_os = "android"))]
         let connection = TcpStream::connect("localhost:13127").await?;
         #[cfg(target_os = "android")]
-        let connection = TcpStream::connect("10.0.2.2:13127").await?;
+        let connection = TcpStream::connect("127.0.0.1:13127").await?;
         let mut connection = Framed::new(connection, LinesCodec::new());
         let pending_response = PendingResponses::default();
         let (tx, mut rx) = mpsc::channel::<Request>(32);
@@ -174,7 +174,7 @@ pub async fn init(data_dir: PathBuf) -> anyhow::Result<()> {
         Arc::new(storage),
         Arc::new(SenderEventSink(response_tx.clone())),
         Arc::new(LiveFediApi::new()),
-        "Unknown (remote bridge)".to_owned(),
+        "unknown:remote-bridge:asdocnjasncjsd".to_owned(),
         FeatureCatalog::new(runtime::features::RuntimeEnvironment::Dev).into(),
     )
     .await
