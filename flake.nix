@@ -23,7 +23,7 @@
     };
 
     fs-dir-cache = {
-      url = "github:fedibtc/fs-dir-cache?rev=e9752d00ee16778c9d3d0b93a09c49c44013ac17";
+      url = "github:fedibtc/fs-dir-cache?rev=906f5557941f07630dcbd8f615b0ac1e173a5d68";
     };
 
     cargo-deluxe = {
