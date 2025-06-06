@@ -305,12 +305,14 @@
             pkgs
             flakeboxLib
             fedimint-pkgs
+            androidSdk
             replaceGitHash
             craneMultiBuild
             ;
           toolchains = stdToolchains // {
             "default" = toolchainDefault;
             "wasm32-unknown-unkown" = toolchainWasm;
+            "all" = toolchainAll;
           };
           profiles = [
             "dev"
