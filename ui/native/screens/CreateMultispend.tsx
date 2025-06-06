@@ -190,7 +190,7 @@ const CreateMultispend: React.FC<Props> = ({ navigation, route }) => {
                     <Pressable
                         style={style.assignVoters}
                         onPress={handleAssignVoters}>
-                        <View style={style.fieldInfo}>
+                        <View style={[style.fieldInfo, style.assignVotersInfo]}>
                             <View style={style.votersTitle}>
                                 <Text caption medium>
                                     {t('feature.multispend.assign-voters')}
@@ -282,6 +282,10 @@ const styles = (theme: Theme) =>
         fieldInfo: {
             gap: theme.spacing.xs,
             paddingHorizontal: theme.spacing.sm,
+        },
+        assignVotersInfo: {
+            flexGrow: 1,
+            flexShrink: 1,
         },
         fieldDescription: {
             color: theme.colors.darkGrey,
