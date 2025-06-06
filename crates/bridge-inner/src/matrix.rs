@@ -297,11 +297,13 @@ impl Matrix {
         );
 
         if self.is_multispend_enabled() {
-            let this = self.clone();
+            let this = Arc::downgrade(self);
             self.client
                 .add_event_handler(move |event: AnySyncMessageLikeEvent, room: Room| {
                     let this = this.clone();
                     async move {
+                        // skip if shuting down
+                        let Some(this) = this.upgrade() else { return };
                         let room_id = room.room_id();
                         let event_id = event.event_id();
                         let is_multispend = matches!(
