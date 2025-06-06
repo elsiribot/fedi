@@ -150,6 +150,7 @@ const AddFediMod: React.FC = () => {
                         value={title}
                         onChangeText={setTitle}
                         placeholder={t('feature.fedimods.mod-title')}
+                        numberOfLines={1}
                         label={
                             <Flex row align="center" justify="between">
                                 <Text small>{t('words.title')}</Text>
