@@ -399,11 +399,8 @@ export class MatrixChatClient {
      */
     async sendDirectMessage(userId: string, content: MatrixEventContent) {
         const roomId = await this.fedimint.matrixRoomCreateOrGetDm({ userId })
-        // TODO: Remove timeouts, creating rooms is kinda racey.
-        await new Promise(resolve => setTimeout(resolve, 500))
-        await this.observeRoomInfo(roomId)
-        await new Promise(resolve => setTimeout(resolve, 500))
         await this.sendMessage(roomId, content)
+        await this.observeRoomInfo(roomId)
         await this.observeRoomTimeline(roomId)
         await this.observeRoomPowerLevels(roomId)
         return { roomId }
