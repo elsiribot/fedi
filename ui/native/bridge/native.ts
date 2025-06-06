@@ -8,7 +8,7 @@ import { BridgeError } from '@fedi/common/utils/errors'
 import { FedimintBridge } from '@fedi/common/utils/fedimint'
 import { makeLog } from '@fedi/common/utils/log'
 
-import { isNightly } from './utils/device-info'
+import { isNightly } from '../utils/device-info'
 
 const { BridgeNativeEventEmitter, FedimintFfi } = NativeModules
 

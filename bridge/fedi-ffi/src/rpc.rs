@@ -45,7 +45,7 @@ use mime::Mime;
 use rpc_types::error::{ErrorCode, RpcError};
 use rpc_types::event::{Event, EventSink, PanicEvent, SocialRecoveryEvent, TypedEventExt};
 use rpc_types::{
-    FrontendMetadata, GuardianStatus, NetworkError, RpcAmount, RpcCommunity,
+    FrontendMetadata, GuardianStatus, NetworkError, RpcAmount, RpcAppFlavor, RpcCommunity,
     RpcDeviceIndexAssignmentStatus, RpcEcashInfo, RpcEventId, RpcFederation, RpcFederationId,
     RpcFederationMaybeLoading, RpcFederationPreview, RpcFeeDetails, RpcFiatAmount,
     RpcGenerateEcashResponse, RpcInvoice, RpcLightningGateway, RpcMediaUploadParams,
@@ -59,7 +59,7 @@ use runtime::api::IFediApi;
 use runtime::bridge_runtime::Runtime;
 use runtime::constants::{GLOBAL_MATRIX_SERVER, GLOBAL_MATRIX_SLIDING_SYNC_PROXY};
 use runtime::event::IEventSink;
-use runtime::features::FeatureCatalog;
+use runtime::features::{FeatureCatalog, RuntimeEnvironment};
 use runtime::observable::{Observable, ObservableVec};
 use runtime::storage::{DeviceIdentifier, FiatFXInfo, Storage};
 use serde::de::DeserializeOwned;
@@ -79,7 +79,7 @@ pub async fn fedimint_initialize_async(
     event_sink: EventSink,
     fedi_api: Arc<dyn IFediApi>,
     device_identifier: String,
-    feature_catalog: Arc<FeatureCatalog>,
+    app_flavor: RpcAppFlavor,
 ) -> anyhow::Result<Arc<Bridge>> {
     info!(
         "bridge version hash={}",
@@ -88,6 +88,12 @@ pub async fn fedimint_initialize_async(
     let _g = TimeReporter::new("fedimint_initialize").level(Level::INFO);
 
     let device_identifier = DeviceIdentifier::from_str(&device_identifier)?;
+    let feature_catalog = FeatureCatalog::new(match app_flavor {
+        RpcAppFlavor::Dev => RuntimeEnvironment::Dev,
+        RpcAppFlavor::Nightly => RuntimeEnvironment::Staging,
+        RpcAppFlavor::Bravo => RuntimeEnvironment::Prod,
+    })
+    .into();
     let runtime = Runtime::new(
         storage,
         event_sink,

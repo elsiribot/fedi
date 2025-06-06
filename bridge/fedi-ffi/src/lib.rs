@@ -1,11 +1,9 @@
 #[cfg(not(target_family = "wasm"))]
-mod ffi;
+pub mod ffi;
 #[cfg(not(target_family = "wasm"))]
 pub mod logging;
 #[cfg(test)]
 pub mod matrix_tests;
-#[cfg(not(target_family = "wasm"))]
-pub mod remote;
 pub mod rpc;
 
 #[cfg(test)]
