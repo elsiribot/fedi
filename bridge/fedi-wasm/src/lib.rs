@@ -91,12 +91,7 @@ pub async fn fedimint_initialize_inner(
         event_sink.clone(),
         fedi_api,
         init_opts.device_identifier,
-        FeatureCatalog::new(match init_opts.app_flavor {
-            RpcAppFlavor::Dev => RuntimeEnvironment::Dev,
-            RpcAppFlavor::Nightly => RuntimeEnvironment::Staging,
-            RpcAppFlavor::Bravo => RuntimeEnvironment::Prod,
-        })
-        .into(),
+        init_opts.app_flavor,
     )
     .await
     .context("Failed to initialize the bridge")?;

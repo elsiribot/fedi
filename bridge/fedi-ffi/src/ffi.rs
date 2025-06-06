@@ -11,7 +11,6 @@ use rpc_types::{RpcAppFlavor, RpcInitOpts};
 use runtime::api::LiveFediApi;
 // used by uniffi
 pub use runtime::event::IEventSink as EventSink;
-use runtime::features::{FeatureCatalog, RuntimeEnvironment};
 use runtime::storage::IStorage;
 use tokio::sync::Mutex;
 use tracing::{error, info};
@@ -19,7 +18,6 @@ use tracing::{error, info};
 use super::logging;
 pub use super::rpc::FedimintError;
 use super::rpc::{fedimint_initialize_async, fedimint_rpc_async};
-use crate::remote::{fedimint_remote_initialize, fedimint_remote_rpc};
 use crate::rpc::{self, rpc_error_json};
 
 lazy_static! {
@@ -83,9 +81,6 @@ pub async fn fedimint_initialize_inner(
         }
     };
 
-    if option_env!("FEDI_BRIDGE_REMOTE").is_some() {
-        return fedimint_remote_initialize(event_sink).await;
-    }
     if let Some(bridge) = BRIDGE.lock().await.clone() {
         if let RpcAppFlavor::Dev = init_opts.app_flavor {
             // reset observables
@@ -118,12 +113,7 @@ pub async fn fedimint_initialize_inner(
         event_sink,
         Arc::new(LiveFediApi::new()),
         init_opts.device_identifier,
-        FeatureCatalog::new(match init_opts.app_flavor {
-            RpcAppFlavor::Dev => RuntimeEnvironment::Dev,
-            RpcAppFlavor::Nightly => RuntimeEnvironment::Staging,
-            RpcAppFlavor::Bravo => RuntimeEnvironment::Prod,
-        })
-        .into(),
+        init_opts.app_flavor,
     )
     .await
     {
@@ -144,11 +134,6 @@ pub async fn fedimint_rpc(method: String, payload: String) -> String {
     // run future in background tokio worker threads
     let task_result = RUNTIME
         .spawn(async move {
-            if option_env!("FEDI_BRIDGE_REMOTE").is_some() {
-                return fedimint_remote_rpc(method, payload)
-                    .await
-                    .expect("rpc failed");
-            }
             let Some(bridge) = BRIDGE.lock().await.as_ref().cloned() else {
                 return rpc_error_json(&anyhow::format_err!(ErrorCode::NotInialized));
             };
