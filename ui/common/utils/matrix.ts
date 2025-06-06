@@ -20,7 +20,6 @@ import {
     MatrixTimelineItem,
     MatrixUser,
     MultispendDepositEvent,
-    MultispendFinalized,
     MultispendListedInvitationEvent,
     MultispendRole,
     MultispendTransactionListEntry,
@@ -1062,27 +1061,6 @@ export function isMultispendInvitation(
     )
 }
 
-export function getMultispendWithdrawalStatus(
-    event: MultispendWithdrawalEvent,
-    multispendStatus: MultispendFinalized,
-) {
-    if (event.event.withdrawalRequest.completed) return 'completed'
-
-    const voterCount = Object.keys(
-        multispendStatus.finalized_group.pubkeys,
-    ).length
-    const voteCount = Object.keys(
-        event.event.withdrawalRequest.signatures,
-    ).length
-    const rejectionCount = event.event.withdrawalRequest.rejections.length
-    const threshold = multispendStatus.finalized_group.invitation.threshold
-
-    if (voteCount >= threshold) return 'approved'
-    if (voterCount - rejectionCount < threshold) return 'rejected'
-
-    return 'pending'
-}
-
 export function getHasUserVotedForWithdrawal(
     event: MultispendWithdrawalEvent,
     userId: string,
@@ -1091,4 +1069,38 @@ export function getHasUserVotedForWithdrawal(
     const signatures = event.event.withdrawalRequest.signatures
 
     return Boolean(rejections.includes(userId) || signatures[userId])
+}
+
+export function isWithdrawalRequestRejected(
+    event: MultispendTransactionListEntry,
+    multispendStatus: RpcMultispendGroupStatus,
+) {
+    const invitation = getMultispendInvite(multispendStatus)
+
+    if (
+        invitation &&
+        isMultispendWithdrawalEvent(event) &&
+        event.event.withdrawalRequest.rejections.length >
+            invitation.signers.length - invitation.threshold
+    )
+        return true
+
+    return false
+}
+
+export function isWithdrawalRequestApproved(
+    event: MultispendTransactionListEntry,
+    multispendStatus: RpcMultispendGroupStatus,
+) {
+    const invitation = getMultispendInvite(multispendStatus)
+
+    if (
+        invitation &&
+        isMultispendWithdrawalEvent(event) &&
+        Object.keys(event.event.withdrawalRequest.signatures).length >=
+            invitation.threshold
+    )
+        return true
+
+    return false
 }

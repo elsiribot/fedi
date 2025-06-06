@@ -30,6 +30,8 @@ import { FedimintBridge } from '../utils/fedimint'
 import {
     getMultispendInvite,
     isMultispendWithdrawalEvent,
+    isWithdrawalRequestApproved,
+    isWithdrawalRequestRejected,
     makeMultispendWalletHeader,
     MatrixEventContentType,
     MultispendEventContentType,
@@ -302,7 +304,7 @@ export function useMultispendTransactions(t: TFunction, roomId: RpcRoomId) {
     }
 }
 
-export function useMultispendWithdrawUtils(t: TFunction, roomId: RpcRoomId) {
+export function useMultispendWithdrawUtils(roomId: RpcRoomId) {
     const multispendStatus = useCommonSelector(s =>
         selectMatrixRoomMultispendStatus(s, roomId),
     )
@@ -310,22 +312,17 @@ export function useMultispendWithdrawUtils(t: TFunction, roomId: RpcRoomId) {
     const getWithdrawalStatus = useCallback(
         (event: MultispendWithdrawalEvent) => {
             if (multispendStatus?.status !== 'finalized') return 'pending'
-            if (event.event.withdrawalRequest.completed) return 'completed'
 
-            const voterCount = Object.keys(
-                multispendStatus.finalized_group.pubkeys,
-            ).length
-            const voteCount = Object.keys(
-                event.event.withdrawalRequest.signatures,
-            ).length
-            const rejectionCount =
-                event.event.withdrawalRequest.rejections.length
+            const txStatus = event.event.withdrawalRequest.txSubmissionStatus
 
-            const threshold =
-                multispendStatus.finalized_group.invitation.threshold
+            if (txStatus === 'unknown') return 'pending'
+            if ('accepted' in txStatus) return 'completed'
+            if ('rejected' in txStatus) return 'failed'
 
-            if (voteCount >= threshold) return 'approved'
-            if (voterCount - rejectionCount < threshold) return 'rejected'
+            if (isWithdrawalRequestApproved(event, multispendStatus))
+                return 'approved'
+            if (isWithdrawalRequestRejected(event, multispendStatus))
+                return 'rejected'
 
             return 'pending'
         },
@@ -359,7 +356,7 @@ export function useMultispendWithdrawalRequests({
         selectMatrixRoomMultispendStatus(s, roomId),
     )
     const { transactions } = useMultispendTransactions(t, roomId)
-    const { getWithdrawalStatus } = useMultispendWithdrawUtils(t, roomId)
+    const { getWithdrawalStatus } = useMultispendWithdrawUtils(roomId)
     const matrixAuth = useCommonSelector(selectMatrixAuth)
     const roomMembers = useCommonSelector(s =>
         selectMatrixRoomMembers(s, roomId),
@@ -382,6 +379,8 @@ export function useMultispendWithdrawalRequests({
                     return t('words.pending')
                 case 'completed':
                     return t('words.complete')
+                case 'failed':
+                    return t('words.failed')
             }
         },
         [t, getWithdrawalStatus],
@@ -469,7 +468,9 @@ export function useMultispendWithdrawalRequests({
                     'end',
                 ),
                 selectedFiatCurrency,
-                status: getWithdrawalStatus(event),
+                status: getWithdrawalStatus(event) as ReturnType<
+                    typeof getWithdrawalStatus
+                >,
             }
         },
         [
@@ -729,7 +730,7 @@ export function useMultispendWithdrawalEventContent({
     subText?: string
 } {
     const { senderId, content, roomId } = event
-    const { getWithdrawalStatus } = useMultispendWithdrawUtils(t, roomId)
+    const { getWithdrawalStatus } = useMultispendWithdrawUtils(roomId)
     const selectedFiatCurrency = useCommonSelector(selectCurrency)
     const { convertCentsToFormattedFiat } =
         useBtcFiatPrice(selectedFiatCurrency)
@@ -769,6 +770,9 @@ export function useMultispendWithdrawalEventContent({
                 subText = t(
                     'feature.multispend.chat-events.withdrawal-approved',
                 )
+                break
+            case 'failed':
+                text = t('feature.multispend.chat-events.withdrawal-failed')
                 break
             case 'pending':
             default:

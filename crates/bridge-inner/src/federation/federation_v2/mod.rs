@@ -3473,38 +3473,63 @@ impl FederationV2 {
         if let Ok(update_stream) = update_stream {
             let mut updates = update_stream.into_stream();
             while let Some(state) = updates.next().await {
-                // Force sync spv2 once TX is accepted
-                if matches!(state, StabilityPoolTransferOperationState::Success) {
-                    self.spv2_force_sync();
-                    // send multispend completion notification
-                    match serde_json::from_value::<SPv2TransferMetadata>(extra_meta.clone()) {
-                        Ok(SPv2TransferMetadata::MultispendDeposit {
-                            room, description, ..
-                        }) => {
-                            self.multispend_services
-                                .completion_notification
-                                .add_deposit_notification(
-                                    room,
-                                    signed_request.details().amount(),
-                                    txid,
-                                    description,
-                                )
-                                .await;
+                match state {
+                    StabilityPoolTransferOperationState::Initiated => (),
+                    StabilityPoolTransferOperationState::Success => {
+                        // Force sync spv2 once TX is accepted
+                        self.spv2_force_sync();
+                        // send multispend completion notification
+                        match serde_json::from_value::<SPv2TransferMetadata>(extra_meta.clone()) {
+                            Ok(SPv2TransferMetadata::MultispendDeposit {
+                                room,
+                                description,
+                                ..
+                            }) => {
+                                self.multispend_services
+                                    .completion_notification
+                                    .add_deposit_notification(
+                                        room,
+                                        signed_request.details().amount(),
+                                        txid,
+                                        description,
+                                    )
+                                    .await;
+                            }
+                            Ok(SPv2TransferMetadata::MultispendWithdrawal { room, request_id }) => {
+                                self.multispend_services
+                                    .completion_notification
+                                    .add_withdrawal_notification(
+                                        room,
+                                        request_id,
+                                        signed_request.details().amount(),
+                                        txid,
+                                    )
+                                    .await;
+                            }
+                            Ok(SPv2TransferMetadata::StableBalance { .. }) | Err(_) => {}
                         }
-                        Ok(SPv2TransferMetadata::MultispendWithdrawal { room, request_id }) => {
-                            self.multispend_services
-                                .completion_notification
-                                .add_withdrawal_notification(
-                                    room,
-                                    request_id,
-                                    signed_request.details().amount(),
-                                    txid,
-                                )
-                                .await;
+                    }
+                    StabilityPoolTransferOperationState::TxRejected(ref error) => {
+                        match serde_json::from_value::<SPv2TransferMetadata>(extra_meta.clone()) {
+                            Ok(SPv2TransferMetadata::MultispendWithdrawal { room, request_id }) => {
+                                self.multispend_services
+                                    .completion_notification
+                                    .add_failed_withdrawal_notification(
+                                        room,
+                                        request_id,
+                                        error.to_string(),
+                                    )
+                                    .await;
+                            }
+                            Ok(
+                                SPv2TransferMetadata::StableBalance { .. }
+                                | SPv2TransferMetadata::MultispendDeposit { .. },
+                            )
+                            | Err(_) => {}
                         }
-                        Ok(SPv2TransferMetadata::StableBalance { .. }) | Err(_) => {}
                     }
                 }
+
                 self.update_operation_state(operation_id, state.clone())
                     .await;
                 self.runtime.event_sink.typed_event(&Event::spv2_transfer(
