@@ -60,12 +60,6 @@ const FederationPreview: React.FC<Props> = ({ federation, onJoin, onBack }) => {
                     size={SvgImageSize.md}
                     containerStyle={s.loadingIcon}
                 />
-                <Text h4 medium style={s.loadingTitle}>
-                    {t('feature.quick-fact.title')}
-                </Text>
-                <Text style={s.loadingFactText}>
-                    {t('feature.quick-fact.fact-1')}
-                </Text>
             </Flex>
         )
     }
