@@ -121,7 +121,7 @@ const ReceiveLightning: React.FC<Props> = ({ navigation }: Props) => {
         if (invoice) {
             setGeneratingInvoice(false)
             navigation.navigate('BitcoinRequest', {
-                uri: `lightning:${invoice}`,
+                invoice,
             })
         }
     }, [invoice, navigation])
