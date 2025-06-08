@@ -22,6 +22,8 @@ clean_ios() {
     echo "Deleting ios/build & ios/Pods..."
     rm -rf "$REPO_ROOT/ui/native/ios/build"
     rm -rf "$REPO_ROOT/ui/native/ios/Pods"
+    # the NODE_BINARY env var might have an old nix store path, so regenerate just in case
+    rm -f "$REPO_ROOT/ui/native/ios/.xcode.env.local"
     delete_xcode_derived_data
 }
 
