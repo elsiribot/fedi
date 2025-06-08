@@ -10,7 +10,8 @@ use rpc_types::event::{Event, TypedEventExt as _};
 use rpc_types::{RpcFederationId, RpcFederationMaybeLoading};
 use runtime::bridge_runtime::Runtime;
 use runtime::db::FederationPendingRejoinFromScratchKey;
-use runtime::storage::{DatabaseInfo, FederationInfo, Storage};
+use runtime::storage::state::{DatabaseInfo, FederationInfo};
+use runtime::storage::Storage;
 use tokio::sync::RwLock;
 use tracing::{error, info};
 

@@ -15,7 +15,7 @@ use fedimint_mint_client::{ReissueExternalNotesState, SpendOOBState};
 use fedimint_wallet_client::{DepositStateV2, WithdrawState};
 use matrix::RpcRoomId;
 use runtime::api::RegisteredDevice;
-use runtime::storage::{FediFeeSchedule, FiatFXInfo};
+use runtime::storage::state::{FediFeeSchedule, FiatFXInfo};
 use runtime::utils::to_unix_time;
 use serde::de::{self, MapAccess, Visitor};
 use serde::{Deserialize, Deserializer, Serialize};

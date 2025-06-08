@@ -6,6 +6,7 @@ use std::time::{Duration, SystemTime};
 
 use anyhow::{bail, Context};
 use bitcoin::Network;
+use bridge::onboarding::{BridgeOnboarding, RpcOnboardingStage};
 use bridge::{Bridge, BridgeFull};
 use bridge_inner::federation::federation_v2::FederationV2;
 use devimint::cmd;
@@ -19,12 +20,13 @@ use nostr::secp256k1::PublicKey;
 use runtime::api::{IFediApi, RegisterDeviceError, RegisteredDevice, TransactionDirection};
 use runtime::event::IEventSink;
 use runtime::features::{FeatureCatalog, RuntimeEnvironment};
-use runtime::storage::{DeviceIdentifier, FediFeeSchedule, Storage};
+use runtime::storage::state::{DeviceIdentifier, FediFeeSchedule};
+use runtime::storage::{OnboardingCompletionMethod, Storage};
 use tempfile::TempDir;
 use tokio::sync::{Mutex, OnceCell};
 
 use crate::ffi::PathBasedStorage;
-use crate::rpc;
+use crate::rpc::{self, TryGet};
 
 /// A device for running the bridge, restarting the bridge, read from storage.
 #[derive(Default)]
@@ -121,7 +123,7 @@ impl TestDevice {
             .clone()
     }
 
-    pub async fn bridge_maybe_uncommited(&self) -> anyhow::Result<&Arc<Bridge>> {
+    pub async fn bridge_maybe_onboarding(&self) -> anyhow::Result<&Arc<Bridge>> {
         self.bridge_uncommited
             .get_or_try_init(|| async {
                 Ok(Arc::new(
@@ -138,13 +140,17 @@ impl TestDevice {
             .await
     }
 
-    /// auto commits to seed
+    /// Auto completes onboarding if needed
     pub async fn bridge_full(&self) -> anyhow::Result<&Arc<BridgeFull>> {
         self.bridge_full
             .get_or_try_init(|| async {
-                let bridge = self.bridge_maybe_uncommited().await?;
-                if !bridge.is_commited() {
-                    bridge.commit_to_seed(None).await?;
+                let bridge = self.bridge_maybe_onboarding().await?;
+                if let Ok(b) = TryGet::<Arc<BridgeOnboarding>>::try_get(&**bridge) {
+                    if let RpcOnboardingStage::Init = b.stage().await? {
+                        bridge
+                            .complete_onboarding(OnboardingCompletionMethod::NewSeed)
+                            .await?;
+                    }
                 }
                 Ok(bridge.full()?.clone())
             })

@@ -165,7 +165,7 @@ impl Matrix {
     ) -> Result<Arc<Self>> {
         let matrix_session = runtime
             .app_state
-            .with_read_lock(|r| r.matrix_session_native_sync.clone())
+            .with_read_lock(|r| r.matrix_session.clone())
             .await;
         let user_password = &Self::home_server_password(matrix_secret, &home_server);
         let encryption_passphrase = Self::encryption_passphrase(matrix_secret);
@@ -337,7 +337,7 @@ impl Matrix {
             Some(matrix_sdk::AuthSession::Matrix(matrix_session)) => {
                 app_state
                     .with_write_lock(|a| {
-                        a.matrix_session_native_sync = Some(matrix_session);
+                        a.matrix_session = Some(matrix_session);
                     })
                     .await?;
             }
@@ -368,7 +368,7 @@ impl Matrix {
             runtime
                 .app_state
                 .with_write_lock(|s| {
-                    if let Some(value) = &mut s.matrix_session_native_sync {
+                    if let Some(value) = &mut s.matrix_session {
                         let Some(session_tokens) = client.session_tokens() else {
                             warn!("session tokens not present after refresh");
                             return;

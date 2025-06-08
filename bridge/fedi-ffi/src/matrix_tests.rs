@@ -26,7 +26,8 @@ use runtime::bridge_runtime::Runtime;
 use runtime::constants::MATRIX_CHILD_ID;
 use runtime::event::IEventSink;
 use runtime::features::{FeatureCatalog, RuntimeEnvironment};
-use runtime::storage::AppState;
+use runtime::storage::state::DeviceIdentifier;
+use runtime::storage::{AppState, OnboardingCompletionMethod};
 use stability_pool_client::common::{AccountType, AccountUnchecked};
 use tempfile::TempDir;
 use tokio::sync::mpsc;
@@ -52,15 +53,20 @@ async fn mk_matrix_login(
     let event_sink = Arc::new(TestEventSink(event_tx));
     let tmp_dir = TempDir::new()?;
     let storage = Arc::new(PathBasedStorage::new(tmp_dir.as_ref().to_path_buf()).await?);
-    let Either::Right(uncommited) = AppState::load(
-        storage.clone(),
-        "bridge:test:70c2ad23-bfac-4aa2-81c3-d6f5e79ae724".parse()?,
-    )
-    .await?
+    let new_identifier_v2: DeviceIdentifier =
+        "bridge:test:70c2ad23-bfac-4aa2-81c3-d6f5e79ae724".parse()?;
+    let Either::Right(onboarding) =
+        AppState::load(storage.clone(), new_identifier_v2.clone()).await?
     else {
         panic!("must be uncommited");
     };
-    let app_state = uncommited.commit_to_seed().await;
+    let app_state = onboarding
+        .complete_onboarding(
+            OnboardingCompletionMethod::NewSeed,
+            new_identifier_v2.clone(),
+        )
+        .await
+        .map_err(|(_, err)| err)?;
     let runtime = Runtime::new(
         storage,
         event_sink,

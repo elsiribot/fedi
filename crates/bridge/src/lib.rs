@@ -1,43 +1,30 @@
 use std::fmt::Display;
-use std::mem;
 use std::ops::Deref;
 use std::path::PathBuf;
 use std::str::FromStr;
-use std::sync::{Arc, OnceLock, RwLock};
-use std::time::Duration;
+use std::sync::{Arc, Mutex as StdMutex, OnceLock};
 
 use anyhow::{anyhow, bail, Context, Result};
 use bech32::Bech32;
 use bitcoin::key::{Keypair, Secp256k1};
 use bitcoin::XOnlyPublicKey;
-use bridge_inner::federation::{federation_v2, Federations};
+use bridge_inner::federation::Federations;
 use bridge_inner::matrix::multispend::services::MultispendServices;
 use bridge_inner::matrix::Matrix;
 use communities::Communities;
 use device_registration::DeviceRegistrationService;
 use either::Either;
-use fedi_social_client::{
-    self, FediSocialCommonGen, RecoveryFile, SocialRecoveryClient, SocialRecoveryState,
-};
-use fedimint_api_client::api::DynGlobalApi;
-use fedimint_core::config::ClientConfig;
 use fedimint_core::core::ModuleKind;
 use fedimint_core::db::IDatabaseTransactionOpsCoreTyped as _;
-use fedimint_core::encoding::Decodable;
-use fedimint_core::module::registry::ModuleDecoderRegistry;
-use fedimint_core::module::CommonModuleInit;
-use fedimint_core::PeerId;
 use fedimint_derive_secret::{ChildId, DerivableSecret};
 use fedimint_mint_client::OOBNotes;
 use futures::StreamExt as _;
 use nostr::nips::nip44;
 use nostr::secp256k1::Message;
-use rpc_types::error::ErrorCode;
-use rpc_types::event::SocialRecoveryEvent;
+use onboarding::{BridgeOnboarding, RpcOnboardingStage};
 use rpc_types::{
-    RpcAmount, RpcDeviceIndexAssignmentStatus, RpcEcashInfo, RpcFederation, RpcFederationId,
-    RpcNostrPubkey, RpcNostrSecret, RpcPeerId, RpcPublicKey, RpcRecoveryId, RpcRegisteredDevice,
-    RpcSignedLnurlMessage, SocialRecoveryApproval, SocialRecoveryQr,
+    RpcAmount, RpcEcashInfo, RpcFederationId, RpcNostrPubkey, RpcNostrSecret, RpcPeerId,
+    RpcPublicKey, RpcRecoveryId, RpcSignedLnurlMessage,
 };
 use runtime::api::IFediApi;
 use runtime::bridge_runtime::Runtime;
@@ -45,14 +32,14 @@ use runtime::constants::{LNURL_CHILD_ID, MATRIX_CHILD_ID, NOSTR_CHILD_ID};
 use runtime::db::FederationPendingRejoinFromScratchKeyPrefix;
 use runtime::event::EventSink;
 use runtime::features::FeatureCatalog;
-use runtime::storage::{
-    AppState, AppStateUncommittedSeed, DeviceIdentifier, FiatFXInfo, ModuleFediFeeSchedule, Storage,
-};
-use runtime::utils::required_threashold_of;
+use runtime::storage::state::{DeviceIdentifier, FiatFXInfo, ModuleFediFeeSchedule};
+use runtime::storage::{AppState, OnboardingCompletionMethod, Storage};
+use runtime::utils::PoisonedLockExt;
 use serde::{Deserialize, Serialize};
 use tokio::sync::{Mutex, OnceCell};
-use tracing::debug;
 use ts_rs::TS;
+
+pub mod onboarding;
 
 // FIXME: federation-specific filename
 pub const RECOVERY_FILENAME: &str = "backup.fedi";
@@ -184,101 +171,6 @@ impl BridgeFull {
         }
     }
 
-    // FIXME: doesn't need result
-    async fn get_social_recovery_state(&self) -> anyhow::Result<Option<SocialRecoveryState>> {
-        Ok(self
-            .runtime
-            .app_state
-            .with_read_lock(|state| state.social_recovery_state.clone())
-            .await)
-    }
-
-    async fn set_social_recovery_state(
-        &self,
-        social_recovery_state: Option<SocialRecoveryState>,
-    ) -> anyhow::Result<()> {
-        self.runtime
-            .app_state
-            .with_write_lock(|state| {
-                state.social_recovery_state = social_recovery_state;
-            })
-            .await
-    }
-
-    pub async fn fetch_registered_devices(&self) -> anyhow::Result<Vec<RpcRegisteredDevice>> {
-        let mnemonic = self.runtime.app_state.root_mnemonic().await;
-        let registered_devices_fut = device_registration::get_registered_devices_with_backoff(
-            self.runtime.fedi_api.clone(),
-            mnemonic,
-        );
-        let registered_devices =
-            fedimint_core::task::timeout(Duration::from_secs(120), registered_devices_fut)
-                .await
-                .context("fetching registered devices timed out")??
-                .into_iter()
-                .map(Into::into)
-                .collect();
-        Ok(registered_devices)
-    }
-
-    pub async fn register_device_with_index(
-        &self,
-        index: u8,
-        force_overwrite: bool,
-    ) -> anyhow::Result<Option<RpcFederation>> {
-        let register_device_fut = device_registration::register_device_with_backoff(
-            self.runtime.app_state.clone(),
-            self.runtime.fedi_api.clone(),
-            self.runtime.event_sink.clone(),
-            index,
-            force_overwrite,
-        );
-        fedimint_core::task::timeout(Duration::from_secs(120), register_device_fut)
-            .await
-            .context("registering device timed out")??;
-
-        self.runtime.app_state.set_device_index(index).await?;
-        self.device_registration_service
-            .lock()
-            .await
-            .start_ongoing_periodic_registration(
-                index,
-                &self.runtime.task_group,
-                self.runtime.event_sink.clone(),
-            )
-            .await?;
-
-        if self
-            .runtime
-            .app_state
-            .with_read_lock(|state| state.social_recovery_state.clone())
-            .await
-            .is_some()
-        {
-            let recovery_client = self.social_recovery_client_continue().await?;
-
-            self.set_social_recovery_state(None).await?;
-            tracing::info!("social recovery complete");
-            tracing::info!("auto joining federation");
-            let fed_arc = self
-                .federations
-                .join_federation(
-                    federation_v2::invite_code_from_client_confing(
-                        &ClientConfig::consensus_decode_hex(
-                            &recovery_client.state().client_config,
-                            &Default::default(),
-                        )?,
-                    )
-                    .to_string(),
-                    false,
-                )
-                .await?;
-            Ok(Some(fed_arc.to_rpc_federation().await))
-        } else {
-            Ok(None)
-        }
-    }
-
     pub async fn upload_backup_file(
         &self,
         federation_id: RpcFederationId,
@@ -299,190 +191,6 @@ impl BridgeFull {
             .write_file(RECOVERY_FILENAME.as_ref(), recovery_file)
             .await?;
         Ok(storage.platform_path(RECOVERY_FILENAME.as_ref()))
-    }
-
-    pub async fn start_social_recovery_v2(
-        &self,
-        recovery_file: RecoveryFile,
-    ) -> anyhow::Result<()> {
-        let social_instance_id = *recovery_file
-            .client_config
-            .modules
-            .iter()
-            .find(|(_, module_config)| module_config.is_kind(&fedi_social_client::KIND))
-            .context("social module not available in recovery config")?
-            .0;
-        let decoders = ModuleDecoderRegistry::from_iter(vec![(
-            social_instance_id,
-            fedi_social_client::KIND,
-            FediSocialCommonGen::decoder(),
-        )]);
-        let config = recovery_file
-            .client_config
-            .clone()
-            .redecode_raw(&decoders)?;
-        let (social_module_id, social_cfg) = config
-            .get_first_module_by_kind::<fedi_social_client::config::FediSocialClientConfig>(
-                "fedi-social",
-            )
-            .expect("needs social recovery module client config");
-
-        let social_api = DynGlobalApi::from_endpoints(
-            config
-                .global
-                .api_endpoints
-                .iter()
-                .map(|(peer_id, peer_url)| (*peer_id, peer_url.url.clone())),
-            &None, // FIXME: api secret
-        )
-        .await?
-        .with_module(social_module_id);
-        let client = SocialRecoveryClient::new_start(
-            social_module_id,
-            social_cfg.clone(),
-            social_api,
-            recovery_file.clone(),
-        )?;
-
-        // request social recovery verification with the federation
-        let verification_request =
-            client.create_verification_request(recovery_file.verification_document.clone())?;
-        client
-            .upload_verification_request(&verification_request)
-            .await
-            .context("upload verification request")?;
-
-        self.set_social_recovery_state(Some(client.state().clone()))
-            .await?;
-        Ok(())
-    }
-
-    pub async fn recovery_qr(&self) -> anyhow::Result<Option<SocialRecoveryQr>> {
-        if let Some(state) = self.get_social_recovery_state().await? {
-            Ok(Some(SocialRecoveryQr {
-                recovery_id: RpcRecoveryId(state.recovery_id()),
-            }))
-        } else {
-            Ok(None)
-        }
-    }
-
-    pub async fn cancel_social_recovery(&self) -> anyhow::Result<()> {
-        self.set_social_recovery_state(None).await?;
-        Ok(())
-    }
-
-    // TODO: rename this to start_social_recovery
-    pub async fn validate_recovery_file(&self, recovery_file_path: PathBuf) -> Result<()> {
-        // Only allow recovery when there are no joined federations
-        if !self.federations.get_federations_map().is_empty() {
-            bail!("Cannot recover while joined federations exist");
-        }
-
-        // These 2 lines validate
-        let recovery_file_bytes = self
-            .runtime
-            .storage
-            .read_file(&recovery_file_path)
-            .await?
-            .ok_or(anyhow!("recovery file not found"))?;
-        let recovery_file = RecoveryFile::from_bytes(&recovery_file_bytes)
-            .context(ErrorCode::InvalidSocialRecoveryFile)?;
-
-        // this starts a social recovery "session" ... what this means is kinda
-        // handwavvy
-        self.start_social_recovery_v2(recovery_file).await?;
-        Ok(())
-    }
-
-    pub async fn complete_social_recovery(&self) -> Result<Vec<RpcRegisteredDevice>> {
-        todo!()
-    }
-
-    async fn social_recovery_client_continue(&self) -> anyhow::Result<SocialRecoveryClient> {
-        let social_state = self
-            .get_social_recovery_state()
-            .await?
-            .context(ErrorCode::BadRequest)?;
-        let config: ClientConfig =
-            ClientConfig::consensus_decode_hex(&social_state.client_config, &Default::default())?;
-        let social_instance_id = *config
-            .modules
-            .iter()
-            .find(|(_, module_config)| module_config.is_kind(&fedi_social_client::KIND))
-            .context("social module not available in recovery config")?
-            .0;
-        let decoders = ModuleDecoderRegistry::from_iter(vec![(
-            social_instance_id,
-            fedi_social_client::KIND,
-            FediSocialCommonGen::decoder(),
-        )]);
-        let config = config.redecode_raw(&decoders)?;
-        let (social_module_id, social_cfg) = config
-            .get_first_module_by_kind::<fedi_social_client::config::FediSocialClientConfig>(
-                "fedi-social",
-            )
-            .expect("needs social recovery module client config");
-        let social_api = DynGlobalApi::from_endpoints(
-            config
-                .global
-                .api_endpoints
-                .iter()
-                .map(|(peer_id, peer_url)| (*peer_id, peer_url.url.clone())),
-            &None, // FIXME: api secret
-        )
-        .await?
-        .with_module(social_module_id);
-        let recovery_client = SocialRecoveryClient::new_continue(
-            social_module_id,
-            social_cfg.clone(),
-            social_api,
-            social_state.clone(),
-        );
-        Ok(recovery_client)
-    }
-
-    pub async fn social_recovery_approvals(&self) -> Result<SocialRecoveryEvent> {
-        let mut recovery_client = self.social_recovery_client_continue().await?;
-
-        let client_config = ClientConfig::consensus_decode_hex(
-            &recovery_client.state().client_config,
-            &ModuleDecoderRegistry::from_iter(vec![]),
-        )?;
-        let guardian_peer_ids: Vec<(String, PeerId)> = client_config
-            .global
-            .api_endpoints
-            .into_iter()
-            .map(|(peer_id, endpoint)| (endpoint.name, peer_id))
-            .collect();
-        let mut approvals = vec![];
-        for (guardian_name, peer_id) in guardian_peer_ids {
-            let approved = recovery_client
-                .get_decryption_share_from(peer_id)
-                .await
-                .unwrap_or_else(|_| {
-                    debug!("failed to get decryption share from peer {}", peer_id);
-                    false
-                });
-            approvals.push(SocialRecoveryApproval {
-                guardian_name,
-                approved,
-            });
-        }
-
-        // calculate approvals remaining
-        let approvals_required = required_threashold_of(approvals.len());
-        let num_approvals = approvals.iter().filter(|a| a.approved).count();
-        let remaining = approvals_required.saturating_sub(num_approvals);
-
-        // Save progress to DB
-        self.set_social_recovery_state(Some(recovery_client.state().clone()))
-            .await?;
-        let result = SocialRecoveryEvent {
-            approvals,
-            remaining,
-        };
-        Ok(result)
     }
 
     pub async fn download_verification_doc(
@@ -554,7 +262,7 @@ impl BridgeFull {
 pub struct Bridge {
     // the read lock is only held for very small time
     // write lock is held during commitToSeed.
-    state: RwLock<BridgeState>,
+    state: StdMutex<BridgeState>,
     // after runtime is ready it is saved in OnceLock to avoid holding lock to get reference to it.
     runtime: OnceLock<Arc<Runtime>>,
     // after bridge full is ready it is saved in OnceLock to avoid holding lock to get reference to
@@ -568,33 +276,22 @@ pub struct Bridge {
 // start -> Full
 // Uncommited -> RuntimeOnly
 // Uncommited -> Full
-enum BridgeState {
+#[derive(Clone)]
+pub enum BridgeState {
     /// Bridge is not always guaranteed to exist as "Full", for
     /// example if the device index has been taken over by another device.
     /// There may also be other scenarios for these services to not be
     /// available. In such scenarios only the Runtime is available.
     RuntimeOnly {
         runtime: Arc<Runtime>,
-        error: BridgeFullInitError,
+        error: Arc<BridgeFullInitError>,
     },
-    /// Bridge has not been committed to a seed yet, and seed can be changed
-    /// using restoreMnemonic
-    ///
-    /// This can transition into full or runtime only after commiting to a seed.
-    Uncommitted {
-        state: AppStateUncommittedSeed,
-        fedi_api: Arc<dyn IFediApi>,
-        // saved for transitioning into full
-        storage: Storage,
-        event_sink: EventSink,
-        feature_catalog: Arc<FeatureCatalog>,
-        device_identifier: DeviceIdentifier,
-    },
+    /// Bridge is still onboarding.
+    /// This can transition into full or runtime only.
+    Onboarding(Arc<BridgeOnboarding>),
     /// No errors during startup and we have a committed seed, this bridge is
     /// full.
     Full(Arc<BridgeFull>),
-    /// A dead state that is never held.
-    Null,
 }
 
 impl Bridge {
@@ -620,20 +317,28 @@ impl Bridge {
                 )
                 .await?
             }
-            Either::Right(state) => BridgeState::Uncommitted {
+            Either::Right(state) => BridgeState::Onboarding(Arc::new(BridgeOnboarding::new(
                 state,
                 fedi_api,
-                feature_catalog,
-                event_sink,
                 storage,
+                event_sink,
+                feature_catalog,
                 device_identifier,
-            },
+            ))),
         };
         Ok(Self {
-            state: RwLock::new(state),
+            state: StdMutex::new(state),
             runtime: OnceLock::default(),
             full: OnceLock::default(),
         })
+    }
+
+    pub fn state(&self) -> BridgeState {
+        self.state.ensure_lock().clone()
+    }
+
+    fn set_state(&self, bridge_state: BridgeState) {
+        *self.state.ensure_lock() = bridge_state;
     }
 
     async fn try_load_bridge_full(
@@ -650,15 +355,11 @@ impl Bridge {
         let runtime = Arc::new(runtime);
         match BridgeFull::new(runtime.clone(), device_identifier).await {
             Ok(full) => Ok(BridgeState::Full(Arc::new(full))),
-            Err(error) => Ok(BridgeState::RuntimeOnly { runtime, error }),
+            Err(error) => Ok(BridgeState::RuntimeOnly {
+                runtime,
+                error: error.into(),
+            }),
         }
-    }
-
-    pub fn is_commited(&self) -> bool {
-        !matches!(
-            &*self.state.read().expect("poison"),
-            BridgeState::Uncommitted { .. }
-        )
     }
 
     pub fn runtime(&self) -> anyhow::Result<&Arc<Runtime>> {
@@ -666,11 +367,10 @@ impl Bridge {
         if let Some(runtime) = self.runtime.get() {
             return Ok(runtime);
         }
-        let runtime = match &*self.state.read().expect("poison") {
+        let runtime = match self.state() {
             BridgeState::RuntimeOnly { runtime, error: _ } => runtime.clone(),
             BridgeState::Full(bridge_full) => bridge_full.runtime.clone(),
-            BridgeState::Uncommitted { .. } => bail!("commit the seed first"),
-            BridgeState::Null => bail!("null state must not be visible outside"),
+            BridgeState::Onboarding { .. } => bail!("commit the seed first"),
         };
         // racy, but fine because all thread will try to set the same value. so doesn't
         // matter which one wins
@@ -681,11 +381,10 @@ impl Bridge {
         if let Some(full) = self.full.get() {
             return Ok(full);
         }
-        let full = match &*self.state.read().expect("poison") {
+        let full = match self.state() {
             BridgeState::RuntimeOnly { runtime: _, error } => bail!(error.to_string()),
             BridgeState::Full(bridge_full) => bridge_full.clone(),
-            BridgeState::Uncommitted { .. } => bail!("commit the seed first"),
-            BridgeState::Null => bail!("null state must not be visible outside"),
+            BridgeState::Onboarding { .. } => bail!("commit the seed first"),
         };
         Ok(self.full.get_or_init(|| full))
     }
@@ -697,65 +396,37 @@ impl Bridge {
     }
 
     pub async fn bridge_status(&self) -> anyhow::Result<RpcBridgeStatus> {
-        let (runtime, bridge_full_init_error) = match &*self.state.read().expect("poison") {
-            BridgeState::Uncommitted { .. } => return Ok(RpcBridgeStatus::SeedUncommitted {}),
-            BridgeState::Null => bail!("null state must not be visible outside"),
-            BridgeState::RuntimeOnly { error, runtime } => (runtime.clone(), Some(error.into())),
+        let (runtime, bridge_full_init_error) = match self.state() {
+            BridgeState::Onboarding(onboarding) => {
+                return Ok(RpcBridgeStatus::Onboarding {
+                    stage: onboarding.stage().await?,
+                })
+            }
+            BridgeState::RuntimeOnly { error, runtime } => {
+                (runtime.clone(), Some(RpcBridgeFullInitError::from(&*error)))
+            }
             BridgeState::Full(full) => (full.runtime.clone(), None),
         };
         let matrix_setup = runtime
             .app_state
             // did we ever setup matrix?
-            .with_read_lock(|x| {
-                #[allow(deprecated)]
-                let value = x.matrix_session.is_some() || x.matrix_session_native_sync.is_some();
-                value
-            })
+            .with_read_lock(|x| x.matrix_session.is_some())
             .await;
-        let device_index_assignment_status = runtime.device_index_assignment_status().await?;
-        Ok(RpcBridgeStatus::SeedCommitted {
+        Ok(RpcBridgeStatus::Onboarded {
             matrix_setup,
-            device_index_assignment_status,
             bridge_full_init_error,
         })
     }
 
-    /// commit to a random seed or the given seed
-    pub async fn commit_to_seed(&self, mnemonic: Option<bip39::Mnemonic>) -> Result<()> {
-        // steal the bridge state
-        let bridge_state = {
-            let mut wlock = self.state.write().expect("poison");
-            mem::replace(&mut *wlock, BridgeState::Null)
-        };
-        let new_bridge_state = match bridge_state {
-            BridgeState::Uncommitted {
-                state,
-                event_sink,
-                storage,
-                fedi_api,
-                feature_catalog,
-                device_identifier,
-            } => {
-                if let Some(mnemonic) = mnemonic {
-                    state.restore_mnemonic(mnemonic).await?;
-                }
-                let app_state = state.commit_to_seed().await;
-                Self::try_load_bridge_full(
-                    storage,
-                    event_sink,
-                    fedi_api,
-                    app_state,
-                    feature_catalog,
-                    device_identifier,
-                )
-                .await?
-            }
+    pub async fn complete_onboarding(&self, method: OnboardingCompletionMethod) -> Result<()> {
+        let new_bridge_state = match self.state() {
+            BridgeState::Onboarding(onboarding) => onboarding.complete_onboarding(method).await?,
             _ => {
-                panic!("invalid call to commit_to_seed when already committed to seed");
+                panic!("onboarding is already completed");
             }
         };
 
-        *self.state.write().expect("poison") = new_bridge_state;
+        self.set_state(new_bridge_state);
         Ok(())
     }
 }
@@ -765,13 +436,13 @@ impl Bridge {
 #[serde(tag = "type")]
 #[ts(export)]
 pub enum RpcBridgeStatus {
-    SeedCommitted {
+    Onboarded {
         matrix_setup: bool,
-
-        device_index_assignment_status: RpcDeviceIndexAssignmentStatus,
         bridge_full_init_error: Option<RpcBridgeFullInitError>,
     },
-    SeedUncommitted {},
+    Onboarding {
+        stage: RpcOnboardingStage,
+    },
 }
 
 #[derive(Debug, Serialize, Deserialize, TS)]
@@ -799,15 +470,6 @@ impl From<&BridgeFullInitError> for RpcBridgeFullInitError {
 
 #[allow(async_fn_in_trait)]
 pub trait RuntimeExt: Deref<Target = Runtime> {
-    async fn device_index_assignment_status(
-        &self,
-    ) -> anyhow::Result<RpcDeviceIndexAssignmentStatus> {
-        Ok(match self.app_state.ensure_device_index().await {
-            Ok(index) => RpcDeviceIndexAssignmentStatus::Assigned(index),
-            Err(_) => RpcDeviceIndexAssignmentStatus::Unassigned,
-        })
-    }
-
     async fn get_mnemonic_words(&self) -> anyhow::Result<Vec<String>> {
         Ok(self
             .app_state
