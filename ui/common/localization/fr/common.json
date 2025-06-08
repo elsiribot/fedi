@@ -119,7 +119,7 @@
         "skip": "Passer",
         "status": "Statut",
         "stay": "Rester",
-        "submit": "Soumettre",
+        "submit": "Soumets",
         "time": "Temps",
         "title": "Titre",
         "to": "À",
@@ -363,9 +363,9 @@
             "screenshot-label": "Importer les captures d'écran ou les enregistrements",
             "submit-generating-data": "Génération des données du rapport...",
             "submit-submitting-report": "Soumission du rapport...",
-            "submit-uploading-data": "Téléchargement des données du rapport...",
-            "success-subtitle": "Nous nous mettrons au travail",
-            "success-title": "Merci pour votre rapport de bug !"
+            "submit-uploading-data": "Téléversement des données du rapport...",
+            "success-subtitle": "On s'en occupe 🤝",
+            "success-title": "Merci d’avoir partagé vos logs !"
         },
         "chat": {
             "add-a-photo": "Ajouter une photo",
@@ -505,7 +505,7 @@
             "log-fcm-token": "Consigner le jeton FCM",
             "logs": "Journaux",
             "nightly": "chaque nuit",
-            "share-logs": "Partager les journaux",
+            "share-logs": "Partage les logs",
             "share-state": "Partager l'état de l'application",
             "show-fcm-token": "Afficher le jeton FCM"
         },

@@ -361,11 +361,11 @@
             "info-label": "Kirim Federasi dan Nama Pengguna dengan laporan bug",
             "report-a-bug": "Laporkan Bug",
             "screenshot-label": "Unggah tangkapan layar atau rekaman",
-            "submit-generating-data": "Menghasilkan data laporan...",
-            "submit-submitting-report": "Mengirimkan laporan...",
+            "submit-generating-data": "Sedang membuat data laporan...",
+            "submit-submitting-report": "Mengirim laporan...",
             "submit-uploading-data": "Mengunggah data laporan...",
-            "success-subtitle": "Kami akan mulai bekerja 🤝",
-            "success-title": "Terima kasih atas laporan gangguanmu!"
+            "success-subtitle": "Kami akan mulai kerjakan 🤝",
+            "success-title": "Terima kasih sudah bagikan log!"
         },
         "chat": {
             "add-a-photo": "Menambahkan foto",
@@ -590,10 +590,10 @@
         "home": {
             "community-mods-title": "Mod Komunitas",
             "community-news-title": "Berita Komunitas",
-            "federation-mods-title": "Mod Federasi",
-            "federation-news-title": "Berita Federasi",
             "community-services-selected": "Layanan yang dipilih oleh Komunitas Anda.",
             "display-name": "Ini tampilan nama kamu: ",
+            "federation-mods-title": "Mod Federasi",
+            "federation-news-title": "Berita Federasi",
             "federation-services-selected": "Layanan yang dipilih oleh Federasimu",
             "federation-updates": "Dapatkan pembaruan dengan bergabung dengan Federasi.",
             "profile-change": "Untuk mengubahnya, ketuk profil",
@@ -609,7 +609,6 @@
             "approval-threshold-max-members": "Ambang batas persetujuan tidak boleh melebihi jumlah pemilih",
             "assign-voters": "Tetapkan Pemilih",
             "assign-voters-description": "Pilih siapa yang dapat memberikan suara agar uang dapat ditarik.",
-            "message-header": "📢 Grup Multibelanja",
             "chat-events": {
                 "deposit-body": "telah menyetor",
                 "invitation-body1": "ingin meningkatkan obrolan ini ke Grup Multibelanja:",
@@ -640,6 +639,7 @@
             "learn-more": "PELAJARI LEBIH LANJUT",
             "leave-group-message": "Anda tidak dapat meninggalkan grup multibelanja jika anda adalah pemilih atau admin",
             "max-threshold-n": "Ambang batas persetujuan maksimal yang dapat kamu tetapkan adalah {{n}}",
+            "message-header": "📢 Grup Multibelanja",
             "multispend-group": "Grup Multibelanja",
             "multispend-title": "<bold>Multibelanja</bold>: Cara Sederhana Mengelola Uang Bersama",
             "n-approvals": "{{n}} Persetujuan",
@@ -1104,6 +1104,7 @@
             "how-to-launch": "Kalau kamu butuh bantuan, kamu bisa minta bantuan dari tim kami dengan klik tombol di bawah.",
             "invalid-ticket-number": "Nomor tiket dukungan tidak valid (misalnya: #1234)",
             "log-disclaimer": "Jangan gunakan formulir ini kecuali diminta oleh Dewan Fedi. Laporkan masalah ke kami dulu <anchor>di sini</anchor>.",
+            "open-chat": "Buka chat",
             "permssion-granted": "Pusat Bantuan",
             "privacy-policy": "Kebijakan Privasi",
             "support-ticket-number": "Nomor Tiket Dukungan Kamu",

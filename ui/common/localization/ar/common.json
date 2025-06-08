@@ -19,7 +19,7 @@
         "currency": "عملة",
         "deposit": "إيداع ",
         "details": "تفاصيل ",
-        "done": "منتهي ",
+        "done": "تم",
         "enjoy": "يتمتع ",
         "expired": "منتهي الصلاحية ",
         "failed": "فشل ",
@@ -71,7 +71,7 @@
         "skip": "يتخطى ",
         "status": "حالة ",
         "stay": "يقضي ",
-        "submit": "يقدم ",
+        "submit": "أرسل",
         "time": "وقت ",
         "title": "عنوان ",
         "to": "إلي ",
@@ -222,11 +222,11 @@
             "log-disclaimer": "سيتم تضمين سجلات في التطبيق مع تقريرك لمساعدة مطوري فيدي في تشخيص المشكلة. ",
             "report-a-bug": "تقرير a bug ",
             "screenshot-label": "تحميل لقطات الشاشة او التسجيلات. ",
-            "submit-generating-data": "توليدdata التقرير. ",
-            "submit-submitting-report": "تقديم التقرير. ",
-            "submit-uploading-data": "تحميلdata التقرير. ",
-            "success-subtitle": "سوف نصل إلى العمل.",
-            "success-title": "شكرًا على تقرير bug"
+            "submit-generating-data": "جاري إنشاء بيانات التقرير...",
+            "submit-submitting-report": "جارٍ إرسال التقرير...",
+            "submit-uploading-data": "جاري تحميل بيانات التقرير...",
+            "success-subtitle": "سنباشر العمل 🤝",
+            "success-title": "شكرًا لمشاركة السجلات!"
         },
         "chat": {
             "add-admin": "أضف admin",
@@ -296,7 +296,7 @@
             "export-transactions-csv": "معاملات التصدير csv.",
             "logs": "Logs",
             "nightly": "Nightly",
-            "share-logs": "logs المشاركة. ",
+            "share-logs": "شارك السجلات",
             "share-state": "مشاركة حالة التطبيق. "
         },
         "federations": {
@@ -381,7 +381,6 @@
         "onboarding": {
             "by-clicking-i-accept": "عن طريق تحديد ' أوافق ' أنت توافق على شروط الخدمة في {{tos_url}",
             "by-clicking-you-agree-user-agreement": " uraba wemeye <anchor>ukoreshe amasezerano</anchor>,بالضغط على الانضمام الي مجتمع،فإنك توافق علي</anchor> اتفاقية المستخدم</anchor> ,Markaad gujiso 'ku bir xiriirka' waxaad ogolaatay <anchor>barnaamijika isticmalaha</anchor>,Kwa kufinya 'Jiunge na federation' unakubaliana na <anchor>Masharti ya Mtumiaji</anchor>\r",
-            "tagline": "قم بالدردشه وكسب وحفظ وانفاق الأموال بشكل خاص مع مجتمعك.",
             "community-first": "المجتمع اولا",
             "continue-to-fedi": "الاستمرار في Fedi",
             "earn-and-save": "كسب وحفظ ",
@@ -397,6 +396,7 @@
             "new-users-disabled-notice": "آسف، هذا مجتمعلا يقبل مستخدمين جدد ",
             "nice-to-meet-you": "سعيد بلقائك {{username}}",
             "simple-and-private": "بسيطة وخاصة",
+            "tagline": "قم بالدردشه وكسب وحفظ وانفاق الأموال بشكل خاص مع مجتمعك.",
             "terms-and-conditions": "الاحكام والشروط ",
             "unsupported-notice": "لم يعد هذا مجتمعمدعوما. لا يمكن الإنضمام آلية. ",
             "username-guidance": "يمكنك تغيير هذا لاحقا. ",
@@ -653,12 +653,12 @@
             "you-withdrew": "قمت بالانسحاب"
         },
         "support": {
-            "effective-support-1a": "بمتابعة الاستخدام، فإنك توافق على أن فدي قد تجمع بعض المعلومات",
+            "effective-support-1a": "بمتابعة الاستخدام، فإنك توافق على أن فدي قد تجمع بعض المعلومات ",
             "effective-support-1b": " فقط لتقديم أفضل دعم ممكن لك.",
-            "effective-support-2a": " تفضل بعدم المشاركة؟ لا مشكلة! يمكنك دائمًا زيارة",
+            "effective-support-2a": " تفضل بعدم المشاركة؟ لا مشكلة! يمكنك دائمًا زيارة ",
             "effective-support-2b": " للاطلاع على المزيد حول فدي.",
-            "effective-support-help-center": " مركز المساعدة",
-            "effective-support-info": " المعلومات",
+            "effective-support-help-center": "مركز المساعدة",
+            "effective-support-info": "المعلومات",
             "enter-ticket-number": "أدخل رقم التذكرة الذي قدمه لك فريقنا.",
             "friendly-request": "ملاحظة سريعة",
             "how-to-launch": "إذا كنت بحاجة إلى مساعدة، يمكنك طلب المساعدة من فريقنا بالنقر على الزر أدناه.",
