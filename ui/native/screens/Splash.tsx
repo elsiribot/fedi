@@ -57,7 +57,7 @@ const Splash: React.FC<Props> = ({ navigation }: Props) => {
             }
 
             if (!hasSetDisplayName) {
-                const name = generateRandomDisplayName(2)
+                const name = generateRandomDisplayName()
                 await dispatch(
                     setMatrixDisplayName({ displayName: name }),
                 ).unwrap()

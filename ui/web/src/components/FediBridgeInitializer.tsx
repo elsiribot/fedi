@@ -153,7 +153,7 @@ export const FediBridgeInitializer: React.FC<Props> = ({ children }) => {
         ) {
             dispatch(
                 setMatrixDisplayName({
-                    displayName: generateRandomDisplayName(2),
+                    displayName: generateRandomDisplayName(),
                 }),
             )
 

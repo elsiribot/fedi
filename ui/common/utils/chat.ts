@@ -4,8 +4,8 @@ import { z } from 'zod'
 
 import { Chat, ChatMessage, ChatType } from '@fedi/common/types'
 
-import { BIP39_WORD_LIST } from '../constants/bip39'
 import { BANNED_DISPLAY_NAME_TERMS } from '../constants/matrix'
+import { wordListFirst, wordListLast } from '../constants/words'
 
 /**
  * Given a message, return its chat ID and the type of chat (direct or group).
@@ -191,19 +191,12 @@ export const deriveUrlsFromText = (text: string) => {
     )
 }
 
-export const generateRandomDisplayName = (length: number) => {
-    const words = []
+export const generateRandomDisplayName = () => {
+    const randomIndexFirst = Math.floor(Math.random() * wordListFirst.length)
+    const randomIndexLast = Math.floor(Math.random() * wordListLast.length)
 
-    // Remove banned words from list (currently only "security")
-    const filteredWordsList = BIP39_WORD_LIST.filter(
-        word => !BANNED_DISPLAY_NAME_TERMS.includes(word),
-    )
+    const firstWord = wordListFirst[randomIndexFirst]
+    const lastWord = wordListLast[randomIndexLast]
 
-    for (let i = 0; i < length; i++) {
-        const randomIndex = Math.floor(Math.random() * filteredWordsList.length)
-
-        words.push(filteredWordsList[randomIndex])
-    }
-
-    return words.join(' ')
+    return `${firstWord} ${lastWord}`
 }
