@@ -155,7 +155,7 @@ export function useMatrixUserSearch() {
  * status has been observed and is defined
  *
  */
-export function useObserveMatrixRoom(roomId: MatrixRoom['id'], paused = false) {
+export function useObserveMatrixRoom(roomId: MatrixRoom['id']) {
     const [hasPaginated, setHasPaginated] = useState(false)
     const dispatch = useCommonDispatch()
     // latestEventId is used for sending read receipts
@@ -177,7 +177,7 @@ export function useObserveMatrixRoom(roomId: MatrixRoom['id'], paused = false) {
     // observeMatrixRoom establishes all of the relevant observables
     // when unmounting we unobserve the room, but only for groupchats
     useEffect(() => {
-        if (!isReady || !roomId || paused) return
+        if (!isReady || !roomId) return
         dispatch(observeMatrixRoom({ roomId }))
         return () => {
             // Don't unobserve DMs so ecash gets claimed in the
@@ -188,12 +188,12 @@ export function useObserveMatrixRoom(roomId: MatrixRoom['id'], paused = false) {
             if (room?.directUserId) return
             dispatch(unobserveMatrixRoom({ roomId }))
         }
-    }, [isReady, roomId, paused, dispatch, room?.directUserId])
+    }, [isReady, roomId, dispatch, room?.directUserId])
 
     useEffect(() => {
-        if (!isReady || !roomId || paused || !latestEventId) return
+        if (!isReady || !roomId || !latestEventId) return
         dispatch(sendMatrixReadReceipt({ roomId, eventId: latestEventId }))
-    }, [isReady, roomId, paused, latestEventId, dispatch])
+    }, [isReady, roomId, latestEventId, dispatch])
 
     const handlePaginate = useCallback(async () => {
         // don't paginate if we don't know the pagination status yet
@@ -212,10 +212,10 @@ export function useObserveMatrixRoom(roomId: MatrixRoom['id'], paused = false) {
     // a hasPaginated flag is used to make sure this only runs once
     // subsequent fetches trigger via handlePaginate by whatever component is using this hook
     useEffect(() => {
-        if (!isReady || paused || hasPaginated || !paginationStatus) return
+        if (!isReady || hasPaginated || !paginationStatus) return
         setHasPaginated(true)
         handlePaginate()
-    }, [isReady, paused, handlePaginate, hasPaginated, paginationStatus])
+    }, [isReady, handlePaginate, hasPaginated, paginationStatus])
 
     return {
         paginationStatus,
