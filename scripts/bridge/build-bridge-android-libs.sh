@@ -90,8 +90,8 @@ function build_android_target() {
       jni_name=armeabi-v7a
     fi
 
-    mkdir -p "$libs_out/$jni_name/"
-    cp "$CARGO_BUILD_ANDROID_TARGET_DIR/pkg/fedi-ffi/${target}/$CARGO_PROFILE_DIR/libfediffi.so" "$libs_out/$jni_name/"
+    mkdir -p "$libs_out/jniLibs/$jni_name/"
+    cp "$CARGO_BUILD_ANDROID_TARGET_DIR/pkg/fedi-ffi/${target}/$CARGO_PROFILE_DIR/libfediffi.so" "$libs_out/jniLibs/$jni_name/"
   fi
 }
 export -f build_android_target
@@ -99,7 +99,11 @@ export -f build_android_target
 
 # Use parallel to build all targets concurrently
 
-TARGETS=("aarch64-linux-android" "x86_64-linux-android" "armv7-linux-androideabi")
+if [ -z "${BRIDGE_TARGETS_TO_BUILD:-}" ]; then
+  TARGETS=("aarch64-linux-android" "x86_64-linux-android" "armv7-linux-androideabi")
+else
+  TARGETS=("${BRIDGE_TARGETS_TO_BUILD[@]}")
+fi
 
 export BRIDGE_ROOT=$REPO_ROOT/bridge
 

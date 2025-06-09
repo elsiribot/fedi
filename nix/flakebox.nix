@@ -351,7 +351,7 @@ in
       buildPhaseCargoCommand = ''
 
         mkdir -p scripts/bridge
-        cp ${../scripts/bridge/build-bridge-android-nix.sh} ./scripts/bridge/build-bridge-android-nix.sh
+        cp ${../scripts/bridge/build-bridge-android-libs.sh} ./scripts/bridge/build-bridge-android-libs.sh
         cp ${../scripts/common.sh} ./scripts/common.sh
         patchShebangs ./scripts
 
@@ -359,7 +359,7 @@ in
         export HOME=$(pwd)
 
         env FM_BUILD_BRIDGE_ANDROID_LIBS_DEPS_ONLY=1 \
-          ./scripts/bridge/build-bridge-android-nix.sh
+          ./scripts/bridge/build-bridge-android-libs.sh
       '';
     };
 
@@ -379,7 +379,7 @@ in
 
         buildPhaseCargoCommand = ''
           mkdir -p scripts/bridge
-          cp ${../scripts/bridge/build-bridge-android-nix.sh} ./scripts/bridge/build-bridge-android-nix.sh
+          cp ${../scripts/bridge/build-bridge-android-libs.sh} ./scripts/bridge/build-bridge-android-libs.sh
           cp ${../scripts/common.sh} ./scripts/common.sh
           patchShebangs ./scripts
 
@@ -387,7 +387,7 @@ in
           export HOME=$(pwd)
 
           env FM_BUILD_BRIDGE_ANDROID_LIBS_OUT=$out/share/fedi-android/ \
-            ./scripts/bridge/build-bridge-android-nix.sh
+            ./scripts/bridge/build-bridge-android-libs.sh
         '';
       }
       // commonEnvsShell

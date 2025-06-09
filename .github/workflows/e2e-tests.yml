@@ -37,7 +37,7 @@ jobs:
               run: nix develop -L .#xcode --command env HOME="$HOME" BUILD_ALL_BRIDGE_TARGETS=1 CARGO_PROFILE=ci scripts/ci/run-in-fs-dir-cache.sh build-bridge-ios ./scripts/bridge/build-bridge-ios.sh
 
             - name: Build Android bridge artifacts
-              run: nix develop --command env HOME="$HOME" BUILD_ALL_BRIDGE_TARGETS=1 CARGO_PROFILE=ci scripts/ci/run-in-fs-dir-cache.sh build-bridge-android ./scripts/bridge/build-bridge-android.sh
+              run: nix develop -c env BUILD_ALL_BRIDGE_TARGETS=1 CARGO_PROFILE=ci ./scripts/bridge/build-bridge-android.sh
 
             - name: Build UI dependencies
               run: nix develop -c ./scripts/ui/build-deps.sh

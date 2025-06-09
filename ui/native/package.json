@@ -6,13 +6,8 @@
         "node": ">=18"
     },
     "scripts": {
-        "build-bridge-android": "bash ../../scripts/bridge/build-bridge-android.sh",
-        "build-bridge-ios": "bash ../../scripts/bridge/build-bridge-ios.sh",
-        "build-android": "bash scripts/build-android.sh",
         "start": "react-native start",
         "dev": "react-native start",
-        "dev:ios": "bash scripts/run-ios.sh",
-        "dev:android": "bash scripts/run-android.sh",
         "test": "yarn run test:functional",
         "test:functional": "jest --config='tests/configs/jest-functional.config.js'",
         "test:android:regtest": "bash scripts/run-detox-tests-android.sh -n regtest",
