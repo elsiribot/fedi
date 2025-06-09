@@ -1761,6 +1761,7 @@ impl FederationV2 {
             .expect("recovery has completed so mint module must be present");
         let blind_nonces = {
             let mut dbtx = mint.db.begin_transaction_nc().await;
+            dbtx.ignore_uncommitted();
             let mut blind_nonces = vec![];
             for amt in cfg.tbs_pks.tiers().copied() {
                 let blind_nonce = mint.new_ecash_note(amt, &mut dbtx).await.1;
