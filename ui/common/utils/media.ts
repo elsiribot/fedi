@@ -55,12 +55,6 @@ export const scaleAttachment = (
     return { width, height }
 }
 
-export const isMimeTypeImage = (mimeType: string) =>
-    mimeType.startsWith('image')
-
-export const isMimeTypeVideo = (mimeType: string) =>
-    mimeType.startsWith('video')
-
 /**
  * Ensures that the file URI is prefixed with `file://` if it is not already.
  */

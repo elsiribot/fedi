@@ -1364,27 +1364,6 @@ PODS:
     - ReactCommon/turbomodule/bridging
     - ReactCommon/turbomodule/core
     - Yoga
-  - react-native-compressor (1.11.0):
-    - DoubleConversion
-    - glog
-    - hermes-engine
-    - RCT-Folly (= 2024.01.01.00)
-    - RCTRequired
-    - RCTTypeSafety
-    - React-Core
-    - React-debug
-    - React-Fabric
-    - React-featureflags
-    - React-graphics
-    - React-ImageManager
-    - React-NativeModulesApple
-    - React-RCTFabric
-    - React-rendererdebug
-    - React-utils
-    - ReactCodegen
-    - ReactCommon/turbomodule/bridging
-    - ReactCommon/turbomodule/core
-    - Yoga
   - react-native-document-picker (9.3.1):
     - DoubleConversion
     - glog
@@ -2199,7 +2178,6 @@ DEPENDENCIES:
   - React-microtasksnativemodule (from `../../node_modules/react-native/ReactCommon/react/nativemodule/microtasks`)
   - "react-native-blur (from `../../node_modules/@react-native-community/blur`)"
   - "react-native-cameraroll (from `../../node_modules/@react-native-camera-roll/camera-roll`)"
-  - react-native-compressor (from `../../node_modules/react-native-compressor`)
   - react-native-document-picker (from `../../node_modules/react-native-document-picker`)
   - react-native-get-random-values (from `../../node_modules/react-native-get-random-values`)
   - react-native-image-picker (from `../../node_modules/react-native-image-picker`)
@@ -2369,8 +2347,6 @@ EXTERNAL SOURCES:
     :path: "../../node_modules/@react-native-community/blur"
   react-native-cameraroll:
     :path: "../../node_modules/@react-native-camera-roll/camera-roll"
-  react-native-compressor:
-    :path: "../../node_modules/react-native-compressor"
   react-native-document-picker:
     :path: "../../node_modules/react-native-document-picker"
   react-native-get-random-values:
@@ -2544,7 +2520,6 @@ SPEC CHECKSUMS:
   React-microtasksnativemodule: 2b73e68f0462f3175f98782db08896f8501afd20
   react-native-blur: a1bf334589f44658a58a859b1f3defe28e367fcf
   react-native-cameraroll: b3395629565d1663b4f340c7314e7c04e88c9b3c
-  react-native-compressor: cea38f92f16e942469cc72c956dc0c22248c9852
   react-native-document-picker: 7343222102ece8aec51390717f47ad7119c7921f
   react-native-get-random-values: 21325b2244dfa6b58878f51f9aa42821e7ba3d06
   react-native-image-picker: 2fbbafdae7a7c6db9d25df2f2b1db4442d2ca2ad
