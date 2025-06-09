@@ -136,41 +136,39 @@ const ConfirmSendLightning: React.FC<Props> = ({ route }: Props) => {
     }
 
     return (
-        <>
-            <AmountScreen
-                subHeader={<FederationWalletSelector />}
-                amount={inputAmount}
-                onChangeAmount={setInputAmount}
-                minimumAmount={minimumAmount}
-                maximumAmount={maximumAmount}
-                submitAttempts={submitAttempts}
-                isSubmitting={isPayingInvoice}
-                readOnly={!!exactAmount}
-                description={description}
-                subContent={renderDetails()}
-                buttons={
-                    !exactAmount
-                        ? [
-                              {
-                                  title: (
-                                      <Text
-                                          medium
-                                          caption
-                                          color={theme.colors.secondary}>
-                                          {t('words.send')}
-                                      </Text>
-                                  ),
-                                  onPress: handleSend,
-                                  loading: isPayingInvoice,
-                                  disabled: isPayingInvoice,
-                              },
-                          ]
-                        : []
-                }
-                notes={notes}
-                setNotes={setNotes}
-            />
-        </>
+        <AmountScreen
+            subHeader={<FederationWalletSelector />}
+            amount={inputAmount}
+            onChangeAmount={setInputAmount}
+            minimumAmount={minimumAmount}
+            maximumAmount={maximumAmount}
+            submitAttempts={submitAttempts}
+            isSubmitting={isPayingInvoice}
+            readOnly={!!exactAmount}
+            description={description}
+            subContent={renderDetails()}
+            buttons={
+                !exactAmount
+                    ? [
+                          {
+                              title: (
+                                  <Text
+                                      medium
+                                      caption
+                                      color={theme.colors.secondary}>
+                                      {t('words.send')}
+                                  </Text>
+                              ),
+                              onPress: handleSend,
+                              loading: isPayingInvoice,
+                              disabled: isPayingInvoice,
+                          },
+                      ]
+                    : []
+            }
+            notes={notes}
+            setNotes={setNotes}
+        />
     )
 }
 
