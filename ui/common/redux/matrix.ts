@@ -1363,7 +1363,7 @@ export const refetchMatrixRoomList = createAsyncThunk<void, void>(
 )
 
 export const paginateMatrixRoomTimeline = createAsyncThunk<
-    void,
+    null,
     { roomId: MatrixRoom['id']; limit?: number },
     { state: CommonState }
 >(
@@ -1371,7 +1371,7 @@ export const paginateMatrixRoomTimeline = createAsyncThunk<
     ({ roomId, limit = 30 }, { getState }) => {
         const numEvents = getState().matrix.roomTimelines[roomId]?.length || 0
         const client = getMatrixClient()
-        client.paginateTimeline(roomId, numEvents + limit)
+        return client.paginateTimeline(roomId, numEvents + limit)
     },
 )
 
