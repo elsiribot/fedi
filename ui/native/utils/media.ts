@@ -2,7 +2,6 @@ import { DocumentPickerResponse } from 'react-native-document-picker'
 import RNFS from 'react-native-fs'
 
 import { makeLog } from '@fedi/common/utils/log'
-import { isMimeTypeImage } from '@fedi/common/utils/media'
 
 const log = makeLog('utils/media')
 
@@ -24,12 +23,6 @@ export const stripFileUriPrefix = (uri: string) =>
 export function pathJoin(...paths: string[]): string {
     return paths.join('/').replace(/\/+/g, '/')
 }
-
-/**
- * Determines if the given MIME type is an image can be compressed with `react-native-compressor`.
- */
-export const isMimeTypeCompressableImage = (mimeType: string) =>
-    isMimeTypeImage(mimeType) && /(png|jpg|jpeg)/i.test(mimeType)
 
 /**
  * Converts a DocumentPickerResponse to a file URI.

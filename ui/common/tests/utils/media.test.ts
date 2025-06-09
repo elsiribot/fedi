@@ -1,8 +1,6 @@
 import {
     formatFileSize,
     scaleAttachment,
-    isMimeTypeImage,
-    isMimeTypeVideo,
     prefixFileUri,
     stripFileUriPrefix,
     pathJoin,
@@ -59,35 +57,6 @@ describe('media', () => {
             const portrait = scaleAttachment(700, 1280, 300, 400)
             expect(portrait.width).toBe(700 * (400 / 1280))
             expect(portrait.height).toBe(400)
-        })
-    })
-
-    describe('isMimeTypeImage', () => {
-        it('should return true for image mime types', () => {
-            expect(isMimeTypeImage('image/jpeg')).toBe(true)
-            expect(isMimeTypeImage('image/png')).toBe(true)
-            expect(isMimeTypeImage('image/gif')).toBe(true)
-            expect(isMimeTypeImage('image/webp')).toBe(true)
-        })
-
-        it('should return false for non-image mime types', () => {
-            expect(isMimeTypeImage('text/plain')).toBe(false)
-            expect(isMimeTypeImage('application/json')).toBe(false)
-            expect(isMimeTypeImage('video/mp4')).toBe(false)
-        })
-    })
-
-    describe('isMimeTypeVideo', () => {
-        it('should return true for video mime types', () => {
-            expect(isMimeTypeVideo('video/mp4')).toBe(true)
-            expect(isMimeTypeVideo('video/webm')).toBe(true)
-            expect(isMimeTypeVideo('video/ogg')).toBe(true)
-        })
-
-        it('should return false for non-video mime types', () => {
-            expect(isMimeTypeVideo('text/plain')).toBe(false)
-            expect(isMimeTypeVideo('application/json')).toBe(false)
-            expect(isMimeTypeVideo('image/jpeg')).toBe(false)
         })
     })
 

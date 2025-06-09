@@ -1,7 +1,6 @@
 import type { NativeStackScreenProps } from '@react-navigation/native-stack'
 import React, { useCallback, useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { Image, Video } from 'react-native-compressor'
 
 import { useMultispendDisplayUtils } from '@fedi/common/hooks/multispend'
 import { useToast } from '@fedi/common/hooks/toast'
@@ -24,7 +23,7 @@ import Flex from '../components/ui/Flex'
 import HoloLoader from '../components/ui/HoloLoader'
 import { useAppDispatch, useAppSelector } from '../state/hooks'
 import type { RootStackParamList } from '../types/navigation'
-import { isMimeTypeCompressableImage, stripFileUriPrefix } from '../utils/media'
+import { stripFileUriPrefix } from '../utils/media'
 
 const log = makeLog('ChatRoomConversation')
 
@@ -81,28 +80,6 @@ const ChatRoomConversation: React.FC<Props> = ({ route }: Props) => {
                     const width = 'width' in att ? att.width : null
                     const height = 'height' in att ? att.height : null
 
-                    const isVideo = att.mimeType.startsWith('video')
-                    const canBeImageCompressed = isMimeTypeCompressableImage(
-                        att.mimeType,
-                    )
-
-                    let compressed: string = filePath
-
-                    if (canBeImageCompressed) {
-                        compressed = await Image.compress(filePath, {
-                            compressionMethod: 'manual',
-                            quality: 1,
-                            maxWidth: width ?? undefined,
-                            maxHeight: height ?? undefined,
-                        })
-                    }
-
-                    if (isVideo) {
-                        compressed = await Video.compress(filePath, {
-                            compressionMethod: 'manual',
-                        })
-                    }
-
                     await fedimint.matrixSendAttachment({
                         roomId,
                         filename: att.fileName,
@@ -111,7 +88,7 @@ const ChatRoomConversation: React.FC<Props> = ({ route }: Props) => {
                             width,
                             height,
                         },
-                        filePath: stripFileUriPrefix(compressed),
+                        filePath,
                     })
                 }
             } catch (err) {
