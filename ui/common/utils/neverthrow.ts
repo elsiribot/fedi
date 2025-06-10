@@ -10,7 +10,7 @@ import {
 import { isErrorInstance, makeError, tryTag, UnexpectedError } from './errors'
 
 /**
- * Attempts to pass data through a zod schema
+ * Attempts to pass unknown data through a zod schema
  * If parsing fails, bubbles up a `MalformedDataError`
  * Otherwise, casts the result to the inferred type of the schema
  *
@@ -21,14 +21,6 @@ import { isErrorInstance, makeError, tryTag, UnexpectedError } from './errors'
  *
  * result
  *   .andThen(throughSchema(zodSchema))
- *   .match(
- *     ok => { // `{ foo: string }`
- *       console.log('parsed data', ok)
- *     },
- *     err => { // `SchemaValidationError`
- *       console.log('failed to parse data', err.message)
- *     }
- *   )
  * ```
  */
 export const throughZodSchema = <T extends ZodSchema>(schema: T) => {
@@ -39,17 +31,8 @@ export const throughZodSchema = <T extends ZodSchema>(schema: T) => {
 /**
  * Attempts to perform a safe `fetch()` call
  * If an invalid URL is passed, bubbles up a `UrlConstructError`
- *
- * @example
- * ```typescript
- * await fetchResult(url)
- *   .match(
- *     res => console.log('request is', res.ok ? 'ok' : 'not ok'),
- *     err => { // `UrlConstructError | UnexpectedError`
- *       console.log('invalid url', err.message)
- *     }
- *   )
- * ```
+ * If the fetch fails, bubbles up a `FetchError`
+ * A non-ok status code does **not** result in a `FetchError`
  */
 export const fetchResult = (
     ...args: Parameters<typeof fetch>
@@ -73,12 +56,6 @@ export const fetchResult = (
  * ```typescript
  * await fetchResult(lnurl)
  *   .andThen(thenJson)
- *   .match(
- *     ok => console.log(ok),
- *     err => { // `MalformedDataError | UrlConstructError | UnexpectedError`
- *       console.log('lnurl request failed', err.message)
- *     }
- *   )
  * ```
  */
 export const thenJson = (
@@ -87,19 +64,8 @@ export const thenJson = (
     ResultAsync.fromPromise(res.json(), tryTag('MalformedDataError'))
 
 /**
- * Attempts to construct a `URL` from a string or a `URL`
- * If the URL fails to be constructed, bubbles up a `UrlConstructError`
- *
- * @example
- * ```typescript
- * constructUrl('https://example.com')
- *   .match(
- *     ok => console.log('constructed url', ok),
- *     err => { // `UrlConstructError`
- *       console.log('failed to parse url', err.message)
- *     }
- *   )
- * ```
+ * Attempts to construct a `URL` from a string or a `URL` object
+ * If an invalid URL is passed, bubbles up a `UrlConstructError`
  */
 export const constructUrl = Result.fromThrowable(
     (...args: ConstructorParameters<typeof URL>) => new URL(...args),
@@ -112,10 +78,11 @@ export const constructUrl = Result.fromThrowable(
  *
  * @example
  * ```typescript
- * .andThen(ensureNonNullish)
- * .andThen(value => {
- *   // value is not null or undefined
- * })
+ * result
+ *   .andThen(ensureNonNullish)
+ *   .andThen(value => {
+ *     // value is not null or undefined
+ *   })
  * ```
  */
 export const ensureNonNullish = <T>(
