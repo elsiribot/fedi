@@ -76,7 +76,7 @@ pub async fn fedimint_initialize_inner(
         }
     };
     let event_sink = Arc::new(event_sink);
-    logging::init(event_sink.clone(), log_file_handle).await;
+    logging::init(event_sink.clone(), log_file_handle, init_opts.log_level).await;
     if BRIDGE.with(|b| b.borrow().is_some()) {
         warn!("bridge is already initialized");
         return Ok(());
