@@ -2,7 +2,7 @@
 module.exports = {
     rootDir: '..',
     preset: 'ts-jest',
-    testEnvironment: 'node',
+    testEnvironment: './environment.js',
     testMatch: ['<rootDir>/**/*.test.ts'],
     testPathIgnorePatterns: ['<rootDir>/detox/*'],
     moduleFileExtensions: ['ts', 'tsx', 'js', 'jsx', 'json', 'node'],

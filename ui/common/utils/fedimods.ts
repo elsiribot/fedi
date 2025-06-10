@@ -149,6 +149,7 @@ const tryFetchManifestMetadata = (
     | UrlConstructError
     | MalformedDataError
     | UnexpectedError
+    | FetchError
 > => {
     return fetchResult(manifestUrl.toString())
         .andThen(thenJson)

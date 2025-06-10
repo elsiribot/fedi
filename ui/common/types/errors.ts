@@ -2,7 +2,7 @@ import { TagToErrorConstructorMap } from '../constants/errors'
 
 export type ErrorTag = keyof typeof TagToErrorConstructorMap
 export type TaggedError<T extends keyof typeof TagToErrorConstructorMap> =
-    (typeof TagToErrorConstructorMap)[T] & {
+    InstanceType<(typeof TagToErrorConstructorMap)[T]> & {
         _tag: T
     }
 

@@ -3,6 +3,8 @@ import { rest } from 'msw'
 import { setupServer } from 'msw/node'
 
 import { tryFetchUrlMetadata } from '../../utils/fedimods'
+import { configureLogging } from '../../utils/log'
+import { constructUrl } from '../../utils/neverthrow'
 
 fetchMock.enableMocks()
 
@@ -20,6 +22,7 @@ const standardTitle = 'https://standard-title.example.com'
 const noTags = 'https://no-tags.example.com'
 const withManifest = 'https://with-manifest.example.com'
 const withManifestNoMaskable = 'https://with-manifest-no-maskable.example.com'
+const networkErrorUrl = 'https://enotfound.com/'
 
 describe('fedimods', () => {
     // --- Mock API for LNURLs ---
@@ -264,98 +267,135 @@ describe('fedimods', () => {
                 )
             },
         ),
+
+        rest.get(networkErrorUrl, (_req, res, _ctx) => {
+            return res.networkError('getaddrinfo ENOTFOUND')
+        }),
     )
 
+    beforeAll(() => {
+        configureLogging({
+            saveLogs: jest.fn().mockResolvedValue(undefined),
+            readLogs: jest.fn().mockResolvedValue(''),
+        })
+    })
     beforeEach(() => server.listen())
     afterEach(() => server.resetHandlers())
     afterAll(() => server.close())
 
     it('should return the /favicon.ico as a fallback', async () => {
-        const metadata = await tryFetchUrlMetadata(new URL(rootFaviconFallback))
+        const metadata =
+            await constructUrl(rootFaviconFallback).asyncAndThen(
+                tryFetchUrlMetadata,
+            )
         expect(metadata._unsafeUnwrap().icon).toBe(
             `${rootFaviconFallback}/favicon.ico`,
         )
     })
 
     it('should return an empty string favicon with no links or favicon.ico fallback', async () => {
-        const metadata = await tryFetchUrlMetadata(new URL(noFavicon))
+        const metadata =
+            await constructUrl(noFavicon).asyncAndThen(tryFetchUrlMetadata)
         expect(metadata._unsafeUnwrap().icon).toBe('')
     })
 
     it('should return the apple touch icon as the favicon', async () => {
-        const metadata = await tryFetchUrlMetadata(new URL(appleTouchIconLink))
+        const metadata =
+            await constructUrl(appleTouchIconLink).asyncAndThen(
+                tryFetchUrlMetadata,
+            )
         expect(metadata._unsafeUnwrap().icon).toBe(
             `${appleTouchIconLink}/test-apple-touch-icon.png`,
         )
     })
 
     it('should return the icon link as the favicon', async () => {
-        const metadata = await tryFetchUrlMetadata(new URL(iconLink))
+        const metadata =
+            await constructUrl(iconLink).asyncAndThen(tryFetchUrlMetadata)
         expect(metadata._unsafeUnwrap().icon).toBe(
             `${iconLink}/test-icon-link.png`,
         )
     })
 
     it('should return the shortcut icon link as the favicon', async () => {
-        const metadata = await tryFetchUrlMetadata(new URL(shortcutIconLink))
+        const metadata =
+            await constructUrl(shortcutIconLink).asyncAndThen(
+                tryFetchUrlMetadata,
+            )
         expect(metadata._unsafeUnwrap().icon).toBe(
             `${shortcutIconLink}/test-shortcut-icon-link.png`,
         )
     })
 
     it('should return the favicon.ico fallback if link is found but refs a 404', async () => {
-        const metadata = await tryFetchUrlMetadata(
-            new URL(appleTouchFaviconFallback),
-        )
+        const metadata = await constructUrl(
+            appleTouchFaviconFallback,
+        ).asyncAndThen(tryFetchUrlMetadata)
         expect(metadata._unsafeUnwrap().icon).toBe(
             `${appleTouchFaviconFallback}/favicon.ico`,
         )
     })
 
     it('should return an Err on non-200 status code', async () => {
-        const metadata = await tryFetchUrlMetadata(new URL(notFound))
+        const metadata =
+            await constructUrl(notFound).asyncAndThen(tryFetchUrlMetadata)
         expect(metadata.isOk()).toBe(false)
         expect(metadata.isErr()).toBe(true)
         expect(metadata._unsafeUnwrapErr()._tag).toBe('FetchError')
     })
 
     it('should return the application name as the title', async () => {
-        const metadata = await tryFetchUrlMetadata(new URL(appNameTitle))
+        const metadata =
+            await constructUrl(appNameTitle).asyncAndThen(tryFetchUrlMetadata)
         expect(metadata._unsafeUnwrap().title).toBe('Test Application Name')
     })
 
     it('should return the apple mobile web app title as the title', async () => {
-        const metadata = await tryFetchUrlMetadata(
-            new URL(appleMobileWebAppTitle),
-        )
+        const metadata = await constructUrl(
+            appleMobileWebAppTitle,
+        ).asyncAndThen(tryFetchUrlMetadata)
         expect(metadata._unsafeUnwrap().title).toBe(
             'Test Apple Mobile Web App Title',
         )
     })
 
     it('should return hostname if no tags are found', async () => {
-        const metadata = await tryFetchUrlMetadata(new URL(noTags))
+        const metadata =
+            await constructUrl(noTags).asyncAndThen(tryFetchUrlMetadata)
         expect(metadata._unsafeUnwrap().title).toBe(noTags.split('https://')[1])
     })
 
     it('should prioritize the manifest name over the html title', async () => {
-        const metadata = await tryFetchUrlMetadata(new URL(withManifest))
+        const metadata =
+            await constructUrl(withManifest).asyncAndThen(tryFetchUrlMetadata)
         expect(metadata._unsafeUnwrap().title).toBe('Test Manifest Name')
     })
 
     it('should select the largest maskable icon from the manifest', async () => {
-        const metadata = await tryFetchUrlMetadata(new URL(withManifest))
+        const metadata =
+            await constructUrl(withManifest).asyncAndThen(tryFetchUrlMetadata)
         expect(metadata._unsafeUnwrap().icon).toBe(
             `${withManifest}/test-icon-link-64-maskable.png`,
         )
     })
 
     it('should fall back to the largest icon from the manifest if no maskable icon is found', async () => {
-        const metadata = await tryFetchUrlMetadata(
-            new URL(withManifestNoMaskable),
-        )
+        const metadata = await constructUrl(
+            withManifestNoMaskable,
+        ).asyncAndThen(tryFetchUrlMetadata)
         expect(metadata._unsafeUnwrap().icon).toBe(
             `${withManifestNoMaskable}/test-icon-link-128-any.png`,
         )
+    })
+
+    it('should return a FetchError if the fetch fails', async () => {
+        const metadata =
+            await constructUrl(networkErrorUrl).asyncAndThen(
+                tryFetchUrlMetadata,
+            )
+
+        expect(metadata.isOk()).toBe(false)
+        expect(metadata.isErr()).toBe(true)
+        expect(metadata._unsafeUnwrapErr()._tag).toBe('FetchError')
     })
 })

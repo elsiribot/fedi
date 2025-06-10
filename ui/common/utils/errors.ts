@@ -33,25 +33,43 @@ export class UnexpectedError extends Error {
     unexpectedError: unknown
 
     constructor(_unexpectedError: unknown, attemptedTag: string) {
-        super(`Failed to construct ${attemptedTag} from unknown value`)
+        let unknownValue = 'unknown value'
+
+        // If the unexpected error is a result of an already-tagged error,
+        // display the original error tag instead of 'unknown value'
+        if (
+            _unexpectedError instanceof Error &&
+            '_tag' in _unexpectedError &&
+            typeof _unexpectedError._tag === 'string'
+        ) {
+            unknownValue = _unexpectedError._tag
+        }
+
+        super(`Failed to construct ${attemptedTag} from ${unknownValue}`)
         this.unexpectedError = _unexpectedError
     }
 }
 
-function isErrorInstance<T extends ErrorTag>(
+export function isErrorInstance<T extends ErrorTag>(
     e: unknown,
     tag: T,
-): e is (typeof TagToErrorConstructorMap)[T] {
+): e is InstanceType<(typeof TagToErrorConstructorMap)[T]> {
     const cstr = TagToErrorConstructorMap[tag]
     return e instanceof cstr
 }
 
+function hasTag(e: unknown): e is TaggedError<ErrorTag> {
+    if (typeof e !== 'object' || e === null) return false
+    return '_tag' in e
+}
+
 export function makeError<T extends ErrorTag>(e: unknown, tag: T) {
-    if (isErrorInstance(e, tag)) {
+    if (isErrorInstance(e, tag) && !hasTag(e)) {
         return Object.assign(e, {
             _tag: tag,
         }) satisfies TaggedError<T>
     }
+
     return new UnexpectedError(e, tag)
 }
 
