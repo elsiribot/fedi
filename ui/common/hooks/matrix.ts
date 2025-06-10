@@ -14,13 +14,13 @@ import {
     selectCanPayFromOtherFeds,
     selectCanSendPayment,
     selectIsInternetUnreachable,
-    selectIsMatrixReady,
     selectLatestMatrixRoomEventId,
     selectMatrixAuth,
     selectMatrixPushNotificationToken,
     selectMatrixRoom,
     selectMatrixRoomMember,
     selectMatrixRoomPaginationStatus,
+    selectMatrixStarted,
     selectMatrixUser,
     sendMatrixReadReceipt,
     unobserveMatrixRoom,
@@ -168,7 +168,7 @@ export function useObserveMatrixRoom(roomId: MatrixRoom['id']) {
     const room = useCommonSelector(s =>
         roomId ? selectMatrixRoom(s, roomId) : undefined,
     )
-    const isReady = useCommonSelector(s => selectIsMatrixReady(s))
+    const matrixStarted = useCommonSelector(s => selectMatrixStarted(s))
 
     const isPaginating = useMemo(() => {
         return paginationStatus === 'paginating'
@@ -177,7 +177,7 @@ export function useObserveMatrixRoom(roomId: MatrixRoom['id']) {
     // observeMatrixRoom establishes all of the relevant observables
     // when unmounting we unobserve the room, but only for groupchats
     useEffect(() => {
-        if (!isReady || !roomId) return
+        if (!matrixStarted || !roomId) return
         dispatch(observeMatrixRoom({ roomId }))
         return () => {
             // Don't unobserve DMs so ecash gets claimed in the
@@ -188,12 +188,12 @@ export function useObserveMatrixRoom(roomId: MatrixRoom['id']) {
             if (room?.directUserId) return
             dispatch(unobserveMatrixRoom({ roomId }))
         }
-    }, [isReady, roomId, dispatch, room?.directUserId])
+    }, [matrixStarted, roomId, dispatch, room?.directUserId])
 
     useEffect(() => {
-        if (!isReady || !roomId || !latestEventId) return
+        if (!matrixStarted || !roomId || !latestEventId) return
         dispatch(sendMatrixReadReceipt({ roomId, eventId: latestEventId }))
-    }, [isReady, roomId, latestEventId, dispatch])
+    }, [matrixStarted, roomId, latestEventId, dispatch])
 
     const handlePaginate = useCallback(async () => {
         // don't paginate if we don't know the pagination status yet
@@ -212,10 +212,10 @@ export function useObserveMatrixRoom(roomId: MatrixRoom['id']) {
     // a hasPaginated flag is used to make sure this only runs once
     // subsequent fetches trigger via handlePaginate by whatever component is using this hook
     useEffect(() => {
-        if (!isReady || hasPaginated || !paginationStatus) return
+        if (!matrixStarted || hasPaginated || !paginationStatus) return
         setHasPaginated(true)
         handlePaginate()
-    }, [isReady, handlePaginate, hasPaginated, paginationStatus])
+    }, [matrixStarted, handlePaginate, hasPaginated, paginationStatus])
 
     return {
         paginationStatus,
