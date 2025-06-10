@@ -60,16 +60,15 @@ export const OmniConfirmation = <T extends AnyParsedData>({
         onSuccess(parsedData)
     }
 
-    const handleAuth = async () => {
+    const handleAuth = () => {
         if (parsedData.type !== ParserDataType.LnurlAuth) return
         setIsLoading(true)
-        try {
-            await lnurlAuth(fedimint, parsedData.data)
-            onSuccess(parsedData)
-        } catch (err) {
-            toast.error(t, err)
-        }
-        setIsLoading(false)
+        lnurlAuth(fedimint, parsedData.data)
+            .match(
+                () => onSuccess(parsedData),
+                e => toast.error(t, e),
+            )
+            .finally(() => setIsLoading(false))
     }
 
     const handleContinueFedimintEcash = ({ data }: ParsedFedimintEcash) => {

@@ -200,6 +200,13 @@ export function useOmniPaymentState(
                     lnurlPayment,
                     amountUtils.satToMsat(amount),
                     notes,
+                ).match(
+                    ok => ok,
+                    e => {
+                        // TODO: refactor handleOmniSend to return a ResultAsync
+                        // and don't throw
+                        throw e
+                    },
                 )
             } else if (bip21Payment) {
                 return fedimint.payAddress(

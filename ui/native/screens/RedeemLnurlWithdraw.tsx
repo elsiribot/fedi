@@ -77,7 +77,7 @@ const RedeemLnurlWithdraw: React.FC<Props> = ({ navigation, route }: Props) => {
         )
     }
 
-    const handleSubmit = async () => {
+    const handleSubmit = () => {
         setSubmitAttempts(attempts => attempts + 1)
         if (
             amount > maximumAmount ||
@@ -88,31 +88,24 @@ const RedeemLnurlWithdraw: React.FC<Props> = ({ navigation, route }: Props) => {
         }
 
         setIsLoading(true)
-
-        // Attempt to LNURL withdraw
-        await ResultAsync.fromPromise(
-            lnurlWithdraw(
-                fedimint,
-                activeFederationId,
-                lnurlWithdrawal,
-                amountUtils.satToMsat(amount),
-                memo,
-            ),
-            // TODO: be more specific about errors when lnurl utils are refactored
-            tryTag('GenericError'),
+        lnurlWithdraw(
+            fedimint,
+            activeFederationId,
+            lnurlWithdrawal,
+            amountUtils.satToMsat(amount),
+            memo,
         )
             .andThen(awaitLnurlWithdrawTxn)
             .match(
-                tx => {
+                tx =>
                     navigation.dispatch(
                         reset('ReceiveSuccess', {
                             tx,
                         }),
-                    )
-                },
+                    ),
                 e => toast.error(t, e),
             )
-        setIsLoading(false)
+            .finally(() => setIsLoading(false))
     }
 
     return (
