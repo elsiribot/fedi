@@ -35,7 +35,6 @@ use crate::ffi::PathBasedStorage;
 use crate::test_device::MockFediApi;
 
 const TEST_HOME_SERVER: &str = "staging.m1.8fa.in";
-const TEST_SLIDING_SYNC: &str = "https://staging.sliding.m1.8fa.in";
 
 async fn mk_matrix_login(
     user_name: &str,
@@ -68,7 +67,6 @@ async fn mk_matrix_login(
         secret,
         user_name,
         format!("https://{TEST_HOME_SERVER}"),
-        TEST_SLIDING_SYNC.to_string(),
         multispend_services,
     )
     .await?;

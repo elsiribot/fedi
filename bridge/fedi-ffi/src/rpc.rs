@@ -57,7 +57,7 @@ use rpc_types::{
 };
 use runtime::api::IFediApi;
 use runtime::bridge_runtime::Runtime;
-use runtime::constants::{GLOBAL_MATRIX_SERVER, GLOBAL_MATRIX_SLIDING_SYNC_PROXY};
+use runtime::constants::GLOBAL_MATRIX_SERVER;
 use runtime::event::IEventSink;
 use runtime::features::{FeatureCatalog, RuntimeEnvironment};
 use runtime::observable::{Observable, ObservableVec};
@@ -1050,7 +1050,6 @@ async fn matrixInit(bridge: &BridgeFull) -> anyhow::Result<()> {
         &matrix_secret,
         &nostr_pubkey,
         GLOBAL_MATRIX_SERVER.to_owned(),
-        GLOBAL_MATRIX_SLIDING_SYNC_PROXY.to_owned(),
         bridge.multispend_services.clone(),
     )
     .await?;
