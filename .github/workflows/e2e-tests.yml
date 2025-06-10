@@ -21,6 +21,7 @@ jobs:
             RUN_TESTS: 1
             TESTS_TO_RUN: all
             E2E_CI: 1
+            ANDROID_HOME: ~/Library/Android/sdk
         steps:
             - uses: actions/checkout@v4
             - uses: cachix/install-nix-action@v30
@@ -114,57 +115,55 @@ jobs:
                 sleep 5
                 cat appium.log
 
-            - name: Start Android Emulators
-              run: |
-                export ANDROID_HOME=~/Library/Android/sdk
-                export PATH=$PATH:$ANDROID_HOME/tools:$ANDROID_HOME/tools/bin:$ANDROID_HOME/platform-tools
-                echo $ANDROID_HOME
-                echo "Starting Android emulators..."
-                ANDROID_DEVICES=("emulator-5554" "emulator-5556")
-                ANDROID_VERSIONS=("7.1" "15")
-                $ANDROID_HOME/emulator/emulator -avd "android-7.1" -no-audio -no-boot-anim -no-window > emulator71.log 2>&1 & echo $! >> android_emulator_pids.txt
-                $ANDROID_HOME/emulator/emulator -avd "android-15" -no-audio -no-boot-anim -no-window > emulator15.log 2>&1 & echo $! >> android_emulator_pids.txt
-                sleep 10
-                echo "Emulator processes:"
-                ps aux | grep emulator
-                for device in "${ANDROID_DEVICES[@]}"; do
-                  echo "Waiting for $device to connect..."
-                  adb -s $device wait-for-device
-                  echo "Waiting for $device to fully boot (timeout: 5 minutes)..."
-                  boot_complete=false
-                  for attempt in {1..30}; do
-                    boot_completed=$(adb -s $device shell getprop sys.boot_completed 2>/dev/null | tr -d '\r')
-                    if [[ "$boot_completed" == "1" ]]; then
-                      echo "$device is fully booted after $((attempt * 10)) seconds"
-                      boot_complete=true
-                      break
-                    fi
-                    echo "Boot attempt $attempt: Device $device not ready yet, waiting 10 more seconds..."
-                    sleep 10
-                  done
-                  if [[ "$boot_complete" != "true" ]]; then
-                    echo "WARNING: Timed out after 5 minutes waiting for $device to boot"
-                  fi
-                done
-                echo "All Android emulators started (or timed out)"
-                adb devices
-                echo "Checking logs"
-                cat emulator15.log
-                cat emulator71.log
-                cat android_emulator_pids.txt
+            # - name: Start Android Emulators
+            #   run: |
+            #     echo $ANDROID_HOME
+            #     echo "Starting Android emulators..."
+            #     ANDROID_DEVICES=("emulator-5554" "emulator-5556")
+            #     ANDROID_VERSIONS=("7.1" "15")
+            #     $ANDROID_HOME/emulator/emulator -avd "android-7.1" -no-audio -no-boot-anim -no-window > emulator71.log 2>&1 & echo $! >> android_emulator_pids.txt
+            #     $ANDROID_HOME/emulator/emulator -avd "android-15" -no-audio -no-boot-anim -no-window > emulator15.log 2>&1 & echo $! >> android_emulator_pids.txt
+            #     sleep 10
+            #     echo "Emulator processes:"
+            #     ps aux | grep emulator
+            #     for device in "${ANDROID_DEVICES[@]}"; do
+            #       echo "Waiting for $device to connect..."
+            #       adb -s $device wait-for-device
+            #       echo "Waiting for $device to fully boot (timeout: 5 minutes)..."
+            #       boot_complete=false
+            #       for attempt in {1..30}; do
+            #         boot_completed=$(adb -s $device shell getprop sys.boot_completed 2>/dev/null | tr -d '\r')
+            #         if [[ "$boot_completed" == "1" ]]; then
+            #           echo "$device is fully booted after $((attempt * 10)) seconds"
+            #           boot_complete=true
+            #           break
+            #         fi
+            #         echo "Boot attempt $attempt: Device $device not ready yet, waiting 10 more seconds..."
+            #         sleep 10
+            #       done
+            #       if [[ "$boot_complete" != "true" ]]; then
+            #         echo "WARNING: Timed out after 5 minutes waiting for $device to boot"
+            #       fi
+            #     done
+            #     echo "All Android emulators started (or timed out)"
+            #     adb devices
+            #     echo "Checking logs"
+            #     cat emulator15.log
+            #     cat emulator71.log
+            #     cat android_emulator_pids.txt
 
-            - name: Start iOS simulators
-              run: |
-                echo "Starting iOS simulators..."
-                xcrun simctl boot "iPhone SE 1st gen (15.2)" || true
-                IOS_15_UDID=$(xcrun simctl list devices | grep "iPhone SE 1st gen (15.2)" | grep -E -o -i "([0-9a-f]{8}-([0-9a-f]{4}-){3}[0-9a-f]{12})")
-                echo "IOS_15_UDID=$IOS_15_UDID" >> $GITHUB_ENV
+            # - name: Start iOS simulators
+            #   run: |
+            #     echo "Starting iOS simulators..."
+            #     xcrun simctl boot "iPhone SE 1st gen (15.2)" || true
+            #     IOS_15_UDID=$(xcrun simctl list devices | grep "iPhone SE 1st gen (15.2)" | grep -E -o -i "([0-9a-f]{8}-([0-9a-f]{4}-){3}[0-9a-f]{12})")
+            #     echo "IOS_15_UDID=$IOS_15_UDID" >> $GITHUB_ENV
 
-                xcrun simctl boot "iPhone 16 Pro Max (18.1)" || true
-                IOS_18_UDID=$(xcrun simctl list devices | grep "iPhone 16 Pro Max (18.1)" | grep -E -o -i "([0-9a-f]{8}-([0-9a-f]{4}-){3}[0-9a-f]{12})")
-                echo "IOS_18_UDID=$IOS_18_UDID" >> $GITHUB_ENV
+            #     xcrun simctl boot "iPhone 16 Pro Max (18.1)" || true
+            #     IOS_18_UDID=$(xcrun simctl list devices | grep "iPhone 16 Pro Max (18.1)" | grep -E -o -i "([0-9a-f]{8}-([0-9a-f]{4}-){3}[0-9a-f]{12})")
+            #     echo "IOS_18_UDID=$IOS_18_UDID" >> $GITHUB_ENV
 
-                xcrun simctl list devices | grep "Booted"
+            #     xcrun simctl list devices | grep "Booted"
 
             - name: Build UI dependencies again
               run: nix develop -c ./scripts/ui/build-deps.sh
@@ -181,8 +180,8 @@ jobs:
             - name: Run Android 7.1 tests
               continue-on-error: true
               run: |
-                export ANDROID_HOME=~/Library/Android/sdk
                 export PATH=$PATH:$ANDROID_HOME/tools:$ANDROID_HOME/tools/bin:$ANDROID_HOME/platform-tools
+                $ANDROID_HOME/emulator/emulator -avd "android-7.1" -no-audio -no-boot-anim -no-window > emulator71.log 2>&1 & echo $! >> android_emulator_pids.txt
                 echo "Running tests on Android 7.1 (Device ID: emulator-5554)"
                 pushd ui
                 if adb -s emulator-5554 shell pm list packages | grep -q "package:com.fedi"; then
@@ -198,6 +197,8 @@ jobs:
             - name: Run Android 15 tests
               continue-on-error: true
               run: |
+                export PATH=$PATH:$ANDROID_HOME/tools:$ANDROID_HOME/tools/bin:$ANDROID_HOME/platform-tools
+                $ANDROID_HOME/emulator/emulator -avd "android-15" -no-audio -no-boot-anim -no-window > emulator15.log 2>&1 & echo $! >> android_emulator_pids.txt
                 echo "Running tests on Android 15 (Device ID: emulator-5556)"
                 pushd ui
                 if adb -s emulator-5556 shell pm list packages | grep -q "package:com.fedi"; then
@@ -215,6 +216,8 @@ jobs:
               run: |
                 echo "Running tests on iOS 15 (Device ID: $IOS_15_UDID)"
                 pushd ui
+                xcrun simctl boot "iPhone SE 1st gen (15.2)" || true
+                IOS_15_UDID=$(xcrun simctl list devices | grep "iPhone SE 1st gen (15.2)" | grep -E -o -i "([0-9a-f]{8}-([0-9a-f]{4}-){3}[0-9a-f]{12})")
                 xcrun simctl uninstall $IOS_15_UDID org.fedi.alpha
                 nix develop -c yarn install
                 PLATFORM=ios DEVICE_ID=$IOS_15_UDID BUNDLE_PATH="./ui/native/ios/build/Build/Products/Debug-iphonesimulator/FediReactNative.app" nix develop -c yarn run ts-node ./native/tests/appium/runner.ts all
@@ -226,7 +229,9 @@ jobs:
               run: |
                 echo "Running tests on iOS 18 (Device ID: $IOS_18_UDID)"
                 pushd ui
-                xcrun simctl uninstall $IOS_15_UDID org.fedi.alpha
+                xcrun simctl boot "iPhone 16 Pro Max (18.1)" || true
+                IOS_18_UDID=$(xcrun simctl list devices | grep "iPhone 16 Pro Max (18.1)" | grep -E -o -i "([0-9a-f]{8}-([0-9a-f]{4}-){3}[0-9a-f]{12})")
+                xcrun simctl uninstall $IOS_18_UDID org.fedi.alpha
                 nix develop -c yarn install
                 PLATFORM=ios DEVICE_ID=$IOS_18_UDID BUNDLE_PATH="./ui/native/ios/build/Build/Products/Debug-iphonesimulator/FediReactNative.app" nix develop -c yarn run ts-node ./native/tests/appium/runner.ts all
                 echo "status=$?" >> $GITHUB_OUTPUT
