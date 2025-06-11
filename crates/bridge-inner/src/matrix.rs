@@ -1,7 +1,7 @@
-use std::collections::BTreeSet;
+use std::collections::{hash_map, BTreeSet, HashMap};
 use std::path::Path;
 use std::pin::pin;
-use std::sync::Arc;
+use std::sync::{Arc, Weak};
 use std::time::Duration;
 
 use anyhow::{bail, Context, Result};
@@ -51,10 +51,10 @@ use matrix_sdk::ruma::events::{
 use matrix_sdk::ruma::{
     assign, EventId, OwnedEventId, OwnedMxcUri, OwnedRoomId, RoomId, UInt, UserId,
 };
-use matrix_sdk::{Client, RoomInfo, RoomMemberships};
-use matrix_sdk_ui::room_list_service;
+use matrix_sdk::{Client, RoomInfo, RoomMemberships, SessionChange};
 use matrix_sdk_ui::sync_service::{self, SyncService};
-use matrix_sdk_ui::timeline::{default_event_filter, TimelineEventItemId};
+use matrix_sdk_ui::timeline::{default_event_filter, RoomExt, TimelineEventItemId};
+use matrix_sdk_ui::{room_list_service, Timeline};
 use mime::Mime;
 use multispend::db::{
     MultispendGroupStatus, MultispendMarkedForScanning, RpcMultispendGroupStatus,
@@ -74,7 +74,7 @@ use runtime::observable::{Observable, ObservableUpdate, ObservableVec, Observabl
 use runtime::storage::AppState;
 use runtime::utils::PoisonedLockExt as _;
 use stability_pool_client::common::TransferRequest;
-use tokio::sync::{mpsc, Mutex};
+use tokio::sync::{broadcast, mpsc, Mutex};
 use tracing::{error, info, warn};
 
 use crate::federation::federation_v2::FederationV2;
@@ -94,6 +94,7 @@ pub struct Matrix {
     notification_settings: NotificationSettings,
     /// Manager for room rescanning operations
     pub rescanner: Arc<RoomRescannerManager>,
+    pub timelines: Mutex<HashMap<OwnedRoomId, Weak<Timeline>>>,
     /// Mutex to prevent concurrent send_multispend_event
     send_multispend_mutex: Mutex<()>,
     // This is used as a synchronization mechanism between sending multispend
@@ -202,6 +203,7 @@ impl Matrix {
                 runtime,
                 multispend_services,
             )),
+            timelines: Default::default(),
             send_multispend_mutex: Mutex::new(()),
             send_multispend_server_ack: std::sync::Mutex::new(None),
         });
@@ -346,22 +348,39 @@ impl Matrix {
     }
 
     async fn handle_session_tokens_updated(client: Client, runtime: Arc<Runtime>) {
-        let Some(mut session_token_changed) = client.matrix_auth().session_tokens_stream() else {
-            warn!("handle session tokens updated called on a logged out client");
-            return;
-        };
-        while let Some(token) = session_token_changed.next().await {
-            if let Err(err) = runtime
+        let mut changes = client.subscribe_to_session_changes();
+        loop {
+            match changes.recv().await {
+                Ok(SessionChange::TokensRefreshed) => (),
+                Ok(SessionChange::UnknownToken { .. }) => {
+                    warn!("unknown session token");
+                    continue;
+                }
+                Err(broadcast::error::RecvError::Closed) => {
+                    error!("unexpected session close");
+                    break;
+                }
+                Err(broadcast::error::RecvError::Lagged(_)) => {
+                    warn!("session token changes lagged");
+                    continue;
+                }
+            }
+            runtime
                 .app_state
-                .with_write_lock(|w| {
-                    if let Some(session) = w.matrix_session_native_sync.as_mut() {
-                        session.tokens = token;
+                .with_write_lock(|s| {
+                    if let Some(value) = &mut s.matrix_session_native_sync {
+                        let Some(session_tokens) = client.session_tokens() else {
+                            warn!("session tokens not present after refresh");
+                            return;
+                        };
+                        value.tokens = session_tokens;
                     }
                 })
                 .await
-            {
-                error!(%err, "unable to update session token");
-            }
+                .inspect_err(|err| {
+                    warn!(?err, "failed to save matrix tokens");
+                })
+                .ok();
         }
     }
     // backup (set of room keys) is encrypted by (a random) key called backup key
@@ -496,38 +515,48 @@ impl Matrix {
             .await
     }
 
-    pub async fn room(
-        &self,
-        room_id: &RoomId,
-    ) -> Result<room_list_service::Room, room_list_service::Error> {
+    pub async fn room(&self, room_id: &RoomId) -> Result<Room, room_list_service::Error> {
         self.sync_service.room_list_service().room(room_id)
     }
 
     /// See [`matrix_sdk_ui::Timeline`].
-    pub async fn timeline(
-        &self,
-        room_id: &RoomId,
-    ) -> Result<Arc<matrix_sdk_ui::Timeline>, room_list_service::Error> {
+    pub async fn build_timeline(room: &Room) -> anyhow::Result<matrix_sdk_ui::Timeline> {
+        Ok(room
+            .timeline_builder()
+            .event_filter(|event, version| match event {
+                AnySyncTimelineEvent::MessageLike(
+                    matrix_sdk::ruma::events::AnySyncMessageLikeEvent::RoomMessage(msg),
+                ) if msg
+                    .as_original()
+                    .is_some_and(|o| o.content.msgtype.msgtype().starts_with("xyz.fedi")) =>
+                {
+                    true
+                }
+                _ => default_event_filter(event, version),
+            })
+            .build()
+            .await?)
+    }
+
+    pub async fn timeline(&self, room_id: &RoomId) -> anyhow::Result<Arc<Timeline>> {
         let room = self.room(room_id).await?;
-        if !room.is_timeline_initialized() {
-            room.init_timeline_with_builder(
-                room.default_room_timeline_builder()
-                    .await?
-                    .event_filter(|event, version| match event {
-                        AnySyncTimelineEvent::MessageLike(
-                            matrix_sdk::ruma::events::AnySyncMessageLikeEvent::RoomMessage(msg),
-                        ) if msg.as_original().is_some_and(|o| {
-                            o.content.msgtype.msgtype().starts_with("xyz.fedi")
-                        }) =>
-                        {
-                            true
-                        }
-                        _ => default_event_filter(event, version),
-                    }),
-            )
-            .await?;
+        let mut timelines = self.timelines.lock().await;
+        match timelines.entry(room_id.to_owned()) {
+            hash_map::Entry::Occupied(mut o) => {
+                if let Some(timeline) = o.get().upgrade() {
+                    Ok(timeline)
+                } else {
+                    let timeline = Arc::new(Self::build_timeline(&room).await?);
+                    o.insert(Arc::downgrade(&timeline));
+                    Ok(timeline)
+                }
+            }
+            hash_map::Entry::Vacant(v) => {
+                let timeline = Arc::new(Self::build_timeline(&room).await?);
+                v.insert(Arc::downgrade(&timeline));
+                Ok(timeline)
+            }
         }
-        Ok(room.timeline().unwrap())
     }
 
     pub async fn room_timeline_items(
@@ -706,7 +735,7 @@ impl Matrix {
     pub async fn wait_for_room_id(&self, room_id: &RoomId) -> Result<()> {
         fedimint_core::task::timeout(Duration::from_secs(20), async {
             loop {
-                match self.timeline(room_id).await {
+                match self.room(room_id).await {
                     Ok(_) => return Ok(()),
                     Err(room_list_service::Error::RoomNotFound(_)) => {
                         fedimint_core::task::sleep(Duration::from_millis(100)).await;
@@ -749,7 +778,7 @@ impl Matrix {
 
     // Only works for left and invited rooms
     pub async fn room_join(&self, room_id: &RoomId) -> Result<()> {
-        self.room(room_id).await?.inner_room().join().await?;
+        self.room(room_id).await?.join().await?;
         Ok(())
     }
 
@@ -761,7 +790,7 @@ impl Matrix {
 
     // Only works for left and invited rooms
     pub async fn room_leave(&self, room_id: &RoomId) -> Result<()> {
-        self.room(room_id).await?.inner_room().leave().await?;
+        self.room(room_id).await?.leave().await?;
         Ok(())
     }
 
@@ -770,7 +799,7 @@ impl Matrix {
         observable_id: u64,
         room_id: &RoomId,
     ) -> Result<Observable<RoomInfo>> {
-        let sub = self.room(room_id).await?.inner_room().subscribe_info();
+        let sub = self.room(room_id).await?.subscribe_info();
         self.runtime
             .observable_pool
             .make_observable_from_subscriber(observable_id, sub)
@@ -778,11 +807,7 @@ impl Matrix {
     }
 
     pub async fn room_invite_user_by_id(&self, room_id: &RoomId, user_id: &UserId) -> Result<()> {
-        self.room(room_id)
-            .await?
-            .inner_room()
-            .invite_user_by_id(user_id)
-            .await?;
+        self.room(room_id).await?.invite_user_by_id(user_id).await?;
         match self.get_multispend_group_status(room_id).await {
             RpcMultispendGroupStatus::Finalized {
                 invite_event_id,
@@ -825,13 +850,7 @@ impl Matrix {
         &self,
         room_id: &RoomId,
     ) -> Result<RoomPowerLevelsEventContent> {
-        Ok(self
-            .room(room_id)
-            .await?
-            .inner_room()
-            .power_levels()
-            .await?
-            .into())
+        Ok(self.room(room_id).await?.power_levels().await?.into())
     }
 
     pub async fn room_change_power_levels(
@@ -839,11 +858,7 @@ impl Matrix {
         room_id: &RoomId,
         new: RoomPowerLevelsEventContent,
     ) -> Result<()> {
-        self.room(room_id)
-            .await?
-            .inner_room()
-            .send_state_event(new)
-            .await?;
+        self.room(room_id).await?.send_state_event(new).await?;
         Ok(())
     }
 
@@ -852,12 +867,7 @@ impl Matrix {
         room_id: &RoomId,
         name: String,
     ) -> Result<send_state_event::v3::Response> {
-        Ok(self
-            .room(room_id)
-            .await?
-            .inner_room()
-            .set_name(name)
-            .await?)
+        Ok(self.room(room_id).await?.set_name(name).await?)
     }
 
     pub async fn room_set_topic(
@@ -865,12 +875,7 @@ impl Matrix {
         room_id: &RoomId,
         topic: String,
     ) -> Result<send_state_event::v3::Response> {
-        Ok(self
-            .room(room_id)
-            .await?
-            .inner_room()
-            .set_room_topic(&topic)
-            .await?)
+        Ok(self.room(room_id).await?.set_room_topic(&topic).await?)
     }
 
     pub async fn ignore_user(&self, user_id: &UserId) -> Result<()> {
@@ -1038,11 +1043,7 @@ impl Matrix {
         Ok(self.client.account().fetch_user_profile_of(user_id).await?)
     }
     pub async fn room_mark_as_unread(&self, room_id: &RoomId, unread: bool) -> Result<()> {
-        self.room(room_id)
-            .await?
-            .inner_room()
-            .set_unread_flag(unread)
-            .await?;
+        self.room(room_id).await?.set_unread_flag(unread).await?;
         Ok(())
     }
     pub async fn preview_room_content(&self, room_id: &RoomId) -> Result<Vec<RpcTimelineItem>> {
@@ -1341,9 +1342,10 @@ impl Matrix {
         proposer_pubkey: RpcPublicKey,
     ) -> Result<()> {
         let room = self.room(room_id).await?;
-        let (own_member, _) = room.own_membership_details().await?;
+        let own_member = room.member_with_sender_info(room.own_user_id()).await?;
         anyhow::ensure!(
-            own_member.suggested_role_for_power_level() == RoomMemberRole::Administrator,
+            own_member.room_member.suggested_role_for_power_level()
+                == RoomMemberRole::Administrator,
             ErrorCode::BadRequest
         );
         anyhow::ensure!(!room.is_direct().await?, ErrorCode::BadRequest);
@@ -1363,9 +1365,10 @@ impl Matrix {
 
     pub async fn cancel_multispend_group_invitation(&self, room_id: &RoomId) -> Result<()> {
         let room = self.room(room_id).await?;
-        let (own_member, _) = room.own_membership_details().await?;
+        let own_member = room.member_with_sender_info(room.own_user_id()).await?;
         anyhow::ensure!(
-            own_member.suggested_role_for_power_level() == RoomMemberRole::Administrator,
+            own_member.room_member.suggested_role_for_power_level()
+                == RoomMemberRole::Administrator,
             ErrorCode::BadRequest
         );
         match self.get_multispend_group_status(room_id).await {

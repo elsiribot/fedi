@@ -898,7 +898,7 @@ impl FederationV2 {
             .create_bolt11_invoice(
                 amount.0,
                 lightning_invoice::Bolt11InvoiceDescription::Direct(
-                    &lightning_invoice::Description::new(description)?,
+                    lightning_invoice::Description::new(description)?,
                 ),
                 expiry_time,
                 BaseMetadata::from(frontend_meta),

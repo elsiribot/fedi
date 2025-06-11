@@ -311,8 +311,8 @@ impl TryFrom<lightning_invoice::Bolt11Invoice> for RpcInvoice {
 
         // We might get no description
         let description = match invoice.description() {
-            lightning_invoice::Bolt11InvoiceDescription::Direct(desc) => desc.to_string(),
-            lightning_invoice::Bolt11InvoiceDescription::Hash(_) => "".to_string(),
+            lightning_invoice::Bolt11InvoiceDescriptionRef::Direct(desc) => desc.to_string(),
+            lightning_invoice::Bolt11InvoiceDescriptionRef::Hash(_) => "".to_string(),
         };
 
         Ok(RpcInvoice {
