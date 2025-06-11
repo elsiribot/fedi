@@ -10,8 +10,12 @@ fi
 
 REPO_ROOT=$(git rev-parse --show-toplevel)
 
-$REPO_ROOT/scripts/enforce-nix.sh
+source "$REPO_ROOT/scripts/common.sh"
+build_workspace
+
+# needs the compiled binaries in the PATH
+export PATH="$CARGO_BIN_DIR:$PATH"
 
 BRIDGE_DATADIR="$CARGO_BUILD_TARGET_DIR/datadir"
 mkdir -p "$BRIDGE_DATADIR"
-cargo run --package remote-server -- "$BRIDGE_DATADIR"
+remote-server "$BRIDGE_DATADIR"
