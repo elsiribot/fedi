@@ -160,14 +160,12 @@ export function useObserveMatrixRoom(roomId: MatrixRoom['id']) {
     const dispatch = useCommonDispatch()
     // latestEventId is used for sending read receipts
     const latestEventId = useCommonSelector(s =>
-        roomId ? selectLatestMatrixRoomEventId(s, roomId) : undefined,
+        selectLatestMatrixRoomEventId(s, roomId),
     )
     const paginationStatus = useCommonSelector(s =>
-        roomId ? selectMatrixRoomPaginationStatus(s, roomId) : undefined,
+        selectMatrixRoomPaginationStatus(s, roomId),
     )
-    const room = useCommonSelector(s =>
-        roomId ? selectMatrixRoom(s, roomId) : undefined,
-    )
+    const room = useCommonSelector(s => selectMatrixRoom(s, roomId))
     const matrixStarted = useCommonSelector(s => selectMatrixStarted(s))
 
     const isPaginating = useMemo(() => {
@@ -177,7 +175,7 @@ export function useObserveMatrixRoom(roomId: MatrixRoom['id']) {
     // observeMatrixRoom establishes all of the relevant observables
     // when unmounting we unobserve the room, but only for groupchats
     useEffect(() => {
-        if (!matrixStarted || !roomId) return
+        if (!matrixStarted) return
         dispatch(observeMatrixRoom({ roomId }))
         return () => {
             // Don't unobserve DMs so ecash gets claimed in the
@@ -191,7 +189,7 @@ export function useObserveMatrixRoom(roomId: MatrixRoom['id']) {
     }, [matrixStarted, roomId, dispatch, room?.directUserId])
 
     useEffect(() => {
-        if (!matrixStarted || !roomId || !latestEventId) return
+        if (!matrixStarted || !latestEventId) return
         dispatch(sendMatrixReadReceipt({ roomId, eventId: latestEventId }))
     }, [matrixStarted, roomId, latestEventId, dispatch])
 
