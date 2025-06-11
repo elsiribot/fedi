@@ -599,8 +599,8 @@ impl Matrix {
     }
 
     pub async fn send_message_text(&self, room_id: &RoomId, message: String) -> anyhow::Result<()> {
-        let timeline = self.timeline(room_id).await?;
-        timeline
+        let room = self.room(room_id).await?;
+        room.send_queue()
             .send(RoomMessageEventContent::text_plain(message).into())
             .await?;
         Ok(())
@@ -613,8 +613,8 @@ impl Matrix {
         body: String,
         data: serde_json::Map<String, serde_json::Value>,
     ) -> anyhow::Result<()> {
-        let timeline = self.timeline(room_id).await?;
-        timeline
+        let room = self.room(room_id).await?;
+        room.send_queue()
             .send(
                 RoomMessageEventContent::new(
                     MessageType::new(msgtype, body, data).context(ErrorCode::BadRequest)?,
