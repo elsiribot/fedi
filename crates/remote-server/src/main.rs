@@ -13,6 +13,7 @@ use bridge::Bridge;
 use fediffi::ffi::PathBasedStorage;
 use fediffi::rpc::{fedimint_initialize_async, fedimint_rpc_async};
 use fedimint_logging::TracingSetup;
+use listenfd::ListenFd;
 use rpc_types::error::RpcError;
 use rpc_types::RpcInitOpts;
 use runtime::api::LiveFediApi;
@@ -80,9 +81,17 @@ async fn main() -> Result<()> {
         .layer(cors)
         .with_state(state);
 
-    let addr = "127.0.0.1:26722";
-    info!("Server listening on {}", addr);
-    let listener = tokio::net::TcpListener::bind(addr).await?;
+    let mut listenfd = ListenFd::from_env();
+    let listener = if let Some(listener) = listenfd.take_tcp_listener(0)? {
+        info!("Using listenfd socket");
+        listener.set_nonblocking(true)?;
+        tokio::net::TcpListener::from_std(listener)?
+    } else {
+        let addr = "127.0.0.1:26722";
+        info!("Server listening on {}", addr);
+        tokio::net::TcpListener::bind(addr).await?
+    };
+
     axum::serve(listener, app).await?;
 
     Ok(())
