@@ -1,3 +1,5 @@
+import { TFunction } from 'i18next'
+
 import { TagToErrorConstructorMap } from '../constants/errors'
 import { ErrorCode, RpcError } from '../types/bindings'
 import { ErrorTag, TaggedError } from '../types/errors'
@@ -71,6 +73,14 @@ export function makeError<T extends ErrorTag>(e: unknown, tag: T) {
     }
 
     return new UnexpectedError(e, tag)
+}
+
+export function makeLocalizedError<T extends ErrorTag>(
+    t: TFunction,
+    tag: T,
+    ...params: Parameters<typeof t>
+) {
+    return makeError(new Error(t(...params)), tag)
 }
 
 /**
