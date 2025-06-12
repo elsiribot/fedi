@@ -2,11 +2,12 @@ import { err, ok, Result, ResultAsync } from 'neverthrow'
 import { ZodSchema, z } from 'zod'
 
 import {
+    FetchError,
     MalformedDataError,
     MissingDataError,
     UrlConstructError,
 } from '../types/errors'
-import { makeError, tryTag, UnexpectedError } from './errors'
+import { isErrorInstance, makeError, tryTag, UnexpectedError } from './errors'
 
 /**
  * Attempts to pass data through a zod schema
@@ -52,8 +53,17 @@ export const throughZodSchema = <T extends ZodSchema>(schema: T) => {
  */
 export const fetchResult = (
     ...args: Parameters<typeof fetch>
-): ResultAsync<Response, UrlConstructError | UnexpectedError> =>
-    ResultAsync.fromPromise(fetch(...args), tryTag('UrlConstructError'))
+): ResultAsync<Response, UrlConstructError | FetchError | UnexpectedError> =>
+    ResultAsync.fromPromise(fetch(...args), e => {
+        if (
+            isErrorInstance(e, 'UrlConstructError') &&
+            e.message.includes('URL')
+        ) {
+            return makeError(e, 'UrlConstructError')
+        }
+
+        return makeError(e, 'FetchError')
+    })
 
 /**
  * Attempts to parse a `Response` as JSON

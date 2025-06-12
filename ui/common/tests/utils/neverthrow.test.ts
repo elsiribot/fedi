@@ -16,6 +16,7 @@ fetchMock.enableMocks()
 
 const validDataUrl = 'https://validjson.com'
 const responseHtmlUrl = 'https://html.com'
+const eNotFound = 'https://enotfound.com'
 const invalidUrl = '$invalid\\url'
 
 const testSchema = z.object({
@@ -26,7 +27,7 @@ const testSchema = z.object({
 const sampleValidData = { foo: 'bar', baz: 1 }
 const sampleInvalidData = { foo: 1, baz: 'qux' }
 
-describe('fedimods', () => {
+describe('neverthrow', () => {
     // --- Mock API for LNURLs ---
     const server = setupServer(
         rest.get(validDataUrl, (_req, res, ctx) => {
@@ -42,6 +43,9 @@ describe('fedimods', () => {
                 ctx.set('Content-Type', 'text/html'),
                 ctx.body('<html>hi</html>'),
             )
+        }),
+        rest.get(eNotFound, (_req, res, _ctx) => {
+            return res.networkError('getaddrinfo ENOTFOUND')
         }),
     )
 
@@ -59,11 +63,12 @@ describe('fedimods', () => {
             expect(url._unsafeUnwrap().href).toContain(validDataUrl)
         })
 
-        it('should error for an invalid URL', () => {
+        it('should return a UrlConstructError error for an invalid URL', () => {
             const url = constructUrl(invalidUrl)
 
             expect(url.isOk()).toBe(false)
             expect(url.isErr()).toBe(true)
+            expect(url._unsafeUnwrapErr()._tag).toBe('UrlConstructError')
         })
     })
 
@@ -119,11 +124,20 @@ describe('fedimods', () => {
             expect(response.ok).toBe(false)
         })
 
-        it('should error if an invalid URL is passed', async () => {
+        it('should return a UrlConstructError if an invalid URL is passed', async () => {
             const result = await fetchResult(invalidUrl)
 
             expect(result.isOk()).toBe(false)
             expect(result.isErr()).toBe(true)
+            expect(result._unsafeUnwrapErr()._tag).toBe('UrlConstructError')
+        })
+
+        it('should return a FetchError if the fetch results in a network error', async () => {
+            const result = await fetchResult(eNotFound)
+
+            expect(result.isOk()).toBe(false)
+            expect(result.isErr()).toBe(true)
+            expect(result._unsafeUnwrapErr()._tag).toBe('FetchError')
         })
     })
 
