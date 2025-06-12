@@ -11,4 +11,5 @@ export const TagToErrorConstructorMap = {
     FetchError: Error,
     SchemaValidationError: ZodError,
     TimeoutError: Error,
+    UserError: Error,
 }
