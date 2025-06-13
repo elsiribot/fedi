@@ -32,7 +32,7 @@ pub const DEVICE_REGISTRATION_FREQUENCY: Duration = Duration::from_secs(15 * 60)
 pub const DEVICE_REGISTRATION_OVERDUE: Duration = Duration::from_secs(12 * 60 * 60);
 
 // Fedi file path
-pub const FEDI_FILE_PATH: &str = "./fedi_file.json";
+pub const FEDI_FILE_V0_PATH: &str = "./fedi_file.json";
 
 // Operation types in fedimint client
 pub const LIGHTNING_OPERATION_TYPE: &str = "ln";

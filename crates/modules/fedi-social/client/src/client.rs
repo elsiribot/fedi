@@ -192,7 +192,7 @@ impl SocialBackup {
 }
 
 /// The state of recovery, that can be serialized and stored
-#[derive(Encodable, Decodable, Clone, Serialize, Deserialize)]
+#[derive(Encodable, Decodable, Clone, Serialize, Deserialize, PartialEq, Eq)]
 pub struct SocialRecoveryState {
     signing_sk: SerdeEncodable<secp256k1::SecretKey>,
     encryption_key: [u8; 32],

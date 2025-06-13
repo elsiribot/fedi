@@ -28,7 +28,7 @@ use runtime::constants::MATRIX_CHILD_ID;
 use runtime::event::IEventSink;
 use runtime::features::{FeatureCatalog, RuntimeEnvironment};
 use runtime::storage::state::DeviceIdentifier;
-use runtime::storage::{AppState, OnboardingCompletionMethod};
+use runtime::storage::{AppState, OnboardingCompletionMethod, Storage};
 use stability_pool_client::common::{AccountType, AccountUnchecked};
 use tempfile::TempDir;
 use tokio::sync::{mpsc, watch};
@@ -53,11 +53,12 @@ async fn mk_matrix_login(
     let (event_tx, event_rx) = mpsc::channel(1000);
     let event_sink = Arc::new(TestEventSink(event_tx));
     let tmp_dir = TempDir::new()?;
-    let storage = Arc::new(PathBasedStorage::new(tmp_dir.as_ref().to_path_buf()).await?);
+    let storage = Arc::new(PathBasedStorage::new(tmp_dir.as_ref().to_path_buf()).await?) as Storage;
     let new_identifier_v2: DeviceIdentifier =
         "bridge:test:70c2ad23-bfac-4aa2-81c3-d6f5e79ae724".parse()?;
+    let global_db = storage.federation_database_v2("global").await?;
     let Either::Right(onboarding) =
-        AppState::load(storage.clone(), new_identifier_v2.clone()).await?
+        AppState::load(&storage, &global_db, new_identifier_v2.clone()).await?
     else {
         panic!("must be uncommited");
     };
@@ -70,6 +71,7 @@ async fn mk_matrix_login(
         .map_err(|(_, err)| err)?;
     let runtime = Runtime::new(
         storage,
+        global_db,
         event_sink,
         Arc::new(MockFediApi::default()),
         app_state,

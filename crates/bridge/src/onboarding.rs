@@ -3,6 +3,7 @@ use std::time::Duration;
 
 use anyhow::{bail, Context as _};
 use fedi_social_client::SocialRecoveryState;
+use fedimint_core::db::Database;
 use fedimint_core::util::backoff_util::aggressive_backoff;
 use fedimint_core::util::retry;
 use rpc_types::RpcRegisteredDevice;
@@ -28,6 +29,7 @@ pub struct BridgeOnboarding {
     event_sink: EventSink,
     feature_catalog: Arc<FeatureCatalog>,
     device_identifier: DeviceIdentifier,
+    global_db: Database,
 }
 
 #[derive(Debug, Serialize, Deserialize, TS)]
@@ -47,6 +49,7 @@ impl BridgeOnboarding {
         state: AppStateOnboarding,
         fedi_api: Arc<dyn IFediApi>,
         storage: Storage,
+        global_db: Database,
         event_sink: EventSink,
         feature_catalog: Arc<FeatureCatalog>,
         device_identifier: DeviceIdentifier,
@@ -55,6 +58,7 @@ impl BridgeOnboarding {
             state: Mutex::new(Some(state)),
             fedi_api,
             storage,
+            global_db,
             event_sink,
             feature_catalog,
             device_identifier,
@@ -122,6 +126,7 @@ impl BridgeOnboarding {
             Ok(new_state) => {
                 Bridge::try_load_bridge_full(
                     self.storage.clone(),
+                    self.global_db.clone(),
                     self.event_sink.clone(),
                     self.fedi_api.clone(),
                     new_state,

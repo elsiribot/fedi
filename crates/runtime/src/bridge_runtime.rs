@@ -32,13 +32,13 @@ pub struct Runtime {
 impl Runtime {
     pub async fn new(
         storage: Storage,
+        global_db: Database,
         event_sink: EventSink,
         fedi_api: Arc<dyn IFediApi>,
         app_state: AppState,
         feature_catalog: Arc<FeatureCatalog>,
     ) -> anyhow::Result<Self> {
         let task_group = TaskGroup::new();
-        let global_db = storage.federation_database_v2("global").await?;
         let observable_pool = ObservablePool::new(event_sink.clone(), task_group.clone());
 
         Ok(Self {

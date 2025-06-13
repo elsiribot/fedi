@@ -12,6 +12,8 @@ pub enum BridgeDbPrefix {
     // scratch. This will guarantee that they don't lose money. We auto-leave, and store the
     // invite code here to later recall.
     FederationPendingRejoinFromScratch = 0x02,
+
+    AppState = 0x03,
 }
 
 #[derive(Debug, Decodable, Encodable)]

@@ -7,17 +7,20 @@ use either::Either;
 use fedi_social_client::SocialRecoveryState;
 use fedimint_bip39::Bip39RootSecretStrategy;
 use fedimint_client::secret::RootSecretStrategy;
+use fedimint_core::db::{Database, IDatabaseTransactionOpsCoreTyped};
+use fedimint_core::encoding::{Decodable, Encodable};
 use fedimint_core::task::{MaybeSend, MaybeSync};
-use fedimint_core::{apply, async_trait_maybe_send};
+use fedimint_core::{apply, async_trait_maybe_send, impl_db_record};
 use fedimint_derive_secret::DerivableSecret;
 use rand::rngs::OsRng;
 use state::{
-    default_next_federation_prefix, AppStateJson, AppStateJsonBase, AppStateJsonV1,
-    AppStateJsonV1Onboarded, AppStateJsonV1Onboarding, DeviceIdentifier, OnboardingStage,
+    default_next_federation_prefix, AppStateJson, AppStateJsonBase, AppStateJsonOnboarded,
+    AppStateJsonOnboarding, DeviceIdentifier, OnboardingStage,
 };
 use tokio::sync::RwLock;
 
-use crate::constants::FEDI_FILE_PATH;
+use crate::constants::FEDI_FILE_V0_PATH;
+use crate::db::BridgeDbPrefix;
 
 pub mod state;
 
@@ -52,7 +55,7 @@ struct AppStateStore {
     // Arc surrounding RwLock<AppStateRaw> is required to be able to move the (owned) write lock
     // within the spawn_blocking task in the with_write_lock() function.
     raw: Arc<RwLock<state::AppStateJson>>,
-    storage: Storage,
+    bridge_db: Database,
 }
 
 // allows clone because transition to seed_committed = true -> false is not
@@ -60,133 +63,127 @@ struct AppStateStore {
 #[derive(Clone)]
 pub struct AppState {
     // invariant: AppStateJsonV1 is Committed
-    inner: AppStateStore,
+    store: AppStateStore,
 }
 
 // invariant: AppStateJsonV1 is Uncommitted
 pub struct AppStateOnboarding {
-    inner: AppStateStore,
+    store: AppStateStore,
 }
+
+#[derive(Debug, Encodable, Decodable)]
+struct AppStateDbKey;
+impl_db_record!(
+    key = AppStateDbKey,
+    value = AppStateJson,
+    db_prefix = BridgeDbPrefix::AppState
+);
 
 impl AppStateStore {
     pub async fn with_read_lock<T, F>(&self, closure: F) -> T
     where
-        F: FnOnce(&AppStateJsonV1) -> T,
+        F: FnOnce(&AppStateJson) -> T,
     {
         let app_state_read_lock = self.raw.read().await;
-        match &*app_state_read_lock {
-            state::AppStateJson::V1(value) => closure(value),
+        {
+            let mut dbtx = self.bridge_db.begin_transaction().await;
+            let state_in_db = dbtx
+                .get_value(&AppStateDbKey)
+                .await
+                .expect("app state must be present in db");
+            assert_eq!(
+                state_in_db, *app_state_read_lock,
+                "bug: app state mismatch in db and in memory"
+            );
         }
+        closure(&app_state_read_lock)
     }
 
     pub async fn with_write_lock<F, T>(&self, closure: F) -> anyhow::Result<T>
     where
-        F: FnOnce(&mut AppStateJsonV1) -> T,
+        F: FnOnce(&mut AppStateJson) -> T,
     {
-        let mut app_state_write_lock = self.raw.clone().write_owned().await;
-        let mut app_state_copy = app_state_write_lock.clone();
-        let state::AppStateJson::V1(v1_ref) = &mut app_state_copy;
-        let result = closure(v1_ref);
+        let mut in_memory_write_lock = self.raw.clone().write_owned().await;
+        let mut dbtx = self.bridge_db.begin_transaction().await;
+        // always read from db to avoid overwriting with stale state
+        let mut state = dbtx
+            .get_value(&AppStateDbKey)
+            .await
+            .expect("app state must be present in db");
 
-        #[cfg(not(target_family = "wasm"))]
-        {
-            let storage = self.storage.clone();
-            tokio::task::spawn_blocking(move || {
-                storage.write_file_sync(
-                    Path::new(FEDI_FILE_PATH),
-                    serde_json::to_vec::<state::AppStateJson>(&app_state_copy)?,
-                )?;
-                *app_state_write_lock = app_state_copy;
-                Ok::<(), anyhow::Error>(())
-            })
-            .await??;
-        }
-        // wasm has async storage
-        #[cfg(target_family = "wasm")]
-        {
-            self.storage
-                .write_file(
-                    Path::new(FEDI_FILE_PATH),
-                    serde_json::to_vec::<state::AppStateJson>(&app_state_copy)?,
-                )
-                .await?;
-            *app_state_write_lock = app_state_copy;
-        }
-
+        let result = closure(&mut state);
+        dbtx.insert_entry(&AppStateDbKey, &state).await;
+        dbtx.commit_tx().await;
+        *in_memory_write_lock = state;
         Ok(result)
     }
 }
 
 impl AppState {
-    /// Loads from existing file if present. If not, attempts to read from
-    /// legacy global DB and writes to a new file (migration). If migration
-    /// results in error, just loads a default empty file.
+    /// Loads from database if present. If not, attempts to read from
+    /// legacy fedi file and writes to global db.
     pub async fn load(
-        storage: Storage,
+        storage: &Storage,
+        global_db: &Database,
         new_identifier_v2: DeviceIdentifier,
     ) -> anyhow::Result<Either<AppState, AppStateOnboarding>> {
-        if let Some(state) =
-            AppState::existing_from_storage(storage.clone(), new_identifier_v2.clone()).await?
-        {
-            Ok(state)
+        let bridge_db = global_db.with_prefix(vec![BRIDGE_DB_PREFIX]);
+        let mut dbtx = bridge_db.begin_transaction().await;
+        let state = if let Some(state) = dbtx.get_value(&AppStateDbKey).await {
+            state
         } else {
-            Ok(Either::Right(AppStateOnboarding::write_new(storage).await?))
+            let state = Self::v0_from_storage(storage, new_identifier_v2)
+                .await?
+                .unwrap_or_else(|| {
+                    // new user
+                    AppStateJson::Onboarding(AppStateJsonOnboarding {
+                        stage: OnboardingStage::Init {},
+                    })
+                });
+            dbtx.insert_new_entry(&AppStateDbKey, &state).await;
+            state
+        };
+        dbtx.commit_tx().await;
+
+        let onboarding_complete = match &state {
+            AppStateJson::Onboarded(_) => true,
+            AppStateJson::Onboarding(_) => false,
+        };
+
+        let store = AppStateStore {
+            raw: Arc::new(RwLock::new(state)),
+            bridge_db,
+        };
+        if onboarding_complete {
+            Ok(Either::Left(AppState { store }))
+        } else {
+            Ok(Either::Right(AppStateOnboarding { store }))
         }
     }
 
-    async fn existing_from_storage(
-        storage: Storage,
+    // read from v0 file
+    async fn v0_from_storage(
+        storage: &Storage,
         device_identifier_v2: DeviceIdentifier,
-    ) -> anyhow::Result<Option<Either<AppState, AppStateOnboarding>>> {
-        let Some(app_state_raw) = storage.read_file(Path::new(FEDI_FILE_PATH)).await? else {
+    ) -> anyhow::Result<Option<AppStateJson>> {
+        let Some(app_state_raw_v0) = storage.read_file(Path::new(FEDI_FILE_V0_PATH)).await? else {
             return Ok(None);
         };
 
-        let Some(value) = Self::parse(app_state_raw, device_identifier_v2)? else {
-            return Ok(None);
-        };
-
-        let app_state_base = AppStateStore {
-            raw: RwLock::new(value).into(),
-            storage,
-        };
-
-        let is_committed = app_state_base
-            .with_read_lock(|state| match state {
-                AppStateJsonV1::Onboarded(_) => true,
-                AppStateJsonV1::Onboarding(_) => false,
-            })
-            .await;
-
-        let state = if is_committed {
-            Either::Left(AppState {
-                inner: app_state_base,
-            })
-        } else {
-            Either::Right(AppStateOnboarding {
-                inner: app_state_base,
-            })
-        };
-        Ok(Some(state))
-    }
-
-    fn parse(
-        app_state_raw: Vec<u8>,
-        device_identifier_v2: DeviceIdentifier,
-    ) -> Result<Option<state::AppStateJson>, anyhow::Error> {
-        Ok(Some(AppStateJson::parse(
-            &app_state_raw,
+        Ok(Some(AppStateJson::from_v0(
+            serde_json::from_slice(&app_state_raw_v0)
+                .context("bug: failed to parse v0 state file")?,
             device_identifier_v2,
         )?))
     }
 
     pub async fn with_read_lock<T, F>(&self, closure: F) -> T
     where
-        F: FnOnce(&state::AppStateJsonV1Onboarded) -> T,
+        F: FnOnce(&state::AppStateJsonOnboarded) -> T,
     {
-        self.inner
+        self.store
             .with_read_lock(|state| {
-                let AppStateJsonV1::Onboarded(state) = state else {
+                let AppStateJson::Onboarded(state) = state else {
                     panic!("appstate invariant broken");
                 };
                 closure(state)
@@ -196,11 +193,11 @@ impl AppState {
 
     pub async fn with_write_lock<F, T>(&self, closure: F) -> anyhow::Result<T>
     where
-        F: FnOnce(&mut state::AppStateJsonV1Onboarded) -> T,
+        F: FnOnce(&mut state::AppStateJsonOnboarded) -> T,
     {
-        self.inner
+        self.store
             .with_write_lock(|state| {
-                let AppStateJsonV1::Onboarded(state) = state else {
+                let AppStateJson::Onboarded(state) = state else {
                     panic!("appstate invariant broken");
                 };
                 closure(state)
@@ -273,31 +270,10 @@ pub enum OnboardingCompletionMethod {
 }
 
 impl AppStateOnboarding {
-    async fn write_new(storage: Storage) -> anyhow::Result<AppStateOnboarding> {
-        #[allow(deprecated)]
-        let app_state_base = AppStateStore {
-            raw: RwLock::new(AppStateJson::V1(AppStateJsonV1::Onboarding(
-                AppStateJsonV1Onboarding {
-                    stage: OnboardingStage::Init {},
-                    old_mnemonic: None,
-                },
-            )))
-            .into(),
-            storage,
-        };
-
-        // Write immediately before returning
-        app_state_base.with_write_lock(|_| ()).await?;
-        // invariant: held above in default value
-        Ok(AppStateOnboarding {
-            inner: app_state_base,
-        })
-    }
-
     pub async fn stage(&self) -> OnboardingStage {
-        self.inner
+        self.store
             .with_read_lock(|state| {
-                let AppStateJsonV1::Onboarding(onboarding) = state else {
+                let AppStateJson::Onboarding(onboarding) = state else {
                     panic!("invariant of app state onboarding broken");
                 };
                 onboarding.stage.clone()
@@ -307,11 +283,11 @@ impl AppStateOnboarding {
 
     async fn with_write_lock<F, T>(&self, closure: F) -> anyhow::Result<T>
     where
-        F: FnOnce(&mut AppStateJsonV1Onboarding) -> T,
+        F: FnOnce(&mut AppStateJsonOnboarding) -> T,
     {
-        self.inner
+        self.store
             .with_write_lock(|state| {
-                let AppStateJsonV1::Onboarding(state) = state else {
+                let AppStateJson::Onboarding(state) = state else {
                     panic!("invariant of app state onboarding broken");
                 };
                 closure(state)
@@ -388,9 +364,9 @@ impl AppStateOnboarding {
         device_identifier: DeviceIdentifier,
     ) -> Result<AppState, (Self, anyhow::Error)> {
         let result = self
-            .inner
+            .store
             .with_write_lock(|state| {
-                let AppStateJsonV1::Onboarding(uncommitted) = state else {
+                let AppStateJson::Onboarding(uncommitted) = state else {
                     panic!("invariant of app state onboarding broken");
                 };
                 let (
@@ -429,9 +405,7 @@ impl AppStateOnboarding {
                 };
 
                 #[allow(deprecated)]
-                let new_state = AppStateJsonV1::Onboarded(AppStateJsonV1Onboarded {
-                    // preserve old mnemonic
-                    old_mnemonic: uncommitted.old_mnemonic.clone(),
+                let new_state = AppStateJson::Onboarded(AppStateJsonOnboarded {
                     social_recovery_state,
                     device_index,
                     encrypted_device_identifier_v2: encrypted_device_identifier.clone(),
@@ -457,28 +431,7 @@ impl AppStateOnboarding {
             .await;
         match result {
             Err(err) | Ok(Err(err)) => Err((self, err)),
-            Ok(Ok(())) => Ok(AppState { inner: self.inner }),
+            Ok(Ok(())) => Ok(AppState { store: self.store }),
         }
-    }
-}
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn test_old_fedi_file_compatible() {
-        let old_file = String::from(r#"{"federations": {"s": "y"}}"#);
-        assert!(
-            AppState::parse(old_file.into(), "test:test:asdfjnadnjs".parse().unwrap())
-                .unwrap()
-                .is_none()
-        );
-    }
-    #[test]
-    fn test_fedi_file_seed_is_not_overwritten() {
-        let old_file = String::from(r#"{"format_version": 0, "root_seed": "foo"}"#);
-        assert!(
-            AppState::parse(old_file.into(), "test:test:asdfjnadnjs".parse().unwrap()).is_err()
-        );
     }
 }

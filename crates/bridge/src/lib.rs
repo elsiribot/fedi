@@ -13,7 +13,7 @@ use communities::Communities;
 use device_registration::DeviceRegistrationService;
 use either::Either;
 use fedimint_core::core::ModuleKind;
-use fedimint_core::db::IDatabaseTransactionOpsCoreTyped as _;
+use fedimint_core::db::{Database, IDatabaseTransactionOpsCoreTyped as _};
 use fedimint_derive_secret::{ChildId, DerivableSecret};
 use fedimint_mint_client::OOBNotes;
 use futures::StreamExt as _;
@@ -313,13 +313,15 @@ impl Bridge {
         feature_catalog: Arc<FeatureCatalog>,
         device_identifier: DeviceIdentifier,
     ) -> anyhow::Result<Self> {
-        let state = match AppState::load(storage.clone(), device_identifier.clone())
+        let global_db = storage.federation_database_v2("global").await?;
+        let state = match AppState::load(&storage, &global_db, device_identifier.clone())
             .await
             .context("failed to load state")?
         {
             Either::Left(state) => {
                 Self::try_load_bridge_full(
                     storage,
+                    global_db,
                     event_sink,
                     fedi_api,
                     state,
@@ -332,6 +334,7 @@ impl Bridge {
                 state,
                 fedi_api,
                 storage,
+                global_db,
                 event_sink,
                 feature_catalog,
                 device_identifier,
@@ -354,15 +357,23 @@ impl Bridge {
 
     async fn try_load_bridge_full(
         storage: Storage,
+        global_db: Database,
         event_sink: EventSink,
         fedi_api: Arc<dyn IFediApi>,
         app_state: AppState,
         feature_catalog: Arc<FeatureCatalog>,
         device_identifier: DeviceIdentifier,
     ) -> anyhow::Result<BridgeState> {
-        let runtime = Runtime::new(storage, event_sink, fedi_api, app_state, feature_catalog)
-            .await
-            .context("Failed to create runtime for bridge")?;
+        let runtime = Runtime::new(
+            storage,
+            global_db,
+            event_sink,
+            fedi_api,
+            app_state,
+            feature_catalog,
+        )
+        .await
+        .context("Failed to create runtime for bridge")?;
         let runtime = Arc::new(runtime);
         match BridgeFull::new(runtime.clone(), device_identifier).await {
             Ok(full) => Ok(BridgeState::Full(Arc::new(full))),

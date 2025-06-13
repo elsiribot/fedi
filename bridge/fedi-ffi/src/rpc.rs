@@ -2315,6 +2315,7 @@ pub mod tests {
     use devimint::{cmd, DevFed};
     use env::envs::FEDI_SOCIAL_RECOVERY_MODULE_ENABLE_ENV;
     use fedi_social_client::common::VerificationDocument;
+    use fedimint_core::db::IDatabaseTransactionOpsCore;
     use fedimint_core::encoding::Encodable;
     use fedimint_core::task::{sleep_in_test, TaskGroup};
     use fedimint_core::util::backoff_util::aggressive_backoff;
@@ -2329,8 +2330,10 @@ pub mod tests {
         RpcLnReceiveState, RpcOOBReissueState, RpcOnchainDepositState, RpcReturningMemberStatus,
         RpcTransactionDirection, RpcTransactionKind,
     };
-    use runtime::constants::{COMMUNITY_INVITE_CODE_HRP, FEDI_FILE_PATH, MILLION};
+    use runtime::constants::{COMMUNITY_INVITE_CODE_HRP, FEDI_FILE_V0_PATH, MILLION};
+    use runtime::db::BridgeDbPrefix;
     use runtime::envs::USE_UPSTREAM_FEDIMINTD_ENV;
+    use runtime::storage::BRIDGE_DB_PREFIX;
     use tokio::sync::Semaphore;
     use tokio::task::JoinSet;
     use tracing::{debug, info, trace};
@@ -2698,14 +2701,14 @@ pub mod tests {
         let invalid_fedi_file = String::from(r#"{"format_version": 0, "root_seed": "abcd"}"#);
         td.storage()
             .await?
-            .write_file(FEDI_FILE_PATH.as_ref(), invalid_fedi_file.clone().into())
+            .write_file(FEDI_FILE_V0_PATH.as_ref(), invalid_fedi_file.clone().into())
             .await?;
         // start bridge with unknown data
         assert!(td.bridge_maybe_onboarding().await.is_err());
         assert_eq!(
             td.storage()
                 .await?
-                .read_file(FEDI_FILE_PATH.as_ref())
+                .read_file(FEDI_FILE_V0_PATH.as_ref())
                 .await?
                 .expect("fedi file not found"),
             invalid_fedi_file.into_bytes()
@@ -4706,10 +4709,17 @@ pub mod tests {
             td.storage()
                 .await?
                 .write_file(
-                    Path::new(FEDI_FILE_PATH),
+                    Path::new(FEDI_FILE_V0_PATH),
                     serde_json::to_vec(&app_state_raw_json)?,
                 )
                 .await?;
+            let global_db = td.storage().await?.federation_database_v2("global").await?;
+            // delete app state from db to trigger.
+            let bridge_db = global_db.with_prefix(vec![BRIDGE_DB_PREFIX]);
+            let mut dbtx = bridge_db.begin_transaction().await;
+            dbtx.raw_remove_by_prefix(&[BridgeDbPrefix::AppState as u8])
+                .await?;
+            dbtx.commit_tx().await;
         }
 
         // Set up bridge again using same data_dir but now pass in v2 identifier

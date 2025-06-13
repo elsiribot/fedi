@@ -18,7 +18,8 @@ use fedimint_aead::{decrypt, LessSafeKey};
 use fedimint_bip39::Bip39RootSecretStrategy;
 use fedimint_client::secret::RootSecretStrategy;
 use fedimint_client::ModuleKind;
-use fedimint_core::encoding::{Decodable, Encodable};
+use fedimint_core::encoding::{Decodable, DecodeError, Encodable};
+use fedimint_core::module::registry::ModuleDecoderRegistry;
 use fedimint_derive_secret::DerivableSecret;
 use matrix_sdk::authentication::matrix::MatrixSession;
 use serde::{Deserialize, Serialize};
@@ -27,27 +28,42 @@ use ts_rs::TS;
 use super::FIRST_FEDERATION_DB_PREFIX;
 use crate::constants::{DEVICE_IDENTIFIER_FIXED_LENGTH, DEVICE_REGISTRATION_CHILD_ID};
 
-// we manually implement Deserialize for this to parse it as AnyVersion and
-// migrate.
-#[derive(Serialize, Clone)]
-#[serde(tag = "v")]
-pub enum AppStateJson {
-    V1(AppStateJsonV1),
-}
-
-#[derive(Serialize, Deserialize, Clone)]
+#[derive(Serialize, Deserialize, Clone, PartialEq)]
 #[serde(tag = "kind")]
 #[allow(clippy::large_enum_variant)]
-pub enum AppStateJsonV1 {
-    Onboarded(AppStateJsonV1Onboarded),
-    Onboarding(AppStateJsonV1Onboarding),
+pub enum AppStateJson {
+    Onboarded(AppStateJsonOnboarded),
+    Onboarding(AppStateJsonOnboarding),
 }
 
-#[derive(Serialize, Deserialize, Clone)]
-pub struct AppStateJsonV1Onboarded {
-    // we save old mnemonic on migration to uncommitted to not delete generated mnemonic if we mess
-    // up.
-    pub old_mnemonic: Option<bip39::Mnemonic>,
+impl std::fmt::Debug for AppStateJson {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Self::Onboarded(_) => f.debug_tuple("Onboarded").finish_non_exhaustive(),
+            Self::Onboarding(_) => f.debug_tuple("Onboarding").finish_non_exhaustive(),
+        }
+    }
+}
+
+// encoding json into database
+impl Decodable for AppStateJson {
+    fn consensus_decode_partial<R: std::io::Read>(
+        r: &mut R,
+        _decoders: &ModuleDecoderRegistry,
+    ) -> Result<Self, DecodeError> {
+        serde_json::from_reader(r).map_err(|e| DecodeError::new_custom(e.into()))
+    }
+}
+
+impl Encodable for AppStateJson {
+    fn consensus_encode<W: std::io::Write>(&self, writer: &mut W) -> Result<(), std::io::Error> {
+        serde_json::to_writer(writer, self).map_err(std::io::Error::other)
+    }
+}
+
+#[derive(Serialize, Deserialize, Clone, PartialEq)]
+pub struct AppStateJsonOnboarded {
+    /// social recovery state
     pub social_recovery_state: Option<SocialRecoveryState>,
     /// Device index identifies which device number this is under the same root
     /// seed as registered with Fedi's device registration service. This index
@@ -82,13 +98,13 @@ pub struct AppStateJsonV1Onboarded {
     pub base: AppStateJsonBase,
 }
 
-impl DerefMut for AppStateJsonV1Onboarded {
+impl DerefMut for AppStateJsonOnboarded {
     fn deref_mut(&mut self) -> &mut Self::Target {
         &mut self.base
     }
 }
 
-impl Deref for AppStateJsonV1Onboarded {
+impl Deref for AppStateJsonOnboarded {
     type Target = AppStateJsonBase;
 
     fn deref(&self) -> &Self::Target {
@@ -96,15 +112,12 @@ impl Deref for AppStateJsonV1Onboarded {
     }
 }
 
-#[derive(Serialize, Deserialize, Clone)]
-pub struct AppStateJsonV1Onboarding {
+#[derive(Serialize, Deserialize, Clone, PartialEq, Eq)]
+pub struct AppStateJsonOnboarding {
     pub stage: OnboardingStage,
-    // we save old mnemonic on migration to uncommitted to not delete generated mnemonic if we mess
-    // up.
-    pub old_mnemonic: Option<bip39::Mnemonic>,
 }
 
-#[derive(Serialize, Deserialize, Clone)]
+#[derive(Serialize, Deserialize, Clone, PartialEq, Eq)]
 #[serde(tag = "type")]
 pub enum OnboardingStage {
     // nothing has happened yet
@@ -121,7 +134,7 @@ pub enum OnboardingStage {
 }
 
 #[derive(Deserialize, Clone)]
-struct AppStateJsonV0 {
+pub(crate) struct AppStateJsonV0 {
     #[allow(dead_code)]
     #[deprecated = "We use serde tag instead of format_version"]
     #[serde(skip)]
@@ -157,7 +170,7 @@ struct AppStateJsonV0 {
 }
 
 // Some shared fields between V0 and V1 committed
-#[derive(Serialize, Deserialize, Clone)]
+#[derive(Serialize, Deserialize, Clone, PartialEq)]
 pub struct AppStateJsonBase {
     /// Root mnemonic that's used to derive all secrets in the app
     pub(super) root_mnemonic: bip39::Mnemonic,
@@ -227,7 +240,7 @@ pub(crate) fn default_next_federation_prefix() -> u64 {
     FIRST_FEDERATION_DB_PREFIX
 }
 
-#[derive(Clone, Serialize, Deserialize)]
+#[derive(Clone, Serialize, Deserialize, PartialEq)]
 pub struct FederationInfo {
     /// The version of the federation, mostly characterized by consensus
     /// version
@@ -243,7 +256,7 @@ pub struct FederationInfo {
 }
 
 /// { database_name: String } | { database_prefix: u64 }
-#[derive(Clone, Serialize, Deserialize)]
+#[derive(Clone, Serialize, Deserialize, PartialEq)]
 #[serde(rename_all = "snake_case")]
 pub enum DatabaseInfo {
     /// The name used for the database file for the federation's
@@ -256,7 +269,7 @@ pub enum DatabaseInfo {
     DatabasePrefix(u64),
 }
 
-#[derive(Clone, Serialize, Deserialize)]
+#[derive(Clone, Serialize, Deserialize, PartialEq)]
 pub struct FediFeeSchedule {
     /// The minimum amount of fee in msat that must be accrued before an
     /// attempt is made to remit it to Fedi.
@@ -268,7 +281,7 @@ pub struct FediFeeSchedule {
     pub modules: BTreeMap<ModuleKind, ModuleFediFeeSchedule>,
 }
 
-#[derive(Clone, Serialize, Deserialize)]
+#[derive(Clone, Serialize, Deserialize, PartialEq)]
 pub struct ModuleFediFeeSchedule {
     /// Represents the fee to charge on the amount in ppm whenever a module
     /// contributes an input to a transaction.
@@ -279,7 +292,7 @@ pub struct ModuleFediFeeSchedule {
     pub receive_ppm: u64,
 }
 
-#[derive(Clone, Serialize, Deserialize)]
+#[derive(Clone, Serialize, Deserialize, PartialEq)]
 pub struct CommunityInfo {
     /// Meta field captures the full JSON object for the community as
     /// fetched from server. We keep this in AppState so we can
@@ -305,7 +318,7 @@ pub struct CommunityJson {
 // string so that new currency codes added on the front-end side don't require
 // additional bridge work. The rate is recorded as hundredths per btc, which
 // would typically correspond to cents per btc.
-#[derive(Debug, Clone, Serialize, Deserialize, TS, Encodable, Decodable)]
+#[derive(Debug, Clone, Serialize, Deserialize, TS, Encodable, Decodable, PartialEq)]
 #[serde(rename_all = "camelCase")]
 #[ts(export)]
 pub struct FiatFXInfo {
@@ -318,8 +331,11 @@ pub struct FiatFXInfo {
     pub btc_to_fiat_hundredths: u64,
 }
 
-impl AppStateJsonV1 {
-    fn migrate(value: AppStateJsonV0, device_identifier: DeviceIdentifier) -> anyhow::Result<Self> {
+impl AppStateJson {
+    pub(crate) fn from_v0(
+        value: AppStateJsonV0,
+        device_identifier: DeviceIdentifier,
+    ) -> anyhow::Result<Self> {
         // matrix or federations
         // frontend used only matrix for onboarding screen check, we also check joined
         // federations
@@ -342,7 +358,7 @@ impl AppStateJsonV1 {
             value.social_recovery_state.clone(),
         ) {
             (true, Some(device_index), social_recovery_state) => {
-                Self::Onboarded(AppStateJsonV1Onboarded {
+                AppStateJson::Onboarded(AppStateJsonOnboarded {
                     encrypted_device_identifier_v2: if let Some(value) =
                         value.encrypted_device_identifier_v2
                     {
@@ -350,7 +366,6 @@ impl AppStateJsonV1 {
                     } else {
                         encrypt_device_identifier()?
                     },
-                    old_mnemonic: None,
                     matrix_session: value.matrix_session_native_sync,
                     device_index,
                     social_recovery_state,
@@ -358,47 +373,26 @@ impl AppStateJsonV1 {
                 })
             }
             // device index doesn't matter if seed is not committed
-            (false, _, Some(social_recovery)) => Self::Onboarding(AppStateJsonV1Onboarding {
+            (false, _, Some(social_recovery)) => AppStateJson::Onboarding(AppStateJsonOnboarding {
                 stage: OnboardingStage::SocialRecovery {
                     state: social_recovery,
                 },
-                old_mnemonic: Some(value.base.root_mnemonic),
             }),
-            (false, _, None) => Self::Onboarding(AppStateJsonV1Onboarding {
+            (false, _, None) => AppStateJson::Onboarding(AppStateJsonOnboarding {
                 stage: OnboardingStage::Init {},
-                old_mnemonic: Some(value.base.root_mnemonic),
             }),
             // seed is final, but device index selection is pending
-            (true, None, social_recovery_state) => Self::Onboarding(AppStateJsonV1Onboarding {
-                stage: OnboardingStage::DeviceIndexSelection {
-                    encrypted_device_identifier: encrypt_device_identifier()?,
-                    root_mnemonic: value.base.root_mnemonic,
-                    social_recovery_state,
-                },
-                old_mnemonic: None,
-            }),
+            (true, None, social_recovery_state) => {
+                AppStateJson::Onboarding(AppStateJsonOnboarding {
+                    stage: OnboardingStage::DeviceIndexSelection {
+                        encrypted_device_identifier: encrypt_device_identifier()?,
+                        root_mnemonic: value.base.root_mnemonic,
+                        social_recovery_state,
+                    },
+                })
+            }
         };
         Ok(v1)
-    }
-}
-
-impl AppStateJson {
-    pub fn parse(bytes: &[u8], device_identifier: DeviceIdentifier) -> anyhow::Result<Self> {
-        #[derive(Deserialize, Clone)]
-        #[serde(tag = "v")]
-        enum AppStateJsonAnyVersion {
-            V1(AppStateJsonV1),
-            #[serde(untagged)]
-            V0(AppStateJsonV0),
-        }
-
-        let any: AppStateJsonAnyVersion = serde_json::from_slice(bytes)?;
-        match any {
-            AppStateJsonAnyVersion::V1(v1) => Ok(Self::V1(v1)),
-            AppStateJsonAnyVersion::V0(v0) => {
-                Ok(Self::V1(AppStateJsonV1::migrate(v0, device_identifier)?))
-            }
-        }
     }
 }
 
