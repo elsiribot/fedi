@@ -6,9 +6,14 @@ use std::time::Duration;
 use anyhow::{Context as _, Result};
 use bitcoin::secp256k1;
 use bridge_inner::matrix::bg_matrix::MatrixInitializeStatus;
-use bridge_inner::matrix::multispend::MultispendGroupVoteType;
 // nosemgrep: ban-wildcard-imports
 use bridge_inner::matrix::*;
+use bridge_inner::multispend::multispend_matrix::MultispendMatrix;
+use bridge_inner::multispend::services::MultispendServices;
+use bridge_inner::multispend::{
+    FinalizedGroup, GroupInvitation, GroupInvitationWithKeys, MsEventData, MultispendEvent,
+    MultispendGroupVoteType,
+};
 use either::Either;
 use fedimint_bip39::Bip39RootSecretStrategy;
 use fedimint_client::secret::RootSecretStrategy as _;
@@ -17,10 +22,6 @@ use fedimint_core::util::retry;
 use fedimint_derive_secret::{ChildId, DerivableSecret};
 use fedimint_logging::TracingSetup;
 use matrix_sdk::ruma::events::room::message::MessageType;
-use multispend::services::MultispendServices;
-use multispend::{
-    FinalizedGroup, GroupInvitation, GroupInvitationWithKeys, MsEventData, MultispendEvent,
-};
 use rand::{thread_rng, Rng};
 use rpc_types::{RpcEventId, RpcFederationId, RpcMediaUploadParams, RpcPublicKey};
 use runtime::bridge_runtime::Runtime;
@@ -42,7 +43,12 @@ const TEST_HOME_SERVER: &str = "staging.m1.8fa.in";
 async fn mk_matrix_login(
     user_name: &str,
     secret: &DerivableSecret,
-) -> Result<(Arc<Matrix>, mpsc::Receiver<(String, String)>, TempDir)> {
+) -> Result<(
+    Arc<Matrix>,
+    Arc<MultispendMatrix>,
+    mpsc::Receiver<(String, String)>,
+    TempDir,
+)> {
     struct TestEventSink(mpsc::Sender<(String, String)>);
     impl IEventSink for TestEventSink {
         fn event(&self, event_type: String, body: String) {
@@ -82,16 +88,24 @@ async fn mk_matrix_login(
     let multispend_services = MultispendServices::new(runtime.clone());
     let sender = watch::Sender::new(MatrixInitializeStatus::Starting);
     let matrix = Matrix::init(
-        runtime,
+        runtime.clone(),
         tmp_dir.as_ref(),
         secret,
         user_name,
         format!("https://{TEST_HOME_SERVER}"),
-        multispend_services,
         &sender,
     )
     .await?;
-    Ok((matrix, event_rx, tmp_dir))
+
+    let multispend_matrix = Arc::new(MultispendMatrix::new(
+        matrix.client.clone(),
+        runtime,
+        multispend_services,
+    ));
+    multispend_matrix.register_message_handler();
+    matrix.start_syncing();
+
+    Ok((matrix, multispend_matrix, event_rx, tmp_dir))
 }
 
 fn mk_secret() -> DerivableSecret {
@@ -105,7 +119,12 @@ fn mk_username() -> String {
     username
 }
 
-async fn mk_matrix_new_user() -> Result<(Arc<Matrix>, mpsc::Receiver<(String, String)>, TempDir)> {
+async fn mk_matrix_new_user() -> Result<(
+    Arc<Matrix>,
+    Arc<MultispendMatrix>,
+    mpsc::Receiver<(String, String)>,
+    TempDir,
+)> {
     mk_matrix_login(&mk_username(), &mk_secret()).await
 }
 
@@ -113,7 +132,7 @@ async fn mk_matrix_new_user() -> Result<(Arc<Matrix>, mpsc::Receiver<(String, St
 #[tokio::test(flavor = "multi_thread")]
 async fn login() -> Result<()> {
     TracingSetup::default().init().unwrap();
-    let (_matrix, _event_rx, _temp_dir) = mk_matrix_new_user().await?;
+    let (_matrix, _, _event_rx, _temp_dir) = mk_matrix_new_user().await?;
     Ok(())
 }
 
@@ -121,8 +140,8 @@ async fn login() -> Result<()> {
 #[tokio::test(flavor = "multi_thread")]
 async fn send_dm() -> Result<()> {
     TracingSetup::default().init().unwrap();
-    let (matrix1, mut event_rx1, _temp_dir) = mk_matrix_new_user().await?;
-    let (matrix2, mut event_rx2, _temp_dir) = mk_matrix_new_user().await?;
+    let (matrix1, _, mut event_rx1, _temp_dir) = mk_matrix_new_user().await?;
+    let (matrix2, _, mut event_rx2, _temp_dir) = mk_matrix_new_user().await?;
     let user2 = matrix2.client.user_id().unwrap();
     let room_id = matrix1.create_or_get_dm(user2).await?;
     matrix2.room_join(&room_id).await?;
@@ -171,8 +190,8 @@ async fn test_recovery() -> Result<()> {
     let username = mk_username();
     let secret = mk_secret();
     info!("### creating users");
-    let (matrix1, _, _temp_dir) = mk_matrix_login(&username, &secret).await?;
-    let (matrix2, _, _temp_dir) = mk_matrix_new_user().await?;
+    let (matrix1, _, _, _temp_dir) = mk_matrix_login(&username, &secret).await?;
+    let (matrix2, _, _, _temp_dir) = mk_matrix_new_user().await?;
 
     info!("### creating room");
     // make room
@@ -189,7 +208,8 @@ async fn test_recovery() -> Result<()> {
         .await?;
 
     info!("### recover user 1");
-    let (matrix1_new, mut event_rx1_new, _temp_dir) = mk_matrix_login(&username, &secret).await?;
+    let (matrix1_new, _, mut event_rx1_new, _temp_dir) =
+        mk_matrix_login(&username, &secret).await?;
 
     matrix1_new.wait_for_room_id(&room_id).await?;
     let id_gen = AtomicU64::new(0);
@@ -243,7 +263,7 @@ fn matrix_password() {
 #[tokio::test(flavor = "multi_thread")]
 async fn test_create_room() -> Result<()> {
     TracingSetup::default().init().unwrap();
-    let (matrix, _event_rx, _temp_dir) = mk_matrix_new_user().await?;
+    let (matrix, _, _event_rx, _temp_dir) = mk_matrix_new_user().await?;
     let mut request = create_room::Request::default();
     let room_name = "my name is one".to_string();
     request.name = Some(room_name.clone());
@@ -260,8 +280,8 @@ async fn test_create_room() -> Result<()> {
 #[tokio::test(flavor = "multi_thread")]
 async fn test_send_and_download_attachment() -> Result<()> {
     TracingSetup::default().init().unwrap();
-    let (matrix, _event_rx, _temp_dir) = mk_matrix_new_user().await?;
-    let (matrix2, _event_rx, _temp_dir) = mk_matrix_new_user().await?;
+    let (matrix, _, _event_rx, _temp_dir) = mk_matrix_new_user().await?;
+    let (matrix2, _, _event_rx, _temp_dir) = mk_matrix_new_user().await?;
 
     // Create a room
     let room_id = matrix
@@ -319,8 +339,8 @@ async fn test_multispend_minimal() -> Result<()> {
         .with_directive("fediffi=trace")
         .init()
         .ok();
-    let (matrix, _event_rx, _temp_dir) = mk_matrix_new_user().await?;
-    let (matrix2, _event_rx, _temp_dir) = mk_matrix_new_user().await?;
+    let (matrix, multispend_matrix, _event_rx, _temp_dir) = mk_matrix_new_user().await?;
+    let (matrix2, _multispend_matrix2, _event_rx, _temp_dir) = mk_matrix_new_user().await?;
 
     // Create a room
     let room_id = matrix
@@ -328,7 +348,7 @@ async fn test_multispend_minimal() -> Result<()> {
         .await?;
 
     // Test initial state
-    assert!(matrix
+    assert!(multispend_matrix
         .get_multispend_finalized_group(RpcRoomId(room_id.to_string()))
         .await?
         .is_none());
@@ -348,16 +368,18 @@ async fn test_multispend_minimal() -> Result<()> {
         proposer_pubkey: RpcPublicKey(pk1),
     };
     error!("SENDING MESSAGE");
-    matrix.send_multispend_event(&room_id, event).await?;
+    multispend_matrix
+        .send_multispend_event(&room_id, event)
+        .await?;
     error!("SENT MESSAGE");
-    matrix.rescanner.wait_for_scanned(&room_id).await;
+    multispend_matrix.rescanner.wait_for_scanned(&room_id).await;
     error!("DONE SCANNING");
 
     // Test event data
     let timeline = matrix.timeline(&room_id).await?;
     let last_event = timeline.latest_event().await.unwrap();
     let event_id = last_event.event_id().unwrap();
-    let event_data = matrix
+    let event_data = multispend_matrix
         .get_multispend_event_data(
             &RpcRoomId(room_id.to_string()),
             &RpcEventId(event_id.to_string()),
@@ -375,8 +397,8 @@ async fn test_multispend_group_acceptance() -> Result<()> {
         .with_directive("fediffi=trace")
         .init()
         .ok();
-    let (matrix1, _event_rx1, _temp_dir1) = mk_matrix_new_user().await?;
-    let (matrix2, _event_rx2, _temp_dir2) = mk_matrix_new_user().await?;
+    let (matrix1, multispend_matrix1, _event_rx1, _temp_dir1) = mk_matrix_new_user().await?;
+    let (matrix2, multispend_matrix2, _event_rx2, _temp_dir2) = mk_matrix_new_user().await?;
 
     let room_id = matrix1
         .create_or_get_dm(matrix2.client.user_id().unwrap())
@@ -400,16 +422,24 @@ async fn test_multispend_group_acceptance() -> Result<()> {
         invitation: invitation.clone(),
         proposer_pubkey: RpcPublicKey(pk1),
     };
-    matrix1.send_multispend_event(&room_id, event).await?;
+    multispend_matrix1
+        .send_multispend_event(&room_id, event)
+        .await?;
 
-    matrix1.rescanner.wait_for_scanned(&room_id).await;
-    matrix2.rescanner.wait_for_scanned(&room_id).await;
+    multispend_matrix1
+        .rescanner
+        .wait_for_scanned(&room_id)
+        .await;
+    multispend_matrix2
+        .rescanner
+        .wait_for_scanned(&room_id)
+        .await;
 
     let timeline = matrix1.timeline(&room_id).await?;
     let last_event = timeline.latest_event().await.unwrap();
     let invitation_event_id = RpcEventId(last_event.event_id().unwrap().to_string());
 
-    let event_data1 = matrix1
+    let event_data1 = multispend_matrix1
         .get_multispend_event_data(&RpcRoomId(room_id.to_string()), &invitation_event_id)
         .await;
 
@@ -427,7 +457,7 @@ async fn test_multispend_group_acceptance() -> Result<()> {
         "wait for user2 to receive",
         aggressive_backoff(),
         || async {
-            matrix2
+            multispend_matrix2
                 .get_multispend_event_data(&RpcRoomId(room_id.to_string()), &invitation_event_id)
                 .await
                 .context("event not found")
@@ -442,17 +472,25 @@ async fn test_multispend_group_acceptance() -> Result<()> {
             member_pubkey: RpcPublicKey(pk2),
         },
     };
-    matrix2.send_multispend_event(&room_id, event).await?;
+    multispend_matrix2
+        .send_multispend_event(&room_id, event)
+        .await?;
 
-    matrix1.rescanner.wait_for_scanned(&room_id).await;
-    matrix2.rescanner.wait_for_scanned(&room_id).await;
+    multispend_matrix1
+        .rescanner
+        .wait_for_scanned(&room_id)
+        .await;
+    multispend_matrix2
+        .rescanner
+        .wait_for_scanned(&room_id)
+        .await;
 
     // Verify group is finalized in matrix1
     let final_group1 = retry(
         "wait for group to be finalized",
         aggressive_backoff(),
         || async {
-            matrix1
+            multispend_matrix2
                 .get_multispend_finalized_group(RpcRoomId(room_id.to_string()))
                 .await?
                 .context("finalized group not found")
@@ -480,7 +518,7 @@ async fn test_multispend_group_acceptance() -> Result<()> {
     );
 
     // Verify group is finalized in matrix2 as well
-    let final_group2 = matrix2
+    let final_group2 = multispend_matrix2
         .get_multispend_finalized_group(RpcRoomId(room_id.to_string()))
         .await?;
 
@@ -495,8 +533,8 @@ async fn test_multispend_group_rejection() -> Result<()> {
         .with_directive("fediffi=trace")
         .init()
         .ok();
-    let (matrix1, _event_rx1, _temp_dir1) = mk_matrix_new_user().await?;
-    let (matrix2, _event_rx2, _temp_dir2) = mk_matrix_new_user().await?;
+    let (matrix1, multispend_matrix1, _event_rx1, _temp_dir1) = mk_matrix_new_user().await?;
+    let (matrix2, multispend_matrix2, _event_rx2, _temp_dir2) = mk_matrix_new_user().await?;
 
     let room_id = matrix1
         .create_or_get_dm(matrix2.client.user_id().unwrap())
@@ -519,16 +557,24 @@ async fn test_multispend_group_rejection() -> Result<()> {
         invitation: invitation.clone(),
         proposer_pubkey: RpcPublicKey(pk1),
     };
-    matrix1.send_multispend_event(&room_id, event).await?;
+    multispend_matrix1
+        .send_multispend_event(&room_id, event)
+        .await?;
 
-    matrix1.rescanner.wait_for_scanned(&room_id).await;
-    matrix2.rescanner.wait_for_scanned(&room_id).await;
+    multispend_matrix1
+        .rescanner
+        .wait_for_scanned(&room_id)
+        .await;
+    multispend_matrix2
+        .rescanner
+        .wait_for_scanned(&room_id)
+        .await;
 
     let timeline = matrix1.timeline(&room_id).await?;
     let last_event = timeline.latest_event().await.unwrap();
     let invitation_event_id = RpcEventId(last_event.event_id().unwrap().to_string());
 
-    let event_data1 = matrix1
+    let event_data1 = multispend_matrix1
         .get_multispend_event_data(&RpcRoomId(room_id.to_string()), &invitation_event_id)
         .await;
 
@@ -547,7 +593,7 @@ async fn test_multispend_group_rejection() -> Result<()> {
         "wait for user2 to receive",
         aggressive_backoff(),
         || async {
-            matrix2
+            multispend_matrix2
                 .get_multispend_event_data(&RpcRoomId(room_id.to_string()), &invitation_event_id)
                 .await
                 .context("event not found")
@@ -561,17 +607,25 @@ async fn test_multispend_group_rejection() -> Result<()> {
         invitation: invitation_event_id.clone(),
         vote: MultispendGroupVoteType::Reject,
     };
-    matrix2.send_multispend_event(&room_id, event).await?;
+    multispend_matrix2
+        .send_multispend_event(&room_id, event)
+        .await?;
 
-    matrix1.rescanner.wait_for_scanned(&room_id).await;
-    matrix2.rescanner.wait_for_scanned(&room_id).await;
+    multispend_matrix1
+        .rescanner
+        .wait_for_scanned(&room_id)
+        .await;
+    multispend_matrix2
+        .rescanner
+        .wait_for_scanned(&room_id)
+        .await;
 
     // Verify invitation state has the rejection recorded
     let event_data1 = retry(
         "wait for rejection to be recorded",
         aggressive_backoff(),
         || async {
-            let data = matrix1
+            let data = multispend_matrix1
                 .get_multispend_event_data(&RpcRoomId(room_id.to_string()), &invitation_event_id)
                 .await
                 .unwrap();
@@ -598,19 +652,19 @@ async fn test_multispend_group_rejection() -> Result<()> {
     );
 
     // Verify matrix2 has the same data
-    let event_data2 = matrix2
+    let event_data2 = multispend_matrix2
         .get_multispend_event_data(&RpcRoomId(room_id.to_string()), &invitation_event_id)
         .await;
     assert_eq!(Some(event_data1), event_data2);
 
     // Verify group is not finalized in matrix1
-    let final_group1 = matrix1
+    let final_group1 = multispend_matrix1
         .get_multispend_finalized_group(RpcRoomId(room_id.to_string()))
         .await?;
     assert_eq!(final_group1, None);
 
     // Verify group is not finalized in matrix2 either
-    let final_group2 = matrix2
+    let final_group2 = multispend_matrix2
         .get_multispend_finalized_group(RpcRoomId(room_id.to_string()))
         .await?;
     assert_eq!(final_group2, None);

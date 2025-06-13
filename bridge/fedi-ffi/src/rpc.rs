@@ -17,15 +17,15 @@ use bridge_inner::federation::federation_v2::spv2_pay_address::Spv2PaymentAddres
 use bridge_inner::federation::federation_v2::{BackupServiceStatus, FederationV2};
 use bridge_inner::federation::Federations;
 use bridge_inner::matrix::bg_matrix::{BgMatrix, MatrixInitializeStatus};
-use bridge_inner::matrix::multispend::db::RpcMultispendGroupStatus;
-use bridge_inner::matrix::multispend::{
-    GroupInvitation, GroupInvitationWithKeys, MsEventData, MultispendGroupVoteType,
-    MultispendListedEvent, WithdrawRequestWithApprovals, WithdrawalResponseType,
-};
 use bridge_inner::matrix::{
     self, RpcBackPaginationStatus, RpcMatrixAccountSession, RpcMatrixUploadResult,
     RpcMatrixUserDirectorySearchResponse, RpcRoomId, RpcRoomMember, RpcRoomNotificationMode,
     RpcSyncIndicator, RpcTimelineEventItemId, RpcTimelineItem, RpcUserId,
+};
+use bridge_inner::multispend::db::RpcMultispendGroupStatus;
+use bridge_inner::multispend::{
+    GroupInvitation, GroupInvitationWithKeys, MsEventData, MultispendGroupVoteType,
+    MultispendListedEvent, WithdrawRequestWithApprovals, WithdrawalResponseType,
 };
 use bug_report::reused_ecash_proofs::SerializedReusedEcashProofs;
 use fedimint_client::db::ChronologicalOperationLogKey;
@@ -1059,8 +1059,10 @@ async fn matrixInitializeStatus(
     observable_id: u32,
 ) -> anyhow::Result<Observable<MatrixInitializeStatus>> {
     let runtime: Arc<Runtime> = bridge.try_get()?;
-    let matrix: &BgMatrix = bridge.try_get()?;
-    matrix.observe_status(&runtime, observable_id.into()).await
+    let bg_matrix: &BgMatrix = bridge.try_get()?;
+    bg_matrix
+        .observe_status(&runtime, observable_id.into())
+        .await
 }
 
 #[macro_rules_derive(rpc_method!)]
@@ -1211,10 +1213,10 @@ ts_type_ser!(
 
 #[macro_rules_derive(rpc_method!)]
 async fn matrixGetAccountSession(
-    matrix: &BgMatrix,
+    bg_matrix: &BgMatrix,
     cached: bool,
 ) -> anyhow::Result<RpcMatrixAccountSession> {
-    let matrix = matrix.wait().await;
+    let matrix = bg_matrix.wait().await;
     matrix
         .get_account_session(cached, &matrix.runtime.app_state)
         .await
@@ -1222,10 +1224,10 @@ async fn matrixGetAccountSession(
 
 #[macro_rules_derive(rpc_method!)]
 async fn matrixRoomList(
-    matrix: &BgMatrix,
+    bg_matrix: &BgMatrix,
     observable_id: u32,
 ) -> anyhow::Result<ObservableRoomList> {
-    let matrix = matrix.wait().await;
+    let matrix = bg_matrix.wait().await;
     Ok(ObservableRoomList(
         matrix.room_list(observable_id.into()).await?,
     ))
@@ -1236,11 +1238,11 @@ ts_type_ser!(
 );
 #[macro_rules_derive(rpc_method!)]
 async fn matrixRoomTimelineItems(
-    matrix: &BgMatrix,
+    bg_matrix: &BgMatrix,
     observable_id: u32,
     room_id: RpcRoomId,
 ) -> anyhow::Result<ObservableTimelineItems> {
-    let matrix = matrix.wait().await;
+    let matrix = bg_matrix.wait().await;
     let items = matrix
         .room_timeline_items(observable_id.into(), &room_id.into_typed()?)
         .await?;
@@ -1249,22 +1251,22 @@ async fn matrixRoomTimelineItems(
 
 #[macro_rules_derive(rpc_method!)]
 async fn matrixRoomPreviewContent(
-    matrix: &BgMatrix,
+    bg_matrix: &BgMatrix,
     room_id: RpcRoomId,
 ) -> anyhow::Result<Vec<RpcTimelineItem>> {
-    let matrix = matrix.wait().await;
+    let matrix = bg_matrix.wait().await;
     matrix.preview_room_content(&room_id.into_typed()?).await
 }
 
 #[macro_rules_derive(rpc_method!)]
 async fn matrixSendAttachment(
-    matrix: &BgMatrix,
+    bg_matrix: &BgMatrix,
     room_id: RpcRoomId,
     filename: String,
     file_path: PathBuf,
     params: RpcMediaUploadParams,
 ) -> anyhow::Result<()> {
-    let matrix = matrix.wait().await;
+    let matrix = bg_matrix.wait().await;
     let file_data = matrix
         .runtime
         .storage
@@ -1281,11 +1283,11 @@ async fn matrixSendAttachment(
 
 #[macro_rules_derive(rpc_method!)]
 async fn matrixRoomTimelineItemsPaginateBackwards(
-    matrix: &BgMatrix,
+    bg_matrix: &BgMatrix,
     room_id: RpcRoomId,
     event_num: u16,
 ) -> anyhow::Result<()> {
-    let matrix = matrix.wait().await;
+    let matrix = bg_matrix.wait().await;
     matrix
         .room_timeline_items_paginate_backwards(&room_id.into_typed()?, event_num)
         .await?;
@@ -1294,11 +1296,11 @@ async fn matrixRoomTimelineItemsPaginateBackwards(
 
 #[macro_rules_derive(rpc_method!)]
 async fn matrixRoomObserveTimelineItemsPaginateBackwards(
-    matrix: &BgMatrix,
+    bg_matrix: &BgMatrix,
     observable_id: u32,
     room_id: RpcRoomId,
 ) -> anyhow::Result<Observable<RpcBackPaginationStatus>> {
-    let matrix = matrix.wait().await;
+    let matrix = bg_matrix.wait().await;
     matrix
         .room_observe_timeline_items_paginate_backwards_status(
             observable_id.into(),
@@ -1308,19 +1310,19 @@ async fn matrixRoomObserveTimelineItemsPaginateBackwards(
 }
 
 #[macro_rules_derive(rpc_method!)]
-async fn matrixObservableCancel(matrix: &BgMatrix, observable_id: u32) -> anyhow::Result<()> {
-    let matrix = matrix.wait().await;
+async fn matrixObservableCancel(bg_matrix: &BgMatrix, observable_id: u32) -> anyhow::Result<()> {
+    let matrix = bg_matrix.wait().await;
     matrix.observable_cancel(observable_id.into()).await?;
     Ok(())
 }
 
 #[macro_rules_derive(rpc_method!)]
 async fn matrixSendMessage(
-    matrix: &BgMatrix,
+    bg_matrix: &BgMatrix,
     room_id: RpcRoomId,
     message: String,
 ) -> anyhow::Result<()> {
-    let matrix = matrix.wait().await;
+    let matrix = bg_matrix.wait().await;
     matrix
         .send_message_text(&room_id.into_typed()?, message)
         .await
@@ -1329,13 +1331,13 @@ async fn matrixSendMessage(
 ts_type_de!(CustomMessageData: serde_json::Map<String, serde_json::Value> = "Record<string, JSONValue>");
 #[macro_rules_derive(rpc_method!)]
 async fn matrixSendMessageJson(
-    matrix: &BgMatrix,
+    bg_matrix: &BgMatrix,
     room_id: RpcRoomId,
     msgtype: String,
     body: String,
     data: CustomMessageData,
 ) -> anyhow::Result<()> {
-    let matrix = matrix.wait().await;
+    let matrix = bg_matrix.wait().await;
     matrix
         .send_message_json(&room_id.into_typed()?, &msgtype, body, data.0)
         .await
@@ -1345,19 +1347,19 @@ ts_type_de!(CreateRoomRequest: matrix::create_room::Request = "JSONObject");
 
 #[macro_rules_derive(rpc_method!)]
 async fn matrixRoomCreate(
-    matrix: &BgMatrix,
+    bg_matrix: &BgMatrix,
     request: CreateRoomRequest,
 ) -> anyhow::Result<RpcRoomId> {
-    let matrix = matrix.wait().await;
+    let matrix = bg_matrix.wait().await;
     matrix.room_create(request.0).await.map(RpcRoomId::from)
 }
 
 #[macro_rules_derive(rpc_method!)]
 async fn matrixRoomCreateOrGetDm(
-    matrix: &BgMatrix,
+    bg_matrix: &BgMatrix,
     user_id: RpcUserId,
 ) -> anyhow::Result<RpcRoomId> {
-    let matrix = matrix.wait().await;
+    let matrix = bg_matrix.wait().await;
     matrix
         .create_or_get_dm(&user_id.into_typed()?)
         .await
@@ -1365,20 +1367,20 @@ async fn matrixRoomCreateOrGetDm(
 }
 
 #[macro_rules_derive(rpc_method!)]
-async fn matrixRoomJoin(matrix: &BgMatrix, room_id: RpcRoomId) -> anyhow::Result<()> {
-    let matrix = matrix.wait().await;
+async fn matrixRoomJoin(bg_matrix: &BgMatrix, room_id: RpcRoomId) -> anyhow::Result<()> {
+    let matrix = bg_matrix.wait().await;
     matrix.room_join(&room_id.into_typed()?).await
 }
 
 #[macro_rules_derive(rpc_method!)]
-async fn matrixRoomJoinPublic(matrix: &BgMatrix, room_id: RpcRoomId) -> anyhow::Result<()> {
-    let matrix = matrix.wait().await;
+async fn matrixRoomJoinPublic(bg_matrix: &BgMatrix, room_id: RpcRoomId) -> anyhow::Result<()> {
+    let matrix = bg_matrix.wait().await;
     matrix.room_join_public(&room_id.into_typed()?).await
 }
 
 #[macro_rules_derive(rpc_method!)]
-async fn matrixRoomLeave(matrix: &BgMatrix, room_id: RpcRoomId) -> anyhow::Result<()> {
-    let matrix = matrix.wait().await;
+async fn matrixRoomLeave(bg_matrix: &BgMatrix, room_id: RpcRoomId) -> anyhow::Result<()> {
+    let matrix = bg_matrix.wait().await;
     matrix.room_leave(&room_id.into_typed()?).await
 }
 
@@ -1386,11 +1388,11 @@ ts_type_ser!(ObservableRoomInfo: Observable<RoomInfo> = "Observable<JSONObject>"
 
 #[macro_rules_derive(rpc_method!)]
 async fn matrixRoomObserveInfo(
-    matrix: &BgMatrix,
+    bg_matrix: &BgMatrix,
     observable_id: u32,
     room_id: RpcRoomId,
 ) -> anyhow::Result<ObservableRoomInfo> {
-    let matrix = matrix.wait().await;
+    let matrix = bg_matrix.wait().await;
     Ok(ObservableRoomInfo(
         matrix
             .room_observe_info(observable_id.into(), &room_id.into_typed()?)
@@ -1400,73 +1402,79 @@ async fn matrixRoomObserveInfo(
 
 #[macro_rules_derive(rpc_method!)]
 async fn matrixObserveSyncIndicator(
-    matrix: &BgMatrix,
+    bg_matrix: &BgMatrix,
     observable_id: u32,
 ) -> anyhow::Result<Observable<RpcSyncIndicator>> {
-    let matrix = matrix.wait().await;
+    let matrix = bg_matrix.wait().await;
     matrix.observe_sync_status(observable_id.into()).await
 }
 
 #[macro_rules_derive(rpc_method!)]
 async fn matrixRoomInviteUserById(
-    matrix: &BgMatrix,
+    bg_matrix: &BgMatrix,
     room_id: RpcRoomId,
     user_id: RpcUserId,
 ) -> anyhow::Result<()> {
-    let matrix = matrix.wait().await;
+    let matrix = bg_matrix.wait().await;
+    let room_id = room_id.into_typed()?;
     matrix
-        .room_invite_user_by_id(&room_id.into_typed()?, &user_id.into_typed()?)
-        .await
+        .room_invite_user_by_id(&room_id, &user_id.into_typed()?)
+        .await?;
+    let multispend_matrix = bg_matrix.wait_multispend().await;
+    multispend_matrix
+        .maybe_send_multispend_reannouncement(&room_id)
+        .await?;
+    Ok(())
 }
 
 #[macro_rules_derive(rpc_method!)]
 async fn matrixRoomSetName(
-    matrix: &BgMatrix,
+    bg_matrix: &BgMatrix,
     room_id: RpcRoomId,
     name: String,
 ) -> anyhow::Result<()> {
-    let matrix = matrix.wait().await;
+    let matrix = bg_matrix.wait().await;
     matrix.room_set_name(&room_id.into_typed()?, name).await?;
     Ok(())
 }
 
 #[macro_rules_derive(rpc_method!)]
 async fn matrixRoomSetTopic(
-    matrix: &BgMatrix,
+    bg_matrix: &BgMatrix,
     room_id: RpcRoomId,
     topic: String,
 ) -> anyhow::Result<()> {
-    let matrix = matrix.wait().await;
+    let matrix = bg_matrix.wait().await;
     matrix.room_set_topic(&room_id.into_typed()?, topic).await?;
     Ok(())
 }
 
 #[macro_rules_derive(rpc_method!)]
-async fn matrixIgnoreUser(matrix: &BgMatrix, user_id: RpcUserId) -> anyhow::Result<()> {
-    let matrix = matrix.wait().await;
+async fn matrixIgnoreUser(bg_matrix: &BgMatrix, user_id: RpcUserId) -> anyhow::Result<()> {
+    let matrix = bg_matrix.wait().await;
     matrix.ignore_user(&user_id.into_typed()?).await
 }
 
 #[macro_rules_derive(rpc_method!)]
-async fn matrixUnignoreUser(matrix: &BgMatrix, user_id: RpcUserId) -> anyhow::Result<()> {
-    let matrix = matrix.wait().await;
+async fn matrixUnignoreUser(bg_matrix: &BgMatrix, user_id: RpcUserId) -> anyhow::Result<()> {
+    let matrix = bg_matrix.wait().await;
     matrix.unignore_user(&user_id.into_typed()?).await
 }
 
 #[macro_rules_derive(rpc_method!)]
-async fn matrixListIgnoredUsers(matrix: &BgMatrix) -> anyhow::Result<Vec<RpcUserId>> {
-    let matrix = matrix.wait().await;
+async fn matrixListIgnoredUsers(bg_matrix: &BgMatrix) -> anyhow::Result<Vec<RpcUserId>> {
+    let matrix = bg_matrix.wait().await;
     matrix.list_ignored_users().await
 }
 
 #[macro_rules_derive(rpc_method!)]
 async fn matrixRoomKickUser(
-    matrix: &BgMatrix,
+    bg_matrix: &BgMatrix,
     room_id: RpcRoomId,
     user_id: RpcUserId,
     reason: Option<String>,
 ) -> anyhow::Result<()> {
-    let matrix = matrix.wait().await;
+    let matrix = bg_matrix.wait().await;
     matrix
         .room_kick_user(
             &room_id.into_typed()?,
@@ -1478,12 +1486,12 @@ async fn matrixRoomKickUser(
 
 #[macro_rules_derive(rpc_method!)]
 async fn matrixRoomBanUser(
-    matrix: &BgMatrix,
+    bg_matrix: &BgMatrix,
     room_id: RpcRoomId,
     user_id: RpcUserId,
     reason: Option<String>,
 ) -> anyhow::Result<()> {
-    let matrix = matrix.wait().await;
+    let matrix = bg_matrix.wait().await;
     matrix
         .room_ban_user(
             &room_id.into_typed()?,
@@ -1495,12 +1503,12 @@ async fn matrixRoomBanUser(
 
 #[macro_rules_derive(rpc_method!)]
 async fn matrixRoomUnbanUser(
-    matrix: &BgMatrix,
+    bg_matrix: &BgMatrix,
     room_id: RpcRoomId,
     user_id: RpcUserId,
     reason: Option<String>,
 ) -> anyhow::Result<()> {
-    let matrix = matrix.wait().await;
+    let matrix = bg_matrix.wait().await;
     matrix
         .room_unban_user(
             &room_id.into_typed()?,
@@ -1512,20 +1520,20 @@ async fn matrixRoomUnbanUser(
 
 #[macro_rules_derive(rpc_method!)]
 async fn matrixRoomGetMembers(
-    matrix: &BgMatrix,
+    bg_matrix: &BgMatrix,
     room_id: RpcRoomId,
 ) -> anyhow::Result<Vec<RpcRoomMember>> {
-    let matrix = matrix.wait().await;
+    let matrix = bg_matrix.wait().await;
     matrix.room_get_members(&room_id.into_typed()?).await
 }
 
 #[macro_rules_derive(rpc_method!)]
 async fn matrixUserDirectorySearch(
-    matrix: &BgMatrix,
+    bg_matrix: &BgMatrix,
     search_term: String,
     limit: u32,
 ) -> anyhow::Result<RpcMatrixUserDirectorySearchResponse> {
-    let matrix = matrix.wait().await;
+    let matrix = bg_matrix.wait().await;
     matrix
         .search_user_directory(&search_term, limit.into())
         .await
@@ -1535,32 +1543,32 @@ ts_type_ser!(RpcPublicRoomChunk: PublicRoomsChunk = "JSONObject");
 
 #[macro_rules_derive(rpc_method!)]
 async fn matrixPublicRoomInfo(
-    matrix: &BgMatrix,
+    bg_matrix: &BgMatrix,
     room_id: String,
 ) -> anyhow::Result<RpcPublicRoomChunk> {
-    let matrix = matrix.wait().await;
+    let matrix = bg_matrix.wait().await;
     Ok(RpcPublicRoomChunk(matrix.public_room_info(&room_id).await?))
 }
 
 #[macro_rules_derive(rpc_method!)]
-async fn matrixSetDisplayName(matrix: &BgMatrix, display_name: String) -> anyhow::Result<()> {
-    let matrix = matrix.wait().await;
+async fn matrixSetDisplayName(bg_matrix: &BgMatrix, display_name: String) -> anyhow::Result<()> {
+    let matrix = bg_matrix.wait().await;
     matrix.set_display_name(display_name).await
 }
 
 #[macro_rules_derive(rpc_method!)]
-async fn matrixSetAvatarUrl(matrix: &BgMatrix, avatar_url: String) -> anyhow::Result<()> {
-    let matrix = matrix.wait().await;
+async fn matrixSetAvatarUrl(bg_matrix: &BgMatrix, avatar_url: String) -> anyhow::Result<()> {
+    let matrix = bg_matrix.wait().await;
     matrix.set_avatar_url(avatar_url).await
 }
 
 #[macro_rules_derive(rpc_method!)]
 async fn matrixUploadMedia(
-    matrix: &BgMatrix,
+    bg_matrix: &BgMatrix,
     path: PathBuf,
     mime_type: String,
 ) -> anyhow::Result<RpcMatrixUploadResult> {
-    let matrix = matrix.wait().await;
+    let matrix = bg_matrix.wait().await;
     let mime = mime_type.parse::<Mime>().context(ErrorCode::BadRequest)?;
     let file = matrix.runtime.get_matrix_media_file(path).await?;
     matrix.upload_file(mime, file).await
@@ -1569,10 +1577,10 @@ async fn matrixUploadMedia(
 ts_type_serde!(RpcRoomPowerLevelsEventContent: RoomPowerLevelsEventContent = "JSONObject");
 #[macro_rules_derive(rpc_method!)]
 async fn matrixRoomGetPowerLevels(
-    matrix: &BgMatrix,
+    bg_matrix: &BgMatrix,
     room_id: RpcRoomId,
 ) -> anyhow::Result<RpcRoomPowerLevelsEventContent> {
-    let matrix = matrix.wait().await;
+    let matrix = bg_matrix.wait().await;
     Ok(RpcRoomPowerLevelsEventContent(
         matrix.room_get_power_levels(&room_id.into_typed()?).await?,
     ))
@@ -1580,11 +1588,11 @@ async fn matrixRoomGetPowerLevels(
 
 #[macro_rules_derive(rpc_method!)]
 async fn matrixRoomSetPowerLevels(
-    matrix: &BgMatrix,
+    bg_matrix: &BgMatrix,
     room_id: RpcRoomId,
     new: RpcRoomPowerLevelsEventContent,
 ) -> anyhow::Result<()> {
-    let matrix = matrix.wait().await;
+    let matrix = bg_matrix.wait().await;
     matrix
         .room_change_power_levels(&room_id.into_typed()?, new.0)
         .await
@@ -1592,11 +1600,11 @@ async fn matrixRoomSetPowerLevels(
 
 #[macro_rules_derive(rpc_method!)]
 async fn matrixRoomSendReceipt(
-    matrix: &BgMatrix,
+    bg_matrix: &BgMatrix,
     room_id: RpcRoomId,
     event_id: String,
 ) -> anyhow::Result<bool> {
-    let matrix = matrix.wait().await;
+    let matrix = bg_matrix.wait().await;
     matrix
         .room_send_receipt(&room_id.into_typed()?, &event_id)
         .await
@@ -1604,11 +1612,11 @@ async fn matrixRoomSendReceipt(
 
 #[macro_rules_derive(rpc_method!)]
 async fn matrixRoomSetNotificationMode(
-    matrix: &BgMatrix,
+    bg_matrix: &BgMatrix,
     room_id: RpcRoomId,
     mode: RpcRoomNotificationMode,
 ) -> anyhow::Result<()> {
-    let matrix = matrix.wait().await;
+    let matrix = bg_matrix.wait().await;
     matrix
         .room_set_notification_mode(&room_id.into_typed()?, mode)
         .await
@@ -1616,10 +1624,10 @@ async fn matrixRoomSetNotificationMode(
 
 #[macro_rules_derive(rpc_method!)]
 async fn matrixRoomGetNotificationMode(
-    matrix: &BgMatrix,
+    bg_matrix: &BgMatrix,
     room_id: RpcRoomId,
 ) -> anyhow::Result<Option<RpcRoomNotificationMode>> {
-    let matrix = matrix.wait().await;
+    let matrix = bg_matrix.wait().await;
     matrix
         .room_get_notification_mode(&room_id.into_typed()?)
         .await
@@ -1627,11 +1635,11 @@ async fn matrixRoomGetNotificationMode(
 
 #[macro_rules_derive(rpc_method!)]
 async fn matrixRoomMarkAsUnread(
-    matrix: &BgMatrix,
+    bg_matrix: &BgMatrix,
     room_id: RpcRoomId,
     unread: bool,
 ) -> anyhow::Result<()> {
-    let matrix = matrix.wait().await;
+    let matrix = bg_matrix.wait().await;
     matrix
         .room_mark_as_unread(&room_id.into_typed()?, unread)
         .await
@@ -1639,8 +1647,11 @@ async fn matrixRoomMarkAsUnread(
 
 ts_type_ser!(UserProfile: get_profile::v3::Response = "JSONObject");
 #[macro_rules_derive(rpc_method!)]
-async fn matrixUserProfile(matrix: &BgMatrix, user_id: RpcUserId) -> anyhow::Result<UserProfile> {
-    let matrix = matrix.wait().await;
+async fn matrixUserProfile(
+    bg_matrix: &BgMatrix,
+    user_id: RpcUserId,
+) -> anyhow::Result<UserProfile> {
+    let matrix = bg_matrix.wait().await;
     matrix
         .user_profile(&user_id.into_typed()?)
         .await
@@ -1650,19 +1661,19 @@ async fn matrixUserProfile(matrix: &BgMatrix, user_id: RpcUserId) -> anyhow::Res
 ts_type_de!(RpcPusher: Pusher = "JSONObject");
 
 #[macro_rules_derive(rpc_method!)]
-async fn matrixSetPusher(matrix: &BgMatrix, pusher: RpcPusher) -> anyhow::Result<()> {
-    let matrix = matrix.wait().await;
+async fn matrixSetPusher(bg_matrix: &BgMatrix, pusher: RpcPusher) -> anyhow::Result<()> {
+    let matrix = bg_matrix.wait().await;
     matrix.set_pusher(pusher.0).await
 }
 
 #[macro_rules_derive(rpc_method!)]
 async fn matrixEditMessage(
-    matrix: &BgMatrix,
+    bg_matrix: &BgMatrix,
     room_id: RpcRoomId,
     event_id: RpcTimelineEventItemId,
     new_content: String,
 ) -> anyhow::Result<()> {
-    let matrix = matrix.wait().await;
+    let matrix = bg_matrix.wait().await;
     matrix
         .edit_message(&room_id.into_typed()?, &event_id.try_into()?, new_content)
         .await
@@ -1670,12 +1681,12 @@ async fn matrixEditMessage(
 
 #[macro_rules_derive(rpc_method!)]
 async fn matrixDeleteMessage(
-    matrix: &BgMatrix,
+    bg_matrix: &BgMatrix,
     room_id: RpcRoomId,
     event_id: RpcTimelineEventItemId,
     reason: Option<String>,
 ) -> anyhow::Result<()> {
-    let matrix = matrix.wait().await;
+    let matrix = bg_matrix.wait().await;
     matrix
         .delete_message(&room_id.into_typed()?, &event_id.try_into()?, reason)
         .await
@@ -1684,11 +1695,11 @@ async fn matrixDeleteMessage(
 ts_type_de!(RpcMediaSource: MediaSource = "JSONObject");
 #[macro_rules_derive(rpc_method!)]
 async fn matrixDownloadFile(
-    matrix: &BgMatrix,
+    bg_matrix: &BgMatrix,
     path: PathBuf,
     media_source: RpcMediaSource,
 ) -> anyhow::Result<PathBuf> {
-    let matrix = matrix.wait().await;
+    let matrix = bg_matrix.wait().await;
     let content = matrix.download_file(media_source.0).await?;
     matrix.runtime.storage.write_file(&path, content).await?;
     Ok(matrix.runtime.storage.platform_path(&path))
@@ -1696,14 +1707,14 @@ async fn matrixDownloadFile(
 
 #[macro_rules_derive(rpc_method!)]
 async fn matrixStartPoll(
-    matrix: &BgMatrix,
+    bg_matrix: &BgMatrix,
     room_id: RpcRoomId,
     question: String,
     answers: Vec<String>,
     is_multiple_choice: bool,
     is_disclosed: bool,
 ) -> anyhow::Result<()> {
-    let matrix = matrix.wait().await;
+    let matrix = bg_matrix.wait().await;
     matrix
         .start_poll(
             &room_id.into_typed()?,
@@ -1717,11 +1728,11 @@ async fn matrixStartPoll(
 
 #[macro_rules_derive(rpc_method!)]
 async fn matrixEndPoll(
-    matrix: &BgMatrix,
+    bg_matrix: &BgMatrix,
     room_id: RpcRoomId,
     poll_start_id: String,
 ) -> anyhow::Result<()> {
-    let matrix = matrix.wait().await;
+    let matrix = bg_matrix.wait().await;
     let poll_start_event_id = OwnedEventId::try_from(poll_start_id)?;
     matrix
         .end_poll(&room_id.into_typed()?, &poll_start_event_id)
@@ -1730,12 +1741,12 @@ async fn matrixEndPoll(
 
 #[macro_rules_derive(rpc_method!)]
 async fn matrixRespondToPoll(
-    matrix: &BgMatrix,
+    bg_matrix: &BgMatrix,
     room_id: RpcRoomId,
     poll_start_id: String,
     answer_ids: Vec<String>,
 ) -> anyhow::Result<()> {
-    let matrix = matrix.wait().await;
+    let matrix = bg_matrix.wait().await;
     let poll_start_event_id = OwnedEventId::try_from(poll_start_id)?;
     matrix
         .respond_to_poll(&room_id.into_typed()?, &poll_start_event_id, answer_ids)
@@ -1745,10 +1756,10 @@ ts_type_ser!(RpcMediaPreviewResponse: get_media_preview::v1::Response = "JSONObj
 
 #[macro_rules_derive(rpc_method!)]
 async fn matrixGetMediaPreview(
-    matrix: &BgMatrix,
+    bg_matrix: &BgMatrix,
     url: String,
 ) -> anyhow::Result<RpcMediaPreviewResponse> {
-    let matrix = matrix.wait().await;
+    let matrix = bg_matrix.wait().await;
     Ok(RpcMediaPreviewResponse(
         matrix.get_media_preview(url).await?,
     ))
@@ -1761,12 +1772,12 @@ async fn getFeatureCatalog(runtime: Arc<Runtime>) -> anyhow::Result<Arc<FeatureC
 
 #[macro_rules_derive(rpc_method!)]
 async fn matrixObserveMultispendGroup(
-    matrix: &BgMatrix,
+    bg_matrix: &BgMatrix,
     observable_id: u32,
     room_id: RpcRoomId,
 ) -> anyhow::Result<Observable<RpcMultispendGroupStatus>> {
-    let matrix = matrix.wait().await;
-    matrix
+    let multispend_matrix = bg_matrix.wait_multispend().await;
+    multispend_matrix
         .observe_multispend_group(observable_id.into(), room_id.into_typed()?)
         .await
 }
@@ -1777,8 +1788,8 @@ async fn matrixMultispendAccountInfo(
     room_id: RpcRoomId,
     observable_id: u32,
 ) -> anyhow::Result<Observable<Result<RpcSPv2SyncResponse, NetworkError>>> {
-    let matrix = bridge.matrix.wait().await;
-    let finalized_group = matrix
+    let multispend_matrix = bridge.matrix.wait_multispend().await;
+    let finalized_group = multispend_matrix
         .get_multispend_finalized_group(room_id.clone())
         .await?
         .context("multispend group not finalized yet")?;
@@ -1787,20 +1798,20 @@ async fn matrixMultispendAccountInfo(
         .get_federation(&finalized_group.federation_id.0)?;
     fed.ensure_multispend_feature()?;
     let room_id = room_id.into_typed()?;
-    matrix
+    multispend_matrix
         .observe_multispend_account_info(observable_id.into(), fed, room_id, &finalized_group)
         .await
 }
 
 #[macro_rules_derive(rpc_method!)]
 pub async fn matrixMultispendListEvents(
-    matrix: &BgMatrix,
+    bg_matrix: &BgMatrix,
     room_id: RpcRoomId,
     start_after: Option<u32>,
     limit: u32,
 ) -> anyhow::Result<Vec<MultispendListedEvent>> {
-    let matrix = matrix.wait().await;
-    Ok(matrix
+    let multispend_matrix = bg_matrix.wait_multispend().await;
+    Ok(multispend_matrix
         .list_multispend_events(
             &room_id,
             start_after.map(Into::into),
@@ -1826,8 +1837,8 @@ async fn matrixSendMultispendGroupInvitation(
         federation_invite_code: fed.get_invite_code().await,
         federation_name,
     };
-    let matrix = bridge.matrix.wait().await;
-    matrix
+    let multispend_matrix = bridge.matrix.wait_multispend().await;
+    multispend_matrix
         .send_multispend_group_invitation(
             &room_id.into_typed()?,
             invitation,
@@ -1842,14 +1853,15 @@ async fn matrixApproveMultispendGroupInvitation(
     room_id: RpcRoomId,
     invitation: RpcEventId,
 ) -> anyhow::Result<()> {
-    let matrix = bridge.matrix.wait().await;
-    let Some(MsEventData::GroupInvitation(GroupInvitationWithKeys { federation_id, .. })) = matrix
-        .get_multispend_event_data(&room_id, &invitation)
-        .await
+    let multispend_matrix = bridge.matrix.wait_multispend().await;
+    let Some(MsEventData::GroupInvitation(GroupInvitationWithKeys { federation_id, .. })) =
+        multispend_matrix
+            .get_multispend_event_data(&room_id, &invitation)
+            .await
     else {
         anyhow::bail!("invalid matrix invitation id")
     };
-    matrix
+    multispend_matrix
         .vote_multispend_group_invitation(
             &room_id.into_typed()?,
             invitation,
@@ -1867,12 +1879,12 @@ async fn matrixApproveMultispendGroupInvitation(
 
 #[macro_rules_derive(rpc_method!)]
 async fn matrixRejectMultispendGroupInvitation(
-    matrix: &BgMatrix,
+    bg_matrix: &BgMatrix,
     room_id: RpcRoomId,
     invitation: RpcEventId,
 ) -> anyhow::Result<()> {
-    let matrix = matrix.wait().await;
-    matrix
+    let multispend_matrix = bg_matrix.wait_multispend().await;
+    multispend_matrix
         .vote_multispend_group_invitation(
             &room_id.into_typed()?,
             invitation,
@@ -1883,11 +1895,11 @@ async fn matrixRejectMultispendGroupInvitation(
 
 #[macro_rules_derive(rpc_method!)]
 async fn matrixCancelMultispendGroupInvitation(
-    matrix: &BgMatrix,
+    bg_matrix: &BgMatrix,
     room_id: RpcRoomId,
 ) -> anyhow::Result<()> {
-    let matrix = matrix.wait().await;
-    matrix
+    let multispend_matrix = bg_matrix.wait_multispend().await;
+    multispend_matrix
         .cancel_multispend_group_invitation(&room_id.into_typed()?)
         .await
 }
@@ -1900,8 +1912,8 @@ async fn matrixMultispendDeposit(
     description: String,
     frontend_meta: FrontendMetadata,
 ) -> anyhow::Result<()> {
-    let matrix = bridge.matrix.wait().await;
-    let finalized_group = matrix
+    let multispend_matrix = bridge.matrix.wait_multispend().await;
+    let finalized_group = multispend_matrix
         .get_multispend_finalized_group(room_id.clone())
         .await?
         .context("multispend group not finalized yet")?;
@@ -1925,8 +1937,8 @@ async fn matrixSendMultispendWithdrawalRequest(
     amount: RpcFiatAmount,
     description: String,
 ) -> anyhow::Result<()> {
-    let matrix = bridge.matrix.wait().await;
-    let finalized_group = matrix
+    let multispend_matrix = bridge.matrix.wait_multispend().await;
+    let finalized_group = multispend_matrix
         .get_multispend_finalized_group(room_id.clone())
         .await?
         .context("multispend group not finalized yet")?;
@@ -1935,7 +1947,7 @@ async fn matrixSendMultispendWithdrawalRequest(
         .get_federation(&finalized_group.federation_id.0)?;
     let transfer_request =
         fed.multispend_create_transfer_request(FiatAmount(amount.0), finalized_group.spv2_account)?;
-    matrix
+    multispend_matrix
         .send_multispend_withdraw_request(&room_id.into_typed()?, transfer_request, description)
         .await?;
     Ok(())
@@ -1947,15 +1959,15 @@ async fn matrixSendMultispendWithdrawalApprove(
     room_id: RpcRoomId,
     withdraw_request_id: RpcEventId,
 ) -> anyhow::Result<()> {
-    let matrix = bridge.matrix.wait().await;
-    let finalized_group = matrix
+    let multispend_matrix = bridge.matrix.wait_multispend().await;
+    let finalized_group = multispend_matrix
         .get_multispend_finalized_group(room_id.clone())
         .await?
         .context("multispend group not finalized yet")?;
     let Some(MsEventData::WithdrawalRequest(WithdrawRequestWithApprovals {
         request: transfer_request,
         ..
-    })) = matrix
+    })) = multispend_matrix
         .get_multispend_event_data(&room_id, &withdraw_request_id)
         .await
     else {
@@ -1966,7 +1978,7 @@ async fn matrixSendMultispendWithdrawalApprove(
         .get_federation(&finalized_group.federation_id.0)?;
     let signature = fed.multispend_approve_withdrawal(room_id.0.clone(), &transfer_request)?;
 
-    matrix
+    multispend_matrix
         .respond_multispend_withdraw(
             &room_id.into_typed()?,
             withdraw_request_id,
@@ -1981,12 +1993,12 @@ async fn matrixSendMultispendWithdrawalApprove(
 
 #[macro_rules_derive(rpc_method!)]
 async fn matrixSendMultispendWithdrawalReject(
-    bridge: &BridgeFull,
+    bg_matrix: &BgMatrix,
     room_id: RpcRoomId,
     withdraw_request_id: RpcEventId,
 ) -> anyhow::Result<()> {
-    let matrix = bridge.matrix.wait().await;
-    matrix
+    let multispend_matrix = bg_matrix.wait_multispend().await;
+    multispend_matrix
         .respond_multispend_withdraw(
             &room_id.into_typed()?,
             withdraw_request_id,
@@ -1998,23 +2010,25 @@ async fn matrixSendMultispendWithdrawalReject(
 
 #[macro_rules_derive(rpc_method!)]
 async fn matrixMultispendEventData(
-    matrix: &BgMatrix,
+    bg_matrix: &BgMatrix,
     room_id: RpcRoomId,
     event_id: RpcEventId,
 ) -> anyhow::Result<Option<MsEventData>> {
-    let matrix = matrix.wait().await;
-    Ok(matrix.get_multispend_event_data(&room_id, &event_id).await)
+    let multispend_matrix = bg_matrix.wait_multispend().await;
+    Ok(multispend_matrix
+        .get_multispend_event_data(&room_id, &event_id)
+        .await)
 }
 
 #[macro_rules_derive(rpc_method!)]
 async fn matrixObserveMultispendEventData(
-    matrix: &BgMatrix,
+    bg_matrix: &BgMatrix,
     observable_id: u32,
     room_id: RpcRoomId,
     event_id: RpcEventId,
 ) -> anyhow::Result<Observable<MsEventData>> {
-    let matrix = matrix.wait().await;
-    matrix
+    let multispend_matrix = bg_matrix.wait_multispend().await;
+    multispend_matrix
         .observe_multispend_event_data(observable_id.into(), room_id, event_id)
         .await
 }

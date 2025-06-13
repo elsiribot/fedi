@@ -5,8 +5,8 @@ use rpc_types::SPv2TransferMetadata;
 use tokio::sync::Notify;
 use tracing::warn;
 
+use super::db::MultispendPendingApprovedWithdrawalRequestKeyPrefix;
 use crate::federation::Federations;
-use crate::matrix::multispend::db::MultispendPendingApprovedWithdrawalRequestKeyPrefix;
 
 #[derive(Default)]
 pub struct WithdrawalService {

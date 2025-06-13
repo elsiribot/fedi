@@ -5,15 +5,17 @@ use fedimint_core::util::backoff_util::background_backoff;
 use fedimint_core::util::retry;
 use fedimint_core::TransactionId;
 use futures::StreamExt as _;
+use rpc_types::matrix::RpcRoomId;
 use rpc_types::{RpcEventId, RpcFiatAmount, RpcTransactionId};
 use runtime::bridge_runtime::Runtime;
 use stability_pool_client::common::FiatAmount;
 use tokio::sync::Notify;
 use tracing::error;
 
-use super::db::MultispendPendingCompletionNotification;
-use crate::matrix::multispend::db::MultispendPendingCompletionNotificationPrefix;
-use crate::matrix::{Matrix, RpcRoomId};
+use super::db::{
+    MultispendPendingCompletionNotification, MultispendPendingCompletionNotificationPrefix,
+};
+use super::multispend_matrix::MultispendMatrix;
 
 // This service maintains a list of pending multispend notifications and sends
 // them into the room.
@@ -103,13 +105,13 @@ impl CompletionNotificationService {
         self.trigger();
     }
 
-    pub async fn run_continuously(&self, matrix: &Matrix) {
+    pub async fn run_continuously(&self, multispend_matrix: &MultispendMatrix) {
         loop {
             // run at least once
             retry(
                 "send queued notifications",
                 background_backoff(),
-                || async { self.run_once(matrix).await },
+                || async { self.run_once(multispend_matrix).await },
             )
             .await
             .expect("never fail");
@@ -118,7 +120,7 @@ impl CompletionNotificationService {
         }
     }
 
-    async fn run_once(&self, matrix: &Matrix) -> anyhow::Result<()> {
+    async fn run_once(&self, multispend_matrix: &MultispendMatrix) -> anyhow::Result<()> {
         let multispend_db = self.runtime.multispend_db();
         let mut dbtx = multispend_db.begin_transaction().await;
         let mut network_error = false;
@@ -135,7 +137,10 @@ impl CompletionNotificationService {
                 continue;
             };
             let event = pending_operation.multispend_event();
-            if let Err(err) = matrix.send_multispend_event(&room_id, event).await {
+            if let Err(err) = multispend_matrix
+                .send_multispend_event(&room_id, event)
+                .await
+            {
                 error!(%err, "failed to send multispend completion event");
                 network_error = true;
                 continue;

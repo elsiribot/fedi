@@ -14,7 +14,9 @@ use futures::Stream;
 use matrix_sdk::deserialized_responses::TimelineEvent;
 use matrix_sdk::event_cache::EventCacheError;
 use matrix_sdk::locks::RwLock;
-use matrix_sdk::ruma::events::{AnySyncTimelineEvent, SyncMessageLikeEvent};
+use matrix_sdk::ruma::events::{
+    AnySyncMessageLikeEvent, AnySyncTimelineEvent, SyncMessageLikeEvent,
+};
 use matrix_sdk::ruma::{OwnedEventId, OwnedRoomId, RoomId};
 use matrix_sdk::{Client, Room};
 use rpc_types::RpcEventId;
@@ -22,11 +24,9 @@ use runtime::bridge_runtime::Runtime;
 use tokio::sync::Notify;
 use tracing::{debug, instrument, warn};
 
-use super::multispend::db::MultispendScannerLastEventKey;
-use super::multispend::services::MultispendServices;
-use super::multispend::{self, MultispendContext, MultispendEvent, MULTISPEND_MSGTYPE};
-use super::{RpcRoomId, RpcUserId};
-use crate::matrix::AnySyncMessageLikeEvent;
+use super::db::MultispendScannerLastEventKey;
+use super::services::MultispendServices;
+use super::{MultispendContext, MultispendEvent, RpcRoomId, RpcUserId, MULTISPEND_MSGTYPE};
 
 /// Represents the current state of a room rescan operation
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -299,7 +299,7 @@ impl RoomRescannerManager {
             });
 
         for (sender, event_id, event, event_time) in new_multispend_events {
-            multispend::process_event_db(
+            super::process_event_db(
                 dbtx,
                 &RpcRoomId(room_id.to_string()),
                 sender.clone(),

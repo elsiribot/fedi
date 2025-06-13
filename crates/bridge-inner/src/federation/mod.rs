@@ -15,7 +15,7 @@ use runtime::utils::PoisonedLockExt as _;
 use tracing::error;
 
 use crate::fedi_fee::FediFeeHelper;
-use crate::matrix::multispend::services::MultispendServices;
+use crate::multispend::services::MultispendServices;
 
 pub mod federation_sm;
 pub mod federation_v2;

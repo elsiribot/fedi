@@ -139,7 +139,7 @@ use self::ln_gateway_service::LnGatewayService;
 use self::stability_pool_sweeper_service::StabilityPoolSweeperService;
 use super::federations_locker::FederationLockGuard;
 use crate::fedi_fee::{FediFeeHelper, FediFeeRemittanceService};
-use crate::matrix::multispend::services::MultispendServices;
+use crate::multispend::services::MultispendServices;
 
 mod backup_service;
 mod ln_gateway_service;

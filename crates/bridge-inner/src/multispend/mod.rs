@@ -12,6 +12,7 @@ use fedimint_core::db::{DatabaseTransaction, IDatabaseTransactionOpsCoreTyped};
 use fedimint_core::encoding::{Decodable, Encodable};
 use fedimint_core::invite_code::InviteCode;
 use futures::StreamExt as _;
+use rpc_types::matrix::{RpcRoomId, RpcUserId};
 use rpc_types::{
     RpcEventId, RpcFederationId, RpcFiatAmount, RpcPublicKey, RpcSignature, RpcTransactionId,
 };
@@ -22,10 +23,10 @@ use stability_pool_client::common::{
 use tracing::error;
 use ts_rs::TS;
 
-use super::{RpcRoomId, RpcUserId};
-
 pub mod completion_notification_service;
 pub mod db;
+pub mod multispend_matrix;
+pub mod rescanner;
 pub mod services;
 pub mod withdrawal_service;
 
