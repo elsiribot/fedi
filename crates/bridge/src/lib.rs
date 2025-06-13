@@ -33,8 +33,9 @@ use runtime::features::FeatureCatalog;
 use runtime::storage::state::{DeviceIdentifier, FiatFXInfo, ModuleFediFeeSchedule};
 use runtime::storage::{AppState, OnboardingCompletionMethod, Storage};
 use runtime::utils::PoisonedLockExt;
-use serde::{Deserialize, Serialize};
+use serde::Serialize;
 use tokio::sync::Mutex;
+use tracing::error;
 use ts_rs::TS;
 
 pub mod onboarding;
@@ -55,23 +56,24 @@ pub struct BridgeFull {
     pub nostril: Nostril,
 }
 
-#[derive(Debug)]
-pub enum BridgeFullInitError {
-    V2IdentifierMismatch {
+#[derive(Debug, TS, Serialize)]
+#[serde(rename_all = "camelCase")]
+#[serde(tag = "type")]
+#[ts(export)]
+pub enum BridgeOffboardingReason {
+    DeviceIdentifierMismatch {
+        #[serde(skip)]
         existing: DeviceIdentifier,
+        #[serde(skip)]
         new: DeviceIdentifier,
     },
-    Other(anyhow::Error),
 }
 
-impl Display for BridgeFullInitError {
+impl Display for BridgeOffboardingReason {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        let message =
-            match self {
-                Self::V2IdentifierMismatch { existing, new } => format!("Expected device ID {} but received {}. Likely app has been cloned on a new device.", existing, new),
-                Self::Other(e) => e.to_string(),
-            };
-        write!(f, "{message}")
+        match self {
+            Self::DeviceIdentifierMismatch { existing, new } => write!(f, "Expected device ID {} but received {}. Likely app has been cloned on a new device.", existing, new),
+        }
     }
 }
 
@@ -79,14 +81,15 @@ impl BridgeFull {
     pub async fn new(
         runtime: Arc<Runtime>,
         device_identifier: DeviceIdentifier,
-    ) -> anyhow::Result<Self, BridgeFullInitError> {
+    ) -> anyhow::Result<Self, BridgeOffboardingReason> {
         // If the provided v2 identifier is not the same as the existing v2 identifier,
         // then under the guarantees of the v2 identifier, the user's phone
         // storage has been cloned (as part of a new device set up process,
         // perhaps). In this case, we notify the caller with a special type of error.
         let existing_identifier_v2 = runtime.app_state.device_identifier().await;
         if existing_identifier_v2 != device_identifier {
-            return Err(BridgeFullInitError::V2IdentifierMismatch {
+            error!(%existing_identifier_v2, %device_identifier, "device id mismatch");
+            return Err(BridgeOffboardingReason::DeviceIdentifierMismatch {
                 existing: existing_identifier_v2,
                 new: device_identifier,
             });
@@ -281,20 +284,18 @@ pub struct Bridge {
 }
 
 // allow transitions:
-// start -> RuntimeOnly
+// start -> Offboarding
 // start -> Uncommited
 // start -> Full
-// Uncommited -> RuntimeOnly
-// Uncommited -> Full
+// Onboarding -> Offboarding
+// Onboarding -> Full
 #[derive(Clone)]
 pub enum BridgeState {
-    /// Bridge is not always guaranteed to exist as "Full", for
-    /// example if the device index has been taken over by another device.
-    /// There may also be other scenarios for these services to not be
-    /// available. In such scenarios only the Runtime is available.
-    RuntimeOnly {
+    /// This bridge is no longer usable, we want users to uninstall the app.
+    /// example: Device Id mismatches.
+    Offboarding {
         runtime: Arc<Runtime>,
-        error: Arc<BridgeFullInitError>,
+        reason: Arc<BridgeOffboardingReason>,
     },
     /// Bridge is still onboarding.
     /// This can transition into full or runtime only.
@@ -365,9 +366,9 @@ impl Bridge {
         let runtime = Arc::new(runtime);
         match BridgeFull::new(runtime.clone(), device_identifier).await {
             Ok(full) => Ok(BridgeState::Full(Arc::new(full))),
-            Err(error) => Ok(BridgeState::RuntimeOnly {
+            Err(reason) => Ok(BridgeState::Offboarding {
                 runtime,
-                error: error.into(),
+                reason: Arc::new(reason),
             }),
         }
     }
@@ -378,9 +379,9 @@ impl Bridge {
             return Ok(runtime);
         }
         let runtime = match self.state() {
-            BridgeState::RuntimeOnly { runtime, error: _ } => runtime.clone(),
+            BridgeState::Offboarding { runtime, .. } => runtime.clone(),
             BridgeState::Full(bridge_full) => bridge_full.runtime.clone(),
-            BridgeState::Onboarding { .. } => bail!("commit the seed first"),
+            BridgeState::Onboarding { .. } => bail!("frontend bug: complete onboarding first"),
         };
         // racy, but fine because all thread will try to set the same value. so doesn't
         // matter which one wins
@@ -392,9 +393,11 @@ impl Bridge {
             return Ok(full);
         }
         let full = match self.state() {
-            BridgeState::RuntimeOnly { runtime: _, error } => bail!(error.to_string()),
+            BridgeState::Offboarding { reason, .. } => {
+                bail!("frontend bug: bridge is offboarding: {reason}")
+            }
             BridgeState::Full(bridge_full) => bridge_full.clone(),
-            BridgeState::Onboarding { .. } => bail!("commit the seed first"),
+            BridgeState::Onboarding { .. } => bail!("frontend bug: complete onboarding first"),
         };
         Ok(self.full.get_or_init(|| full))
     }
@@ -406,26 +409,15 @@ impl Bridge {
     }
 
     pub async fn bridge_status(&self) -> anyhow::Result<RpcBridgeStatus> {
-        let (runtime, bridge_full_init_error) = match self.state() {
-            BridgeState::Onboarding(onboarding) => {
-                return Ok(RpcBridgeStatus::Onboarding {
-                    stage: onboarding.stage().await?,
-                })
-            }
-            BridgeState::RuntimeOnly { error, runtime } => {
-                (runtime.clone(), Some(RpcBridgeFullInitError::from(&*error)))
-            }
-            BridgeState::Full(full) => (full.runtime.clone(), None),
-        };
-        let matrix_setup = runtime
-            .app_state
-            // did we ever setup matrix?
-            .with_read_lock(|x| x.matrix_session.is_some())
-            .await;
-        Ok(RpcBridgeStatus::Onboarded {
-            matrix_setup,
-            bridge_full_init_error,
-        })
+        match self.state() {
+            BridgeState::Onboarding(onboarding) => Ok(RpcBridgeStatus::Onboarding {
+                stage: onboarding.stage().await?,
+            }),
+            BridgeState::Offboarding { reason, .. } => Ok(RpcBridgeStatus::Offboarding {
+                reason: reason.clone(),
+            }),
+            BridgeState::Full(_) => Ok(RpcBridgeStatus::Onboarded {}),
+        }
     }
 
     pub async fn complete_onboarding(&self, method: OnboardingCompletionMethod) -> Result<()> {
@@ -441,41 +433,18 @@ impl Bridge {
     }
 }
 
-#[derive(Debug, Serialize, Deserialize, TS)]
+#[derive(Debug, Serialize, TS)]
 #[serde(rename_all = "camelCase")]
 #[serde(tag = "type")]
 #[ts(export)]
 pub enum RpcBridgeStatus {
-    Onboarded {
-        matrix_setup: bool,
-        bridge_full_init_error: Option<RpcBridgeFullInitError>,
-    },
+    Onboarded {},
     Onboarding {
         stage: RpcOnboardingStage,
     },
-}
-
-#[derive(Debug, Serialize, Deserialize, TS)]
-#[serde(rename_all = "camelCase")]
-#[serde(tag = "type")]
-#[ts(export)]
-pub enum RpcBridgeFullInitError {
-    V2IdentifierMismatch { existing: String, new: String },
-    Other(String),
-}
-
-impl From<&BridgeFullInitError> for RpcBridgeFullInitError {
-    fn from(error: &BridgeFullInitError) -> Self {
-        match error {
-            BridgeFullInitError::V2IdentifierMismatch { existing, new } => {
-                RpcBridgeFullInitError::V2IdentifierMismatch {
-                    existing: existing.to_string(),
-                    new: new.to_string(),
-                }
-            }
-            BridgeFullInitError::Other(error) => RpcBridgeFullInitError::Other(error.to_string()),
-        }
-    }
+    Offboarding {
+        reason: Arc<BridgeOffboardingReason>,
+    },
 }
 
 #[allow(async_fn_in_trait)]

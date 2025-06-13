@@ -41,6 +41,8 @@ export type BalanceEvent = {
   balance: RpcAmount;
 };
 
+export type BridgeOffboardingReason = { type: "deviceIdentifierMismatch" };
+
 /**
  * Notify front-end that a particular community's metadata has updated
  */
@@ -416,17 +418,10 @@ export type RpcBitcoinNetwork =
   | "regtest"
   | "unknown";
 
-export type RpcBridgeFullInitError =
-  | { type: "v2IdentifierMismatch"; existing: string; new: string }
-  | ({ type: "other" } & string);
-
 export type RpcBridgeStatus =
-  | {
-      type: "onboarded";
-      matrix_setup: boolean;
-      bridge_full_init_error: RpcBridgeFullInitError | null;
-    }
-  | { type: "onboarding"; stage: RpcOnboardingStage };
+  | { type: "onboarded" }
+  | { type: "onboarding"; stage: RpcOnboardingStage }
+  | { type: "offboarding"; reason: BridgeOffboardingReason };
 
 export type RpcCommunity = {
   inviteCode: string;
