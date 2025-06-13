@@ -5,7 +5,9 @@ members = [
   "bridge/ffi-bindgen",
   "crates/api-types",
   "crates/bridge",
-  "crates/bridge-inner",
+  "crates/federations",
+  "crates/matrix",
+  "crates/multispend",
   "crates/bug-report",
   "crates/communities",
   "crates/debug-tools",
@@ -64,7 +66,8 @@ ring = "0.17.14"
 # fedi crates
 api-types = { path = "crates/api-types" }
 bridge = { path = "crates/bridge" }
-bridge-inner = { path = "crates/bridge-inner" }
+federations = { path = "crates/federations" }
+matrix = { path = "crates/matrix" }
 bug-report = { path = "crates/bug-report" }
 communities = { path = "crates/communities" }
 debug-tools = { path = "crates/debug-tools" }

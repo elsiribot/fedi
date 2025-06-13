@@ -6,17 +6,16 @@ use std::sync::{Arc, Mutex as StdMutex, OnceLock};
 
 use anyhow::{anyhow, bail, Context, Result};
 use bitcoin::key::Secp256k1;
-use bridge_inner::federation::Federations;
-use bridge_inner::matrix::bg_matrix::BgMatrix;
-use bridge_inner::multispend::services::MultispendServices;
 use communities::Communities;
 use device_registration::DeviceRegistrationService;
 use either::Either;
+use federations::Federations;
 use fedimint_core::core::ModuleKind;
 use fedimint_core::db::{Database, IDatabaseTransactionOpsCoreTyped as _};
 use fedimint_derive_secret::{ChildId, DerivableSecret};
 use fedimint_mint_client::OOBNotes;
 use futures::StreamExt as _;
+use multispend::services::MultispendServices;
 use nostr::secp256k1::Message;
 use nostril::Nostril;
 use onboarding::{BridgeOnboarding, RpcOnboardingStage};
@@ -38,7 +37,12 @@ use tokio::sync::Mutex;
 use tracing::error;
 use ts_rs::TS;
 
+pub mod bg_matrix;
 pub mod onboarding;
+pub mod providers;
+
+use crate::bg_matrix::BgMatrix;
+use crate::providers::{FederationProviderWrapper, MultispendNotificationsProvider};
 
 // FIXME: federation-specific filename
 pub const RECOVERY_FILENAME: &str = "backup.fedi";
@@ -99,13 +103,12 @@ impl BridgeFull {
             Mutex::new(DeviceRegistrationService::new(runtime.clone()).await);
 
         let multispend_services = MultispendServices::new(runtime.clone());
+        let multispend_notifications =
+            Arc::new(MultispendNotificationsProvider(multispend_services.clone()));
 
         // Load communities and federations services
         let communities = Communities::init(runtime.clone()).await;
-        let federations = Arc::new(Federations::new(
-            runtime.clone(),
-            multispend_services.clone(),
-        ));
+        let federations = Arc::new(Federations::new(runtime.clone(), multispend_notifications));
         federations.load_joined_federations_in_background().await;
 
         let nostril = Nostril::new(&runtime).await;
@@ -133,12 +136,13 @@ impl BridgeFull {
         let runtime = self.runtime.clone();
         let federations = self.federations.clone();
         let multispend_services = self.multispend_services.clone();
+        let federation_provider = Arc::new(FederationProviderWrapper(federations));
         self.runtime
             .task_group
             .spawn_cancellable("multispend::WithdrawalService", async move {
                 multispend_services
                     .withdrawal
-                    .run_continuously(&runtime.multispend_db(), &federations)
+                    .run(&runtime.multispend_db(), federation_provider.as_ref())
                     .await
             });
         let multispend_services = self.multispend_services.clone();

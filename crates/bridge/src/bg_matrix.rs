@@ -4,28 +4,15 @@
 use std::sync::Arc;
 
 use fedimint_derive_secret::ChildId;
+use matrix::Matrix;
+use multispend::multispend_matrix::MultispendMatrix;
+use multispend::services::MultispendServices;
 use rpc_types::error::RpcError;
+use rpc_types::matrix::MatrixInitializeStatus;
 use runtime::bridge_runtime::Runtime;
 use runtime::constants::{GLOBAL_MATRIX_SERVER, MATRIX_CHILD_ID};
 use runtime::observable::Observable;
-use serde::{Deserialize, Serialize};
 use tokio::sync::{watch, OnceCell};
-use ts_rs::TS;
-
-use super::Matrix;
-use crate::multispend::multispend_matrix::MultispendMatrix;
-use crate::multispend::services::MultispendServices;
-
-#[derive(Clone, Debug, Serialize, Deserialize, TS)]
-#[serde(rename_all = "camelCase")]
-#[serde(tag = "type")]
-#[ts(export)]
-pub enum MatrixInitializeStatus {
-    Starting,
-    LoggingIn,
-    Success,
-    Error { error: RpcError },
-}
 
 pub struct BgMatrix {
     initialized: OnceCell<(Arc<Matrix>, Arc<MultispendMatrix>)>,

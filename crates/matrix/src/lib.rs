@@ -55,17 +55,13 @@ use matrix_sdk_ui::timeline::{default_event_filter, RoomExt, TimelineEventItemId
 use matrix_sdk_ui::{room_list_service, Timeline};
 use mime::Mime;
 use rpc_types::error::ErrorCode;
+pub use rpc_types::matrix::*;
 use rpc_types::RpcMediaUploadParams;
 use runtime::bridge_runtime::Runtime;
 use runtime::observable::{Observable, ObservableVec, ObservableVecUpdate};
 use runtime::storage::AppState;
 use tokio::sync::{broadcast, watch, Mutex};
 use tracing::{error, info, warn};
-
-use self::bg_matrix::MatrixInitializeStatus;
-
-pub mod bg_matrix;
-pub use rpc_types::matrix::*;
 
 pub struct Matrix {
     /// matrix client

@@ -9,31 +9,23 @@ use std::time::{Duration, UNIX_EPOCH};
 use anyhow::{bail, Context};
 use bitcoin::secp256k1::Message;
 use bitcoin::Amount;
+use bridge::bg_matrix::BgMatrix;
 use bridge::onboarding::BridgeOnboarding;
+use bridge::providers::FederationProviderWrapper;
 use bridge::{Bridge, BridgeFull, RpcBridgeStatus, RuntimeExt as _};
-use bridge_inner::federation::federation_sm::FederationState;
-use bridge_inner::federation::federation_v2::client::ClientExt;
-use bridge_inner::federation::federation_v2::spv2_pay_address::Spv2PaymentAddress;
-use bridge_inner::federation::federation_v2::{BackupServiceStatus, FederationV2};
-use bridge_inner::federation::Federations;
-use bridge_inner::matrix::bg_matrix::{BgMatrix, MatrixInitializeStatus};
-use bridge_inner::matrix::{
-    self, RpcBackPaginationStatus, RpcMatrixAccountSession, RpcMatrixUploadResult,
-    RpcMatrixUserDirectorySearchResponse, RpcRoomId, RpcRoomMember, RpcRoomNotificationMode,
-    RpcSyncIndicator, RpcTimelineEventItemId, RpcTimelineItem, RpcUserId,
-};
-use bridge_inner::multispend::db::RpcMultispendGroupStatus;
-use bridge_inner::multispend::{
-    GroupInvitation, GroupInvitationWithKeys, MsEventData, MultispendGroupVoteType,
-    MultispendListedEvent, WithdrawRequestWithApprovals, WithdrawalResponseType,
-};
 use bug_report::reused_ecash_proofs::SerializedReusedEcashProofs;
+use federations::federation_sm::FederationState;
+use federations::federation_v2::client::ClientExt;
+use federations::federation_v2::spv2_pay_address::Spv2PaymentAddress;
+use federations::federation_v2::{BackupServiceStatus, FederationV2};
+use federations::Federations;
 use fedimint_client::db::ChronologicalOperationLogKey;
 use fedimint_core::core::OperationId;
 use fedimint_core::timing::TimeReporter;
 use futures::Future;
 use lightning_invoice::Bolt11Invoice;
 use macro_rules_attribute::macro_rules_derive;
+use matrix;
 use matrix_sdk::ruma::api::client::authenticated_media::get_media_preview;
 use matrix_sdk::ruma::api::client::profile::get_profile;
 use matrix_sdk::ruma::api::client::push::Pusher;
@@ -43,9 +35,19 @@ use matrix_sdk::ruma::events::room::MediaSource;
 use matrix_sdk::ruma::OwnedEventId;
 use matrix_sdk::RoomInfo;
 use mime::Mime;
+use multispend::db::RpcMultispendGroupStatus;
+use multispend::{
+    GroupInvitation, GroupInvitationWithKeys, MsEventData, MultispendGroupVoteType,
+    MultispendListedEvent, WithdrawRequestWithApprovals, WithdrawalResponseType,
+};
 use nostril::{RpcNostrPubkey, RpcNostrSecret};
 use rpc_types::error::{ErrorCode, RpcError};
 use rpc_types::event::{Event, EventSink, PanicEvent, SocialRecoveryEvent, TypedEventExt};
+use rpc_types::matrix::{
+    MatrixInitializeStatus, RpcBackPaginationStatus, RpcMatrixAccountSession,
+    RpcMatrixUploadResult, RpcMatrixUserDirectorySearchResponse, RpcRoomId, RpcRoomMember,
+    RpcRoomNotificationMode, RpcSyncIndicator, RpcTimelineEventItemId, RpcTimelineItem, RpcUserId,
+};
 use rpc_types::{
     FrontendMetadata, GuardianStatus, NetworkError, RpcAmount, RpcAppFlavor, RpcCommunity,
     RpcEcashInfo, RpcEventId, RpcFederation, RpcFederationId, RpcFederationMaybeLoading,
@@ -1798,8 +1800,15 @@ async fn matrixMultispendAccountInfo(
         .get_federation(&finalized_group.federation_id.0)?;
     fed.ensure_multispend_feature()?;
     let room_id = room_id.into_typed()?;
+    let federation_provider = Arc::new(FederationProviderWrapper(bridge.federations.clone()));
     multispend_matrix
-        .observe_multispend_account_info(observable_id.into(), fed, room_id, &finalized_group)
+        .observe_multispend_account_info(
+            observable_id.into(),
+            federation_provider,
+            finalized_group.federation_id.0.clone(),
+            room_id,
+            &finalized_group,
+        )
         .await
 }
 
@@ -2319,8 +2328,6 @@ pub mod tests {
     use anyhow::{anyhow, bail};
     use bech32::{self, Bech32m};
     use bridge::RuntimeExt as _;
-    use bridge_inner::federation::federation_sm::FederationState;
-    use bridge_inner::federation::federation_v2::FederationV2;
     use communities::CommunityInvite;
     use devimint::devfed::DevJitFed;
     use devimint::envs::FM_INVITE_CODE_ENV;
@@ -2328,6 +2335,8 @@ pub mod tests {
     use devimint::vars::{self, mkdir};
     use devimint::{cmd, DevFed};
     use env::envs::FEDI_SOCIAL_RECOVERY_MODULE_ENABLE_ENV;
+    use federations::federation_sm::FederationState;
+    use federations::federation_v2::FederationV2;
     use fedi_social_client::common::VerificationDocument;
     use fedimint_core::db::IDatabaseTransactionOpsCore;
     use fedimint_core::encoding::Encodable;

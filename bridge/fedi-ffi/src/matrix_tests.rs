@@ -5,15 +5,6 @@ use std::time::Duration;
 
 use anyhow::{Context as _, Result};
 use bitcoin::secp256k1;
-use bridge_inner::matrix::bg_matrix::MatrixInitializeStatus;
-// nosemgrep: ban-wildcard-imports
-use bridge_inner::matrix::*;
-use bridge_inner::multispend::multispend_matrix::MultispendMatrix;
-use bridge_inner::multispend::services::MultispendServices;
-use bridge_inner::multispend::{
-    FinalizedGroup, GroupInvitation, GroupInvitationWithKeys, MsEventData, MultispendEvent,
-    MultispendGroupVoteType,
-};
 use either::Either;
 use fedimint_bip39::Bip39RootSecretStrategy;
 use fedimint_client::secret::RootSecretStrategy as _;
@@ -21,8 +12,17 @@ use fedimint_core::util::backoff_util::aggressive_backoff;
 use fedimint_core::util::retry;
 use fedimint_derive_secret::{ChildId, DerivableSecret};
 use fedimint_logging::TracingSetup;
+// nosemgrep: ban-wildcard-imports
+use matrix::*;
 use matrix_sdk::ruma::events::room::message::MessageType;
+use multispend::multispend_matrix::MultispendMatrix;
+use multispend::services::MultispendServices;
+use multispend::{
+    FinalizedGroup, GroupInvitation, GroupInvitationWithKeys, MsEventData, MultispendEvent,
+    MultispendGroupVoteType,
+};
 use rand::{thread_rng, Rng};
+use rpc_types::matrix::MatrixInitializeStatus;
 use rpc_types::{RpcEventId, RpcFederationId, RpcMediaUploadParams, RpcPublicKey};
 use runtime::bridge_runtime::Runtime;
 use runtime::constants::MATRIX_CHILD_ID;

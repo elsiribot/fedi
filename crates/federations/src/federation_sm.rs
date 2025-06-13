@@ -16,9 +16,8 @@ use tokio::sync::RwLock;
 use tracing::{error, info};
 
 use super::federations_locker::{FederationLockGuard, FederationsLocker};
-use crate::federation::federation_v2::FederationV2;
+use crate::federation_v2::{FederationV2, MultispendNotifications};
 use crate::fedi_fee::FediFeeHelper;
-use crate::multispend::services::MultispendServices;
 
 // label: * = lock held
 //
@@ -94,7 +93,7 @@ impl FederationStateMachine {
         locker: &FederationsLocker,
         recover_from_scratch: bool,
         fedi_fee_helper: &Arc<FediFeeHelper>,
-        multispend_services: Arc<MultispendServices>,
+        multispend_services: Arc<dyn MultispendNotifications>,
     ) -> Result<Arc<FederationV2>> {
         let mut wstate = self.state.write().await;
         anyhow::ensure!(
@@ -136,7 +135,7 @@ impl FederationStateMachine {
         federation_info: FederationInfo,
         locker: &FederationsLocker,
         fedi_fee_helper: &Arc<FediFeeHelper>,
-        multispend_services: Arc<MultispendServices>,
+        multispend_services: Arc<dyn MultispendNotifications>,
     ) {
         let mut wstate = self.state.write().await;
         assert!(matches!(&*wstate, FederationStateInternal::NewForLoad));
@@ -181,7 +180,7 @@ impl FederationStateMachine {
         runtime: &Arc<Runtime>,
         federation_info: FederationInfo,
         fedi_fee_helper: &Arc<FediFeeHelper>,
-        multispend_services: Arc<MultispendServices>,
+        multispend_services: Arc<dyn MultispendNotifications>,
         guard: FederationLockGuard,
     ) -> anyhow::Result<Arc<FederationV2>> {
         FederationV2::from_db(

@@ -1,4 +1,3 @@
-use anyhow::Context as _;
 use fedimint_core::db::{Database, IDatabaseTransactionOpsCoreTyped};
 use futures::StreamExt as _;
 use rpc_types::SPv2TransferMetadata;
@@ -6,7 +5,7 @@ use tokio::sync::Notify;
 use tracing::warn;
 
 use super::db::MultispendPendingApprovedWithdrawalRequestKeyPrefix;
-use crate::federation::Federations;
+use super::FederationProvider;
 
 #[derive(Default)]
 pub struct WithdrawalService {
@@ -18,7 +17,7 @@ impl WithdrawalService {
         self.notify.notify_one();
     }
 
-    pub async fn run_continuously(&self, multispend_db: &Database, federations: &Federations) {
+    pub async fn run(&self, multispend_db: &Database, federations: &dyn FederationProvider) {
         loop {
             if let Err(err) = self.run_once(multispend_db, federations).await {
                 warn!(?err, "Withdrawal service processing failed");
@@ -31,7 +30,7 @@ impl WithdrawalService {
     async fn run_once(
         &self,
         multispend_db: &Database,
-        federations: &Federations,
+        federations: &dyn FederationProvider,
     ) -> anyhow::Result<()> {
         let mut dbtx = multispend_db.begin_transaction().await;
         let approved_requests = dbtx
@@ -42,17 +41,16 @@ impl WithdrawalService {
             .await;
         for request in approved_requests {
             dbtx.remove_entry(&request).await;
-            let fed = federations
-                .get_federation(&request.federation_id.0)
-                .context("federation left")?;
-            fed.spv2_transfer(
-                request.transfer_request,
-                SPv2TransferMetadata::MultispendWithdrawal {
-                    room: request.room_id,
-                    request_id: request.request_event_id,
-                },
-            )
-            .await?;
+            federations
+                .spv2_transfer(
+                    &request.federation_id.0,
+                    request.transfer_request,
+                    SPv2TransferMetadata::MultispendWithdrawal {
+                        room: request.room_id,
+                        request_id: request.request_event_id,
+                    },
+                )
+                .await?;
         }
         dbtx.commit_tx().await;
         Ok(())

@@ -24,10 +24,9 @@ use super::db::{MultispendGroupStatus, MultispendMarkedForScanning, RpcMultispen
 use super::rescanner::RoomRescannerManager;
 use super::services::MultispendServices;
 use super::{
-    FinalizedGroup, GroupInvitation, MsEventData, MultispendEvent, MultispendGroupVoteType,
-    MultispendListedEvent, WithdrawalResponseType,
+    FederationProvider, FinalizedGroup, GroupInvitation, MsEventData, MultispendEvent,
+    MultispendGroupVoteType, MultispendListedEvent, WithdrawalResponseType,
 };
-use crate::federation::federation_v2::FederationV2;
 
 pub struct MultispendMatrix {
     pub client: Client,
@@ -256,15 +255,18 @@ impl MultispendMatrix {
     pub async fn observe_multispend_account_info(
         self: &Arc<Self>,
         id: u64,
-        fed: Arc<FederationV2>,
+        federation_ops: Arc<dyn FederationProvider>,
+        federation_id: String,
         room_id: OwnedRoomId,
         finalized_group: &FinalizedGroup,
     ) -> Result<Observable<Result<RpcSPv2SyncResponse, NetworkError>>> {
         let account_id = finalized_group.spv2_account.id();
         let fetch = move || {
-            let fed = fed.clone();
+            let federation_ops = federation_ops.clone();
+            let federation_id = federation_id.clone();
             async move {
-                fed.multispend_group_sync_info(account_id)
+                federation_ops
+                    .multispend_group_sync_info(&federation_id, account_id)
                     .await
                     .map(RpcSPv2SyncResponse::from)
                     .map_err(|_| NetworkError {})

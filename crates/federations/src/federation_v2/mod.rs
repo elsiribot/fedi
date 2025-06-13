@@ -53,7 +53,9 @@ use fedimint_core::task::{timeout, MaybeSend, MaybeSync, TaskGroup};
 use fedimint_core::timing::TimeReporter;
 use fedimint_core::util::backoff_util::{aggressive_backoff, background_backoff};
 use fedimint_core::util::{retry, SafeUrl};
-use fedimint_core::{maybe_add_send_sync, Amount, PeerId, TransactionId};
+use fedimint_core::{
+    apply, async_trait_maybe_send, maybe_add_send_sync, Amount, PeerId, TransactionId,
+};
 use fedimint_derive_secret::{ChildId, DerivableSecret};
 use fedimint_ln_client::pay::GatewayPayError;
 use fedimint_ln_client::{
@@ -84,11 +86,11 @@ use rpc_types::event::{Event, RecoveryProgressEvent, TypedEventExt};
 use rpc_types::matrix::RpcRoomId;
 use rpc_types::{
     BaseMetadata, EcashReceiveMetadata, EcashSendMetadata, FrontendMetadata, GuardianStatus,
-    LightningSendMetadata, OperationFediFeeStatus, RpcAmount, RpcFederation, RpcFederationId,
-    RpcFederationMaybeLoading, RpcFederationPreview, RpcFeeDetails, RpcGenerateEcashResponse,
-    RpcInvoice, RpcJsonClientConfig, RpcLightningGateway, RpcOperationFediFeeStatus,
-    RpcOperationId, RpcPayAddressResponse, RpcPayInvoiceResponse, RpcPeerId,
-    RpcPrevPayInvoiceResult, RpcPublicKey, RpcReturningMemberStatus, RpcSPDepositState,
+    LightningSendMetadata, OperationFediFeeStatus, RpcAmount, RpcEventId, RpcFederation,
+    RpcFederationId, RpcFederationMaybeLoading, RpcFederationPreview, RpcFeeDetails,
+    RpcGenerateEcashResponse, RpcInvoice, RpcJsonClientConfig, RpcLightningGateway,
+    RpcOperationFediFeeStatus, RpcOperationId, RpcPayAddressResponse, RpcPayInvoiceResponse,
+    RpcPeerId, RpcPrevPayInvoiceResult, RpcPublicKey, RpcReturningMemberStatus, RpcSPDepositState,
     RpcSPV2DepositState, RpcSPV2TransferInState, RpcSPV2TransferOutState, RpcSPV2WithdrawalState,
     RpcSPWithdrawState, RpcSPv2CachedSyncResponse, RpcTransaction, RpcTransactionDirection,
     RpcTransactionKind, RpcTransactionListEntry, SPv2DepositMetadata, SPv2TransferMetadata,
@@ -139,7 +141,33 @@ use self::ln_gateway_service::LnGatewayService;
 use self::stability_pool_sweeper_service::StabilityPoolSweeperService;
 use super::federations_locker::FederationLockGuard;
 use crate::fedi_fee::{FediFeeHelper, FediFeeRemittanceService};
-use crate::multispend::services::MultispendServices;
+
+// Trait for multispend notifications required by federation
+#[apply(async_trait_maybe_send!)]
+pub trait MultispendNotifications: MaybeSend + MaybeSync {
+    async fn add_deposit_notification(
+        &self,
+        room: RpcRoomId,
+        amount: FiatAmount,
+        txid: TransactionId,
+        description: String,
+    );
+
+    async fn add_withdrawal_notification(
+        &self,
+        room: RpcRoomId,
+        request_id: RpcEventId,
+        amount: FiatAmount,
+        txid: TransactionId,
+    );
+
+    async fn add_failed_withdrawal_notification(
+        &self,
+        room: RpcRoomId,
+        request_id: RpcEventId,
+        error: String,
+    );
+}
 
 mod backup_service;
 mod ln_gateway_service;
@@ -206,7 +234,7 @@ pub struct FederationV2 {
     pub spv2_sync_service: OnceCell<StabilityPoolSyncService>,
     pub spv2_history_service: OnceCell<StabilityPoolHistoryService>,
     pub spv2_sweeper_service: OnceCell<SPv2SweeperService>,
-    pub multispend_services: Arc<MultispendServices>,
+    pub multispend_services: Arc<dyn MultispendNotifications>,
 }
 
 impl FederationV2 {
@@ -232,7 +260,7 @@ impl FederationV2 {
         guard: FederationLockGuard,
         auxiliary_secret: DerivableSecret,
         fedi_fee_helper: Arc<FediFeeHelper>,
-        multispend_services: Arc<MultispendServices>,
+        multispend_services: Arc<dyn MultispendNotifications>,
     ) -> Arc<Self> {
         let recovering = client.has_pending_recoveries();
         let federation = Arc::new_cyclic(|weak| Self {
@@ -399,7 +427,7 @@ impl FederationV2 {
         federation_info: FederationInfo,
         guard: FederationLockGuard,
         fedi_fee_helper: Arc<FediFeeHelper>,
-        multispend_services: Arc<MultispendServices>,
+        multispend_services: Arc<dyn MultispendNotifications>,
     ) -> anyhow::Result<Arc<Self>> {
         let root_mnemonic = runtime.app_state.root_mnemonic().await;
         let device_index = runtime.app_state.device_index().await;
@@ -509,7 +537,7 @@ impl FederationV2 {
         guard: FederationLockGuard,
         recover_from_scratch: bool,
         fedi_fee_helper: Arc<FediFeeHelper>,
-        multispend_services: Arc<MultispendServices>,
+        multispend_services: Arc<dyn MultispendNotifications>,
     ) -> Result<Arc<Self>> {
         let db_prefix = runtime
             .app_state
@@ -3483,7 +3511,6 @@ impl FederationV2 {
                                 ..
                             }) => {
                                 self.multispend_services
-                                    .completion_notification
                                     .add_deposit_notification(
                                         room,
                                         signed_request.details().amount(),
@@ -3494,7 +3521,6 @@ impl FederationV2 {
                             }
                             Ok(SPv2TransferMetadata::MultispendWithdrawal { room, request_id }) => {
                                 self.multispend_services
-                                    .completion_notification
                                     .add_withdrawal_notification(
                                         room,
                                         request_id,
@@ -3510,7 +3536,6 @@ impl FederationV2 {
                         match serde_json::from_value::<SPv2TransferMetadata>(extra_meta.clone()) {
                             Ok(SPv2TransferMetadata::MultispendWithdrawal { room, request_id }) => {
                                 self.multispend_services
-                                    .completion_notification
                                     .add_failed_withdrawal_notification(
                                         room,
                                         request_id,
