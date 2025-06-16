@@ -18,7 +18,7 @@ use tracing::{error, info};
 use super::federations_locker::{FederationLockGuard, FederationsLocker};
 use crate::federation::federation_v2::FederationV2;
 use crate::fedi_fee::FediFeeHelper;
-use crate::matrix::multispend::services::MultispendServices;
+use crate::multispend::services::MultispendServices;
 
 // label: * = lock held
 //

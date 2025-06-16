@@ -52,8 +52,6 @@ pub type Storage = Arc<dyn IStorage>;
 // base for both AppState and AppStateSeedUncommitted
 #[derive(Clone)]
 struct AppStateStore {
-    // Arc surrounding RwLock<AppStateRaw> is required to be able to move the (owned) write lock
-    // within the spawn_blocking task in the with_write_lock() function.
     raw: Arc<RwLock<state::AppStateJson>>,
     bridge_db: Database,
 }

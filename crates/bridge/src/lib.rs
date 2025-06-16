@@ -8,7 +8,7 @@ use anyhow::{anyhow, bail, Context, Result};
 use bitcoin::key::Secp256k1;
 use bridge_inner::federation::Federations;
 use bridge_inner::matrix::bg_matrix::BgMatrix;
-use bridge_inner::matrix::multispend::services::MultispendServices;
+use bridge_inner::multispend::services::MultispendServices;
 use communities::Communities;
 use device_registration::DeviceRegistrationService;
 use either::Either;
@@ -147,7 +147,7 @@ impl BridgeFull {
             async move {
                 multispend_services
                     .completion_notification
-                    .run_continuously(matrix.wait().await)
+                    .run_continuously(matrix.wait_multispend().await)
                     .await
             },
         );

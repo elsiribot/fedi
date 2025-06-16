@@ -12,8 +12,9 @@ use serde::{Deserialize, Serialize};
 use tokio::sync::{watch, OnceCell};
 use ts_rs::TS;
 
-use super::multispend::services::MultispendServices;
 use super::Matrix;
+use crate::multispend::multispend_matrix::MultispendMatrix;
+use crate::multispend::services::MultispendServices;
 
 #[derive(Clone, Debug, Serialize, Deserialize, TS)]
 #[serde(rename_all = "camelCase")]
@@ -27,7 +28,7 @@ pub enum MatrixInitializeStatus {
 }
 
 pub struct BgMatrix {
-    initialized: OnceCell<Arc<Matrix>>,
+    initialized: OnceCell<(Arc<Matrix>, Arc<MultispendMatrix>)>,
     status: watch::Sender<MatrixInitializeStatus>,
 }
 
@@ -90,15 +91,22 @@ impl BgMatrix {
             &matrix_secret,
             user_name,
             GLOBAL_MATRIX_SERVER.to_owned(),
-            multispend_services,
             &self.status,
         )
         .await;
 
         match result {
             Ok(matrix) => {
+                let multispend_matrix = Arc::new(MultispendMatrix::new(
+                    matrix.client.clone(),
+                    runtime,
+                    multispend_services,
+                ));
+                // important: start listening to messages before syncing
+                multispend_matrix.register_message_handler();
+                matrix.start_syncing();
                 assert!(
-                    self.initialized.set(matrix).is_ok(),
+                    self.initialized.set((matrix, multispend_matrix)).is_ok(),
                     "matrix initialize is only called once"
                 );
                 self.status.send_replace(MatrixInitializeStatus::Success);
@@ -111,10 +119,10 @@ impl BgMatrix {
         }
     }
 
-    pub async fn wait(&self) -> &Arc<Matrix> {
+    async fn wait_inner(&self) -> &(Arc<Matrix>, Arc<MultispendMatrix>) {
         // important: just hangs on failed starts
-        if let Some(matrix) = self.initialized.get() {
-            return matrix;
+        if let Some(value) = self.initialized.get() {
+            return value;
         }
 
         let mut status_rx = self.status.subscribe();
@@ -126,5 +134,13 @@ impl BgMatrix {
         self.initialized
             .get()
             .expect("matrix must be initialized after success status")
+    }
+
+    pub async fn wait(&self) -> &Arc<Matrix> {
+        &self.wait_inner().await.0
+    }
+
+    pub async fn wait_multispend(&self) -> &Arc<MultispendMatrix> {
+        &self.wait_inner().await.1
     }
 }
