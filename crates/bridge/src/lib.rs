@@ -1,7 +1,6 @@
 use std::fmt::Display;
 use std::ops::Deref;
 use std::path::PathBuf;
-use std::str::FromStr;
 use std::sync::{Arc, Mutex as StdMutex, OnceLock};
 
 use anyhow::{anyhow, bail, Context, Result};
@@ -13,16 +12,12 @@ use federations::Federations;
 use fedimint_core::core::ModuleKind;
 use fedimint_core::db::{Database, IDatabaseTransactionOpsCoreTyped as _};
 use fedimint_derive_secret::{ChildId, DerivableSecret};
-use fedimint_mint_client::OOBNotes;
 use futures::StreamExt as _;
 use multispend::services::MultispendServices;
 use nostr::secp256k1::Message;
 use nostril::Nostril;
 use onboarding::{BridgeOnboarding, RpcOnboardingStage};
-use rpc_types::{
-    RpcAmount, RpcEcashInfo, RpcFederationId, RpcPeerId, RpcPublicKey, RpcRecoveryId,
-    RpcSignedLnurlMessage,
-};
+use rpc_types::{RpcFederationId, RpcPeerId, RpcPublicKey, RpcRecoveryId, RpcSignedLnurlMessage};
 use runtime::api::IFediApi;
 use runtime::bridge_runtime::Runtime;
 use runtime::constants::{LNURL_CHILD_ID, MATRIX_CHILD_ID};
@@ -169,23 +164,6 @@ impl BridgeFull {
             .write_file(db_dump_path.as_ref(), buffer)
             .await?;
         Ok(self.runtime.storage.platform_path(db_dump_path.as_ref()))
-    }
-
-    pub async fn validate_ecash(&self, ecash: String) -> Result<RpcEcashInfo> {
-        let oob = OOBNotes::from_str(&ecash)?;
-        let id = self
-            .federations
-            .find_federation_id_for_prefix(oob.federation_id_prefix());
-        match id {
-            Some(id) => Ok(RpcEcashInfo::Joined {
-                federation_id: RpcFederationId(id),
-                amount: RpcAmount(oob.total_amount()),
-            }),
-            None => Ok(RpcEcashInfo::NotJoined {
-                federation_invite: oob.federation_invite().map(|invite| invite.to_string()),
-                amount: RpcAmount(oob.total_amount()),
-            }),
-        }
     }
 
     pub async fn upload_backup_file(

@@ -482,8 +482,8 @@ async fn receiveEcash(
         .map(|(amt, op)| (RpcAmount(amt), RpcOperationId(op)))
 }
 #[macro_rules_derive(rpc_method!)]
-async fn validateEcash(bridge: &BridgeFull, ecash: String) -> anyhow::Result<RpcEcashInfo> {
-    bridge.validate_ecash(ecash).await
+async fn validateEcash(federations: &Federations, ecash: String) -> anyhow::Result<RpcEcashInfo> {
+    federations.validate_ecash(ecash).await
 }
 
 #[macro_rules_derive(rpc_method!)]
@@ -3387,7 +3387,7 @@ pub mod tests {
         let td = TestDevice::new();
         let bridge = td.bridge_full().await?;
         let v2_ecash = "AgEEsuFO5gD3AwQBmW/h68gy6W5cgnl93aTdduN1OnnFofSCqjth03Q6CA+fXnKlVXQSIVSLqcHzsbhozAuo2q5jPMsO6XMZZZXaYvZyIdXzCUIuDNhdCHkGJWAgAa9M5zsSPPVWDVeCWgkerg0Z+Xv8IQGMh7rsgpLh77NCSVRKA2i4fBYNwPglSbkGs42Yllmz6HJtgmmtl/tdjcyVSR30Nc2cfkZYTJcEEnRjQAGC8ZX5eLYQB8rCAZiX5/gQX2QtjasZMy+BJ67kJ0klVqsS9G1IVWhea6ILISOd9H1MJElma8aHBiWBaWeGjrCXru8Ns7Lz4J18CbxFdHyWEQ==";
-        validateEcash(bridge, v2_ecash.into()).await?;
+        validateEcash(&bridge.federations, v2_ecash.into()).await?;
         Ok(())
     }
 

@@ -8,7 +8,8 @@ use federation_v2::FederationV2;
 use federations_locker::FederationsLocker;
 use fedimint_core::config::FederationIdPrefix;
 use fedimint_core::invite_code::InviteCode;
-use rpc_types::RpcFederationPreview;
+use fedimint_mint_client::OOBNotes;
+use rpc_types::{RpcAmount, RpcEcashInfo, RpcFederationId, RpcFederationPreview};
 use runtime::bridge_runtime::Runtime;
 use runtime::storage::state::FederationInfo;
 use runtime::utils::PoisonedLockExt as _;
@@ -197,6 +198,21 @@ impl Federations {
             .keys()
             .find(|x| x.starts_with(&prefix))
             .cloned()
+    }
+
+    pub async fn validate_ecash(&self, ecash: String) -> anyhow::Result<RpcEcashInfo> {
+        let oob = OOBNotes::from_str(&ecash)?;
+        let id = self.find_federation_id_for_prefix(oob.federation_id_prefix());
+        match id {
+            Some(id) => Ok(RpcEcashInfo::Joined {
+                federation_id: RpcFederationId(id),
+                amount: RpcAmount(oob.total_amount()),
+            }),
+            None => Ok(RpcEcashInfo::NotJoined {
+                federation_invite: oob.federation_invite().map(|invite| invite.to_string()),
+                amount: RpcAmount(oob.total_amount()),
+            }),
+        }
     }
 
     async fn update_fedi_fees_schedule(&self) {
