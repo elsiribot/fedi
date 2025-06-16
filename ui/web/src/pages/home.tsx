@@ -20,19 +20,23 @@ import { ContentBlock } from '../components/ContentBlock'
 import { FederationAvatar } from '../components/FederationAvatar'
 import { FediModTiles } from '../components/FediModTiles'
 import { Icon } from '../components/Icon'
+import { InstallBanner } from '../components/InstallBanner'
 import * as Layout from '../components/Layout'
 import { Modal } from '../components/Modal'
 import { Text } from '../components/Text'
-import { useAppSelector } from '../hooks'
+import { useAppSelector, useDeviceQuery, useInstallPrompt } from '../hooks'
 import { styled, theme } from '../styles'
 
 function HomePage() {
     const { t } = useTranslation()
+    const { isIOS } = useDeviceQuery()
+    const { handleOnInstall, showInstallBanner, handleOnDismiss } =
+        useInstallPrompt()
 
     const [hasSeenDisplayName, completeSeenDisplayName] =
         useNuxStep('displayNameModal')
-    const matrixAuth = useAppSelector(selectMatrixAuth)
 
+    const matrixAuth = useAppSelector(selectMatrixAuth)
     const activeFederation = useAppSelector(selectActiveFederation)
     const newsItems = useAppSelector(s => selectActiveFederationChats(s))
 
@@ -153,6 +157,27 @@ function HomePage() {
                         </Section>
                     </Content>
                 </Layout.Content>
+
+                {showInstallBanner && (
+                    <InstallBanner
+                        title={t('feature.home.pwa-install-banner-title')}
+                        description={t(
+                            'feature.home.pwa-install-banner-description',
+                        )}
+                        buttonLabel={t(
+                            'feature.home.pwa-install-banner-button-label',
+                        )}
+                        onInstall={() =>
+                            isIOS
+                                ? window.open(
+                                      'https://support.fedi.xyz/hc/en-us/articles/27283843087634',
+                                      '_blank',
+                                  )
+                                : handleOnInstall()
+                        }
+                        onClose={handleOnDismiss}
+                    />
+                )}
             </Layout.Root>
 
             <Modal

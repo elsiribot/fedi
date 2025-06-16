@@ -1,5 +1,11 @@
 import { useEffect, useState } from 'react'
 
+import { useNuxStep } from '@fedi/common/hooks/nux'
+import { selectTransactions } from '@fedi/common/redux/transactions'
+
+import { useAppSelector } from '../hooks'
+import { config } from '../styles'
+
 export function useMediaQuery(query: string): boolean {
     const [matches, setMatches] = useState(false)
 
@@ -31,4 +37,77 @@ export function useCopy() {
     }
 
     return { copy, copied }
+}
+
+// Whereas useMediaQuery can be used to tell if a user is viewing
+// in a mobile sized window, this hook will look at the userAgent string
+// This means that this will return false for a narrow window in a desktop browser
+export function useDeviceQuery() {
+    const [isMobile, setIsMobile] = useState<boolean>(false)
+    const [isIOS, setIsIOS] = useState<boolean>(false)
+
+    useEffect(() => {
+        if (!window) return
+
+        const userAgentString = window.navigator?.userAgent
+
+        const isAppleDevice = /iPhone|iPad|iPod/i.test(userAgentString)
+        const isAndroidDevice = /Android/i.test(userAgentString)
+
+        setIsMobile(isAppleDevice || isAndroidDevice)
+        setIsIOS(isAppleDevice)
+    }, [])
+
+    return { isMobile, isIOS }
+}
+
+export function useInstallPrompt() {
+    const transactions = useAppSelector(selectTransactions)
+    const { isMobile, isIOS } = useDeviceQuery()
+    const isStandalone = useMediaQuery(config.media.standalone)
+
+    const [showInstallBanner, setShowInstallBanner] = useState<boolean>(false)
+    const [deferredPrompt, setDeferredPrompt] =
+        useState<BeforeInstallPromptEvent>()
+
+    const [hasDismissedInstallPrompt, completeHasDismissedInstallPrompt] =
+        useNuxStep('pwaHasDismissedInstallPrompt')
+
+    useEffect(() => {
+        const handleBeforeInstallPrompt = (event: BeforeInstallPromptEvent) => {
+            event.preventDefault()
+            setDeferredPrompt(event)
+        }
+
+        window.addEventListener(
+            'beforeinstallprompt',
+            handleBeforeInstallPrompt,
+        )
+        return () =>
+            window.removeEventListener(
+                'beforeinstallprompt',
+                handleBeforeInstallPrompt,
+            )
+    }, [])
+
+    useEffect(() => {
+        setShowInstallBanner(
+            isMobile &&
+                !isStandalone &&
+                !hasDismissedInstallPrompt &&
+                transactions.length === 0,
+        )
+    }, [isMobile, isStandalone, hasDismissedInstallPrompt, transactions])
+
+    const handleOnInstall = async () => {
+        if (isIOS) return
+
+        await deferredPrompt?.prompt()
+    }
+
+    return {
+        showInstallBanner,
+        handleOnInstall,
+        handleOnDismiss: completeHasDismissedInstallPrompt,
+    }
 }

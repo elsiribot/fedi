@@ -607,7 +607,10 @@
             "community-services-selected": "Services selected by your Community.",
             "display-name": "Here's your display name:",
             "profile-change": "To change, tap the profile",
-            "profile-change-icon": "To change, tap the <icon /> icon"
+            "profile-change-icon": "To change, tap the <icon /> icon",
+            "pwa-install-banner-title": "Install Fedi",
+            "pwa-install-banner-description": "Install Fedi as an app on your homescreen.",
+            "pwa-install-banner-button-label": "Install"
         },
         "multispend": {
             "chat-events": {

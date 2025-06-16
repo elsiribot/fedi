@@ -38,6 +38,15 @@ const mockCommunity: FederationListItem = {
     meta: {},
 }
 
+jest.mock('../../hooks/util.ts', () => ({
+    ...jest.requireActual('../../hooks/util'),
+    useInstallPrompt: () => ({
+        showInstallBanner: true,
+        handleOnInstall: jest.fn(),
+        handleOnDismiss: jest.fn(),
+    }),
+}))
+
 describe('/pages/home', () => {
     let store
     let state: AppState
@@ -48,28 +57,20 @@ describe('/pages/home', () => {
     })
 
     describe('when the page loads for the first time', () => {
-        it('should render the display name modal', async () => {
+        it('should render the install banner component', async () => {
             renderWithProviders(<HomePage />, {
                 preloadedState: {
                     nux: {
                         steps: {
                             ...state.nux.steps,
-                            displayNameModal: false,
-                        },
-                    },
-                    matrix: {
-                        ...state.matrix,
-                        auth: {
-                            userId: 'user-id',
-                            deviceId: 'device-id',
-                            displayName: 'test user',
+                            pwaHasDismissedInstallPrompt: false,
                         },
                     },
                 },
             })
 
-            const modal = screen.getByRole('alertdialog')
-            expect(modal).toBeInTheDocument()
+            const component = screen.getByLabelText('Install Banner')
+            expect(component).toBeInTheDocument()
         })
     })
 
