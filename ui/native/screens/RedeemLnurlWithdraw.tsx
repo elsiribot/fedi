@@ -6,13 +6,14 @@ import { useTranslation } from 'react-i18next'
 
 import { useRequestForm } from '@fedi/common/hooks/amount'
 import { useToast } from '@fedi/common/hooks/toast'
-import { selectActiveFederationId } from '@fedi/common/redux'
+import { selectPaymentFederation } from '@fedi/common/redux'
 import { RpcTransaction, TransactionEvent } from '@fedi/common/types/bindings'
 import amountUtils from '@fedi/common/utils/AmountUtils'
 import { tryTag } from '@fedi/common/utils/errors'
 import { lnurlWithdraw } from '@fedi/common/utils/lnurl'
 
 import { fedimint } from '../bridge'
+import FederationWalletSelector from '../components/feature/send/FederationWalletSelector'
 import { AmountScreen } from '../components/ui/AmountScreen'
 import Flex from '../components/ui/Flex'
 import { SafeScrollArea } from '../components/ui/SafeArea'
@@ -29,7 +30,7 @@ export type Props = NativeStackScreenProps<
 const RedeemLnurlWithdraw: React.FC<Props> = ({ navigation, route }: Props) => {
     const lnurlWithdrawal = route.params.parsedData.data
     const { t } = useTranslation()
-    const activeFederationId = useAppSelector(selectActiveFederationId)
+    const paymentFederation = useAppSelector(selectPaymentFederation)
     const {
         inputAmount: amount,
         setInputAmount: setAmount,
@@ -82,7 +83,7 @@ const RedeemLnurlWithdraw: React.FC<Props> = ({ navigation, route }: Props) => {
         if (
             amount > maximumAmount ||
             amount < minimumAmount ||
-            !activeFederationId
+            !paymentFederation
         ) {
             return
         }
@@ -90,7 +91,7 @@ const RedeemLnurlWithdraw: React.FC<Props> = ({ navigation, route }: Props) => {
         setIsLoading(true)
         lnurlWithdraw(
             fedimint,
-            activeFederationId,
+            paymentFederation.id,
             lnurlWithdrawal,
             amountUtils.satToMsat(amount),
             memo,
@@ -111,6 +112,7 @@ const RedeemLnurlWithdraw: React.FC<Props> = ({ navigation, route }: Props) => {
     return (
         <SafeScrollArea edges="notop">
             <AmountScreen
+                subHeader={<FederationWalletSelector />}
                 amount={amount}
                 onChangeAmount={onChangeAmount}
                 minimumAmount={minimumAmount}
