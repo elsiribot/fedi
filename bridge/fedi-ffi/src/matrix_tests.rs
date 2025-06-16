@@ -131,7 +131,7 @@ async fn mk_matrix_new_user() -> Result<(
 #[ignore]
 #[tokio::test(flavor = "multi_thread")]
 async fn login() -> Result<()> {
-    TracingSetup::default().init().unwrap();
+    TracingSetup::default().init().ok();
     let (_matrix, _, _event_rx, _temp_dir) = mk_matrix_new_user().await?;
     Ok(())
 }
@@ -139,7 +139,7 @@ async fn login() -> Result<()> {
 #[ignore]
 #[tokio::test(flavor = "multi_thread")]
 async fn send_dm() -> Result<()> {
-    TracingSetup::default().init().unwrap();
+    TracingSetup::default().init().ok();
     let (matrix1, _, mut event_rx1, _temp_dir) = mk_matrix_new_user().await?;
     let (matrix2, _, mut event_rx2, _temp_dir) = mk_matrix_new_user().await?;
     let user2 = matrix2.client.user_id().unwrap();
@@ -186,7 +186,7 @@ async fn send_dm() -> Result<()> {
 #[tokio::test(flavor = "multi_thread")]
 #[ignore]
 async fn test_recovery() -> Result<()> {
-    TracingSetup::default().init().unwrap();
+    TracingSetup::default().init().ok();
     let username = mk_username();
     let secret = mk_secret();
     info!("### creating users");
@@ -247,7 +247,7 @@ async fn test_recovery() -> Result<()> {
 #[test]
 #[ignore]
 fn matrix_password() {
-    TracingSetup::default().init().unwrap();
+    TracingSetup::default().init().ok();
     let home_server = "matrix-synapse-homeserver2.dev.fedibtc.com";
     let mnemonic = "foo bar baz".parse::<bip39::Mnemonic>().unwrap();
     let root_secret = Bip39RootSecretStrategy::<12>::to_root_secret(&mnemonic);
@@ -262,7 +262,7 @@ fn matrix_password() {
 #[ignore]
 #[tokio::test(flavor = "multi_thread")]
 async fn test_create_room() -> Result<()> {
-    TracingSetup::default().init().unwrap();
+    TracingSetup::default().init().ok();
     let (matrix, _, _event_rx, _temp_dir) = mk_matrix_new_user().await?;
     let mut request = create_room::Request::default();
     let room_name = "my name is one".to_string();
@@ -279,7 +279,7 @@ async fn test_create_room() -> Result<()> {
 #[ignore]
 #[tokio::test(flavor = "multi_thread")]
 async fn test_send_and_download_attachment() -> Result<()> {
-    TracingSetup::default().init().unwrap();
+    TracingSetup::default().init().ok();
     let (matrix, _, _event_rx, _temp_dir) = mk_matrix_new_user().await?;
     let (matrix2, _, _event_rx, _temp_dir) = mk_matrix_new_user().await?;
 
