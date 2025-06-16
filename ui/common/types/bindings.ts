@@ -41,6 +41,8 @@ export type BalanceEvent = {
   balance: RpcAmount;
 };
 
+export type BridgeOffboardingReason = { type: "deviceIdentifierMismatch" };
+
 /**
  * Notify front-end that a particular community's metadata has updated
  */
@@ -159,6 +161,13 @@ export type FeatureCatalog = {
    */
   stability_pool_v2: StabilityPoolV2FeatureConfig | null;
   /**
+   * Enable Nostr client for Rate federation feature.
+   *
+   * This allows relays to be configured using a remote feature flag service
+   * in future.
+   */
+  nostr_client: NostrClientFeatureCatalog | null;
+  /**
    * figure out stable format for account id, that includes the federation id
    * prefix
    */
@@ -214,6 +223,12 @@ export type GuardianStatus =
   | { timeout: { guardian: string; elapsed: string } };
 
 export type LogEvent = { log: string };
+
+export type MatrixInitializeStatus =
+  | { type: "starting" }
+  | { type: "loggingIn" }
+  | { type: "success" }
+  | { type: "error"; error: RpcError };
 
 /**
  * Collected details for a given event id.
@@ -303,6 +318,8 @@ export type NetworkError = Record<string, never>;
  * reuse check and must be rejoined using a recovery-from-scratch.
  */
 export type NonceReuseCheckFailedEvent = { federationId: RpcFederationId };
+
+export type NostrClientFeatureCatalog = { relays: Array<string> };
 
 /**
  * An Observable contains a value that updates over time.
@@ -401,15 +418,10 @@ export type RpcBitcoinNetwork =
   | "regtest"
   | "unknown";
 
-export type RpcBridgeFullInitError =
-  | { type: "v2IdentifierMismatch"; existing: string; new: string }
-  | ({ type: "other" } & string);
-
-export type RpcBridgeStatus = {
-  matrixSetup: boolean;
-  deviceIndexAssignmentStatus: RpcDeviceIndexAssignmentStatus;
-  bridgeFullInitError: RpcBridgeFullInitError | null;
-};
+export type RpcBridgeStatus =
+  | { type: "onboarded" }
+  | { type: "onboarding"; stage: RpcOnboardingStage }
+  | { type: "offboarding"; reason: BridgeOffboardingReason };
 
 export type RpcCommunity = {
   inviteCode: string;
@@ -621,7 +633,8 @@ export type RpcMethods = {
   backupNow: [backupNow, null];
   getMnemonic: [getMnemonic, Array<string>];
   checkMnemonic: [checkMnemonic, boolean];
-  recoverFromMnemonic: [recoverFromMnemonic, Array<RpcRegisteredDevice>];
+  restoreMnemonic: [restoreMnemonic, null];
+  completeOnboardingNewSeed: [completeOnboardingNewSeed, null];
   generateReusedEcashProofs: [generateReusedEcashProofs, RpcReusedEcashProofs];
   uploadBackupFile: [uploadBackupFile, string];
   locateRecoveryFile: [locateRecoveryFile, string];
@@ -629,7 +642,7 @@ export type RpcMethods = {
   recoveryQr: [recoveryQr, SocialRecoveryQr | null];
   cancelSocialRecovery: [cancelSocialRecovery, null];
   socialRecoveryApprovals: [socialRecoveryApprovals, SocialRecoveryEvent];
-  completeSocialRecovery: [completeSocialRecovery, Array<RpcRegisteredDevice>];
+  completeSocialRecovery: [completeSocialRecovery, null];
   socialRecoveryDownloadVerificationDoc: [
     socialRecoveryDownloadVerificationDoc,
     string | null,
@@ -644,6 +657,8 @@ export type RpcMethods = {
   signNostrEvent: [signNostrEvent, string];
   nostrEncrypt: [nostrEncrypt, string];
   nostrDecrypt: [nostrDecrypt, string];
+  nostrEncrypt04: [nostrEncrypt04, string];
+  nostrDecrypt04: [nostrDecrypt04, string];
   stabilityPoolAccountInfo: [
     stabilityPoolAccountInfo,
     RpcStabilityPoolAccountInfo,
@@ -691,17 +706,16 @@ export type RpcMethods = {
   ];
   dumpDb: [dumpDb, string];
   fetchRegisteredDevices: [fetchRegisteredDevices, Array<RpcRegisteredDevice>];
-  registerAsNewDevice: [registerAsNewDevice, RpcFederation | null];
-  transferExistingDeviceRegistration: [
-    transferExistingDeviceRegistration,
-    RpcFederation | null,
-  ];
-  deviceIndexAssignmentStatus: [
-    deviceIndexAssignmentStatus,
-    RpcDeviceIndexAssignmentStatus,
+  onboardRegisterAsNewDevice: [onboardRegisterAsNewDevice, null];
+  onboardTransferExistingDeviceRegistration: [
+    onboardTransferExistingDeviceRegistration,
+    null,
   ];
   matrixObservableCancel: [matrixObservableCancel, null];
-  matrixInit: [matrixInit, null];
+  matrixInitializeStatus: [
+    matrixInitializeStatus,
+    Observable<MatrixInitializeStatus>,
+  ];
   matrixGetAccountSession: [matrixGetAccountSession, RpcMatrixAccountSession];
   matrixObserveSyncIndicator: [
     matrixObserveSyncIndicator,
@@ -854,6 +868,11 @@ export type RpcOOBSpendState =
   | { type: "success" };
 
 export type RpcOOBState = RpcOOBSpendState | RpcOOBReissueState;
+
+export type RpcOnboardingStage =
+  | { type: "init" }
+  | { type: "socialRecovery" }
+  | { type: "deviceIndexSelection" };
 
 export type RpcOnchainDepositState =
   | { type: "waitingForTransaction" }
@@ -1446,14 +1465,14 @@ export type checkMnemonic = { mnemonic: Array<string> };
 
 export type communityPreview = { inviteCode: string };
 
+export type completeOnboardingNewSeed = {};
+
 export type completeSocialRecovery = {};
 
 export type decodeInvoice = {
   federationId: RpcFederationId | null;
   invoice: string;
 };
-
-export type deviceIndexAssignmentStatus = {};
 
 export type dumpDb = { federationId: string };
 
@@ -1577,7 +1596,7 @@ export type matrixGetMediaPreview = { url: string };
 
 export type matrixIgnoreUser = { userId: RpcUserId };
 
-export type matrixInit = {};
+export type matrixInitializeStatus = { observableId: number };
 
 export type matrixListIgnoredUsers = {};
 
@@ -1771,9 +1790,17 @@ export type matrixUserProfile = { userId: RpcUserId };
 
 export type nostrDecrypt = { pubkey: string; ciphertext: string };
 
+export type nostrDecrypt04 = { pubkey: string; ciphertext: string };
+
 export type nostrEncrypt = { pubkey: string; plaintext: string };
 
+export type nostrEncrypt04 = { pubkey: string; plaintext: string };
+
 export type onAppForeground = {};
+
+export type onboardRegisterAsNewDevice = {};
+
+export type onboardTransferExistingDeviceRegistration = { index: number };
 
 export type payAddress = {
   federationId: RpcFederationId;
@@ -1805,11 +1832,9 @@ export type recheckPeginAddress = {
   operationId: RpcOperationId;
 };
 
-export type recoverFromMnemonic = { mnemonic: Array<string> };
-
 export type recoveryQr = {};
 
-export type registerAsNewDevice = {};
+export type restoreMnemonic = { mnemonic: Array<string> };
 
 export type setLightningModuleFediFeeSchedule = {
   federationId: RpcFederationId;
@@ -1933,8 +1958,6 @@ export type switchGateway = {
   federationId: RpcFederationId;
   gatewayId: RpcPublicKey;
 };
-
-export type transferExistingDeviceRegistration = { index: number };
 
 export type updateCachedFiatFXInfo = {
   fiatCode: string;

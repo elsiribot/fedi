@@ -24,6 +24,7 @@ import {
 } from '../types'
 import {
     JSONObject,
+    MatrixInitializeStatus,
     MsEventData,
     MultispendListedEvent,
     NetworkError,
@@ -39,7 +40,11 @@ import {
     RpcSyncIndicator,
     RpcTimelineItem,
 } from '../types/bindings'
-import { DisplayNameValidatorType, getDisplayNameValidator } from './chat'
+import {
+    DisplayNameValidatorType,
+    generateRandomDisplayName,
+    getDisplayNameValidator,
+} from './chat'
 import { FedimintBridge, UnsubscribeFn } from './fedimint'
 import { makeLog } from './log'
 import {
@@ -157,25 +162,39 @@ export class MatrixChatClient {
         }
 
         this.startPromise = new Promise((resolve, reject) => {
-            fedimint
-                .matrixInit()
-                .then(() => this.getInitialAuth())
-                .then(auth => {
-                    // resolve cached auth before fetching anything
-                    // to support offline UX
-                    resolve(auth)
+            const unsubscribe =
+                this.fedimint.subscribeObservableSimple<MatrixInitializeStatus>(
+                    id => {
+                        return this.fedimint.matrixInitializeStatus({
+                            observableId: id,
+                        })
+                    },
+                    status => {
+                        if (status.type === 'success') {
+                            unsubscribe()
+                            this.getInitialAuth()
+                                .then(auth => {
+                                    // resolve cached auth before fetching anything
+                                    // to support offline UX
+                                    resolve(auth)
 
-                    // try to refetch auth in the background to
-                    // asynchronously get the user's avatarUrl
-                    this.refetchAuth()
+                                    // try to refetch auth in the background to
+                                    // asynchronously get the user's avatarUrl
+                                    this.refetchAuth()
 
-                    this.listIgnoredUsers()
-                    this.observeRoomList().catch(reject)
-                })
-                .catch(err => {
-                    log.error('matrixInit', err)
-                    reject(err)
-                })
+                                    // get initial list of ignored users
+                                    this.listIgnoredUsers()
+                                    // these should always be observing
+                                    this.observeSyncStatus()
+                                    this.observeRoomList().catch(reject)
+                                })
+                                .catch(err => {
+                                    log.error('matrixInit', err)
+                                    reject(err)
+                                })
+                        }
+                    },
+                )
         })
 
         return this.startPromise
@@ -184,17 +203,34 @@ export class MatrixChatClient {
     async getInitialAuth() {
         // Don't emit cached auth to make sure the startPromise
         // resolves before matrixAuth is set
-        return this.getAccountSession()
+        const session = await this.getAccountSession()
+        log.debug('getInitialAuth', session)
+        // if the display name is set to the npub in the user ID,
+        // we haven't set a display name yet, so generate a random one
+        if (
+            session.displayName &&
+            session.userId.includes(session.displayName)
+        ) {
+            const name = generateRandomDisplayName()
+            log.debug('setting random display name:', name)
+            await this.setDisplayName(name)
+        } else {
+            log.debug('no need to set random display name')
+        }
+        return this.serializeAuth(session)
     }
 
     async refetchAuth() {
-        const auth = await this.getAccountSession(false)
+        const session = await this.getAccountSession(false)
+        log.debug('refetchAuth session', session)
+        const auth = this.serializeAuth(session)
+        log.debug('refetchAuth emitting auth', auth)
         this.emit('auth', auth)
+        return auth
     }
 
     private async getAccountSession(cached = true) {
-        const session = await this.fedimint.matrixGetAccountSession({ cached })
-        return this.serializeAuth(session)
+        return this.fedimint.matrixGetAccountSession({ cached })
     }
 
     // arrow function notation is important here! otherwise this.fedimint is

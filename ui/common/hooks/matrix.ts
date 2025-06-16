@@ -6,7 +6,6 @@ import {
     cancelMatrixPayment,
     joinMatrixRoom,
     observeMatrixRoom,
-    observeMatrixSyncStatus,
     paginateMatrixRoomTimeline,
     rejectMatrixPaymentRequest,
     searchMatrixUsers,
@@ -24,7 +23,6 @@ import {
     selectMatrixUser,
     sendMatrixReadReceipt,
     unobserveMatrixRoom,
-    unsubscribeMatrixSyncStatus,
     selectMatrixContactsList,
     observeMultispendEvent,
     unobserveMultispendEvent,
@@ -562,18 +560,6 @@ export function useMatrixChatInvites(t: TFunction) {
     return {
         joinPublicGroup,
     }
-}
-
-export function useObserveMatrixSyncStatus(isMatrixStarted: boolean) {
-    const dispatch = useCommonDispatch()
-    useEffect(() => {
-        if (!isMatrixStarted) return
-        dispatch(observeMatrixSyncStatus())
-
-        return () => {
-            dispatch(unsubscribeMatrixSyncStatus())
-        }
-    }, [isMatrixStarted, dispatch])
 }
 
 export function useObserveMultispendEvent(

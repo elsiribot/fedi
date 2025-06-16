@@ -74,11 +74,13 @@ use runtime::observable::{Observable, ObservableUpdate, ObservableVec, Observabl
 use runtime::storage::AppState;
 use runtime::utils::PoisonedLockExt as _;
 use stability_pool_client::common::TransferRequest;
-use tokio::sync::{broadcast, mpsc, Mutex};
+use tokio::sync::{broadcast, mpsc, watch, Mutex};
 use tracing::{error, info, warn};
 
+use self::bg_matrix::MatrixInitializeStatus;
 use crate::federation::federation_v2::FederationV2;
 
+pub mod bg_matrix;
 pub mod multispend;
 mod rescanner;
 pub use rpc_types::matrix::*;
@@ -155,6 +157,7 @@ impl Matrix {
     }
 
     /// Start the matrix service.
+    #[allow(clippy::too_many_arguments)]
     pub async fn init(
         runtime: Arc<Runtime>,
         base_dir: &Path,
@@ -162,10 +165,11 @@ impl Matrix {
         user_name: &str,
         home_server: String,
         multispend_services: Arc<MultispendServices>,
+        status_sender: &watch::Sender<MatrixInitializeStatus>,
     ) -> Result<Arc<Self>> {
         let matrix_session = runtime
             .app_state
-            .with_read_lock(|r| r.matrix_session_native_sync.clone())
+            .with_read_lock(|r| r.matrix_session.clone())
             .await;
         let user_password = &Self::home_server_password(matrix_secret, &home_server);
         let encryption_passphrase = Self::encryption_passphrase(matrix_secret);
@@ -174,6 +178,7 @@ impl Matrix {
         if let Some(session) = matrix_session {
             client.restore_session(session).await?;
         } else {
+            status_sender.send_replace(MatrixInitializeStatus::LoggingIn);
             Self::login_or_register(
                 &client,
                 user_name,
@@ -337,7 +342,7 @@ impl Matrix {
             Some(matrix_sdk::AuthSession::Matrix(matrix_session)) => {
                 app_state
                     .with_write_lock(|a| {
-                        a.matrix_session_native_sync = Some(matrix_session);
+                        a.matrix_session = Some(matrix_session);
                     })
                     .await?;
             }
@@ -368,7 +373,7 @@ impl Matrix {
             runtime
                 .app_state
                 .with_write_lock(|s| {
-                    if let Some(value) = &mut s.matrix_session_native_sync {
+                    if let Some(value) = &mut s.matrix_session {
                         let Some(session_tokens) = client.session_tokens() else {
                             warn!("session tokens not present after refresh");
                             return;

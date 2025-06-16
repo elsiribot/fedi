@@ -103,7 +103,7 @@ use runtime::constants::{
 use runtime::db::FederationPendingRejoinFromScratchKey;
 use runtime::features::{StabilityPoolV2FeatureConfig, StabilityPoolV2FeatureConfigState};
 use runtime::observable::Observable;
-use runtime::storage::{DatabaseInfo, FederationInfo, FediFeeSchedule};
+use runtime::storage::state::{DatabaseInfo, FederationInfo, FediFeeSchedule};
 use runtime::utils::{display_currency, to_unix_time};
 use serde::de::DeserializeOwned;
 use spv2_sweeper_service::SPv2SweeperService;
@@ -402,11 +402,7 @@ impl FederationV2 {
         multispend_services: Arc<MultispendServices>,
     ) -> anyhow::Result<Arc<Self>> {
         let root_mnemonic = runtime.app_state.root_mnemonic().await;
-        let device_index = runtime
-            .app_state
-            .device_index()
-            .await
-            .context("device index must exist when joined federations exist")?;
+        let device_index = runtime.app_state.device_index().await;
         let federation_db = match &federation_info.database {
             DatabaseInfo::DatabaseName(db_name) => {
                 runtime.storage.federation_database_v2(db_name).await?
@@ -524,7 +520,7 @@ impl FederationV2 {
             .global_db
             .with_prefix(db_prefix.consensus_encode_to_vec());
         let root_mnemonic = runtime.app_state.root_mnemonic().await;
-        let device_index = runtime.app_state.ensure_device_index().await?;
+        let device_index = runtime.app_state.device_index().await;
 
         let mut invite_code =
             InviteCode::from_str(&invite_code_string).context("invalid invite code")?;

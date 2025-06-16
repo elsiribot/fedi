@@ -14,7 +14,7 @@ use rpc_types::{LightningSendMetadata, RpcTransactionDirection};
 use runtime::api::TransactionDirection;
 use runtime::bridge_runtime::Runtime;
 use runtime::constants::MILLION;
-use runtime::storage::{FediFeeSchedule, ModuleFediFeeSchedule};
+use runtime::storage::state::{FediFeeSchedule, ModuleFediFeeSchedule};
 use tokio::sync::{Mutex, OwnedMutexGuard};
 use tracing::{error, info, instrument, warn};
 

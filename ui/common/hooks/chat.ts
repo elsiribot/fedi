@@ -7,15 +7,12 @@ import { INVALID_NAME_PLACEHOLDER } from '../constants/matrix'
 import {
     CommonDispatch,
     configureMatrixPushNotifications,
-    previewAllDefaultChats,
     selectActiveFederationId,
-    selectHasSetMatrixDisplayName,
     selectMatrixAuth,
     selectPaymentFederation,
     sendMatrixPaymentPush,
     sendMatrixPaymentRequest,
     setMatrixDisplayName,
-    startMatrixClient,
 } from '../redux'
 import { getDisplayNameValidator, parseData } from '../utils/chat'
 import { FedimintBridge } from '../utils/fedimint'
@@ -293,23 +290,22 @@ export const useChatPaymentUtils = (
 }
 
 // Pass in fedimint bridge to make sure startMatrixClient is called
-export const useDisplayNameForm = (t: TFunction, fedimint?: FedimintBridge) => {
+export const useDisplayNameForm = (t: TFunction) => {
     const [username, setUsername] = useState<string>('')
     const [isSubmitting, setIsSubmitting] = useState(false)
     const [errorMessage, setErrorMessage] = useState<string | null>(null)
     const toast = useToast()
     const dispatch = useCommonDispatch()
     const matrixAuth = useCommonSelector(selectMatrixAuth)
-    const hasSetDisplayName = useCommonSelector(selectHasSetMatrixDisplayName)
     const validator = useMemo(() => getDisplayNameValidator(), [])
 
     useEffect(() => {
         if (!matrixAuth) return
         const { displayName } = matrixAuth
-        if (hasSetDisplayName && displayName !== INVALID_NAME_PLACEHOLDER) {
+        if (displayName !== INVALID_NAME_PLACEHOLDER) {
             setUsername(displayName)
         }
-    }, [hasSetDisplayName, matrixAuth])
+    }, [matrixAuth])
 
     const handleChangeUsername = useCallback(
         (input: string) => {
@@ -335,16 +331,6 @@ export const useDisplayNameForm = (t: TFunction, fedimint?: FedimintBridge) => {
                     // Only show first error
                     throw new Error(result.errorMessage)
                 }
-                // this is optional because it must be provided during onboarding to start
-                // the matrix client for the first time but this same hook is also
-                // used after the client has started when editing the display name
-                if (fedimint && !matrixAuth) {
-                    // this should be the first time we start the
-                    // matrix client when registering for the first time
-                    await dispatch(startMatrixClient({ fedimint }))
-                    // TODO: find a better place for this action
-                    dispatch(previewAllDefaultChats())
-                }
                 await dispatch(
                     setMatrixDisplayName({ displayName: username }),
                 ).unwrap()
@@ -355,7 +341,7 @@ export const useDisplayNameForm = (t: TFunction, fedimint?: FedimintBridge) => {
             }
             setIsSubmitting(false)
         },
-        [dispatch, fedimint, matrixAuth, t, toast, username, validator],
+        [dispatch, t, toast, username, validator],
     )
 
     return {

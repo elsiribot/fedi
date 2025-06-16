@@ -1,14 +1,15 @@
 use std::collections::{BTreeMap, BTreeSet};
-use std::str::FromStr;
 use std::sync::atomic::{AtomicU64, Ordering};
 use std::sync::Arc;
 use std::time::Duration;
 
 use anyhow::{Context as _, Result};
 use bitcoin::secp256k1;
+use bridge_inner::matrix::bg_matrix::MatrixInitializeStatus;
 use bridge_inner::matrix::multispend::MultispendGroupVoteType;
 // nosemgrep: ban-wildcard-imports
 use bridge_inner::matrix::*;
+use either::Either;
 use fedimint_bip39::Bip39RootSecretStrategy;
 use fedimint_client::secret::RootSecretStrategy as _;
 use fedimint_core::util::backoff_util::aggressive_backoff;
@@ -26,9 +27,11 @@ use runtime::bridge_runtime::Runtime;
 use runtime::constants::MATRIX_CHILD_ID;
 use runtime::event::IEventSink;
 use runtime::features::{FeatureCatalog, RuntimeEnvironment};
+use runtime::storage::state::DeviceIdentifier;
+use runtime::storage::{AppState, OnboardingCompletionMethod, Storage};
 use stability_pool_client::common::{AccountType, AccountUnchecked};
 use tempfile::TempDir;
-use tokio::sync::mpsc;
+use tokio::sync::{mpsc, watch};
 use tracing::{error, info, warn};
 
 use crate::ffi::PathBasedStorage;
@@ -50,17 +53,34 @@ async fn mk_matrix_login(
     let (event_tx, event_rx) = mpsc::channel(1000);
     let event_sink = Arc::new(TestEventSink(event_tx));
     let tmp_dir = TempDir::new()?;
-    let storage = PathBasedStorage::new(tmp_dir.as_ref().to_path_buf()).await?;
+    let storage = Arc::new(PathBasedStorage::new(tmp_dir.as_ref().to_path_buf()).await?) as Storage;
+    let new_identifier_v2: DeviceIdentifier =
+        "bridge:test:70c2ad23-bfac-4aa2-81c3-d6f5e79ae724".parse()?;
+    let global_db = storage.federation_database_v2("global").await?;
+    let Either::Right(onboarding) =
+        AppState::load(&storage, &global_db, new_identifier_v2.clone()).await?
+    else {
+        panic!("must be uncommited");
+    };
+    let app_state = onboarding
+        .complete_onboarding(
+            OnboardingCompletionMethod::NewSeed,
+            new_identifier_v2.clone(),
+        )
+        .await
+        .map_err(|(_, err)| err)?;
     let runtime = Runtime::new(
-        Arc::new(storage),
+        storage,
+        global_db,
         event_sink,
         Arc::new(MockFediApi::default()),
-        FromStr::from_str("bridge:test:70c2ad23-bfac-4aa2-81c3-d6f5e79ae724")?,
+        app_state,
         FeatureCatalog::new(RuntimeEnvironment::Dev).into(),
     )
     .await?;
     let runtime = Arc::new(runtime);
     let multispend_services = MultispendServices::new(runtime.clone());
+    let sender = watch::Sender::new(MatrixInitializeStatus::Starting);
     let matrix = Matrix::init(
         runtime,
         tmp_dir.as_ref(),
@@ -68,6 +88,7 @@ async fn mk_matrix_login(
         user_name,
         format!("https://{TEST_HOME_SERVER}"),
         multispend_services,
+        &sender,
     )
     .await?;
     Ok((matrix, event_rx, tmp_dir))

@@ -228,11 +228,13 @@ async fn handle_websocket(mut socket: WebSocket, device_id: String, state: AppSt
             .expect("bridge must be present")
             .bridge;
 
-        let root_task_group = bridge.runtime().task_group.clone();
-        root_task_group
-            .shutdown_join_all(None)
-            .await
-            .expect("must shutdown");
+        if let Ok(runtime) = bridge.runtime() {
+            let root_task_group = runtime.task_group.clone();
+            root_task_group
+                .shutdown_join_all(None)
+                .await
+                .expect("must shutdown");
+        }
 
         // hold the write lock until bridge is dead
         debug!("waiting for bridge down");

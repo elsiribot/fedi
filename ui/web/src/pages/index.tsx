@@ -5,7 +5,8 @@ import { Trans, useTranslation } from 'react-i18next'
 import welcomeBackground from '@fedi/common/assets/images/welcome-bg.png'
 import FediLogo from '@fedi/common/assets/svgs/fedi-logo-icon.svg'
 import { useToast } from '@fedi/common/hooks/toast'
-import { startMatrixClient } from '@fedi/common/redux'
+import { refreshOnboardingStatus } from '@fedi/common/redux'
+import { isDev } from '@fedi/common/utils/environment'
 import { makeLog } from '@fedi/common/utils/log'
 
 import { Button } from '../components/Button'
@@ -34,7 +35,9 @@ function WelcomePage() {
 
     const handleOnContinue = async () => {
         try {
-            dispatch(startMatrixClient({ fedimint })).unwrap()
+            setLoading(true)
+            await fedimint.completeOnboardingNewSeed()
+            await dispatch(refreshOnboardingStatus(fedimint)).unwrap()
 
             // Return early if no invite code
             if (!inviteCode) {
@@ -44,8 +47,8 @@ function WelcomePage() {
 
             push(`/onboarding/join?invite_code=${inviteCode}`)
         } catch (err) {
-            log.error('handleJoin', err)
-            toast.error(t, 'errors.invalid-federation-code')
+            log.error('handleOnContinue', err)
+            toast.error(t, err, 'errors.unknown-error')
         } finally {
             setLoading(false)
         }
@@ -77,15 +80,15 @@ function WelcomePage() {
                         loading={loading}>
                         {t('words.continue')}
                     </Button>
-                    {/* Hide for now until issues with recovery on the backend can be investigated further */}
-                    {/* {!inviteCode && (
+                    {/* Show recovery only in development until issues with recovery on the backend are resolved */}
+                    {isDev() && !inviteCode && (
                         <Button
                             width="full"
                             href="/onboarding/recover"
                             variant="secondary">
                             {t('phrases.recover-my-account')}
                         </Button>
-                    )} */}
+                    )}
 
                     <TextWrapper>
                         <Text

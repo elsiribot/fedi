@@ -10,7 +10,7 @@ use fedimint_core::config::FederationIdPrefix;
 use fedimint_core::invite_code::InviteCode;
 use rpc_types::RpcFederationPreview;
 use runtime::bridge_runtime::Runtime;
-use runtime::storage::FederationInfo;
+use runtime::storage::state::FederationInfo;
 use runtime::utils::PoisonedLockExt as _;
 use tracing::error;
 
@@ -90,7 +90,7 @@ impl Federations {
     ) -> anyhow::Result<RpcFederationPreview> {
         let invite_code = invite_code.to_lowercase();
         let root_mnemonic = self.runtime.app_state.root_mnemonic().await;
-        let device_index = self.runtime.app_state.ensure_device_index().await?;
+        let device_index = self.runtime.app_state.device_index().await;
         FederationV2::federation_preview(
             &invite_code,
             &root_mnemonic,

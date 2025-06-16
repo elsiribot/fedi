@@ -5,7 +5,7 @@ use fedimint_core::core::{ModuleKind, OperationId};
 use fedimint_core::encoding::{Decodable, Encodable};
 use fedimint_core::{impl_db_lookup, impl_db_record, Amount};
 use rpc_types::{OperationFediFeeStatus, RpcTransactionDirection};
-use runtime::storage::FiatFXInfo;
+use runtime::storage::state::FiatFXInfo;
 
 #[repr(u8)]
 pub enum BridgeDbPrefix {

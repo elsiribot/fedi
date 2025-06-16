@@ -7,7 +7,15 @@ import {
 } from '@reduxjs/toolkit'
 import type { i18n } from 'i18next'
 
-import { CommonState } from '.'
+import {
+    CommonState,
+    fetchSocialRecovery,
+    initializeDeviceRegistration,
+    previewAllDefaultChats,
+    refreshFederations,
+    setShouldMigrateSeed,
+    startMatrixClient,
+} from '.'
 import {
     FeatureCatalog,
     RpcNostrPubkey,
@@ -15,7 +23,10 @@ import {
 } from '../types/bindings'
 import { FediModCacheMode } from '../types/fediInternal'
 import { FedimintBridge } from '../utils/fedimint'
+import { makeLog } from '../utils/log'
 import { loadFromStorage } from './storage'
+
+const log = makeLog('redux/environment')
 
 /*** Initial State ***/
 
@@ -37,6 +48,7 @@ const initialState = {
     fedimintVersion: undefined as string | undefined,
     featureFlags: undefined as FeatureCatalog | undefined,
     internetUnreachableBadgeShown: false,
+    onboardingCompleted: false,
 }
 
 export type EnvironmentState = typeof initialState
@@ -104,6 +116,9 @@ export const environmentSlice = createSlice({
                 state.internetUnreachableBadgeShown = true
             }
         },
+        setOnboardingCompleted(state, action: PayloadAction<boolean>) {
+            state.onboardingCompleted = action.payload
+        },
     },
     extraReducers: builder => {
         builder.addCase(changeLanguage.fulfilled, (state, action) => {
@@ -155,9 +170,80 @@ export const {
     setFedimintVersion,
     setFeatureFlags,
     setInternetUnreachableBadgeVisibility,
+    setOnboardingCompleted,
 } = environmentSlice.actions
 
 /*** Async thunk actions ***/
+
+export const refreshOnboardingStatus = createAsyncThunk<
+    void,
+    FedimintBridge,
+    { state: CommonState }
+>('environment/refreshOnboardingStatus', async (fedimint, { dispatch }) => {
+    const status = await fedimint.bridgeStatus()
+    log.info('bridgeStatus', status)
+
+    if (status.type === 'onboarded') {
+        // generate a random display name after matrix client is resolved
+        // but only if matrix_setup
+        dispatch(startMatrixClient({ fedimint }))
+        dispatch(getBridgeInfo(fedimint))
+
+        // wait until after the matrix client is started to refresh federations because
+        // the latest metadata may include new default chats that require
+        // matrix to fetch the room previews
+        await dispatch(refreshFederations(fedimint)).unwrap()
+
+        // setBridgeIsReady(true)
+        // preview chats after matrix client has finished initializing
+        dispatch(previewAllDefaultChats())
+
+        // navigate to home
+        await dispatch(setOnboardingCompleted(true))
+        return
+    } else if (status.type === 'onboarding') {
+        switch (status.stage.type) {
+            case 'deviceIndexSelection': // Transfer device flow
+                dispatch(initializeDeviceRegistration(fedimint))
+                // navigate to RecoveryWalletOptions (/onboarding/recover/wallet-transfer)
+                break
+            case 'socialRecovery':
+                dispatch(fetchSocialRecovery(fedimint))
+                // navigate to CompleteSocialRecovery (/onboarding/recover/social)
+                break
+            case 'init':
+            default:
+                // navigate to splash
+                await dispatch(setOnboardingCompleted(false))
+                break
+        }
+    } else {
+        // type === 'offboarding'
+        const { reason } = status
+        switch (reason.type) {
+            // This means the user has migrated their seed to a new device via device/app
+            // cloning so we need to prompt them to reinstall and do a device transfer
+            // so exit early without proceeding with further initialization
+            case 'deviceIdentifierMismatch':
+                await dispatch(setShouldMigrateSeed(true))
+                break
+            default:
+        }
+        return
+    }
+})
+
+export const getBridgeInfo = createAsyncThunk<
+    void,
+    FedimintBridge,
+    { state: CommonState }
+>('environment/getBridgeInfo', async (fedimint, { dispatch }) => {
+    await Promise.all([
+        dispatch(initializeFeatureFlags({ fedimint })),
+        dispatch(initializeFedimintVersion({ fedimint })),
+        dispatch(initializeNostrKeys({ fedimint })),
+    ])
+})
 
 export const changeLanguage = createAsyncThunk<
     void,
@@ -293,3 +379,6 @@ export const selectIsMultispendFeatureEnabled = ({
 
 export const selectInternetUnreachableBadgeShown = (s: CommonState) =>
     s.environment.internetUnreachableBadgeShown
+
+export const selectOnboardingCompleted = (s: CommonState) =>
+    s.environment.onboardingCompleted
