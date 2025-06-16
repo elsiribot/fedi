@@ -457,6 +457,20 @@ export class FedimintBridge {
         })
     }
 
+    async nostrEncrypt04(pubkey: string, plaintext: string) {
+        return this.rpcTyped('nostrEncrypt04', {
+            pubkey,
+            plaintext,
+        })
+    }
+
+    async nostrDecrypt04(pubkey: string, ciphertext: string) {
+        return this.rpcTyped('nostrDecrypt04', {
+            pubkey,
+            ciphertext,
+        })
+    }
+
     async listGateways(federationId: string) {
         return this.rpcTyped('listGateways', { federationId })
     }
@@ -479,24 +493,26 @@ export class FedimintBridge {
         return this.rpcTyped('checkMnemonic', { mnemonic })
     }
 
-    async recoverFromMnemonic(mnemonic: string[]) {
-        return this.rpcTyped('recoverFromMnemonic', {
+    async restoreMnemonic(mnemonic: string[]) {
+        return this.rpcTyped('restoreMnemonic', {
             mnemonic,
         })
     }
 
-    async registerAsNewDevice() {
-        return this.rpcTyped('registerAsNewDevice', {})
+    // Adds a new device for an existing user.
+    // Currently DISABLED in the UI.
+    async onboardRegisterAsNewDevice() {
+        return this.rpcTyped('onboardRegisterAsNewDevice', {})
     }
 
-    async transferExistingDeviceRegistration(index: number) {
-        return this.rpcTyped('transferExistingDeviceRegistration', {
+    async onboardTransferExistingDeviceRegistration(index: number) {
+        return this.rpcTyped('onboardTransferExistingDeviceRegistration', {
             index,
         })
     }
 
-    async deviceIndexAssignmentStatus() {
-        return this.rpcTyped('deviceIndexAssignmentStatus', {})
+    async completeOnboardingNewSeed() {
+        return this.rpcTyped('completeOnboardingNewSeed', {})
     }
 
     async fetchRegisteredDevices() {
@@ -640,8 +656,10 @@ export class FedimintBridge {
         })
     }
 
-    async matrixInit() {
-        return this.rpcTyped('matrixInit', {})
+    async matrixInitializeStatus(
+        args: bindings.RpcPayload<'matrixInitializeStatus'>,
+    ) {
+        return this.rpcTyped('matrixInitializeStatus', args)
     }
 
     async matrixGetAccountSession(

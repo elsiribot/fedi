@@ -480,8 +480,7 @@ export const matrixSlice = createSlice({
             log.debug('startMatrixClient.pending')
             state.status = MatrixSyncStatus.initialSync
         })
-        builder.addCase(startMatrixClient.fulfilled, (state, action) => {
-            state.auth = action.payload
+        builder.addCase(startMatrixClient.fulfilled, state => {
             state.started = true
         })
         builder.addCase(startMatrixClient.rejected, state => {
@@ -734,7 +733,7 @@ export const unobserveMultispendEvent = createAsyncThunk<
 })
 
 export const startMatrixClient = createAsyncThunk<
-    MatrixAuth,
+    void,
     { fedimint: FedimintBridge },
     { state: CommonState }
 >('matrix/startMatrix', ({ fedimint }, { getState, dispatch }) => {
@@ -744,8 +743,8 @@ export const startMatrixClient = createAsyncThunk<
     // success on a second call, but failure on the first one.
     const client = getMatrixClient()
     if (client.hasStarted) {
-        log.warn('Matrix client already started')
-        throw new Error('Matrix client already started')
+        log.info('Matrix client already started')
+        return
     }
 
     // Bind all the listeners we need to dispatch actions
@@ -823,7 +822,7 @@ export const startMatrixClient = createAsyncThunk<
     })
 
     // Start the client
-    return client.start(fedimint)
+    client.start(fedimint)
 })
 
 export const setMatrixDisplayName = createAsyncThunk<

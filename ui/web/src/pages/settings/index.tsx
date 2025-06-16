@@ -18,7 +18,6 @@ import {
     leaveFederation,
     selectAlphabeticallySortedFederations,
     selectFederation,
-    selectHasSetMatrixDisplayName,
     selectMatrixAuth,
     setActiveFederationId,
 } from '@fedi/common/redux'
@@ -57,9 +56,6 @@ function AdminPage() {
     const { t } = useTranslation()
     const dispatch = useAppDispatch()
     const matrixAuth = useAppSelector(selectMatrixAuth)
-    const hasSetMatrixDisplayName = useAppSelector(
-        selectHasSetMatrixDisplayName,
-    )
 
     const isInviteSupported = useIsInviteSupported()
     const exportTransactions = useExportTransactions(fedimint, t)
@@ -172,7 +168,7 @@ function AdminPage() {
                     label: t('phrases.edit-profile'),
                     icon: UserIcon,
                     href: '/settings/edit-profile',
-                    hidden: !hasSetMatrixDisplayName,
+                    hidden: !matrixAuth,
                 },
                 {
                     label: t('words.language'),
@@ -219,7 +215,7 @@ function AdminPage() {
                 </Layout.Header>
                 <Layout.Content>
                     <div>
-                        {hasSetMatrixDisplayName && (
+                        {matrixAuth && (
                             <Content>
                                 <QRContainer>
                                     <QRCode
