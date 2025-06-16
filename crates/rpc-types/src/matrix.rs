@@ -21,7 +21,18 @@ use matrix_sdk_ui::timeline::{
 use serde::{Deserialize, Serialize};
 use tracing::warn;
 
-use crate::error::ErrorCode;
+use crate::error::{ErrorCode, RpcError};
+
+#[derive(Clone, Debug, Serialize, Deserialize, ts_rs::TS)]
+#[serde(rename_all = "camelCase")]
+#[serde(tag = "type")]
+#[ts(export)]
+pub enum MatrixInitializeStatus {
+    Starting,
+    LoggingIn,
+    Success,
+    Error { error: RpcError },
+}
 
 #[derive(Debug, Serialize, Clone, ts_rs::TS)]
 #[serde(tag = "kind", content = "value")]

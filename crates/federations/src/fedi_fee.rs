@@ -18,11 +18,11 @@ use runtime::storage::state::{FediFeeSchedule, ModuleFediFeeSchedule};
 use tokio::sync::{Mutex, OwnedMutexGuard};
 use tracing::{error, info, instrument, warn};
 
-use crate::federation::federation_v2::client::ClientExt;
-use crate::federation::federation_v2::db::{
+use crate::federation_v2::client::ClientExt;
+use crate::federation_v2::db::{
     OutstandingFediFeesPerTXTypeKey, OutstandingFediFeesPerTXTypeKeyPrefix,
 };
-use crate::federation::federation_v2::{zero_gateway_fees, FederationV2};
+use crate::federation_v2::{zero_gateway_fees, FederationV2};
 
 /// Helper struct to encapsulate all state and logic related to Fedi fee. This
 /// struct can be consumed by both the bridge and each individual federation

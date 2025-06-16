@@ -14,23 +14,27 @@ use runtime::storage::state::FederationInfo;
 use runtime::utils::PoisonedLockExt as _;
 use tracing::error;
 
+use crate::federation_v2::MultispendNotifications;
 use crate::fedi_fee::FediFeeHelper;
-use crate::multispend::services::MultispendServices;
 
 pub mod federation_sm;
 pub mod federation_v2;
 pub mod federations_locker;
+pub mod fedi_fee;
 
 pub struct Federations {
     runtime: Arc<Runtime>,
     pub fedi_fee_helper: Arc<FediFeeHelper>,
     federations: Mutex<BTreeMap<String, FederationStateMachine>>,
     federations_locker: FederationsLocker,
-    multispend_services: Arc<MultispendServices>,
+    multispend_services: Arc<dyn MultispendNotifications>,
 }
 
 impl Federations {
-    pub fn new(runtime: Arc<Runtime>, multispend_services: Arc<MultispendServices>) -> Self {
+    pub fn new(
+        runtime: Arc<Runtime>,
+        multispend_services: Arc<dyn MultispendNotifications>,
+    ) -> Self {
         Federations {
             fedi_fee_helper: Arc::new(FediFeeHelper::new(runtime.clone())),
             runtime,
@@ -223,7 +227,7 @@ async fn load_federation(
     federations_locker: &FederationsLocker,
     federation_id_str: String,
     federation_info: FederationInfo,
-    multispend_services: Arc<MultispendServices>,
+    multispend_services: Arc<dyn MultispendNotifications>,
     fed_sm: FederationStateMachine,
 ) -> anyhow::Result<()> {
     fed_sm

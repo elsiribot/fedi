@@ -2,6 +2,7 @@ use fedimint_core::db::{DatabaseTransaction, IDatabaseTransactionOpsCoreTyped as
 use fedimint_core::encoding::{Decodable, Encodable};
 use fedimint_core::{impl_db_lookup, impl_db_record};
 use futures::StreamExt as _;
+use rpc_types::matrix::RpcRoomId;
 use rpc_types::{RpcEventId, RpcFederationId, RpcFiatAmount, RpcTransactionId};
 use stability_pool_client::common::SignedTransferRequest;
 use ts_rs::TS;
@@ -10,7 +11,6 @@ use super::{
     FinalizedGroup, GroupInvitationWithKeys, MultispendDepositEventData, MultispendEvent,
     WithdrawRequestWithApprovals, WithdrawalResponseType,
 };
-use crate::matrix::RpcRoomId;
 
 pub enum MultispendDbPrefix {
     /// (room_id) => MultispendGroupStatus

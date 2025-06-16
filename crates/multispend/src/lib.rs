@@ -8,17 +8,22 @@ use db::{
     MultispendGroupStatusKey, MultispendInvalidEvent, MultispendInvitationKey,
     MultispendPendingApprovedWithdrawalRequestKey, MultispendWithdrawRequestKey,
 };
+use fedimint_core::core::OperationId;
 use fedimint_core::db::{DatabaseTransaction, IDatabaseTransactionOpsCoreTyped};
 use fedimint_core::encoding::{Decodable, Encodable};
 use fedimint_core::invite_code::InviteCode;
+use fedimint_core::task::{MaybeSend, MaybeSync};
+use fedimint_core::{apply, async_trait_maybe_send};
 use futures::StreamExt as _;
 use rpc_types::matrix::{RpcRoomId, RpcUserId};
 use rpc_types::{
     RpcEventId, RpcFederationId, RpcFiatAmount, RpcPublicKey, RpcSignature, RpcTransactionId,
+    SPv2TransferMetadata,
 };
 use serde::{Deserialize, Serialize};
 use stability_pool_client::common::{
-    Account, AccountType, AccountUnchecked, SignedTransferRequest, TransferRequest,
+    Account, AccountId, AccountType, AccountUnchecked, SignedTransferRequest, SyncResponse,
+    TransferRequest,
 };
 use tracing::error;
 use ts_rs::TS;
@@ -395,6 +400,23 @@ pub struct MultispendListedEvent {
     pub time: u64,
     pub event: MsEventData,
     pub event_id: RpcEventId,
+}
+
+// Trait abstraction for federation operations needed by multispend
+#[apply(async_trait_maybe_send!)]
+pub trait FederationProvider: MaybeSend + MaybeSync {
+    async fn spv2_transfer(
+        &self,
+        federation_id: &str,
+        signed_request: SignedTransferRequest,
+        meta: SPv2TransferMetadata,
+    ) -> anyhow::Result<OperationId>;
+
+    async fn multispend_group_sync_info(
+        &self,
+        federation_id: &str,
+        account_id: AccountId,
+    ) -> anyhow::Result<SyncResponse>;
 }
 
 pub struct MultispendContext {

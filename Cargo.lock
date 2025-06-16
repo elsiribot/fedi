@@ -1481,14 +1481,15 @@ name = "bridge"
 version = "0.3.0"
 dependencies = [
  "anyhow",
+ "async-trait",
  "bech32",
  "bip39",
  "bitcoin",
- "bridge-inner",
  "bug-report",
  "communities",
  "device-registration",
  "either",
+ "federations",
  "fedi-social-client",
  "fedimint-api-client",
  "fedimint-core",
@@ -1496,62 +1497,18 @@ dependencies = [
  "fedimint-mint-client",
  "futures",
  "hex",
+ "matrix",
+ "multispend",
  "nostr 0.42.1",
  "nostril",
  "rpc-types",
  "runtime",
  "serde",
- "tokio",
- "tracing",
- "ts-rs",
-]
-
-[[package]]
-name = "bridge-inner"
-version = "0.3.0"
-dependencies = [
- "anyhow",
- "async-recursion",
- "async-stream",
- "async-trait",
- "bip39",
- "bitcoin",
- "bug-report",
- "fedi-social-client",
- "fedimint-api-client",
- "fedimint-bip39",
- "fedimint-build",
- "fedimint-client",
- "fedimint-core",
- "fedimint-derive-secret",
- "fedimint-ln-client",
- "fedimint-ln-common",
- "fedimint-meta-client",
- "fedimint-mint-client",
- "fedimint-wallet-client",
- "futures",
- "hex",
- "imbl",
- "lightning-invoice",
- "matrix-sdk",
- "matrix-sdk-ui",
- "mime",
- "rand 0.8.5",
- "reqwest 0.12.18",
- "ring 0.17.14",
- "rpc-types",
- "runtime",
- "rusqlite",
- "serde",
- "serde_json",
  "stability-pool-client",
- "stability-pool-client-old",
- "thiserror 2.0.12",
  "tokio",
  "tokio-stream",
  "tracing",
  "ts-rs",
- "url",
 ]
 
 [[package]]
@@ -3101,6 +3058,55 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "37909eebbb50d72f9059c3b6d82c0463f2ff062c9e95845c43a6c9c0355411be"
 
 [[package]]
+name = "federations"
+version = "0.3.0"
+dependencies = [
+ "anyhow",
+ "async-recursion",
+ "async-stream",
+ "async-trait",
+ "bip39",
+ "bitcoin",
+ "bug-report",
+ "fedi-social-client",
+ "fedimint-api-client",
+ "fedimint-bip39",
+ "fedimint-build",
+ "fedimint-client",
+ "fedimint-core",
+ "fedimint-derive-secret",
+ "fedimint-ln-client",
+ "fedimint-ln-common",
+ "fedimint-meta-client",
+ "fedimint-mint-client",
+ "fedimint-wallet-client",
+ "futures",
+ "hex",
+ "imbl",
+ "lightning-invoice",
+ "matrix",
+ "matrix-sdk",
+ "matrix-sdk-ui",
+ "mime",
+ "rand 0.8.5",
+ "reqwest 0.12.18",
+ "ring 0.17.14",
+ "rpc-types",
+ "runtime",
+ "rusqlite",
+ "serde",
+ "serde_json",
+ "stability-pool-client",
+ "stability-pool-client-old",
+ "thiserror 2.0.12",
+ "tokio",
+ "tokio-stream",
+ "tracing",
+ "ts-rs",
+ "url",
+]
+
+[[package]]
 name = "fedi-debug"
 version = "0.0.0"
 dependencies = [
@@ -3153,13 +3159,13 @@ dependencies = [
  "bip39",
  "bitcoin",
  "bridge",
- "bridge-inner",
  "bug-report",
  "clap",
  "communities",
  "devimint",
  "either",
  "env",
+ "federations",
  "fedi-social-client",
  "fedimint-bip39",
  "fedimint-build",
@@ -3176,9 +3182,11 @@ dependencies = [
  "lazy_static",
  "lightning-invoice",
  "macro_rules_attribute 0.1.3",
+ "matrix",
  "matrix-sdk",
  "mime",
  "mockito",
+ "multispend",
  "nostr 0.42.1",
  "nostril",
  "rand 0.8.5",
@@ -6723,6 +6731,29 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "47e1ffaa40ddd1f3ed91f717a33c8c0ee23fff369e3aa8772b9605cc1d22f4c3"
 
 [[package]]
+name = "matrix"
+version = "0.3.0"
+dependencies = [
+ "anyhow",
+ "fedimint-core",
+ "fedimint-derive-secret",
+ "futures",
+ "hex",
+ "imbl",
+ "matrix-sdk",
+ "matrix-sdk-ui",
+ "mime",
+ "ring 0.17.14",
+ "rpc-types",
+ "runtime",
+ "rusqlite",
+ "serde_json",
+ "tokio",
+ "tokio-stream",
+ "tracing",
+]
+
+[[package]]
 name = "matrix-pickle"
 version = "0.2.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -7191,6 +7222,29 @@ name = "multimap"
 version = "0.10.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "1d87ecb2933e8aeadb3e3a02b828fed80a7528047e68b4f424523a0981a3a084"
+
+[[package]]
+name = "multispend"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "async-stream",
+ "async-trait",
+ "bitcoin",
+ "fedimint-core",
+ "futures",
+ "matrix-sdk",
+ "rand 0.8.5",
+ "rpc-types",
+ "runtime",
+ "serde",
+ "serde_json",
+ "stability-pool-client",
+ "thiserror 2.0.12",
+ "tokio",
+ "tracing",
+ "ts-rs",
+]
 
 [[package]]
 name = "n0-future"
