@@ -61,7 +61,7 @@ export const RequestPaymentDialog: React.FC<Props> = ({
         useState<Transaction>()
     const containerRef = useRef<HTMLDivElement | null>(null)
     const onOpenChangeRef = useUpdatingRef(onOpenChange)
-    const isOnchainSupported = useIsOnchainDepositSupported()
+    const isOnchainSupported = useIsOnchainDepositSupported(fedimint)
 
     // Reset on close, focus input on desktop open
     useEffect(() => {

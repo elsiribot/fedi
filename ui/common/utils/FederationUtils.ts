@@ -368,9 +368,9 @@ export const shouldEnableOnchainDeposits = (metadata: FederationMetadata) => {
         SupportedMetaFields.onchain_deposits_disabled,
         metadata,
     )
-    // Disable onchain deposits by default if not specified in meta
+    // Enable onchain deposits by default if not specified in meta
     return onchainDepositsDisabled === null
-        ? false
+        ? true
         : onchainDepositsDisabled !== 'true'
 }
 

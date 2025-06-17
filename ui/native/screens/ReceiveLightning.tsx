@@ -49,7 +49,7 @@ const ReceiveLightning: React.FC<Props> = ({ navigation }: Props) => {
     const [invoice, setInvoice] = useState<string>('')
     const [generatingInvoice, setGeneratingInvoice] = useState<boolean>(false)
     const [submitAttempts, setSubmitAttempts] = useState(0)
-    const isOnchainSupported = useIsOnchainDepositSupported()
+    const isOnchainSupported = useIsOnchainDepositSupported(fedimint)
     const [onchainAddress, setOnchainAddress] = useState<string>('')
     const [isLoading, setIsLoading] = useState<boolean>(false)
     const [notes, setNotes] = useState<string>('')
