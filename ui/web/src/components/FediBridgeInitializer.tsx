@@ -11,7 +11,7 @@ import {
     refreshOnboardingStatus,
     selectOnboardingCompleted,
 } from '@fedi/common/redux'
-import { selectHasLoadedFromStorage } from '@fedi/common/redux/storage'
+import { selectStorageIsReady } from '@fedi/common/redux/storage'
 import {
     DeviceRegistrationEvent,
     PanicEvent,
@@ -37,7 +37,7 @@ export const FediBridgeInitializer: React.FC<Props> = ({ children }) => {
     const { t } = useTranslation()
     const { asPath, pathname, query } = useRouter()
 
-    const hasLoadedStorage = useAppSelector(selectHasLoadedFromStorage)
+    const hasLoadedStorage = useAppSelector(selectStorageIsReady)
     const socialRecoveryId = useAppSelector(selectSocialRecoveryQr)
     const shouldLockDevice = useAppSelector(s => s.recovery.shouldLockDevice)
     const deviceIndexRequired = useAppSelector(
@@ -58,11 +58,11 @@ export const FediBridgeInitializer: React.FC<Props> = ({ children }) => {
             const start = Date.now()
             try {
                 const newDeviceId = generateDeviceId()
-                log.info('initializing bridge with deviceId', newDeviceId)
                 // PWA-specific device ID handling
                 const deviceId = await dispatchRef
                     .current(initializeDeviceIdWeb({ deviceId: newDeviceId }))
                     .unwrap()
+                log.info('initializing bridge with deviceId', deviceId)
                 await initializeBridge(deviceId)
 
                 const stop = Date.now()

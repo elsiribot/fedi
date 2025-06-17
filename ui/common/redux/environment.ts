@@ -11,7 +11,6 @@ import {
     CommonState,
     fetchSocialRecovery,
     initializeDeviceRegistration,
-    previewAllDefaultChats,
     refreshFederations,
     setShouldMigrateSeed,
     startMatrixClient,
@@ -186,17 +185,13 @@ export const refreshOnboardingStatus = createAsyncThunk<
     if (status.type === 'onboarded') {
         // generate a random display name after matrix client is resolved
         // but only if matrix_setup
-        dispatch(startMatrixClient({ fedimint }))
+        await dispatch(startMatrixClient({ fedimint }))
         dispatch(getBridgeInfo(fedimint))
 
         // wait until after the matrix client is started to refresh federations because
         // the latest metadata may include new default chats that require
         // matrix to fetch the room previews
         await dispatch(refreshFederations(fedimint)).unwrap()
-
-        // setBridgeIsReady(true)
-        // preview chats after matrix client has finished initializing
-        dispatch(previewAllDefaultChats())
 
         // navigate to home
         await dispatch(setOnboardingCompleted(true))
@@ -212,13 +207,13 @@ export const refreshOnboardingStatus = createAsyncThunk<
                 // navigate to CompleteSocialRecovery (/onboarding/recover/social)
                 break
             case 'init':
-            default:
                 // navigate to splash
                 await dispatch(setOnboardingCompleted(false))
                 break
+            default:
+                throw new Error('Unknown onboarding stage')
         }
-    } else {
-        // type === 'offboarding'
+    } else if (status.type === 'offboarding') {
         const { reason } = status
         switch (reason.type) {
             // This means the user has migrated their seed to a new device via device/app
@@ -230,6 +225,8 @@ export const refreshOnboardingStatus = createAsyncThunk<
             default:
         }
         return
+    } else {
+        throw new Error('Unknown bridge status type')
     }
 })
 
@@ -269,6 +266,7 @@ export const initializeDeviceIdWeb = createAsyncThunk<
     async ({ deviceId }, { getState, dispatch }) => {
         const cachedDeviceId = getState().environment.deviceId
         if (!cachedDeviceId) {
+            log.debug(`no cachedDeviceId found, setting to ${deviceId}`)
             dispatch(setDeviceId(deviceId))
         }
         return cachedDeviceId || deviceId

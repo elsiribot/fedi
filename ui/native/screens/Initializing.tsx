@@ -3,7 +3,7 @@ import type { NativeStackScreenProps } from '@react-navigation/native-stack'
 import React, { useEffect } from 'react'
 
 import { selectOnboardingCompleted } from '@fedi/common/redux'
-import { selectHasLoadedFromStorage } from '@fedi/common/redux/storage'
+import { selectStorageIsReady } from '@fedi/common/redux/storage'
 
 import Flex from '../components/ui/Flex'
 import SvgImage, { SvgImageSize } from '../components/ui/SvgImage'
@@ -20,7 +20,7 @@ export type Props = NativeStackScreenProps<RootStackParamList, 'Initializing'>
 const Initializing: React.FC<Props> = () => {
     const navigation = useNavigation<NavigationHook>()
     const onboardingCompleted = useAppSelector(selectOnboardingCompleted)
-    const hasStorageLoaded = useAppSelector(selectHasLoadedFromStorage || false)
+    const hasStorageLoaded = useAppSelector(selectStorageIsReady || false)
     const isAppUnlocked = useIsFeatureUnlocked('app')
     const shouldMigrateSeed = useAppSelector(s => s.recovery.shouldMigrateSeed)
     const hasLoaded = hasStorageLoaded

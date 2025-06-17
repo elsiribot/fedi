@@ -736,7 +736,7 @@ export const startMatrixClient = createAsyncThunk<
     void,
     { fedimint: FedimintBridge },
     { state: CommonState }
->('matrix/startMatrix', ({ fedimint }, { getState, dispatch }) => {
+>('matrix/startMatrix', async ({ fedimint }, { getState, dispatch }) => {
     // Create or grab existing client, bail out if we've already started.
     // TODO: when short circuiting on hasStarted, we should try to return
     // the same promise as the existing start call. Otherwise we may show
@@ -822,7 +822,9 @@ export const startMatrixClient = createAsyncThunk<
     })
 
     // Start the client
-    client.start(fedimint)
+    await client.start(fedimint)
+    // preview default chats after matrix is ready
+    dispatch(previewAllDefaultChats())
 })
 
 export const setMatrixDisplayName = createAsyncThunk<
@@ -1537,6 +1539,7 @@ export const previewGlobalDefaultChats = createAsyncThunk<
     void,
     { state: CommonState }
 >('matrix/previewGlobalDefaultChats', async (_, { getState }) => {
+    log.debug('previewGlobalDefaultChats')
     const client = getMatrixClient()
     // can't fetch preview until after matrix init + registration
     if (!selectMatrixAuth(getState())) return []
@@ -1588,13 +1591,14 @@ export const previewCommunityDefaultChats = createAsyncThunk<
 
 /**
  * Fetches the room previews for any default chats configured in the meta
- * of any federations that have been loaded
+ * of any federations that have been loaded AND the global default chats
  */
 export const previewAllDefaultChats = createAsyncThunk<
     MatrixGroupPreview[],
     void,
     { state: CommonState }
 >('matrix/previewAllDefaultChats', async (_, { getState, dispatch }) => {
+    dispatch(previewGlobalDefaultChats())
     const federations = selectLoadedFederations(getState())
     // Previews default chats for each federation
     const federationDefaultChatResults = await Promise.allSettled(

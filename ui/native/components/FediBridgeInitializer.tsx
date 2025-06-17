@@ -10,7 +10,7 @@ import {
     refreshOnboardingStatus,
     setShouldLockDevice,
 } from '@fedi/common/redux'
-import { selectHasLoadedFromStorage } from '@fedi/common/redux/storage'
+import { selectStorageIsReady } from '@fedi/common/redux/storage'
 import { TransactionEvent } from '@fedi/common/types'
 import {
     DeviceRegistrationEvent,
@@ -40,7 +40,7 @@ export const FediBridgeInitializer: React.FC<Props> = ({ children }) => {
     const { t } = useTranslation()
     const [bridgeIsReady, setBridgeIsReady] = useState<boolean>(false)
     const [bridgeError, setBridgeError] = useState<unknown>()
-    const hasLoadedStorage = useAppSelector(selectHasLoadedFromStorage)
+    const hasLoadedStorage = useAppSelector(selectStorageIsReady)
     const dispatchRef = useUpdatingRef(dispatch)
     const isForeground = useAppIsInForeground()
 
