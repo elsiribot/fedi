@@ -24,14 +24,12 @@ import { InstallBanner } from '../components/InstallBanner'
 import * as Layout from '../components/Layout'
 import { Modal } from '../components/Modal'
 import { Text } from '../components/Text'
-import { useAppSelector, useDeviceQuery, useInstallPrompt } from '../hooks'
+import { useAppSelector, useInstallPrompt } from '../hooks'
 import { styled, theme } from '../styles'
 
 function HomePage() {
     const { t } = useTranslation()
-    const { isIOS } = useDeviceQuery()
-    const { handleOnInstall, showInstallBanner, handleOnDismiss } =
-        useInstallPrompt()
+    const { showInstallBanner, handleOnDismiss } = useInstallPrompt()
 
     const [hasSeenDisplayName, completeSeenDisplayName] =
         useNuxStep('displayNameModal')
@@ -168,12 +166,10 @@ function HomePage() {
                             'feature.home.pwa-install-banner-button-label',
                         )}
                         onInstall={() =>
-                            isIOS
-                                ? window.open(
-                                      'https://support.fedi.xyz/hc/en-us/articles/27283843087634',
-                                      '_blank',
-                                  )
-                                : handleOnInstall()
+                            window.open(
+                                'https://support.fedi.xyz/hc/en-us/articles/27283843087634',
+                                '_blank',
+                            )
                         }
                         onClose={handleOnDismiss}
                     />
