@@ -25,7 +25,7 @@ import { useStoragePermission } from '../utils/hooks'
 import {
     copyAssetToTempUri,
     stripFileUriPrefix,
-    tryLaunchImageLibrary,
+    tryPickAssets,
 } from '../utils/media'
 
 const log = makeLog('EditProfile')
@@ -57,22 +57,27 @@ const EditProfileSettings: React.FC = () => {
                 await requestStoragePermission()
             }
 
-            tryLaunchImageLibrary({
-                selectionLimit: 1,
-                mediaType: 'photo',
-                maxWidth: 1024,
-                maxHeight: 1024,
-                quality: 0.7,
-            })
-                .map(({ assets }) => assets?.[0])
+            tryPickAssets(
+                {
+                    selectionLimit: 1,
+                    mediaType: 'photo',
+                    maxWidth: 1024,
+                    maxHeight: 1024,
+                    quality: 0.7,
+                },
+                t,
+            )
+                .map(assets => assets[0])
                 .andThen(ensureNonNullish)
                 .andTee(({ type }) => setProfileImageMimeType(type ?? ''))
                 .andThen(copyAssetToTempUri)
-                .match(setProfileImageUri, e =>
-                    log.error('Failed to launch image library', e),
-                )
+                .match(setProfileImageUri, e => {
+                    log.error('Failed to launch image library', e)
+
+                    if (e._tag === 'UserError') toast.error(t, e)
+                })
         },
-        [storagePermission, requestStoragePermission],
+        [storagePermission, requestStoragePermission, t, toast],
     )
 
     const handleNameSubmit = useCallback(async () => {

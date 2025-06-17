@@ -1,6 +1,5 @@
 import { useNavigation } from '@react-navigation/native'
 import { Input, Theme, useTheme } from '@rneui/themed'
-import { err, ok } from 'neverthrow'
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import {
@@ -21,7 +20,6 @@ import { DocumentPickerResponse, types } from 'react-native-document-picker'
 import { Asset, ImageLibraryOptions } from 'react-native-image-picker'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 
-import { MAX_FILE_SIZE, MAX_IMAGE_SIZE } from '@fedi/common/constants/matrix'
 import { theme as fediTheme } from '@fedi/common/constants/theme'
 import { useToast } from '@fedi/common/hooks/toast'
 import { useDebouncedEffect } from '@fedi/common/hooks/util'
@@ -35,21 +33,18 @@ import {
     setMessageToEdit,
 } from '@fedi/common/redux'
 import { InputAttachment, InputMedia } from '@fedi/common/types'
-import { makeError, makeLocalizedError } from '@fedi/common/utils/errors'
 import { makeLog } from '@fedi/common/utils/log'
 import { getEventId } from '@fedi/common/utils/matrix'
 import { formatFileSize } from '@fedi/common/utils/media'
-import { ensureNonNullish } from '@fedi/common/utils/neverthrow'
 
 import { fedimint } from '../../../bridge'
 import { useAppDispatch, useAppSelector } from '../../../state/hooks'
 import {
-    doesAssetExceedSize,
-    doesDocumentExceedSize,
     copyDocumentToTempUri,
     copyAssetToTempUri,
-    tryLaunchImageLibrary,
+    tryPickAssets,
     tryPickDocuments,
+    mapMixedMediaToMatrixInput,
 } from '../../../utils/media'
 import { Attachments } from '../../ui/Attachments'
 import SvgImage, { SvgImageSize } from '../../ui/SvgImage'
@@ -123,172 +118,75 @@ const MessageInput: React.FC<MessageInputProps> = ({
     const [documents, setDocuments] = useState<DocumentPickerResponse[]>([])
     const [media, setMedia] = useState<Asset[]>([])
 
-    const combinedUploads = useMemo(() => {
-        const allAttachments: Array<InputMedia | InputAttachment> = []
-
-        for (const att of documents) {
-            if (!att.name || !att.type) continue
-            allAttachments.push({
-                fileName: att.name,
-                mimeType: att.type,
-                uri: att.uri,
-            })
-        }
-
-        for (const att of media) {
-            if (
-                !att.fileName ||
-                !att.type ||
-                !att.uri ||
-                !att.width ||
-                !att.height
-            )
-                continue
-
-            allAttachments.push({
-                fileName: att.fileName,
-                mimeType: att.type,
-                uri: att.uri,
-                width: att.width,
-                height: att.height,
-            })
-        }
-
-        return allAttachments
-    }, [documents, media])
+    const combinedUploads = useMemo(
+        () => mapMixedMediaToMatrixInput({ documents, assets: media }),
+        [documents, media],
+    )
 
     const handleUploadMedia = useCallback(async () => {
-        tryLaunchImageLibrary(imageOptions)
-            .andThen(library => {
-                // If the user cancels the image library, short-circuit with a GenericError
-                if (library.didCancel)
-                    return err(
-                        makeError(
-                            new Error('Image library cancelled'),
-                            'GenericError',
+        tryPickAssets(imageOptions, t).match(
+            async assets => {
+                const assetsToUpload: Array<Asset> = []
+
+                await Promise.all(
+                    assets.map(asset =>
+                        copyAssetToTempUri(asset).map(uri =>
+                            assetsToUpload.push({ ...asset, uri }),
                         ),
-                    )
+                    ),
+                )
 
-                return ok(library.assets)
-            })
-            .andThen(ensureNonNullish)
-            // If any assets exceed the maximum size, cease uploading and short-circuit with a UserError
-            .andThrough(assets => {
-                const anyImageExceedsSize = assets
-                    .filter(asset => asset.type?.includes('image'))
-                    .some(asset => doesAssetExceedSize(asset, MAX_IMAGE_SIZE))
-                const anyVideoExceedsSize = assets
-                    .filter(asset => asset.type?.includes('video'))
-                    .some(asset => doesAssetExceedSize(asset, MAX_FILE_SIZE))
+                setMedia(imgs => [...imgs, ...assetsToUpload])
+            },
+            e => {
+                log.error('launchImageLibrary Error: ', e)
 
-                if (anyImageExceedsSize) {
-                    return err(
-                        makeLocalizedError(
-                            t,
-                            'UserError',
-                            'errors.images-may-not-exceed-size',
-                            {
-                                size: formatFileSize(MAX_IMAGE_SIZE),
-                            },
-                        ),
-                    )
-                }
-
-                if (anyVideoExceedsSize) {
-                    return err(
-                        makeLocalizedError(
-                            t,
-                            'UserError',
-                            'errors.videos-may-not-exceed-size',
-                            {
-                                size: formatFileSize(MAX_FILE_SIZE),
-                            },
-                        ),
-                    )
-                }
-
-                return ok()
-            })
-            .match(
-                async assets => {
-                    const assetsToUpload: Array<Asset> = []
-
-                    await Promise.all(
-                        assets.map(asset =>
-                            copyAssetToTempUri(asset).map(uri =>
-                                assetsToUpload.push({ ...asset, uri }),
-                            ),
-                        ),
-                    )
-
-                    setMedia(imgs => [...imgs, ...assetsToUpload])
-                },
-                e => {
-                    log.error('launchImageLibrary Error: ', e)
-
-                    // Only show a toast if the error is the user's fault
-                    if (e._tag === 'UserError') toast.error(t, e)
-                },
-            )
+                // Only show a toast if the error is the user's fault
+                if (e._tag === 'UserError') toast.error(t, e)
+            },
+        )
     }, [t, toast])
 
     const handleUploadDocument = useCallback(() => {
-        tryPickDocuments({
-            // Allow all supported file extensions except for images, audio, and video
-            type: [
-                types.csv,
-                types.doc,
-                types.docx,
-                types.pdf,
-                types.plainText,
-                types.ppt,
-                types.pptx,
-                types.xls,
-                types.xlsx,
-                types.zip,
-            ],
-            allowMultiSelection: true,
-        })
-            .andThrough(files => {
-                if (
-                    files.some(doc =>
-                        doesDocumentExceedSize(doc, MAX_FILE_SIZE),
-                    )
-                ) {
-                    return err(
-                        makeLocalizedError(
-                            t,
-                            'UserError',
-                            'errors.files-may-not-exceed-size',
-                            {
-                                size: formatFileSize(MAX_FILE_SIZE),
-                            },
+        tryPickDocuments(
+            {
+                // Allow all supported file extensions except for images, audio, and video
+                type: [
+                    types.csv,
+                    types.doc,
+                    types.docx,
+                    types.pdf,
+                    types.plainText,
+                    types.ppt,
+                    types.pptx,
+                    types.xls,
+                    types.xlsx,
+                    types.zip,
+                ],
+                allowMultiSelection: true,
+            },
+            t,
+        ).match(
+            async files => {
+                const documentsToUpload: Array<DocumentPickerResponse> = []
+
+                await Promise.all(
+                    files.map(file =>
+                        copyDocumentToTempUri(file).map(uri =>
+                            documentsToUpload.push({ ...file, uri }),
                         ),
-                    )
-                }
-                return ok()
-            })
-            .match(
-                async files => {
-                    const documentsToUpload: Array<DocumentPickerResponse> = []
+                    ),
+                )
 
-                    await Promise.all(
-                        files.map(file =>
-                            copyDocumentToTempUri(file).map(uri =>
-                                documentsToUpload.push({ ...file, uri }),
-                            ),
-                        ),
-                    )
+                setDocuments(att => [...att, ...documentsToUpload])
+            },
+            e => {
+                log.error('DocumentPicker Error: ', e)
 
-                    setDocuments(att => [...att, ...documentsToUpload])
-                },
-                e => {
-                    log.error('DocumentPicker Error: ', e)
-
-                    // Only show a toast if the error is the user's fault
-                    if (e._tag === 'UserError') toast.error(t, e)
-                },
-            )
+                // Only show a toast if the error is the user's fault
+                if (e._tag === 'UserError') toast.error(t, e)
+            },
+        )
     }, [t, toast])
 
     const handleEdit = useCallback(async () => {

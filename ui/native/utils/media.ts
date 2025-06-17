@@ -1,4 +1,5 @@
-import { errAsync, okAsync, ResultAsync } from 'neverthrow'
+import { TFunction } from 'i18next'
+import { err, errAsync, ok, okAsync, ResultAsync } from 'neverthrow'
 import { Platform } from 'react-native'
 import {
     DocumentPickerOptions,
@@ -12,10 +13,22 @@ import {
     launchImageLibrary,
 } from 'react-native-image-picker'
 
-import { GenericError, MissingDataError } from '@fedi/common/types/errors'
-import { makeError, tryTag, UnexpectedError } from '@fedi/common/utils/errors'
+import { MAX_FILE_SIZE, MAX_IMAGE_SIZE } from '@fedi/common/constants/matrix'
+import { InputAttachment, InputMedia } from '@fedi/common/types'
+import {
+    GenericError,
+    MissingDataError,
+    UserError,
+} from '@fedi/common/types/errors'
+import {
+    makeError,
+    makeLocalizedError,
+    tryTag,
+    UnexpectedError,
+} from '@fedi/common/utils/errors'
 import { makeLog } from '@fedi/common/utils/log'
-import { pathJoin } from '@fedi/common/utils/media'
+import { formatFileSize, pathJoin } from '@fedi/common/utils/media'
+import { ensureNonNullish } from '@fedi/common/utils/neverthrow'
 
 const log = makeLog('utils/media')
 
@@ -144,19 +157,143 @@ export function copyAssetToTempUri(
         .orTee(e => log.error(`Error copying asset ${uri}`, e))
 }
 
-export const tryLaunchImageLibrary = (imageOptions: ImageLibraryOptions) =>
-    ResultAsync.fromPromise(
+/**
+ * Attempt to select assets with the ImagePicker.
+ * If any assets exceed the maximum image size, short-circuit with a UserError.
+ */
+export function tryPickAssets(
+    imageOptions: ImageLibraryOptions,
+    t: TFunction,
+): ResultAsync<
+    Array<Asset>,
+    UnexpectedError | GenericError | MissingDataError | UserError
+> {
+    return ResultAsync.fromPromise(
         launchImageLibrary(imageOptions),
         tryTag('GenericError'),
     )
+        .andThen(library => {
+            if (library.didCancel)
+                return err(
+                    makeError(
+                        new Error('Image library cancelled'),
+                        'GenericError',
+                    ),
+                )
 
-export const tryPickDocuments = (options: DocumentPickerOptions) =>
-    ResultAsync.fromPromise(pick(options), tryTag('GenericError'))
+            return ok(library.assets)
+        })
+        .andThen(ensureNonNullish)
+        .andThrough(assets => {
+            const anyImageExceedsSize = assets
+                .filter(asset => asset.type?.includes('image'))
+                .some(asset => doesAssetExceedSize(asset, MAX_IMAGE_SIZE))
+            const anyVideoExceedsSize = assets
+                .filter(asset => asset.type?.includes('video'))
+                .some(asset => doesAssetExceedSize(asset, MAX_FILE_SIZE))
 
-export const doesAssetExceedSize = ({ fileSize }: Asset, size: number) =>
-    fileSize && fileSize > size
+            if (anyImageExceedsSize) {
+                return err(
+                    makeLocalizedError(
+                        t,
+                        'UserError',
+                        'errors.images-may-not-exceed-size',
+                        {
+                            size: formatFileSize(MAX_IMAGE_SIZE),
+                        },
+                    ),
+                )
+            }
+
+            if (anyVideoExceedsSize) {
+                return err(
+                    makeLocalizedError(
+                        t,
+                        'UserError',
+                        'errors.videos-may-not-exceed-size',
+                        {
+                            size: formatFileSize(MAX_FILE_SIZE),
+                        },
+                    ),
+                )
+            }
+
+            return ok()
+        })
+}
+
+/**
+ * Attempt to select documents with the DocumentPicker.
+ * If any documents exceed the maximum file size, short-circuit with a UserError.
+ */
+export function tryPickDocuments(
+    options: DocumentPickerOptions,
+    t: TFunction,
+): ResultAsync<
+    Array<DocumentPickerResponse>,
+    UnexpectedError | GenericError | UserError
+> {
+    return ResultAsync.fromPromise(
+        pick(options),
+        tryTag('GenericError'),
+    ).andThrough(documents => {
+        if (documents.some(doc => doesDocumentExceedSize(doc, MAX_FILE_SIZE))) {
+            return err(
+                makeLocalizedError(
+                    t,
+                    'UserError',
+                    'errors.files-may-not-exceed-size',
+                    {
+                        size: formatFileSize(MAX_FILE_SIZE),
+                    },
+                ),
+            )
+        }
+        return ok()
+    })
+}
+
+export const doesAssetExceedSize = (
+    { fileSize }: Asset,
+    maxSizeBytes: number,
+) => fileSize && fileSize > maxSizeBytes
 
 export const doesDocumentExceedSize = (
     document: DocumentPickerResponse,
-    size: number,
-) => document.size && document.size > size
+    maxSizeBytes: number,
+) => document.size && document.size > maxSizeBytes
+
+export const mapMixedMediaToMatrixInput = ({
+    assets,
+    documents,
+}: {
+    assets: Array<Asset>
+    documents: Array<DocumentPickerResponse>
+}) => {
+    const allAttachments: Array<InputMedia | InputAttachment> = []
+
+    for (const att of documents) {
+        if (!att.name || !att.type) continue
+
+        allAttachments.push({
+            fileName: att.name,
+            mimeType: att.type,
+            uri: att.uri,
+        })
+    }
+
+    for (const att of assets) {
+        if (!att.fileName || !att.type || !att.uri || !att.width || !att.height)
+            continue
+
+        allAttachments.push({
+            fileName: att.fileName,
+            mimeType: att.type,
+            uri: att.uri,
+            width: att.width,
+            height: att.height,
+        })
+    }
+
+    return allAttachments
+}
