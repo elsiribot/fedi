@@ -322,7 +322,7 @@ export const useDisplayNameForm = (t: TFunction) => {
     )
 
     const handleSubmitDisplayName = useCallback(
-        async (onSuccess: () => void) => {
+        async (onSuccess?: () => void) => {
             setIsSubmitting(true)
             try {
                 // Double check the submitted username is valid
@@ -334,7 +334,7 @@ export const useDisplayNameForm = (t: TFunction) => {
                 await dispatch(
                     setMatrixDisplayName({ displayName: username }),
                 ).unwrap()
-                onSuccess()
+                onSuccess?.()
             } catch (err) {
                 log.error('handleSubmit', err)
                 toast.error(t, err)

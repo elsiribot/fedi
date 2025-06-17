@@ -39,3 +39,8 @@ export type FetchError = TaggedError<'FetchError'>
  * Used for when a timeout is reached
  */
 export type TimeoutError = TaggedError<'TimeoutError'>
+/**
+ * Generic error type used when a user error occurs
+ * Used for when an error is a result of a user action
+ */
+export type UserError = TaggedError<'UserError'>
