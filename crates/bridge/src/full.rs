@@ -36,7 +36,7 @@ pub struct BridgeFull {
     pub nostril: Nostril,
 }
 
-#[derive(Debug, TS, Serialize)]
+#[derive(Debug, TS, Serialize, PartialEq)]
 #[serde(rename_all = "camelCase")]
 #[serde(tag = "type")]
 #[ts(export)]
@@ -47,13 +47,15 @@ pub enum BridgeOffboardingReason {
         #[serde(skip)]
         new: DeviceIdentifier,
     },
+    InternalBridgeExport,
 }
 
 impl Display for BridgeOffboardingReason {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
-        Self::DeviceIdentifierMismatch { existing, new } => write!(f, "Expected device ID {} but received {}. Likely app has been cloned on a new device.", existing, new),
-    }
+            Self::DeviceIdentifierMismatch { existing, new } => write!(f, "Expected device ID {} but received {}. Likely app has been cloned on a new device.", existing, new),
+            Self::InternalBridgeExport => write!(f, "Bridge is ready for export"),
+        }
     }
 }
 
@@ -73,6 +75,12 @@ impl BridgeFull {
                 existing: existing_identifier_v2,
                 new: device_identifier,
             });
+        }
+
+        // Check if bridge is ready for export
+        if runtime.app_state.is_internal_bridge_export().await {
+            error!("Bridge is ready for export");
+            return Err(BridgeOffboardingReason::InternalBridgeExport);
         }
 
         let device_registration_service =

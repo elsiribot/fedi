@@ -557,6 +557,14 @@ export class FedimintBridge {
         return this.rpcTyped('setSensitiveLog', { enable })
     }
 
+    async internalMarkBridgeExport() {
+        return this.rpcTyped('internalMarkBridgeExport', {})
+    }
+
+    async internalExportBridgeState(path: string) {
+        return this.rpcTyped('internalExportBridgeState', { path })
+    }
+
     // `_userPublicKey` is what guardian decryption shares are threshold-encrypted to
     async approveSocialRecoveryRequest(
         recoveryId: string,

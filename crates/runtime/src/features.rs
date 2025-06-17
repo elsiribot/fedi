@@ -19,7 +19,7 @@ use ts_rs::TS;
 /// be turned on for the "Staging" environment so that internally it can be
 /// tested. Finally, when the feature is considered stable, it will also be
 /// turned on for the "Prod" environment.
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, TS, Serialize)]
 pub enum RuntimeEnvironment {
     Dev,
     Staging,
@@ -43,6 +43,9 @@ pub enum RuntimeEnvironment {
 #[derive(Debug, Clone, TS, Serialize)]
 #[ts(export)]
 pub struct FeatureCatalog {
+    #[serde(skip)]
+    pub runtime_env: RuntimeEnvironment,
+
     /// "Encrypted sync" feature is the Fedi app using a remote server to store,
     /// retrieve, and manipulate data that's necessary for a smooth user
     /// experience. This data can be seed-level, such as matrix server URL,
@@ -124,6 +127,7 @@ impl FeatureCatalog {
 
     fn new_dev() -> Self {
         Self {
+            runtime_env: RuntimeEnvironment::Dev,
             encrypted_sync: Some(EncryptedSyncFeatureConfig {
                 server_url: "https://prod-kv-store.dev.fedibtc.com/".to_string(),
             }),
@@ -138,6 +142,7 @@ impl FeatureCatalog {
 
     fn new_staging() -> Self {
         Self {
+            runtime_env: RuntimeEnvironment::Staging,
             encrypted_sync: None,
             override_localhost: None,
             stability_pool_v2: Some(StabilityPoolV2FeatureConfig {
@@ -150,6 +155,7 @@ impl FeatureCatalog {
 
     fn new_prod() -> Self {
         Self {
+            runtime_env: RuntimeEnvironment::Prod,
             encrypted_sync: None,
             override_localhost: None,
             stability_pool_v2: Some(StabilityPoolV2FeatureConfig {

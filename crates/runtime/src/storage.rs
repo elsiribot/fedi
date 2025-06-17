@@ -259,6 +259,16 @@ impl AppState {
         self.with_read_lock(|state| state.cached_fiat_fx_info.clone())
             .await
     }
+
+    pub async fn is_internal_bridge_export(&self) -> bool {
+        self.with_read_lock(|state| state.internal_bridge_export)
+            .await
+    }
+
+    pub async fn set_internal_bridge_export(&self, enabled: bool) -> anyhow::Result<()> {
+        self.with_write_lock(|state| state.internal_bridge_export = enabled)
+            .await
+    }
 }
 
 #[derive(Clone, Debug, Copy)]
@@ -408,6 +418,7 @@ impl AppStateOnboarding {
                     device_index,
                     encrypted_device_identifier_v2: encrypted_device_identifier.clone(),
                     matrix_session: None,
+                    internal_bridge_export: false,
                     base: AppStateJsonBase {
                         root_mnemonic,
                         joined_federations: BTreeMap::new(),
