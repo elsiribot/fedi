@@ -593,44 +593,44 @@ export const matrixSlice = createSlice({
                     },
                 )
             },
-        ),
-            builder.addMatcher(
-                isAnyOf(
-                    previewGlobalDefaultChats.fulfilled,
-                    previewCommunityDefaultChats.fulfilled,
-                    previewAllDefaultChats.fulfilled,
-                ),
-                (state, action) => {
-                    let hasUpdates = false
-                    const updatedDefaultGroups = action.payload.reduce(
-                        (
-                            result: Record<RpcRoomId, MatrixGroupPreview>,
-                            preview: MatrixGroupPreview,
-                        ) => {
-                            const existingPreview = result[preview.info.id]
-                            const updatedPreview = {
-                                ...preview,
-                                isDefaultGroup: true,
-                            }
+        )
+        builder.addMatcher(
+            isAnyOf(
+                previewGlobalDefaultChats.fulfilled,
+                previewCommunityDefaultChats.fulfilled,
+                previewAllDefaultChats.fulfilled,
+            ),
+            (state, action) => {
+                let hasUpdates = false
+                const updatedDefaultGroups = action.payload.reduce(
+                    (
+                        result: Record<RpcRoomId, MatrixGroupPreview>,
+                        preview: MatrixGroupPreview,
+                    ) => {
+                        const existingPreview = result[preview.info.id]
+                        const updatedPreview = {
+                            ...preview,
+                            isDefaultGroup: true,
+                        }
 
-                            if (
-                                !existingPreview ||
-                                !isEqual(existingPreview, updatedPreview)
-                            ) {
-                                hasUpdates = true
-                                result[preview.info.id] = updatedPreview
-                            }
+                        if (
+                            !existingPreview ||
+                            !isEqual(existingPreview, updatedPreview)
+                        ) {
+                            hasUpdates = true
+                            result[preview.info.id] = updatedPreview
+                        }
 
-                            return result
-                        },
-                        { ...state.groupPreviews },
-                    )
+                        return result
+                    },
+                    { ...state.groupPreviews },
+                )
 
-                    if (hasUpdates) {
-                        state.groupPreviews = updatedDefaultGroups
-                    }
-                },
-            )
+                if (hasUpdates) {
+                    state.groupPreviews = updatedDefaultGroups
+                }
+            },
+        )
     },
 })
 
@@ -1331,7 +1331,7 @@ export const searchMatrixUsers = createAsyncThunk<MatrixSearchResults, string>(
     },
 )
 
-export const fetchMatrixProfile = createAsyncThunk<any, string>(
+export const fetchMatrixProfile = createAsyncThunk<unknown, string>(
     'matrix/fetchMatrixProfile',
     async userId => {
         const client = getMatrixClient()

@@ -66,6 +66,7 @@ export class FediMod extends Shortcut {
     url: string
     imageUrl?: string
 
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     constructor(data: any) {
         super(data) // Ensure parent properties are initialized correctly
         this.id = data.id || '' // Assign id explicitly from data

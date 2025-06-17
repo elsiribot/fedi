@@ -6,8 +6,8 @@ import {
     DEBOUNCE_DELAY,
     QUICK_SAVE_THRESHOLD,
     QUICK_SAVE_DELAY,
+    type LogFileApi,
 } from '../../utils/log'
-import type { LogFileApi } from '../../utils/log'
 
 // Mock isDev to control console logging behavior
 jest.mock('../../utils/environment', () => ({

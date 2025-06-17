@@ -22,7 +22,7 @@ import { storage } from '../utils/storage'
 const log = makeLog('native/state/store')
 
 export const store = configureStore({
-    //@ts-ignore
+    // @ts-expect-error - TODO: investigate how to type this properly
     middleware: commonMiddleware,
     reducer: {
         ...commonReducers,
@@ -37,7 +37,7 @@ export type AppDispatch = typeof store.dispatch &
 export function initializeNativeStore() {
     // Common initialization behavior
     const unsubscribe = initializeCommonStore({
-        //@ts-ignore
+        // @ts-expect-error - TODO: investigate how to type this properly
         store,
         fedimint,
         storage,

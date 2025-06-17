@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-require-imports */
 import { ImageSourcePropType } from 'react-native'
 
 // TODO: Improve this typing, this allows people to access keys that haven't been defined.

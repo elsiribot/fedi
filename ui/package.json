@@ -21,8 +21,8 @@
         "dev:native": "turbo run dev --parallel --filter=native...",
         "knip": "knip",
         "lint": "turbo run lint",
-        "format": "turbo run format",
-        "format:check": "turbo run format:check --parallel",
+        "format": "prettier --write '*.{js,json,md,ts}' && turbo run format",
+        "format:check": "prettier --check '*.{js,json,md,ts}' && turbo run format:check --parallel",
         "test": "turbo run test",
         "postinstall": "patch-package"
     },

@@ -1,4 +1,4 @@
-/* eslint-disable no-console */
+/* eslint-disable no-console, @typescript-eslint/no-explicit-any */
 import AppiumManager, { Platform, currentPlatform } from './AppiumManager'
 
 export const DEFAULT_TIMEOUT = 10000

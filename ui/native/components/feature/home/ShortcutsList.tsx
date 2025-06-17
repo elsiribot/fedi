@@ -1,6 +1,5 @@
 import { useNavigation } from '@react-navigation/native'
-import type { Theme } from '@rneui/themed'
-import { useTheme, Text } from '@rneui/themed'
+import { useTheme, Text, type Theme } from '@rneui/themed'
 import React, { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import {

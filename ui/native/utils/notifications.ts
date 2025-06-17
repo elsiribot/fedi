@@ -4,6 +4,7 @@ import notifee, {
     NotificationAndroid,
     type NotificationIOS,
     AndroidGroupAlertBehavior,
+    Notification,
 } from '@notifee/react-native'
 import messaging, {
     FirebaseMessagingTypes,
@@ -217,10 +218,11 @@ export const displayPaymentReceivedNotification = async (
 }
 
 export const displayMessageReceivedNotification = async (
-    data: any,
+    // TODO: make stronger type for this
+    data: FirebaseMessagingTypes.RemoteMessage['data'],
     t: TFunction,
 ) => {
-    if (!data.room_id) return null
+    if (!data?.room_id) return null
 
     /*
      * TODO:
@@ -234,7 +236,7 @@ export const displayMessageReceivedNotification = async (
     // sent messages so it is just confusing to show "You have 1 new message"
     // when really there could be more. Just make it generic for now
     const body = t('feature.notifications.new-messages')
-    const link = encodeFediMatrixRoomUri(data.room_id, true)
+    const link = encodeFediMatrixRoomUri(data.room_id as string, true)
 
     const uniqueId = `chat-${uuidv4()}`
 
@@ -274,7 +276,7 @@ type NotificationData = {
     type?: NOTIFICATION_TYPE
 
     // todo: type inner data?
-    data?: any
+    data?: Record<string, unknown>
 }
 export const getNotificationBackgroundColor = () => {
     const colorScheme = Appearance.getColorScheme() // 'light' | 'dark' | null
@@ -414,7 +416,9 @@ export const dispatchNotification = async (
  * A replacement for the unreliable 'Zendesk.handleNotification(data' that detects whether a notification payload is from zendesk or not, that has stopped working since
  * we bumped zendeskSdkVersion = "2.18.0" as there was a bug affecting the back button, explained in isssue: #6519 - in build.gradle. 'handleNotification' no longer works in this older version
  **/
-export async function isZendeskNotification(data: any): Promise<boolean> {
+export async function isZendeskNotification(
+    data: Notification['data'],
+): Promise<boolean> {
     if (!data) return false
 
     try {

@@ -956,6 +956,7 @@ export class MatrixChatClient {
     }
 
     // TODO: get type for this from bridge?
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     private serializePublicRoomInfo(room: any): MatrixRoom {
         return {
             id: room.room_id,
@@ -977,6 +978,7 @@ export class MatrixChatClient {
     }
 
     // TODO: get type for this from bridge?
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     private serializeRoomInfo(room: any): MatrixRoom {
         const directUserId = room.base_info.dm_targets?.[0]
 
@@ -1104,6 +1106,7 @@ export class MatrixChatClient {
 
     // TODO: get type for this from bridge?
     private serializeTimelineItem(
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         item: any,
         roomId: string,
     ): MatrixTimelineItem {
