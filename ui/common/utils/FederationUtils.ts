@@ -18,6 +18,7 @@ import {
     SelectableCurrency,
 } from '../types'
 import { GuardianStatus, RpcCommunity, RpcFederation } from '../types/bindings'
+import { isDev } from './environment'
 import { FedimintBridge } from './fedimint'
 import { makeLog } from './log'
 
@@ -205,10 +206,12 @@ export const fetchPublicFederations = async (): Promise<PublicFederation[]> => {
             // Note these are not techincally supported meta fields... just the quickest
             // hack to be able to display public federations using the meta.json
             if (
-                value.public &&
-                value.public === 'true' &&
-                value.invite_code &&
-                value.preview_message
+                (value.public &&
+                    value.public === 'true' &&
+                    value.invite_code &&
+                    value.preview_message) ||
+                // in development only, always show Fedi Testnet in public federations for easier testing
+                (isDev() && value.federation_name === 'Fedi Testnet')
             ) {
                 publicFederations.push({
                     id: key,
