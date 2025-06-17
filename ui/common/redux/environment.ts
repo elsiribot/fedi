@@ -222,6 +222,10 @@ export const refreshOnboardingStatus = createAsyncThunk<
             case 'deviceIdentifierMismatch':
                 await dispatch(setShouldMigrateSeed(true))
                 break
+            case 'internalBridgeExport':
+                // Bridge is ready for export, show migration screen
+                await dispatch(setShouldMigrateSeed(true))
+                break
             default:
         }
         return

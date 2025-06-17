@@ -203,6 +203,93 @@ impl Bridge {
         self.set_state(new_bridge_state);
         Ok(())
     }
+
+    /// Export bridge state to a zip file at the provided path.
+    /// The zip file will include:
+    /// - The global database
+    /// - The fedi file v0
+    /// - The matrix databases
+    ///
+    /// fails on non nightly builds.
+    #[cfg(not(target_family = "wasm"))]
+    pub async fn export_bridge_state(&self, export_path: PathBuf) -> anyhow::Result<()> {
+        use std::fs::File;
+        use std::io::Write;
+
+        use runtime::constants::FEDI_FILE_V0_PATH;
+        use runtime::features::RuntimeEnvironment;
+        use zip::write::SimpleFileOptions;
+        use zip::ZipWriter;
+
+        enum ItemKind {
+            Directory(PathBuf),
+            File(PathBuf),
+        }
+
+        let BridgeState::Offboarding { runtime, reason } = self.state() else {
+            bail!("incorrect state for export state");
+        };
+        anyhow::ensure!(
+            *reason == BridgeOffboardingReason::InternalBridgeExport,
+            "incorrect state"
+        );
+        anyhow::ensure!(
+            matches!(
+                runtime.feature_catalog.runtime_env,
+                RuntimeEnvironment::Dev | RuntimeEnvironment::Staging
+            ),
+            "only available in internal builds"
+        );
+
+        let base_path = runtime.storage.platform_path("".as_ref());
+        let zip_file = File::options()
+            .write(true)
+            .create_new(true)
+            .open(&export_path)?;
+        let mut zip = ZipWriter::new(zip_file);
+        let options = SimpleFileOptions::default();
+
+        let mut process_item = |item, items_queue: &mut Vec<_>| match item {
+            ItemKind::File(path) => {
+                let mut f = File::open(&path)?;
+                let relative_path = path.strip_prefix(&base_path)?.to_string_lossy();
+                zip.start_file(relative_path, options)?;
+                std::io::copy(&mut f, &mut zip)?;
+                anyhow::Ok(())
+            }
+            ItemKind::Directory(path) => {
+                for entry in std::fs::read_dir(path)? {
+                    let entry = entry?;
+                    let entry_path = entry.path();
+                    let entry_metadata = entry.metadata()?;
+
+                    if entry_metadata.is_file() {
+                        items_queue.push(ItemKind::File(entry_path));
+                    } else if entry_metadata.is_dir() {
+                        items_queue.push(ItemKind::Directory(entry_path));
+                    }
+                }
+                Ok(())
+            }
+        };
+
+        // the seeds
+        let mut items_queue = vec![
+            ItemKind::Directory(base_path.join("global.db")),
+            ItemKind::Directory(base_path.join("matrix")),
+            ItemKind::File(base_path.join(FEDI_FILE_V0_PATH)),
+        ];
+
+        while let Some(next) = items_queue.pop() {
+            // ignore errors while processing items
+            process_item(next, &mut items_queue).ok();
+        }
+
+        let mut zip_file = zip.finish()?;
+        zip_file.flush()?;
+
+        Ok(())
+    }
 }
 
 #[derive(Debug, Serialize, TS)]

@@ -94,6 +94,10 @@ pub struct AppStateJsonOnboarded {
     /// Matrix tokens for client with native sliding sync
     pub matrix_session: Option<MatrixSession>,
 
+    /// Flag indicating if the bridge is ready for export (internal use only)
+    #[serde(default)]
+    pub internal_bridge_export: bool,
+
     #[serde(flatten)]
     pub base: AppStateJsonBase,
 }
@@ -369,6 +373,7 @@ impl AppStateJson {
                     matrix_session: value.matrix_session_native_sync,
                     device_index,
                     social_recovery_state,
+                    internal_bridge_export: false,
                     base: value.base,
                 })
             }

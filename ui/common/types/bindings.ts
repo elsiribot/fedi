@@ -41,7 +41,9 @@ export type BalanceEvent = {
   balance: RpcAmount;
 };
 
-export type BridgeOffboardingReason = { type: "deviceIdentifierMismatch" };
+export type BridgeOffboardingReason =
+  | { type: "deviceIdentifierMismatch" }
+  | { type: "internalBridgeExport" };
 
 /**
  * Notify front-end that a particular community's metadata has updated
@@ -688,6 +690,8 @@ export type RpcMethods = {
   spv2Transfer: [spv2Transfer, RpcOperationId];
   getSensitiveLog: [getSensitiveLog, boolean];
   setSensitiveLog: [setSensitiveLog, null];
+  internalMarkBridgeExport: [internalMarkBridgeExport, null];
+  internalExportBridgeState: [internalExportBridgeState, null];
   setMintModuleFediFeeSchedule: [setMintModuleFediFeeSchedule, null];
   setWalletModuleFediFeeSchedule: [setWalletModuleFediFeeSchedule, null];
   setLightningModuleFediFeeSchedule: [setLightningModuleFediFeeSchedule, null];
@@ -1539,6 +1543,10 @@ export type getTransaction = {
   federationId: RpcFederationId;
   operationId: RpcOperationId;
 };
+
+export type internalExportBridgeState = { path: string };
+
+export type internalMarkBridgeExport = {};
 
 export type joinCommunity = { inviteCode: string };
 

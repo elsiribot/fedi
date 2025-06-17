@@ -942,6 +942,18 @@ async fn setSensitiveLog(runtime: Arc<Runtime>, enable: bool) -> anyhow::Result<
 }
 
 #[macro_rules_derive(rpc_method!)]
+async fn internalMarkBridgeExport(runtime: Arc<Runtime>) -> anyhow::Result<()> {
+    runtime.app_state.set_internal_bridge_export(true).await
+}
+
+#[macro_rules_derive(rpc_method!)]
+async fn internalExportBridgeState(bridge: &Bridge, path: String) -> anyhow::Result<()> {
+    #[cfg(not(target_family = "wasm"))]
+    bridge.export_bridge_state(path.into()).await?;
+    Ok(())
+}
+
+#[macro_rules_derive(rpc_method!)]
 async fn setMintModuleFediFeeSchedule(
     bridge: &BridgeFull,
     federation_id: RpcFederationId,
@@ -2181,6 +2193,8 @@ rpc_methods!(RpcMethods {
     // Developer
     getSensitiveLog,
     setSensitiveLog,
+    internalMarkBridgeExport,
+    internalExportBridgeState,
     setMintModuleFediFeeSchedule,
     setWalletModuleFediFeeSchedule,
     setLightningModuleFediFeeSchedule,
