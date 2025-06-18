@@ -1357,6 +1357,23 @@ async fn matrixSendMessageJson(
         .await
 }
 
+#[macro_rules_derive(rpc_method!)]
+async fn matrixSendReply(
+    bg_matrix: &BgMatrix,
+    room_id: RpcRoomId,
+    reply_to_event_id: RpcEventId,
+    message: String,
+) -> anyhow::Result<()> {
+    let matrix = bg_matrix.wait().await;
+    matrix
+        .send_reply(
+            &room_id.into_typed()?,
+            &OwnedEventId::try_from(&*reply_to_event_id.0)?,
+            message,
+        )
+        .await
+}
+
 ts_type_de!(CreateRoomRequest: matrix::create_room::Request = "JSONObject");
 
 #[macro_rules_derive(rpc_method!)]
@@ -2254,6 +2271,7 @@ rpc_methods!(RpcMethods {
     matrixRoomMarkAsUnread,
     matrixEditMessage,
     matrixDeleteMessage,
+    matrixSendReply,
     matrixDownloadFile,
     matrixStartPoll,
     matrixEndPoll,
