@@ -91,7 +91,9 @@ const EditProfile = () => {
             setIsChangingDisplayName(true)
 
             await dispatch(
-                setMatrixDisplayName({ displayName: displayName.trim() }),
+                setMatrixDisplayName({
+                    displayName: displayName.trim().toLowerCase(),
+                }),
             ).unwrap()
             toast.show({
                 content: t('phrases.changes-saved'),
