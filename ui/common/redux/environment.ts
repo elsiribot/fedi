@@ -45,6 +45,7 @@ const initialState = {
     nostrNpub: undefined as RpcNostrPubkey | undefined,
     nostrNsec: undefined as RpcNostrSecret | undefined,
     fedimintVersion: undefined as string | undefined,
+    pwaVersion: undefined as string | undefined,
     featureFlags: undefined as FeatureCatalog | undefined,
     internetUnreachableBadgeShown: false,
     onboardingCompleted: false,
@@ -102,6 +103,9 @@ export const environmentSlice = createSlice({
         },
         setFedimintVersion(state, action: PayloadAction<string>) {
             state.fedimintVersion = action.payload
+        },
+        setPwaVersion(state, action: PayloadAction<string>) {
+            state.pwaVersion = action.payload
         },
         setFeatureFlags(state, action: PayloadAction<FeatureCatalog>) {
             state.featureFlags = action.payload
@@ -167,6 +171,7 @@ export const {
     setNostrNpub,
     setNostrNsec,
     setFedimintVersion,
+    setPwaVersion,
     setFeatureFlags,
     setInternetUnreachableBadgeVisibility,
     setOnboardingCompleted,
@@ -252,6 +257,16 @@ export const changeLanguage = createAsyncThunk<
 >('environment/changeLanguage', ({ language, i18n }) => {
     i18n.changeLanguage(language)
 })
+
+/**
+ * PWA uses a similar but separate versioning system to the native app.
+ */
+export const initializePwaVersion = createAsyncThunk<void, { version: string }>(
+    'environment/initializePwaVersion',
+    async ({ version }, { dispatch }) => {
+        dispatch(setPwaVersion(version))
+    },
+)
 
 /**
  * Used only by the PWA.
@@ -368,6 +383,8 @@ export const selectNostrNsec = (s: CommonState) => s.environment.nostrNsec
 
 export const selectFedimintVersion = (s: CommonState) =>
     s.environment.fedimintVersion
+
+export const selectPwaVersion = (s: CommonState) => s.environment.pwaVersion
 
 export const selectFeatureFlags = (s: CommonState) => s.environment.featureFlags
 

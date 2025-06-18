@@ -6,6 +6,7 @@ import FediLogo from '@fedi/common/assets/svgs/fedi-logo-icon.svg'
 import { useUpdatingRef } from '@fedi/common/hooks/util'
 import {
     initializeDeviceIdWeb,
+    initializePwaVersion,
     selectSocialRecoveryQr,
     setShouldLockDevice,
     refreshOnboardingStatus,
@@ -19,6 +20,7 @@ import {
 import { formatErrorMessage } from '@fedi/common/utils/format'
 import { makeLog } from '@fedi/common/utils/log'
 
+import { version } from '../../package.json'
 import { useAppDispatch, useAppSelector } from '../hooks'
 import { fedimint, initializeBridge } from '../lib/bridge'
 import { keyframes, styled, theme } from '../styles'
@@ -62,6 +64,7 @@ export const FediBridgeInitializer: React.FC<Props> = ({ children }) => {
                 const deviceId = await dispatchRef
                     .current(initializeDeviceIdWeb({ deviceId: newDeviceId }))
                     .unwrap()
+                dispatchRef.current(initializePwaVersion({ version }))
                 log.info('initializing bridge with deviceId', deviceId)
                 await initializeBridge(deviceId)
 
