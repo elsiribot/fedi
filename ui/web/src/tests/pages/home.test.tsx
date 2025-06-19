@@ -11,7 +11,7 @@ const mockFederation: FederationListItem = {
     status: 'online',
     init_state: 'ready',
     hasWallet: true,
-    balance: 0 as MSats,
+    balance: 2000000 as MSats,
     id: '1',
     network: 'bitcoin',
     name: 'test',
@@ -71,6 +71,23 @@ describe('/pages/home', () => {
 
             const component = screen.getByLabelText('Install Banner')
             expect(component).toBeInTheDocument()
+        })
+    })
+
+    describe("when the user hasn't already backed up their seed and they have a balance above minimum level", () => {
+        it('should render the backup wallet modal', () => {
+            renderWithProviders(<HomePage />, {
+                preloadedState: {
+                    federation: {
+                        ...state.federation,
+                        federations: [mockFederation],
+                        activeFederationId: '1',
+                    },
+                },
+            })
+
+            const modal = screen.getByRole('alertdialog')
+            expect(modal).toBeInTheDocument()
         })
     })
 

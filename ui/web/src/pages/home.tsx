@@ -1,10 +1,12 @@
 import Link from 'next/link'
+import { useRouter } from 'next/router'
 import { Trans, useTranslation } from 'react-i18next'
 
 import ChatIcon from '@fedi/common/assets/svgs/chat.svg'
 import ArrowRightIcon from '@fedi/common/assets/svgs/chevron-right.svg'
 import SettingsIcon from '@fedi/common/assets/svgs/cog.svg'
 import userProfile from '@fedi/common/assets/svgs/profile.svg'
+import WordListIcon from '@fedi/common/assets/svgs/word-list.svg'
 import { ErrorBoundary } from '@fedi/common/components/ErrorBoundary'
 import { useNuxStep } from '@fedi/common/hooks/nux'
 import {
@@ -15,6 +17,7 @@ import {
 } from '@fedi/common/redux'
 import stringUtils from '@fedi/common/utils/StringUtils'
 
+import { Avatar } from '../components/Avatar'
 import { BitcoinWallet } from '../components/BitcoinWallet'
 import { ContentBlock } from '../components/ContentBlock'
 import { FederationAvatar } from '../components/FederationAvatar'
@@ -27,12 +30,18 @@ import { Text } from '../components/Text'
 import { useAppSelector, useInstallPrompt } from '../hooks'
 import { styled, theme } from '../styles'
 
+const BACKUP_REMINDER_MIN_BALANCE = 1000000 // 1000000 msats or 1000 sats
+
 function HomePage() {
     const { t } = useTranslation()
     const { showInstallBanner, handleOnDismiss } = useInstallPrompt()
+    const router = useRouter()
 
     const [hasSeenDisplayName, completeSeenDisplayName] =
         useNuxStep('displayNameModal')
+    const [hasPerformedPersonalBackup] = useNuxStep(
+        'hasPerformedPersonalBackup',
+    )
 
     const matrixAuth = useAppSelector(selectMatrixAuth)
     const activeFederation = useAppSelector(selectActiveFederation)
@@ -176,6 +185,7 @@ function HomePage() {
                 )}
             </Layout.Root>
 
+            {/* Modal - Show user their display name */}
             <Modal
                 open={!hasSeenDisplayName && !!matrixAuth?.displayName}
                 onClick={completeSeenDisplayName}
@@ -203,6 +213,38 @@ function HomePage() {
                             }}
                         />
                     </ModalTextWithIcon>
+                </ModalContent>
+            </Modal>
+
+            {/* Modal - Ask user to backup if their balance is above 1000 sats */}
+            <Modal
+                open={
+                    !!activeFederation &&
+                    activeFederation.balance > BACKUP_REMINDER_MIN_BALANCE &&
+                    !hasPerformedPersonalBackup
+                }
+                onClick={() => router.push('/settings/backup/personal')}
+                title={t('feature.home.backup-wallet-title')}
+                description={t('feature.home.backup-wallet-description')}>
+                <ModalContent aria-label="test">
+                    <ModalIconWrapper>
+                        <Avatar
+                            size="md"
+                            id=""
+                            name="list"
+                            holo
+                            icon={WordListIcon}
+                            css={{ alignSelf: 'center' }}
+                        />
+                    </ModalIconWrapper>
+                    <ModalTextWrapper>
+                        <Text variant="h2">
+                            {t('feature.home.backup-wallet-title')}
+                        </Text>
+                    </ModalTextWrapper>
+                    <Text variant="body" css={{ color: theme.colors.darkGrey }}>
+                        {t('feature.home.backup-wallet-description')}
+                    </Text>
                 </ModalContent>
             </Modal>
         </ContentBlock>
@@ -287,6 +329,7 @@ const ModalIconWrapper = styled('div', {
     height: 50,
     holoGradient: '600',
     justifyContent: 'center',
+    marginBottom: 10,
     padding: 5,
     overflow: 'hidden',
     width: 50,

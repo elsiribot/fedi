@@ -610,7 +610,9 @@
             "profile-change-icon": "To change, tap the <icon /> icon",
             "pwa-install-banner-title": "Install Fedi",
             "pwa-install-banner-description": "Install Fedi as an app on your homescreen.",
-            "pwa-install-banner-button-label": "Install"
+            "pwa-install-banner-button-label": "Install",
+            "backup-wallet-title": "Personal Backup",
+            "backup-wallet-description": "It's time to backup your seed phrase to keep your funds safe."
         },
         "multispend": {
             "chat-events": {
