@@ -46,7 +46,7 @@ const Splash: React.FC<Props> = ({ navigation }: Props) => {
             setLoading(true)
             await fedimint.completeOnboardingNewSeed()
             await dispatch(refreshOnboardingStatus(fedimint)).unwrap()
-            navigation.navigate('PublicFederations')
+            navigation.navigate('PublicFederations', { from: 'Splash' })
         } catch (err) {
             log.error('handleContinue', err)
             toast.error(t, err, 'errors.unknown-error')

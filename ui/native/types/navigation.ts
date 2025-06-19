@@ -135,7 +135,7 @@ export type RootStackParamList = {
     PersonalRecovery: undefined
     PersonalRecoverySuccess: undefined
     PopupFederationEnded: undefined
-    PublicFederations: undefined
+    PublicFederations: { from?: string } | undefined
     LocateSocialRecovery: undefined
     Receive: undefined
     ReceiveLightning: undefined
