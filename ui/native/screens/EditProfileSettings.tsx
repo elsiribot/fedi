@@ -149,6 +149,7 @@ const EditProfileSettings: React.FC = () => {
                         }}
                         value={username}
                         returnKeyType="done"
+                        keyboardType="visible-password"
                         containerStyle={style.textInputOuter}
                         inputContainerStyle={style.textInputInner}
                         autoCapitalize={'none'}
