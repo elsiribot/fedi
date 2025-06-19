@@ -101,9 +101,9 @@ jobs:
                   appium driver install xcuitest
                 fi
                 if grep -q "uiautomator2" "$DRIVER_LIST_FILE"; then
-                  appium driver update uiautomator2 || echo "No updates available for uiautomator2 driver"
+                  appium driver uninstall uiautomator2 && appium driver install uiautomator2@4.0.0 || echo "Reinstalled uiautomator2@4.0.0"
                 else
-                  appium driver install uiautomator2
+                  appium driver install uiautomator2@4.0.0
                 fi
                 rm "$DRIVER_LIST_FILE"
                 echo "Final installed drivers:"
