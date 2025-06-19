@@ -40,7 +40,7 @@ pub struct RpcInitOpts {
     pub app_flavor: RpcAppFlavor,
 }
 
-#[derive(Debug, Serialize, Deserialize, TS)]
+#[derive(Debug, Serialize, Deserialize, Clone, Copy, TS)]
 #[serde(rename_all = "camelCase")]
 #[serde(tag = "type")]
 #[ts(export)]
