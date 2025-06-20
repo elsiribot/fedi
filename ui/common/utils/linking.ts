@@ -1,0 +1,265 @@
+import { err, ok, Result } from 'neverthrow'
+
+import {
+    DEEPLINK_HOSTS,
+    LINK_PATH,
+    TELEGRAM_BASE_URL,
+    WHATSAPP_BASE_URL,
+} from '@fedi/common/constants/linking'
+
+import { ParsedDeepLink, ScreenConfig } from '../types/linking'
+import { constructUrl, ensureNonNullish } from './neverthrow'
+
+/** True if host equals one of our Universal-Link hosts (with or without www). */
+export const hostMatches = (h: string): boolean =>
+    DEEPLINK_HOSTS.some(host => h === host || h === `www.${host}`)
+
+export function isUniversalLink(raw: string): boolean {
+    return constructUrl(raw).match(
+        ({ host, pathname }) => {
+            const normalised = pathname.endsWith('/')
+                ? pathname.slice(0, -1)
+                : pathname
+            return hostMatches(host) && normalised === LINK_PATH
+        },
+        () => false,
+    )
+}
+
+/**
+ * Convert a Universal Link to the deep-link format the rest of the app expects.
+ * Returns '' when the input is not valid.
+ *
+ *   https://app.fedi.xyz/link?screen=user&id=%40npub…  →
+ *   fedi://user/@npub…
+ */
+export function universalToFedi(raw: string): string {
+    if (!isUniversalLink(raw)) return ''
+
+    return constructUrl(raw)
+        .andThen(url => {
+            const screen = url.searchParams.get('screen')
+            const idParam = url.searchParams.get('id')
+
+            if (!screen || !idParam) {
+                return err(new Error('Missing required parameters'))
+            }
+
+            return ok({ screen, idParam })
+        })
+        .match(
+            ({ screen, idParam }) => {
+                const decodedId = decodeURIComponent(idParam)
+                return joinFediPath(screen, decodedId)
+            },
+            () => '',
+        )
+}
+
+/**
+ * Optional helper: normalise percent-encoding on **native** fedi:// links
+ */
+export function decodeFediDeepLink(uri: string): string {
+    return constructUrl(uri).match(
+        url => {
+            if (url.protocol !== 'fedi:') return uri
+
+            const paths = url.pathname
+                .split('/')
+                .filter(Boolean)
+                .map(decodeURIComponent)
+
+            return joinFediPath(url.host, paths.join('/'))
+        },
+        () => uri,
+    )
+}
+
+/**
+ * Extract all valid screen names from a nested screen configuration.
+ */
+export function getValidScreens(
+    screens: Record<string, ScreenConfig | null> | undefined,
+): Set<string> {
+    const valid = new Set<string>()
+    if (!screens) return valid
+
+    for (const value of Object.values(screens)) {
+        if (typeof value === 'string') {
+            valid.add(value.split('/')[0])
+        } else if (typeof value === 'object' && value !== null) {
+            if (value.path) {
+                valid.add(value.path.split('/')[0])
+            }
+            getValidScreens(value.screens).forEach(s => valid.add(s))
+        }
+    }
+    return valid
+}
+
+/**
+ * Parse any deep link (universal or fedi://) into its components.
+ */
+export function parseDeepLink(
+    uri: string,
+    validScreens: Set<string>,
+): ParsedDeepLink {
+    const result: ParsedDeepLink = {
+        screen: '',
+        isValid: false,
+        originalUrl: uri,
+    }
+
+    let deepLink = uri
+
+    // Convert universal links to fedi:// format
+    if (isUniversalLink(uri)) {
+        deepLink = universalToFedi(uri)
+        if (!deepLink) {
+            return result
+        }
+        result.fediUrl = deepLink
+    }
+
+    // Decode fedi:// links
+    if (isFediUri(deepLink)) {
+        deepLink = decodeFediDeepLink(deepLink)
+        result.fediUrl = deepLink
+    }
+
+    // Must be fedi:// at this point
+    if (!isFediUri(deepLink)) {
+        return result
+    }
+
+    // Extract screen and ID using utility
+    const { screen, id } = parseFediPath(deepLink)
+
+    result.screen = screen
+    result.id = id
+    result.isValid = validScreens.has(screen)
+
+    return result
+}
+
+/**
+ * Check if a URL is a FediMod deep link type that should be handled specially.
+ */
+export const isFediDeeplinkType = (url: string): boolean =>
+    url.includes(TELEGRAM_BASE_URL) ||
+    url.includes(WHATSAPP_BASE_URL) ||
+    DEEPLINK_HOSTS.some(
+        h => url.includes(`https://${h}`) || url.includes(`https://www.${h}`),
+    )
+
+export class DeepLinkQueue {
+    private queue: string[] = []
+    private isReady = false
+
+    add(url: string): void {
+        if (!this.queue.includes(url)) {
+            this.queue.push(url)
+        }
+    }
+
+    setReady(): void {
+        this.isReady = true
+    }
+
+    getIsReady(): boolean {
+        return this.isReady
+    }
+
+    flush(): string[] {
+        const links = [...this.queue]
+        this.queue = []
+        return links
+    }
+
+    size(): number {
+        return this.queue.length
+    }
+
+    clear(): void {
+        this.queue = []
+    }
+}
+
+/**
+ * Utility helper functions
+ */
+
+const FEDI_PROTOCOL = 'fedi://'
+
+/**
+ * Check if a URI starts with the fedi:// protocol
+ */
+export const isFediUri = (uri: string): boolean => uri.startsWith(FEDI_PROTOCOL)
+
+/**
+ * Remove the fedi:// prefix from a URI
+ * Returns the path part without the protocol
+ *
+ * @example
+ * stripFediPrefix('fedi://user/123') → 'user/123'
+ */
+export const stripFediPrefix = (uri: string): string => {
+    if (!isFediUri(uri)) return uri
+    return uri.substring(FEDI_PROTOCOL.length)
+}
+
+/**
+ * Add the fedi:// prefix to a path
+ *
+ * @example
+ * prefixFediUri('user/123') → 'fedi://user/123'
+ */
+export const prefixFediUri = (path: string): string => {
+    if (isFediUri(path)) return path
+    return `${FEDI_PROTOCOL}${path}`
+}
+
+/**
+ * Parse a fedi:// URI into its screen and ID components
+ *
+ * @example
+ * parseFediPath('fedi://user/123/sub') → { screen: 'user', id: '123/sub' }
+ * parseFediPath('fedi://user') → { screen: 'user', id: undefined }
+ */
+export const parseFediPath = (uri: string): { screen: string; id?: string } => {
+    const pathPart = stripFediPrefix(uri)
+    const [screen, ...restParts] = pathPart.split('/')
+    const id = restParts.length > 0 ? restParts.join('/') : undefined
+
+    return { screen, id }
+}
+
+/**
+ * Join screen and ID into a fedi:// URI
+ *
+ * @example
+ * joinFediPath('user', '123') → 'fedi://user/123'
+ * joinFediPath('user') → 'fedi://user'
+ */
+export const joinFediPath = (screen: string, id?: string): string => {
+    const path = id ? `${screen}/${id}` : screen
+    return prefixFediUri(path)
+}
+
+/**
+ * Safely parse a fedi:// URI using Result for error handling
+ * Returns screen and ID components or an error if invalid
+ */
+export const parseFediUri = (
+    uri: string,
+): Result<{ screen: string; id?: string }, Error> => {
+    if (!isFediUri(uri)) {
+        return err(new Error(`URI does not start with ${FEDI_PROTOCOL}`))
+    }
+
+    const { screen, id } = parseFediPath(uri)
+
+    return ensureNonNullish(screen)
+        .map(() => ({ screen, id }))
+        .mapErr(() => new Error('Invalid fedi URI: missing screen'))
+}
