@@ -278,6 +278,8 @@ impl Bridge {
             ItemKind::Directory(base_path.join("global.db")),
             ItemKind::Directory(base_path.join("matrix")),
             ItemKind::File(base_path.join(FEDI_FILE_V0_PATH)),
+            ItemKind::File(base_path.join("fedi.log")),
+            ItemKind::File(base_path.join("fedi.log.1")),
         ];
 
         while let Some(next) = items_queue.pop() {
