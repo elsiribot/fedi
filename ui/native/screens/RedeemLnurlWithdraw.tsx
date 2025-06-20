@@ -6,13 +6,14 @@ import { useTranslation } from 'react-i18next'
 
 import { useRequestForm } from '@fedi/common/hooks/amount'
 import { useToast } from '@fedi/common/hooks/toast'
-import { selectActiveFederationId } from '@fedi/common/redux'
+import { selectPaymentFederation } from '@fedi/common/redux'
 import { RpcTransaction, TransactionEvent } from '@fedi/common/types/bindings'
 import amountUtils from '@fedi/common/utils/AmountUtils'
 import { tryTag } from '@fedi/common/utils/errors'
 import { lnurlWithdraw } from '@fedi/common/utils/lnurl'
 
 import { fedimint } from '../bridge'
+import FederationWalletSelector from '../components/feature/send/FederationWalletSelector'
 import { AmountScreen } from '../components/ui/AmountScreen'
 import Flex from '../components/ui/Flex'
 import { SafeScrollArea } from '../components/ui/SafeArea'
@@ -29,7 +30,7 @@ export type Props = NativeStackScreenProps<
 const RedeemLnurlWithdraw: React.FC<Props> = ({ navigation, route }: Props) => {
     const lnurlWithdrawal = route.params.parsedData.data
     const { t } = useTranslation()
-    const activeFederationId = useAppSelector(selectActiveFederationId)
+    const paymentFederation = useAppSelector(selectPaymentFederation)
     const {
         inputAmount: amount,
         setInputAmount: setAmount,
@@ -77,47 +78,41 @@ const RedeemLnurlWithdraw: React.FC<Props> = ({ navigation, route }: Props) => {
         )
     }
 
-    const handleSubmit = async () => {
+    const handleSubmit = () => {
         setSubmitAttempts(attempts => attempts + 1)
         if (
             amount > maximumAmount ||
             amount < minimumAmount ||
-            !activeFederationId
+            !paymentFederation
         ) {
             return
         }
 
         setIsLoading(true)
-
-        // Attempt to LNURL withdraw
-        await ResultAsync.fromPromise(
-            lnurlWithdraw(
-                fedimint,
-                activeFederationId,
-                lnurlWithdrawal,
-                amountUtils.satToMsat(amount),
-                memo,
-            ),
-            // TODO: be more specific about errors when lnurl utils are refactored
-            tryTag('GenericError'),
+        lnurlWithdraw(
+            fedimint,
+            paymentFederation.id,
+            lnurlWithdrawal,
+            amountUtils.satToMsat(amount),
+            memo,
         )
             .andThen(awaitLnurlWithdrawTxn)
             .match(
-                tx => {
+                tx =>
                     navigation.dispatch(
                         reset('ReceiveSuccess', {
                             tx,
                         }),
-                    )
-                },
+                    ),
                 e => toast.error(t, e),
             )
-        setIsLoading(false)
+            .finally(() => setIsLoading(false))
     }
 
     return (
         <SafeScrollArea edges="notop">
             <AmountScreen
+                subHeader={<FederationWalletSelector />}
                 amount={amount}
                 onChangeAmount={onChangeAmount}
                 minimumAmount={minimumAmount}
