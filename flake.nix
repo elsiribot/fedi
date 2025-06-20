@@ -159,10 +159,12 @@
             build-tools-32-0-0
             build-tools-33-0-0
             build-tools-34-0-0
+            build-tools-35-0-0
             platform-tools
             platforms-android-31
             platforms-android-33
             platforms-android-34
+            platforms-android-35
             emulator
             ndk-26-1-10909125
             cmake-3-22-1
