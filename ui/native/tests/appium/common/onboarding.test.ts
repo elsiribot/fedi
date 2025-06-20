@@ -10,7 +10,6 @@ export class OnboardingTest extends AppiumTestBase {
         await this.clickElementByKey('FediTestnetJoinButton')
         await this.clickElementByKey('Join Federation')
         await new Promise(resolve => setTimeout(resolve, 5000))
-        await this.clickElementByKey('Continue')
         await this.clickElementByKey('Explore Now')
         await this.clickElementByKey('Chat')
         await this.clickElementByKey('Explore Now')
@@ -26,6 +25,7 @@ export class OnboardingTest extends AppiumTestBase {
             }
         }
         await this.clickElementByKey('Home')
+        await this.clickElementByKey('Continue')
         await this.clickElementByKey('AvatarButton')
         await this.waitForElementDisplayed('UserQrContainer')
         // TODO: copy the fedi user address and validate it
