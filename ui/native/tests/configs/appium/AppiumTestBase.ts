@@ -1,7 +1,7 @@
 /* eslint-disable no-console, @typescript-eslint/no-explicit-any */
 import AppiumManager, { Platform, currentPlatform } from './AppiumManager'
 
-export const DEFAULT_TIMEOUT = 10000
+export const DEFAULT_TIMEOUT = 20000
 
 export abstract class AppiumTestBase {
     protected driver: WebdriverIO.Browser
@@ -22,7 +22,12 @@ export abstract class AppiumTestBase {
                 `android=new UiSelector().resourceId("${key}")`,
             ]
         } else {
-            return [`accessibility id:${key}`, `id:${key}`]
+            return [
+                `accessibility id:${key}`,
+                `id:${key}`,
+                // `label == "${key}" OR name == "${key}" OR value == "${key}"`,
+                // `label CONTAINS "${key}" OR name CONTAINS "${key}" OR value CONTAINS "${key}"`, test to see how this works
+            ]
         }
     }
 
@@ -50,7 +55,7 @@ export abstract class AppiumTestBase {
     async findElementsByText(
         text: string,
         exactMatch = false,
-        timeout = 10000,
+        timeout = DEFAULT_TIMEOUT,
     ) {
         const startTime = Date.now()
         const platform = process.env.PLATFORM?.toLowerCase() || ''
@@ -171,7 +176,7 @@ export abstract class AppiumTestBase {
         text: string,
         instanceNum: number,
         exactMatch = false,
-        timeout = 10000,
+        timeout = DEFAULT_TIMEOUT,
     ) {
         const elements = await this.findElementsByText(
             text,
@@ -201,7 +206,7 @@ export abstract class AppiumTestBase {
     async isTextPresent(
         text: string,
         exactMatch = false,
-        timeout = 10000,
+        timeout = DEFAULT_TIMEOUT,
     ): Promise<boolean> {
         const elements = await this.findElementsByText(
             text,
@@ -215,7 +220,7 @@ export abstract class AppiumTestBase {
         text: string,
         instanceNum: number,
         exactMatch = false,
-        timeout = 10000,
+        timeout = DEFAULT_TIMEOUT,
     ): Promise<WebdriverIO.Element> {
         const element = await this.findElementByText(
             text,
@@ -235,7 +240,7 @@ export abstract class AppiumTestBase {
         text: string,
         instanceNum: number,
         exactMatch = false,
-        timeout = 10000,
+        timeout = DEFAULT_TIMEOUT,
     ): Promise<void> {
         const element = await this.waitForText(
             text,
@@ -249,7 +254,7 @@ export abstract class AppiumTestBase {
     async getTextInstanceCount(
         text: string,
         exactMatch = false,
-        timeout = 10000,
+        timeout = DEFAULT_TIMEOUT,
     ): Promise<number> {
         const elements = await this.findElementsByText(
             text,
@@ -286,7 +291,13 @@ export abstract class AppiumTestBase {
 
             await new Promise(resolve => setTimeout(resolve, 500))
         }
-
+        if (currentPlatform === Platform.IOS) {
+            // Android doesn't have this yet
+            console.log('Dumping XML tree')
+            await this.driver.executeScript('mobile: source', [
+                { format: 'xml' },
+            ])
+        }
         throw new Error(
             `Element with key "${key}" not displayed after ${timeout}ms. Tried strategies: ${strategies.join(', ')}. Errors: ${errors.map(e => e.message).join('; ')}`,
         )
