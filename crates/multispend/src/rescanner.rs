@@ -22,7 +22,7 @@ use matrix_sdk::{Client, Room};
 use rpc_types::RpcEventId;
 use runtime::bridge_runtime::Runtime;
 use tokio::sync::Notify;
-use tracing::{debug, instrument, warn};
+use tracing::{debug, error, info, instrument, warn};
 
 use super::db::MultispendScannerLastEventKey;
 use super::services::MultispendServices;
@@ -186,7 +186,7 @@ impl RoomRescannerManager {
             // while we were rescanning
             *room_state.state.write() = RoomRescanState::Running;
 
-            debug!(?room_id, "Started rescanning room");
+            info!(?room_id, "Started rescanning room");
 
             // Perform the rescanning
             let db = self.runtime.multispend_db();
@@ -218,7 +218,7 @@ impl RoomRescannerManager {
             if context.refresh_account_info {
                 room_state.account_info_refresh.notify_waiters();
             }
-            debug!("Room rescanning completed");
+            info!("Room rescanning completed");
 
             // Only transition to idle if still in running state
             // this will be Queued state if a rescan was queued while this rescan was
@@ -262,16 +262,26 @@ impl RoomRescannerManager {
             )))
             .await;
 
+        info!(?last_scan_event_id);
         // find all events since our last seen event, first time this will scan the
         // entire* room history.
         // * see hack bellow in all_message_since.
         let events_to_process = all_message_since(&room, last_scan_event_id).await?;
+
+        let event_ids_found = events_to_process
+            .iter()
+            .map(|e| e.event_id())
+            .collect::<Vec<_>>();
+
+        info!(?event_ids_found);
 
         let new_latest_event_id = events_to_process
             .iter()
             .rev()
             .find_map(|e| e.event_id())
             .map(|event_id| RpcEventId(event_id.to_string()));
+
+        info!(?new_latest_event_id);
 
         let new_multispend_events = events_to_process
             .iter()
@@ -288,6 +298,7 @@ impl RoomRescannerManager {
                 let data = m.content.msgtype.data().into_owned();
                 let mevent =
                     serde_json::from_value::<MultispendEvent>(serde_json::Value::Object(data))
+                        .inspect_err(|err| error!(%err, "invalid multispend event"))
                         .ok()?;
 
                 Some((
