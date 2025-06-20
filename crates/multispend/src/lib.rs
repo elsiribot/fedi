@@ -25,7 +25,7 @@ use stability_pool_client::common::{
     Account, AccountId, AccountType, AccountUnchecked, SignedTransferRequest, SyncResponse,
     TransferRequest,
 };
-use tracing::error;
+use tracing::{error, info};
 use ts_rs::TS;
 
 pub mod completion_notification_service;
@@ -435,7 +435,7 @@ pub async fn process_event_db(
     event_time: u64,
     context: &mut MultispendContext,
 ) {
-    tracing::trace!(?event, "processing event");
+    info!(event_id = %event_id.0, "processing multispend event");
     if let Err(err) = process_event_db_raw(
         dbtx,
         room_id,
