@@ -450,8 +450,7 @@ export const dispatchNotification = async (
 }
 
 /**
- * A replacement for the unreliable 'Zendesk.handleNotification(data' that detects whether a notification payload is from zendesk or not, that has stopped working since
- * we bumped zendeskSdkVersion = "2.18.0" as there was a bug affecting the back button, explained in isssue: #6519 - in build.gradle. 'handleNotification' no longer works in this older version
+ * A replacement for the unreliable 'Zendesk.handleNotification(data' that detects whether a notification payload is from zendesk or not
  **/
 export async function isZendeskNotification(
     data: Notification['data'],
