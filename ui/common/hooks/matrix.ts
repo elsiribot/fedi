@@ -29,15 +29,25 @@ import {
     observeMultispendAccountInfo,
     unobserveMultispendAccountInfo,
     checkBolt11PaymentResult,
+    selectConsolidatedMatrixPaymentEventByPaymentId,
 } from '../redux'
 import {
     MatrixPaymentEvent,
     MatrixPaymentStatus,
     MatrixRoom,
     MatrixUser,
+    MSats,
 } from '../types'
+import {
+    RpcFederationId,
+    RpcOperationId,
+    RpcTransaction,
+} from '../types/bindings'
+import amountUtils from '../utils/AmountUtils'
+import { calculateHistoricalFiatAmount } from '../utils/currency'
 import { FedimintBridge } from '../utils/fedimint'
 import { formatErrorMessage } from '../utils/format'
+import { makeLog } from '../utils/log'
 import {
     decodeFediMatrixUserUri,
     isValidMatrixUserId,
@@ -46,11 +56,12 @@ import {
     MatrixUrlMetadata,
     matrixUrlMetadataSchema,
 } from '../utils/matrix'
-import { useAmountFormatter } from './amount'
+import { FormattedAmounts, useAmountFormatter } from './amount'
 import { useCommonDispatch, useCommonSelector } from './redux'
 import { useToast } from './toast'
 import { useUpdatingRef } from './util'
 
+const log = makeLog('common/hooks/matrix')
 /**
  * Hook to retrieve the push notification token from the Redux store.
  * @returns The latest push notification token, or null if not set.
@@ -261,39 +272,73 @@ export function useMatrixPaymentEvent({
 }) {
     const dispatch = useCommonDispatch()
     const isOffline = useCommonSelector(selectIsInternetUnreachable)
+
+    // pull the *up-to-date* event from Redux (with all updates merged in)
+    const consolidatedEvent =
+        useCommonSelector(s =>
+            selectConsolidatedMatrixPaymentEventByPaymentId(
+                s,
+                event.roomId,
+                event.content.paymentId,
+            ),
+        ) ?? event
+
+    const matrixAuth = useCommonSelector(s => s.matrix.auth)
+
+    // determine which operation ID to use based on user role
+    const isSentByMe = consolidatedEvent.content.senderId === matrixAuth?.userId
+    const isRecipient =
+        consolidatedEvent.content.recipientId === matrixAuth?.userId
+
+    // drive all our selectors off of the consolidated object
     const canClaimPayment = useCommonSelector(s =>
-        selectCanClaimPayment(s, event),
+        selectCanClaimPayment(s, consolidatedEvent),
     )
     const canSendPayment = useCommonSelector(s =>
-        selectCanSendPayment(s, event),
+        selectCanSendPayment(s, consolidatedEvent),
     )
     const canPayFromOtherFeds = useCommonSelector(s =>
-        selectCanPayFromOtherFeds(s, event),
+        selectCanPayFromOtherFeds(s, consolidatedEvent),
     )
-    const matrixAuth = useCommonSelector(selectMatrixAuth)
     const eventSender = useCommonSelector(s =>
-        selectMatrixRoomMember(s, event.roomId, event.senderId || ''),
+        selectMatrixRoomMember(
+            s,
+            consolidatedEvent.roomId,
+            consolidatedEvent.senderId || '',
+        ),
     )
     const paymentSender = useCommonSelector(s =>
-        selectMatrixRoomMember(s, event.roomId, event.content.senderId || ''),
+        selectMatrixRoomMember(
+            s,
+            consolidatedEvent.roomId,
+            consolidatedEvent.content.senderId || '',
+        ),
     )
     const paymentRecipient = useCommonSelector(s =>
         selectMatrixRoomMember(
             s,
-            event.roomId,
-            event.content.recipientId || '',
+            consolidatedEvent.roomId,
+            consolidatedEvent.content.recipientId || '',
         ),
     )
-    const federationInviteCode = event.content.inviteCode
+    const federationInviteCode = consolidatedEvent.content.inviteCode
     const isDm = useCommonSelector(
-        s => !!selectMatrixRoom(s, event.roomId)?.directUserId,
+        s => !!selectMatrixRoom(s, consolidatedEvent.roomId)?.directUserId,
     )
     const { makeFormattedAmountsFromMSats } = useAmountFormatter()
+
     const [isCanceling, setIsCanceling] = useState(false)
     const [isAccepting, setIsAccepting] = useState(false)
     const [isRejecting, setIsRejecting] = useState(false)
     const [isHandlingForeignEcash, setIsHandlingForeignEcash] = useState(false)
     const onErrorRef = useUpdatingRef(onError)
+
+    // add transaction fetching with the appropriate operation ID
+    const { transaction, isLoading: isLoadingTransaction } =
+        useMatrixPaymentTransaction({
+            event: consolidatedEvent,
+            fedimint,
+        })
 
     const handleDispatchPaymentUpdate = useCallback(
         async (
@@ -313,21 +358,24 @@ export function useMatrixPaymentEvent({
 
     const handleCancel = useCallback(() => {
         handleDispatchPaymentUpdate(
-            cancelMatrixPayment({ fedimint, event }),
+            cancelMatrixPayment({ fedimint, event: consolidatedEvent }),
             setIsCanceling,
         )
-    }, [fedimint, event, handleDispatchPaymentUpdate])
+    }, [fedimint, consolidatedEvent, handleDispatchPaymentUpdate])
 
     const handleAcceptRequest = useCallback(async () => {
         if (canSendPayment) {
             handleDispatchPaymentUpdate(
-                acceptMatrixPaymentRequest({ fedimint, event }),
+                acceptMatrixPaymentRequest({
+                    fedimint,
+                    event: consolidatedEvent,
+                }),
                 setIsAccepting,
             )
         } else if (onPayWithForeignEcash && canPayFromOtherFeds) {
             onPayWithForeignEcash()
             handleDispatchPaymentUpdate(
-                rejectMatrixPaymentRequest({ event }),
+                rejectMatrixPaymentRequest({ event: consolidatedEvent }),
                 setIsRejecting,
             )
         } else {
@@ -336,7 +384,7 @@ export function useMatrixPaymentEvent({
     }, [
         canPayFromOtherFeds,
         canSendPayment,
-        event,
+        consolidatedEvent,
         fedimint,
         handleDispatchPaymentUpdate,
         onErrorRef,
@@ -344,41 +392,130 @@ export function useMatrixPaymentEvent({
     ])
 
     const handleViewBolt11 = useCallback(() => {
-        if (onViewBolt11 && event.content.bolt11) {
-            onViewBolt11(event.content.bolt11)
+        if (onViewBolt11 && consolidatedEvent.content.bolt11) {
+            onViewBolt11(consolidatedEvent.content.bolt11)
         }
-    }, [event, onViewBolt11])
+    }, [consolidatedEvent, onViewBolt11])
 
     const handleCopyBolt11 = useCallback(() => {
-        if (onCopyBolt11 && event.content.bolt11) {
-            onCopyBolt11(event.content.bolt11)
+        if (onCopyBolt11 && consolidatedEvent.content.bolt11) {
+            onCopyBolt11(consolidatedEvent.content.bolt11)
         }
-    }, [event, onCopyBolt11])
+    }, [consolidatedEvent, onCopyBolt11])
 
     const handleRejectRequest = useCallback(async () => {
         handleDispatchPaymentUpdate(
-            rejectMatrixPaymentRequest({ event }),
+            rejectMatrixPaymentRequest({ event: consolidatedEvent }),
             setIsRejecting,
         )
-    }, [event, handleDispatchPaymentUpdate])
+    }, [consolidatedEvent, handleDispatchPaymentUpdate])
 
     const handleAcceptForeignEcash = useCallback(async () => {
         setIsHandlingForeignEcash(true)
     }, [])
+    const makeFormattedAmountsFromMSatsWithHistory = useCallback(
+        (msats: MSats): FormattedAmounts => {
+            // Add this debug log
+            log.debug('Formatting amount:', {
+                msats,
+                hasTransaction: !!transaction,
+                hasTxDateFiatInfo: !!transaction?.txDateFiatInfo,
+                txDateFiatInfo: transaction?.txDateFiatInfo,
+                isLoadingTransaction,
+                isSentByMe,
+                isRecipient,
+                paymentId: consolidatedEvent.content.paymentId,
+            })
+
+            // historical rate path
+            if (transaction?.txDateFiatInfo) {
+                log.debug('Using historical exchange rate', {
+                    paymentId: consolidatedEvent.content.paymentId,
+                    txDateFiatInfo: transaction.txDateFiatInfo,
+                })
+
+                const historicalFiat = calculateHistoricalFiatAmount(
+                    msats,
+                    transaction.txDateFiatInfo,
+                )
+
+                if (historicalFiat) {
+                    log.debug('Historical calculation successful:', {
+                        paymentId: consolidatedEvent.content.paymentId,
+                        msats,
+                        historicalFiat,
+                        originalTxDateFiatInfo: transaction.txDateFiatInfo,
+                    })
+
+                    const sats = amountUtils.msatToSat(msats)
+                    const formattedPrimaryAmount = `${sats.toLocaleString()} SATS`
+                    const formattedSecondaryAmount = `${historicalFiat.currency} ${historicalFiat.amount.toFixed(2)}`
+
+                    return {
+                        formattedPrimaryAmount,
+                        formattedSecondaryAmount,
+                        formattedSats: formattedPrimaryAmount,
+                        formattedFiat: formattedSecondaryAmount,
+                        // Only set formattedUsd if the currency is actually USD
+                        formattedUsd:
+                            historicalFiat.currency === 'USD'
+                                ? formattedSecondaryAmount
+                                : makeFormattedAmountsFromMSats(msats)
+                                      .formattedUsd,
+                    }
+                } else {
+                    log.warn(
+                        'txDateFiatInfo present but calculateHistoricalFiatAmount returned null',
+                        {
+                            paymentId: consolidatedEvent.content.paymentId,
+                            msats,
+                            txDateFiatInfo: transaction.txDateFiatInfo,
+                        },
+                    )
+                }
+            } else {
+                log.debug('No historical data, using current rates', {
+                    paymentId: consolidatedEvent.content.paymentId,
+                    hasTransaction: !!transaction,
+                    transactionKeys: transaction
+                        ? Object.keys(transaction)
+                        : [],
+                    isLoadingTransaction,
+                })
+            }
+
+            // fallback path
+            const fallbackResult = makeFormattedAmountsFromMSats(msats)
+            log.debug('Using fallback current rates result:', {
+                paymentId: consolidatedEvent.content.paymentId,
+                msats,
+                fallbackResult,
+            })
+
+            return fallbackResult
+        },
+        [
+            transaction,
+            makeFormattedAmountsFromMSats,
+            isLoadingTransaction,
+            isSentByMe,
+            isRecipient,
+            consolidatedEvent.content.paymentId,
+        ],
+    )
 
     const messageText = makeMatrixPaymentText({
         t,
-        event,
+        event: consolidatedEvent,
         myId: matrixAuth?.userId || '',
         eventSender,
         paymentSender,
         paymentRecipient,
-        makeFormattedAmountsFromMSats,
+        makeFormattedAmountsFromMSats: makeFormattedAmountsFromMSatsWithHistory,
     })
-    const paymentStatus = event.content.status
-    const isSentByMe = event.content.senderId === matrixAuth?.userId
-    const isRecipient = event.content.recipientId === matrixAuth?.userId
-    const isBolt11 = !!event.content.bolt11
+
+    const paymentStatus = consolidatedEvent.content.status
+    const isBolt11 = !!consolidatedEvent.content.bolt11
 
     let statusIcon: 'x' | 'reject' | 'check' | 'error' | 'loading' | undefined
     let statusText: string | undefined
@@ -388,6 +525,7 @@ export function useMatrixPaymentEvent({
         loading?: boolean
         disabled?: boolean
     }[] = []
+
     if (isBolt11) {
         if (onViewBolt11) {
             buttons.push({
@@ -402,6 +540,7 @@ export function useMatrixPaymentEvent({
             })
         }
     }
+
     if (paymentStatus === MatrixPaymentStatus.received) {
         statusIcon = 'check'
         statusText = isBolt11
@@ -434,7 +573,6 @@ export function useMatrixPaymentEvent({
                     disabled: isAccepting,
                 },
             ]
-            buttons.push()
         } else if (isRecipient) {
             statusIcon = 'loading'
             statusText = `${t('words.receiving')}...`
@@ -456,12 +594,12 @@ export function useMatrixPaymentEvent({
             statusText = t('feature.chat.paid-by-name', {
                 name:
                     paymentSender?.displayName ||
-                    matrixIdToUsername(event.senderId),
+                    matrixIdToUsername(consolidatedEvent.senderId),
             })
         }
     } else if (paymentStatus === MatrixPaymentStatus.requested) {
         if (isBolt11) {
-            if (event.senderId === matrixAuth?.userId) {
+            if (consolidatedEvent.senderId === matrixAuth?.userId) {
                 buttons.push({
                     label: t('words.cancel'),
                     handler: handleCancel,
@@ -511,11 +649,11 @@ export function useMatrixPaymentEvent({
             dispatch(
                 checkBolt11PaymentResult({
                     fedimint,
-                    event,
+                    event: consolidatedEvent,
                 }),
             )
         }
-    }, [dispatch, event, fedimint, isBolt11])
+    }, [dispatch, consolidatedEvent, fedimint, isBolt11])
 
     return {
         messageText,
@@ -527,6 +665,7 @@ export function useMatrixPaymentEvent({
         federationInviteCode,
         paymentSender,
         handleRejectRequest,
+        isLoadingTransaction,
     }
 }
 
@@ -597,4 +736,126 @@ export function useMatrixUrlPreview({
     }, [url, fedimint])
 
     return urlPreview
+}
+
+/**
+ * Hook for managing Matrix payment transactions with historical exchange rates
+ * @param event - The payment event to fetch transaction data for
+ * @param fedimint - The Fedimint bridge instance
+ * @returns Transaction state including loading, error, and transaction data
+ */
+export function useMatrixPaymentTransaction({
+    event,
+    fedimint,
+}: {
+    event: MatrixPaymentEvent
+    fedimint: FedimintBridge
+}) {
+    // undefined = not yet tried (or loading), null = tried & got nothing, object = got a transaction
+    const [transaction, setTransaction] = useState<
+        RpcTransaction | null | undefined
+    >(undefined)
+    const [hasTriedFetch, setHasTriedFetch] = useState(false)
+    const [isLoading, setIsLoading] = useState(false)
+    const [error, setError] = useState<unknown>(null)
+
+    const matrixAuth = useCommonSelector(selectMatrixAuth)
+    const currentUserId = matrixAuth?.userId
+
+    useEffect(() => {
+        // skip if we've already tried
+        if (hasTriedFetch) return
+
+        const { senderOperationId, receiverOperationId, federationId } =
+            event.content
+
+        const isSentByMe = event.content.senderId === currentUserId
+
+        // for legacy payments without senderOperationId (from old clients),
+        // we can't fetch transaction history, so just mark as tried and return null
+        if (isSentByMe && !senderOperationId) {
+            log.debug(
+                'Legacy payment detected (no senderOperationId), skipping transaction fetch',
+            )
+            setHasTriedFetch(true)
+            setTransaction(null)
+            setIsLoading(false)
+            return
+        }
+
+        const operationId = isSentByMe ? senderOperationId : receiverOperationId
+
+        if (!operationId || !federationId) {
+            log.debug(
+                'Waiting for operationId & federationId to fetch transaction',
+            )
+            // for receiver of legacy payment, mark as tried if there's no receiverOperationId
+            if (!isSentByMe && !receiverOperationId && federationId) {
+                log.debug(
+                    'Receiver of legacy payment (no receiverOperationId yet), marking as tried',
+                )
+                setHasTriedFetch(true)
+                setTransaction(null)
+                setIsLoading(false)
+            }
+            return
+        }
+
+        const fetchTransaction = async () => {
+            let chosenOp: string | undefined
+            if (isSentByMe && senderOperationId) {
+                chosenOp = senderOperationId
+            } else if (!isSentByMe && receiverOperationId) {
+                chosenOp = receiverOperationId
+            } else {
+                log.warn(
+                    `Missing ${
+                        isSentByMe ? 'sender' : 'receiver'
+                    }OperationId for payment ${event.content.paymentId}`,
+                )
+                setHasTriedFetch(true)
+                setTransaction(null)
+                return
+            }
+
+            setHasTriedFetch(true)
+            setIsLoading(true)
+            setError(null)
+
+            log.debug(
+                `Fetching transaction for ${
+                    isSentByMe ? 'sender' : 'receiver'
+                } operation: ${chosenOp}`,
+            )
+
+            try {
+                const result = await fedimint.getTransaction(
+                    federationId as RpcFederationId,
+                    chosenOp as RpcOperationId,
+                )
+                setTransaction(result ?? null)
+
+                if (result) {
+                    log.debug(
+                        `Successfully fetched transaction for operation ${chosenOp}`,
+                    )
+                } else {
+                    log.debug(`No transaction found for operation ${chosenOp}`)
+                }
+            } catch (err) {
+                log.error(
+                    `Failed to fetch transaction for operation ${chosenOp}:`,
+                    err,
+                )
+                setError(err)
+                setTransaction(null)
+            } finally {
+                setIsLoading(false)
+            }
+        }
+
+        fetchTransaction()
+    }, [event.content, fedimint, currentUserId, hasTriedFetch])
+
+    return { transaction, hasTriedFetch, isLoading, error }
 }

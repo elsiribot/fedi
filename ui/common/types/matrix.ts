@@ -162,7 +162,10 @@ type PickEventContentType<
 export type MatrixPaymentEventContent = PickEventContentType<
     MatrixEventContent,
     'xyz.fedi.payment'
->
+> & {
+    senderOperationId?: string
+    receiverOperationId?: string
+}
 
 export type MatrixPaymentEvent = MatrixEvent<MatrixPaymentEventContent>
 

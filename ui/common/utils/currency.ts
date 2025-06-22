@@ -7,7 +7,9 @@ import {
     SelectableCurrency,
     SelectableCurrencyKey,
     NonGenericCurrency,
+    MSats,
 } from '../types'
+import { FiatFXInfo } from '../types/bindings'
 import { formattedCurrencyName } from './format'
 
 // Gets the three-letter currency code from an entry in SupportedCurrency
@@ -61,4 +63,25 @@ export const sortCurrenciesByName = (
 
         return aFormatted.localeCompare(bFormatted)
     })
+}
+
+export const calculateHistoricalFiatAmount = (
+    msats: MSats,
+    fiatFXInfo: FiatFXInfo | null,
+): { amount: number; currency: string } | null => {
+    if (!fiatFXInfo) return null
+
+    // Convert msats to BTC (1 BTC = 100 000 000 000 msats)
+    const btc = Number(msats) / 100_000_000_000
+
+    // fiatFXInfo.btcToFiatHundredths is in hundredths (e.g. cents)
+    const fiatInHundredths = btc * fiatFXInfo.btcToFiatHundredths
+
+    // Convert from hundredths to standard units
+    const amount = fiatInHundredths / 100
+
+    return {
+        amount,
+        currency: fiatFXInfo.fiatCode,
+    }
 }
