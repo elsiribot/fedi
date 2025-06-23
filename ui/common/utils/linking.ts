@@ -68,16 +68,20 @@ export function universalToFedi(raw: string): string {
                 idParam = hashParams.get('id')
             }
 
-            if (!screen || !idParam) {
-                return err(new Error('Missing required parameters'))
+            if (!screen) {
+                return err(new Error('Missing required screen parameter'))
             }
 
-            return ok({ screen, idParam })
+            return ok({ screen, idParam: idParam || '' })
         })
         .match(
             ({ screen, idParam }) => {
-                const decodedId = decodeURIComponent(idParam)
-                return joinFediPath(screen, decodedId)
+                if (idParam) {
+                    const decodedId = decodeURIComponent(idParam)
+                    return joinFediPath(screen, decodedId)
+                } else {
+                    return joinFediPath(screen)
+                }
             },
             () => '',
         )

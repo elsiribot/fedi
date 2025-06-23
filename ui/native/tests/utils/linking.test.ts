@@ -109,9 +109,9 @@ describe('universalToFedi', () => {
         expect(result).toBe('')
     })
 
-    it('returns empty string when id parameter is missing', () => {
+    it('returns valid fedi URL when id parameter is missing', () => {
         const result = universalToFedi('https://app.fedi.xyz/link?screen=user')
-        expect(result).toBe('')
+        expect(result).toBe('fedi://user')
     })
 })
 
