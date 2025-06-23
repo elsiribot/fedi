@@ -106,17 +106,18 @@ export const useShareLogs = () => {
 
                 // Bridge logs
                 const bridgeLogFiles = await getBridgeLogs()
+                const bridgeLogs = await Promise.allSettled(
+                    bridgeLogFiles.map(x => x.text()),
+                ).then(result =>
+                    result
+                        .filter(x => x.status === 'fulfilled')
+                        .map(x => x.value)
+                        .join(),
+                )
+
                 attachmentFiles.push({
                     name: 'bridge.log',
-                    content: await Promise.allSettled(
-                        bridgeLogFiles.map(
-                            async x => await (await x.getFile()).text(),
-                        ),
-                    ).then(results =>
-                        results
-                            .map(x => (x.status == 'fulfilled' ? x.value : ''))
-                            .join(''),
-                    ),
+                    content: bridgeLogs,
                 })
 
                 // Add device info

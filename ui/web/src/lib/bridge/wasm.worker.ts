@@ -83,9 +83,11 @@ addEventListener('message', e => {
     }
     if (method == 'getLogs') {
         getAllBridgeLogFiles()
-            .then(result => {
-                postMessage({ token, result })
-            })
+            .then(result => Promise.allSettled(result.map(x => x.getFile())))
+            .then(result =>
+                result.filter(x => x.status === 'fulfilled').map(x => x.value),
+            )
+            .then(result => postMessage({ token, result }))
             .catch(err => {
                 postMessage({ token, error: String(err) })
             })
