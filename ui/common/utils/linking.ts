@@ -16,30 +16,57 @@ export const hostMatches = (h: string): boolean =>
 
 export function isUniversalLink(raw: string): boolean {
     return constructUrl(raw).match(
-        ({ host, pathname }) => {
+        ({ host, pathname, search, hash }) => {
             const normalised = pathname.endsWith('/')
                 ? pathname.slice(0, -1)
                 : pathname
-            return hostMatches(host) && normalised === LINK_PATH
+
+            // Check if it's our host and path
+            if (!hostMatches(host) || normalised !== LINK_PATH) {
+                return false
+            }
+
+            // Valid if it has either query params OR hash params with screen
+            if (search.includes('screen=')) {
+                return true
+            }
+
+            if (hash && hash.includes('screen=')) {
+                return true
+            }
+
+            return false
         },
         () => false,
     )
 }
-
 /**
  * Convert a Universal Link to the deep-link format the rest of the app expects.
  * Returns '' when the input is not valid.
  *
- *   https://app.fedi.xyz/link?screen=user&id=%40npub…  →
- *   fedi://user/@npub…
+ * Handles both:
+ *   https://app.fedi.xyz/link?screen=user&id=%40npub…  →  fedi://user/@npub…
+ *   https://app.fedi.xyz/link#screen=user&id=%40npub…  →  fedi://user/@npub…
  */
 export function universalToFedi(raw: string): string {
     if (!isUniversalLink(raw)) return ''
 
     return constructUrl(raw)
         .andThen(url => {
-            const screen = url.searchParams.get('screen')
-            const idParam = url.searchParams.get('id')
+            let screen: string | null = null
+            let idParam: string | null = null
+
+            // First check standard query params (?screen=...)
+            if (url.searchParams.has('screen')) {
+                screen = url.searchParams.get('screen')
+                idParam = url.searchParams.get('id')
+            }
+            // If not found, check hash fragment (#screen=...)
+            else if (url.hash && url.hash.length > 1) {
+                const hashParams = new URLSearchParams(url.hash.substring(1))
+                screen = hashParams.get('screen')
+                idParam = hashParams.get('id')
+            }
 
             if (!screen || !idParam) {
                 return err(new Error('Missing required parameters'))
