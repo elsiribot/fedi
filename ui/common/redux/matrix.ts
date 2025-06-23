@@ -267,11 +267,8 @@ export const matrixSlice = createSlice({
             }>,
         ) {
             const { roomId, updates } = action.payload
-            const consolidated = consolidatePaymentEvents(
-                state.roomTimelines[roomId] || [],
-            )
             state.roomTimelines[roomId] = applyObservableUpdates(
-                consolidated,
+                state.roomTimelines[roomId] || [],
                 updates,
             )
         },
