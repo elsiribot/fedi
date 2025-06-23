@@ -2,11 +2,17 @@ import React from 'react'
 
 import { selectMatrixAuth } from '@fedi/common/redux'
 import { MatrixEvent } from '@fedi/common/types'
-import { isPaymentEvent } from '@fedi/common/utils/matrix'
+import {
+    isImageEvent,
+    isPaymentEvent,
+    isVideoEvent,
+} from '@fedi/common/utils/matrix'
 
 import { useAppSelector } from '../../hooks'
 import { styled, theme } from '../../styles'
+import { ChatImageEvent } from './ChatImageEvent'
 import { ChatPaymentEvent } from './ChatPaymentEvent'
+import { ChatVideoEvent } from './ChatVideoEvent'
 
 interface Props {
     event: MatrixEvent
@@ -16,28 +22,29 @@ export const ChatEvent: React.FC<Props> = ({ event }) => {
     const matrixAuth = useAppSelector(selectMatrixAuth)
 
     const isMe = event.senderId === matrixAuth?.userId
-    const isQueued = false
-    let isPayment = false
 
-    // Default to using the body as the content
-    let content: React.ReactNode =
-        typeof event.content.body === 'string'
-            ? event.content.body.split(/\r?\n/).map((part, index, array) => (
-                  <React.Fragment key={index}>
-                      {part}
-                      {index !== array.length - 1 && <br />}
-                  </React.Fragment>
-              ))
-            : event.content.body
-
-    // For certain message types, use custom components
-    if (isPaymentEvent(event)) {
-        isPayment = true
-        content = <ChatPaymentEvent event={event} />
-    }
+    const content = isImageEvent(event) ? (
+        <ChatImageEvent event={event} />
+    ) : isVideoEvent(event) ? (
+        <ChatVideoEvent event={event} />
+    ) : isPaymentEvent(event) ? (
+        <ChatPaymentEvent event={event} />
+    ) : typeof event.content.body === 'string' ? (
+        event.content.body.split(/\r?\n/).map((part, index, array) => (
+            <React.Fragment key={index}>
+                {part}
+                {index !== array.length - 1 && <br />}
+            </React.Fragment>
+        ))
+    ) : (
+        event.content.body
+    )
 
     return (
-        <MessageContent isMe={isMe} isPayment={isPayment} isQueued={isQueued}>
+        <MessageContent
+            isMe={isMe}
+            isMedia={isImageEvent(event) || isVideoEvent(event)}
+            isPayment={isPaymentEvent(event)}>
             {content}
         </MessageContent>
     )
@@ -53,24 +60,23 @@ const MessageContent = styled('div', {
     wordWrap: 'break-word',
     borderRadius: 12,
     transition: 'opacity 100ms ease',
+    maxHeight: 340,
+    color: theme.colors.white,
+    background: theme.colors.blue,
 
     variants: {
+        isPayment: {
+            true: {},
+        },
         isMe: {
-            true: {
-                background: theme.colors.blue,
-                color: theme.colors.white,
-            },
             false: {
                 background: theme.colors.extraLightGrey,
                 color: theme.colors.primary,
             },
         },
-        isPayment: {
-            true: {},
-        },
-        isQueued: {
+        isMedia: {
             true: {
-                opacity: 0.5,
+                padding: 0,
             },
         },
     },
