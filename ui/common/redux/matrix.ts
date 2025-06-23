@@ -267,13 +267,13 @@ export const matrixSlice = createSlice({
             }>,
         ) {
             const { roomId, updates } = action.payload
-            const raw = applyObservableUpdates(
+            const consolidated = consolidatePaymentEvents(
                 state.roomTimelines[roomId] || [],
+            )
+            state.roomTimelines[roomId] = applyObservableUpdates(
+                consolidated,
                 updates,
             )
-            // consolidate payment events: merge status updates while preserving operation IDs
-            // this ensures users see one message per payment with the latest status
-            state.roomTimelines[roomId] = consolidatePaymentEvents(raw)
         },
         handleMatrixRoomTimelinePaginationStatus(
             state,
