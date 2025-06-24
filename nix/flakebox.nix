@@ -478,6 +478,8 @@ in
             pkgs.bash
             pkgs.coreutils
             pkgs.busybox
+            pkgs.cacert
+            (pkgs.lib.hiPrio pkgs.gnutar)
             pkgs.curl
             pkgs.rsync
           ];
@@ -507,6 +509,8 @@ in
             pkgs.bash
             pkgs.coreutils
             pkgs.busybox
+            pkgs.cacert
+            (pkgs.lib.hiPrio pkgs.gnutar)
             pkgs.curl
             pkgs.rsync
           ];
