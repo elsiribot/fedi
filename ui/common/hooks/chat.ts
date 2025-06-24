@@ -321,28 +321,21 @@ export const useDisplayNameForm = (t: TFunction) => {
         [t, validator],
     )
 
-    const handleSubmitDisplayName = useCallback(
-        async (onSuccess?: () => void) => {
-            setIsSubmitting(true)
-            try {
-                // Double check the submitted username is valid
-                const result = parseData(username, validator, t)
-                if (!result.success) {
-                    // Only show first error
-                    throw new Error(result.errorMessage)
-                }
-                await dispatch(
-                    setMatrixDisplayName({ displayName: username }),
-                ).unwrap()
-                onSuccess?.()
-            } catch (err) {
-                log.error('handleSubmit', err)
-                toast.error(t, err)
-            }
+    const handleSubmitDisplayName = async (onSuccess?: () => void) => {
+        setIsSubmitting(true)
+        try {
+            const trimmedUsername = username.trim()
+            await dispatch(
+                setMatrixDisplayName({ displayName: trimmedUsername }),
+            ).unwrap()
+            onSuccess?.()
+        } catch (err) {
+            log.error('handleSubmit', err)
+            toast.error(t, err)
+        } finally {
             setIsSubmitting(false)
-        },
-        [dispatch, t, toast, username, validator],
-    )
+        }
+    }
 
     return {
         username,

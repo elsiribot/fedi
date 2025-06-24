@@ -129,6 +129,7 @@ export const getDisplayNameValidator = () =>
         // Validates length
         // Using z.string().refine() instead of z.string().max()
         // to keep return types consistent
+        .refine(username => username.length > 0)
         .refine(username => username.length <= 21)
         // Validates all lowercase
         .refine(username => !/[A-Z]/.test(username))

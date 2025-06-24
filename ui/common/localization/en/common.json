@@ -288,7 +288,7 @@
         "invalid-ecash-token": "Invalid eCash token",
         "invalid-federation-code": "Invalid federation code",
         "invalid-invite-code": "Invalid invite code",
-        "invalid-username": "Must be 21 characters or less and cannot include uppercase letters",
+        "invalid-username": "Must be between 1 and 21 characters and cannot include uppercase letters",
         "invalid-username-banned": "Please enter a different display name",
         "invoice-already-paid": "This invoice has already been paid.",
         "multispend-cannot-be-broadcast": "Multispend groups cannot be Broadcast-only.",

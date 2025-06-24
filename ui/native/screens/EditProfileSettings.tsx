@@ -113,9 +113,7 @@ const EditProfileSettings: React.FC = () => {
     const style = styles(theme)
 
     const hasChanged =
-        username !== matrixAuth?.displayName ||
-        username.length === 0 ||
-        profileImageUri !== null
+        username.trim() !== matrixAuth?.displayName || profileImageUri !== null
 
     const saveButtonDisabled = !hasChanged || isLoading || errorMessage !== null
 
