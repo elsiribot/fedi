@@ -1,11 +1,12 @@
-import { TFunction } from 'i18next'
-import { err, errAsync, ok, okAsync, ResultAsync } from 'neverthrow'
-import { Platform } from 'react-native'
 import {
     DocumentPickerOptions,
     DocumentPickerResponse,
+    keepLocalCopy,
     pick,
-} from 'react-native-document-picker'
+} from '@react-native-documents/picker'
+import { TFunction } from 'i18next'
+import { err, errAsync, ok, okAsync, ResultAsync } from 'neverthrow'
+import { Platform } from 'react-native'
 import RNFS, { TemporaryDirectoryPath } from 'react-native-fs'
 import {
     Asset,
@@ -57,7 +58,7 @@ export function makeRandomTempFilePath(fileName: string) {
  * Converts a DocumentPickerResponse to a file URI.
  * Handles Android content URIs which may not have the filename in the URI.
  */
-export function copyDocumentToTempUri({
+export function deriveCopyableFileUri({
     name,
     ...document
 }: DocumentPickerResponse): ResultAsync<
@@ -72,26 +73,26 @@ export function copyDocumentToTempUri({
             ),
         )
 
-    const { dirPath, path, uri } = makeRandomTempFilePath(name)
-
     if (document.uri.startsWith('content://')) {
         return ResultAsync.fromPromise(
-            RNFS.mkdir(dirPath),
+            keepLocalCopy({
+                files: [
+                    {
+                        uri: document.uri,
+                        fileName: name,
+                    },
+                ],
+                destination: 'cachesDirectory',
+            }),
             tryTag('GenericError'),
         )
-            .andThen(() =>
-                ResultAsync.fromPromise(
-                    RNFS.readFile(document.uri, 'base64'),
-                    tryTag('GenericError'),
-                ),
-            )
-            .andThen(inputStream =>
-                ResultAsync.fromPromise(
-                    RNFS.writeFile(path, inputStream, 'base64'),
-                    tryTag('GenericError'),
-                ),
-            )
-            .map(() => uri)
+            .andThen(([result]) => {
+                if (result.status === 'success') return ok(result.localUri)
+
+                return err(
+                    makeError(new Error(result.copyError), 'GenericError'),
+                )
+            })
             .orTee(e => log.error(`Error copying document ${document.uri}`, e))
     }
 
