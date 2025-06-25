@@ -40,9 +40,8 @@ const mockCommunity: FederationListItem = {
 
 jest.mock('../../hooks/util.ts', () => ({
     ...jest.requireActual('../../hooks/util'),
-    useInstallPrompt: () => ({
+    useShowInstallPromptBanner: () => ({
         showInstallBanner: true,
-        handleOnInstall: jest.fn(),
         handleOnDismiss: jest.fn(),
     }),
 }))

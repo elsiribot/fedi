@@ -1,9 +1,8 @@
-import { useEffect, useState } from 'react'
+import { useContext, useEffect, useState } from 'react'
 
 import { useNuxStep } from '@fedi/common/hooks/nux'
-import { selectTransactions } from '@fedi/common/redux/transactions'
 
-import { useAppSelector } from '../hooks'
+import { InstallPromptContext } from '../context/InstallPromptContext'
 import { config } from '../styles'
 
 export function useMediaQuery(query: string): boolean {
@@ -61,17 +60,14 @@ export function useDeviceQuery() {
     return { isMobile, isIOS }
 }
 
-export function useInstallPrompt() {
-    const transactions = useAppSelector(selectTransactions)
-    const { isMobile, isIOS } = useDeviceQuery()
-    const isStandalone = useMediaQuery(config.media.standalone)
+export function useInstallPromptContext() {
+    const deferredPrompt = useContext(InstallPromptContext)
+    return deferredPrompt
+}
 
-    const [showInstallBanner, setShowInstallBanner] = useState<boolean>(false)
+export function useInstallPrompt() {
     const [deferredPrompt, setDeferredPrompt] =
         useState<BeforeInstallPromptEvent>()
-
-    const [hasDismissedInstallPrompt, completeHasDismissedInstallPrompt] =
-        useNuxStep('pwaHasDismissedInstallPrompt')
 
     useEffect(() => {
         const handleBeforeInstallPrompt = (event: BeforeInstallPromptEvent) => {
@@ -83,6 +79,7 @@ export function useInstallPrompt() {
             'beforeinstallprompt',
             handleBeforeInstallPrompt,
         )
+
         return () =>
             window.removeEventListener(
                 'beforeinstallprompt',
@@ -90,24 +87,26 @@ export function useInstallPrompt() {
             )
     }, [])
 
+    return deferredPrompt
+}
+
+export function useShowInstallPromptBanner() {
+    const { isMobile } = useDeviceQuery()
+    const isStandalone = useMediaQuery(config.media.standalone)
+
+    const [showInstallBanner, setShowInstallBanner] = useState<boolean>(false)
+
+    const [hasDismissedInstallPrompt, completeHasDismissedInstallPrompt] =
+        useNuxStep('pwaHasDismissedInstallPrompt')
+
     useEffect(() => {
         setShowInstallBanner(
-            isMobile &&
-                !isStandalone &&
-                !hasDismissedInstallPrompt &&
-                transactions.length === 0,
+            isMobile && !isStandalone && !hasDismissedInstallPrompt,
         )
-    }, [isMobile, isStandalone, hasDismissedInstallPrompt, transactions])
-
-    const handleOnInstall = async () => {
-        if (isIOS) return
-
-        await deferredPrompt?.prompt()
-    }
+    }, [isMobile, isStandalone, hasDismissedInstallPrompt])
 
     return {
         showInstallBanner,
-        handleOnInstall,
         handleOnDismiss: completeHasDismissedInstallPrompt,
     }
 }

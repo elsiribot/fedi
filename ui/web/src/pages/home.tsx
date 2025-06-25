@@ -27,14 +27,21 @@ import { InstallBanner } from '../components/InstallBanner'
 import * as Layout from '../components/Layout'
 import { Modal } from '../components/Modal'
 import { Text } from '../components/Text'
-import { useAppSelector, useInstallPrompt } from '../hooks'
+import {
+    useAppSelector,
+    useDeviceQuery,
+    useInstallPromptContext,
+    useShowInstallPromptBanner,
+} from '../hooks'
 import { styled, theme } from '../styles'
 
 const BACKUP_REMINDER_MIN_BALANCE = 1000000 // 1000000 msats or 1000 sats
 
 function HomePage() {
     const { t } = useTranslation()
-    const { showInstallBanner, handleOnDismiss } = useInstallPrompt()
+    const deferredPrompt = useInstallPromptContext()
+    const { isIOS } = useDeviceQuery()
+    const { showInstallBanner, handleOnDismiss } = useShowInstallPromptBanner()
     const router = useRouter()
 
     const [hasSeenDisplayName, completeSeenDisplayName] =
@@ -42,6 +49,10 @@ function HomePage() {
     const [hasPerformedPersonalBackup] = useNuxStep(
         'hasPerformedPersonalBackup',
     )
+
+    const handleOnInstall = async () => {
+        await deferredPrompt?.prompt()
+    }
 
     const matrixAuth = useAppSelector(selectMatrixAuth)
     const activeFederation = useAppSelector(selectActiveFederation)
@@ -174,11 +185,14 @@ function HomePage() {
                         buttonLabel={t(
                             'feature.home.pwa-install-banner-button-label',
                         )}
-                        onInstall={() =>
-                            window.open(
-                                'https://support.fedi.xyz/hc/en-us/articles/27283843087634',
-                                '_blank',
-                            )
+                        onInstall={
+                            isIOS
+                                ? () =>
+                                      window.open(
+                                          'https://support.fedi.xyz/hc/en-us/articles/27283843087634',
+                                          '_blank',
+                                      )
+                                : handleOnInstall
                         }
                         onClose={handleOnDismiss}
                     />
