@@ -207,9 +207,12 @@ android {
         nightly {
             dimension "env"
             applicationIdSuffix ".nightly"
+            // Force domain verification on install
+            manifestPlaceholders = [autoVerify: "true"]
         }
         production {
             dimension "env"
+            manifestPlaceholders = [autoVerify: "true"]
         }
     }
 }
