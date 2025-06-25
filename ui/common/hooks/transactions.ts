@@ -260,8 +260,15 @@ export function useMultispendTxnDisplayUtils(t: TFunction, roomId: RpcRoomId) {
     )
 
     const makeMultispendTxnStatusText = useCallback(
-        (txn: MultispendTransactionListEntry) =>
-            makeMultispendTxnStatusTextUtil(t, txn, multispendStatus),
+        (txn: MultispendTransactionListEntry) => {
+            if (
+                multispendStatus &&
+                isWithdrawalRequestRejected(txn, multispendStatus)
+            )
+                return t('words.failed')
+
+            return makeMultispendTxnStatusTextUtil(t, txn, multispendStatus)
+        },
         [multispendStatus, t],
     )
 
