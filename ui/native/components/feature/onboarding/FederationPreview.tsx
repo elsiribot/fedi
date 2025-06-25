@@ -125,18 +125,18 @@ const FederationPreview: React.FC<Props> = ({ federation, onJoin, onBack }) => {
         <View style={s.buttonsContainer}>
             <Button
                 fullWidth
+                type="clear"
+                title={t('feature.onboarding.i-do-not-accept')}
+                onPress={navigation.goBack}
+                containerStyle={s.button}
+            />
+            <Button
+                fullWidth
                 title={t('feature.onboarding.i-accept')}
                 onPress={handleJoin}
                 containerStyle={s.button}
                 disabled={isJoining}
                 loading={isJoining}
-            />
-            <Button
-                fullWidth
-                type="clear"
-                title={t('feature.onboarding.i-do-not-accept')}
-                onPress={navigation.goBack}
-                containerStyle={s.button}
             />
         </View>
     ) : (
