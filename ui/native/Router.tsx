@@ -20,6 +20,7 @@ import ToastManager from './components/ui/ToastManager'
 import { MainNavigator } from './screens/MainNavigator'
 import SwitchingFederations from './screens/SwitchingFederations'
 import { useOmniLinkContext } from './state/contexts/OmniLinkContext'
+import { usePinContext } from './state/contexts/PinContext'
 import {
     DRAWER_NAVIGATION_ID,
     MainNavigatorDrawerParamList,
@@ -31,6 +32,7 @@ import {
     setNavigationRef,
     setNavigationReady,
     handleInternalDeepLink,
+    setAppUnlocked,
 } from './utils/linking'
 
 const log = makeLog('NavigationRouter')
@@ -41,9 +43,25 @@ const Router = () => {
     const { theme } = useTheme()
     const navigation = useNavigationContainerRef()
     const isAppUnlocked = useIsFeatureUnlocked('app')
+    const pin = usePinContext()
     const { parseUrl } = useOmniLinkContext()
 
     useEffect(() => setNavigationRef(navigation), [navigation])
+
+    useEffect(() => {
+        // Only consider app unlocked when both feature is unlocked AND PIN allows it
+        const isPinReady =
+            pin.status === 'unset' ||
+            (pin.status === 'set' && Boolean(isAppUnlocked))
+
+        log.info('PIN state changed', {
+            pinStatus: pin.status,
+            isAppUnlocked,
+            isPinReady,
+        })
+
+        setAppUnlocked(isPinReady)
+    }, [pin.status, isAppUnlocked])
 
     // DEEPLINK SHIM for app.fedi.xyz universal-links (to allow links clicked inside the app to work)
     useEffect(() => {

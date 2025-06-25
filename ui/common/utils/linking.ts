@@ -8,7 +8,10 @@ import {
 } from '@fedi/common/constants/linking'
 
 import { ParsedDeepLink, ScreenConfig } from '../types/linking'
+import { makeLog } from './log'
 import { constructUrl, ensureNonNullish } from './neverthrow'
+
+const log = makeLog('common/utils/linking')
 
 /** True if host equals one of our Universal-Link hosts (with or without www). */
 export const hostMatches = (h: string): boolean =>
@@ -40,6 +43,7 @@ export function isUniversalLink(raw: string): boolean {
         () => false,
     )
 }
+
 /**
  * Convert a Universal Link to the deep-link format the rest of the app expects.
  * Returns '' when the input is not valid.
@@ -183,27 +187,94 @@ export const isFediDeeplinkType = (url: string): boolean =>
         h => url.includes(`https://${h}`) || url.includes(`https://www.${h}`),
     )
 
-export class DeepLinkQueue {
+/**
+ * Handler function type for processing deep links
+ */
+type DeepLinkHandler = (url: string) => boolean
+
+/**
+ * Global handler that native layer will set
+ */
+let deepLinkHandler: DeepLinkHandler | null = null
+
+/**
+ * Set the handler function that will process deep links
+ * This should be called by the native layer during initialization
+ */
+export const setDeepLinkHandler = (handler: DeepLinkHandler): void => {
+    deepLinkHandler = handler
+    log.info('Deep link handler set')
+}
+
+/**
+ * Process pending deep links using the registered handler
+ */
+const processPendingDeepLinks = (pendingLinks: string[]) => {
+    if (pendingLinks.length === 0) return
+
+    log.info(`Processing ${pendingLinks.length} pending deep links`)
+
+    // Delay for older devices to ensure everything is ready
+    setTimeout(() => {
+        pendingLinks.forEach(link => {
+            log.info('Processing pending link:', link)
+
+            if (deepLinkHandler) {
+                const handled = deepLinkHandler(link)
+                if (!handled) {
+                    log.warn('Failed to handle pending link:', link)
+                }
+            } else {
+                log.warn('No deep link handler set for:', link)
+            }
+        })
+    }, 800)
+}
+
+/**
+ * PIN-aware deep link queue that respects both navigation and PIN state
+ */
+export class PinAwareDeepLinkQueue {
     private queue: string[] = []
-    private isReady = false
+    private isNavigationReady = false
+    private isAppUnlocked = false
 
     add(url: string): void {
         if (!this.queue.includes(url)) {
             this.queue.push(url)
+            log.info('Deep link queued:', url)
         }
     }
 
-    setReady(): void {
-        this.isReady = true
+    setNavigationReady(): void {
+        this.isNavigationReady = true
+        log.info('Navigation ready state set:', this.isNavigationReady)
+        this.processQueueIfReady()
+    }
+
+    setAppUnlocked(unlocked: boolean): void {
+        this.isAppUnlocked = unlocked
+        log.info('App unlock state set:', unlocked)
+        this.processQueueIfReady()
     }
 
     getIsReady(): boolean {
-        return this.isReady
+        return this.isNavigationReady && this.isAppUnlocked
+    }
+
+    private processQueueIfReady(): void {
+        if (this.getIsReady() && this.queue.length > 0) {
+            log.info('Both navigation and PIN ready, processing queue')
+            // Process queue when both navigation and PIN are ready
+            const pendingLinks = this.flush()
+            processPendingDeepLinks(pendingLinks)
+        }
     }
 
     flush(): string[] {
         const links = [...this.queue]
         this.queue = []
+        log.info('Queue flushed, returning links:', links)
         return links
     }
 
@@ -213,12 +284,9 @@ export class DeepLinkQueue {
 
     clear(): void {
         this.queue = []
+        log.info('Queue cleared')
     }
 }
-
-/**
- * Utility helper functions
- */
 
 const FEDI_PROTOCOL = 'fedi://'
 

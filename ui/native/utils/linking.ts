@@ -13,7 +13,8 @@ import {
     getValidScreens,
     parseDeepLink,
     isFediDeeplinkType,
-    DeepLinkQueue,
+    PinAwareDeepLinkQueue,
+    setDeepLinkHandler,
 } from '@fedi/common/utils/linking'
 import { makeLog } from '@fedi/common/utils/log'
 
@@ -78,7 +79,12 @@ const validScreens = getValidScreens(
  */
 let navigationRef: NavigationContainerRef<RootStackParamList> | null = null
 let isNavigationReady = false
-const deepLinkQueue = new DeepLinkQueue()
+const pinAwareQueue = new PinAwareDeepLinkQueue()
+
+// Set the callback so common can call back to native
+setDeepLinkHandler((url: string) => {
+    return handleInternalDeepLinkDirect(url)
+})
 
 export const setNavigationRef = (
     r: NavigationContainerRef<RootStackParamList> | null,
@@ -90,8 +96,12 @@ export const setNavigationRef = (
 export const setNavigationReady = () => {
     log.info('Navigation marked as ready')
     isNavigationReady = true
-    deepLinkQueue.setReady()
-    processPendingDeepLinks()
+    pinAwareQueue.setNavigationReady()
+}
+
+export const setAppUnlocked = (unlocked: boolean) => {
+    log.info('App PIN state changed', { unlocked })
+    pinAwareQueue.setAppUnlocked(unlocked)
 }
 
 /**
@@ -194,28 +204,6 @@ export function createNavigationAction(
 }
 
 /**
- * Deep Link processing
- */
-const processPendingDeepLinks = () => {
-    const pendingLinks = deepLinkQueue.flush()
-    if (pendingLinks.length === 0) return
-
-    log.info(`Processing ${pendingLinks.length} pending deep links`)
-
-    // delay for older devices to ensure navigation is fully ready
-    setTimeout(() => {
-        pendingLinks.forEach(link => {
-            log.info('Processing pending link:', link)
-            const handled = handleInternalDeepLink(link)
-            if (!handled) {
-                log.warn('Failed to handle pending link:', link)
-                // Could implement additional fallback logic here if needed
-            }
-        })
-    }, 800)
-}
-
-/**
  * Execute a navigation action using React Navigation
  */
 const executeNavigationAction = (action: NavigationAction): boolean => {
@@ -240,31 +228,18 @@ const executeNavigationAction = (action: NavigationAction): boolean => {
 }
 
 /**
- * Handle internal deep links
+ * Direct handler without queue logic (for processing queued items)
  */
-export const handleInternalDeepLink = (u: string): boolean => {
+const handleInternalDeepLinkDirect = (u: string): boolean => {
     const startTime = Date.now()
-    log.info('handleInternalDeepLink START', {
+    log.info('handleInternalDeepLinkDirect START', {
         url: u,
         timestamp: startTime,
-        isNavigationReady,
-        hasNavigationRef: !!navigationRef,
     })
 
-    if (!navigationRef) {
-        log.warn('handleInternalDeepLink: no navigationRef, queueing')
-        deepLinkQueue.add(u)
-        return true
-    }
-
-    // Check if navigation is ready
-    if (!isNavigationReady || !navigationRef.isReady()) {
-        log.info('Navigation not ready, queueing deep link', {
-            isNavigationReady,
-            isReady: navigationRef.isReady(),
-        })
-        deepLinkQueue.add(u)
-        return true
+    if (!navigationRef || !navigationRef.isReady()) {
+        log.warn('handleInternalDeepLinkDirect: navigation not ready')
+        return false
     }
 
     const parsed = parseDeepLink(u, validScreens)
@@ -295,7 +270,7 @@ export const handleInternalDeepLink = (u: string): boolean => {
     const dispatchStart = Date.now()
     const success = executeNavigationAction(action)
 
-    log.info('handleInternalDeepLink END', {
+    log.info('handleInternalDeepLinkDirect END', {
         success,
         screen: parsed.screen,
         id: parsed.id,
@@ -304,6 +279,40 @@ export const handleInternalDeepLink = (u: string): boolean => {
     })
 
     return success
+}
+
+/**
+ * Main entry point - PIN-aware
+ */
+export const handleInternalDeepLink = (u: string): boolean => {
+    const startTime = Date.now()
+    log.info('handleInternalDeepLink START', {
+        url: u,
+        timestamp: startTime,
+        isNavigationReady,
+        isPinReady: pinAwareQueue.getIsReady(),
+        hasNavigationRef: !!navigationRef,
+    })
+
+    if (!navigationRef) {
+        log.warn('handleInternalDeepLink: no navigationRef, queueing')
+        pinAwareQueue.add(u)
+        return true
+    }
+
+    // Check if both navigation AND PIN are ready
+    if (!pinAwareQueue.getIsReady() || !navigationRef.isReady()) {
+        log.info('Navigation or PIN not ready, queueing deep link', {
+            isNavigationReady,
+            isPinReady: pinAwareQueue.getIsReady(),
+            navigationReady: navigationRef.isReady(),
+        })
+        pinAwareQueue.add(u)
+        return true
+    }
+
+    // If everything is ready, handle directly
+    return handleInternalDeepLinkDirect(u)
 }
 
 /**
@@ -322,19 +331,15 @@ export const handleFediModNavigation = async (
         url.includes('wa.me/') ||
         url.includes('app.fedi.xyz')
     ) {
-        // Open externally via Linking for these specific services
         try {
             await Linking.openURL(url)
         } catch (error) {
             log.error('Failed to open external URL:', url, error)
-            // Fallback to in-app browser if external opening fails
             navigation.navigate('FediModBrowser', { url })
         }
     } else if (isFediDeeplinkType(url)) {
-        // For other fedi deep link types, use the existing openURL logic
         await openURL(url)
     } else {
-        // For all other URLs, open in the in-app browser
         navigation.navigate('FediModBrowser', { url })
     }
 }
@@ -348,6 +353,7 @@ export const openURL = async (u: string): Promise<void> => {
 /**
  * Parse and validate deep links for React Navigation.
  *
+ *
  * Handles both Universal Links (https://app.fedi.xyz/link?screen=user&id=...)
  * and native fedi:// links. The function attempts to handle navigation internally
  * when the navigation system is ready, otherwise returns the link for React Navigation
@@ -357,7 +363,6 @@ export const openURL = async (u: string): Promise<void> => {
 export function parseLink(uri: string, fallback: (u: string) => void): string {
     log.debug('parseLink called with', uri)
 
-    // Parse using common utilities
     const parsed = parseDeepLink(uri, validScreens)
 
     // Handle universal links
@@ -374,25 +379,29 @@ export function parseLink(uri: string, fallback: (u: string) => void): string {
             converted: parsed.fediUrl,
         })
 
-        // Check if navigation is ready before trying to handle manually
-        if (isNavigationReady && navigationRef?.isReady()) {
-            log.info('parseLink: navigation ready, handling internally')
+        // Check if PIN-aware queue is ready before trying to handle manually
+        if (
+            isNavigationReady &&
+            navigationRef?.isReady() &&
+            pinAwareQueue.getIsReady()
+        ) {
+            log.info('parseLink: navigation and PIN ready, handling internally')
             if (handleInternalDeepLink(parsed.fediUrl)) {
                 log.info(
                     'parseLink: successfully handled via handleInternalDeepLink',
                 )
-                return '' // Return empty so React Navigation doesn't try to handle it
+                return ''
             } else {
                 log.warn(
                     'parseLink: handleInternalDeepLink failed, returning deep link for React Navigation',
                 )
-                return parsed.fediUrl // Let React Navigation try to handle it
+                return parsed.fediUrl
             }
         } else {
             log.info(
-                'parseLink: navigation not ready, returning deep link for React Navigation to handle',
+                'parseLink: navigation or PIN not ready, returning deep link for React Navigation to handle',
             )
-            return parsed.fediUrl // Let React Navigation handle it when ready
+            return parsed.fediUrl
         }
     }
 
@@ -404,10 +413,14 @@ export function parseLink(uri: string, fallback: (u: string) => void): string {
             return ''
         }
 
-        // Check if navigation is ready before trying to handle manually
-        if (isNavigationReady && navigationRef?.isReady()) {
+        // Check if PIN-aware queue is ready
+        if (
+            isNavigationReady &&
+            navigationRef?.isReady() &&
+            pinAwareQueue.getIsReady()
+        ) {
             log.info(
-                'parseLink: navigation ready, handling fedi:// link internally',
+                'parseLink: navigation and PIN ready, handling fedi:// link internally',
             )
             const linkToHandle = parsed.fediUrl || uri
             if (handleInternalDeepLink(linkToHandle)) {
@@ -423,7 +436,7 @@ export function parseLink(uri: string, fallback: (u: string) => void): string {
             }
         } else {
             log.info(
-                'parseLink: navigation not ready, returning fedi:// link for React Navigation',
+                'parseLink: navigation or PIN not ready, returning fedi:// link for React Navigation',
             )
             return parsed.fediUrl || uri // Let React Navigation handle it
         }
@@ -468,13 +481,11 @@ export const getLinkingConfig = (
             if (url != null) {
                 log.info('getInitialURL found URL:', url)
 
-                // For initial URLs, always queue them for later processing
-                // since navigation might not be ready yet
                 if (isUniversalLink(url) || url.startsWith('fedi://')) {
                     log.info(
                         'getInitialURL: queueing deep link for later processing',
                     )
-                    deepLinkQueue.add(url)
+                    pinAwareQueue.add(url)
                     return null // Don't let React Navigation handle it
                 }
 
@@ -486,12 +497,11 @@ export const getLinkingConfig = (
             if (typeof link === 'string') {
                 log.info('getInitialURL found notification link:', link)
 
-                // Same for notification links
                 if (isUniversalLink(link) || link.startsWith('fedi://')) {
                     log.info(
                         'getInitialURL: queueing notification link for later processing',
                     )
-                    deepLinkQueue.add(link)
+                    pinAwareQueue.add(link)
                     return null
                 }
 
@@ -514,11 +524,15 @@ export const getLinkingConfig = (
                 try {
                     await zendeskCloseMessagingView()
 
-                    // For foreground links, try immediate handling if navigation is ready
-                    if (isNavigationReady && navigationRef?.isReady()) {
+                    // For foreground links, try immediate handling if everything is ready
+                    if (
+                        isNavigationReady &&
+                        navigationRef?.isReady() &&
+                        pinAwareQueue.getIsReady()
+                    ) {
                         if (isUniversalLink(url) || url.startsWith('fedi://')) {
                             log.info(
-                                'addEventListener: navigation ready, trying direct handling',
+                                'addEventListener: everything ready, trying direct handling',
                             )
                             const handled = handleInternalDeepLink(url)
                             if (handled) {
@@ -565,10 +579,14 @@ export const getLinkingConfig = (
                 }
 
                 // Same logic for notifications
-                if (isNavigationReady && navigationRef?.isReady()) {
+                if (
+                    isNavigationReady &&
+                    navigationRef?.isReady() &&
+                    pinAwareQueue.getIsReady()
+                ) {
                     if (isUniversalLink(uri) || uri.startsWith('fedi://')) {
                         log.info(
-                            'notification: navigation ready, trying direct handling',
+                            'notification: everything ready, trying direct handling',
                         )
                         const handled = handleInternalDeepLink(uri)
                         if (handled) {
