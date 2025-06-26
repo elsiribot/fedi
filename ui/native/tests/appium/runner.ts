@@ -1,6 +1,9 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
 /* eslint-disable no-console */
+import fs from 'fs'
+import path from 'path'
+
 import AppiumManager from '../configs/appium/AppiumManager'
 import { AppiumTestBase } from '../configs/appium/AppiumTestBase'
 import { OnboardingTest } from './common/onboarding.test'
@@ -114,13 +117,11 @@ async function runTests(testNames: string[]): Promise<void> {
 
                 anyTestFailed = true
 
-                /* take a screenshot on failure
+                /* take a screenshot on failure */
                 try {
                     if (appiumManager.driver) {
                         const screenshot =
                             await appiumManager.driver.takeScreenshot()
-                        const fs = require('fs')
-                        const path = require('path')
                         const screenshotPath = path.join(
                             process.cwd(),
                             'screenshots',
@@ -140,7 +141,7 @@ async function runTests(testNames: string[]): Promise<void> {
                         'Failed to capture screenshot:',
                         screenshotError,
                     )
-                }*/
+                }
             }
         }
 
