@@ -135,10 +135,8 @@ export class OnboardingTest extends AppiumTestBase {
                 .move({ duration: 100, x: 13, y: 47 })
                 .up({ button: 0 })
                 .perform()
-            await this.clickElementByKey('Fedi Testnet')
-        } else {
-            await this.clickOnText('Fedi Testnet', -2)
         }
+        await this.clickElementByKey('FediTestnetAccordionButton')
         await this.driver
             .action('pointer')
             .move({ duration: 0, x: 13, y: 360 })
