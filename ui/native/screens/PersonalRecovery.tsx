@@ -11,9 +11,9 @@ import {
     TextInput,
 } from 'react-native'
 
-import { useInternetConnectivity } from '@fedi/common/hooks/environment'
 import { usePersonalRecovery } from '@fedi/common/hooks/recovery'
 import { useToast } from '@fedi/common/hooks/toast'
+import { selectIsInternetUnreachable } from '@fedi/common/redux'
 import type { SeedWords } from '@fedi/common/types'
 import stringUtils from '@fedi/common/utils/StringUtils'
 
@@ -22,6 +22,7 @@ import SeedWordInput from '../components/feature/recovery/SeedWordInput'
 import Flex from '../components/ui/Flex'
 import { BIP39_WORD_LIST } from '../constants'
 import { usePinContext } from '../state/contexts/PinContext'
+import { useAppSelector } from '../state/hooks'
 import { resetAfterPersonalRecovery } from '../state/navigation'
 import type { RootStackParamList } from '../types/navigation'
 
@@ -43,7 +44,7 @@ const PersonalRecovery: React.FC<Props> = ({ navigation }: Props) => {
         t,
         fedimint,
     )
-    const { isOffline } = useInternetConnectivity()
+    const isOffline = useAppSelector(selectIsInternetUnreachable)
     const [seedWords, setSeedWords] = useState<SeedWords>(
         new Array(12).fill(''),
     )

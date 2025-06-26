@@ -4,10 +4,12 @@ import React, { useCallback, useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { ActivityIndicator } from 'react-native'
 
-import { useInternetConnectivity } from '@fedi/common/hooks/environment'
 import { useOmniPaymentState } from '@fedi/common/hooks/pay'
 import { useToast } from '@fedi/common/hooks/toast'
-import { selectPaymentFederation } from '@fedi/common/redux'
+import {
+    selectIsInternetUnreachable,
+    selectPaymentFederation,
+} from '@fedi/common/redux'
 import amountUtils from '@fedi/common/utils/AmountUtils'
 
 import { fedimint } from '../bridge'
@@ -31,7 +33,7 @@ const SendOnChainAmount: React.FC<Props> = ({ route }: Props) => {
     const paymentFederation = useAppSelector(selectPaymentFederation)
     const { parsedData } = route.params
     const [notes, setNotes] = useState<string>('')
-    const { isOffline } = useInternetConnectivity()
+    const isOffline = useAppSelector(selectIsInternetUnreachable)
     const recheckConnection = useRecheckInternet()
 
     const {
@@ -60,9 +62,9 @@ const SendOnChainAmount: React.FC<Props> = ({ route }: Props) => {
         )
             return
 
-        const conn = await recheckConnection()
+        const connection = await recheckConnection()
 
-        if (conn.isOffline) {
+        if (connection.isOffline) {
             toast.error(t, t('errors.actions-require-internet'))
             return
         }

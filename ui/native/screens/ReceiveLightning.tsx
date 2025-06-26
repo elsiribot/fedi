@@ -6,7 +6,6 @@ import { ActivityIndicator, Keyboard, View } from 'react-native'
 
 import { useRequestForm } from '@fedi/common/hooks/amount'
 import { useSyncCurrencyRatesAndCache } from '@fedi/common/hooks/currency'
-import { useInternetConnectivity } from '@fedi/common/hooks/environment'
 import { useIsOnchainDepositSupported } from '@fedi/common/hooks/federation'
 import { useToast } from '@fedi/common/hooks/toast'
 import { useTransactionHistory } from '@fedi/common/hooks/transactions'
@@ -14,6 +13,7 @@ import {
     generateAddress,
     generateInvoice,
     selectActiveFederation,
+    selectIsInternetUnreachable,
 } from '@fedi/common/redux'
 import amountUtils from '@fedi/common/utils/AmountUtils'
 import { makeLog } from '@fedi/common/utils/log'
@@ -59,7 +59,7 @@ const ReceiveLightning: React.FC<Props> = ({ navigation }: Props) => {
     const [requestType, setRequestType] = useState<BitcoinOrLightning>(
         BitcoinOrLightning.lightning,
     )
-    const { isOffline } = useInternetConnectivity()
+    const isOffline = useAppSelector(selectIsInternetUnreachable)
     const recheckConnection = useRecheckInternet()
     const showOnchainDeposits = isOnchainSupported
 
@@ -182,9 +182,9 @@ const ReceiveLightning: React.FC<Props> = ({ navigation }: Props) => {
             return
         }
 
-        const conn = await recheckConnection()
+        const connection = await recheckConnection()
 
-        if (conn.isOffline) {
+        if (connection.isOffline) {
             toast.error(t, t('errors.actions-require-internet'))
             return
         }

@@ -5,11 +5,13 @@ import React, { useCallback, useEffect, useMemo, useState } from 'react'
 import { Trans, useTranslation } from 'react-i18next'
 import { ActivityIndicator } from 'react-native'
 
-import { useInternetConnectivity } from '@fedi/common/hooks/environment'
 import { useOmniPaymentState } from '@fedi/common/hooks/pay'
 import { useToast } from '@fedi/common/hooks/toast'
 import { useFeeDisplayUtils } from '@fedi/common/hooks/transactions'
-import { selectPaymentFederation } from '@fedi/common/redux'
+import {
+    selectIsInternetUnreachable,
+    selectPaymentFederation,
+} from '@fedi/common/redux'
 import amountUtils from '@fedi/common/utils/AmountUtils'
 
 import { fedimint } from '../bridge'
@@ -38,7 +40,7 @@ const ConfirmSendLightning: React.FC<Props> = ({ route }: Props) => {
     const { feeBreakdownTitle, makeLightningFeeContent } = useFeeDisplayUtils(t)
     const [notes, setNotes] = useState<string>('')
     const { parsedData } = route.params
-    const { isOffline } = useInternetConnectivity()
+    const isOffline = useAppSelector(selectIsInternetUnreachable)
     const recheckConnection = useRecheckInternet()
     const {
         isReadyToPay,
