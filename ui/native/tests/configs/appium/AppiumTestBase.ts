@@ -33,6 +33,7 @@ export abstract class AppiumTestBase {
 
     async findElementByKey(key: string) {
         const strategies = this.getLocatorStrategies(key)
+        const primaryStrategy = strategies[0]
 
         for (const strategy of strategies) {
             try {
@@ -45,7 +46,21 @@ export abstract class AppiumTestBase {
                     return element
                 }
             } catch (error: any) {
-                console.log(`Strategy ${strategy} failed: ${error.message}`)
+                console.log(
+                    `Strategy ${strategy} failed: ${error.message}. Trying the first strategy once again just to be sure.`,
+                )
+                const element = await this.driver.$(primaryStrategy)
+                const exists = await element.isExisting()
+                if (exists) {
+                    console.log(
+                        `Element found with primary strategy ${primaryStrategy} after the strategy failed the first time.`,
+                    )
+                    return element
+                } else {
+                    console.log(
+                        `A repeat atttempt with primary strategy ${primaryStrategy} failed: ${error.message}. Element most likely does not exist in XML tree. Try dumping it.`,
+                    )
+                }
             }
         }
 
