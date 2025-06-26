@@ -1028,7 +1028,6 @@ export class MatrixChatClient {
                 }
             }
         }
-
         // TODO (cleanup): Remove base_info.name fallback
         // cached_display_name seems to be the best source of truth for the room name
         // for both groups and DMS assuming matrix-rust-sdk handles computing it correctly

@@ -69,6 +69,7 @@ export type MatrixRoom = {
     isBlocked?: boolean
     inviteCode: string
     roomState: MatrixRoomState
+    recencyStamp?: number
 }
 
 export type MatrixRoomState = 'Joined' | 'Left' | 'Invited'

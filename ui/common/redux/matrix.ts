@@ -1750,6 +1750,41 @@ export const selectGroupPreviews = createSelector(
     groupPreviews => groupPreviews,
 )
 
+// Returns a processed & sorted list of default chats for
+// use in the chats list
+const selectDefaultChatsForChatList = createSelector(
+    selectMatrixRooms,
+    selectGroupPreviews,
+    (roomsList, defaultGroupPreviews) => {
+        // Here we add preview rooms from the default groups list to be
+        // displayed alongside the user's joined rooms to make it seem like
+        // the user has joined these rooms when really they are just public previews
+        // TODO: These should be moved to the Community screen and only shown
+        // when the user switches to view that community
+        const defaultGroupsList = Object.entries(defaultGroupPreviews).reduce<
+            MatrixRoom[]
+        >((result, [_, preview]: [RpcRoomId, MatrixGroupPreview]) => {
+            const { info, timeline } = preview
+            // don't include previews if we dont have info and timeline
+            if (!info || !timeline) return result
+            // don't include previews unless they are default groups
+            if (!preview.isDefaultGroup) return result
+            // don't include previews that have no messages in the timeline
+            if (timeline.filter(t => t !== null).length === 0) return result
+            // don't include previews for rooms we are already joined to
+            if (roomsList.find(r => r.id === info.id)) return result
+            result.push(makeChatFromPreview(preview))
+            return result
+        }, [])
+        // Sorts so merging with the joined rooms list is more efficient
+        return orderBy(
+            defaultGroupsList,
+            room => room.preview?.timestamp ?? 0,
+            'desc',
+        )
+    },
+)
+
 export const selectMatrixAuth = createSelector(
     (s: CommonState) => s.matrix.auth,
     auth => {
@@ -1802,36 +1837,47 @@ export const selectMatrixChatsWithoutDefaultGroupPreviewsList = createSelector(
 
 export const selectMatrixChatsList = createSelector(
     selectMatrixRooms,
-    selectGroupPreviews,
-    (roomsList, defaultGroupPreviews): MatrixRoom[] => {
-        // Here we add preview rooms from the default groups list to be
-        // displayed alongside the user's joined rooms to make it seem like
-        // the user has joined these rooms when really they are just public previews
-        // TODO: These should be moved to the Community screen and only shown
-        // when the user switches to view that community
-        const defaultGroupsList = Object.entries(defaultGroupPreviews).reduce<
-            MatrixRoom[]
-        >((result, [_, preview]: [RpcRoomId, MatrixGroupPreview]) => {
-            const { info, timeline } = preview
-            // don't include previews if we dont have info and timeline
-            if (!info || !timeline) return result
-            // don't include previews unless they are default groups
-            if (!preview.isDefaultGroup) return result
-            // don't include previews that have no messages in the timeline
-            if (timeline.filter(t => t !== null).length === 0) return result
-            // don't include previews for rooms we are already joined to
-            if (roomsList.find(r => r.id === info.id)) return result
-            result.push(makeChatFromPreview(preview))
-            return result
-        }, [])
+    selectDefaultChatsForChatList,
+    (roomsList, defaultGroupsList): MatrixRoom[] => {
         // don't include rooms that we have not joined yet this should happen
         // automatically but we filter here anyway in case the join fails for some reason
         const joinedRoomsList = roomsList.filter(r => r.roomState === 'Joined')
-        const chatList: MatrixRoom[] = [
-            ...joinedRoomsList,
-            ...defaultGroupsList,
-        ]
-        return orderBy(chatList, item => item.preview?.timestamp || 0, 'desc')
+
+        const chatList: MatrixRoom[] = []
+        let i = 0 // joinedRoomsList index
+        let j = 0 // defaultGroupsList index
+
+        // Merge the two sorted lists in linear time
+        while (i < joinedRoomsList.length && j < defaultGroupsList.length) {
+            const joinedRoom = joinedRoomsList[i]
+            const defaultRoom = defaultGroupsList[j]
+
+            // If a joined room doesn't have a timestamp, (such as
+            // newly created rooms) always order it before the default group
+            const joinedTimestamp =
+                joinedRoom.preview?.timestamp ?? Number.MAX_SAFE_INTEGER
+            const defaultTimestamp = defaultRoom.preview?.timestamp ?? 0
+
+            // insert each default room just before the first room with
+            // a newer (larger) timestamp
+            if (joinedTimestamp >= defaultTimestamp) {
+                chatList.push(joinedRoom)
+                i++
+            } else {
+                chatList.push(defaultRoom)
+                j++
+            }
+        }
+
+        // Add remaining items from either list
+        while (i < joinedRoomsList.length) {
+            chatList.push(joinedRoomsList[i++])
+        }
+        while (j < defaultGroupsList.length) {
+            chatList.push(defaultGroupsList[j++])
+        }
+
+        return chatList
     },
 )
 
