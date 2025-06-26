@@ -1,4 +1,4 @@
-/* eslint-disable no-console, @typescript-eslint/no-explicit-any */
+/* eslint-disable no-console */
 import AppiumManager, { Platform, currentPlatform } from './AppiumManager'
 
 export const DEFAULT_TIMEOUT = 20000
@@ -45,9 +45,9 @@ export abstract class AppiumTestBase {
                     console.log(`Element found with strategy: ${strategy}`)
                     return element
                 }
-            } catch (error: any) {
+            } catch (error: unknown) {
                 console.log(
-                    `Strategy ${strategy} failed: ${error.message}. Trying the first strategy once again just to be sure.`,
+                    `Strategy ${strategy} failed: ${(error as Error).message}. Trying the first strategy once again just to be sure.`,
                 )
                 const element = await this.driver.$(primaryStrategy)
                 const exists = await element.isExisting()
@@ -58,7 +58,7 @@ export abstract class AppiumTestBase {
                     return element
                 } else {
                     console.log(
-                        `A repeat atttempt with primary strategy ${primaryStrategy} failed: ${error.message}. Element most likely does not exist in XML tree. Try dumping it.`,
+                        `A repeat atttempt with primary strategy ${primaryStrategy} failed: ${(error as Error).message}. Element most likely does not exist in XML tree. Try dumping it.`,
                     )
                 }
             }
@@ -346,8 +346,10 @@ export abstract class AppiumTestBase {
         try {
             await this.waitForElementDisplayed(key, timeout)
             return true
-        } catch (error: any) {
-            console.log(`Element ${key} is not displayed: ${error.message}`)
+        } catch (error: unknown) {
+            console.log(
+                `Element ${key} is not displayed: ${(error as Error).message}`,
+            )
             return false
         }
     }
@@ -358,8 +360,10 @@ export abstract class AppiumTestBase {
             await this.driver.executeScript('mobile: hideKeyboard', [
                 { keys: ['done', 'gotowe'] },
             ])
-        } catch (error: any) {
-            console.log(`Unable to hide keyboard. Reason: ${error.message}`)
+        } catch (error: unknown) {
+            console.log(
+                `Unable to hide keyboard. Reason: ${(error as Error).message}`,
+            )
         }
     }
 
@@ -367,9 +371,9 @@ export abstract class AppiumTestBase {
         if (currentPlatform === Platform.ANDROID) {
             try {
                 await this.driver.executeScript('mobile: acceptAlert', [])
-            } catch (error: any) {
+            } catch (error: unknown) {
                 console.log(
-                    `Unable to accept alert on Android. Reason: ${error.message}`,
+                    `Unable to accept alert on Android. Reason: ${(error as Error).message}`,
                 )
             }
         } else {
@@ -377,9 +381,9 @@ export abstract class AppiumTestBase {
                 await this.driver.executeScript('mobile: alert', [
                     { action: 'accept', button: `${button}` },
                 ])
-            } catch (error: any) {
+            } catch (error: unknown) {
                 console.log(
-                    `Unable to accept alert on iOS. Got error ${error.message}`,
+                    `Unable to accept alert on iOS. Got error ${(error as Error).message}`,
                 )
             }
         }

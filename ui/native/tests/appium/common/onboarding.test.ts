@@ -172,7 +172,7 @@ export class OnboardingTest extends AppiumTestBase {
         }
         // TODO: go through the rest of federation settings
     }
-    catch(error: any) {
+    catch(error: unknown) {
         console.error('Onboarding test failed:', error)
     }
 }
