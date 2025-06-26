@@ -13,18 +13,21 @@ import {
     generateAddress,
     generateInvoice,
     selectActiveFederation,
+    selectIsInternetUnreachable,
 } from '@fedi/common/redux'
 import amountUtils from '@fedi/common/utils/AmountUtils'
 import { makeLog } from '@fedi/common/utils/log'
 
 import { fedimint } from '../bridge'
+import InternetUnreachableBanner from '../components/feature/environment/InternetUnreachableBanner'
 import ReceiveQr from '../components/feature/receive/ReceiveQr'
 import RequestTypeSwitcher from '../components/feature/receive/RequestTypeSwitcher'
 import { AmountScreen } from '../components/ui/AmountScreen'
-import { SafeScrollArea } from '../components/ui/SafeArea'
+import { SafeAreaContainer, SafeScrollArea } from '../components/ui/SafeArea'
 import { useAppDispatch, useAppSelector } from '../state/hooks'
 import { BitcoinOrLightning, BtcLnUri, Sats } from '../types'
 import type { RootStackParamList } from '../types/navigation'
+import { useRecheckInternet } from '../utils/hooks/environment'
 
 const log = makeLog('ReceiveLightning')
 
@@ -56,6 +59,8 @@ const ReceiveLightning: React.FC<Props> = ({ navigation }: Props) => {
     const [requestType, setRequestType] = useState<BitcoinOrLightning>(
         BitcoinOrLightning.lightning,
     )
+    const isOffline = useAppSelector(selectIsInternetUnreachable)
+    const recheckConnection = useRecheckInternet()
     const showOnchainDeposits = isOnchainSupported
 
     const syncCurrencyRatesAndCache = useSyncCurrencyRatesAndCache(fedimint)
@@ -171,9 +176,16 @@ const ReceiveLightning: React.FC<Props> = ({ navigation }: Props) => {
         setAmount(updatedValue)
     }
 
-    const handleSubmit = () => {
+    const handleSubmit = async () => {
         setSubmitAttempts(attempts => attempts + 1)
         if (amount > maximumAmount || amount < minimumAmount) {
+            return
+        }
+
+        const connection = await recheckConnection()
+
+        if (connection.isOffline) {
+            toast.error(t, t('errors.actions-require-internet'))
             return
         }
 
@@ -182,64 +194,68 @@ const ReceiveLightning: React.FC<Props> = ({ navigation }: Props) => {
     }
 
     return (
-        <SafeScrollArea edges="notop">
-            {showOnchainDeposits && (
-                <RequestTypeSwitcher
-                    requestType={requestType}
-                    onSwitch={() => {
-                        requestType === BitcoinOrLightning.lightning
-                            ? setRequestType(BitcoinOrLightning.bitcoin)
-                            : setRequestType(BitcoinOrLightning.lightning)
-                    }}
-                />
-            )}
-            {requestType === BitcoinOrLightning.bitcoin && onchainAddress ? (
-                <View>
-                    {isLoading ? (
-                        <ActivityIndicator />
-                    ) : (
-                        <ReceiveQr
-                            uri={
-                                new BtcLnUri({
-                                    type: BitcoinOrLightning.bitcoin,
-                                    body: onchainAddress,
-                                })
-                            }
-                            type={requestType}
-                            transactionId={transactionId}
-                        />
-                    )}
-                </View>
-            ) : (
-                <AmountScreen
-                    amount={amount}
-                    onChangeAmount={onChangeAmount}
-                    minimumAmount={minimumAmount}
-                    maximumAmount={maximumAmount}
-                    submitAttempts={submitAttempts}
-                    isSubmitting={generatingInvoice}
-                    readOnly={Boolean(exactAmount)}
-                    verb={t('words.request')}
-                    buttons={[
-                        {
-                            title: `${t('words.request')}${
-                                amount
-                                    ? ` ${amountUtils.formatSats(amount)} `
-                                    : ' '
-                            }${t('words.sats').toUpperCase()}`,
-                            onPress: handleSubmit,
-                            disabled: generatingInvoice,
-                            loading: generatingInvoice,
-                            containerStyle: {
-                                width: '100%',
+        <SafeScrollArea edges="bottom">
+            {isOffline && <InternetUnreachableBanner />}
+            <SafeAreaContainer edges="horizontal">
+                {showOnchainDeposits && (
+                    <RequestTypeSwitcher
+                        requestType={requestType}
+                        onSwitch={() => {
+                            requestType === BitcoinOrLightning.lightning
+                                ? setRequestType(BitcoinOrLightning.bitcoin)
+                                : setRequestType(BitcoinOrLightning.lightning)
+                        }}
+                    />
+                )}
+                {requestType === BitcoinOrLightning.bitcoin &&
+                onchainAddress ? (
+                    <View>
+                        {isLoading ? (
+                            <ActivityIndicator />
+                        ) : (
+                            <ReceiveQr
+                                uri={
+                                    new BtcLnUri({
+                                        type: BitcoinOrLightning.bitcoin,
+                                        body: onchainAddress,
+                                    })
+                                }
+                                type={requestType}
+                                transactionId={transactionId}
+                            />
+                        )}
+                    </View>
+                ) : (
+                    <AmountScreen
+                        amount={amount}
+                        onChangeAmount={onChangeAmount}
+                        minimumAmount={minimumAmount}
+                        maximumAmount={maximumAmount}
+                        submitAttempts={submitAttempts}
+                        isSubmitting={generatingInvoice}
+                        readOnly={Boolean(exactAmount)}
+                        verb={t('words.request')}
+                        buttons={[
+                            {
+                                title: `${t('words.request')}${
+                                    amount
+                                        ? ` ${amountUtils.formatSats(amount)} `
+                                        : ' '
+                                }${t('words.sats').toUpperCase()}`,
+                                onPress: handleSubmit,
+                                disabled: generatingInvoice,
+                                loading: generatingInvoice,
+                                containerStyle: {
+                                    width: '100%',
+                                },
                             },
-                        },
-                    ]}
-                    isIndependent={false}
-                    notes={notes}
-                    setNotes={setNotes}
-                />
-            )}
+                        ]}
+                        isIndependent={false}
+                        notes={notes}
+                        setNotes={setNotes}
+                    />
+                )}
+            </SafeAreaContainer>
         </SafeScrollArea>
     )
 }

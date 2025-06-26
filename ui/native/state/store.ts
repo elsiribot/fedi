@@ -9,14 +9,15 @@ import {
     CommonState,
     initializeCommonStore,
     setCurrencyLocale,
-    setNetworkInfo,
     refreshHistoricalCurrencyRates,
+    setIsInternetUnreachable,
 } from '@fedi/common/redux'
 import { makeLog } from '@fedi/common/utils/log'
 
 import { fedimint } from '../bridge'
 import i18n from '../localization/i18n'
 import { getNumberFormatLocale } from '../utils/device-info'
+import { checkIsInternetUnreachable } from '../utils/environment'
 import { storage } from '../utils/storage'
 
 const log = makeLog('native/state/store')
@@ -71,7 +72,8 @@ export function initializeNativeStore() {
         debounce(
             state => {
                 log.debug('Network status changed (debounced)', state)
-                store.dispatch(setNetworkInfo(state))
+                const isInternetUnreachable = checkIsInternetUnreachable(state)
+                store.dispatch(setIsInternetUnreachable(isInternetUnreachable))
             },
             100,
             { leading: true, trailing: true },
