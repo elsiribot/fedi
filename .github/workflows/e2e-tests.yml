@@ -123,9 +123,9 @@ jobs:
                 echo $ANDROID_HOME
                 echo "Starting Android emulators..."
                 ANDROID_DEVICES=("emulator-5554" "emulator-5556")
-                ANDROID_VERSIONS=("7.1" "15")
+                ANDROID_VERSIONS=("7.1" "16")
                 $ANDROID_HOME/emulator/emulator -avd "android-7.1" -no-audio -no-boot-anim -no-window > emulator71.log 2>&1 & echo $! >> android_emulator_pids.txt
-                $ANDROID_HOME/emulator/emulator -avd "android-15" -no-audio -no-boot-anim -no-window > emulator15.log 2>&1 & echo $! >> android_emulator_pids.txt
+                $ANDROID_HOME/emulator/emulator -avd "android-16" -no-audio -no-boot-anim -no-window > emulator16.log 2>&1 & echo $! >> android_emulator_pids.txt
                 sleep 10
                 echo "Emulator processes:"
                 ps aux | grep emulator
@@ -151,7 +151,7 @@ jobs:
                 echo "All Android emulators started (or timed out)"
                 adb devices
                 echo "Checking logs"
-                cat emulator15.log
+                cat emulator16.log
                 cat emulator71.log
                 cat android_emulator_pids.txt
 
@@ -197,10 +197,10 @@ jobs:
                 echo "status=$?" >> $GITHUB_OUTPUT
                 popd
 
-            - name: Run Android 15 tests
+            - name: Run Android 16 tests
               continue-on-error: true
               run: |
-                echo "Running tests on Android 15 (Device ID: emulator-5556)"
+                echo "Running tests on Android 16 (Device ID: emulator-5556)"
                 pushd ui
                 if adb -s emulator-5556 shell pm list packages | grep -q "package:com.fedi"; then
                   adb -s emulator-5556 uninstall com.fedi
