@@ -140,8 +140,9 @@ const FederationPreview: React.FC<Props> = ({ federation, onJoin, onBack }) => {
             />
         </View>
     ) : (
-        <View style={s.buttonsContainer}>
+        <View accessible={false} style={s.buttonsContainer}>
             <Button
+                testID="JoinFederationButton"
                 fullWidth
                 title={
                     federation.hasWallet

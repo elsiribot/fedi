@@ -8,7 +8,7 @@ export class OnboardingTest extends AppiumTestBase {
         await new Promise(resolve => setTimeout(resolve, 10000)) // waiting for 10 seconds for the username to generate
         await this.clickElementByKey('Get a Wallet')
         await this.clickElementByKey('FediTestnetJoinButton')
-        await this.clickElementByKey('Join Federation')
+        await this.clickElementByKey('JoinFederationButton')
         await new Promise(resolve => setTimeout(resolve, 5000))
         await this.clickElementByKey('Explore Now')
         await this.clickElementByKey('Chat')
