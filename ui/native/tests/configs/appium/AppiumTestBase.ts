@@ -803,6 +803,87 @@ export abstract class AppiumTestBase {
         }
     }
 
+    async getClipboard(): Promise<string> {
+        try {
+            let clipboardContent = ''
+            if (currentPlatform === Platform.ANDROID) {
+                try {
+                    const base64Content = (await this.driver.executeScript(
+                        'mobile: getClipboard',
+                        [],
+                    )) as string
+                    if (base64Content) {
+                        clipboardContent = Buffer.from(
+                            base64Content,
+                            'base64',
+                        ).toString('utf8')
+                        console.log('Retrieved clipboard content on Android')
+                    } else {
+                        console.warn(
+                            'Received empty or invalid clipboard data from Android',
+                        )
+                    }
+                } catch (error: unknown) {
+                    console.error(
+                        `Failed to get Android clipboard: ${(error as Error).message}`,
+                    )
+                }
+            } else {
+                try {
+                    const content = (await this.driver.executeScript(
+                        'mobile: getPasteboard',
+                        [],
+                    )) as string
+                    if (content) {
+                        clipboardContent = content
+                        console.log('Retrieved clipboard content on iOS')
+                    } else {
+                        console.warn(
+                            'Received non-string clipboard data from iOS',
+                        )
+                    }
+                } catch (error: unknown) {
+                    console.error(
+                        `Failed to get iOS clipboard: ${(error as Error).message}`,
+                    )
+                }
+            }
+            return clipboardContent
+        } catch (error: unknown) {
+            console.error(
+                `Unexpected error getting clipboard: ${(error as Error).message}`,
+            )
+            return ''
+        }
+    }
+
+    async setClipboard(clipboardContent: string): Promise<void> {
+        if (currentPlatform === Platform.ANDROID) {
+            try {
+                await this.driver.executeScript('mobile: setClipboard', [
+                    {
+                        content:
+                            Buffer.from(clipboardContent).toString('base64'),
+                    },
+                ])
+            } catch (error: unknown) {
+                console.log(
+                    `Unable to push content to clipboard on Android. Reason: ${(error as Error).message}`,
+                )
+            }
+        } else {
+            try {
+                await this.driver.executeScript('mobile: setPasteboard', [
+                    { content: Buffer.from(clipboardContent).toString('utf8') },
+                ])
+            } catch (error: unknown) {
+                console.log(
+                    `Unable to push content to clipboard on iOS. Reason: ${(error as Error).message}`,
+                )
+            }
+        }
+    }
+
     // Method to be implemented by each test class
     abstract execute(): Promise<void>
 }
