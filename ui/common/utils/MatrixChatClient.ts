@@ -177,6 +177,7 @@ export class MatrixChatClient {
                                     // resolve cached auth before fetching anything
                                     // to support offline UX
                                     resolve(auth)
+                                    this.emit('auth', auth)
 
                                     // try to refetch auth in the background to
                                     // asynchronously get the user's avatarUrl
