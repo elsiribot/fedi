@@ -268,6 +268,7 @@ export function useMatrixPaymentEvent({
 }) {
     const dispatch = useCommonDispatch()
     const isOffline = useCommonSelector(selectIsInternetUnreachable)
+    const toast = useToast()
 
     const matrixAuth = useCommonSelector(s => s.matrix.auth)
 
@@ -382,8 +383,13 @@ export function useMatrixPaymentEvent({
     }, [event, handleDispatchPaymentUpdate])
 
     const handleAcceptForeignEcash = useCallback(async () => {
+        if (isOffline) {
+            toast.error(t, null, t('errors.internet-offline'))
+            return
+        }
+
         setIsHandlingForeignEcash(true)
-    }, [])
+    }, [isOffline, toast, t])
 
     // add transaction fetching with the appropriate operation ID
     const { transaction, isLoading: isLoadingTransaction } =
