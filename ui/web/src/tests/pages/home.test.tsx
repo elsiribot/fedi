@@ -1,42 +1,14 @@
 import '@testing-library/jest-dom'
 import { screen } from '@testing-library/react'
 
-import { MSats, FederationListItem } from '@fedi/common/types'
+import {
+    mockFederation1,
+    mockCommunity,
+} from '@fedi/common/tests/mock-data/federation'
 
 import HomePage from '../../pages/home'
 import { AppState, setupStore } from '../../state/store'
 import { renderWithProviders } from '../../utils/test-utils/render'
-
-const mockFederation: FederationListItem = {
-    status: 'online',
-    init_state: 'ready',
-    hasWallet: true,
-    balance: 2000000 as MSats,
-    id: '1',
-    network: 'bitcoin',
-    name: 'test',
-    inviteCode: 'test',
-    meta: {},
-    recovering: false,
-    nodes: {},
-    clientConfig: null,
-    fediFeeSchedule: {
-        modules: {},
-        remittanceThresholdMsat: 10000,
-    },
-    hadReusedEcash: false,
-}
-
-const mockCommunity: FederationListItem = {
-    id: '1',
-    status: 'online',
-    network: undefined,
-    hasWallet: false,
-    init_state: 'ready',
-    inviteCode: 'test',
-    name: 'name',
-    meta: {},
-}
 
 jest.mock('../../hooks/util.ts', () => ({
     ...jest.requireActual('../../hooks/util'),
@@ -79,7 +51,7 @@ describe('/pages/home', () => {
                 preloadedState: {
                     federation: {
                         ...state.federation,
-                        federations: [mockFederation],
+                        federations: [mockFederation1],
                         activeFederationId: '1',
                     },
                 },
@@ -111,7 +83,7 @@ describe('/pages/home', () => {
                     preloadedState: {
                         federation: {
                             ...state.federation,
-                            federations: [mockFederation],
+                            federations: [mockFederation1],
                             activeFederationId: '1',
                             defaultCommunityChats: {
                                 '1': [

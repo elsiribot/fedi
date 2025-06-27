@@ -19,17 +19,7 @@ import { Icon } from '../Icon'
 import { Popover } from '../Popover'
 import { Text } from '../Text'
 
-type Props = {
-    /*
-     * If true and no active federation
-     * then "Join Federation" will be shown
-     * and list item will also be shown at
-     * the bottom of the dropdown list
-     */
-    joinable?: boolean
-}
-
-export const FederationSelector: React.FC<Props> = ({ joinable }) => {
+export const FederationSelector: React.FC = () => {
     const { t } = useTranslation()
     const dispatch = useAppDispatch()
     const activeFederation = useAppSelector(selectActiveFederation)
@@ -73,16 +63,14 @@ export const FederationSelector: React.FC<Props> = ({ joinable }) => {
                     </li>
                 )
             })}
-            {joinable && (
-                <li>
-                    <FederationItem add as={Link} href="/onboarding">
-                        <Icon icon={PlusIcon} size="sm" />
-                        <Text variant="caption" weight="bold">
-                            {t('feature.federations.join-federation')}
-                        </Text>
-                    </FederationItem>
-                </li>
-            )}
+            <li>
+                <FederationItem add as={Link} href="/onboarding">
+                    <Icon icon={PlusIcon} size="sm" />
+                    <Text variant="caption" weight="bold">
+                        {t('feature.federations.join-federation')}
+                    </Text>
+                </FederationItem>
+            </li>
         </FederationList>
     )
 
@@ -108,7 +96,7 @@ export const FederationSelector: React.FC<Props> = ({ joinable }) => {
                             </IconWrapper>
                         </Inner>
                     </Popover>
-                ) : joinable ? (
+                ) : (
                     <Link href="/onboarding">
                         <Inner>
                             <Text variant="caption" weight="bold">
@@ -119,7 +107,7 @@ export const FederationSelector: React.FC<Props> = ({ joinable }) => {
                             </IconWrapper>
                         </Inner>
                     </Link>
-                ) : null}
+                )}
             </Wrapper>
         </Container>
     )
@@ -167,7 +155,6 @@ const IconWrapper = styled('div', {
 })
 
 const FederationList = styled('ul', {
-    width: 260,
     padding: 0,
     margin: -8,
 
