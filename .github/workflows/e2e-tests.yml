@@ -181,7 +181,6 @@ jobs:
                 cat metro.log
 
             - name: Run Android 7.1 tests
-              continue-on-error: true
               run: |
                 export ANDROID_HOME=~/Library/Android/sdk
                 export PATH=$PATH:$ANDROID_HOME/tools:$ANDROID_HOME/tools/bin:$ANDROID_HOME/platform-tools
@@ -198,7 +197,6 @@ jobs:
                 popd
 
             - name: Run Android 16 tests
-              continue-on-error: true
               run: |
                 echo "Running tests on Android 16 (Device ID: emulator-5556)"
                 pushd ui
@@ -213,7 +211,6 @@ jobs:
                 popd
 
             - name: Run iOS 15 tests
-              continue-on-error: true
               run: |
                 echo "Running tests on iOS 15 (Device ID: $IOS_15_UDID)"
                 pushd ui
@@ -224,7 +221,6 @@ jobs:
                 popd
 
             - name: Run iOS 18 tests
-              continue-on-error: true
               run: |
                 echo "Running tests on iOS 18 (Device ID: $IOS_18_UDID)"
                 pushd ui
