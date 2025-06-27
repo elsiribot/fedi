@@ -739,6 +739,26 @@ async fn nostrDecrypt04(
     bridge.nostril.nip04_decrypt(pubkey, ciphertext).await
 }
 
+#[macro_rules_derive(rpc_method!)]
+async fn nostrRateFederation(
+    bridge: &BridgeFull,
+    federation_id: String,
+    rating: u8,
+    include_invite_code: bool,
+) -> anyhow::Result<()> {
+    let invite_code = if include_invite_code {
+        let federation = bridge.federations.get_federation(&federation_id)?;
+        Some(federation.get_invite_code().await)
+    } else {
+        None
+    };
+
+    bridge
+        .nostril
+        .rate_federation(federation_id, rating, invite_code)
+        .await
+}
+
 #[macro_rules_derive(federation_rpc_method!)]
 async fn stabilityPoolAccountInfo(
     federation: Arc<FederationV2>,
@@ -2170,6 +2190,7 @@ rpc_methods!(RpcMethods {
     nostrDecrypt,
     nostrEncrypt04,
     nostrDecrypt04,
+    nostrRateFederation,
     // Stability Pool
     stabilityPoolAccountInfo,
     stabilityPoolNextCycleStartTime,

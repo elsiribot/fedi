@@ -661,6 +661,7 @@ export type RpcMethods = {
   nostrDecrypt: [nostrDecrypt, string];
   nostrEncrypt04: [nostrEncrypt04, string];
   nostrDecrypt04: [nostrDecrypt04, string];
+  nostrRateFederation: [nostrRateFederation, null];
   stabilityPoolAccountInfo: [
     stabilityPoolAccountInfo,
     RpcStabilityPoolAccountInfo,
@@ -1803,6 +1804,12 @@ export type nostrDecrypt04 = { pubkey: string; ciphertext: string };
 export type nostrEncrypt = { pubkey: string; plaintext: string };
 
 export type nostrEncrypt04 = { pubkey: string; plaintext: string };
+
+export type nostrRateFederation = {
+  federationId: string;
+  rating: number;
+  includeInviteCode: boolean;
+};
 
 export type onAppForeground = {};
 
