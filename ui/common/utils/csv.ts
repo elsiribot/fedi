@@ -16,7 +16,7 @@ import {
 } from '../types'
 import { RpcTransactionListEntry } from '../types/bindings'
 import amountUtils, { FIAT_MAX_DECIMAL_PLACES } from './AmountUtils'
-import { findUserDisplayName, isWithdrawalRequestRejected } from './matrix'
+import { findUserDisplayName } from './matrix'
 import {
     getTxnDirection,
     makeMultispendTxnStatusText,
@@ -166,21 +166,8 @@ export function makeMultispendTransactionHistoryCSV(
         },
         {
             name: 'Status',
-            getValue: tx => {
-                if (
-                    multispendStatus &&
-                    isWithdrawalRequestRejected(tx, multispendStatus)
-                ) {
-                    return t('words.failed')
-                }
-
-                return makeMultispendTxnStatusText(
-                    t,
-                    tx,
-                    multispendStatus,
-                    true,
-                )
-            },
+            getValue: tx =>
+                makeMultispendTxnStatusText(t, tx, multispendStatus, true),
         },
         {
             name: 'Amount (USD)',
