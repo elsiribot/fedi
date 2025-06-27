@@ -1387,7 +1387,7 @@ impl FederationV2 {
             Ok(stream) => stream.into_stream(),
         };
 
-        while let Some(update) = updates.next().await {
+        if let Some(update) = updates.next().await {
             match update {
                 WithdrawState::Succeeded(txid) => {
                     return Some((update, Some(txid)));
@@ -1395,7 +1395,7 @@ impl FederationV2 {
                 WithdrawState::Failed(_) => {
                     return Some((update, None));
                 }
-                _ => {}
+                WithdrawState::Created => return Some((update, None)),
             }
         }
 
