@@ -5,12 +5,14 @@ import path from 'path'
 import AppiumManager from '../configs/appium/AppiumManager'
 import { AppiumTestBase } from '../configs/appium/AppiumTestBase'
 import { currentPlatform, Platform } from '../configs/appium/types'
+import { JoinLeaveFederation } from './common/JoinLeaveFederation.test'
 import { OnboardingTest } from './common/onboarding.test'
 
 type TestConstructor = new () => AppiumTestBase
 
 const availableTests: Record<string, TestConstructor> = {
     onboarding: OnboardingTest,
+    joinLeaveFederations: JoinLeaveFederation,
 }
 type TestName = keyof typeof availableTests
 
@@ -153,6 +155,7 @@ async function runTests(testNames: string[]): Promise<void> {
                         screenshotError,
                     )
                 }
+                break
             }
         }
 
