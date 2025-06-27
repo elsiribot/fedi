@@ -261,6 +261,7 @@ export const JoinFederation: React.FC = () => {
                 {tosUrl ? (
                     <>
                         <Text
+                            accessible={false}
                             variant="small"
                             css={{
                                 color: theme.colors.grey,
