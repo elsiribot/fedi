@@ -45,6 +45,7 @@ export class JoinLeaveFederation extends AppiumTestBase {
         }
         // END of the process of joining a Public Federation with TOS
         await this.clickOnText('Fedi Testnet', 0, true)
+        await new Promise(resolve => setTimeout(resolve, 1000))
         await this.clickElementByKey('AvatarButton')
         await this.driver
             .action('pointer')
@@ -79,6 +80,13 @@ export class JoinLeaveFederation extends AppiumTestBase {
             .perform()
         await this.clickElementByKey('Leave Federation')
         await this.dismissAlert('No')
+        await this.driver
+            .action('pointer')
+            .move({ duration: 0, x: 13, y: 60 })
+            .down({ button: 0 })
+            .move({ duration: 1000, x: 13, y: 100 })
+            .up({ button: 0 })
+            .perform()
         if (
             (await this.elementIsDisplayed(
                 'BitcoinPrinciplesAccordionButton',
