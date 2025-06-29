@@ -239,49 +239,45 @@ jobs:
                   ./*.log
                   ./**/screenshots/*.png
 
-    cleanup-environment:
-        needs: [build-run-e2e-tests]
-        runs-on: [self-hosted, macos, arm64, legacy]
-        if: always()
-        steps:
-          - name: Stop Android emulators
-            continue-on-error: true
-            run: |
-              if [ -f "android_emulator_pids.txt" ]; then
-                while IFS=: read -r device_id pid; do
-                  echo "Stopping Android emulator $device_id (PID: $pid)"
-                  kill -9 $pid || true
-                done < "android_emulator_pids.txt"
-              fi
+            - name: Stop Android emulators
+              continue-on-error: true
+              if: ${{ always() }}
+              run: |
+                if [ -f "android_emulator_pids.txt" ]; then
+                  while IFS=: read -r device_id pid; do
+                    echo "Stopping Android emulator $device_id (PID: $pid)"
+                    kill -9 $pid || true
+                  done < "android_emulator_pids.txt"
+                fi
+                pkill -9 qemu-system-x86_64 || true
+                adb devices
 
-              pkill -9 qemu-system-x86_64 || true
-              adb devices
+            - name: Stop iOS simulators
+              continue-on-error: true
+              if: ${{ always() }}
+              run: |
+                echo "Shutting down all iOS simulators"
+                xcrun simctl shutdown all
+                pkill -9 Simulator || true
+                xcrun simctl list devices | grep "Booted" || echo "No simulators running"
 
-          - name: Stop iOS simulators
-            continue-on-error: true
-            run: |
-              echo "Shutting down all iOS simulators"
-              xcrun simctl shutdown all
+            - name: Stop Appium server
+              continue-on-error: true
+              if: ${{ always() }}
+              run: |
+                if [ -f "appium_pid.txt" ]; then
+                  APPIUM_PID=$(cat appium_pid.txt)
+                  echo "Stopping Appium server (PID: $APPIUM_PID)"
+                  kill -9 $APPIUM_PID || true
+                fi
+                pkill -9 -f appium || true
 
-              pkill -9 Simulator || true
-              xcrun simctl list devices | grep "Booted" || echo "No simulators running"
-
-          - name: Stop Appium server
-            continue-on-error: true
-            run: |
-              if [ -f "appium_pid.txt" ]; then
-                APPIUM_PID=$(cat appium_pid.txt)
-                echo "Stopping Appium server (PID: $APPIUM_PID)"
-                kill -9 $APPIUM_PID || true
-              fi
-
-              pkill -9 -f appium || true
-
-          - name: Stop Metro server
-            run: |
-              if [ -f "metro_pid.txt" ]; then
-                METRO_PID=$(cat metro_pid.txt)
-                echo "Stopping Metro server (PID: $METRO_PID)"
-                kill -9 $METRO_PID || true
-              fi
-              pkill -9 -f node || true
+            - name: Stop Metro server
+              if: ${{ always() }}
+              run: |
+                if [ -f "metro_pid.txt" ]; then
+                  METRO_PID=$(cat metro_pid.txt)
+                  echo "Stopping Metro server (PID: $METRO_PID)"
+                  kill -9 $METRO_PID || true
+                fi
+                pkill -9 -f node || true
