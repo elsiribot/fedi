@@ -230,8 +230,9 @@ jobs:
                 echo "status=$?" >> $GITHUB_OUTPUT
                 popd
 
-            - name: Upload logs
+            - name: Upload logs & screenshots
               uses: actions/upload-artifact@v4
+              if: ${{ always() }}
               with:
                 name: logs
                 path: |
