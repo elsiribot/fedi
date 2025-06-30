@@ -19,7 +19,7 @@ import InternetUnreachableBanner from '../components/feature/environment/Interne
 import FederationWalletSelector from '../components/feature/send/FederationWalletSelector'
 import FeeOverlay from '../components/feature/send/FeeOverlay'
 import SendPreviewDetails from '../components/feature/send/SendPreviewDetails'
-import { AmountDisplayScreen } from '../components/ui/AmountDisplayScreen'
+import { AmountScreen } from '../components/ui/AmountScreen'
 import LineBreak from '../components/ui/LineBreak'
 import SvgImage from '../components/ui/SvgImage'
 import { useAppSelector } from '../state/hooks'
@@ -48,8 +48,10 @@ const ConfirmSendLightning: React.FC<Props> = ({ route }: Props) => {
         minimumAmount,
         maximumAmount,
         inputAmount,
+        description,
         feeDetails,
         sendTo,
+        setInputAmount,
         handleOmniInput,
         handleOmniSend,
     } = useOmniPaymentState(fedimint, paymentFederation?.id, true, t)
@@ -68,7 +70,7 @@ const ConfirmSendLightning: React.FC<Props> = ({ route }: Props) => {
     const [showFeeBreakdown, setShowFeeBreakdown] = useState<boolean>(false)
 
     const [isPayingInvoice, setIsPayingInvoice] = useState<boolean>(false)
-    const [, setSubmitAttempts] = useState<number>(0)
+    const [submitAttempts, setSubmitAttempts] = useState(0)
 
     const navigationReplace = navigation.replace
     const handleSend = useCallback(async () => {
@@ -151,9 +153,16 @@ const ConfirmSendLightning: React.FC<Props> = ({ route }: Props) => {
     return (
         <>
             {isOffline && <InternetUnreachableBanner />}
-            <AmountDisplayScreen
+            <AmountScreen
                 subHeader={<FederationWalletSelector />}
                 amount={inputAmount}
+                onChangeAmount={setInputAmount}
+                minimumAmount={minimumAmount}
+                maximumAmount={maximumAmount}
+                submitAttempts={submitAttempts}
+                isSubmitting={isPayingInvoice}
+                readOnly={!!exactAmount}
+                description={description}
                 subContent={renderDetails()}
                 buttons={
                     !exactAmount
@@ -176,7 +185,6 @@ const ConfirmSendLightning: React.FC<Props> = ({ route }: Props) => {
                 }
                 notes={notes}
                 setNotes={setNotes}
-                isIndependent={false}
             />
         </>
     )
