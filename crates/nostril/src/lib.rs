@@ -138,10 +138,14 @@ impl Nostril {
         };
         client
             .send_event_builder(
-                EventBuilder::new(Kind::from_u16(38173), format!("[{rating}/5]"))
+                EventBuilder::new(Kind::from_u16(38000), format!("[{rating}/5]"))
                     .tag(Tag::identifier(federation_id))
+                    .tag(Tag::custom(TagKind::k(), ["38173"]))
                     .tag(Tag::custom(TagKind::custom("rating"), [rating.to_string()]))
-                    .tags(invite_code.map(|code| Tag::custom(TagKind::u(), [code]))),
+                    .tags(
+                        invite_code
+                            .map(|code| Tag::custom(TagKind::u(), [code, "fedimint".to_string()])),
+                    ),
             )
             .await?;
         Ok(())
