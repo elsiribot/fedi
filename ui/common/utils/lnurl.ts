@@ -35,7 +35,7 @@ const lnurlErrorResponseSchema = z.object({
 // https://github.com/lnurl/luds/blob/luds/06.md
 const lnurlPayResponseSchema = z.object({
     pr: z.string(),
-    routes: z.array(z.never()),
+    routes: z.array(z.never()).optional(),
 })
 
 // Matches the typical LNURL OK response object. See:
