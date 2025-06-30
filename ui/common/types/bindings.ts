@@ -780,6 +780,7 @@ export type RpcMethods = {
   matrixRoomMarkAsUnread: [matrixRoomMarkAsUnread, null];
   matrixEditMessage: [matrixEditMessage, null];
   matrixDeleteMessage: [matrixDeleteMessage, null];
+  matrixSendReply: [matrixSendReply, null];
   matrixDownloadFile: [matrixDownloadFile, string];
   matrixStartPoll: [matrixStartPoll, null];
   matrixEndPoll: [matrixEndPoll, null];
@@ -1773,6 +1774,12 @@ export type matrixSendMultispendWithdrawalRequest = {
   roomId: RpcRoomId;
   amount: RpcFiatAmount;
   description: string;
+};
+
+export type matrixSendReply = {
+  roomId: RpcRoomId;
+  replyToEventId: RpcEventId;
+  message: string;
 };
 
 export type matrixSetAvatarUrl = { avatarUrl: string };

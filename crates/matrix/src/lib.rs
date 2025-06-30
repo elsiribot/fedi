@@ -16,6 +16,7 @@ use matrix_sdk::encryption::BackupDownloadStrategy;
 use matrix_sdk::media::{MediaFormat, MediaRequestParameters};
 use matrix_sdk::notification_settings::NotificationSettings;
 use matrix_sdk::room::edit::EditedContent;
+use matrix_sdk::room::reply::{EnforceThread, Reply};
 use matrix_sdk::room::Room;
 pub use matrix_sdk::ruma::api::client::account::register::v3 as register;
 use matrix_sdk::ruma::api::client::authenticated_media::get_media_preview;
@@ -540,6 +541,26 @@ impl Matrix {
                     MessageType::new(msgtype, body, data).context(ErrorCode::BadRequest)?,
                 )
                 .into(),
+            )
+            .await?;
+        Ok(())
+    }
+
+    /// Send a reply to a specific message in a room
+    pub async fn send_reply(
+        &self,
+        room_id: &RoomId,
+        reply_to_event_id: &EventId,
+        message: String,
+    ) -> anyhow::Result<()> {
+        let timeline = self.timeline(room_id).await?;
+        timeline
+            .send_reply(
+                RoomMessageEventContentWithoutRelation::text_plain(message),
+                Reply {
+                    event_id: reply_to_event_id.to_owned(),
+                    enforce_thread: EnforceThread::MaybeThreaded,
+                },
             )
             .await?;
         Ok(())
