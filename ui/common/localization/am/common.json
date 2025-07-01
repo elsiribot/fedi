@@ -653,11 +653,11 @@
             "you-withdrew": "ፈቀቅ ብለሃል"
         },
         "support": {
-            "effective-support-1a": "ሲቀጥሉ ፌዲ አንዳንድ መረጃ ሊሰበስብ እንደሚችል ትስማማላችሁ ",
-            "effective-support-1b": " ምርጥ ድጋፍ ለመስጠት ብቻ።",
-            "effective-support-2a": " ማንም መረጃ ማሳየት ካትፈልጉ ችግር የለም። ሁልጊዜ ማዕከላችንን መምረመር ትችላላችሁ። ",
-            "effective-support-2b": " ከፌዲ የተመኘውን መረጃ ማግኘት ትችላላችሁ።",
-            "effective-support-help-center": "የ እርዳታ ማዕከል",
+            "effective-support-1a": "በመቀጠልዎ፣ የተሻለውን ድጋፍ ለእርስዎ ለመስጠት ብቻ Fedi የተወሰነ ",
+            "effective-support-1b": " እንዲሰበስብ ተስማምተዋል።",
+            "effective-support-2a": " ማጋራት አይፈልጉም? ችግር የለም! ለFedi የበለጸገ የእውቀት ክምችት የእኛን ",
+            "effective-support-2b": " ሁልጊዜ ማሰስ ይችላሉ።",
+            "effective-support-help-center": "የእገዛ ማዕከል",
             "effective-support-info": "መረጃ",
             "enter-ticket-number": "በቡድናችን የተሰጠውን የድጋፍ ትኬት ቁጥር አስገባ።",
             "friendly-request": "ፈጣን ማስታወሻ",
