@@ -8,9 +8,9 @@ export class JoinLeaveFederation extends AppiumTestBase {
         await this.clickElementByKey('HomeHeaderHamburger')
         await this.clickElementByKey('AddFederationButton')
         await this.clickElementByKey('E-CashClubJoinButton')
-        await new Promise(resolve => setTimeout(resolve, 15000))
+        await this.waitForElementDisplayed('JoinFederationButton')
         await this.clickElementByKey('JoinFederationButton')
-        await new Promise(resolve => setTimeout(resolve, 10000))
+        await this.waitForElementDisplayed('E-CashClubSelectorButton')
         await this.clickElementByKey('E-CashClubSelectorButton')
         if ((await this.elementIsDisplayed('E-Cash Club', 2000)) === false) {
             throw new Error(
@@ -20,7 +20,7 @@ export class JoinLeaveFederation extends AppiumTestBase {
         // END of the process of joining a Public Federation without TOS
         await this.clickElementByKey('AddFederationButton')
         await this.clickElementByKey('BitcoinPrinciplesJoinButton')
-        await new Promise(resolve => setTimeout(resolve, 10000))
+        await this.waitForElementDisplayed('I accept')
         if (
             (await this.isTextPresent(
                 `By clicking 'I accept' you agree to the terms of service at https://`,
@@ -33,7 +33,7 @@ export class JoinLeaveFederation extends AppiumTestBase {
         await this.clickElementByKey('I do not accept')
         await this.clickElementByKey('BitcoinPrinciplesJoinButton')
         await this.clickElementByKey('I accept')
-        await new Promise(resolve => setTimeout(resolve, 10000))
+        await this.waitForElementDisplayed('BitcoinPrinciplesSelectorButton')
         await this.clickElementByKey('BitcoinPrinciplesSelectorButton')
         if (
             (await this.elementIsDisplayed('Bitcoin Principles', 2000)) ===
@@ -45,7 +45,7 @@ export class JoinLeaveFederation extends AppiumTestBase {
         }
         // END of the process of joining a Public Federation with TOS
         await this.clickOnText('Fedi Testnet', 0, true)
-        await new Promise(resolve => setTimeout(resolve, 1000))
+        await this.waitForElementDisplayed('FediTestnetSelectorButton')
         await this.clickElementByKey('AvatarButton')
         await this.driver
             .action('pointer')
@@ -134,7 +134,7 @@ export class JoinLeaveFederation extends AppiumTestBase {
         await this.clickElementByKey('BitcoinPrinciplesJoinButton')
         await this.clickElementByKey('I accept')
         await this.clickElementByKey('BitcoinPrinciplesSelectorButton')
-        await new Promise(resolve => setTimeout(resolve, 10000))
+        await this.waitForElementDisplayed('AddFederationButton')
         if (
             (await this.elementIsDisplayed('Bitcoin Principles', 2000)) ===
             false
@@ -211,12 +211,13 @@ export class JoinLeaveFederation extends AppiumTestBase {
         await this.clickElementByKey('RecoverFromScratchSwitch')
         await this.clickElementByKey('JoinFederationButton')
         await this.clickElementByKey('E-CashClubSelectorButton')
-        await new Promise(resolve => setTimeout(resolve, 10000))
+        await this.waitForElementDisplayed('AddFederationButton')
         if ((await this.elementIsDisplayed('E-Cash Club', 2000)) === false) {
             throw new Error(
                 `Failed - E-Cash Club Federation is not present in the Federations drawer after re-joining`,
             )
         }
+        await this.clickOnText('Fedi Testnet', 0, true)
         // END of the process of re-joining to a Public Federation without TOS
     }
     catch(error: unknown) {
