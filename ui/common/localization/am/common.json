@@ -19,7 +19,7 @@
         "currency": "ምንዛሪ",
         "deposit": "ተቀማጭ ገንዘብ",
         "details": "ዝርዝሮች",
-        "done": "ተከናውኗል",
+        "done": "ተጠናቀቀ",
         "enjoy": "ተደሰት",
         "expired": "ጊዜው አልፎበታል።",
         "failed": "አልተሳካም",
@@ -71,7 +71,7 @@
         "skip": "ዝለል",
         "status": "ሁኔታ",
         "stay": "መቆየት",
-        "submit": "አስረክብ",
+        "submit": "አስገባ",
         "time": "ጊዜ",
         "title": "ርዕስ",
         "to": "ወደ",
@@ -222,11 +222,11 @@
             "log-disclaimer": "የ Fedi ገንቢዎች ጉዳዩን እንዲያውቁ ለማገዝ የመተግበሪያ ምዝግብ ማስታወሻዎች ከሪፖርትዎ ጋር ይካተታሉ",
             "report-a-bug": "Bug ሪፖርት አድርግ",
             "screenshot-label": "ቅጽበታዊ ገጽ እይታዎችን ወይም ቅጂዎችን ይስቀሉ",
-            "submit-generating-data": "የሪፖርት ውሂብ በማመንጨት ላይ...",
-            "submit-submitting-report": "ሪፖርት በማቅረብ ላይ...",
-            "submit-uploading-data": "የሪፖርት ውሂብን በመስቀል ላይ...",
-            "success-subtitle": "ወደ ሥራ እንገባለን።",
-            "success-title": "bug ሪፖርትዎ እናመሰግናለን!"
+            "submit-generating-data": "የሪፖርት ውሂብ በመፍጠር ላይ...",
+            "submit-submitting-report": "ሪፖርት በመላክ ላይ...",
+            "submit-uploading-data": "የሪፖርት ውሂብ በመስቀል ላይ...",
+            "success-subtitle": "እንግዲኛ መስራት እንጀምራለን 🤝",
+            "success-title": "ሎጎችዎን ስላጋራችሁ እናመሰግናለን!"
         },
         "chat": {
             "add-admin": "አስተዳዳሪ አክል",
@@ -296,7 +296,7 @@
             "export-transactions-csv": "ግብይቶችን ወደ ውጪ ላክ CSV",
             "logs": "መዝገቦች",
             "nightly": "Nightly",
-            "share-logs": "የምዝግብ ማስታወሻዎችን አጋራ",
+            "share-logs": "መረጃዎችን አጋራ",
             "share-state": "የመተግበሪያ ሁኔታን ያጋሩ"
         },
         "federations": {
@@ -381,7 +381,6 @@
         "onboarding": {
             "by-clicking-i-accept": "እቀበላለሁ' የሚለውን ጠቅ በማድረግ በአገልግሎት ውሉ ተስማምተዋል። {{tos_url}}",
             "by-clicking-you-agree-user-agreement": "ፌዴሬሽኑን ተቀላቀል' የሚለውን ጠቅ በማድረግ<anchor> በተጠቃሚ ስምምነት ተስማምተዋል</anchor>።",
-            "tagline": "ከማህበረሰብዎ ጋር በግል ይወያዩ፣ ያግኙ፣ ያስቀምጡ እና ገንዘብ ያወጡ",
             "community-first": "ማህበረሰብ መጀመሪያ",
             "continue-to-fedi": "ወደ Fedi ይቀጥሉ",
             "earn-and-save": "ያግኙ እና ያስቀምጡ",
@@ -397,6 +396,7 @@
             "new-users-disabled-notice": "ይቅርታ፣ ይህ ማህበረሰብ አዲስ ተጠቃሚዎችን እየተቀበለ አይደለም።",
             "nice-to-meet-you": "ስለተገናኘን ደስ ብሎኛል {{username}}",
             "simple-and-private": "ቀላል እና ግላዊ",
+            "tagline": "ከማህበረሰብዎ ጋር በግል ይወያዩ፣ ያግኙ፣ ያስቀምጡ እና ገንዘብ ያወጡ",
             "terms-and-conditions": "ውሎች እና ሁኔታዎች",
             "unsupported-notice": "ይህ ማህበረሰብ ከእንግዲህ አይደገፍም።መቀላቀል አይቻልም።",
             "username-guidance": "ይህን በኋላ መቀየር ትችላለህ",
@@ -653,12 +653,12 @@
             "you-withdrew": "ፈቀቅ ብለሃል"
         },
         "support": {
-            "effective-support-1a": "ሲቀጥሉ ፌዲ አንዳንድ መረጃ ሊሰበስብ እንደሚችል ትስማማላችሁ",
-            "effective-support-1b": " ምርጥ ድጋፍ ለመስጠት ብቻ።",
-            "effective-support-2a": " ማንም መረጃ ማሳየት ካትፈልጉ ችግር የለም። ሁልጊዜ ማዕከላችንን መምረመር ትችላላችሁ።",
-            "effective-support-2b": " ከፌዲ የተመኘውን መረጃ ማግኘት ትችላላችሁ።",
-            "effective-support-help-center": "የ እርዳታ ማዕከል",
-            "effective-support-info": " መረጃ",
+            "effective-support-1a": "በመቀጠልዎ፣ የተሻለውን ድጋፍ ለእርስዎ ለመስጠት ብቻ Fedi የተወሰነ ",
+            "effective-support-1b": " እንዲሰበስብ ተስማምተዋል።",
+            "effective-support-2a": " ማጋራት አይፈልጉም? ችግር የለም! ለFedi የበለጸገ የእውቀት ክምችት የእኛን ",
+            "effective-support-2b": " ሁልጊዜ ማሰስ ይችላሉ።",
+            "effective-support-help-center": "የእገዛ ማዕከል",
+            "effective-support-info": "መረጃ",
             "enter-ticket-number": "በቡድናችን የተሰጠውን የድጋፍ ትኬት ቁጥር አስገባ።",
             "friendly-request": "ፈጣን ማስታወሻ",
             "how-to-launch": "እርዳታ ከፈለጉ፣ በታች ያለውን ቁልፍ በመጫን ከቡድናችን እርዳታ ማግኘት ትችላላችሁ።",

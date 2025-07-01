@@ -119,7 +119,7 @@
         "skip": "Pular",
         "status": "Estado",
         "stay": "Ficar",
-        "submit": "Submeter",
+        "submit": "Envie",
         "time": "Tempo",
         "title": "Título",
         "to": "Para",
@@ -361,11 +361,11 @@
             "info-label": "Enviar Federação e Nome de Usuário com o relatório de erro",
             "report-a-bug": "Reportar um erro",
             "screenshot-label": "Carregar capturas de tela ou gravações",
-            "submit-generating-data": "A gerar dados do relatório...",
-            "submit-submitting-report": "A submeter o relatório...",
-            "submit-uploading-data": "A carregar os dados do relatório...",
-            "success-subtitle": "Vamos pôr mãos à obra",
-            "success-title": "Obrigado pelo seu relatório de erro!"
+            "submit-generating-data": "Gerando dados do relatório...",
+            "submit-submitting-report": "Enviando relatório...",
+            "submit-uploading-data": "Carregando dados do relatório...",
+            "success-subtitle": "Vamos cuidar disso 🤝",
+            "success-title": "Obrigado por compartilhar seus logs!"
         },
         "chat": {
             "add-a-photo": "Adicionar uma foto",
@@ -505,7 +505,7 @@
             "log-fcm-token": "Registrar token FCM",
             "logs": "Registos",
             "nightly": "noturno",
-            "share-logs": "Partilhar registos",
+            "share-logs": "Compartilhe os logs",
             "share-state": "Partilhar o estado da aplicação",
             "show-fcm-token": "Mostrar token FCM"
         },
