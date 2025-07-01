@@ -1,5 +1,75 @@
-import { MatrixEvent, MatrixEventStatus } from '@fedi/common/types'
+import {
+    MatrixEvent,
+    MatrixEventStatus,
+    MatrixPaymentEvent,
+    MatrixPaymentStatus,
+} from '@fedi/common/types'
 import { MatrixEventContentType } from '@fedi/common/utils/matrix'
+
+// Mock payment event factory
+export const createMockPaymentEvent = (
+    overrides: any = {},
+): MatrixPaymentEvent => {
+    const baseEvent = {
+        id: 'event123',
+        content: {
+            msgtype: 'xyz.fedi.payment',
+            body: 'Payment of 1000 sats',
+            paymentId: 'payment123',
+            status: MatrixPaymentStatus.pushed,
+            amount: 1000,
+            senderId: 'user123',
+            recipientId: 'user456',
+            federationId: 'fed123',
+            senderOperationId: 'sender-op-123',
+            receiverOperationId: undefined,
+        },
+        status: MatrixEventStatus.sent,
+        roomId: 'room123',
+        timestamp: Date.now(),
+        senderId: 'user123',
+        error: null,
+    }
+
+    // Handle content overrides properly
+    if (overrides.content) {
+        baseEvent.content = { ...baseEvent.content, ...overrides.content }
+        delete overrides.content
+    }
+
+    // Handle direct property overrides on content
+    const contentOverrides: any = {}
+    const topLevelOverrides: any = {}
+
+    Object.keys(overrides).forEach(key => {
+        if (
+            [
+                'senderId',
+                'recipientId',
+                'federationId',
+                'senderOperationId',
+                'receiverOperationId',
+                'status',
+                'amount',
+                'paymentId',
+                'bolt11',
+            ].includes(key)
+        ) {
+            contentOverrides[key] = overrides[key]
+        } else {
+            topLevelOverrides[key] = overrides[key]
+        }
+    })
+
+    return {
+        ...baseEvent,
+        ...topLevelOverrides,
+        content: {
+            ...baseEvent.content,
+            ...contentOverrides,
+        },
+    }
+}
 
 export const mockMatrixEventImage: MatrixEvent<
     MatrixEventContentType<'m.image'>

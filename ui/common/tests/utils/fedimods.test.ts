@@ -3,7 +3,6 @@ import { rest } from 'msw'
 import { setupServer } from 'msw/node'
 
 import { tryFetchUrlMetadata } from '../../utils/fedimods'
-import { configureLogging } from '../../utils/log'
 import { constructUrl } from '../../utils/neverthrow'
 
 fetchMock.enableMocks()
@@ -273,12 +272,6 @@ describe('fedimods', () => {
         }),
     )
 
-    beforeAll(() => {
-        configureLogging({
-            saveLogs: jest.fn().mockResolvedValue(undefined),
-            readLogs: jest.fn().mockResolvedValue(''),
-        })
-    })
     beforeEach(() => server.listen())
     afterEach(() => server.resetHandlers())
     afterAll(() => server.close())

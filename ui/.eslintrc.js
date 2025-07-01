@@ -43,7 +43,12 @@ module.exports = {
             },
         },
         {
-            files: ['*.test.ts', '*.test.tsx'],
+            files: [
+                '**/tests/**/*.ts',
+                '**/tests/**/*.tsx',
+                '*.test.ts',
+                '*.test.tsx',
+            ],
             rules: {
                 '@typescript-eslint/no-explicit-any': 'off',
             },

@@ -6,6 +6,7 @@ import {
 import { calculateHistoricalFiatAmount } from '../../utils/currency'
 import { consolidatePaymentEvents } from '../../utils/matrix'
 
+// CONSIDER: should test files make their own mock factory functions? or use a central mock-data directory?
 const createMockNonPaymentEvent = (id: any, timestamp: number) =>
     ({
         id,

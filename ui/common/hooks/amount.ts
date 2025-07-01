@@ -2,8 +2,6 @@ import { TFunction } from 'i18next'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { RequestInvoiceArgs } from 'webln'
 
-import { FiatFXInfo, RpcRoomId } from '@fedi/common/types/bindings'
-
 import {
     selectAmountInputType,
     selectBtcExchangeRate,
@@ -24,7 +22,9 @@ import {
     selectWithdrawableStableBalanceCents,
     selectWithdrawableStableBalanceMsats,
     setAmountInputType,
-} from '../redux'
+} from '@fedi/common/redux'
+import { FiatFXInfo, RpcRoomId } from '@fedi/common/types/bindings'
+
 import {
     Btc,
     EcashRequest,
@@ -353,27 +353,12 @@ export function useAmountInput(
         [dispatch],
     )
 
-    const clampSats = useCallback((value: number) => {
-        if (Number.isNaN(value)) return 0 as Sats
-        return Math.round(Math.max(0, value)) as Sats
-    }, [])
-
     const handleChangeSats = useCallback(
         (value: string) => {
-            // can be 1,000 or 1.000 or 1 000
-            const thousandsSeparator = amountUtils.getThousandsSeparator({
-                locale: currencyLocale,
-            })
-            // replacing periods requires a special regex
-            let escapeSeparator = thousandsSeparator
-            if (thousandsSeparator === '.') {
-                escapeSeparator = '\\.'
-            }
-            const regex = new RegExp(escapeSeparator, 'g')
-            const sats = clampSats(parseInt(value.replace(regex, ''), 10))
+            const sats = amountUtils.stripSatsValue(value, currencyLocale)
             const fiat = amountUtils.satToBtc(sats) * btcToFiatRateRef.current
             onChangeAmount && onChangeAmount(sats)
-            setSatsValue(Intl.NumberFormat().format(sats))
+            setSatsValue(amountUtils.formatSats(sats))
             setFiatValue(
                 amountUtils.formatFiat(fiat, currency, {
                     symbolPosition: 'none',
@@ -381,7 +366,7 @@ export function useAmountInput(
                 }),
             )
         },
-        [currencyLocale, clampSats, btcToFiatRateRef, onChangeAmount, currency],
+        [currencyLocale, btcToFiatRateRef, onChangeAmount, currency],
     )
 
     const handleChangeFiat = useCallback(
@@ -421,7 +406,7 @@ export function useAmountInput(
             }
 
             // Convert to sats and clamp
-            let sats = clampSats(
+            let sats = amountUtils.clampSats(
                 amountUtils.btcToSat((fiat / btcToFiatRateRef.current) as Btc),
             )
 
@@ -474,7 +459,6 @@ export function useAmountInput(
         [
             currencyLocale,
             currency,
-            clampSats,
             btcToFiatRateRef,
             minimumAmount,
             maximumAmount,
