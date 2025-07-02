@@ -283,6 +283,7 @@
         "insufficient-balance": "Insufficient balance. You only have {{balance}} in your wallet",
         "insufficient-balance-send": "Insufficient balance for spend plus fees. You can send a maximum of {{sats}} sats",
         "internet-offline": "Network is offline",
+        "internet-offline-foreign-ecash": "Failed to redeem ecash. Your network is offline",
         "internet-connecting": "Connecting..",
         "invalid-amount-max": "The max you can {{verb}} is <suggestion>{{amount}}</suggestion>",
         "invalid-amount-min": "The minimum you can {{verb}} is <suggestion>{{amount}}</suggestion>",
