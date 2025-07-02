@@ -382,9 +382,9 @@ export function useMatrixPaymentEvent({
         )
     }, [event, handleDispatchPaymentUpdate])
 
-    const handleAcceptForeignEcash = useCallback(async () => {
+    const handleAcceptForeignEcash = useCallback(() => {
         if (isOffline) {
-            toast.error(t, null, t('errors.internet-offline'))
+            toast.error(t, null, t('errors.internet-offline-foreign-ecash'))
             return
         }
 
