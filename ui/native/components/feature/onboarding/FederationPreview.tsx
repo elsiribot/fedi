@@ -177,32 +177,26 @@ const FederationPreview: React.FC<Props> = ({ federation, onJoin, onBack }) => {
 
             <Card containerStyle={s.roundedCardContainer}>
                 <View style={s.cardContent}>
-                    {welcomeMessage ? (
-                        <ScrollView
-                            style={s.scrollTos}
-                            contentContainerStyle={{
-                                padding: theme.spacing.lg,
-                            }}>
-                            <Text caption style={s.welcomeText}>
-                                <Trans
-                                    components={{
-                                        bold: (
-                                            <Text
-                                                caption
-                                                bold
-                                                style={s.welcomeText}
-                                            />
-                                        ),
-                                    }}>
-                                    {welcomeMessage}
-                                </Trans>
-                            </Text>
-                        </ScrollView>
-                    ) : (
+                    <ScrollView
+                        style={s.scrollTos}
+                        contentContainerStyle={{
+                            padding: theme.spacing.lg,
+                        }}>
                         <Text caption style={s.welcomeText}>
-                            {welcomeInstructions}
+                            <Trans
+                                components={{
+                                    bold: (
+                                        <Text
+                                            caption
+                                            bold
+                                            style={s.welcomeText}
+                                        />
+                                    ),
+                                }}>
+                                {welcomeMessage ?? welcomeInstructions}
+                            </Trans>
                         </Text>
-                    )}
+                    </ScrollView>
                 </View>
             </Card>
 
