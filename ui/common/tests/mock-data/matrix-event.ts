@@ -6,69 +6,68 @@ import {
 } from '@fedi/common/types'
 import { MatrixEventContentType } from '@fedi/common/utils/matrix'
 
-// Mock payment event factory
+// Simple function to create event with overrides, properly merging nested content
+function makeEventWithOverrides<T extends { content: any }>(
+    baseEvent: T,
+    overrides: any = {},
+): T {
+    return {
+        ...baseEvent,
+        ...overrides,
+        content: {
+            ...baseEvent.content,
+            ...overrides.content,
+        },
+    }
+}
+
+// Base mock event with common fields
+const MOCK_EVENT = {
+    id: 'event123',
+    roomId: 'room123',
+    senderId: 'npub1user123',
+    timestamp: Date.now(),
+    status: MatrixEventStatus.sent,
+    error: null,
+}
+
+// Mock event factories
+const MOCK_PAYMENT_EVENT = {
+    ...MOCK_EVENT,
+    content: {
+        msgtype: 'xyz.fedi.payment' as const,
+        body: 'Payment of 1000 sats',
+        paymentId: 'payment123',
+        status: MatrixPaymentStatus.pushed,
+        amount: 1000,
+        senderId: 'npub1user123',
+        recipientId: 'npub1user456',
+        federationId: 'fed123',
+        senderOperationId: 'sender-op-123',
+        receiverOperationId: undefined,
+    },
+}
+
+const MOCK_NON_PAYMENT_EVENT = {
+    ...MOCK_EVENT,
+    content: {
+        msgtype: 'm.text' as const,
+        body: 'Hello world',
+        originalContent: {
+            msgtype: 'm.text' as const,
+            body: 'Hello world',
+        },
+    },
+}
+
 export const createMockPaymentEvent = (
     overrides: any = {},
 ): MatrixPaymentEvent => {
-    const baseEvent = {
-        id: 'event123',
-        content: {
-            msgtype: 'xyz.fedi.payment',
-            body: 'Payment of 1000 sats',
-            paymentId: 'payment123',
-            status: MatrixPaymentStatus.pushed,
-            amount: 1000,
-            senderId: 'user123',
-            recipientId: 'user456',
-            federationId: 'fed123',
-            senderOperationId: 'sender-op-123',
-            receiverOperationId: undefined,
-        },
-        status: MatrixEventStatus.sent,
-        roomId: 'room123',
-        timestamp: Date.now(),
-        senderId: 'user123',
-        error: null,
-    }
+    return makeEventWithOverrides(MOCK_PAYMENT_EVENT, overrides)
+}
 
-    // Handle content overrides properly
-    if (overrides.content) {
-        baseEvent.content = { ...baseEvent.content, ...overrides.content }
-        delete overrides.content
-    }
-
-    // Handle direct property overrides on content
-    const contentOverrides: any = {}
-    const topLevelOverrides: any = {}
-
-    Object.keys(overrides).forEach(key => {
-        if (
-            [
-                'senderId',
-                'recipientId',
-                'federationId',
-                'senderOperationId',
-                'receiverOperationId',
-                'status',
-                'amount',
-                'paymentId',
-                'bolt11',
-            ].includes(key)
-        ) {
-            contentOverrides[key] = overrides[key]
-        } else {
-            topLevelOverrides[key] = overrides[key]
-        }
-    })
-
-    return {
-        ...baseEvent,
-        ...topLevelOverrides,
-        content: {
-            ...baseEvent.content,
-            ...contentOverrides,
-        },
-    }
+export const createMockNonPaymentEvent = (overrides: any = {}) => {
+    return makeEventWithOverrides(MOCK_NON_PAYMENT_EVENT, overrides)
 }
 
 export const mockMatrixEventImage: MatrixEvent<

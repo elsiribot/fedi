@@ -23,7 +23,11 @@ import {
     selectWithdrawableStableBalanceMsats,
     setAmountInputType,
 } from '@fedi/common/redux'
-import { FiatFXInfo, RpcRoomId } from '@fedi/common/types/bindings'
+import {
+    FiatFXInfo,
+    RpcRoomId,
+    RpcTransaction,
+} from '@fedi/common/types/bindings'
 
 import {
     Btc,
@@ -38,7 +42,6 @@ import {
     Sats,
     SelectableCurrency,
     SupportedCurrency,
-    TransactionListEntry,
     UsdCents,
 } from '../types'
 import amountUtils from '../utils/AmountUtils'
@@ -46,8 +49,11 @@ import stringUtils from '../utils/StringUtils'
 import { MeltSummary } from '../utils/cashu'
 import { BridgeError } from '../utils/errors'
 import { FedimintBridge } from '../utils/fedimint'
+import { makeLog } from '../utils/log'
 import { useCommonDispatch, useCommonSelector } from './redux'
 import { useUpdatingRef } from './util'
+
+const log = makeLog('hooks/amount')
 
 interface RequestAmountArgs {
     lnurlWithdrawal?: ParsedLnurlWithdraw['data'] | null
@@ -218,10 +224,17 @@ export const useAmountFormatter = (currency?: SelectableCurrency) => {
 
     const makeFormattedAmountsFromTxn = useCallback(
         (
-            txn: TransactionListEntry,
+            txn: RpcTransaction,
             symbolPosition: AmountSymbolPosition = 'end',
         ): FormattedAmounts => {
             if (txn.txDateFiatInfo) {
+                log.debug(
+                    'makeFormattedAmountsFromTxn - Using historical exchange rate',
+                    {
+                        amountMSats: txn.amount,
+                        txDateFiatInfo: txn.txDateFiatInfo,
+                    },
+                )
                 const sats = amountUtils.msatToSat(txn.amount)
                 const formattedFiat = convertSatsToFormattedFiat(
                     sats,
@@ -248,6 +261,13 @@ export const useAmountFormatter = (currency?: SelectableCurrency) => {
                         : formattedFiat,
                 }
             } else {
+                log.debug(
+                    'makeFormattedAmountsFromTxn - No historical data, using current rates',
+                    {
+                        hasTransaction: !!txn,
+                        transactionKeys: txn ? Object.keys(txn) : [],
+                    },
+                )
                 return makeFormattedAmountsFromMSats(txn.amount, symbolPosition)
             }
         },

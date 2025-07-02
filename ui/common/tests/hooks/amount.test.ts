@@ -4,9 +4,10 @@
  */
 import { renderHook, act } from '@testing-library/react'
 
-import { useAmountInput } from '@fedi/common/hooks/amount'
+import { useAmountInput, useAmountFormatter } from '@fedi/common/hooks/amount'
 import { Sats } from '@fedi/common/types'
 
+import { createMockTransaction } from '../mock-data/transactions'
 import { mockSelectorValues, mockSystemLocale } from '../setup/jest.setup'
 
 describe('useAmountInput hook', () => {
@@ -638,6 +639,182 @@ describe('useAmountInput hook', () => {
                 })
                 expect(result.current.fiatValue).toBe('12,345')
             })
+        })
+    })
+})
+
+describe('useAmountFormatter hook', () => {
+    beforeEach(() => {
+        jest.clearAllMocks()
+    })
+
+    describe('makeFormattedAmountsFromTxn with historical exchange rates', () => {
+        it('uses historical exchange rate when txDateFiatInfo is present', () => {
+            mockSelectorValues({
+                selectBtcExchangeRate: 100000, // Current rate: $100K per BTC
+                selectBtcUsdExchangeRate: 100000,
+                selectCurrency: 'USD',
+                selectCurrencyLocale: 'en-US',
+                selectShowFiatTxnAmounts: false,
+            })
+
+            const { result } = renderHook(() => useAmountFormatter())
+
+            const txn = createMockTransaction({
+                amount: 100000000000, // 1 BTC in msats
+                txDateFiatInfo: {
+                    btcToFiatHundredths: 4000000, // Historical rate: $40K per BTC
+                    fiatCode: 'USD',
+                },
+            })
+
+            const formatted = result.current.makeFormattedAmountsFromTxn(
+                txn,
+                'none',
+            )
+
+            // Should use historical rate ($40k) not current rate ($100k)
+            expect(formatted.formattedFiat).toBe('40,000.00')
+            expect(formatted.formattedSats).toBe('100,000,000')
+        })
+
+        it('falls back to current exchange rates when txDateFiatInfo is missing', () => {
+            mockSelectorValues({
+                selectBtcExchangeRate: 100000, // Current rate: $100K per BTC
+                selectBtcUsdExchangeRate: 100000,
+                selectCurrency: 'USD',
+                selectCurrencyLocale: 'en-US',
+                selectShowFiatTxnAmounts: false,
+            })
+
+            const { result } = renderHook(() => useAmountFormatter())
+
+            const txn = createMockTransaction({
+                amount: 100000000000, // 1 BTC, no historical data
+            })
+
+            const formatted = result.current.makeFormattedAmountsFromTxn(
+                txn,
+                'none',
+            )
+
+            expect(formatted.formattedFiat).toBe('100,000.00')
+            expect(formatted.formattedSats).toBe('100,000,000')
+        })
+
+        it('works with different fiat currencies in historical data', () => {
+            mockSelectorValues({
+                selectBtcExchangeRate: 45000, // Current EUR rate
+                selectBtcUsdExchangeRate: 50000,
+                selectCurrency: 'EUR',
+                selectCurrencyLocale: 'de-DE',
+                selectShowFiatTxnAmounts: false,
+            })
+            mockSystemLocale('de-DE')
+
+            const { result } = renderHook(() => useAmountFormatter())
+
+            const txn = createMockTransaction({
+                amount: 10000000000, // 0.1 BTC
+                txDateFiatInfo: {
+                    btcToFiatHundredths: 4500000, // Historical rate: €45,000.00 per BTC
+                    fiatCode: 'EUR',
+                },
+            })
+
+            const formatted = result.current.makeFormattedAmountsFromTxn(
+                txn,
+                'none',
+            )
+
+            // Should use EUR historical rate and currency
+            expect(formatted.formattedFiat).toBe('4.500,00')
+            expect(formatted.formattedSats).toBe('10.000.000')
+        })
+
+        it('respects showFiatTxnAmounts setting with historical data', () => {
+            mockSelectorValues({
+                selectBtcExchangeRate: 100000,
+                selectBtcUsdExchangeRate: 100000,
+                selectCurrency: 'USD',
+                selectCurrencyLocale: 'en-US',
+                selectShowFiatTxnAmounts: true, // with fiat display preference
+            })
+
+            const { result: fiatPrimaryResult } = renderHook(() =>
+                useAmountFormatter(),
+            )
+
+            const txn = createMockTransaction({
+                amount: 1000000000, // 0.01 BTC
+                txDateFiatInfo: {
+                    btcToFiatHundredths: 6000000, // Historical rate: $60,000.00 per BTC
+                    fiatCode: 'USD',
+                },
+            })
+
+            const fiatPrimaryFormatted =
+                fiatPrimaryResult.current.makeFormattedAmountsFromTxn(txn)
+
+            // When fiat is primary, historical fiat should be primary
+            expect(fiatPrimaryFormatted.formattedPrimaryAmount).toBe(
+                '600.00 USD',
+            )
+            expect(fiatPrimaryFormatted.formattedSecondaryAmount).toBe(
+                '1,000,000 SATS',
+            )
+
+            mockSelectorValues({
+                selectBtcExchangeRate: 100000,
+                selectBtcUsdExchangeRate: 100000,
+                selectCurrency: 'USD',
+                selectCurrencyLocale: 'en-US',
+                selectShowFiatTxnAmounts: false, // don't show fiat display preference
+            })
+
+            const { result: satsPrimaryResult } = renderHook(() =>
+                useAmountFormatter(),
+            )
+
+            const satsPrimaryFormatted =
+                satsPrimaryResult.current.makeFormattedAmountsFromTxn(txn)
+
+            // When sats is primary, sats should be primary
+            expect(satsPrimaryFormatted.formattedPrimaryAmount).toBe(
+                '1,000,000 SATS',
+            )
+            expect(satsPrimaryFormatted.formattedSecondaryAmount).toBe(
+                '600.00 USD',
+            )
+        })
+
+        it('handles small historical amounts with proper precision', () => {
+            mockSelectorValues({
+                selectBtcExchangeRate: 100000,
+                selectBtcUsdExchangeRate: 100000,
+                selectCurrency: 'USD',
+                selectCurrencyLocale: 'en-US',
+                selectShowFiatTxnAmounts: false,
+            })
+
+            const { result } = renderHook(() => useAmountFormatter())
+
+            const txn = createMockTransaction({
+                amount: 1000000, // 1000 sats (0.00001 BTC)
+                txDateFiatInfo: {
+                    btcToFiatHundredths: 5000000, // Historical rate: $50K per BTC
+                    fiatCode: 'USD',
+                },
+            })
+
+            const formatted = result.current.makeFormattedAmountsFromTxn(
+                txn,
+                'none',
+            )
+
+            // 1000 sats * $50K / 100,000,000 sats = $0.50
+            expect(formatted.formattedFiat).toBe('0.50')
+            expect(formatted.formattedSats).toBe('1,000')
         })
     })
 })

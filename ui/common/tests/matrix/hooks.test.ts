@@ -23,8 +23,12 @@ describe('createMockPaymentEvent - Button State and Status Tests', () => {
     // required fields and follow the expected format for reliable testing.
     it('creates valid payment event structures', () => {
         const event = createMockPaymentEvent({
-            status: MatrixPaymentStatus.received,
-            bolt11: 'lnbc123...',
+            content: {
+                paymentId: 'payment123',
+                amount: 1000,
+                status: MatrixPaymentStatus.received,
+                bolt11: 'lnbc123...',
+            },
         })
 
         expect(event.content.status).toBe(MatrixPaymentStatus.received)
@@ -70,20 +74,26 @@ describe('Real-time Payment Event Updates', () => {
         const events = [
             createMockPaymentEvent({
                 id: 'event1',
-                paymentId,
-                status: MatrixPaymentStatus.pushed,
+                content: {
+                    paymentId,
+                    status: MatrixPaymentStatus.pushed,
+                },
                 timestamp: 1000,
             }),
             createMockPaymentEvent({
                 id: 'event2',
-                paymentId,
-                status: MatrixPaymentStatus.accepted,
+                content: {
+                    paymentId,
+                    status: MatrixPaymentStatus.accepted,
+                },
                 timestamp: 2000,
             }),
             createMockPaymentEvent({
                 id: 'event3',
-                paymentId,
-                status: MatrixPaymentStatus.received,
+                content: {
+                    paymentId,
+                    status: MatrixPaymentStatus.received,
+                },
                 timestamp: 3000,
             }),
         ]
@@ -133,14 +143,18 @@ describe('Real-time Payment Event Updates', () => {
         const payment1Events = [
             createMockPaymentEvent({
                 id: 'p1-event1',
-                paymentId: 'payment-1',
-                status: MatrixPaymentStatus.pushed,
+                content: {
+                    paymentId: 'payment-1',
+                    status: MatrixPaymentStatus.pushed,
+                },
                 timestamp: 1000,
             }),
             createMockPaymentEvent({
                 id: 'p1-event2',
-                paymentId: 'payment-1',
-                status: MatrixPaymentStatus.received,
+                content: {
+                    paymentId: 'payment-1',
+                    status: MatrixPaymentStatus.received,
+                },
                 timestamp: 3000,
             }),
         ]
@@ -148,14 +162,18 @@ describe('Real-time Payment Event Updates', () => {
         const payment2Events = [
             createMockPaymentEvent({
                 id: 'p2-event1',
-                paymentId: 'payment-2',
-                status: MatrixPaymentStatus.requested,
+                content: {
+                    paymentId: 'payment-2',
+                    status: MatrixPaymentStatus.requested,
+                },
                 timestamp: 1500,
             }),
             createMockPaymentEvent({
                 id: 'p2-event2',
-                paymentId: 'payment-2',
-                status: MatrixPaymentStatus.accepted,
+                content: {
+                    paymentId: 'payment-2',
+                    status: MatrixPaymentStatus.accepted,
+                },
                 timestamp: 2500,
             }),
         ]

@@ -2152,54 +2152,12 @@ export const selectCanSendPayment = createSelector(
 )
 
 export const selectCanClaimPayment = createSelector(
-    [
-        (s: CommonState, raw: MatrixPaymentEvent) =>
-            selectConsolidatedMatrixPaymentEventByPaymentId(
-                s,
-                raw.roomId,
-                raw.id,
-            ) ?? raw, // fallback to the prop
-        (s: CommonState) => selectLoadedFederations(s),
-    ] as const,
-    (
-        consolidatedEvent, // inferred as MatrixPaymentEvent
-        federations,
-    ): boolean => {
-        const { federationId, status } = consolidatedEvent.content
-
-        // not in the federation?
-        if (!federations.some(f => f.id === federationId)) {
-            return false
-        }
-
-        // only "pushed" or "accepted" can be claimed
-        return (
-            status === MatrixPaymentStatus.pushed ||
-            status === MatrixPaymentStatus.accepted
+    (s: CommonState) => selectLoadedFederations(s),
+    (s: CommonState, chatPayment: MatrixPaymentEvent) => chatPayment,
+    (federations, chatPayment): boolean => {
+        return !!federations.find(
+            f => f.id === chatPayment.content.federationId,
         )
-    },
-)
-
-export const selectConsolidatedMatrixPaymentEventByPaymentId = createSelector(
-    // grab the whole room-timelines map
-    (state: CommonState) => state.matrix.roomTimelines,
-
-    // pull out our lookup args
-    (_state: CommonState, roomId: string) => roomId,
-    (_state: CommonState, _roomId: string, paymentId: string) => paymentId,
-
-    // // consolidate, filter to only payment events, then find by paymentId
-    (timelines, roomId, paymentId): MatrixPaymentEvent | undefined => {
-        const raw = timelines[roomId] ?? []
-
-        // de-dupe + merge updates
-        const merged = consolidatePaymentEvents(raw)
-
-        // narrow to only genuine payment events
-        const payments = merged.filter(isPaymentEvent) as MatrixPaymentEvent[]
-
-        // return the one with matching paymentId
-        return payments.find(ev => ev.content.paymentId === paymentId)
     },
 )
 

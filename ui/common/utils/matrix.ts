@@ -34,6 +34,7 @@ import {
     RpcTimelineEventItemId,
     RpcUserId,
     MultispendListedEvent,
+    RpcTransaction,
 } from '../types/bindings'
 import { makeLog } from './log'
 import { isBolt11 } from './parser'
@@ -69,105 +70,39 @@ const encryptedFileSchema = z
     })
     // Don't strip off additional decryption keys from the file object
     .passthrough()
-
 /**
  * Filter out payment events that aren't the initial push or request
  * since we only render the original event. Keep track of the latest
  * payment for each payment ID, and replace the initial event's content
  * with the latest content.
- */ export const consolidatePaymentEvents = (
-    events: (MatrixEvent | null)[],
-): MatrixEvent[] => {
-    // drop nulls & de-dupe by event id
-    const seen = new Set<string>()
-    const clean: MatrixEvent[] = events.filter((ev): ev is MatrixEvent => {
-        if (!ev || seen.has(ev.id)) return false
-        seen.add(ev.id)
-        return true
+ */
+export const consolidatePaymentEvents = (events: MatrixEvent[]) => {
+    const latestPayments: Record<string, MatrixPaymentEvent> = {}
+    // events are already sorted from oldest to newest
+    const filteredEvents = events.filter(event => {
+        // Return non-payment events as-is
+        if (!isPaymentEvent(event)) return true
+        // Always set the newest event to the payment ID record map
+        latestPayments[event.content.paymentId] = event
+        // Only return the payment events that are the initial push or request
+        return [
+            MatrixPaymentStatus.pushed,
+            MatrixPaymentStatus.requested,
+        ].includes(event.content.status)
     })
-
-    const latestByPaymentId: Record<string, MatrixPaymentEvent> = {}
-    const displayEventsByPaymentId: Record<string, MatrixPaymentEvent> = {}
-
-    const initialStatuses = [
-        MatrixPaymentStatus.pushed,
-        MatrixPaymentStatus.requested,
-    ]
-
-    // build maps for latest and display events
-    for (const ev of clean) {
-        if (!isPaymentEvent(ev)) continue
-
-        const paymentId = ev.content.paymentId
-        const existing = latestByPaymentId[paymentId]
-
-        // track latest by timestamp
-        if (
-            !existing ||
-            (ev.timestamp &&
-                existing.timestamp &&
-                ev.timestamp > existing.timestamp)
-        ) {
-            latestByPaymentId[paymentId] = ev
+    const consolidatedEvents = filteredEvents.map(event => {
+        if (!isPaymentEvent(event)) return event
+        const latestPayment = latestPayments[event.content.paymentId]
+        if (!latestPayment || event.id === latestPayment.id) return event
+        return {
+            ...event,
+            content: {
+                ...event.content,
+                ...latestPayment.content,
+            },
         }
-
-        // track which event to display
-        const isInitial = initialStatuses.includes(ev.content.status)
-        const existingDisplay = displayEventsByPaymentId[paymentId]
-
-        if (!existingDisplay) {
-            displayEventsByPaymentId[paymentId] = ev
-        } else {
-            const existingIsInitial = initialStatuses.includes(
-                existingDisplay.content.status,
-            )
-            const shouldReplace =
-                (isInitial && !existingIsInitial) ||
-                (isInitial === existingIsInitial &&
-                    ev.timestamp &&
-                    existingDisplay.timestamp &&
-                    ev.timestamp < existingDisplay.timestamp)
-
-            if (shouldReplace) {
-                displayEventsByPaymentId[paymentId] = ev
-            }
-        }
-    }
-
-    // filter and consolidate
-    return clean
-        .filter(event => {
-            if (!isPaymentEvent(event)) return true
-            const display = displayEventsByPaymentId[event.content.paymentId]
-            return display?.id === event.id
-        })
-        .map(event => {
-            if (!isPaymentEvent(event)) return event
-
-            const latest = latestByPaymentId[event.content.paymentId]
-            if (!latest || event.id === latest.id) return event
-
-            // Only merge specific fields that should be updated,
-            // preserve the original event's user context (senderId, recipientId, etc.)
-            return {
-                ...event,
-                content: {
-                    ...event.content,
-                    // Update only the status from the latest event
-                    status: latest.content.status,
-                    // Merge operation IDs (keep existing if present, add missing ones)
-                    senderOperationId:
-                        event.content.senderOperationId ??
-                        latest.content.senderOperationId,
-                    receiverOperationId:
-                        event.content.receiverOperationId ??
-                        latest.content.receiverOperationId,
-                    // DO NOT overwrite: senderId, recipientId, paymentId, amount,
-                    // federationId, inviteCode, bolt11, body, msgtype, ecash
-                    // These should remain from the original display event
-                },
-            }
-        })
+    })
+    return consolidatedEvents
 }
 
 /**
@@ -612,6 +547,8 @@ export const makeMatrixPaymentText = ({
     paymentSender,
     paymentRecipient,
     makeFormattedAmountsFromMSats,
+    transaction,
+    makeFormattedAmountsFromTxn,
 }: {
     t: TFunction
     event: MatrixPaymentEvent
@@ -619,7 +556,9 @@ export const makeMatrixPaymentText = ({
     eventSender: MatrixUser | null | undefined
     paymentSender: MatrixUser | null | undefined
     paymentRecipient: MatrixUser | null | undefined
+    transaction: RpcTransaction | null | undefined
     makeFormattedAmountsFromMSats: (amt: MSats) => FormattedAmounts
+    makeFormattedAmountsFromTxn: (txn: RpcTransaction) => FormattedAmounts
 }): string => {
     const {
         senderId: eventSenderId,
@@ -631,8 +570,9 @@ export const makeMatrixPaymentText = ({
         },
     } = event
 
-    const { formattedPrimaryAmount, formattedSecondaryAmount } =
-        makeFormattedAmountsFromMSats(amount as MSats)
+    const { formattedPrimaryAmount, formattedSecondaryAmount } = transaction
+        ? makeFormattedAmountsFromTxn(transaction)
+        : makeFormattedAmountsFromMSats(amount as MSats)
 
     const previewStringParams = {
         name: eventSender?.displayName || matrixIdToUsername(eventSenderId),

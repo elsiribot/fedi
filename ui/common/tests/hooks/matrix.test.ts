@@ -1,12 +1,12 @@
 import { renderHook, waitFor } from '@testing-library/react'
 
-import { MSats } from '@fedi/common/types'
-
-// Import the hook after setting up all mocks
-import { useMatrixPaymentTransaction } from '../../hooks/matrix'
-import { RpcLnReceiveState } from '../../types/bindings'
-import { createMockPaymentEvent } from '../mock-data/matrix-event'
-import { mockFedimint, mockSelectorValues } from '../setup/jest.setup'
+import { useMatrixPaymentTransaction } from '@fedi/common/hooks/matrix'
+import { createMockPaymentEvent } from '@fedi/common/tests/mock-data/matrix-event'
+import { createMockTransaction } from '@fedi/common/tests/mock-data/transactions'
+import {
+    mockFedimint,
+    mockSelectorValues,
+} from '@fedi/common/tests/setup/jest.setup'
 
 /*
 // Payment Transaction Hook Tests
@@ -29,8 +29,10 @@ describe('useMatrixPaymentTransaction', () => {
         mockFedimint.getTransaction.mockResolvedValue(undefined as any)
 
         const event = createMockPaymentEvent({
-            senderId: 'npub123',
-            senderOperationId: undefined,
+            content: {
+                senderId: 'npub123',
+                senderOperationId: undefined,
+            },
         })
 
         const { result } = renderHook(() =>
@@ -47,30 +49,17 @@ describe('useMatrixPaymentTransaction', () => {
     })
 
     it('should return the txn resolved by getTransaction', async () => {
-        const mockTransaction = {
-            id: 'tx123',
-            amount: 1000000 as MSats,
-            fediFeeStatus: null,
-            txnNotes: 'test',
-            txDateFiatInfo: null,
-            frontendMetadata: {
-                initialNotes: null,
-                recipientMatrixId: null,
-                senderMatrixId: null,
-            },
-            outcomeTime: Date.now(),
-            kind: 'lnReceive' as const,
-            ln_invoice: 'lnbc123',
-            state: { type: 'claimed' } as RpcLnReceiveState,
-        }
+        const mockTransaction = createMockTransaction()
         mockSelectorValues({
             selectMatrixAuth: { userId: 'npub123' },
         })
         mockFedimint.getTransaction.mockResolvedValue(mockTransaction)
 
         const event = createMockPaymentEvent({
-            senderId: 'npub123',
-            senderOperationId: 'sender-op-123',
+            content: {
+                senderId: 'npub123',
+                senderOperationId: 'sender-op-123',
+            },
         })
 
         const { result } = renderHook(() =>
