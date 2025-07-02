@@ -177,52 +177,46 @@ const FederationPreview: React.FC<Props> = ({ federation, onJoin, onBack }) => {
 
             <Card containerStyle={s.roundedCardContainer}>
                 <View style={s.cardContent}>
-                    {welcomeMessage ? (
-                        <ScrollView
-                            style={s.scrollTos}
-                            contentContainerStyle={{
-                                padding: theme.spacing.md,
-                            }}>
-                            <Text caption style={s.welcomeText}>
-                                <Trans
-                                    components={{
-                                        bold: (
-                                            <Text
-                                                caption
-                                                bold
-                                                style={s.welcomeText}
-                                            />
-                                        ),
-                                    }}>
-                                    {welcomeMessage}
-                                </Trans>
-                            </Text>
-                        </ScrollView>
-                    ) : (
+                    <ScrollView
+                        style={s.scrollTos}
+                        contentContainerStyle={{
+                            padding: theme.spacing.lg,
+                        }}>
                         <Text caption style={s.welcomeText}>
-                            {welcomeInstructions}
+                            <Trans
+                                components={{
+                                    bold: (
+                                        <Text
+                                            caption
+                                            bold
+                                            style={s.welcomeText}
+                                        />
+                                    ),
+                                }}>
+                                {welcomeMessage ?? welcomeInstructions}
+                            </Trans>
                         </Text>
-                    )}
+                    </ScrollView>
                 </View>
             </Card>
 
             <View style={s.bottomSection}>
                 {showJoinFederation && isReturningMember && (
-                    <Flex row align="center" gap="sm" style={s.switchWrapper}>
-                        <Flex grow basis={false} gap="md">
+                    <Flex gap="sm" style={s.switchWrapper}>
+                        <Flex row align="center" justify="between" gap="md">
                             <Text bold caption>
                                 {t('feature.federations.recover-from-scratch')}
                             </Text>
-                            <Text small>
-                                {t(
-                                    'feature.federations.recover-from-scratch-warning',
-                                )}
-                            </Text>
+                            <Switch
+                                value={selectedRecoverFromScratch}
+                                onValueChange={setSelectedRecoverFromScratch}
+                            />
                         </Flex>
-                        <Switch
-                            value={selectedRecoverFromScratch}
-                            onValueChange={setSelectedRecoverFromScratch}
-                        />
+                        <Text small>
+                            {t(
+                                'feature.federations.recover-from-scratch-warning',
+                            )}
+                        </Text>
                     </Flex>
                 )}
 
@@ -291,7 +285,7 @@ const styles = (theme: Theme) =>
             marginTop: 10,
             borderRadius: theme.borders.defaultRadius,
             marginHorizontal: 0,
-            padding: theme.spacing.md,
+            padding: 0,
             borderWidth: 0,
             borderColor: 'transparent',
         },
