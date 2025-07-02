@@ -25,21 +25,21 @@ export function useLoadMedia(
                 if (event.content.file === null) return
                 const { body, file } = event.content
 
-                const imagePath = await fedimint.matrixDownloadFile(
+                const mediaPath = await fedimint.matrixDownloadFile(
                     body,
                     typeof file === 'string'
                         ? { url: file }
                         : { file: file as JSONObject },
                 )
 
-                const result = await readBridgeFile(imagePath)
+                const result = await readBridgeFile(mediaPath)
                 url = URL.createObjectURL(
                     new Blob([result], { type: event.content.info.mimetype }),
                 )
 
                 setSrc(url)
             } catch {
-                log.error('failed to load image')
+                log.error('failed to load media')
                 setError(true)
             } finally {
                 setLoading(false)

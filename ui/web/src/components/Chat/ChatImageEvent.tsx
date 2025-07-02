@@ -1,5 +1,5 @@
 import Image from 'next/image'
-import React from 'react'
+import React, { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 
 import ImageOff from '@fedi/common/assets/svgs/image-off.svg'
@@ -10,6 +10,7 @@ import { Icon } from '../../components/Icon'
 import { Text } from '../../components/Text'
 import { useLoadMedia } from '../../hooks/media'
 import { keyframes, styled, theme } from '../../styles'
+import { ChatMediaPreview } from './ChatMediaPreview'
 
 interface Props {
     event: MatrixEvent<MatrixEventContentType<'m.image'>>
@@ -17,25 +18,48 @@ interface Props {
 
 export const ChatImageEvent: React.FC<Props> = ({ event }) => {
     const { t } = useTranslation()
-    const { error, loading, src } = useLoadMedia(event)
+    const { error, src } = useLoadMedia(event)
 
-    if (loading || !src) return null
+    const [showMediaPreview, setShowMediaPreview] = useState(false)
 
     if (error) {
         return (
-            <ImgWrapper css={{ padding: 10, textAlign: 'center' }}>
+            <Error>
                 <Icon icon={ImageOff} size="sm" />
-                <Text variant="small" css={{ color: theme.colors.darkGrey }}>
+                <Text variant="small" css={{ color: theme.colors.black }}>
                     {t('errors.failed-to-load-image')}
                 </Text>
-            </ImgWrapper>
+            </Error>
         )
     }
 
+    if (!src) {
+        return <ImgWrapper />
+    }
+
     return (
-        <ImgWrapper>
-            <Img src={src} alt="image" width={0} height={0} loading="lazy" />
-        </ImgWrapper>
+        <div>
+            <ChatMediaPreview
+                open={showMediaPreview}
+                onOpenChange={setShowMediaPreview}
+                trigger={
+                    <Img
+                        src={src}
+                        placeholder="empty"
+                        alt="image"
+                        width={0}
+                        height={0}
+                        loading="lazy"
+                    />
+                }>
+                <PreviewImg
+                    src={src}
+                    alt="preview-image"
+                    width={0}
+                    height={0}
+                />
+            </ChatMediaPreview>
+        </div>
     )
 }
 
@@ -45,16 +69,25 @@ const fadeIn = keyframes({
 })
 
 const ImgWrapper = styled('div', {
-    animation: `${fadeIn} 1s ease`,
+    background: theme.colors.extraLightGrey,
     borderRadius: theme.sizes.xxs,
-    height: '100%',
-    maxHeight: 400,
-    maxWidth: 400,
-    overflow: 'hidden',
+    height: 300,
     width: '100%',
 })
 
 const Img = styled(Image, {
-    height: '100%',
+    animation: `${fadeIn} 200ms ease`,
+    height: 'auto',
     width: '100%',
+})
+
+const PreviewImg = styled(Image, {
+    height: 'auto',
+    width: '100%',
+})
+
+const Error = styled('div', {
+    background: theme.colors.extraLightGrey,
+    padding: 10,
+    textAlign: 'center',
 })

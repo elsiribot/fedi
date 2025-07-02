@@ -34,4 +34,17 @@ describe('/components/Chat/ChatVideoEvent', () => {
             })
         })
     })
+
+    describe('when the video is clicked', () => {
+        it('should open the dialog', async () => {
+            render(<ChatVideoEvent event={mockMatrixEventVideo} />)
+
+            await waitFor(() => {
+                const video = screen.getByLabelText('video')
+
+                video.click()
+                expect(screen.getByRole('dialog')).toBeInTheDocument()
+            })
+        })
+    })
 })

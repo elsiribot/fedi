@@ -34,4 +34,17 @@ describe('/components/Chat/ChatImageEvent', () => {
             })
         })
     })
+
+    describe('when the image is clicked', () => {
+        it('should open the dialog', async () => {
+            render(<ChatImageEvent event={mockMatrixEventImage} />)
+
+            await waitFor(() => {
+                const image = screen.getByAltText('image')
+
+                image.click()
+                expect(screen.getByRole('dialog')).toBeInTheDocument()
+            })
+        })
+    })
 })

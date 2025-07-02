@@ -1,4 +1,4 @@
-import React from 'react'
+import React, { useEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 
 import PlayIcon from '@fedi/common/assets/svgs/play.svg'
@@ -10,6 +10,7 @@ import { Icon } from '../../components/Icon'
 import { Text } from '../../components/Text'
 import { useLoadMedia } from '../../hooks/media'
 import { keyframes, styled, theme } from '../../styles'
+import { ChatMediaPreview } from './ChatMediaPreview'
 
 interface Props {
     event: MatrixEvent<MatrixEventContentType<'m.video'>>
@@ -17,30 +18,49 @@ interface Props {
 
 export const ChatVideoEvent: React.FC<Props> = ({ event }) => {
     const { t } = useTranslation()
-    const { error, loading, src } = useLoadMedia(event)
+    const { error, src } = useLoadMedia(event)
+    const [showMediaPreview, setShowMediaPreview] = useState(false)
+    const videoRef = useRef<HTMLVideoElement>(null)
 
-    if (loading || !src) return null
+    useEffect(() => {
+        if (videoRef.current) {
+            videoRef.current.defaultMuted = true
+        }
+    }, [])
 
     if (error) {
         return (
-            <VideoWrapper css={{ padding: 10, textAlign: 'center' }}>
+            <Error>
                 <Icon icon={VideoOff} size="sm" />
-                <Text variant="small" css={{ color: theme.colors.darkGrey }}>
+                <Text variant="small" css={{ color: theme.colors.black }}>
                     {t('errors.failed-to-load-video')}
                 </Text>
-            </VideoWrapper>
+            </Error>
         )
     }
 
+    if (!src) {
+        return <Video />
+    }
+
     return (
-        <VideoWrapper aria-label="video">
-            <PlayButtonWrapper>
-                <PlayButtonIcon icon={PlayIcon} size="md" />
-            </PlayButtonWrapper>
-            <Video>
+        <ChatMediaPreview
+            open={showMediaPreview}
+            onOpenChange={setShowMediaPreview}
+            trigger={
+                <VideoWrapper aria-label="video">
+                    <PlayButtonWrapper>
+                        <PlayButtonIcon icon={PlayIcon} size="md" />
+                    </PlayButtonWrapper>
+                    <Video ref={videoRef} muted>
+                        <source src={src} type={event.content.info.mimetype} />
+                    </Video>
+                </VideoWrapper>
+            }>
+            <PreviewVideo autoPlay playsInline aria-label="preview-video">
                 <source src={src} type={event.content.info.mimetype} />
-            </Video>
-        </VideoWrapper>
+            </PreviewVideo>
+        </ChatMediaPreview>
     )
 }
 
@@ -50,14 +70,7 @@ const fadeIn = keyframes({
 })
 
 const VideoWrapper = styled('div', {
-    animation: `${fadeIn} .5s ease`,
-    borderRadius: theme.sizes.xxs,
-    height: '100%',
-    maxHeight: 400,
-    maxWidth: 400,
-    overflow: 'hidden',
     position: 'relative',
-    width: '100%',
 })
 
 const PlayButtonWrapper = styled('div', {
@@ -77,6 +90,20 @@ const PlayButtonIcon = styled(Icon, {
 })
 
 const Video = styled('video', {
-    height: '100%',
+    animation: `${fadeIn} 200ms ease`,
+    height: 'auto',
+    maxHeight: 300,
     width: '100%',
+})
+
+const PreviewVideo = styled('video', {
+    animation: `${fadeIn} 200ms ease`,
+    height: 'auto',
+    width: '100%',
+})
+
+const Error = styled('div', {
+    background: theme.colors.extraLightGrey,
+    padding: 10,
+    textAlign: 'center',
 })

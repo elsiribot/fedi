@@ -51,18 +51,18 @@ export const ChatEvent: React.FC<Props> = ({ event }) => {
 }
 
 const MessageContent = styled('div', {
-    width: 'fit-content',
-    maxWidth: '90%',
-    padding: 8,
+    background: theme.colors.blue,
+    borderRadius: theme.sizes.xxs,
+    color: theme.colors.white,
     fontSize: theme.fontSizes.caption,
     fontWeight: theme.fontWeights.medium,
     lineHeight: '20px',
-    wordWrap: 'break-word',
-    borderRadius: 12,
+    maxWidth: '90%',
+    padding: 8,
+    overflow: 'hidden',
     transition: 'opacity 100ms ease',
-    maxHeight: 340,
-    color: theme.colors.white,
-    background: theme.colors.blue,
+    width: 'fit-content',
+    wordWrap: 'break-word',
 
     variants: {
         isPayment: {
@@ -77,6 +77,7 @@ const MessageContent = styled('div', {
         isMedia: {
             true: {
                 padding: 0,
+                width: '90%',
             },
         },
     },
