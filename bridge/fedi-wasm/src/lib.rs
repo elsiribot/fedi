@@ -21,7 +21,6 @@ use wasm_bindgen::prelude::wasm_bindgen;
 use wasm_bindgen::JsError;
 use web_sys::FileSystemSyncAccessHandle;
 
-mod db;
 mod logging;
 mod storage;
 
@@ -55,11 +54,13 @@ pub async fn fedimint_initialize(
     event_sink: EventSink,
     init_opts_json: String,
     log_file_handle: FileSystemSyncAccessHandle,
+    db_file_handle: FileSystemSyncAccessHandle,
 ) -> String {
     let value = AssertUnwindSafe(fedimint_initialize_inner(
         event_sink,
         init_opts_json,
         log_file_handle,
+        db_file_handle,
     ))
     .catch_unwind()
     .await;
@@ -74,6 +75,7 @@ pub async fn fedimint_initialize_inner(
     event_sink: EventSink,
     init_opts_json: String,
     log_file_handle: FileSystemSyncAccessHandle,
+    db_file_handle: FileSystemSyncAccessHandle,
 ) -> anyhow::Result<()> {
     let init_opts: RpcInitOpts = match serde_json::from_str(&init_opts_json) {
         Ok(init_opts) => init_opts,
@@ -88,7 +90,9 @@ pub async fn fedimint_initialize_inner(
         warn!("bridge is already initialized");
         return Ok(());
     }
-    let storage = WasmStorage::new()
+    let cursed_db = fedimint_cursed_redb::MemAndRedb::new(db_file_handle)
+        .context("Failed to create cursed redb")?;
+    let storage = WasmStorage::new(cursed_db.into())
         .await
         .context("Failed to initialize storage")?;
     let storage = Arc::new(storage) as Storage;
