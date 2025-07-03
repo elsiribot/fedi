@@ -17,7 +17,6 @@ async function workerRequest<ResponseData, RequestData = unknown>(
     if (!worker) {
         throw new Error('Fedimint bridge is not ready!')
     }
-
     return new Promise(resolve => {
         callbackId++
         callbacks.set(callbackId, (res: ResponseData) => resolve(res))
