@@ -6,7 +6,6 @@ import welcomeBackground from '@fedi/common/assets/images/welcome-bg.png'
 import FediLogo from '@fedi/common/assets/svgs/fedi-logo-icon.svg'
 import { useToast } from '@fedi/common/hooks/toast'
 import { refreshOnboardingStatus } from '@fedi/common/redux'
-import { isDev } from '@fedi/common/utils/environment'
 import { makeLog } from '@fedi/common/utils/log'
 
 import { Button } from '../components/Button'
@@ -80,8 +79,7 @@ function WelcomePage() {
                         loading={loading}>
                         {t('words.continue')}
                     </Button>
-                    {/* Show recovery only in development until issues with recovery on the backend are resolved */}
-                    {isDev() && !inviteCode && (
+                    {!inviteCode && (
                         <Button
                             width="full"
                             href="/onboarding/recover"

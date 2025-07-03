@@ -13,6 +13,7 @@ members = [
   "crates/debug-tools",
   "crates/device-registration",
   "crates/env",
+  "crates/fedimint-cursed-redb",
   "crates/fedimint/devi",
   "crates/fedimint/fedimint-cli",
   "crates/fedimint/fedimintd",
@@ -78,6 +79,7 @@ fedi-ffi = { path = "bridge/fedi-ffi" }
 fedi-social-client = { path = "crates/modules/fedi-social/client" }
 fedi-social-common = { path = "crates/modules/fedi-social/common" }
 fedi-social-server = { path = "crates/modules/fedi-social/server" }
+fedimint-cursed-redb = { path = "crates/fedimint-cursed-redb" }
 nostril = { path = "crates/nostril" }
 stability-pool-client-old = { path = "crates/modules/stability-pool-old/client" }
 stability-pool-common-old = { path = "crates/modules/stability-pool-old/common" }

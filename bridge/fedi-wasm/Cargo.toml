@@ -33,3 +33,4 @@ wasm-bindgen-futures = "0.4.34"
 wasm-bindgen-test = "0.3.49"
 
 fedimint-core = { workspace = true }
+fedimint-cursed-redb = { workspace = true }

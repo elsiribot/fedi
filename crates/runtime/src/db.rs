@@ -14,6 +14,8 @@ pub enum BridgeDbPrefix {
     FederationPendingRejoinFromScratch = 0x02,
 
     AppState = 0x03,
+    // Prefix for file storage in WASM environment
+    WasmFileStorage = 0x04,
 }
 
 #[derive(Debug, Decodable, Encodable)]
