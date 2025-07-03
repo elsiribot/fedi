@@ -94,8 +94,9 @@ impl Matrix {
         let builder =
             builder.sqlite_store(base_dir.join("db-native-sync.sqlite"), Some(passphrase));
 
+        // v2 to avoid reusing the old matrix db for new redb pwa
         #[cfg(target_family = "wasm")]
-        let builder = builder.indexeddb_store("matrix-db-native-sync", Some(passphrase));
+        let builder = builder.indexeddb_store("matrix-db-native-sync-v2", Some(passphrase));
 
         let client = builder.build().await?;
         Ok(client)
