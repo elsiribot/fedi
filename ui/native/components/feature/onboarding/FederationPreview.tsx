@@ -127,7 +127,14 @@ const FederationPreview: React.FC<Props> = ({ federation, onJoin, onBack }) => {
                 fullWidth
                 type="clear"
                 title={t('feature.onboarding.i-do-not-accept')}
-                onPress={navigation.goBack}
+                onPress={() =>
+                    (navigation.getState()?.routes?.length || 0) > 1
+                        ? navigation.goBack()
+                        : navigation.reset({
+                              index: 0,
+                              routes: [{ name: 'TabsNavigator' }],
+                          })
+                }
                 containerStyle={s.button}
             />
             <Button

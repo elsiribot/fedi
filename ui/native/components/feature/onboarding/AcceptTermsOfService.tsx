@@ -72,7 +72,12 @@ const AcceptTermsOfService: React.FC<Props> = ({
                         setIsRejecting(true)
                         await onReject()
                         setIsRejecting(false)
-                        navigation.goBack()
+                        ;(navigation.getState()?.routes?.length || 0) > 1
+                            ? navigation.goBack()
+                            : navigation.reset({
+                                  index: 0,
+                                  routes: [{ name: 'TabsNavigator' }],
+                              })
                     }}
                     containerStyle={style.button}
                     loading={isRejecting}
