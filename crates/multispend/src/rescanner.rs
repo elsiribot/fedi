@@ -165,7 +165,7 @@ impl RoomRescannerManager {
                 let room_id = room_id.to_owned();
                 let this = self.clone();
                 self.runtime.task_group.spawn_cancellable(
-                    format!("room_rescanner::{}", room_id),
+                    format!("room_rescanner::{room_id}"),
                     async move {
                         this.run_room_rescan_task(&room_id, &room_state).await;
                     },

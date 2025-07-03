@@ -446,7 +446,7 @@ impl DeviceIdentifier {
     pub fn encrypt_and_hex_encode(&self, root_secret: &DerivableSecret) -> anyhow::Result<String> {
         let device_id_encryption_secret = root_secret.child_key(DEVICE_REGISTRATION_CHILD_ID);
         // Pad if necessary -> encrypt -> hex-encode
-        let padded = format!("{:width$}", self, width = DEVICE_IDENTIFIER_FIXED_LENGTH);
+        let padded = format!("{self:DEVICE_IDENTIFIER_FIXED_LENGTH$}");
         let encrypted = fedimint_aead::encrypt(
             padded.into(),
             &LessSafeKey::new(device_id_encryption_secret.to_chacha20_poly1305_key()),

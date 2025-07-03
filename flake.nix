@@ -1,11 +1,11 @@
 {
   inputs = {
-    nixpkgs = {
-      # Pineed due to fastelan issues
-      # See https://github.com/fedibtc/fedi/pull/6903
-      # url = "github:NixOS/nixpkgs/nixos-24.11";
-      url = "github:NixOS/nixpkgs?rev=bffc22eb12172e6db3c5dde9e3e5628f8e3e7912";
-    };
+
+    # Pineed due to fastelan issues
+    # See https://github.com/fedibtc/fedi/pull/6903
+    # url = "github:NixOS/nixpkgs/nixos-24.11";
+    nixpkgs.url = "github:NixOS/nixpkgs/nixos-25.05";
+
     nixpkgs-unstable.url = "github:NixOS/nixpkgs/nixos-unstable";
     flake-utils.url = "github:numtide/flake-utils";
     fedimint-pkgs = {
@@ -17,7 +17,7 @@
       inputs.nixpkgs.follows = "nixpkgs";
     };
     flakebox = {
-      url = "github:dpc/flakebox?rev=77a60a6b8912d780ddba27987fdde8ef8ca5aefd";
+      url = "github:dpc/flakebox?rev=f96cbeafded56bc6f5c27fbd96e4fcc78b8a8861";
       inputs.nixpkgs.follows = "nixpkgs";
       inputs.fenix.follows = "fenix";
     };
