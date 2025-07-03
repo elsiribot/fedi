@@ -68,6 +68,6 @@ impl fmt::Display for Spv2PaymentAddress {
         ]
         .consensus_encode_to_vec();
         let data = bech32::encode::<Bech32m>(HRP, &data).map_err(|_| fmt::Error)?;
-        write!(f, "{}", data)
+        write!(f, "{data}")
     }
 }

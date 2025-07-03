@@ -127,7 +127,6 @@ in
         nativeBuildInputs =
           (builtins.attrValues {
             inherit (pkgs)
-              mold
               pkg-config
               parallel
               time
@@ -136,6 +135,9 @@ in
             inherit (pkgs) perl;
             inherit moreutils-ts;
           })
+          ++ lib.optionals pkgs.stdenv.isLinux [
+            pkgs.mold
+          ]
           ++ [
             (lib.hiPrio pkgs.cargo-deluxe)
 

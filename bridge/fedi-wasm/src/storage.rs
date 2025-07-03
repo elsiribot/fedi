@@ -1,14 +1,10 @@
-use std::collections::HashMap;
 use std::path::{Path, PathBuf};
-use std::sync::Mutex as StdMutex;
 
-use anyhow::bail;
 use fedimint_core::db::{Database, IDatabaseTransactionOpsCoreTyped};
 use fedimint_core::encoding::{Decodable, Encodable};
-use fedimint_core::{apply, async_trait_maybe_send, impl_db_lookup, impl_db_record};
+use fedimint_core::{apply, async_trait_maybe_send, impl_db_record};
 use runtime::db::BridgeDbPrefix;
 use runtime::storage::{IStorage, BRIDGE_DB_PREFIX};
-use wasm_bindgen::{JsCast, JsValue};
 
 #[derive(Debug, Encodable, Decodable, PartialEq, Eq, PartialOrd, Ord, Clone)]
 pub struct FileStorageKey(String);

@@ -53,7 +53,7 @@ pub enum BridgeOffboardingReason {
 impl Display for BridgeOffboardingReason {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
-            Self::DeviceIdentifierMismatch { existing, new } => write!(f, "Expected device ID {} but received {}. Likely app has been cloned on a new device.", existing, new),
+            Self::DeviceIdentifierMismatch { existing, new } => write!(f, "Expected device ID {existing} but received {new}. Likely app has been cloned on a new device."),
             Self::InternalBridgeExport => write!(f, "Bridge is ready for export"),
         }
     }
