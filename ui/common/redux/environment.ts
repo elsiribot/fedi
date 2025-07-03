@@ -375,6 +375,14 @@ export const selectIsMultispendFeatureEnabled = ({
     )
 }
 
+export const selectIsNostrClientEnabled = ({
+    environment: { featureFlags },
+}: CommonState) => {
+    return Boolean(
+        featureFlags && Array.isArray(featureFlags.nostr_client?.relays),
+    )
+}
+
 export const selectInternetUnreachableBadgeShown = (s: CommonState) =>
     s.environment.internetUnreachableBadgeShown
 

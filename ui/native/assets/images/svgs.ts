@@ -141,6 +141,7 @@ export { default as SmileMessageHolo } from '@fedi/common/assets/svgs/smile-mess
 export { default as SmileMessageHoloLight } from '@fedi/common/assets/svgs/smile-message-holo-light.svg'
 export { default as SocialPeople } from '@fedi/common/assets/svgs/social-people.svg'
 export { default as SpeakerPhone } from '@fedi/common/assets/svgs/speakerphone.svg'
+export { default as Star } from '@fedi/common/assets/svgs/star.svg'
 export { default as StarOutline } from '@fedi/common/assets/svgs/star-outline.svg'
 export { default as SwitchLeft } from '@fedi/common/assets/svgs/switch-left.svg'
 export { default as SwitchRight } from '@fedi/common/assets/svgs/switch-right.svg'
