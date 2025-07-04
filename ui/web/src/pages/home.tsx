@@ -15,6 +15,10 @@ import {
     selectMatrixAuth,
     selectActiveFederationHasWallet,
 } from '@fedi/common/redux'
+import {
+    selectCoreMods,
+    selectVisibleCommunityMods,
+} from '@fedi/common/redux/mod'
 import stringUtils from '@fedi/common/utils/StringUtils'
 
 import { Avatar } from '../components/Avatar'
@@ -54,6 +58,8 @@ function HomePage() {
         await deferredPrompt?.prompt()
     }
 
+    const mods = useAppSelector(selectVisibleCommunityMods)
+    const coreMods = useAppSelector(selectCoreMods)
     const matrixAuth = useAppSelector(selectMatrixAuth)
     const activeFederation = useAppSelector(selectActiveFederation)
     const newsItems = useAppSelector(s => selectActiveFederationChats(s))
@@ -169,7 +175,7 @@ function HomePage() {
                             </SubTitle>
                             <ErrorBoundary fallback={null}>
                                 <FediModTiles
-                                    isFederation={!!activeFederation}
+                                    mods={activeFederation ? mods : coreMods}
                                 />
                             </ErrorBoundary>
                         </Section>

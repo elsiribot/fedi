@@ -14,7 +14,7 @@ const commonProps = {
     onClose: onCloseSpy,
 }
 
-describe('/compnents/InstallBanner', () => {
+describe('/components/InstallBanner', () => {
     beforeEach(() => {
         jest.clearAllMocks()
     })

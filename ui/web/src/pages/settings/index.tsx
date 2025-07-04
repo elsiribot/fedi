@@ -208,7 +208,7 @@ function AdminPage() {
     return (
         <ContentBlock>
             <Layout.Root>
-                <Layout.Header>
+                <Layout.Header showCloseButton>
                     <Layout.Title>{t('words.account')}</Layout.Title>
                 </Layout.Header>
                 <Layout.Content>
