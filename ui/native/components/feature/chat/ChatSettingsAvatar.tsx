@@ -4,6 +4,7 @@ import React from 'react'
 import { Pressable, StyleSheet } from 'react-native'
 
 import { MatrixRoom } from '@fedi/common/types'
+import { mxcHttpUrlToDownloadUrl } from '@fedi/common/utils/matrix'
 
 import { AvatarSize } from '../../ui/Avatar'
 import Flex from '../../ui/Flex'
@@ -22,7 +23,9 @@ export const ChatSettingsAvatar: React.FC<Props> = ({ room }) => {
 
     const handleAvatarPress = () => {
         if (room && room.directUserId && room.avatarUrl) {
-            navigation.navigate('ChatImageViewer', { uri: room.avatarUrl })
+            navigation.navigate('ChatImageViewer', {
+                uri: mxcHttpUrlToDownloadUrl(room.avatarUrl),
+            })
         }
     }
 

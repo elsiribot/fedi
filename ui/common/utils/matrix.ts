@@ -37,6 +37,7 @@ import {
     RpcTransaction,
 } from '../types/bindings'
 import { makeLog } from './log'
+import { constructUrl } from './neverthrow'
 import { isBolt11 } from './parser'
 
 const log = makeLog('common/utils/matrix')
@@ -58,6 +59,23 @@ export const mxcUrlToHttpUrl = (
     if (height) url.searchParams.set('height', height.toString())
     if (method) url.searchParams.set('method', method)
     return url.toString()
+}
+
+// Converts a thumbnail mxc URL generated with `mxcUrlToHttpUrl`
+// To the full-quality matrix download URL
+export const mxcHttpUrlToDownloadUrl = (url: string) => {
+    return constructUrl(url)
+        .map(u => {
+            u.searchParams.delete('width')
+            u.searchParams.delete('height')
+            u.searchParams.delete('method')
+            u.pathname = u.pathname.replace('thumbnail', 'download')
+            return u
+        })
+        .match(
+            u => u.toString(),
+            () => url,
+        )
 }
 
 const encryptedFileSchema = z
