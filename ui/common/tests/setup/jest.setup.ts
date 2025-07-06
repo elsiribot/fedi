@@ -1,4 +1,5 @@
 import '@testing-library/jest-dom'
+import type { TFunction } from 'i18next'
 
 import { useCommonSelector, useCommonDispatch } from '@fedi/common/hooks/redux'
 import { SupportedCurrency } from '@fedi/common/types'
@@ -108,6 +109,16 @@ const createMockFedimint = (): jest.Mocked<FedimintBridge> => {
 
 // Use the mock factory
 export const mockFedimint = createMockFedimint()
+
+// Mock factory for i18next TFunction
+export const createMockT = (
+    translations: Record<string, string> = {},
+): TFunction => {
+    return ((key: string) => {
+        // Return translation if it exists, otherwise return the key (standard i18n behavior)
+        return translations[key] || key
+    }) as any as TFunction
+}
 
 beforeEach(() => {
     // Mock dispatch function
