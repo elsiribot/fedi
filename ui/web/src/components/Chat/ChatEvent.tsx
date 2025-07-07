@@ -5,6 +5,7 @@ import { MatrixEvent } from '@fedi/common/types'
 import {
     isImageEvent,
     isPaymentEvent,
+    isTextEvent,
     isVideoEvent,
 } from '@fedi/common/utils/matrix'
 
@@ -12,6 +13,7 @@ import { useAppSelector } from '../../hooks'
 import { styled, theme } from '../../styles'
 import { ChatImageEvent } from './ChatImageEvent'
 import { ChatPaymentEvent } from './ChatPaymentEvent'
+import { ChatTextEvent } from './ChatTextEvent'
 import { ChatVideoEvent } from './ChatVideoEvent'
 
 interface Props {
@@ -29,13 +31,8 @@ export const ChatEvent: React.FC<Props> = ({ event }) => {
         <ChatVideoEvent event={event} />
     ) : isPaymentEvent(event) ? (
         <ChatPaymentEvent event={event} />
-    ) : typeof event.content.body === 'string' ? (
-        event.content.body.split(/\r?\n/).map((part, index, array) => (
-            <React.Fragment key={index}>
-                {part}
-                {index !== array.length - 1 && <br />}
-            </React.Fragment>
-        ))
+    ) : isTextEvent(event) ? (
+        <ChatTextEvent event={event} />
     ) : (
         event.content.body
     )
@@ -72,6 +69,17 @@ const MessageContent = styled('div', {
             false: {
                 background: theme.colors.extraLightGrey,
                 color: theme.colors.primary,
+
+                // Style links for messages from others
+                '& a': {
+                    color: theme.colors.blue,
+                },
+            },
+            true: {
+                // Style links for messages from me
+                '& a': {
+                    color: theme.colors.secondary,
+                },
             },
         },
         isMedia: {
