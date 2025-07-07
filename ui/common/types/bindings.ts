@@ -169,11 +169,6 @@ export type FeatureCatalog = {
    * in future.
    */
   nostr_client: NostrClientFeatureCatalog | null;
-  /**
-   * figure out stable format for account id, that includes the federation id
-   * prefix
-   */
-  spv2_stable_account_id: boolean;
 };
 
 export type FiatFXInfo = {
