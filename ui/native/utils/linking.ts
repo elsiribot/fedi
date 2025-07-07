@@ -468,6 +468,7 @@ export const getLinkingConfig = (
         'fedi://',
         'fedi:',
         'lightning:',
+        'lnurl:',
         'bitcoin:',
         'lnurlw://',
         'lnurlp://',

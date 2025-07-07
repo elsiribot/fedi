@@ -141,6 +141,7 @@ import PopupFederationEnded from './PopupFederationEnded'
 import PublicFederations from './PublicFederations'
 import Receive from './Receive'
 import ReceiveLightning from './ReceiveLightning'
+import ReceiveLnurl from './ReceiveLnurl'
 import ReceiveSuccess from './ReceiveSuccess'
 import RecordBackupVideo from './RecordBackupVideo'
 import RecoverFromNonceReuse from './RecoverFromNonceReuse'
@@ -742,6 +743,19 @@ export const MainNavigator = () => {
                                 component={ReceiveLightning}
                                 options={() => ({
                                     header: () => <ReceiveLightningHeader />,
+                                })}
+                            />
+                            <Stack.Screen
+                                name="ReceiveLnurl"
+                                component={ReceiveLnurl}
+                                options={() => ({
+                                    header: () => (
+                                        <CenteredHeader
+                                            backButton
+                                            closeButton
+                                            title={t('words.lnurl')}
+                                        />
+                                    ),
                                 })}
                             />
                             <Stack.Screen

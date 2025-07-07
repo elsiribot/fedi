@@ -311,6 +311,14 @@ export class FedimintBridge {
         })
     }
 
+    async getRecurringdLnurl(federationId: string) {
+        return this.rpcTyped('getRecurringdLnurl', { federationId })
+    }
+
+    async supportsRecurringdLnurl(federationId: string) {
+        return this.rpcTyped('supportsRecurringdLnurl', { federationId })
+    }
+
     async generateAddress(
         federationId: string,
         frontendMetadata: FrontendMetadata = {

@@ -198,6 +198,10 @@ describe('parseUserInput', () => {
         type: ParserDataType.LnurlPay,
     })
     testCases.push({
+        input: `lnurl:${encodeLnurl(lnurlPayUrl)}`,
+        type: ParserDataType.LnurlPay,
+    })
+    testCases.push({
         input: lnurlPayUrl.replace('https', 'lnurlp'),
         type: ParserDataType.LnurlPay,
     })

@@ -139,6 +139,7 @@ export type RootStackParamList = {
     LocateSocialRecovery: undefined
     Receive: undefined
     ReceiveLightning: undefined
+    ReceiveLnurl: undefined
     ReceiveSuccess: {
         tx: ReceiveSuccessData
         status?: ReceiveSuccessStatus

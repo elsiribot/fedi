@@ -245,8 +245,8 @@ async function parseLnurl(
     // Ignore Fedi URIs, they can sometimes look like URLs.
     if (raw.toLowerCase().startsWith('fedi:')) return
 
-    // Strip lightning protocol for uniformity, keep track of if we were passed a full URL.
-    const lnRaw = stripProtocol(raw, 'lightning').toLowerCase()
+    // Strip lightning/lnurl protocol for uniformity, keep track of if we were passed a full URL.
+    const lnRaw = stripProtocol(raw, 'lnurl', 'lightning').toLowerCase()
     let lnurlParamPromise: ReturnType<typeof getLnurlParams> | undefined
     const isWebsiteUrl = validateWebsiteUrl(raw)
     const isValidIdentifier = isValidInternetIdentifier(lnRaw)
@@ -669,8 +669,12 @@ async function parseCashuEcash(
  * Removes the protocol from the front of a string. Supports both
  * `protocol:` and `protocol://` formats, case insensitive.
  */
-function stripProtocol(raw: string, protocol: string) {
-    return raw.replace(new RegExp(`^${protocol}:\\/?\\/?`, 'i'), '')
+function stripProtocol(raw: string, ...protocol: string[]) {
+    for (const p of protocol) {
+        if (raw.startsWith(p))
+            return raw.replace(new RegExp(`^${p}:\\/?\\/?`, 'i'), '')
+    }
+    return raw
 }
 
 function validateWebsiteUrl(url: string) {

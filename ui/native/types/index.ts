@@ -16,6 +16,7 @@ export default class Base {
 export enum BitcoinOrLightning {
     bitcoin = 'bitcoin',
     lightning = 'lightning',
+    lnurl = 'lnurl',
 }
 
 export type QueryParams = {
