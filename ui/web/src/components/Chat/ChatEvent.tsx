@@ -3,6 +3,7 @@ import React from 'react'
 import { selectMatrixAuth } from '@fedi/common/redux'
 import { MatrixEvent } from '@fedi/common/types'
 import {
+    isFormEvent,
     isImageEvent,
     isPaymentEvent,
     isTextEvent,
@@ -11,6 +12,7 @@ import {
 
 import { useAppSelector } from '../../hooks'
 import { styled, theme } from '../../styles'
+import { ChatFormEvent } from './ChatFormEvent'
 import { ChatImageEvent } from './ChatImageEvent'
 import { ChatPaymentEvent } from './ChatPaymentEvent'
 import { ChatTextEvent } from './ChatTextEvent'
@@ -31,6 +33,8 @@ export const ChatEvent: React.FC<Props> = ({ event }) => {
         <ChatVideoEvent event={event} />
     ) : isPaymentEvent(event) ? (
         <ChatPaymentEvent event={event} />
+    ) : isFormEvent(event) ? (
+        <ChatFormEvent event={event} />
     ) : isTextEvent(event) ? (
         <ChatTextEvent event={event} />
     ) : (
@@ -41,7 +45,8 @@ export const ChatEvent: React.FC<Props> = ({ event }) => {
         <MessageContent
             isMe={isMe}
             isMedia={isImageEvent(event) || isVideoEvent(event)}
-            isPayment={isPaymentEvent(event)}>
+            isPayment={isPaymentEvent(event)}
+            isForm={isFormEvent(event)}>
             {content}
         </MessageContent>
     )
@@ -62,6 +67,9 @@ const MessageContent = styled('div', {
     wordWrap: 'break-word',
 
     variants: {
+        isForm: {
+            true: {},
+        },
         isPayment: {
             true: {},
         },
@@ -105,6 +113,14 @@ const MessageContent = styled('div', {
             css: {
                 background: theme.colors.orange,
                 color: theme.colors.white,
+            },
+        },
+        {
+            isMe: true,
+            isForm: true,
+            css: {
+                background: theme.colors.extraLightGrey,
+                color: theme.colors.darkGrey,
             },
         },
     ],

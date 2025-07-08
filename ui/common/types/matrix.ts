@@ -167,6 +167,13 @@ export type MatrixPaymentEventContent = PickEventContentType<
 
 export type MatrixPaymentEvent = MatrixEvent<MatrixPaymentEventContent>
 
+export type MatrixFormEventContent = PickEventContentType<
+    MatrixEventContent,
+    'xyz.fedi.form'
+>
+
+export type MatrixFormEvent = MatrixEvent<MatrixFormEventContent>
+
 export type StateEvent = {
     content: JSONObject
     state_key?: string

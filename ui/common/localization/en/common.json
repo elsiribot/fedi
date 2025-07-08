@@ -116,6 +116,7 @@
         "scan": "Scan",
         "search": "Search",
         "seen": "Seen",
+        "select": "Select",
         "send": "Send",
         "sent": "Sent",
         "share": "Share",
@@ -536,7 +537,8 @@
             "community-details": "Community Details",
             "community-mods": "Community Mods",
             "community-terms": "Community Terms",
-            "leave-community": "Leave Community"
+            "leave-community": "Leave Community",
+            "you-responded": "You responded: {{response}}"
         },
         "federations": {
             "add-federation": "Add a Federation",

@@ -1,4 +1,4 @@
-import { TFunction } from 'i18next'
+import { TFunction, type ResourceKey } from 'i18next'
 import orderBy from 'lodash/orderBy'
 import { z } from 'zod'
 
@@ -11,6 +11,7 @@ import {
     LoadedFederation,
     MSats,
     MatrixEvent,
+    MatrixFormEvent,
     MatrixGroupPreview,
     MatrixPaymentEvent,
     MatrixPaymentStatus,
@@ -41,6 +42,22 @@ import { constructUrl } from './neverthrow'
 import { isBolt11 } from './parser'
 
 const log = makeLog('common/utils/matrix')
+
+/**
+ * Gets a localized text using i18n key if available, otherwise falls back to default text
+ */
+export const getLocalizedTextWithFallback = (
+    t: TFunction,
+    i18nKey?: string | null,
+    fallbackText?: string | null,
+): string => {
+    if (!i18nKey) return fallbackText || ''
+
+    const localizedText = t(i18nKey as ResourceKey)
+
+    // If the translation function returns the same key, it means no translation was found
+    return localizedText !== i18nKey ? localizedText : fallbackText || ''
+}
 
 export const matrixIdToUsername = (id: string | null | undefined) =>
     id ? id.split(':')[0].replace('@', '') : '?'
@@ -229,6 +246,22 @@ const multispendEventSchemas = {
     >,
 }
 
+const formTypeSchema = z.enum(['text', 'radio', 'button'])
+const formOptionSchema = z.object({
+    value: z.string(),
+    label: z.string().optional(),
+    i18nKeyLabel: z.string().nullable().optional(),
+})
+const formResponseSchema = z.object({
+    responseType: formTypeSchema.optional(),
+    responseValue: z.union([z.boolean(), z.string(), z.number()]),
+    responseBody: z.string().optional(),
+    responseI18nKey: z.string().optional(),
+    respondingToEventId: z.string().optional(),
+})
+export type MatrixFormOption = z.infer<typeof formOptionSchema>
+export type MatrixFormResponse = z.infer<typeof formResponseSchema>
+
 const contentSchemas = {
     /* Matrix standard events, not an exhaustive list */
     'm.text': z.object({
@@ -357,6 +390,22 @@ const contentSchemas = {
         // TODO: Attach invite code for federations you belong to that have
         // invites enabled, and allow people to join to accept ecash?
         inviteCode: z.string().optional(),
+    }),
+    'xyz.fedi.form': z.object({
+        msgtype: z.literal('xyz.fedi.form'),
+
+        // Fallback text for clients that don't support this msgtype
+        body: z.string(),
+        // text the user sees, translated to their selected language
+        i18nKeyLabel: z.string().optional(),
+        // HTML-like form inputs
+        type: formTypeSchema.optional(),
+        // single-select options
+        options: z.array(formOptionSchema).optional(),
+        // this is what the chatbot expects to be sent as a response
+        value: z.string().optional(),
+        // This is for the user to send response messages back to guardianito
+        formResponse: formResponseSchema.optional(),
     }),
     'xyz.fedi.deleted': z.object({
         msgtype: z.literal('xyz.fedi.deleted'),
@@ -646,6 +695,10 @@ export function isPaymentEvent(
     event: MatrixEvent,
 ): event is MatrixPaymentEvent {
     return event.content.msgtype === 'xyz.fedi.payment'
+}
+
+export function isFormEvent(event: MatrixEvent): event is MatrixFormEvent {
+    return event.content.msgtype === 'xyz.fedi.form'
 }
 
 export function isBolt11PaymentEvent(

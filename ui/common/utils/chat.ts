@@ -4,7 +4,10 @@ import { z } from 'zod'
 
 import { Chat, ChatMessage, ChatType } from '@fedi/common/types'
 
-import { BANNED_DISPLAY_NAME_TERMS } from '../constants/matrix'
+import {
+    BANNED_DISPLAY_NAME_TERMS,
+    GUARDIANITO_BOT_DISPLAY_NAME,
+} from '../constants/matrix'
 import { wordListFirst, wordListLast } from '../constants/words'
 
 /**
@@ -121,30 +124,63 @@ export const getLatestPaymentUpdateIdsForChats = (
  *  - must be lowercase
  *  - must not include any banned term
  */
-export const getDisplayNameValidator = () =>
-    z
-        .string()
-        // Removes leading/trailing whitespace
-        .trim()
-        // Validates length
-        // Using z.string().refine() instead of z.string().max()
-        // to keep return types consistent
-        .refine(username => username.length > 0)
-        .refine(username => username.length <= 21)
-        // Validates all lowercase
-        .refine(username => !/[A-Z]/.test(username))
-        // Validates No banned words
-        .refine(
-            username => {
-                const lowerUsername = username.toLowerCase()
-                const foundWord = BANNED_DISPLAY_NAME_TERMS.find(word =>
-                    lowerUsername.includes(word),
-                )
-                return !foundWord
-            },
-            { message: 'banned' },
-        )
+const createDisplayNameValidator = (
+    options: {
+        allowBot?: boolean
+    } = {},
+) => {
+    const { allowBot = false } = options
 
+    return (
+        z
+            .string()
+            // Removes leading/trailing whitespace
+            .trim()
+            // Validates length
+            // Using z.string().refine() instead of z.string().max()
+            // to keep return types consistent
+            .refine(username => username.length > 0)
+            .refine(username => username.length <= 21)
+            // Validates all lowercase
+            .refine(username => {
+                // Allow "G-Bot" as an exception if specified
+                if (allowBot && username === GUARDIANITO_BOT_DISPLAY_NAME)
+                    return true
+                return !/[A-Z]/.test(username)
+            })
+            // Validates No banned words
+            .refine(
+                username => {
+                    // Allow "G-Bot" as an exception if specified
+                    if (allowBot && username === GUARDIANITO_BOT_DISPLAY_NAME)
+                        return true
+                    const lowerUsername = username.toLowerCase()
+
+                    const foundWord = BANNED_DISPLAY_NAME_TERMS.find(word =>
+                        lowerUsername.includes(word),
+                    )
+                    return !foundWord
+                },
+                { message: 'banned' },
+            )
+    )
+}
+
+/**
+ * Validator for displaying/getting display names
+ */
+export const getDisplayNameValidator = () =>
+    createDisplayNameValidator({ allowBot: true })
+
+/**
+ * Validator for setting display names
+ */
+export const setDisplayNameValidator = () =>
+    createDisplayNameValidator({ allowBot: false })
+
+export type SetDisplayNameValidatorType = ReturnType<
+    typeof setDisplayNameValidator
+>
 export type DisplayNameValidatorType = ReturnType<
     typeof getDisplayNameValidator
 >

@@ -29,8 +29,10 @@ import {
     observeMultispendAccountInfo,
     unobserveMultispendAccountInfo,
     checkBolt11PaymentResult,
+    sendMatrixFormResponse,
 } from '../redux'
 import {
+    MatrixFormEvent,
     MatrixPaymentEvent,
     MatrixPaymentStatus,
     MatrixRoom,
@@ -48,9 +50,11 @@ import {
     decodeFediMatrixUserUri,
     isValidMatrixUserId,
     makeMatrixPaymentText,
+    MatrixFormOption,
     matrixIdToUsername,
     MatrixUrlMetadata,
     matrixUrlMetadataSchema,
+    getLocalizedTextWithFallback,
 } from '../utils/matrix'
 import { useAmountFormatter } from './amount'
 import { useCommonDispatch, useCommonSelector } from './redux'
@@ -228,6 +232,12 @@ export function useObserveMatrixRoom(roomId: MatrixRoom['id']) {
     }
 }
 
+export type ChatEventAction = {
+    label: string
+    handler: () => void
+    loading?: boolean
+    disabled?: boolean
+}
 type PaymentThunkAction = ReturnType<
     | typeof cancelMatrixPayment
     | typeof acceptMatrixPaymentRequest
@@ -417,12 +427,7 @@ export function useMatrixPaymentEvent({
 
     let statusIcon: 'x' | 'reject' | 'check' | 'error' | 'loading' | undefined
     let statusText: string | undefined
-    let buttons: {
-        label: string
-        handler: () => void
-        loading?: boolean
-        disabled?: boolean
-    }[] = []
+    let buttons: ChatEventAction[] = []
 
     if (isBolt11) {
         if (onViewBolt11) {
@@ -564,6 +569,129 @@ export function useMatrixPaymentEvent({
         paymentSender,
         handleRejectRequest,
         isLoadingTransaction,
+    }
+}
+
+export function useMatrixFormEvent(
+    event: MatrixFormEvent,
+    t: TFunction,
+): {
+    isSentByMe: boolean
+    messageText: string
+    actionButton: ChatEventAction | undefined
+    options: ChatEventAction[]
+} {
+    const dispatch = useCommonDispatch()
+    const matrixAuth = useCommonSelector(selectMatrixAuth)
+    const isSentByMe = event.senderId === matrixAuth?.userId
+
+    let actionButton: ChatEventAction | undefined = undefined
+    const options: ChatEventAction[] = []
+    const {
+        options: formOptions,
+        i18nKeyLabel,
+        body,
+        value,
+        type,
+        formResponse,
+    } = event.content
+
+    // if we have the string for the i18n key, use it, otherwise use the body
+    let messageText = getLocalizedTextWithFallback(t, i18nKeyLabel, body)
+
+    const onSelectOption = async (option: MatrixFormOption) => {
+        try {
+            await dispatch(
+                sendMatrixFormResponse({
+                    roomId: event.roomId,
+                    formResponse: {
+                        responseType: type,
+                        responseValue: option.value,
+                        responseBody: option.label || option.value || '',
+                        responseI18nKey: option.i18nKeyLabel || '',
+                        respondingToEventId: event.eventId,
+                    },
+                }),
+            ).unwrap()
+        } catch (error) {
+            log.error('Failed to send form response', error)
+        }
+    }
+    const onButtonPressed = async () => {
+        try {
+            await dispatch(
+                sendMatrixFormResponse({
+                    roomId: event.roomId,
+                    formResponse: {
+                        responseType: type,
+                        responseValue: value || '',
+                        responseBody: body,
+                        responseI18nKey: i18nKeyLabel,
+                        respondingToEventId: event.eventId,
+                    },
+                }),
+            ).unwrap()
+        } catch (error) {
+            log.error('Failed to send form response', error)
+        }
+    }
+
+    // if we're the sender, just show a message that we responded, no special action UI
+    // otherwise, render buttons / options for the user to interact with the form
+    if (isSentByMe) {
+        // if this is a response we sent, use the formResponse to get the text to display
+        if (formResponse) {
+            // if we have the i18n key, use it, otherwise use the body
+            const { responseBody, responseI18nKey } = formResponse
+            const responseText = getLocalizedTextWithFallback(
+                t,
+                responseI18nKey,
+                responseBody,
+            )
+            messageText = t('feature.communities.you-responded', {
+                response: responseText,
+            })
+        } else {
+            messageText = t('feature.communities.you-responded', {
+                response: messageText,
+            })
+        }
+    } else {
+        // show options with localized strings if we have them
+        if (type === 'radio' && formOptions && formOptions.length > 0) {
+            formOptions.forEach(option => {
+                if (option.value) {
+                    const label = getLocalizedTextWithFallback(
+                        t,
+                        option.i18nKeyLabel,
+                        option.label,
+                    )
+                    options.push({
+                        label,
+                        handler: () => onSelectOption(option),
+                    })
+                }
+            })
+        } else if (type === 'button') {
+            // show a single button to return the body as the value, no additional text
+            messageText = ''
+            const label = getLocalizedTextWithFallback(t, i18nKeyLabel, body)
+            actionButton = {
+                label,
+                handler: () => onButtonPressed(),
+            }
+        } else if (type === 'text') {
+            // no-op, for now we just let the user respond with text via the normal chat input
+        }
+    }
+
+    // TODO: FederationSetupComplete text, invite code with copy button, join button, guardian UI link + password
+
+    return {
+        isSentByMe,
+        messageText,
+        actionButton,
+        options,
     }
 }
 

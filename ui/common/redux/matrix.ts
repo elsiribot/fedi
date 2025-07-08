@@ -85,6 +85,7 @@ import {
     mxcUrlToHttpUrl,
     shouldShowUnreadIndicator,
     isMultispendFinancialTransaction,
+    MatrixFormResponse,
 } from '../utils/matrix'
 import { applyObservableUpdates } from '../utils/observable'
 import { isBolt11 } from '../utils/parser'
@@ -1054,6 +1055,36 @@ export const sendMatrixDirectMessage = createAsyncThunk<
         body: body,
     })
 })
+
+export const sendMatrixFormResponse = createAsyncThunk<
+    void,
+    {
+        roomId: MatrixRoom['id']
+        formResponse: MatrixFormResponse
+    },
+    { state: CommonState }
+>(
+    'matrix/sendMatrixFormResponse',
+    async ({ roomId, formResponse }, { getState }) => {
+        const state = getState()
+        const matrixAuth = selectMatrixAuth(state)
+        if (!matrixAuth) throw new Error('Not authenticated')
+
+        // body MUST contain the exact string value guardianito expects or it will be ignored
+        const { responseValue } = formResponse
+        const body = responseValue.toString()
+        log.debug(
+            `sendMatrixFormResponse to room ${roomId} with body ${body} and formResponse ${JSON.stringify(formResponse)}`,
+        )
+
+        const client = getMatrixClient()
+        await client.sendMessage(roomId, {
+            msgtype: 'xyz.fedi.form',
+            body,
+            formResponse,
+        })
+    },
+)
 
 export const sendMatrixPaymentPush = createAsyncThunk<
     string,

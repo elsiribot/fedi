@@ -42,8 +42,10 @@ import {
 } from '../types/bindings'
 import {
     DisplayNameValidatorType,
+    SetDisplayNameValidatorType,
     generateRandomDisplayName,
     getDisplayNameValidator,
+    setDisplayNameValidator,
 } from './chat'
 import { FedimintBridge, UnsubscribeFn } from './fedimint'
 import { makeLog } from './log'
@@ -147,7 +149,8 @@ export class MatrixChatClient {
     > = {}
     private roomListUnsubscribe: UnsubscribeFn | undefined = undefined
     private syncStatusUnsubscribe: UnsubscribeFn | undefined = undefined
-    private displayNameValidator: DisplayNameValidatorType | undefined
+    private getDisplayNameValidator: DisplayNameValidatorType | undefined
+    private setDisplayNameValidator: SetDisplayNameValidatorType | undefined
 
     /*** Public methods ***/
 
@@ -157,8 +160,11 @@ export class MatrixChatClient {
         }
         this.hasStarted = true
         this.fedimint = fedimint
-        if (!this.displayNameValidator) {
-            this.displayNameValidator = getDisplayNameValidator()
+        if (!this.getDisplayNameValidator) {
+            this.getDisplayNameValidator = getDisplayNameValidator()
+        }
+        if (!this.setDisplayNameValidator) {
+            this.setDisplayNameValidator = setDisplayNameValidator()
         }
 
         this.startPromise = new Promise((resolve, reject) => {
@@ -461,7 +467,8 @@ export class MatrixChatClient {
 
     async setDisplayName(displayName: string) {
         await this.fedimint.matrixSetDisplayName({
-            displayName: this.ensureDisplayName(displayName) ?? displayName,
+            displayName:
+                this.ensureDisplayName(displayName, 'set') ?? displayName,
         })
     }
 
@@ -1200,10 +1207,17 @@ export class MatrixChatClient {
     }
 
     // Ref: https://github.com/fedibtc/fedi/issues/1184#issuecomment-2137529842
-    private ensureDisplayName = (name: string | null) => {
+    private ensureDisplayName = (
+        name: string | null,
+        mode: 'get' | 'set' = 'get',
+    ) => {
         if (!name) return ''
-        if (!this.displayNameValidator) return name
-        const res = this.displayNameValidator.safeParse(name)
+        const validator =
+            mode === 'get'
+                ? this.getDisplayNameValidator
+                : this.setDisplayNameValidator
+        if (!validator) return name
+        const res = validator.safeParse(name)
         if (res.success) return name
         // TODO: figure out efficient way to localize this.
         // What's a place this can live such that locales are accessible?
