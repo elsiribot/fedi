@@ -349,6 +349,7 @@ in
 
       # Set up Android environment variables
       ANDROID_SDK_ROOT = "${androidSdk}/share/android-sdk";
+      FEDIMINT_BUILD_FORCE_GIT_HASH = gitHashPlaceholderValue;
 
       buildPhaseCargoCommand = ''
 
@@ -378,6 +379,7 @@ in
 
         # Set up Android environment variables
         ANDROID_SDK_ROOT = "${androidSdk}/share/android-sdk";
+        FEDIMINT_BUILD_FORCE_GIT_HASH = gitHashPlaceholderValue;
 
         buildPhaseCargoCommand = ''
           mkdir -p scripts/bridge
