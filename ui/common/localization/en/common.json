@@ -879,7 +879,7 @@
             "receive-guidance-title-3": "Transaction size limit",
             "receive-guidance-subtitle-3": "Keep it under 40 KB.",
             "receive-to": "Receive to",
-            "redeem-lnurl-withdraw": "Redeem LNURL withdraw",
+            "redeem-lnurl-withdraw": "Redeem LNURL withdrawal",
             "reject-payment": "Reject payment",
             "request-bitcoin": "Request bitcoin",
             "request-sats": "Request {{amount}} SATS",
