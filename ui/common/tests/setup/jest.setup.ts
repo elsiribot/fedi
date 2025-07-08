@@ -23,6 +23,15 @@ jest.mock('@fedi/common/utils/log', () => ({
     exportLegacyUiLogs: jest.fn().mockResolvedValue(''),
 }))
 
+// Mock react-i18next translation hook
+// TODO: consider adding the option to return the actual localized strings? or at least dedicate a test suite for it
+export const mockUseTranslation = () => ({
+    t: ((i18nKey: string) => i18nKey) as TFunction,
+})
+jest.mock('react-i18next', () => ({
+    useTranslation: mockUseTranslation,
+}))
+
 // Mock Redux hooks, actions, and selectors
 jest.mock('@fedi/common/hooks/redux', () => ({
     useCommonSelector: jest.fn(),

@@ -1,6 +1,7 @@
 import {
     MatrixEvent,
     MatrixEventStatus,
+    MatrixFormEvent,
     MatrixPaymentEvent,
     MatrixPaymentStatus,
 } from '@fedi/common/types'
@@ -23,12 +24,15 @@ function makeEventWithOverrides<T extends { content: any }>(
 
 // Base mock event with common fields
 const MOCK_EVENT = {
-    id: 'event123',
-    roomId: 'room123',
-    senderId: 'npub1user123',
-    timestamp: Date.now(),
+    id: '14',
+    eventId: '$lZ5PilJSxLL_OBo0_bZuva7Z-Wnw-tMN9Um1DBpw0Yk',
+    roomId: '!tErPyFRkaElRGYRAyQ:m1.8fa.in',
+    senderId:
+        '@npub1rvlu99xmn62wn5neseg3dayjp857tzu6yeefnwr4ctrqkn5h08wqttl4ja:m1.8fa.in',
+    timestamp: 1750083034389,
     status: MatrixEventStatus.sent,
     error: null,
+    txnId: undefined,
 }
 
 // Mock event factories
@@ -60,6 +64,19 @@ const MOCK_NON_PAYMENT_EVENT = {
     },
 }
 
+export const MOCK_FORM_EVENT: MatrixEvent<
+    MatrixEventContentType<'xyz.fedi.form'>
+> = {
+    ...MOCK_EVENT,
+    content: {
+        msgtype: 'xyz.fedi.form',
+        body: 'Accept Terms',
+        i18nKeyLabel: 'phrases.accept-terms',
+        type: 'button',
+        value: 'yes',
+    },
+}
+
 export const createMockPaymentEvent = (
     overrides: any = {},
 ): MatrixPaymentEvent => {
@@ -68,6 +85,10 @@ export const createMockPaymentEvent = (
 
 export const createMockNonPaymentEvent = (overrides: any = {}) => {
     return makeEventWithOverrides(MOCK_NON_PAYMENT_EVENT, overrides)
+}
+
+export const createMockFormEvent = (overrides: any = {}): MatrixFormEvent => {
+    return makeEventWithOverrides(MOCK_FORM_EVENT, overrides)
 }
 
 export const mockMatrixEventImage: MatrixEvent<
