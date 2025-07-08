@@ -64,15 +64,15 @@ export const AssetsList: React.FC<Props> = ({
 
     return (
         <Flex row gap="lg" wrap>
-            {attachmentListItems.map(({ asset, isLoading }) =>
+            {attachmentListItems.map(({ asset, isLoading, id }) =>
                 isLoading ? (
-                    <View key={asset.uri} style={style.asset}>
+                    <View key={`loading-${id}`} style={style.asset}>
                         <Flex center style={style.preview}>
                             <ActivityIndicator />
                         </Flex>
                     </View>
                 ) : (
-                    <View key={asset.uri} style={style.asset}>
+                    <View key={`loaded-${id}`} style={style.asset}>
                         {asset.type?.startsWith('image') ? (
                             <Image
                                 source={{

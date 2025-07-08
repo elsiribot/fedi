@@ -187,10 +187,10 @@ const MessageInput: React.FC<MessageInputProps> = ({
         setIsUploadingMedia(true)
         tryPickAssets(imageOptions, t)
             .match(
-                async assets => {
+                assets => {
                     setMediaPendingUpload(assets)
 
-                    await Promise.all(
+                    Promise.allSettled(
                         assets.map(asset =>
                             copyAssetToTempUri(asset).map(uri => {
                                 setMediaPendingUpload(pending =>

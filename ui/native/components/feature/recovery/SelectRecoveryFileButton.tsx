@@ -27,9 +27,14 @@ const SelectRecoveryFileButton: React.FC = () => {
 
     const openFileExplorer = async () => {
         try {
-            const [response] = await DocumentPicker.pick({
+            const responses = await DocumentPicker.pick({
                 type: types.allFiles,
             })
+            const response = responses[0]
+
+            if (!response) {
+                return
+            }
 
             setValidationInProgress(true)
             setResult(response)
