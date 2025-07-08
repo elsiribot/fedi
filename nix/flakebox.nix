@@ -366,7 +366,7 @@ in
       '';
     };
 
-    fedi-android-bridge-libs = toolchains."all".craneLib.mkCargoDerivation (
+    fedi-android-bridge-libs-raw = toolchains."all".craneLib.mkCargoDerivation (
       {
         pname = "fedi-android-bridge-libs";
         version = "0.1.0";
@@ -396,6 +396,11 @@ in
       }
       // commonEnvsShell
     );
+
+    fedi-android-bridge-libs = replaceGitHash {
+      name = "fedi-android-bridge-libs";
+      package = fedi-android-bridge-libs-raw;
+    };
 
     testStabilityPool = craneLib.buildCommand (
       commonTestArgs
