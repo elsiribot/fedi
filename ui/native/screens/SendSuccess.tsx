@@ -54,6 +54,8 @@ const SendSuccess: React.FC<Props> = ({ route }: Props) => {
                                 willShowRateFederation
                             ) {
                                 setShowRateFederation(true)
+                            } else {
+                                navigation.navigate('TabsNavigator')
                             }
                         }}
                     />
