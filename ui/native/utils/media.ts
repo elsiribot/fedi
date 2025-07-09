@@ -72,13 +72,19 @@ export function copyDocumentToTempUri({
             ),
         )
 
-    const { path, uri } = makeRandomTempFilePath(name)
+    const { dirPath, path, uri } = makeRandomTempFilePath(name)
 
     if (document.uri.startsWith('content://')) {
         return ResultAsync.fromPromise(
-            RNFS.readFile(document.uri, 'base64'),
+            RNFS.mkdir(dirPath),
             tryTag('GenericError'),
         )
+            .andThen(() =>
+                ResultAsync.fromPromise(
+                    RNFS.readFile(document.uri, 'base64'),
+                    tryTag('GenericError'),
+                ),
+            )
             .andThen(inputStream =>
                 ResultAsync.fromPromise(
                     RNFS.writeFile(path, inputStream, 'base64'),
