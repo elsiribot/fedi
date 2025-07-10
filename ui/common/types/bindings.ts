@@ -160,6 +160,12 @@ export type FeatureCatalog = {
    * multiple devices using the same seed.
    */
   device_registration: DeviceRegistrationFeatureConfig;
+  /**
+   * Matrix server configuration for chat functionality.
+   * This allows different matrix servers to be used based on the runtime
+   * environment.
+   */
+  matrix: MatrixFeatureConfig;
 };
 
 export type FiatFXInfo = {
@@ -211,6 +217,8 @@ export type GuardianStatus =
   | { timeout: { guardian: string; elapsed: string } };
 
 export type LogEvent = { log: string };
+
+export type MatrixFeatureConfig = { home_server: string };
 
 export type MatrixInitializeStatus =
   | { type: "starting" }
@@ -396,7 +404,8 @@ export type RpcAmount = MSats;
 export type RpcAppFlavor =
   | { type: "dev" }
   | { type: "nightly" }
-  | { type: "bravo" };
+  | { type: "bravo" }
+  | { type: "tests" };
 
 export type RpcBackPaginationStatus =
   | "idle"

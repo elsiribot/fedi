@@ -70,6 +70,11 @@ pub struct FeatureCatalog {
     /// Fedi's backend. This service helps coordinate device indices across
     /// multiple devices using the same seed.
     pub device_registration: DeviceRegistrationFeatureConfig,
+
+    /// Matrix server configuration for chat functionality.
+    /// This allows different matrix servers to be used based on the runtime
+    /// environment.
+    pub matrix: MatrixFeatureConfig,
 }
 
 #[derive(Debug, Clone, TS, Serialize)]
@@ -95,6 +100,12 @@ pub struct DeviceRegistrationFeatureConfig {
     pub service_url: String,
 }
 
+#[derive(Debug, Clone, TS, Serialize)]
+#[ts(export)]
+pub struct MatrixFeatureConfig {
+    pub home_server: String,
+}
+
 impl FeatureCatalog {
     pub fn new(runtime_env: RuntimeEnvironment) -> Self {
         match runtime_env {
@@ -117,6 +128,9 @@ impl FeatureCatalog {
             device_registration: DeviceRegistrationFeatureConfig {
                 service_url: "https://staging-device-control.dev.fedibtc.com/v0".to_string(),
             },
+            matrix: MatrixFeatureConfig {
+                home_server: "https://staging.m1.8fa.in".to_string(),
+            },
         }
     }
 
@@ -131,6 +145,9 @@ impl FeatureCatalog {
             device_registration: DeviceRegistrationFeatureConfig {
                 service_url: "https://staging-device-control.dev.fedibtc.com/v0".to_string(),
             },
+            matrix: MatrixFeatureConfig {
+                home_server: "https://m1.8fa.in".to_string(),
+            },
         }
     }
 
@@ -144,6 +161,9 @@ impl FeatureCatalog {
             }),
             device_registration: DeviceRegistrationFeatureConfig {
                 service_url: "https://prod-device-control.dev.fedibtc.com/v0".to_string(),
+            },
+            matrix: MatrixFeatureConfig {
+                home_server: "https://m1.8fa.in".to_string(),
             },
         }
     }
