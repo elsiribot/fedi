@@ -16,11 +16,12 @@ import {
     setPublicFederations,
     supportsSafeOnchainDeposit,
 } from '../redux'
-import { FederationMetadata, JoinPreview } from '../types'
+import { FederationMetadata, JoinPreview, SupportedMetaFields } from '../types'
 import dateUtils from '../utils/DateUtils'
 import {
     fetchPublicFederations,
     getFederationPopupInfo,
+    getMetaField,
     previewInvite,
     shouldEnableOnchainDeposits,
     shouldEnableStabilityPool,
@@ -116,6 +117,7 @@ export function useIsOnchainDepositSupported(fedimint: FedimintBridge) {
                 const result = await dispatch(
                     supportsSafeOnchainDeposit({ fedimint }),
                 ).unwrap()
+                log.debug('supportsSafeOnchainDeposits result', result)
                 setHasSafeOnchainDeposits(result)
             } catch (error) {
                 log.error(
@@ -133,15 +135,24 @@ export function useIsOnchainDepositSupported(fedimint: FedimintBridge) {
 
     if (!activeFederation) return false
 
+    // Check if onchain deposits are explicitly enabled in metadata
+    const onchainDepositsDisabled = getMetaField(
+        SupportedMetaFields.onchain_deposits_disabled,
+        activeFederation.meta,
+    )
+    const isExplicitlyEnabledInMeta = onchainDepositsDisabled === 'false'
+
     log.debug(
         `checking onchain deposit support for ${activeFederation.name}\n`,
         `dev setting enabled: ${userEnabledOnchainDeposits}\n`,
+        `metadata explicitly enabled: ${isExplicitlyEnabledInMeta}\n`,
         `metadata enabled: ${shouldEnableOnchainDeposits(activeFederation.meta)}\n`,
         `supports safe onchain deposits: ${hasSafeOnchainDeposits}`,
     )
 
     return (
         userEnabledOnchainDeposits ||
+        isExplicitlyEnabledInMeta ||
         (shouldEnableOnchainDeposits(activeFederation.meta) &&
             hasSafeOnchainDeposits)
     )

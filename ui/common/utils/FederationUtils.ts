@@ -230,7 +230,7 @@ export const fetchPublicFederations = async (): Promise<PublicFederation[]> => {
     return publicFederations
 }
 
-const getMetaField = (
+export const getMetaField = (
     field: SupportedMetaFields | 'sites' | 'fedimods' | 'default_group_chats',
     metadata: FederationMetadata,
 ): string | null => {
