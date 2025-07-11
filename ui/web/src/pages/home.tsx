@@ -12,6 +12,7 @@ import { useNuxStep } from '@fedi/common/hooks/nux'
 import {
     selectActiveFederation,
     selectActiveFederationChats,
+    selectIsActiveFederationRecovering,
     selectMatrixAuth,
     selectActiveFederationHasWallet,
 } from '@fedi/common/redux'
@@ -30,6 +31,7 @@ import { Icon } from '../components/Icon'
 import { InstallBanner } from '../components/InstallBanner'
 import * as Layout from '../components/Layout'
 import { Modal } from '../components/Modal'
+import { RecoveryInProgress } from '../components/RecoveryInProgress'
 import { Text } from '../components/Text'
 import {
     useAppSelector,
@@ -58,6 +60,9 @@ function HomePage() {
         await deferredPrompt?.prompt()
     }
 
+    const recoveryInProgress = useAppSelector(
+        selectIsActiveFederationRecovering,
+    )
     const mods = useAppSelector(selectVisibleCommunityMods)
     const coreMods = useAppSelector(selectCoreMods)
     const matrixAuth = useAppSelector(selectMatrixAuth)
@@ -80,7 +85,15 @@ function HomePage() {
                     <Content>
                         {showFederation && (
                             <Section>
-                                <BitcoinWallet />
+                                {recoveryInProgress ? (
+                                    <RecoveryInProgress
+                                        label={t(
+                                            'feature.recovery.recovery-in-progress-balance',
+                                        )}
+                                    />
+                                ) : (
+                                    <BitcoinWallet />
+                                )}
                             </Section>
                         )}
 

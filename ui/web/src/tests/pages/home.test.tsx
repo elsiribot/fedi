@@ -78,35 +78,75 @@ describe('/pages/home', () => {
         })
 
         describe('when the user is part of a federation', () => {
-            it('should render the Bitcoin Wallet and page titles', () => {
-                renderWithProviders(<HomePage />, {
-                    preloadedState: {
-                        federation: {
-                            ...state.federation,
-                            federations: [mockFederation1],
-                            activeFederationId: '1',
-                            defaultCommunityChats: {
-                                '1': [
-                                    {
-                                        id: 'chat-id',
-                                        name: 'name',
-                                        notificationCount: 1,
-                                        inviteCode: 'invite-code',
-                                        roomState: 'Joined',
-                                    },
-                                ],
+            describe('when the active federation is recovering', () => {
+                it('should render the RecoveryInProgress component and not the Bitcoin Wallet', () => {
+                    const recoveringFederation = {
+                        ...mockFederation1,
+                        recovering: true,
+                    }
+
+                    renderWithProviders(<HomePage />, {
+                        preloadedState: {
+                            federation: {
+                                ...state.federation,
+                                federations: [recoveringFederation],
+                                activeFederationId: '1',
+                                defaultCommunityChats: {
+                                    '1': [
+                                        {
+                                            id: 'chat-id',
+                                            name: 'name',
+                                            notificationCount: 1,
+                                            inviteCode: 'invite-code',
+                                            roomState: 'Joined',
+                                        },
+                                    ],
+                                },
                             },
                         },
-                    },
+                    })
+
+                    const wallet = screen.queryByTestId('bitcoin-wallet')
+                    const recoveryInProgress = screen.getByLabelText(
+                        'recovery-in-progress',
+                    )
+
+                    expect(wallet).not.toBeInTheDocument()
+                    expect(recoveryInProgress).toBeInTheDocument()
                 })
+            })
 
-                const wallet = screen.getByTestId('bitcoin-wallet')
-                const title1 = screen.getByText('Federation News')
-                const title2 = screen.getByText('Federation Mods')
+            describe('when the active federation is not recovering', () => {
+                it('should render the Bitcoin Wallet and page titles', () => {
+                    renderWithProviders(<HomePage />, {
+                        preloadedState: {
+                            federation: {
+                                ...state.federation,
+                                federations: [mockFederation1],
+                                activeFederationId: '1',
+                                defaultCommunityChats: {
+                                    '1': [
+                                        {
+                                            id: 'chat-id',
+                                            name: 'name',
+                                            notificationCount: 1,
+                                            inviteCode: 'invite-code',
+                                            roomState: 'Joined',
+                                        },
+                                    ],
+                                },
+                            },
+                        },
+                    })
 
-                expect(wallet).toBeInTheDocument()
-                expect(title1).toBeInTheDocument()
-                expect(title2).toBeInTheDocument()
+                    const wallet = screen.getByTestId('bitcoin-wallet')
+                    const title1 = screen.getByText('Federation News')
+                    const title2 = screen.getByText('Federation Mods')
+
+                    expect(wallet).toBeInTheDocument()
+                    expect(title1).toBeInTheDocument()
+                    expect(title2).toBeInTheDocument()
+                })
             })
         })
 
