@@ -367,14 +367,6 @@ export const selectPwaVersion = (s: CommonState) => s.environment.pwaVersion
 
 export const selectFeatureFlags = (s: CommonState) => s.environment.featureFlags
 
-export const selectIsMultispendFeatureEnabled = ({
-    environment: { featureFlags },
-}: CommonState) => {
-    return Boolean(
-        featureFlags && featureFlags.stability_pool_v2?.state === 'Multispend',
-    )
-}
-
 export const selectIsNostrClientEnabled = ({
     environment: { featureFlags },
 }: CommonState) => {

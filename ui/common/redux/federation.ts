@@ -13,7 +13,6 @@ import {
     previewCommunityDefaultChats,
     previewGlobalDefaultChats,
     selectIsInternetUnreachable,
-    selectIsMultispendFeatureEnabled,
 } from '.'
 import { FEDI_GLOBAL_COMMUNITY } from '../constants/community'
 import {
@@ -1073,10 +1072,9 @@ export const selectDoesFederationHaveMultispend = (
 }
 
 export const selectShouldShowMultispend = createSelector(
-    (s: CommonState) => selectIsMultispendFeatureEnabled(s),
     (s: CommonState) => selectDoesAnyFederationHaveMultispend(s),
-    (isMultispendEnabled, doesAnyFederationHaveMultispend) => {
-        return isMultispendEnabled && doesAnyFederationHaveMultispend
+    doesAnyFederationHaveMultispend => {
+        return doesAnyFederationHaveMultispend
     },
 )
 

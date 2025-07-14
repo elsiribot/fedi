@@ -1875,10 +1875,7 @@ async fn matrixMultispendAccountInfo(
         .get_multispend_finalized_group(room_id.clone())
         .await?
         .context("multispend group not finalized yet")?;
-    let fed = bridge
-        .federations
-        .get_federation(&finalized_group.federation_id.0)?;
-    fed.ensure_multispend_feature()?;
+
     let room_id = room_id.into_typed()?;
     let federation_provider = Arc::new(FederationProviderWrapper(bridge.federations.clone()));
     multispend_matrix

@@ -146,23 +146,6 @@ export type FeatureCatalog = {
   encrypted_sync: EncryptedSyncFeatureConfig | null;
   override_localhost: OverrideLocalhostFeatureConfig | null;
   /**
-   * Enables stability pool v2 module, which also powers the multispend
-   * feature. This feature is to be thought of as a tri-state enum
-   * representing 3 scenarios.
-   * 1. None: both stability pool v2 (and multispend feature) disabled
-   * 2. Some(SpV2Only): use stability pool v2, but multispend disabled
-   * 3. Some(Multispend): use stability pool and multispend enabled
-   *
-   * This is a global, bridge-level configuration. Actual availability of the
-   * feature is on a per-federation basis, depending on whether or not
-   * the new module is available in the federation. Note however, that
-   * the feature flag takes precedence. If the feature flag is disabled,
-   * the feature is never available. If the feature flag is enabled, then
-   * the federation's module availability determines the availability of
-   * the feature.
-   */
-  stability_pool_v2: StabilityPoolV2FeatureConfig | null;
-  /**
    * Enable Nostr client for Rate federation feature.
    *
    * This allows relays to be configured using a remote feature flag service
@@ -1387,12 +1370,6 @@ export type StabilityPoolDepositState =
  * claimed back as e-cash.
  */
 export type StabilityPoolUnfilledDepositSweptEvent = { amount: RpcAmount };
-
-export type StabilityPoolV2FeatureConfig = {
-  state: StabilityPoolV2FeatureConfigState;
-};
-
-export type StabilityPoolV2FeatureConfigState = "SpV2Only" | "Multispend";
 
 export type StabilityPoolWithdrawalEvent = {
   federationId: RpcFederationId;
