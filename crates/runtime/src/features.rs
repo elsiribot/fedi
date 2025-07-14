@@ -81,9 +81,6 @@ pub struct FeatureCatalog {
     /// This allows relays to be configured using a remote feature flag service
     /// in future.
     pub nostr_client: Option<NostrClientFeatureCatalog>,
-    /// figure out stable format for account id, that includes the federation id
-    /// prefix
-    pub spv2_stable_account_id: bool,
 }
 
 #[derive(Debug, Clone, TS, Serialize)]
@@ -138,7 +135,6 @@ impl FeatureCatalog {
             nostr_client: Some(NostrClientFeatureCatalog {
                 relays: vec![Url::parse("wss://nostr-rs-relay.dev.fedibtc.com").unwrap()],
             }),
-            spv2_stable_account_id: true,
         }
     }
 
@@ -151,7 +147,6 @@ impl FeatureCatalog {
                 state: StabilityPoolV2FeatureConfigState::Multispend,
             }),
             nostr_client: None,
-            spv2_stable_account_id: false,
         }
     }
 
@@ -164,7 +159,6 @@ impl FeatureCatalog {
                 state: StabilityPoolV2FeatureConfigState::Multispend,
             }),
             nostr_client: None,
-            spv2_stable_account_id: false,
         }
     }
 }
