@@ -352,6 +352,11 @@ export type ObservableVecUpdate<T> = ObservableUpdate<
   Array<SerdeVectorDiff<T>>
 >;
 
+/**
+ * Tracks how a user completed their onboarding process
+ */
+export type OnboardingMethod = "new_seed" | "restored";
+
 export type OverrideLocalhostFeatureConfig = Record<string, never>;
 
 export type PanicEvent = { message: string };
@@ -399,7 +404,7 @@ export type RpcBitcoinNetwork =
   | "unknown";
 
 export type RpcBridgeStatus =
-  | { type: "onboarded" }
+  | { type: "onboarded"; onboarding_method: OnboardingMethod | null }
   | { type: "onboarding"; stage: RpcOnboardingStage }
   | { type: "offboarding"; reason: BridgeOffboardingReason };
 
