@@ -73,7 +73,7 @@ const MultispendWalletHeader: React.FC<Props> = ({ roomId }) => {
 
     const actionButtons = (
         <>
-            {isActive && canVote ? (
+            {isActive && (canVote || isProposer) ? (
                 <Pressable onPress={() => setIsConfirmingAbort(true)}>
                     <Text color={theme.colors.red} medium>
                         {t(isProposer ? 'words.abort' : 'words.reject')}

@@ -22,7 +22,6 @@ const MultispendActiveInvitation: React.FC<{
         handleAcceptMultispend,
         joinBeforeAcceptContents,
         canVote,
-        isProposer,
     } = useMultispendVoting({
         t,
         fedimint,
@@ -37,7 +36,7 @@ const MultispendActiveInvitation: React.FC<{
     return (
         <SafeAreaContainer edges="bottom">
             <GroupVoters roomId={roomId} />
-            {canVote && !isProposer && (
+            {canVote && (
                 <Flex gap="md" style={{ paddingHorizontal: theme.spacing.md }}>
                     <Button
                         disabled={isLoading}
