@@ -82,9 +82,9 @@ export class JoinLeaveFederation extends AppiumTestBase {
         await this.dismissAlert('No')
         await this.driver
             .action('pointer')
-            .move({ duration: 0, x: 13, y: 60 })
+            .move({ duration: 0, x: 13, y: 240 })
             .down({ button: 0 })
-            .move({ duration: 1000, x: 13, y: 100 })
+            .move({ duration: 1000, x: 13, y: 280 })
             .up({ button: 0 })
             .perform()
         if (
