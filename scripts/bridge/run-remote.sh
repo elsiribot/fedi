@@ -3,7 +3,7 @@
 # exit on failure
 set -e
 
-if [ -z "$FEDI_BRIDGE_REMOTE" ]
+if [ -n "$FEDI_DISABLE_REMOTE_BRIDGE" ]
 then
   exit 0
 fi
