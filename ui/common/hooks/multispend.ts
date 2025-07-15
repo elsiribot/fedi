@@ -82,9 +82,7 @@ export function useMultispendVoting({
             Object.keys(multispendStatus.state.pubkeys).includes(myId),
     )
 
-    const canVote =
-        (!hasApproved && !hasRejected && myMultispendRole === 'voter') ||
-        myMultispendRole === 'proposer'
+    const canVote = !hasApproved && !hasRejected && myMultispendRole === 'voter'
 
     const handleAbortMultispend = async () => {
         if (!isProposer) return
@@ -352,6 +350,11 @@ export function useMultispendWithdrawalRequests({
     const roomMembers = useCommonSelector(s =>
         selectMatrixRoomMembers(s, roomId),
     )
+    const myMultispendRole = useCommonSelector(s =>
+        selectMyMultispendRole(s, roomId),
+    )
+    const canVoteOnWithdrawals =
+        myMultispendRole === 'voter' || myMultispendRole === 'proposer'
 
     const withdrawalRequests = transactions.filter(
         (txn): txn is MultispendWithdrawalEvent => txn.state === 'withdrawal',
@@ -538,6 +541,7 @@ export function useMultispendWithdrawalRequests({
         getWithdrawalRequest,
         handleRejectRequest,
         handleApproveRequest,
+        canVoteOnWithdrawals,
     }
 }
 
