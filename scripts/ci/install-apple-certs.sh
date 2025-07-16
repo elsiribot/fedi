@@ -3,6 +3,8 @@
 set -e
 REPO_ROOT=$(git rev-parse --show-toplevel)
 
+$REPO_ROOT/scripts/enforce-nix.sh
+
 # this script is used to download the Apple certificates required
 # for Apple App Store deployments and install into the keychain used
 # by the Mac OS runner for CI which is assumed to be the default System.keychain
