@@ -1,5 +1,10 @@
 import NetInfo from '@react-native-community/netinfo'
-import { configureStore, ThunkDispatch, UnknownAction } from '@reduxjs/toolkit'
+import {
+    combineReducers,
+    configureStore,
+    ThunkDispatch,
+    UnknownAction,
+} from '@reduxjs/toolkit'
 import debounce from 'lodash/debounce'
 import { AppState as RNAppState } from 'react-native'
 
@@ -22,14 +27,20 @@ import { storage } from '../utils/storage'
 
 const log = makeLog('native/state/store')
 
-export const store = configureStore({
-    // @ts-expect-error - TODO: investigate how to type this properly
-    middleware: commonMiddleware,
-    reducer: {
-        ...commonReducers,
-    },
-})
+const rootReducer = combineReducers({ ...commonReducers })
 
+export const setupStore = (preloadedState?: Partial<RootState>) => {
+    return configureStore({
+        // @ts-expect-error - TODO: investigate how to type this properly
+        middleware: commonMiddleware,
+        reducer: rootReducer,
+        preloadedState,
+    })
+}
+
+export const store = setupStore()
+
+export type RootState = ReturnType<typeof rootReducer>
 export type AppStore = typeof store
 export type AppState = ReturnType<typeof store.getState>
 export type AppDispatch = typeof store.dispatch &
