@@ -1,11 +1,15 @@
 import {
+    fedimint,
     initializeBridge as initializeBridgeRemote,
     subscribeToBridgeEvents,
 } from '@fedi/common/utils/remote-bridge'
 
-export { fedimint } from '@fedi/common/utils/remote-bridge'
+export { fedimint }
 
 export async function initializeBridge(deviceId: string) {
+    // accessible in console
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    ;(globalThis as any).fedimint = fedimint
     await initializeBridgeRemote(deviceId)
     await subscribeToBridgeEvents()
 }
