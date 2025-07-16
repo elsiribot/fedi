@@ -1751,7 +1751,7 @@ async fn matrixSaveComposerDraft(
 ) -> anyhow::Result<()> {
     let matrix = bg_matrix.wait().await;
     let room = matrix.room(&room_id.into_typed()?).await?;
-    room.save_composer_draft(draft.to_sdk()?).await?;
+    room.save_composer_draft(draft.to_sdk()?, None).await?;
     Ok(())
 }
 
@@ -1762,7 +1762,7 @@ async fn matrixLoadComposerDraft(
 ) -> anyhow::Result<Option<RpcComposerDraft>> {
     let matrix = bg_matrix.wait().await;
     let room = matrix.room(&room_id.into_typed()?).await?;
-    let draft = room.load_composer_draft().await?;
+    let draft = room.load_composer_draft(None).await?;
     Ok(draft.map(RpcComposerDraft::from_sdk))
 }
 
@@ -1770,7 +1770,7 @@ async fn matrixLoadComposerDraft(
 async fn matrixClearComposerDraft(bg_matrix: &BgMatrix, room_id: RpcRoomId) -> anyhow::Result<()> {
     let matrix = bg_matrix.wait().await;
     let room = matrix.room(&room_id.into_typed()?).await?;
-    room.clear_composer_draft().await?;
+    room.clear_composer_draft(None).await?;
     Ok(())
 }
 
