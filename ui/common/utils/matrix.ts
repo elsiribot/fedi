@@ -74,7 +74,7 @@ export const mxcUrlToHttpUrl = (
     url.pathname = `/_matrix/media/r0/thumbnail/${serverName}/${mediaId}`
     if (width) url.searchParams.set('width', width.toString())
     if (height) url.searchParams.set('height', height.toString())
-    if (method) url.searchParams.set('method', method)
+    url.searchParams.set('method', method)
     return url.toString()
 }
 

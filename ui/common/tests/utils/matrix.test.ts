@@ -1,3 +1,6 @@
+import assert from 'assert'
+
+import { GLOBAL_MATRIX_SERVER } from '../../constants/matrix'
 import { MatrixEvent, MatrixEventStatus } from '../../types'
 import {
     decodeFediMatrixUserUri,
@@ -9,6 +12,8 @@ import {
     findUserDisplayName,
     getUserSuffix,
     makeNameWithSuffix,
+    mxcUrlToHttpUrl,
+    mxcHttpUrlToDownloadUrl,
 } from '../../utils/matrix'
 
 describe('encodeFediMatrixUserUri', () => {
@@ -240,5 +245,48 @@ describe('User display name and suffix functions', () => {
             expect(bobMakeResult).toContain(bobDirectSuffix)
             expect(bobFindResult).toContain(bobDirectSuffix)
         })
+    })
+})
+
+describe('mxcUrlToHttpUrl', () => {
+    it('converts a mxc url to a http url', () => {
+        expect(mxcUrlToHttpUrl('mxc://example.com/123', 100, 100)).toBe(
+            `${GLOBAL_MATRIX_SERVER}/_matrix/media/r0/thumbnail/example.com/123?width=100&height=100&method=crop`,
+        )
+    })
+
+    it('converts and adds &method=crop if the `method` argument is passed with `crop`', () => {
+        expect(mxcUrlToHttpUrl('mxc://example.com/123', 100, 100, 'crop')).toBe(
+            `${GLOBAL_MATRIX_SERVER}/_matrix/media/r0/thumbnail/example.com/123?width=100&height=100&method=crop`,
+        )
+    })
+
+    it('converts and adds &method=scale if the `method` argument is passed with `scale`', () => {
+        expect(
+            mxcUrlToHttpUrl('mxc://example.com/123', 100, 100, 'scale'),
+        ).toBe(
+            `${GLOBAL_MATRIX_SERVER}/_matrix/media/r0/thumbnail/example.com/123?width=100&height=100&method=scale`,
+        )
+    })
+})
+
+describe('mxcHttpUrlToDownloadUrl', () => {
+    it('converts an mxc http url to a download url', () => {
+        const mxcUrl = 'mxc://matrix.server/123'
+        const thumbnailUrl = mxcUrlToHttpUrl(mxcUrl, 100, 100)
+
+        assert(thumbnailUrl)
+
+        const downloadUrl = mxcHttpUrlToDownloadUrl(thumbnailUrl)
+        expect(downloadUrl).toBe(
+            `${GLOBAL_MATRIX_SERVER}/_matrix/media/r0/download/matrix.server/123`,
+        )
+    })
+
+    it('returns the original url if an invalid url is passed in', () => {
+        const thumbnailUrl = 'invalid$url'
+        const downloadUrl = mxcHttpUrlToDownloadUrl(thumbnailUrl)
+
+        expect(downloadUrl).toBe(thumbnailUrl)
     })
 })
