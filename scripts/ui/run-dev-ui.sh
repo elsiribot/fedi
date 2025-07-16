@@ -49,8 +49,8 @@ if [[ "$MODE" == "interactive" ]]; then
     read -p "Use remote bridge? (y/n) " -n 1 -r
     echo
   done
-  if [[ $REPLY =~ ^[Yy]$ ]]; then
-    export FEDI_BRIDGE_REMOTE=1
+  if [[ $REPLY =~ ^[Nn]$ ]]; then
+    export FEDI_DISABLE_REMOTE_BRIDGE=1
   fi
 
   unset REPLY
