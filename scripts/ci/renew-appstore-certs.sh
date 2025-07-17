@@ -3,7 +3,10 @@
 set -e
 REPO_ROOT=$(git rev-parse --show-toplevel)
 
-$REPO_ROOT/scripts/enforce-nix.sh
+if ! command -v fastlane >/dev/null 2>&1; then
+  >&2 echo "Error: fastlane is not installed. Rerun this script in a nix develop shell."
+  exit 1
+fi
 
 # Make sure Apple certificates are installed in the keychain
 # and keychain is unlocked since there are some codesigning steps
