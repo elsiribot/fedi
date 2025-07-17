@@ -39,16 +39,16 @@ if [ -n "${FLAVOR:-}" ]; then
 fi
 
 CHECK_RESULT=0
-fastlane "check_appstore_certs${LANE_SUFFIX}" --verbose || CHECK_RESULT=$?
+nix develop -c fastlane "check_appstore_certs${LANE_SUFFIX}" --verbose || CHECK_RESULT=$?
 
 if [ $CHECK_RESULT -ne 0 ]; then
   echo "Certificate check failed. Attempting to renew certificates..."
   RENEW_RESULT=0
-  fastlane "renew_appstore_certs${LANE_SUFFIX}" --verbose || RENEW_RESULT=$?
+  nix develop -c fastlane "renew_appstore_certs${LANE_SUFFIX}" --verbose || RENEW_RESULT=$?
   if [ $RENEW_RESULT -eq 0 ]; then
     echo "Renewal succeeded. Re-checking certificates..."
     RE_CHECK_RESULT=0
-    fastlane "check_appstore_certs${LANE_SUFFIX}" --verbose || RE_CHECK_RESULT=$?
+    nix develop -c fastlane "check_appstore_certs${LANE_SUFFIX}" --verbose || RE_CHECK_RESULT=$?
     if [ $RE_CHECK_RESULT -ne 0 ]; then
       echo "Certificate check failed after renewal. Exiting."
       exit 1
