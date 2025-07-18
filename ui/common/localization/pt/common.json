@@ -182,7 +182,7 @@
         "federation-rating-very-bad": "Muito ruim",
         "federation-rating-very-good": "Muito boa",
         "fedi-app-terms-of-service": "Termos de Serviço do Aplicativo Fedi",
-        "fedi-fee": "Taxa da Fedi",
+        "fedi-fee": "Taxa (Fedi e Federação)",
         "fedimint-version": "Fedimint {{version}}",
         "fee-details": "Detalhes da taxa",
         "filter-by": "Filtrar por: {{label}}",
