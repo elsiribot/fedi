@@ -5,13 +5,17 @@
 
 use std::collections::hash_map::Entry;
 use std::collections::HashMap;
+use std::iter;
 use std::sync::Arc;
+use std::time::Duration;
 
 use anyhow::Context;
 use async_stream::stream;
 use fedimint_core::db::{DatabaseTransaction, IDatabaseTransactionOpsCoreTyped as _};
-use futures::Stream;
-use matrix_sdk::deserialized_responses::TimelineEvent;
+use fedimint_core::util::backoff_util::background_backoff;
+use futures::{stream, Stream, StreamExt, TryStreamExt};
+use matrix_sdk::crypto::types::events::UtdCause;
+use matrix_sdk::deserialized_responses::{TimelineEvent, TimelineEventKind};
 use matrix_sdk::event_cache::EventCacheError;
 use matrix_sdk::locks::RwLock;
 use matrix_sdk::ruma::events::{
@@ -266,7 +270,8 @@ impl RoomRescannerManager {
         // find all events since our last seen event, first time this will scan the
         // entire* room history.
         // * see hack bellow in all_message_since.
-        let events_to_process = all_message_since(&room, last_scan_event_id).await?;
+        let events_to_process =
+            all_message_since_retry_decryption(&room, last_scan_event_id).await?;
 
         let event_ids_found = events_to_process
             .iter()
@@ -421,6 +426,70 @@ pub async fn all_message_since(
         }
         Ok(loaded_events)
     }
+}
+
+// some times the events arrive before room key to decrypt that event, so we
+// have to wait for room key.
+pub async fn all_message_since_retry_decryption(
+    room: &Room,
+    last_seen_event: Option<RpcEventId>,
+) -> anyhow::Result<Vec<TimelineEvent>> {
+    let events = all_message_since(room, last_seen_event.clone()).await?;
+    let crypto_context_info = room.crypto_context_info().await;
+    let push_ctx = room.push_context().await?;
+    stream::iter(events)
+        .then(|event| async {
+            let mut event = event;
+            // We have infinitely retries because we can't do anything better.
+            // If we skip an event, our state will diverge from other peers.
+            // If we get stuck in a loop, it will be very visible in logs.
+            //
+            // don't sleep first time
+            let mut backoff = iter::once(Duration::ZERO).chain(background_backoff());
+            let mut tries = 0;
+            loop {
+                tries += 1;
+                let TimelineEventKind::UnableToDecrypt {
+                    event: raw_event,
+                    utd_info,
+                } = &event.kind
+                else {
+                    break;
+                };
+                // is this a permanent error? see docs
+                if !utd_info.reason.is_missing_room_key() {
+                    break;
+                }
+                let cause = UtdCause::determine(raw_event, crypto_context_info, utd_info);
+                // if an event was sent before we joined, we will never be able to decrypt it.
+                //
+                // I have seen UtdCause::Unknown and UtdCause::SentBeforeWeJoined
+                // because is_missing_key restricts the UtdReason a lot, only these are
+                // reachable if backup/recovery is setup properly
+                if cause == UtdCause::SentBeforeWeJoined {
+                    break;
+                }
+
+                fedimint_core::task::sleep(backoff.next().expect("unlimited")).await;
+                if tries <= 1 {
+                    debug!(%tries, ?cause, "utd: retrying decryption");
+                } else {
+                    info!(%tries, ?cause, "utd: retrying decryption");
+                }
+
+                event = room
+                    .decrypt_event(raw_event.cast_ref(), push_ctx.as_ref())
+                    .await?;
+            }
+            if tries != 1 {
+                info!("utd: fixed after {tries} tries");
+            }
+            anyhow::Ok(event)
+        })
+        // No need for concurrency, because network side (receiving rooms keys) is happening in
+        // tasks already
+        .try_collect()
+        .await
 }
 
 // event cache error is not send on wasm
