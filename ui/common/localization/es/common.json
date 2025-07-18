@@ -633,8 +633,8 @@
             "chat-events": {
                 "deposit-body": "ha depositado",
                 "invitation-body1": "quiere actualizar este chat a un grupo de Multigastos:",
-                "invitation-body1-bullet1": "• Federación: {{nombre}}",
-                "invitation-body1-bullet2": "• Total de votantes: {{votos}} (se requieren {{threshold}} aprobaciones)",
+                "invitation-body1-bullet1": "• Federación: {{name}}",
+                "invitation-body1-bullet2": "• Total de votantes: {{votes}} (se requieren {{threshold}} aprobaciones)",
                 "invitation-body2": "¿Aceptas esta solicitud?",
                 "invitation-body2-proposer": "⚠️ Recordatorio: Coordina con tus votantes para evitar problemas.",
                 "invitation-failed": "Algunos votantes rechazaron la invitación.",

@@ -633,7 +633,7 @@
             "chat-events": {
                 "deposit-body": "ameweka",
                 "invitation-body1": "inataka kuboresha gumzo hili hadi Kundi la Multispend:",
-                "invitation-body1-bullet1": "• Shirikisho: {{jina}}",
+                "invitation-body1-bullet1": "• Shirikisho: {{name}}",
                 "invitation-body1-bullet2": "• Jumla ya Wapiga Kura: {{votes}} ({{threshold}} uidhinishaji unahitajika)",
                 "invitation-body2": "Je, unakubali ombi hili?",
                 "invitation-body2-proposer": "⚠️ Kikumbusho: Shiriki na wapiga kura wako ili kuepuka matatizo.",
