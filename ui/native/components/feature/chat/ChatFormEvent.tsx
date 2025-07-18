@@ -50,14 +50,14 @@ export const Options = ({ options }: { options: ChatEventAction[] }) => {
 
     return (
         <Flex
-            row
             justify="start"
+            align="start"
             gap="md"
             fullWidth
             style={style.actionButtons}>
             {options.map(option => (
-                <Flex>
-                    <Text medium caption style={style.buttonText}>
+                <Flex row gap="md" align="center" justify="between">
+                    <Text medium caption style={style.optionText}>
                         {option.label}
                     </Text>
                     <Button
@@ -146,6 +146,9 @@ const styles = (theme: Theme) =>
         },
         actionButtons: {
             marginTop: 0,
+        },
+        optionText: {
+            flex: 1,
         },
         greyBubble: {
             backgroundColor: theme.colors.extraLightGrey,
