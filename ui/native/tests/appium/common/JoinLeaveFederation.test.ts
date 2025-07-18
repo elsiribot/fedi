@@ -1,6 +1,6 @@
 /* eslint-disable no-console */
-import { currentPlatform, Platform } from '../../configs/appium/AppiumManager'
 import { AppiumTestBase } from '../../configs/appium/AppiumTestBase'
+import { currentPlatform, Platform } from '../../configs/appium/types'
 
 export class JoinLeaveFederation extends AppiumTestBase {
     async execute(): Promise<void> {
@@ -47,46 +47,12 @@ export class JoinLeaveFederation extends AppiumTestBase {
         await this.clickOnText('Fedi Testnet', 0, true)
         await this.waitForElementDisplayed('FediTestnetSelectorButton')
         await this.clickElementByKey('AvatarButton')
-        await this.driver
-            .action('pointer')
-            .move({ duration: 0, x: 13, y: 470 })
-            .down({ button: 0 })
-            .move({ duration: 1000, x: 13, y: 47 })
-            .up({ button: 0 })
-            .perform()
-        await this.driver
-            .action('pointer')
-            .move({ duration: 0, x: 13, y: 470 })
-            .down({ button: 0 })
-            .move({ duration: 1000, x: 13, y: 47 })
-            .up({ button: 0 })
-            .perform()
-        if (currentPlatform === Platform.ANDROID) {
-            await this.driver
-                .action('pointer')
-                .move({ duration: 0, x: 13, y: 470 })
-                .down({ button: 0 })
-                .move({ duration: 100, x: 13, y: 47 })
-                .up({ button: 0 })
-                .perform()
-        }
+        await this.scrollToElement('BitcoinPrinciplesAccordionButton')
         await this.clickElementByKey('BitcoinPrinciplesAccordionButton')
-        await this.driver
-            .action('pointer')
-            .move({ duration: 0, x: 13, y: 360 })
-            .down({ button: 0 })
-            .move({ duration: 1000, x: 13, y: 60 })
-            .up({ button: 0 })
-            .perform()
+        await this.scrollToElement('Leave Federation')
         await this.clickElementByKey('Leave Federation')
         await this.dismissAlert('No')
-        await this.driver
-            .action('pointer')
-            .move({ duration: 0, x: 13, y: 240 })
-            .down({ button: 0 })
-            .move({ duration: 1000, x: 13, y: 280 })
-            .up({ button: 0 })
-            .perform()
+        await this.scrollToElement('BitcoinPrinciplesAccordionButton')
         if (
             (await this.elementIsDisplayed(
                 'BitcoinPrinciplesAccordionButton',
@@ -146,37 +112,9 @@ export class JoinLeaveFederation extends AppiumTestBase {
         // END of the process of re-joining to a Public Federation with TOS
         await this.clickOnText('E-Cash Club', 0, true)
         await this.clickElementByKey('AvatarButton')
-        await this.driver
-            .action('pointer')
-            .move({ duration: 0, x: 13, y: 470 })
-            .down({ button: 0 })
-            .move({ duration: 1000, x: 13, y: 47 })
-            .up({ button: 0 })
-            .perform()
-        await this.driver
-            .action('pointer')
-            .move({ duration: 0, x: 13, y: 470 })
-            .down({ button: 0 })
-            .move({ duration: 1000, x: 13, y: 47 })
-            .up({ button: 0 })
-            .perform()
-        if (currentPlatform === Platform.ANDROID) {
-            await this.driver
-                .action('pointer')
-                .move({ duration: 0, x: 13, y: 470 })
-                .down({ button: 0 })
-                .move({ duration: 100, x: 13, y: 47 })
-                .up({ button: 0 })
-                .perform()
-        }
+        await this.scrollToElement('E-CashClubAccordionButton')
         await this.clickElementByKey('E-CashClubAccordionButton')
-        await this.driver
-            .action('pointer')
-            .move({ duration: 0, x: 13, y: 360 })
-            .down({ button: 0 })
-            .move({ duration: 1000, x: 13, y: 60 })
-            .up({ button: 0 })
-            .perform()
+        await this.scrollToElement('Leave Federation')
         await this.clickElementByKey('Leave Federation')
         await this.dismissAlert('No')
         if (
