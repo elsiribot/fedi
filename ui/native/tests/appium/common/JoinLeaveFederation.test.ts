@@ -1,6 +1,5 @@
 /* eslint-disable no-console */
 import { AppiumTestBase } from '../../configs/appium/AppiumTestBase'
-import { currentPlatform, Platform } from '../../configs/appium/types'
 
 export class JoinLeaveFederation extends AppiumTestBase {
     async execute(): Promise<void> {
