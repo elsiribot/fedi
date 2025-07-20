@@ -13,6 +13,7 @@ import {
     FeatureCatalog,
     RpcNostrPubkey,
     RpcNostrSecret,
+    OnboardingMethod,
 } from '../types/bindings'
 import { FediModCacheMode } from '../types/fediInternal'
 import { FedimintBridge } from '../utils/fedimint'
@@ -43,6 +44,7 @@ const initialState = {
     featureFlags: undefined as FeatureCatalog | undefined,
     internetUnreachableBadgeShown: false,
     onboardingCompleted: false,
+    onboardingMethod: null as OnboardingMethod | null,
 }
 
 export type EnvironmentState = typeof initialState
@@ -116,6 +118,12 @@ export const environmentSlice = createSlice({
         setOnboardingCompleted(state, action: PayloadAction<boolean>) {
             state.onboardingCompleted = action.payload
         },
+        setOnboardingMethod(
+            state,
+            action: PayloadAction<OnboardingMethod | null>,
+        ) {
+            state.onboardingMethod = action.payload
+        },
     },
     extraReducers: builder => {
         builder.addCase(changeLanguage.fulfilled, (state, action) => {
@@ -169,10 +177,10 @@ export const {
     setFeatureFlags,
     setInternetUnreachableBadgeVisibility,
     setOnboardingCompleted,
+    setOnboardingMethod,
 } = environmentSlice.actions
 
 /*** Async thunk actions ***/
-
 export const refreshOnboardingStatus = createAsyncThunk<
     void,
     FedimintBridge,
@@ -192,6 +200,8 @@ export const refreshOnboardingStatus = createAsyncThunk<
         // matrix to fetch the room previews
         await dispatch(refreshFederations(fedimint)).unwrap()
 
+        // extract and store the onboarding method if user is onboarded
+        await dispatch(setOnboardingMethod(status.onboarding_method))
         // navigate to home
         await dispatch(setOnboardingCompleted(true))
         return
@@ -380,3 +390,6 @@ export const selectInternetUnreachableBadgeShown = (s: CommonState) =>
 
 export const selectOnboardingCompleted = (s: CommonState) =>
     s.environment.onboardingCompleted
+
+export const selectOnboardingMethod = (s: CommonState) =>
+    s.environment.onboardingMethod
