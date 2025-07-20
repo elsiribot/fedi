@@ -189,6 +189,11 @@ export const refreshOnboardingStatus = createAsyncThunk<
     const status = await fedimint.bridgeStatus()
     log.info('bridgeStatus', status)
 
+    // Extract and store the onboarding method if user is onboarded
+    if (status.type === 'onboarded') {
+        dispatch(setOnboardingMethod(status.onboarding_method))
+    }
+
     if (status.type === 'onboarded') {
         // generate a random display name after matrix client is resolved
         // but only if matrix_setup

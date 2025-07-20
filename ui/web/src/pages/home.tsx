@@ -15,6 +15,7 @@ import {
     selectIsActiveFederationRecovering,
     selectMatrixAuth,
     selectActiveFederationHasWallet,
+    selectOnboardingMethod,
 } from '@fedi/common/redux'
 import {
     selectCoreMods,
@@ -68,6 +69,8 @@ function HomePage() {
     const matrixAuth = useAppSelector(selectMatrixAuth)
     const activeFederation = useAppSelector(selectActiveFederation)
     const newsItems = useAppSelector(s => selectActiveFederationChats(s))
+    const onboardingMethod = useAppSelector(selectOnboardingMethod)
+    const isNewSeedUser = onboardingMethod !== 'restored'
 
     // Federations have wallets, communities do not
     const hasWallet = useAppSelector(selectActiveFederationHasWallet)
@@ -220,7 +223,11 @@ function HomePage() {
 
             {/* Modal - Show user their display name */}
             <Modal
-                open={!hasSeenDisplayName && !!matrixAuth?.displayName}
+                open={
+                    isNewSeedUser &&
+                    !hasSeenDisplayName &&
+                    !!matrixAuth?.displayName
+                }
                 onClick={completeSeenDisplayName}
                 title={t('feature.home.display-name')}
                 description={matrixAuth?.displayName}>
