@@ -213,7 +213,7 @@ export const refreshOnboardingStatus = createAsyncThunk<
     } else if (status.type === 'onboarding') {
         switch (status.stage.type) {
             case 'deviceIndexSelection': // Transfer device flow
-                dispatch(initializeDeviceRegistration(fedimint))
+                await dispatch(initializeDeviceRegistration(fedimint))
                 // navigate to RecoveryWalletOptions (/onboarding/recover/wallet-transfer)
                 break
             case 'socialRecovery':
