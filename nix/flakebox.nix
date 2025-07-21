@@ -186,6 +186,7 @@ in
         pkgs.esplora-electrs
         fedimint-pkgs.packages.${system}.gateway-pkgs
         fedimint-pkgs.packages.${system}.fedimint-recurringd
+        pkgs.matrix-synapse
         # helpers
         pkgs.jq
         pkgs.bc

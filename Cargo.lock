@@ -2560,7 +2560,12 @@ dependencies = [
  "anyhow",
  "clap",
  "devimint",
+ "fedimint-core",
+ "fedimint-logging",
+ "fedimint-portalloc",
+ "tempfile",
  "tokio",
+ "tracing",
 ]
 
 [[package]]
