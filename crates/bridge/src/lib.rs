@@ -238,7 +238,7 @@ impl Bridge {
         anyhow::ensure!(
             matches!(
                 runtime.feature_catalog.runtime_env,
-                RuntimeEnvironment::Dev | RuntimeEnvironment::Staging
+                RuntimeEnvironment::Dev | RuntimeEnvironment::Staging | RuntimeEnvironment::Tests
             ),
             "only available in internal builds"
         );

@@ -81,7 +81,10 @@ pub async fn fedimint_initialize_inner(
     };
 
     if let Some(bridge) = BRIDGE.lock().await.clone() {
-        if let RpcAppFlavor::Dev = init_opts.app_flavor {
+        if matches!(
+            init_opts.app_flavor,
+            RpcAppFlavor::Dev | RpcAppFlavor::Tests
+        ) {
             // reset observables
             if let Ok(runtime) = bridge.runtime() {
                 runtime.observable_pool.reset().await;

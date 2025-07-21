@@ -93,6 +93,7 @@ pub async fn fedimint_initialize_async(
         RpcAppFlavor::Dev => RuntimeEnvironment::Dev,
         RpcAppFlavor::Nightly => RuntimeEnvironment::Staging,
         RpcAppFlavor::Bravo => RuntimeEnvironment::Prod,
+        RpcAppFlavor::Tests => RuntimeEnvironment::Tests,
     }));
 
     let fedi_api = Arc::new(LiveFediApi::new(feature_catalog.clone()));
@@ -2794,6 +2795,7 @@ pub mod tests {
         info!(target: LOG_DEVIMINT, "Pegins completed");
 
         std::env::set_var(FM_INVITE_CODE_ENV, dev_fed.fed().await?.invite_code()?);
+        std::env::set_var("DEVITRIX_SERVER", &synapse.url);
 
         dev_fed.finalize(&process_mgr).await?;
         info!(target: LOG_DEVIMINT, "Devfed ready");

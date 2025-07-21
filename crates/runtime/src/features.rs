@@ -1,3 +1,5 @@
+use std::env;
+
 use reqwest::Url;
 use serde::Serialize;
 use ts_rs::TS;
@@ -5,6 +7,7 @@ use ts_rs::TS;
 /// Enum representing the environment in whose context the bridge is
 /// instantiated. For the Fedi app, this translates to the app flavors:
 /// - Dev = a locally-built developer build of the Fedi app
+/// - Tests = locally-build developer build for automated testing.
 /// - Staging = an internal build of the Fedi app, such as the nightly build
 /// - Prod = an external build of the Fedi app, such as the Fedi build
 ///
@@ -15,13 +18,14 @@ use ts_rs::TS;
 /// Depending on the runtime environment, features will be enabled or disabled.
 /// Typically when development work starts on a new feature, the feature will be
 /// turned off for all runtimes. Once the feature is code-complete, it might be
-/// turned on only for the "Dev" environment. Shortly thereafter, it might also
-/// be turned on for the "Staging" environment so that internally it can be
-/// tested. Finally, when the feature is considered stable, it will also be
-/// turned on for the "Prod" environment.
+/// turned on only for the "Dev" and "Tests" environment. Shortly thereafter, it
+/// might also be turned on for the "Staging" environment so that internally it
+/// can be tested. Finally, when the feature is considered stable, it will also
+/// be turned on for the "Prod" environment.
 #[derive(Debug, Clone, TS, Serialize)]
 pub enum RuntimeEnvironment {
     Dev,
+    Tests,
     Staging,
     Prod,
 }
@@ -112,6 +116,7 @@ impl FeatureCatalog {
             RuntimeEnvironment::Dev => Self::new_dev(),
             RuntimeEnvironment::Staging => Self::new_staging(),
             RuntimeEnvironment::Prod => Self::new_prod(),
+            RuntimeEnvironment::Tests => Self::new_tests(),
         }
     }
 
@@ -130,6 +135,25 @@ impl FeatureCatalog {
             },
             matrix: MatrixFeatureConfig {
                 home_server: "https://staging.m1.8fa.in".to_string(),
+            },
+        }
+    }
+
+    fn new_tests() -> Self {
+        Self {
+            runtime_env: RuntimeEnvironment::Tests,
+            encrypted_sync: Some(EncryptedSyncFeatureConfig {
+                server_url: "https://prod-kv-store.dev.fedibtc.com/".to_string(),
+            }),
+            override_localhost: Some(OverrideLocalhostFeatureConfig {}),
+            nostr_client: Some(NostrClientFeatureCatalog {
+                relays: vec![Url::parse("wss://nostr-rs-relay.dev.fedibtc.com").unwrap()],
+            }),
+            device_registration: DeviceRegistrationFeatureConfig {
+                service_url: "https://staging-device-control.dev.fedibtc.com/v0".to_string(),
+            },
+            matrix: MatrixFeatureConfig {
+                home_server: env::var("DEVITRIX_SERVER").expect("DEVITRIX_SERVER must be set"),
             },
         }
     }
