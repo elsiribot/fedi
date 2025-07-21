@@ -1,5 +1,5 @@
 pub mod devfed;
-pub mod devitrix;
+pub mod synapse;
 
 pub use devfed::DevFed;
-pub use devitrix::{run_devitrix, DevitrixArgs, Synapse};
+pub use synapse::Synapse;

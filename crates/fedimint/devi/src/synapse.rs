@@ -1,8 +1,6 @@
-use std::ffi::OsString;
 use std::ops::ControlFlow;
 
 use anyhow::{Context, Result};
-use devimint::cli::exec_user_command;
 use devimint::cmd;
 use devimint::util::{poll, ProcessHandle, ProcessManager};
 use fedimint_core::util::write_overwrite_async;
@@ -12,7 +10,7 @@ use tracing::info;
 
 /// Minimal Synapse configuration template for devimint testing
 const SYNAPSE_CONFIG_TEMPLATE: &str = r#"
-server_name: "devitrix.org"
+server_name: "synapse.devi.org"
 pid_file: "@@TEMP_DIR@@/homeserver.pid"
 public_baseurl: "http://127.0.0.1:@@HTTP_PORT@@/"
 
@@ -32,7 +30,7 @@ database:
 
 media_store_path: "@@TEMP_DIR@@/media_store"
 uploads_path: "@@TEMP_DIR@@/uploads"
-signing_key_path: "@@TEMP_DIR@@/devitrix.org.signing.key"
+signing_key_path: "@@TEMP_DIR@@/synapse.devi.org.signing.key"
 
 enable_registration: true
 registration_requires_token: false
@@ -118,7 +116,7 @@ impl Synapse {
             .await
             .context("Failed to write Synapse configuration")?;
 
-        info!(target: LOG_DEVIMINT, "Starting Synapse server devitrix.org on port {}", port);
+        info!(target: LOG_DEVIMINT, "Starting Synapse server on port {}", port);
 
         // Start synapse server
         let process = process_mgr
@@ -165,49 +163,4 @@ impl Synapse {
         .await
         .context("Synapse failed to start within timeout")
     }
-}
-
-#[derive(clap::Parser, Debug)]
-pub struct DevitrixArgs {
-    /// Command to run with Matrix server environment
-    #[clap(trailing_var_arg = true)]
-    command: Vec<OsString>,
-}
-
-/// Run devitrix command
-pub async fn run_devitrix(args: DevitrixArgs, common: devimint::cli::CommonArgs) -> Result<()> {
-    let (process_mgr, _task_group) = devimint::cli::setup(common).await?;
-
-    let synapse = Synapse::start(&process_mgr).await?;
-
-    let env_vars = vec![
-        ("SYNAPSE_URL", synapse.url.to_string()),
-        ("SYNAPSE_PORT", synapse.port.to_string()),
-    ];
-
-    info!(target: LOG_DEVIMINT, "Synapse server running at: {}", synapse.url);
-
-    if !args.command.is_empty() {
-        info!(target: LOG_DEVIMINT, "Running command: {:?}", args.command);
-
-        for (key, value) in &env_vars {
-            std::env::set_var(key, value);
-        }
-
-        exec_user_command(args.command).await?;
-    } else {
-        // No command provided, just print environment info
-        println!("Synapse server is running. Set these environment variables:");
-        for (key, value) in &env_vars {
-            println!("export {key}={value}");
-        }
-        println!("\nPress Ctrl+C to stop the server...");
-
-        // Wait for interrupt
-        tokio::signal::ctrl_c()
-            .await
-            .context("Failed to listen for Ctrl+C")?;
-    }
-
-    Ok(())
 }

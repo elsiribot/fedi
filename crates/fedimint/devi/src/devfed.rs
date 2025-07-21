@@ -14,7 +14,7 @@ use rand::distributions::Alphanumeric;
 use rand::Rng;
 use tracing::{debug, info, trace};
 
-use crate::devitrix::Synapse;
+use crate::Synapse;
 
 #[derive(Clone)]
 pub struct DevFed {
@@ -92,7 +92,7 @@ impl DevFed {
         info!(target: LOG_DEVIMINT, "Pegins completed");
 
         std::env::set_var(FM_INVITE_CODE_ENV, dev_fed.fed().await?.invite_code()?);
-        std::env::set_var("DEVITRIX_SERVER", &synapse.url);
+        std::env::set_var("DEVI_SYNAPSE_SERVER", &synapse.url);
 
         dev_fed.finalize(&process_mgr).await?;
         info!(target: LOG_DEVIMINT, "Devfed ready");

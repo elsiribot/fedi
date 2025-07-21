@@ -153,7 +153,8 @@ impl FeatureCatalog {
                 service_url: "https://staging-device-control.dev.fedibtc.com/v0".to_string(),
             },
             matrix: MatrixFeatureConfig {
-                home_server: env::var("DEVITRIX_SERVER").expect("DEVITRIX_SERVER must be set"),
+                home_server: env::var("DEVI_SYNAPSE_SERVER")
+                    .expect("DEVI_SYNAPSE_SERVER must be set"),
             },
         }
     }
