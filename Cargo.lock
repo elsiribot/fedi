@@ -3228,6 +3228,7 @@ dependencies = [
  "bug-report",
  "clap",
  "communities",
+ "devi",
  "devimint",
  "either",
  "env",

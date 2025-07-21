@@ -1,7 +1,6 @@
 use clap::{Parser, Subcommand};
+use devi::devitrix;
 use devimint::cli::CommonArgs;
-
-mod devitrix;
 
 #[derive(Parser)]
 struct Args {

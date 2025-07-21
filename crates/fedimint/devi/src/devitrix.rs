@@ -92,6 +92,7 @@ rc_invites:
 "#;
 
 /// Manages a temporary Synapse Matrix server instance
+#[derive(Clone)]
 pub struct Synapse {
     _process: ProcessHandle,
     pub port: u16,
@@ -100,7 +101,8 @@ pub struct Synapse {
 
 impl Synapse {
     /// Start a new Synapse instance
-    pub async fn start(process_mgr: &ProcessManager, port: u16) -> Result<Self> {
+    pub async fn start(process_mgr: &ProcessManager) -> Result<Self> {
+        let port = port_alloc(1)?;
         let temp_dir = process_mgr.globals.FM_TEST_DIR.join("synapse");
         let config_path = temp_dir.join("homeserver.yaml");
 
@@ -176,9 +178,7 @@ pub struct DevitrixArgs {
 pub async fn run_devitrix(args: DevitrixArgs, common: devimint::cli::CommonArgs) -> Result<()> {
     let (process_mgr, _task_group) = devimint::cli::setup(common).await?;
 
-    let port = port_alloc(1)?;
-
-    let synapse = Synapse::start(&process_mgr, port).await?;
+    let synapse = Synapse::start(&process_mgr).await?;
 
     let env_vars = vec![
         ("SYNAPSE_URL", synapse.url.to_string()),

@@ -2414,11 +2414,12 @@ pub mod tests {
     use bech32::{self, Bech32m};
     use bridge::RuntimeExt as _;
     use communities::CommunityInvite;
+    use devi::{DevFed, Synapse};
+    use devimint::cmd;
     use devimint::devfed::DevJitFed;
     use devimint::envs::FM_INVITE_CODE_ENV;
     use devimint::util::{FedimintCli, LnCli, ProcessManager};
     use devimint::vars::{self, mkdir};
-    use devimint::{cmd, DevFed};
     use env::envs::FEDI_SOCIAL_RECOVERY_MODULE_ENABLE_ENV;
     use federations::federation_sm::FederationState;
     use federations::federation_v2::FederationV2;
@@ -2740,7 +2741,8 @@ pub mod tests {
 
         let gw_pegin_amount = 1_000_000;
         let client_pegin_amount = 1_000_000;
-        let ((), (), _) = tokio::try_join!(
+
+        let ((), (), _, synapse) = tokio::try_join!(
             async {
                 let (address, operation_id) =
                     dev_fed.internal_client().await?.get_deposit_addr().await?;
@@ -2786,6 +2788,7 @@ pub mod tests {
                     .await?;
                 dev_fed.bitcoind().await?.mine_blocks_no_wait(11).await
             },
+            Synapse::start(&process_mgr),
         )?;
 
         info!(target: LOG_DEVIMINT, "Pegins completed");
@@ -2795,7 +2798,8 @@ pub mod tests {
         dev_fed.finalize(&process_mgr).await?;
         info!(target: LOG_DEVIMINT, "Devfed ready");
 
-        dev_fed.to_dev_fed(&process_mgr).await
+        let devimint = dev_fed.to_dev_fed(&process_mgr).await?;
+        Ok(devi::DevFed::new(devimint, synapse))
     }
 
     #[tokio::test(flavor = "multi_thread")]
