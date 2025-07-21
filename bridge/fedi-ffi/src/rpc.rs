@@ -2415,26 +2415,21 @@ pub mod tests {
     use bech32::{self, Bech32m};
     use bridge::RuntimeExt as _;
     use communities::CommunityInvite;
-    use devi::{DevFed, Synapse};
+    use devi::DevFed;
     use devimint::cmd;
-    use devimint::devfed::DevJitFed;
-    use devimint::envs::FM_INVITE_CODE_ENV;
-    use devimint::util::{FedimintCli, LnCli, ProcessManager};
-    use devimint::vars::{self, mkdir};
+    use devimint::util::{FedimintCli, LnCli};
     use env::envs::FEDI_SOCIAL_RECOVERY_MODULE_ENABLE_ENV;
     use federations::federation_sm::FederationState;
     use federations::federation_v2::FederationV2;
     use fedi_social_client::common::VerificationDocument;
     use fedimint_core::db::IDatabaseTransactionOpsCore;
     use fedimint_core::encoding::Encodable;
-    use fedimint_core::task::{sleep_in_test, TaskGroup};
+    use fedimint_core::task::sleep_in_test;
     use fedimint_core::util::backoff_util::aggressive_backoff;
     use fedimint_core::util::retry;
     use fedimint_core::Amount;
-    use fedimint_logging::{TracingSetup, LOG_DEVIMINT};
+    use fedimint_logging::TracingSetup;
     use nostr::nips::nip44;
-    use rand::distributions::Alphanumeric;
-    use rand::Rng;
     use rpc_types::event::TransactionEvent;
     use rpc_types::{
         RpcLnReceiveState, RpcOOBReissueState, RpcOnchainDepositState, RpcReturningMemberStatus,
@@ -2446,7 +2441,7 @@ pub mod tests {
     use runtime::storage::BRIDGE_DB_PREFIX;
     use tokio::sync::Semaphore;
     use tokio::task::JoinSet;
-    use tracing::{debug, info, trace};
+    use tracing::info;
 
     use super::*;
     use crate::test_device::{use_lnd_gateway, MockFediApi, TestDevice};
@@ -2589,7 +2584,12 @@ pub mod tests {
 
     #[tokio::test(flavor = "multi_thread")]
     async fn tests_wrapper_for_bridge() -> anyhow::Result<()> {
-        let dev_fed = dev_fed().await?;
+        INIT_TRACING.call_once(|| {
+            TracingSetup::default()
+                .init()
+                .expect("Failed to initialize tracing");
+        });
+        let dev_fed = DevFed::new_with_setup(4).await?;
         let mut tests_set = JoinSet::new();
         let sem = Arc::new(Semaphore::new(available_parallelism()?.into()));
         let mut tests_names: HashMap<tokio::task::Id, String> = HashMap::new();
@@ -2697,111 +2697,6 @@ pub mod tests {
             }
         }
         Ok(())
-    }
-
-    async fn process_setup(fed_size: usize) -> anyhow::Result<(ProcessManager, TaskGroup)> {
-        let test_dir = std::env::temp_dir().join(format!(
-            "devimint-{}-{}",
-            std::process::id(),
-            rand::thread_rng()
-                .sample_iter(&Alphanumeric)
-                .filter(u8::is_ascii_digit)
-                .take(3)
-                .map(char::from)
-                .collect::<String>()
-        ));
-        mkdir(test_dir.clone()).await?;
-        let logs_dir: PathBuf = test_dir.join("logs");
-        mkdir(logs_dir.clone()).await?;
-
-        INIT_TRACING.call_once(|| {
-            TracingSetup::default()
-                .init()
-                .expect("Failed to initialize tracing");
-        });
-
-        let globals = vars::Global::new(&test_dir, 1, fed_size, 0, None).await?;
-
-        info!(target: LOG_DEVIMINT, path=%globals.FM_DATA_DIR.display() , "Devimint data dir");
-
-        for (var, value) in globals.vars() {
-            debug!(var, value, "Env variable set");
-            std::env::set_var(var, value);
-        }
-        let process_mgr = ProcessManager::new(globals);
-        let task_group = TaskGroup::new();
-        Ok((process_mgr, task_group))
-    }
-
-    async fn dev_fed() -> anyhow::Result<DevFed> {
-        trace!(target: LOG_DEVIMINT, "Starting dev fed");
-        let (process_mgr, _) = process_setup(4).await?;
-        let dev_fed = DevJitFed::new(&process_mgr, false, false)?;
-
-        debug!(target: LOG_DEVIMINT, "Peging in client and gateways");
-
-        let gw_pegin_amount = 1_000_000;
-        let client_pegin_amount = 1_000_000;
-
-        let ((), (), _, synapse) = tokio::try_join!(
-            async {
-                let (address, operation_id) =
-                    dev_fed.internal_client().await?.get_deposit_addr().await?;
-                dev_fed
-                    .bitcoind()
-                    .await?
-                    .send_to(address, client_pegin_amount)
-                    .await?;
-                dev_fed.bitcoind().await?.mine_blocks_no_wait(11).await?;
-                dev_fed
-                    .internal_client()
-                    .await?
-                    .await_deposit(&operation_id)
-                    .await
-            },
-            async {
-                let gw_ldk = dev_fed.gw_ldk_connected().await?.clone();
-                let address = gw_ldk
-                    .get_pegin_addr(&dev_fed.fed().await?.calculate_federation_id())
-                    .await?;
-                debug!(
-                    target: LOG_DEVIMINT,
-                    %address,
-                    "Sending funds to LDK deposit addr"
-                );
-                dev_fed
-                    .bitcoind()
-                    .await?
-                    .send_to(address, gw_pegin_amount)
-                    .await
-                    .map(|_| ())
-            },
-            async {
-                let pegin_addr = dev_fed
-                    .gw_lnd_registered()
-                    .await?
-                    .get_pegin_addr(&dev_fed.fed().await?.calculate_federation_id())
-                    .await?;
-                dev_fed
-                    .bitcoind()
-                    .await?
-                    .send_to(pegin_addr, gw_pegin_amount)
-                    .await?;
-                dev_fed.bitcoind().await?.mine_blocks_no_wait(11).await
-            },
-            Synapse::start(&process_mgr),
-        )?;
-
-        info!(target: LOG_DEVIMINT, "Pegins completed");
-
-        std::env::set_var(FM_INVITE_CODE_ENV, dev_fed.fed().await?.invite_code()?);
-        std::env::set_var("DEVITRIX_SERVER", &synapse.url);
-
-        dev_fed.finalize(&process_mgr).await?;
-        info!(target: LOG_DEVIMINT, "Devfed ready");
-
-        let devimint = dev_fed.to_dev_fed(&process_mgr).await?;
-        Ok(devi::DevFed::new(devimint, synapse))
     }
 
     #[tokio::test(flavor = "multi_thread")]
@@ -4702,7 +4597,7 @@ pub mod tests {
 
     #[tokio::test(flavor = "multi_thread")]
     async fn test_bridge_handles_federation_offline() -> anyhow::Result<()> {
-        let mut dev_fed = dev_fed().await?;
+        let mut dev_fed = DevFed::new_with_setup(4).await?;
         let invite_code = dev_fed.fed.invite_code()?;
 
         let mut td = TestDevice::new();
