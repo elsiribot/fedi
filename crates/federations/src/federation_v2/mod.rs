@@ -2034,6 +2034,39 @@ impl FederationV2 {
         Ok(())
     }
 
+    /// Determine the maximum actual amount of e-cash that can be generated for
+    /// sending taking into account fees.
+    pub async fn calculate_max_generate_ecash(&self) -> Result<RpcAmount> {
+        // Let's say that amount we're looking for is max. We wish to satisfy this
+        // equation: max + fedi_fee = virtual_balance
+        //
+        // fedi_fee is calculated as follows:
+        // fedi_fee = (max * fedi_fee_ppm) / MILLION
+        //
+        // Plugging this into the original equation, we get:
+        // max + [(max * fedi_fee_ppm) / MILLION] = virtual_balance
+        //
+        // We can solve this for max as follows:
+        // max = (virtual_balance * MILLION) / (MILLION + fedi_fee_ppm)
+        // We use floor division here
+
+        let fedi_fee_ppm = self
+            .fedi_fee_helper
+            .get_fedi_fee_ppm(
+                self.federation_id().to_string(),
+                fedimint_mint_client::KIND,
+                RpcTransactionDirection::Send,
+            )
+            .await?;
+        let virtual_balance = self.get_balance().await;
+        let max = {
+            let numerator = virtual_balance.mul_u64(MILLION).msats;
+            let denominator = MILLION + fedi_fee_ppm;
+            numerator / denominator
+        };
+        Ok(RpcAmount(Amount::from_msats(max)))
+    }
+
     /// Generate ecash
     pub async fn generate_ecash(
         &self,

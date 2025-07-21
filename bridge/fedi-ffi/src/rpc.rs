@@ -463,6 +463,11 @@ async fn payAddress(
 }
 
 #[macro_rules_derive(federation_rpc_method!)]
+async fn calculateMaxGenerateEcash(federation: Arc<FederationV2>) -> anyhow::Result<RpcAmount> {
+    federation.calculate_max_generate_ecash().await
+}
+
+#[macro_rules_derive(federation_rpc_method!)]
 async fn generateEcash(
     federation: Arc<FederationV2>,
     amount: RpcAmount,
@@ -2200,6 +2205,7 @@ rpc_methods!(RpcMethods {
     previewPayAddress,
     payAddress,
     // Ecash
+    calculateMaxGenerateEcash,
     generateEcash,
     receiveEcash,
     validateEcash,

@@ -635,6 +635,7 @@ export type RpcMethods = {
   recheckPeginAddress: [recheckPeginAddress, null];
   previewPayAddress: [previewPayAddress, RpcFeeDetails];
   payAddress: [payAddress, RpcPayAddressResponse];
+  calculateMaxGenerateEcash: [calculateMaxGenerateEcash, RpcAmount];
   generateEcash: [generateEcash, RpcGenerateEcashResponse];
   receiveEcash: [receiveEcash, [RpcAmount, RpcOperationId]];
   validateEcash: [validateEcash, RpcEcashInfo];
@@ -1470,6 +1471,8 @@ export type backupNow = { federationId: RpcFederationId };
 export type backupStatus = { federationId: RpcFederationId };
 
 export type bridgeStatus = {};
+
+export type calculateMaxGenerateEcash = { federationId: RpcFederationId };
 
 export type cancelEcash = { federationId: RpcFederationId; ecash: string };
 
