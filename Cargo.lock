@@ -7525,9 +7525,8 @@ dependencies = [
 
 [[package]]
 name = "nostr"
-version = "0.42.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "c9c1891da0e58e7eb48a1d2cd704a16f39a61bac3564a1426b26621e21073594"
+version = "0.42.0"
+source = "git+https://github.com/fedibtc/rust-nostr?rev=6d88b4dbb491ed31c6e2eb4b4ae8e2b4e537298f#6d88b4dbb491ed31c6e2eb4b4ae8e2b4e537298f"
 dependencies = [
  "aes",
  "base64 0.22.1",
@@ -7551,8 +7550,7 @@ dependencies = [
 [[package]]
 name = "nostr-database"
 version = "0.42.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "b6aafe85dc7c039c399796043b76009fa744c3a45ac073a023932f7b7d91b1e7"
+source = "git+https://github.com/fedibtc/rust-nostr?rev=6d88b4dbb491ed31c6e2eb4b4ae8e2b4e537298f#6d88b4dbb491ed31c6e2eb4b4ae8e2b4e537298f"
 dependencies = [
  "lru 0.14.0",
  "nostr",
@@ -7562,8 +7560,7 @@ dependencies = [
 [[package]]
 name = "nostr-relay-pool"
 version = "0.42.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "df4d5628d2444349570fb185b0c2d92cfdb7e68d62b13bf3e8a4348b5de7430b"
+source = "git+https://github.com/fedibtc/rust-nostr?rev=6d88b4dbb491ed31c6e2eb4b4ae8e2b4e537298f#6d88b4dbb491ed31c6e2eb4b4ae8e2b4e537298f"
 dependencies = [
  "async-utility",
  "async-wsocket",
@@ -7579,8 +7576,7 @@ dependencies = [
 [[package]]
 name = "nostr-sdk"
 version = "0.42.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "a1e928ba9ac2695fbe10b8aefda59f2abfeb23c10a0e86a0b3e0f6a27bb274a2"
+source = "git+https://github.com/fedibtc/rust-nostr?rev=6d88b4dbb491ed31c6e2eb4b4ae8e2b4e537298f#6d88b4dbb491ed31c6e2eb4b4ae8e2b4e537298f"
 dependencies = [
  "async-utility",
  "nostr",

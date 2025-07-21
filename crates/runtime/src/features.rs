@@ -111,7 +111,9 @@ impl FeatureCatalog {
             runtime_env: RuntimeEnvironment::Staging,
             encrypted_sync: None,
             override_localhost: None,
-            nostr_client: None,
+            nostr_client: Some(NostrClientFeatureCatalog {
+                relays: vec![Url::parse("wss://nostr-rs-relay.dev.fedibtc.com").unwrap()],
+            }),
         }
     }
 
@@ -120,7 +122,9 @@ impl FeatureCatalog {
             runtime_env: RuntimeEnvironment::Prod,
             encrypted_sync: None,
             override_localhost: None,
-            nostr_client: None,
+            nostr_client: Some(NostrClientFeatureCatalog {
+                relays: vec![Url::parse("wss://nostr-rs-relay.dev.fedibtc.com").unwrap()],
+            }),
         }
     }
 }
