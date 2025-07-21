@@ -117,6 +117,7 @@ strum = "0.27"
 strum_macros = "0.27"
 thiserror = "2.0.8"
 tokio = "1"
+ts-rs = "10"
 tracing = "0.1.37"
 tracing-subscriber = { version = "0.3.16", features = ["env-filter"] }
 matrix-sdk = { git = "https://github.com/fedibtc/matrix-rust-sdk", tag = "v0.13.0-fedi1", default-features = false }
