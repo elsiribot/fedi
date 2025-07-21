@@ -2601,6 +2601,7 @@ pub mod tests {
             test_join_and_leave_and_join
         );
         spawn_and_attach_name!(dev_fed, tests_set, sem, tests_names, test_join_concurrent);
+        spawn_and_attach_name!(dev_fed, tests_set, sem, tests_names, test_matrix_login);
         // TODO: re-enable
         // spawn_and_attach_name!(tests_set, tests_names,
         // test_lightning_send_and_receive);
@@ -2853,6 +2854,17 @@ pub mod tests {
                 FederationState::Failed(err) => bail!(err),
             }
         }
+    }
+
+    async fn test_matrix_login(_dev_fed: DevFed) -> anyhow::Result<()> {
+        let td = TestDevice::new();
+        let bridge = td.bridge_full().await?;
+
+        // Wait for matrix to initialize
+        let _matrix = bridge.matrix.wait().await;
+
+        // If we get here, matrix login was successful
+        Ok(())
     }
 
     #[allow(dead_code)]
