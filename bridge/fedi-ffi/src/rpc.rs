@@ -2682,6 +2682,55 @@ pub mod tests {
             test_fee_remittance_post_successful_tx
         );
         spawn_and_attach_name!(dev_fed, tests_set, sem, tests_names, test_recurring_lnurl);
+        spawn_and_attach_name!(
+            dev_fed,
+            tests_set,
+            sem,
+            tests_names,
+            test_doesnt_overwrite_seed_in_invalid_fedi_file
+        );
+        spawn_and_attach_name!(
+            dev_fed,
+            tests_set,
+            sem,
+            tests_names,
+            test_transfer_device_registration_no_feds
+        );
+        spawn_and_attach_name!(
+            dev_fed,
+            tests_set,
+            sem,
+            tests_names,
+            test_preview_and_join_community
+        );
+        spawn_and_attach_name!(
+            dev_fed,
+            tests_set,
+            sem,
+            tests_names,
+            test_list_and_leave_community
+        );
+        spawn_and_attach_name!(
+            dev_fed,
+            tests_set,
+            sem,
+            tests_names,
+            test_community_meta_bg_refresh
+        );
+        spawn_and_attach_name!(
+            dev_fed,
+            tests_set,
+            sem,
+            tests_names,
+            test_existing_device_identifier_v2_migration
+        );
+        spawn_and_attach_name!(
+            dev_fed,
+            tests_set,
+            sem,
+            tests_names,
+            test_nip44_encrypt_and_decrypt
+        );
 
         while let Some(res) = tests_set.join_next_with_id().await {
             match res {
@@ -2699,13 +2748,9 @@ pub mod tests {
         Ok(())
     }
 
-    #[tokio::test(flavor = "multi_thread")]
-    async fn test_doesnt_overwrite_seed_in_invalid_fedi_file() -> anyhow::Result<()> {
-        INIT_TRACING.call_once(|| {
-            TracingSetup::default()
-                .init()
-                .expect("Failed to initialize tracing");
-        });
+    async fn test_doesnt_overwrite_seed_in_invalid_fedi_file(
+        _dev_fed: DevFed,
+    ) -> anyhow::Result<()> {
         let td = TestDevice::new();
         let invalid_fedi_file = String::from(r#"{"format_version": 0, "root_seed": "abcd"}"#);
         td.storage()
@@ -3932,8 +3977,7 @@ pub mod tests {
         Ok(())
     }
 
-    #[tokio::test(flavor = "multi_thread")]
-    async fn test_transfer_device_registration_no_feds() -> anyhow::Result<()> {
+    async fn test_transfer_device_registration_no_feds(_dev_fed: DevFed) -> anyhow::Result<()> {
         if should_skip_test_using_stock_fedimintd() {
             return Ok(());
         }
@@ -4195,8 +4239,7 @@ pub mod tests {
         "default_group_chats": "[\"fzvjqrtcwcswn4kocj1htpdd\"]"
     }"#;
 
-    #[tokio::test(flavor = "multi_thread")]
-    async fn test_preview_and_join_community() -> anyhow::Result<()> {
+    async fn test_preview_and_join_community(_dev_fed: DevFed) -> anyhow::Result<()> {
         let td = TestDevice::new();
         let bridge = td.bridge_full().await?;
 
@@ -4254,8 +4297,7 @@ pub mod tests {
         Ok(())
     }
 
-    #[tokio::test(flavor = "multi_thread")]
-    async fn test_list_and_leave_community() -> anyhow::Result<()> {
+    async fn test_list_and_leave_community(_dev_fed: DevFed) -> anyhow::Result<()> {
         let td = TestDevice::new();
         let bridge = td.bridge_full().await?;
 
@@ -4336,8 +4378,7 @@ pub mod tests {
         Ok(())
     }
 
-    #[tokio::test(flavor = "multi_thread")]
-    async fn test_community_meta_bg_refresh() -> anyhow::Result<()> {
+    async fn test_community_meta_bg_refresh(_dev_fed: DevFed) -> anyhow::Result<()> {
         let td = TestDevice::new();
         let bridge = td.bridge_full().await?;
 
@@ -4667,8 +4708,7 @@ pub mod tests {
         Ok(())
     }
 
-    #[tokio::test(flavor = "multi_thread")]
-    async fn test_existing_device_identifier_v2_migration() -> anyhow::Result<()> {
+    async fn test_existing_device_identifier_v2_migration(_dev_fed: DevFed) -> anyhow::Result<()> {
         if should_skip_test_using_stock_fedimintd() {
             return Ok(());
         }
@@ -4772,8 +4812,7 @@ pub mod tests {
         Ok(())
     }
 
-    #[tokio::test(flavor = "multi_thread")]
-    async fn test_nip44_encrypt_and_decrypt() -> anyhow::Result<()> {
+    async fn test_nip44_encrypt_and_decrypt(_dev_fed: DevFed) -> anyhow::Result<()> {
         let td = TestDevice::new();
         let bridge = td.bridge_full().await?;
 
