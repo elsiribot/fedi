@@ -186,7 +186,7 @@ in
         pkgs.esplora-electrs
         fedimint-pkgs.packages.${system}.gateway-pkgs
         fedimint-pkgs.packages.${system}.fedimint-recurringd
-        pkgs.matrix-synapse
+        (pkgs.matrix-synapse.override { extras = [ ]; })
         # helpers
         pkgs.jq
         pkgs.bc
