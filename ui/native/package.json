@@ -40,7 +40,7 @@
         "@react-navigation/material-top-tabs": "^6.5.1",
         "@react-navigation/native": "^6.0.13",
         "@react-navigation/native-stack": "^6.9.1",
-        "@reduxjs/toolkit": "^2.3.0",
+        "@reduxjs/toolkit": "^2.8.2",
         "@rneui/base": "^4.0.0-rc.8",
         "@rneui/themed": "^4.0.0-rc.8",
         "base-64": "^1.0.0",

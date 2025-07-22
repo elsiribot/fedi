@@ -1,13 +1,14 @@
 import '@testing-library/jest-dom'
 import { screen } from '@testing-library/react'
 
+import { setupStore } from '@fedi/common/redux'
 import {
     mockFederation1,
     mockCommunity,
 } from '@fedi/common/tests/mock-data/federation'
 
 import HomePage from '../../pages/home'
-import { AppState, setupStore } from '../../state/store'
+import { AppState } from '../../state/store'
 import { renderWithProviders } from '../../utils/test-utils/render'
 
 jest.mock('../../hooks/util.ts', () => ({

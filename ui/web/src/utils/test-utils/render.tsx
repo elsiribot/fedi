@@ -3,8 +3,9 @@ import React, { PropsWithChildren } from 'react'
 import { I18nextProvider } from 'react-i18next'
 import { Provider } from 'react-redux'
 
+import { setupStore, type RootState } from '@fedi/common/redux'
+
 import i18n from '../../localization/i18n'
-import { setupStore, type RootState } from '../../state/store'
 
 // This type interface extends the default options for render from RTL, as well
 // as allows the user to specify other things such as initialState, store.

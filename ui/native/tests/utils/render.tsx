@@ -4,7 +4,8 @@ import React, { PropsWithChildren } from 'react'
 import { SafeAreaProvider } from 'react-native-safe-area-context'
 import { Provider } from 'react-redux'
 
-import { AppState, setupStore } from '@fedi/native/state/store'
+import { setupStore } from '@fedi/common/redux'
+import { AppState } from '@fedi/native/state/store'
 
 import { I18nProvider, mockTheme } from '../setup/jest.setup.mocks'
 
