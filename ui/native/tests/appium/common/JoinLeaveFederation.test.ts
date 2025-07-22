@@ -51,7 +51,9 @@ export class JoinLeaveFederation extends AppiumTestBase {
         await this.scrollToElement('Leave Federation')
         await this.clickElementByKey('Leave Federation')
         await this.dismissAlert('No')
-        await this.scrollToElement('BitcoinPrinciplesAccordionButton')
+        await this.scrollToElement('BitcoinPrinciplesAccordionButton', {
+            scrollDirection: 'up',
+        })
         if (
             (await this.elementIsDisplayed(
                 'BitcoinPrinciplesAccordionButton',
@@ -116,6 +118,9 @@ export class JoinLeaveFederation extends AppiumTestBase {
         await this.scrollToElement('Leave Federation')
         await this.clickElementByKey('Leave Federation')
         await this.dismissAlert('No')
+        await this.scrollToElement('E-CashClubAccordionButton', {
+            scrollDirection: 'up',
+        })
         if (
             (await this.elementIsDisplayed('E-CashClubAccordionButton')) ===
             false
