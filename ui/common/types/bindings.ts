@@ -414,6 +414,17 @@ export type RpcCommunity = {
   meta: { [key in string]?: string };
 };
 
+export type RpcComposerDraft = {
+  plainText: string;
+  htmlText: string | null;
+  draftType: RpcComposerDraftType;
+};
+
+export type RpcComposerDraftType =
+  | "newMessage"
+  | { reply: { event_id: string } }
+  | { edit: { event_id: string } };
+
 export type RpcDeviceIndexAssignmentStatus =
   | { assigned: number }
   | "unassigned";
@@ -769,6 +780,9 @@ export type RpcMethods = {
   matrixEndPoll: [matrixEndPoll, null];
   matrixRespondToPoll: [matrixRespondToPoll, null];
   matrixGetMediaPreview: [matrixGetMediaPreview, RpcMediaPreviewResponse];
+  matrixSaveComposerDraft: [matrixSaveComposerDraft, null];
+  matrixLoadComposerDraft: [matrixLoadComposerDraft, RpcComposerDraft | null];
+  matrixClearComposerDraft: [matrixClearComposerDraft, null];
   matrixObserveMultispendGroup: [
     matrixObserveMultispendGroup,
     Observable<RpcMultispendGroupStatus>,
@@ -1561,6 +1575,8 @@ export type matrixApproveMultispendGroupInvitation = {
 
 export type matrixCancelMultispendGroupInvitation = { roomId: RpcRoomId };
 
+export type matrixClearComposerDraft = { roomId: RpcRoomId };
+
 export type matrixDeleteMessage = {
   roomId: RpcRoomId;
   eventId: RpcTimelineEventItemId;
@@ -1586,6 +1602,8 @@ export type matrixIgnoreUser = { userId: RpcUserId };
 export type matrixInitializeStatus = { observableId: number };
 
 export type matrixListIgnoredUsers = {};
+
+export type matrixLoadComposerDraft = { roomId: RpcRoomId };
 
 export type matrixMultispendAccountInfo = {
   roomId: RpcRoomId;
@@ -1711,6 +1729,11 @@ export type matrixRoomUnbanUser = {
   roomId: RpcRoomId;
   userId: RpcUserId;
   reason: string | null;
+};
+
+export type matrixSaveComposerDraft = {
+  roomId: RpcRoomId;
+  draft: RpcComposerDraft;
 };
 
 export type matrixSendAttachment = {
