@@ -10,6 +10,7 @@ use axum::response::IntoResponse;
 use axum::routing::{get, post};
 use axum::{Json, Router};
 use bridge::Bridge;
+use clap::Parser;
 use fediffi::ffi::PathBasedStorage;
 use fediffi::rpc::{fedimint_initialize_async, fedimint_rpc_async};
 use fedimint_logging::TracingSetup;
@@ -28,6 +29,7 @@ type BridgeArc = Arc<Bridge>;
 struct AppState {
     bridges: Arc<RwLock<HashMap<String, BridgeState>>>,
     data_dir: PathBuf,
+    dev_fed: Option<Arc<devi::DevFed>>,
 }
 
 struct BridgeState {
@@ -55,17 +57,51 @@ impl IEventSink for EventSink {
     }
 }
 
+#[derive(Parser)]
+struct Cli {
+    /// Data directory for storing bridge data
+    #[arg(value_name = "DIR")]
+    data_dir: PathBuf,
+
+    /// Port to listen on (default: 26722)
+    #[arg(short, long, default_value = "26722")]
+    port: u16,
+
+    /// Run with a dev federation
+    #[arg(long)]
+    with_devfed: bool,
+}
+
 #[tokio::main]
 async fn main() -> Result<()> {
     TracingSetup::default().init()?;
 
-    let data_dir = std::env::args().nth(1).expect("must be present");
+    let cli = Cli::parse();
 
-    info!("Starting remote bridge server with data dir: {}", data_dir);
+    let dev_fed = if cli.with_devfed {
+        let dev_fed = devi::DevFed::new_with_setup(4).await?;
+        Some(Arc::new(dev_fed))
+    } else {
+        None
+    };
+
+    run_server(cli.data_dir, cli.port, dev_fed).await
+}
+
+async fn run_server(
+    data_dir: PathBuf,
+    port: u16,
+    dev_fed: Option<Arc<devi::DevFed>>,
+) -> Result<()> {
+    info!(
+        "Starting remote bridge server with data dir: {}",
+        data_dir.display()
+    );
 
     let state = AppState {
         bridges: Arc::new(RwLock::new(HashMap::new())),
-        data_dir: PathBuf::from(data_dir),
+        data_dir,
+        dev_fed,
     };
 
     let cors = CorsLayer::new()
@@ -77,6 +113,7 @@ async fn main() -> Result<()> {
         .route("/:device_id/init", post(handle_init))
         .route("/:device_id/rpc/:method", post(handle_rpc))
         .route("/:device_id/events", get(handle_events))
+        .route("/invite_code", get(handle_invite_code))
         .layer(cors)
         .with_state(state);
 
@@ -86,9 +123,9 @@ async fn main() -> Result<()> {
         listener.set_nonblocking(true)?;
         tokio::net::TcpListener::from_std(listener)?
     } else {
-        let addr = "127.0.0.1:26722";
+        let addr = format!("127.0.0.1:{port}");
         info!("Server listening on {}", addr);
-        tokio::net::TcpListener::bind(addr).await?
+        tokio::net::TcpListener::bind(&addr).await?
     };
 
     axum::serve(listener, app).await?;
@@ -243,4 +280,19 @@ async fn handle_websocket(mut socket: WebSocket, device_id: String, state: AppSt
     }
 
     info!("WebSocket connection closed for device: {}", device_id);
+}
+
+async fn handle_invite_code(
+    State(state): State<AppState>,
+) -> Result<Json<serde_json::Value>, RemoteRpcError> {
+    let dev_fed = state
+        .dev_fed
+        .as_ref()
+        .context("Dev federation not available - server must be started with --with-devfed")?;
+
+    let invite_code = dev_fed.fed.invite_code()?;
+
+    Ok(Json(serde_json::json!({
+        "invite_code": invite_code
+    })))
 }
