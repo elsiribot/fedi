@@ -8,7 +8,6 @@ use bridge::Bridge;
 use lazy_static::lazy_static;
 use rpc_types::error::ErrorCode;
 use rpc_types::{RpcAppFlavor, RpcInitOpts};
-use runtime::api::LiveFediApi;
 // used by uniffi
 pub use runtime::event::IEventSink as EventSink;
 use runtime::storage::IStorage;
@@ -118,7 +117,6 @@ pub async fn fedimint_initialize_inner(
     let bridge = match fedimint_initialize_async(
         Arc::new(storage),
         event_sink,
-        Arc::new(LiveFediApi::new()),
         init_opts.device_identifier,
         init_opts.app_flavor,
     )

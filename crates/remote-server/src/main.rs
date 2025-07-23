@@ -16,7 +16,6 @@ use fedimint_logging::TracingSetup;
 use listenfd::ListenFd;
 use rpc_types::error::RpcError;
 use rpc_types::RpcInitOpts;
-use runtime::api::LiveFediApi;
 use runtime::event::IEventSink;
 use serde::{Deserialize, Serialize};
 use tokio::sync::{mpsc, Mutex, RwLock};
@@ -133,7 +132,6 @@ async fn handle_init(
     let bridge = fedimint_initialize_async(
         Arc::new(PathBasedStorage::new(data_dir).await?),
         event_sink,
-        Arc::new(LiveFediApi::new()),
         opts.device_identifier,
         opts.app_flavor,
     )

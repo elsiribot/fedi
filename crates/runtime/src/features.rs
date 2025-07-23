@@ -65,6 +65,11 @@ pub struct FeatureCatalog {
     /// This allows relays to be configured using a remote feature flag service
     /// in future.
     pub nostr_client: Option<NostrClientFeatureCatalog>,
+
+    /// Device registration service configuration for registering devices with
+    /// Fedi's backend. This service helps coordinate device indices across
+    /// multiple devices using the same seed.
+    pub device_registration: DeviceRegistrationFeatureConfig,
 }
 
 #[derive(Debug, Clone, TS, Serialize)]
@@ -82,6 +87,12 @@ pub struct OverrideLocalhostFeatureConfig {}
 pub struct NostrClientFeatureCatalog {
     #[ts(type = "Array<string>")]
     pub relays: Vec<Url>,
+}
+
+#[derive(Debug, Clone, TS, Serialize)]
+#[ts(export)]
+pub struct DeviceRegistrationFeatureConfig {
+    pub service_url: String,
 }
 
 impl FeatureCatalog {
@@ -103,6 +114,9 @@ impl FeatureCatalog {
             nostr_client: Some(NostrClientFeatureCatalog {
                 relays: vec![Url::parse("wss://nostr-rs-relay.dev.fedibtc.com").unwrap()],
             }),
+            device_registration: DeviceRegistrationFeatureConfig {
+                service_url: "https://staging-device-control.dev.fedibtc.com/v0".to_string(),
+            },
         }
     }
 
@@ -114,6 +128,9 @@ impl FeatureCatalog {
             nostr_client: Some(NostrClientFeatureCatalog {
                 relays: vec![Url::parse("wss://nostr-rs-relay.dev.fedibtc.com").unwrap()],
             }),
+            device_registration: DeviceRegistrationFeatureConfig {
+                service_url: "https://staging-device-control.dev.fedibtc.com/v0".to_string(),
+            },
         }
     }
 
@@ -125,6 +142,9 @@ impl FeatureCatalog {
             nostr_client: Some(NostrClientFeatureCatalog {
                 relays: vec![Url::parse("wss://nostr-rs-relay.dev.fedibtc.com").unwrap()],
             }),
+            device_registration: DeviceRegistrationFeatureConfig {
+                service_url: "https://prod-device-control.dev.fedibtc.com/v0".to_string(),
+            },
         }
     }
 }

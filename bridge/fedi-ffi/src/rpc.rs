@@ -58,7 +58,7 @@ use rpc_types::{
     RpcSignedLnurlMessage, RpcStabilityPoolAccountInfo, RpcTransaction, RpcTransactionDirection,
     RpcTransactionListEntry, SocialRecoveryQr,
 };
-use runtime::api::IFediApi;
+use runtime::api::LiveFediApi;
 use runtime::bridge_runtime::Runtime;
 use runtime::event::IEventSink;
 use runtime::features::{FeatureCatalog, RuntimeEnvironment};
@@ -80,7 +80,6 @@ pub enum FedimintError {
 pub async fn fedimint_initialize_async(
     storage: Storage,
     event_sink: EventSink,
-    fedi_api: Arc<dyn IFediApi>,
     device_identifier: String,
     app_flavor: RpcAppFlavor,
 ) -> anyhow::Result<Arc<Bridge>> {
@@ -90,12 +89,14 @@ pub async fn fedimint_initialize_async(
     );
     let _g = TimeReporter::new("fedimint_initialize").level(Level::INFO);
 
-    let feature_catalog = FeatureCatalog::new(match app_flavor {
+    let feature_catalog = Arc::new(FeatureCatalog::new(match app_flavor {
         RpcAppFlavor::Dev => RuntimeEnvironment::Dev,
         RpcAppFlavor::Nightly => RuntimeEnvironment::Staging,
         RpcAppFlavor::Bravo => RuntimeEnvironment::Prod,
-    })
-    .into();
+    }));
+
+    let fedi_api = Arc::new(LiveFediApi::new(feature_catalog.clone()));
+
     let bridge = Bridge::new(
         storage,
         event_sink,

@@ -59,6 +59,8 @@ export type CustomMessageData = Record<string, JSONValue>;
  */
 export type DeviceRegistrationEvent = { state: DeviceRegistrationState };
 
+export type DeviceRegistrationFeatureConfig = { service_url: string };
+
 /**
  * States representing the different outcomes for device registration requests
  * sent to Fedi's servers
@@ -152,6 +154,12 @@ export type FeatureCatalog = {
    * in future.
    */
   nostr_client: NostrClientFeatureCatalog | null;
+  /**
+   * Device registration service configuration for registering devices with
+   * Fedi's backend. This service helps coordinate device indices across
+   * multiple devices using the same seed.
+   */
+  device_registration: DeviceRegistrationFeatureConfig;
 };
 
 export type FiatFXInfo = {
