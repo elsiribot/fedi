@@ -18,4 +18,4 @@ export PATH="$CARGO_BIN_DIR:$PATH"
 
 BRIDGE_DATADIR="$CARGO_BUILD_TARGET_DIR/datadir"
 mkdir -p "$BRIDGE_DATADIR"
-remote-server "$BRIDGE_DATADIR"
+remote-server "$BRIDGE_DATADIR" "$@"

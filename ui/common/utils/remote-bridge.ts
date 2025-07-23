@@ -64,6 +64,20 @@ export class RemoteBridge {
         this.eventEnabled = false
     }
 
+    public async getInviteCode(): Promise<string> {
+        const response = await fetch(`http://${rbridgeHost}/invite_code`)
+
+        const result = await response.text()
+        const resultJson = JSON.parse(result)
+
+        if (resultJson.error !== undefined) {
+            log.error('getInviteCode', resultJson)
+            throw new Error(resultJson.error)
+        }
+
+        return resultJson.invite_code
+    }
+
     public async initializeBridge(deviceIdentifier: string) {
         this.deviceId = deviceIdentifier
 

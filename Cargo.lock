@@ -9125,6 +9125,8 @@ dependencies = [
  "anyhow",
  "axum 0.7.9",
  "bridge",
+ "clap",
+ "devi",
  "fedi-ffi",
  "fedimint-core",
  "fedimint-logging",
