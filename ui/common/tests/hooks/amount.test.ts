@@ -2,27 +2,50 @@
  * Tests for useAmountInput hook
  * Testing hook logic in isolation without rendering React components
  */
-import { renderHook, act } from '@testing-library/react'
+import { act } from '@testing-library/react'
 
 import { useAmountInput, useAmountFormatter } from '@fedi/common/hooks/amount'
-import { Sats } from '@fedi/common/types'
+import {
+    setupStore,
+    setAmountInputType,
+    changeOverrideCurrency,
+    setCurrencyLocale,
+    setShowFiatTxnAmounts,
+    fetchCurrencyPrices,
+} from '@fedi/common/redux'
+import { Sats, SupportedCurrency } from '@fedi/common/types'
 
 import { createMockTransaction } from '../mock-data/transactions'
-import { mockSelectorValues, mockSystemLocale } from '../setup/jest.setup'
+import { renderHookWithState } from '../test-utils/render'
+import { mockSystemLocale } from '../test-utils/setup'
 
 describe('useAmountInput hook', () => {
     const mockOnChangeAmount = jest.fn()
+    let store: ReturnType<typeof setupStore>
 
     beforeEach(() => {
         jest.clearAllMocks()
+        store = setupStore()
     })
 
     describe('initialization', () => {
         const initialAmount = 1000 as Sats
 
         it('should initialize with correct default values', () => {
-            const { result } = renderHook(() =>
-                useAmountInput(initialAmount, mockOnChangeAmount),
+            store.dispatch({
+                type: fetchCurrencyPrices.fulfilled.type,
+                payload: {
+                    btcUsdRate: 100000,
+                    fiatUsdRates: {},
+                },
+            })
+            store.dispatch(changeOverrideCurrency(SupportedCurrency.USD))
+            store.dispatch(setCurrencyLocale('en-US'))
+            store.dispatch(setAmountInputType('fiat'))
+
+            const { result } = renderHookWithState(
+                () => useAmountInput(initialAmount, mockOnChangeAmount),
+                store,
             )
 
             expect(result.current.isFiat).toBe(true)
@@ -34,23 +57,21 @@ describe('useAmountInput hook', () => {
         })
 
         it('should initialize correct fiat mode based on defaultAmountInputType', () => {
-            mockSelectorValues({
-                selectAmountInputType: 'fiat',
-            })
+            store.dispatch(setAmountInputType('fiat'))
 
-            const { result: resultFiat, unmount } = renderHook(() =>
-                useAmountInput(initialAmount, mockOnChangeAmount),
+            const { result: resultFiat, unmount } = renderHookWithState(
+                () => useAmountInput(initialAmount, mockOnChangeAmount),
+                store,
             )
 
             expect(resultFiat.current.isFiat).toBe(true)
             unmount()
 
-            mockSelectorValues({
-                selectAmountInputType: 'sats',
-            })
+            store.dispatch(setAmountInputType('sats'))
 
-            const { result: resultSats } = renderHook(() =>
-                useAmountInput(initialAmount, mockOnChangeAmount),
+            const { result: resultSats } = renderHookWithState(
+                () => useAmountInput(initialAmount, mockOnChangeAmount),
+                store,
             )
 
             expect(resultSats.current.isFiat).toBe(false)
@@ -59,8 +80,9 @@ describe('useAmountInput hook', () => {
 
     describe('mode switching', () => {
         it('should switch between fiat and sats modes', () => {
-            const { result } = renderHook(() =>
-                useAmountInput(1000 as Sats, mockOnChangeAmount),
+            const { result } = renderHookWithState(
+                () => useAmountInput(1000 as Sats, mockOnChangeAmount),
+                store,
             )
 
             expect(result.current.isFiat).toBe(true)
@@ -82,16 +104,29 @@ describe('useAmountInput hook', () => {
     })
 
     describe('validation', () => {
+        beforeEach(() => {
+            store.dispatch({
+                type: fetchCurrencyPrices.fulfilled.type,
+                payload: {
+                    btcUsdRate: 100000,
+                    fiatUsdRates: {},
+                },
+            })
+            store.dispatch(changeOverrideCurrency(SupportedCurrency.USD))
+        })
+
         it('should validate minimum amount when initial amount is too low', () => {
             const minimumAmount = 500 as Sats
             const initialAmount = 100 as Sats // Below minimum
 
-            const { result } = renderHook(() =>
-                useAmountInput(
-                    initialAmount,
-                    mockOnChangeAmount,
-                    minimumAmount,
-                ),
+            const { result } = renderHookWithState(
+                () =>
+                    useAmountInput(
+                        initialAmount,
+                        mockOnChangeAmount,
+                        minimumAmount,
+                    ),
+                store,
             )
 
             expect(result.current.validation).toEqual({
@@ -106,13 +141,15 @@ describe('useAmountInput hook', () => {
             const maximumAmount = 1000 as Sats
             const initialAmount = 2000 as Sats // Above maximum
 
-            const { result } = renderHook(() =>
-                useAmountInput(
-                    initialAmount,
-                    mockOnChangeAmount,
-                    null,
-                    maximumAmount,
-                ),
+            const { result } = renderHookWithState(
+                () =>
+                    useAmountInput(
+                        initialAmount,
+                        mockOnChangeAmount,
+                        null,
+                        maximumAmount,
+                    ),
+                store,
             )
 
             expect(result.current.validation).toEqual({
@@ -128,13 +165,15 @@ describe('useAmountInput hook', () => {
             const maximumAmount = 2000 as Sats
             const initialAmount = 1000 as Sats // Within bounds
 
-            const { result } = renderHook(() =>
-                useAmountInput(
-                    initialAmount,
-                    mockOnChangeAmount,
-                    minimumAmount,
-                    maximumAmount,
-                ),
+            const { result } = renderHookWithState(
+                () =>
+                    useAmountInput(
+                        initialAmount,
+                        mockOnChangeAmount,
+                        minimumAmount,
+                        maximumAmount,
+                    ),
+                store,
             )
 
             expect(result.current.validation).toBeUndefined()
@@ -143,21 +182,29 @@ describe('useAmountInput hook', () => {
 
     describe('input handlers', () => {
         it('should provide functions to handle input changes', () => {
-            const { result } = renderHook(() =>
-                useAmountInput(1000 as Sats, mockOnChangeAmount),
+            const { result } = renderHookWithState(
+                () => useAmountInput(1000 as Sats, mockOnChangeAmount),
+                store,
             )
 
             expect(result.current.handleChangeFiat).toBeInstanceOf(Function)
             expect(result.current.handleChangeSats).toBeInstanceOf(Function)
             expect(result.current.handleNumpadPress).toBeInstanceOf(Function)
         })
+
         it('handleChangeSats invokes expected state changes', () => {
-            mockSelectorValues({
-                selectAmountInputType: 'sats',
-                selectBtcExchangeRate: 100000,
+            store.dispatch(setAmountInputType('sats'))
+            store.dispatch({
+                type: fetchCurrencyPrices.fulfilled.type,
+                payload: {
+                    btcUsdRate: 100000,
+                    fiatUsdRates: {},
+                },
             })
-            const { result } = renderHook(() =>
-                useAmountInput(0 as Sats, mockOnChangeAmount),
+
+            const { result } = renderHookWithState(
+                () => useAmountInput(0 as Sats, mockOnChangeAmount),
+                store,
             )
             expect(result.current.satsValue).toBe('0')
             expect(result.current.fiatValue).toBe('0')
@@ -171,13 +218,20 @@ describe('useAmountInput hook', () => {
             expect(result.current.satsValue).toBe('10,000')
             expect(result.current.fiatValue).toBe('10.00') // 10K sats = 10.00 USD
         })
+
         it('handleChangeFiat invokes expected state changes', () => {
-            mockSelectorValues({
-                selectAmountInputType: 'fiat',
-                selectBtcExchangeRate: 100000,
+            store.dispatch(setAmountInputType('fiat'))
+            store.dispatch({
+                type: fetchCurrencyPrices.fulfilled.type,
+                payload: {
+                    btcUsdRate: 100000,
+                    fiatUsdRates: {},
+                },
             })
-            const { result } = renderHook(() =>
-                useAmountInput(0 as Sats, mockOnChangeAmount),
+
+            const { result } = renderHookWithState(
+                () => useAmountInput(0 as Sats, mockOnChangeAmount),
+                store,
             )
 
             act(() => {
@@ -194,16 +248,24 @@ describe('useAmountInput hook', () => {
 
     describe('when amount type is in sats', () => {
         beforeEach(() => {
-            mockSelectorValues({
-                selectAmountInputType: 'sats',
+            store.dispatch(setAmountInputType('sats'))
+            // Set exchange rates for numpad tests that need conversions
+            store.dispatch({
+                type: fetchCurrencyPrices.fulfilled.type,
+                payload: {
+                    btcUsdRate: 100000,
+                    fiatUsdRates: {},
+                },
             })
         })
+
         describe('typical numpad usage', () => {
             it('numpad sequence: 1 + 0 + 0 + 0 + 0 = 10K sats = 10 USD', () => {
                 const initialAmount = 0 as Sats
 
-                const { result } = renderHook(() =>
-                    useAmountInput(initialAmount, mockOnChangeAmount),
+                const { result } = renderHookWithState(
+                    () => useAmountInput(initialAmount, mockOnChangeAmount),
+                    store,
                 )
                 expect(result.current.satsValue).toBe('0')
                 expect(result.current.fiatValue).toBe('0')
@@ -234,12 +296,14 @@ describe('useAmountInput hook', () => {
                 expect(result.current.fiatValue).toBe('10.00')
             })
         })
+
         describe('unusual numpad usage', () => {
             it('ignores leading zeroes (numpad sequence: 0 + 0 + 1 + 0 + 0 + 0 + 0 = 10K sats = 10 USD)', () => {
                 const initialAmount = 0 as Sats
 
-                const { result } = renderHook(() =>
-                    useAmountInput(initialAmount, mockOnChangeAmount),
+                const { result } = renderHookWithState(
+                    () => useAmountInput(initialAmount, mockOnChangeAmount),
+                    store,
                 )
                 expect(result.current.satsValue).toBe('0')
                 expect(result.current.fiatValue).toBe('0')
@@ -294,11 +358,13 @@ describe('useAmountInput hook', () => {
                 expect(result.current.satsValue).toBe('10,000')
                 expect(result.current.fiatValue).toBe('10.00')
             })
+
             it('ignores decimals for sats (numpad sequence: 1 + 0 + . + 0 + . + 0 + . + 0 = 10K sats = 10 USD)', () => {
                 const initialAmount = 0 as Sats
 
-                const { result } = renderHook(() =>
-                    useAmountInput(initialAmount, mockOnChangeAmount),
+                const { result } = renderHookWithState(
+                    () => useAmountInput(initialAmount, mockOnChangeAmount),
+                    store,
                 )
                 expect(result.current.satsValue).toBe('0')
                 expect(result.current.fiatValue).toBe('0')
@@ -347,16 +413,13 @@ describe('useAmountInput hook', () => {
 
         describe('numpad usage across different locales', () => {
             it('should handle decimal separator locales (ex: 1.000 sats)', () => {
-                mockSelectorValues({
-                    selectAmountInputType: 'sats',
-                    // 1000 should become "1.000" in German formatting
-                    selectCurrencyLocale: 'de-DE',
-                })
+                store.dispatch(setCurrencyLocale('de-DE'))
                 // Mock system locale to use German formatting for number display
                 mockSystemLocale('de-DE')
 
-                const { result } = renderHook(() =>
-                    useAmountInput(0 as Sats, mockOnChangeAmount),
+                const { result } = renderHookWithState(
+                    () => useAmountInput(0 as Sats, mockOnChangeAmount),
+                    store,
                 )
 
                 act(() => {
@@ -367,16 +430,13 @@ describe('useAmountInput hook', () => {
             })
 
             it('should handle space separators (ex: 1 000 sats)', () => {
-                mockSelectorValues({
-                    selectAmountInputType: 'sats',
-                    // 1000 should become "1 000" in French formatting
-                    selectCurrencyLocale: 'fr-FR',
-                })
+                store.dispatch(setCurrencyLocale('fr-FR'))
                 // Mock system locale to use French formatting for number display
                 mockSystemLocale('fr-FR')
 
-                const { result } = renderHook(() =>
-                    useAmountInput(0 as Sats, mockOnChangeAmount),
+                const { result } = renderHookWithState(
+                    () => useAmountInput(0 as Sats, mockOnChangeAmount),
+                    store,
                 )
 
                 act(() => {
@@ -390,16 +450,24 @@ describe('useAmountInput hook', () => {
 
     describe('when amount type is in fiat', () => {
         beforeEach(() => {
-            mockSelectorValues({
-                selectAmountInputType: 'fiat',
+            store.dispatch(setAmountInputType('fiat'))
+            // Set exchange rates for numpad tests that need conversions
+            store.dispatch({
+                type: fetchCurrencyPrices.fulfilled.type,
+                payload: {
+                    btcUsdRate: 100000,
+                    fiatUsdRates: {},
+                },
             })
         })
+
         describe('typical numpad usage', () => {
             it('numpad sequence: 1 + 0 + 0 + 0 + 0 = 1K USD = 1M sats', () => {
                 const initialAmount = 0 as Sats
 
-                const { result } = renderHook(() =>
-                    useAmountInput(initialAmount, mockOnChangeAmount),
+                const { result } = renderHookWithState(
+                    () => useAmountInput(initialAmount, mockOnChangeAmount),
+                    store,
                 )
                 expect(result.current.fiatValue).toBe('0')
                 expect(result.current.satsValue).toBe('0')
@@ -424,11 +492,13 @@ describe('useAmountInput hook', () => {
                 expect(result.current.fiatValue).toBe('1,000')
                 expect(result.current.satsValue).toBe('1,000,000')
             })
+
             it('numpad sequence: 1 + 2 + . + 3 + 4 = 12.34 USD = 12,340 sats', () => {
                 const initialAmount = 0 as Sats
 
-                const { result } = renderHook(() =>
-                    useAmountInput(initialAmount, mockOnChangeAmount),
+                const { result } = renderHookWithState(
+                    () => useAmountInput(initialAmount, mockOnChangeAmount),
+                    store,
                 )
                 expect(result.current.fiatValue).toBe('0')
                 expect(result.current.satsValue).toBe('0')
@@ -459,12 +529,14 @@ describe('useAmountInput hook', () => {
                 expect(result.current.satsValue).toBe('12,340')
             })
         })
+
         describe('unusual numpad usage', () => {
             it('ignores leading zeroes (numpad sequence: 0 + 0 + 1 + 0 + 0 + 0 + 0 = 1K USD = 1M sats)', () => {
                 const initialAmount = 0 as Sats
 
-                const { result } = renderHook(() =>
-                    useAmountInput(initialAmount, mockOnChangeAmount),
+                const { result } = renderHookWithState(
+                    () => useAmountInput(initialAmount, mockOnChangeAmount),
+                    store,
                 )
                 expect(result.current.fiatValue).toBe('0')
                 expect(result.current.satsValue).toBe('0')
@@ -504,16 +576,20 @@ describe('useAmountInput hook', () => {
         describe('numpad usage across different locales', () => {
             it('should handle locales with inverted thousands & decimal separators (ex: 1.000,00 EUR)', () => {
                 // Test German locale where dot is thousands separator, comma is decimal
-                mockSelectorValues({
-                    selectAmountInputType: 'fiat',
-                    selectCurrency: 'EUR',
-                    // 1000 should become "1.000" in German formatting
-                    selectCurrencyLocale: 'de-DE',
+                store.dispatch(changeOverrideCurrency(SupportedCurrency.EUR))
+                store.dispatch(setCurrencyLocale('de-DE'))
+                store.dispatch({
+                    type: fetchCurrencyPrices.fulfilled.type,
+                    payload: {
+                        btcUsdRate: 100000,
+                        fiatUsdRates: { EUR: 0.9 },
+                    },
                 })
                 mockSystemLocale('de-DE')
 
-                const { result } = renderHook(() =>
-                    useAmountInput(0 as Sats, mockOnChangeAmount),
+                const { result } = renderHookWithState(
+                    () => useAmountInput(0 as Sats, mockOnChangeAmount),
+                    store,
                 )
 
                 // numpad sequence: 1 + 2 + 3 + 4 + . + 5 + 6 = 1.234,56 EUR
@@ -554,16 +630,20 @@ describe('useAmountInput hook', () => {
             })
 
             it('should handle locales with non-breaking space thousands separator (ex: 1 000,00 EUR)', () => {
-                mockSelectorValues({
-                    selectAmountInputType: 'fiat',
-                    selectCurrency: 'EUR',
-                    // 1000 should become "1 000" in French formatting
-                    selectCurrencyLocale: 'fr-FR',
+                store.dispatch(changeOverrideCurrency(SupportedCurrency.EUR))
+                store.dispatch(setCurrencyLocale('fr-FR'))
+                store.dispatch({
+                    type: fetchCurrencyPrices.fulfilled.type,
+                    payload: {
+                        btcUsdRate: 100000,
+                        fiatUsdRates: { EUR: 0.9 },
+                    },
                 })
                 mockSystemLocale('fr-FR')
 
-                const { result } = renderHook(() =>
-                    useAmountInput(0 as Sats, mockOnChangeAmount),
+                const { result } = renderHookWithState(
+                    () => useAmountInput(0 as Sats, mockOnChangeAmount),
+                    store,
                 )
 
                 // numpad sequence: 1 + 2 + 3 + 4 + 5 + . + 6 + 7 = 12 345,67 EUR
@@ -602,17 +682,21 @@ describe('useAmountInput hook', () => {
                 expect(result.current.fiatValue).toBe('12 345,67')
             })
 
-            it('should reject decimal input for zero-decimal currencies (ex: JPY, KRW)', () => {
-                mockSelectorValues({
-                    selectAmountInputType: 'fiat',
-                    selectCurrency: 'JPY',
-                    // 123.45 should become "12,345" in Japanese formatting
-                    selectCurrencyLocale: 'ja-JP',
+            it('should reject decimal input for zero-decimal currencies (ex: KRW)', () => {
+                store.dispatch(changeOverrideCurrency(SupportedCurrency.KRW))
+                store.dispatch(setCurrencyLocale('ko-KR'))
+                store.dispatch({
+                    type: fetchCurrencyPrices.fulfilled.type,
+                    payload: {
+                        btcUsdRate: 100000,
+                        fiatUsdRates: { KRW: 1300 },
+                    },
                 })
-                mockSystemLocale('ja-JP')
+                mockSystemLocale('ko-KR')
 
-                const { result } = renderHook(() =>
-                    useAmountInput(0 as Sats, mockOnChangeAmount),
+                const { result } = renderHookWithState(
+                    () => useAmountInput(0 as Sats, mockOnChangeAmount),
+                    store,
                 )
 
                 act(() => {
@@ -644,21 +728,19 @@ describe('useAmountInput hook', () => {
 })
 
 describe('useAmountFormatter hook', () => {
+    let store: ReturnType<typeof setupStore>
+
     beforeEach(() => {
         jest.clearAllMocks()
+        store = setupStore()
     })
 
     describe('makeFormattedAmountsFromTxn with historical exchange rates', () => {
         it('uses historical exchange rate when txDateFiatInfo is present', () => {
-            mockSelectorValues({
-                selectBtcExchangeRate: 100000, // Current rate: $100K per BTC
-                selectBtcUsdExchangeRate: 100000,
-                selectCurrency: 'USD',
-                selectCurrencyLocale: 'en-US',
-                selectShowFiatTxnAmounts: false,
-            })
-
-            const { result } = renderHook(() => useAmountFormatter())
+            const { result } = renderHookWithState(
+                () => useAmountFormatter(),
+                store,
+            )
 
             const txn = createMockTransaction({
                 amount: 100000000000, // 1 BTC in msats
@@ -679,15 +761,18 @@ describe('useAmountFormatter hook', () => {
         })
 
         it('falls back to current exchange rates when txDateFiatInfo is missing', () => {
-            mockSelectorValues({
-                selectBtcExchangeRate: 100000, // Current rate: $100K per BTC
-                selectBtcUsdExchangeRate: 100000,
-                selectCurrency: 'USD',
-                selectCurrencyLocale: 'en-US',
-                selectShowFiatTxnAmounts: false,
+            store.dispatch({
+                type: fetchCurrencyPrices.fulfilled.type,
+                payload: {
+                    btcUsdRate: 100000, // Current rate: $100K per BTC
+                    fiatUsdRates: {},
+                },
             })
 
-            const { result } = renderHook(() => useAmountFormatter())
+            const { result } = renderHookWithState(
+                () => useAmountFormatter(),
+                store,
+            )
 
             const txn = createMockTransaction({
                 amount: 100000000000, // 1 BTC, no historical data
@@ -703,16 +788,14 @@ describe('useAmountFormatter hook', () => {
         })
 
         it('works with different fiat currencies in historical data', () => {
-            mockSelectorValues({
-                selectBtcExchangeRate: 45000, // Current EUR rate
-                selectBtcUsdExchangeRate: 50000,
-                selectCurrency: 'EUR',
-                selectCurrencyLocale: 'de-DE',
-                selectShowFiatTxnAmounts: false,
-            })
+            store.dispatch(changeOverrideCurrency(SupportedCurrency.EUR))
+            store.dispatch(setCurrencyLocale('de-DE'))
             mockSystemLocale('de-DE')
 
-            const { result } = renderHook(() => useAmountFormatter())
+            const { result } = renderHookWithState(
+                () => useAmountFormatter(),
+                store,
+            )
 
             const txn = createMockTransaction({
                 amount: 10000000000, // 0.1 BTC
@@ -733,16 +816,11 @@ describe('useAmountFormatter hook', () => {
         })
 
         it('respects showFiatTxnAmounts setting with historical data', () => {
-            mockSelectorValues({
-                selectBtcExchangeRate: 100000,
-                selectBtcUsdExchangeRate: 100000,
-                selectCurrency: 'USD',
-                selectCurrencyLocale: 'en-US',
-                selectShowFiatTxnAmounts: true, // with fiat display preference
-            })
+            store.dispatch(setShowFiatTxnAmounts(true)) // with fiat display preference
 
-            const { result: fiatPrimaryResult } = renderHook(() =>
-                useAmountFormatter(),
+            const { result: fiatPrimaryResult } = renderHookWithState(
+                () => useAmountFormatter(),
+                store,
             )
 
             const txn = createMockTransaction({
@@ -764,16 +842,11 @@ describe('useAmountFormatter hook', () => {
                 '1,000,000 SATS',
             )
 
-            mockSelectorValues({
-                selectBtcExchangeRate: 100000,
-                selectBtcUsdExchangeRate: 100000,
-                selectCurrency: 'USD',
-                selectCurrencyLocale: 'en-US',
-                selectShowFiatTxnAmounts: false, // don't show fiat display preference
-            })
+            store.dispatch(setShowFiatTxnAmounts(false)) // don't show fiat display preference
 
-            const { result: satsPrimaryResult } = renderHook(() =>
-                useAmountFormatter(),
+            const { result: satsPrimaryResult } = renderHookWithState(
+                () => useAmountFormatter(),
+                store,
             )
 
             const satsPrimaryFormatted =
@@ -789,15 +862,10 @@ describe('useAmountFormatter hook', () => {
         })
 
         it('handles small historical amounts with proper precision', () => {
-            mockSelectorValues({
-                selectBtcExchangeRate: 100000,
-                selectBtcUsdExchangeRate: 100000,
-                selectCurrency: 'USD',
-                selectCurrencyLocale: 'en-US',
-                selectShowFiatTxnAmounts: false,
-            })
-
-            const { result } = renderHook(() => useAmountFormatter())
+            const { result } = renderHookWithState(
+                () => useAmountFormatter(),
+                store,
+            )
 
             const txn = createMockTransaction({
                 amount: 1000000, // 1000 sats (0.00001 BTC)
