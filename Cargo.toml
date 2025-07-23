@@ -105,8 +105,8 @@ getrandom = "0.3.1"
 hex = { version = "0.4.2" }
 impl-tools = "0.10.0"
 itertools = "0.14"
-nostr = { version = "0.42", default-features = false, features = ["std", "nip44"], rev = "6d88b4dbb491ed31c6e2eb4b4ae8e2b4e537298f", git = "https://github.com/fedibtc/rust-nostr" }
-nostr-sdk = { version = "0.42", features = ["nip44", "nip04"], rev = "6d88b4dbb491ed31c6e2eb4b4ae8e2b4e537298f", git = "https://github.com/fedibtc/rust-nostr" }
+nostr = { version = "0.42", default-features = false, features = ["std", "nip44"], rev = "06b59e3c9e3c8b6ed14679cfaf33730563eca124", git = "https://github.com/fedibtc/rust-nostr" }
+nostr-sdk = { version = "0.42", features = ["nip44", "nip04"], rev = "06b59e3c9e3c8b6ed14679cfaf33730563eca124", git = "https://github.com/fedibtc/rust-nostr" }
 rand = "0.8"
 reqwest = { version = "0.12", features = [
   "json",

@@ -7571,7 +7571,7 @@ dependencies = [
 [[package]]
 name = "nostr"
 version = "0.42.0"
-source = "git+https://github.com/fedibtc/rust-nostr?rev=6d88b4dbb491ed31c6e2eb4b4ae8e2b4e537298f#6d88b4dbb491ed31c6e2eb4b4ae8e2b4e537298f"
+source = "git+https://github.com/fedibtc/rust-nostr?rev=06b59e3c9e3c8b6ed14679cfaf33730563eca124#06b59e3c9e3c8b6ed14679cfaf33730563eca124"
 dependencies = [
  "aes",
  "base64 0.22.1",
@@ -7595,7 +7595,7 @@ dependencies = [
 [[package]]
 name = "nostr-database"
 version = "0.42.0"
-source = "git+https://github.com/fedibtc/rust-nostr?rev=6d88b4dbb491ed31c6e2eb4b4ae8e2b4e537298f#6d88b4dbb491ed31c6e2eb4b4ae8e2b4e537298f"
+source = "git+https://github.com/fedibtc/rust-nostr?rev=06b59e3c9e3c8b6ed14679cfaf33730563eca124#06b59e3c9e3c8b6ed14679cfaf33730563eca124"
 dependencies = [
  "lru 0.14.0",
  "nostr",
@@ -7605,7 +7605,7 @@ dependencies = [
 [[package]]
 name = "nostr-relay-pool"
 version = "0.42.0"
-source = "git+https://github.com/fedibtc/rust-nostr?rev=6d88b4dbb491ed31c6e2eb4b4ae8e2b4e537298f#6d88b4dbb491ed31c6e2eb4b4ae8e2b4e537298f"
+source = "git+https://github.com/fedibtc/rust-nostr?rev=06b59e3c9e3c8b6ed14679cfaf33730563eca124#06b59e3c9e3c8b6ed14679cfaf33730563eca124"
 dependencies = [
  "async-utility",
  "async-wsocket",
@@ -7621,7 +7621,7 @@ dependencies = [
 [[package]]
 name = "nostr-sdk"
 version = "0.42.0"
-source = "git+https://github.com/fedibtc/rust-nostr?rev=6d88b4dbb491ed31c6e2eb4b4ae8e2b4e537298f#6d88b4dbb491ed31c6e2eb4b4ae8e2b4e537298f"
+source = "git+https://github.com/fedibtc/rust-nostr?rev=06b59e3c9e3c8b6ed14679cfaf33730563eca124#06b59e3c9e3c8b6ed14679cfaf33730563eca124"
 dependencies = [
  "async-utility",
  "nostr",
