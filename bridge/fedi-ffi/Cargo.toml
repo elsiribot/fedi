@@ -93,6 +93,7 @@ tempfile = "3.17.1"
 mockito = "1.4.0"
 clap = { workspace = true }
 federations = { workspace = true, features = ["test-support"] }
+devi = { workspace = true }
 
 # FIXME: just put these above? or dev-dependencies
 [target.'cfg(target_os = "macos")'.dependencies]

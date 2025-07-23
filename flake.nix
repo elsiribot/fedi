@@ -361,6 +361,7 @@
               pkgs.esplora-electrs
               pkgs.clightning
               pkgs.lnd
+              (pkgs.matrix-synapse.override { extras = [ ]; })
               pkgs.sccache
               pkgs.ripgrep
 
