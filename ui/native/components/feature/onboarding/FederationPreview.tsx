@@ -258,6 +258,7 @@ const FederationPreview: React.FC<Props> = ({ federation, onJoin, onBack }) => {
                                 </Text>
                             </Flex>
                             <Switch
+                                testID="RecoverFromScratchSwitch"
                                 value={selectedRecoverFromScratch}
                                 onValueChange={() => {
                                     setSelectedRecoverFromScratch(
