@@ -400,7 +400,7 @@ impl Matrix {
                 let mut update_index = 0;
                 let mut stream = std::pin::pin!(stream);
                 while let Some(diffs) = stream.next().await {
-                    this.send_observable_update(ObservableVecUpdate::new_diffs(
+                    this.send_observable_update(ObservableVecUpdate::new(
                         id,
                         update_index,
                         diffs

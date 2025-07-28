@@ -364,9 +364,7 @@ export type ObservableUpdate<T> = {
 
 export type ObservableVec<T> = Observable<Array<T>>;
 
-export type ObservableVecUpdate<T> = ObservableUpdate<
-  Array<SerdeVectorDiff<T>>
->;
+export type ObservableVecUpdate<T> = ObservableUpdate<Array<VectorDiff<T>>>;
 
 /**
  * Tracks how a user completed their onboarding process
@@ -1305,78 +1303,6 @@ export type SPv2WithdrawalState =
   | { primaryOutputError: string }
   | { success: RpcAmount };
 
-export type SerdeVectorDiff<T> =
-  | {
-      kind: "append";
-      /**
-       * The appended elements.
-       */
-      values: T[];
-    }
-  | { kind: "clear" }
-  | {
-      kind: "pushFront";
-      /**
-       * The new element.
-       */
-      value: T;
-    }
-  | {
-      kind: "pushBack";
-      /**
-       * The new element.
-       */
-      value: T;
-    }
-  | { kind: "popFront" }
-  | { kind: "popBack" }
-  | {
-      kind: "insert";
-      /**
-       * The index of the new element.
-       *
-       * The element that was previously at that index as well as all the
-       * ones after it were shifted to the right.
-       */
-      index: number;
-      /**
-       * The new element.
-       */
-      value: T;
-    }
-  | {
-      kind: "set";
-      /**
-       * The index of the element that was replaced.
-       */
-      index: number;
-      /**
-       * The new element.
-       */
-      value: T;
-    }
-  | {
-      kind: "remove";
-      /**
-       * The index that the removed element had.
-       */
-      index: number;
-    }
-  | {
-      kind: "truncate";
-      /**
-       * The number of elements that remain.
-       */
-      length: number;
-    }
-  | {
-      kind: "reset";
-      /**
-       * The full list of elements.
-       */
-      values: T[];
-    };
-
 export type SocialRecoveryApproval = {
   guardianName: string;
   approved: boolean;
@@ -1435,6 +1361,86 @@ export type TransactionEvent = {
 };
 
 export type UserProfile = JSONObject;
+
+export type VectorDiff<T> =
+  | {
+      Append: {
+        /**
+         * The appended elements.
+         */
+        values: T[];
+      };
+    }
+  | "Clear"
+  | {
+      PushFront: {
+        /**
+         * The new element.
+         */
+        value: T;
+      };
+    }
+  | {
+      PushBack: {
+        /**
+         * The new element.
+         */
+        value: T;
+      };
+    }
+  | "PopFront"
+  | "PopBack"
+  | {
+      Insert: {
+        /**
+         * The index of the new element.
+         *
+         * The element that was previously at that index as well as all the
+         * ones after it were shifted to the right.
+         */
+        index: number;
+        /**
+         * The new element.
+         */
+        value: T;
+      };
+    }
+  | {
+      Set: {
+        /**
+         * The index of the element that was replaced.
+         */
+        index: number;
+        /**
+         * The new element.
+         */
+        value: T;
+      };
+    }
+  | {
+      Remove: {
+        /**
+         * The index that the removed element had.
+         */
+        index: number;
+      };
+    }
+  | {
+      Truncate: {
+        /**
+         * The number of elements that remain.
+         */
+        length: number;
+      };
+    }
+  | {
+      Reset: {
+        /**
+         * The full list of elements.
+         */
+        values: T[];
+      };
+    };
 
 /**
  * Withdrawal request with extra data accumulated over events.

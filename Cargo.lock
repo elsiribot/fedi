@@ -3076,6 +3076,7 @@ checksum = "43e8e9d31591be508826b875d8fe6056aebcaec3281ac0e45434ff303686c566"
 dependencies = [
  "futures-core",
  "imbl",
+ "serde",
  "tokio",
  "tracing",
 ]

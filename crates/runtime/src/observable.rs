@@ -12,7 +12,7 @@ use tokio::sync::Mutex;
 use tracing::warn;
 
 use crate::event::EventSink;
-use crate::serde::{SerdeAs, SerdeVectorDiff};
+use crate::ts::TsVectorDiff;
 
 /// ObservableVec is special; it utilizes VectorDiff for efficient
 /// synchronization of vectors between the bridge and the frontend.
@@ -28,8 +28,7 @@ use crate::serde::{SerdeAs, SerdeVectorDiff};
 ///
 /// Refer to `VectorDiff` documentation for more details.
 pub type ObservableVec<T> = Observable<Vector<T>>;
-pub type ObservableVecUpdate<T> =
-    ObservableUpdate<SerdeAs<Vec<VectorDiff<T>>, Vec<SerdeVectorDiff<T>>>>;
+pub type ObservableVecUpdate<T> = ObservableUpdate<Vec<VectorDiff<T>>>;
 
 #[allow(dead_code)]
 // hack for typescript exporting
@@ -42,7 +41,7 @@ mod __hidden {
 
     #[derive(Debug, Clone, ts_rs::TS)]
     #[ts(export)]
-    pub struct ObservableVecUpdate<T: Clone>(ObservableUpdate<Vec<SerdeVectorDiff<T>>>);
+    pub struct ObservableVecUpdate<T: Clone>(ObservableUpdate<Vec<TsVectorDiff<T>>>);
 }
 
 /// An Observable contains a value that updates over time.
@@ -93,12 +92,6 @@ impl<T> ObservableUpdate<T> {
             update_index,
             update,
         }
-    }
-}
-
-impl<T: Clone> ObservableVecUpdate<T> {
-    pub fn new_diffs(id: u64, update_index: u64, diffs: Vec<VectorDiff<T>>) -> Self {
-        Self::new(id, update_index, SerdeAs::new(diffs))
     }
 }
 
@@ -225,7 +218,7 @@ impl ObservablePool {
                 let mut update_index = 0;
                 let mut stream = std::pin::pin!(stream);
                 while let Some(diffs) = stream.next().await {
-                    this.send_observable_update(ObservableVecUpdate::new_diffs(
+                    this.send_observable_update(ObservableVecUpdate::new(
                         id,
                         update_index,
                         diffs.into_iter().map(|diff| diff.map(R::from)).collect(),

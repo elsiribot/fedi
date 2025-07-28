@@ -1,58 +1,11 @@
-use std::marker::PhantomData;
-
 use eyeball_im::VectorDiff;
 use imbl::Vector;
-use serde::{Deserialize, Serialize};
-use serde_with::de::DeserializeAsWrap;
-use serde_with::ser::SerializeAsWrap;
-use serde_with::{DeserializeAs, SerializeAs};
 
-#[derive(Clone, Debug)]
-pub struct SerdeAs<T, U> {
-    pub inner: T,
-    pub phatom_data: PhantomData<U>,
-}
-
-impl<T, U> SerdeAs<T, U> {
-    pub fn new(inner: T) -> Self {
-        Self {
-            inner,
-            phatom_data: PhantomData,
-        }
-    }
-}
-
-impl<T, U> Serialize for SerdeAs<T, U>
-where
-    U: SerializeAs<T>,
-{
-    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
-    where
-        S: serde::Serializer,
-    {
-        SerializeAsWrap::<T, U>::new(&self.inner).serialize(serializer)
-    }
-}
-
-impl<'de, T, U> Deserialize<'de> for SerdeAs<T, U>
-where
-    U: DeserializeAs<'de, T>,
-{
-    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
-    where
-        D: serde::Deserializer<'de>,
-    {
-        let inner: T = DeserializeAsWrap::<T, U>::deserialize(deserializer)?.into_inner();
-        Ok(Self::new(inner))
-    }
-}
-
+// NOTE: only used for TS bindings
 #[derive(Clone, Debug, PartialEq, Eq, serde::Serialize, ts_rs::TS)]
 #[serde(remote = "VectorDiff")]
-#[serde(rename_all = "camelCase")]
-#[serde(tag = "kind")]
-#[ts(export)]
-pub enum SerdeVectorDiff<T: Clone> {
+#[ts(export, rename = "VectorDiff")]
+pub enum TsVectorDiff<T: Clone> {
     /// Multiple elements were appended.
     Append {
         /// The appended elements.
@@ -109,13 +62,4 @@ pub enum SerdeVectorDiff<T: Clone> {
         #[ts(type = "T[]")]
         values: Vector<T>,
     },
-}
-
-impl<T: Clone + Serialize> SerializeAs<VectorDiff<T>> for SerdeVectorDiff<T> {
-    fn serialize_as<S>(value: &VectorDiff<T>, serializer: S) -> Result<S::Ok, S::Error>
-    where
-        S: serde::Serializer,
-    {
-        Self::serialize(value, serializer)
-    }
 }
