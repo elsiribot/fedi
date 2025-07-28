@@ -28,6 +28,6 @@ export async function writeBridgeFile(
     throw new Error('writeBridgeFile is not supported in remote bridge')
 }
 
-export async function getBridgeLogs(): Promise<FileSystemFileHandle[]> {
+export async function getBridgeLogs(): Promise<File> {
     throw new Error('getBridgeLogs is not supported in remote bridge')
 }
