@@ -318,55 +318,6 @@ export type NonceReuseCheckFailedEvent = { federationId: RpcFederationId };
 export type NostrClientFeatureCatalog = { relays: Array<string> };
 
 /**
- * An Observable contains a value that updates over time.
- *
- * The frontend must call `cancelObservable` to free up the resources
- * utilized by the Observable.
- */
-export type Observable<T> = {
-  /**
-   * `id` is used to match `ObservableUpdate`.
-   */
-  id: number;
-  /**
-   * Initial value of the observable.
-   */
-  initial: T;
-};
-
-export type ObservableRoomInfo = Observable<JSONObject>;
-
-export type ObservableRoomList = ObservableVec<RpcRoomId>;
-
-export type ObservableTimelineItems = ObservableVec<RpcTimelineItem>;
-
-/**
- * ObservableUpdate contains the change to original Observable.
- *
- * `T` will only match the Observable<T> in simple observable.
- */
-export type ObservableUpdate<T> = {
-  /**
-   * id matches the id in Observable.
-   * Frontend must store ObservableUpdate with unknown, because you may
-   * receive the ObservableUpdate event before the corresponding Observable
-   * object.
-   */
-  id: number;
-  /**
-   * ObservableUpdate events are highly sensitive to the order
-   * in which they occur. Events may be reordered during RPC or
-   * processing phases. Use this field to correct their order.
-   */
-  update_index: number;
-  update: T;
-};
-
-export type ObservableVec<T> = Observable<Array<T>>;
-
-export type ObservableVecUpdate<T> = ObservableUpdate<Array<VectorDiff<T>>>;
-
-/**
  * Tracks how a user completed their onboarding process
  */
 export type OnboardingMethod = "new_seed" | "restored";
@@ -396,6 +347,8 @@ export type RecoveryProgressEvent = {
    */
   total: number;
 };
+
+export type RoomInfoStreamId = RpcStreamId<JSONObject>;
 
 export type RpcAmount = MSats;
 
@@ -683,10 +636,7 @@ export type RpcMethods = {
   stabilityPoolAverageFeeRate: [stabilityPoolAverageFeeRate, bigint];
   stabilityPoolAvailableLiquidity: [stabilityPoolAvailableLiquidity, RpcAmount];
   spv2AccountInfo: [spv2AccountInfo, RpcSPv2CachedSyncResponse];
-  spv2ObserveAccountInfo: [
-    spv2ObserveAccountInfo,
-    Observable<RpcSPv2CachedSyncResponse>,
-  ];
+  spv2SubscribeAccountInfo: [spv2SubscribeAccountInfo, null];
   spv2NextCycleStartTime: [spv2NextCycleStartTime, bigint];
   spv2DepositToSeek: [spv2DepositToSeek, RpcOperationId];
   spv2Withdraw: [spv2Withdraw, RpcOperationId];
@@ -726,25 +676,19 @@ export type RpcMethods = {
     onboardTransferExistingDeviceRegistration,
     null,
   ];
-  matrixObservableCancel: [matrixObservableCancel, null];
-  matrixInitializeStatus: [
-    matrixInitializeStatus,
-    Observable<MatrixInitializeStatus>,
-  ];
+  streamCancel: [streamCancel, null];
+  matrixInitializeStatus: [matrixInitializeStatus, null];
   matrixGetAccountSession: [matrixGetAccountSession, RpcMatrixAccountSession];
-  matrixObserveSyncIndicator: [
-    matrixObserveSyncIndicator,
-    Observable<RpcSyncIndicator>,
-  ];
-  matrixRoomList: [matrixRoomList, ObservableRoomList];
-  matrixRoomTimelineItems: [matrixRoomTimelineItems, ObservableTimelineItems];
+  matrixSubscribeSyncIndicator: [matrixSubscribeSyncIndicator, null];
+  matrixSubscribeRoomList: [matrixSubscribeRoomList, null];
+  matrixSubscribeRoomTimelineItems: [matrixSubscribeRoomTimelineItems, null];
   matrixRoomTimelineItemsPaginateBackwards: [
     matrixRoomTimelineItemsPaginateBackwards,
     null,
   ];
-  matrixRoomObserveTimelineItemsPaginateBackwards: [
-    matrixRoomObserveTimelineItemsPaginateBackwards,
-    Observable<RpcBackPaginationStatus>,
+  matrixRoomSubscribeTimelineItemsPaginateBackwardsStatus: [
+    matrixRoomSubscribeTimelineItemsPaginateBackwardsStatus,
+    null,
   ];
   matrixSendMessage: [matrixSendMessage, null];
   matrixSendMessageJson: [matrixSendMessageJson, null];
@@ -754,7 +698,7 @@ export type RpcMethods = {
   matrixRoomJoin: [matrixRoomJoin, null];
   matrixRoomJoinPublic: [matrixRoomJoinPublic, null];
   matrixRoomLeave: [matrixRoomLeave, null];
-  matrixRoomObserveInfo: [matrixRoomObserveInfo, ObservableRoomInfo];
+  matrixRoomSubscribeInfo: [matrixRoomSubscribeInfo, null];
   matrixRoomInviteUserById: [matrixRoomInviteUserById, null];
   matrixRoomSetName: [matrixRoomSetName, null];
   matrixRoomSetTopic: [matrixRoomSetTopic, null];
@@ -799,13 +743,10 @@ export type RpcMethods = {
   matrixSaveComposerDraft: [matrixSaveComposerDraft, null];
   matrixLoadComposerDraft: [matrixLoadComposerDraft, RpcComposerDraft | null];
   matrixClearComposerDraft: [matrixClearComposerDraft, null];
-  matrixObserveMultispendGroup: [
-    matrixObserveMultispendGroup,
-    Observable<RpcMultispendGroupStatus>,
-  ];
-  matrixMultispendAccountInfo: [
-    matrixMultispendAccountInfo,
-    Observable<{ Ok: RpcSPv2SyncResponse } | { Err: NetworkError }>,
+  matrixSubscribeMultispendGroup: [matrixSubscribeMultispendGroup, null];
+  matrixSubscribeMultispendAccountInfo: [
+    matrixSubscribeMultispendAccountInfo,
+    null,
   ];
   matrixMultispendListEvents: [
     matrixMultispendListEvents,
@@ -828,9 +769,9 @@ export type RpcMethods = {
     null,
   ];
   matrixMultispendEventData: [matrixMultispendEventData, MsEventData | null];
-  matrixObserveMultispendEventData: [
-    matrixObserveMultispendEventData,
-    Observable<MsEventData>,
+  matrixSubscribeMultispendEventData: [
+    matrixSubscribeMultispendEventData,
+    null,
   ];
   matrixSendMultispendWithdrawalRequest: [
     matrixSendMultispendWithdrawalRequest,
@@ -1084,6 +1025,32 @@ export type RpcStabilityPoolConfig = {
   cycle_duration: RpcDuration;
 };
 
+/**
+ * RpcStreamId is a type-safe identifier for RPC streams.
+ * The phantom type ensures type safety between frontend and backend.
+ */
+export type RpcStreamId<T> = Opaque<number, ["rpc_stream_id", T]>;
+
+/**
+ * RpcStreamUpdate contains updates for an RPC stream.
+ *
+ * The frontend receives these updates via the event system.
+ */
+export type RpcStreamUpdate<T> = {
+  /**
+   * Stream ID that this update belongs to
+   */
+  stream_id: number;
+  /**
+   * Sequence number to ensure correct ordering of updates
+   */
+  sequence: number;
+  /**
+   * The actual update data
+   */
+  data: T;
+};
+
 export type RpcSyncIndicator = "hide" | "show";
 
 export type RpcTimelineEventItemId =
@@ -1261,6 +1228,8 @@ export type RpcTransactionListEntry = {
 export type RpcTransferRequestId = string;
 
 export type RpcUserId = string;
+
+export type RpcVecDiffStreamId<T> = RpcStreamId<Array<VectorDiff<T>>>;
 
 export type SPv2DepositEvent = {
   federationId: RpcFederationId;
@@ -1625,16 +1594,13 @@ export type matrixGetMediaPreview = { url: string };
 
 export type matrixIgnoreUser = { userId: RpcUserId };
 
-export type matrixInitializeStatus = { observableId: number };
+export type matrixInitializeStatus = {
+  streamId: RpcStreamId<MatrixInitializeStatus>;
+};
 
 export type matrixListIgnoredUsers = {};
 
 export type matrixLoadComposerDraft = { roomId: RpcRoomId };
-
-export type matrixMultispendAccountInfo = {
-  roomId: RpcRoomId;
-  observableId: number;
-};
 
 export type matrixMultispendDeposit = {
   roomId: RpcRoomId;
@@ -1653,21 +1619,6 @@ export type matrixMultispendListEvents = {
   startAfter: number | null;
   limit: number;
 };
-
-export type matrixObservableCancel = { observableId: number };
-
-export type matrixObserveMultispendEventData = {
-  observableId: number;
-  roomId: RpcRoomId;
-  eventId: RpcEventId;
-};
-
-export type matrixObserveMultispendGroup = {
-  observableId: number;
-  roomId: RpcRoomId;
-};
-
-export type matrixObserveSyncIndicator = { observableId: number };
 
 export type matrixPublicRoomInfo = { roomId: string };
 
@@ -1712,16 +1663,7 @@ export type matrixRoomKickUser = {
 
 export type matrixRoomLeave = { roomId: RpcRoomId };
 
-export type matrixRoomList = { observableId: number };
-
 export type matrixRoomMarkAsUnread = { roomId: RpcRoomId; unread: boolean };
-
-export type matrixRoomObserveInfo = { observableId: number; roomId: RpcRoomId };
-
-export type matrixRoomObserveTimelineItemsPaginateBackwards = {
-  observableId: number;
-  roomId: RpcRoomId;
-};
 
 export type matrixRoomPreviewContent = { roomId: RpcRoomId };
 
@@ -1741,8 +1683,13 @@ export type matrixRoomSetPowerLevels = {
 
 export type matrixRoomSetTopic = { roomId: RpcRoomId; topic: string };
 
-export type matrixRoomTimelineItems = {
-  observableId: number;
+export type matrixRoomSubscribeInfo = {
+  streamId: RoomInfoStreamId;
+  roomId: RpcRoomId;
+};
+
+export type matrixRoomSubscribeTimelineItemsPaginateBackwardsStatus = {
+  streamId: RpcStreamId<RpcBackPaginationStatus>;
   roomId: RpcRoomId;
 };
 
@@ -1820,6 +1767,35 @@ export type matrixStartPoll = {
   answers: Array<string>;
   isMultipleChoice: boolean;
   isDisclosed: boolean;
+};
+
+export type matrixSubscribeMultispendAccountInfo = {
+  roomId: RpcRoomId;
+  streamId: RpcStreamId<{ Ok: RpcSPv2SyncResponse } | { Err: NetworkError }>;
+};
+
+export type matrixSubscribeMultispendEventData = {
+  streamId: RpcStreamId<MsEventData>;
+  roomId: RpcRoomId;
+  eventId: RpcEventId;
+};
+
+export type matrixSubscribeMultispendGroup = {
+  streamId: RpcStreamId<RpcMultispendGroupStatus>;
+  roomId: RpcRoomId;
+};
+
+export type matrixSubscribeRoomList = {
+  streamId: RpcVecDiffStreamId<RpcRoomId>;
+};
+
+export type matrixSubscribeRoomTimelineItems = {
+  streamId: RpcVecDiffStreamId<RpcTimelineItem>;
+  roomId: RpcRoomId;
+};
+
+export type matrixSubscribeSyncIndicator = {
+  streamId: RpcStreamId<RpcSyncIndicator>;
 };
 
 export type matrixUnignoreUser = { userId: RpcUserId };
@@ -1945,14 +1921,14 @@ export type spv2DepositToSeek = {
 
 export type spv2NextCycleStartTime = { federationId: RpcFederationId };
 
-export type spv2ObserveAccountInfo = {
-  federationId: RpcFederationId;
-  observableId: number;
-};
-
 export type spv2OurPaymentAddress = { federationId: RpcFederationId };
 
 export type spv2ParsePaymentAddress = { address: string };
+
+export type spv2SubscribeAccountInfo = {
+  federationId: RpcFederationId;
+  streamId: RpcStreamId<RpcSPv2CachedSyncResponse>;
+};
 
 export type spv2Transfer = {
   paymentAddress: string;
@@ -1997,6 +1973,8 @@ export type stabilityPoolWithdraw = {
   unlockedAmount: RpcAmount;
   lockedBps: number;
 };
+
+export type streamCancel = { streamId: number };
 
 export type supportsRecurringdLnurl = { federationId: RpcFederationId };
 

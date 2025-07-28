@@ -1,29 +1,28 @@
 import { VectorDiff } from '../../types/bindings'
 import {
-    applyObservableUpdate,
-    applyObservableUpdates,
-    mapObservableUpdate,
-    mapObservableUpdates,
-    makeInitialResetUpdate,
-    getNewObservableIds,
-} from '../../utils/observable'
+    applyStreamUpdate,
+    applyStreamUpdates,
+    mapStreamUpdate,
+    mapStreamUpdates,
+    getNewStreamIds,
+} from '../../utils/stream'
 
-describe('observable utils', () => {
-    describe('applyObservableUpdate', () => {
+describe('stream utils', () => {
+    describe('applyStreamUpdate', () => {
         const initialArray = ['a', 'b', 'c', 'd']
 
         it('handles Clear update', () => {
-            const result = applyObservableUpdate(initialArray, 'Clear')
+            const result = applyStreamUpdate(initialArray, 'Clear')
             expect(result).toEqual([])
         })
 
         it('handles PopFront update', () => {
-            const result = applyObservableUpdate(initialArray, 'PopFront')
+            const result = applyStreamUpdate(initialArray, 'PopFront')
             expect(result).toEqual(['b', 'c', 'd'])
         })
 
         it('handles PopBack update', () => {
-            const result = applyObservableUpdate(initialArray, 'PopBack')
+            const result = applyStreamUpdate(initialArray, 'PopBack')
             expect(result).toEqual(['a', 'b', 'c'])
         })
 
@@ -31,7 +30,7 @@ describe('observable utils', () => {
             const update: VectorDiff<string> = {
                 Append: { values: ['e', 'f'] },
             }
-            const result = applyObservableUpdate(initialArray, update)
+            const result = applyStreamUpdate(initialArray, update)
             expect(result).toEqual(['a', 'b', 'c', 'd', 'e', 'f'])
         })
 
@@ -39,7 +38,7 @@ describe('observable utils', () => {
             const update: VectorDiff<string> = {
                 PushFront: { value: 'z' },
             }
-            const result = applyObservableUpdate(initialArray, update)
+            const result = applyStreamUpdate(initialArray, update)
             expect(result).toEqual(['z', 'a', 'b', 'c', 'd'])
         })
 
@@ -47,7 +46,7 @@ describe('observable utils', () => {
             const update: VectorDiff<string> = {
                 PushBack: { value: 'z' },
             }
-            const result = applyObservableUpdate(initialArray, update)
+            const result = applyStreamUpdate(initialArray, update)
             expect(result).toEqual(['a', 'b', 'c', 'd', 'z'])
         })
 
@@ -55,7 +54,7 @@ describe('observable utils', () => {
             const update: VectorDiff<string> = {
                 Insert: { index: 0, value: 'z' },
             }
-            const result = applyObservableUpdate(initialArray, update)
+            const result = applyStreamUpdate(initialArray, update)
             expect(result).toEqual(['z', 'a', 'b', 'c', 'd'])
         })
 
@@ -63,7 +62,7 @@ describe('observable utils', () => {
             const update: VectorDiff<string> = {
                 Insert: { index: 2, value: 'z' },
             }
-            const result = applyObservableUpdate(initialArray, update)
+            const result = applyStreamUpdate(initialArray, update)
             expect(result).toEqual(['a', 'b', 'z', 'c', 'd'])
         })
 
@@ -71,7 +70,7 @@ describe('observable utils', () => {
             const update: VectorDiff<string> = {
                 Insert: { index: 4, value: 'z' },
             }
-            const result = applyObservableUpdate(initialArray, update)
+            const result = applyStreamUpdate(initialArray, update)
             expect(result).toEqual(['a', 'b', 'c', 'd', 'z'])
         })
 
@@ -79,7 +78,7 @@ describe('observable utils', () => {
             const update: VectorDiff<string> = {
                 Set: { index: 1, value: 'z' },
             }
-            const result = applyObservableUpdate(initialArray, update)
+            const result = applyStreamUpdate(initialArray, update)
             expect(result).toEqual(['a', 'z', 'c', 'd'])
         })
 
@@ -87,7 +86,7 @@ describe('observable utils', () => {
             const update: VectorDiff<string> = {
                 Remove: { index: 0 },
             }
-            const result = applyObservableUpdate(initialArray, update)
+            const result = applyStreamUpdate(initialArray, update)
             expect(result).toEqual(['b', 'c', 'd'])
         })
 
@@ -95,7 +94,7 @@ describe('observable utils', () => {
             const update: VectorDiff<string> = {
                 Remove: { index: 1 },
             }
-            const result = applyObservableUpdate(initialArray, update)
+            const result = applyStreamUpdate(initialArray, update)
             expect(result).toEqual(['a', 'c', 'd'])
         })
 
@@ -103,7 +102,7 @@ describe('observable utils', () => {
             const update: VectorDiff<string> = {
                 Remove: { index: 3 },
             }
-            const result = applyObservableUpdate(initialArray, update)
+            const result = applyStreamUpdate(initialArray, update)
             expect(result).toEqual(['a', 'b', 'c'])
         })
 
@@ -111,7 +110,7 @@ describe('observable utils', () => {
             const update: VectorDiff<string> = {
                 Truncate: { length: 2 },
             }
-            const result = applyObservableUpdate(initialArray, update)
+            const result = applyStreamUpdate(initialArray, update)
             expect(result).toEqual(['a', 'b'])
         })
 
@@ -119,34 +118,32 @@ describe('observable utils', () => {
             const update: VectorDiff<string> = {
                 Reset: { values: ['x', 'y', 'z'] },
             }
-            const result = applyObservableUpdate(initialArray, update)
+            const result = applyStreamUpdate(initialArray, update)
             expect(result).toEqual(['x', 'y', 'z'])
         })
 
         it('throws error for unknown update type', () => {
             const invalidUpdate = { Unknown: { value: 'test' } } as any
             expect(() =>
-                applyObservableUpdate(initialArray, invalidUpdate),
+                applyStreamUpdate(initialArray, invalidUpdate),
             ).toThrow('Unknown update type')
         })
 
         it('handles empty array operations', () => {
             const emptyArray: string[] = []
 
-            expect(applyObservableUpdate(emptyArray, 'Clear')).toEqual([])
-            expect(applyObservableUpdate(emptyArray, 'PopFront')).toEqual([])
-            expect(applyObservableUpdate(emptyArray, 'PopBack')).toEqual([])
+            expect(applyStreamUpdate(emptyArray, 'Clear')).toEqual([])
+            expect(applyStreamUpdate(emptyArray, 'PopFront')).toEqual([])
+            expect(applyStreamUpdate(emptyArray, 'PopBack')).toEqual([])
 
             const pushFront: VectorDiff<string> = {
                 PushFront: { value: 'first' },
             }
-            expect(applyObservableUpdate(emptyArray, pushFront)).toEqual([
-                'first',
-            ])
+            expect(applyStreamUpdate(emptyArray, pushFront)).toEqual(['first'])
         })
     })
 
-    describe('applyObservableUpdates', () => {
+    describe('applyStreamUpdates', () => {
         it('applies multiple updates in sequence', () => {
             const initial = ['a', 'b']
             const updates: VectorDiff<string>[] = [
@@ -155,13 +152,13 @@ describe('observable utils', () => {
                 { Remove: { index: 0 } },
             ]
 
-            const result = applyObservableUpdates(initial, updates)
+            const result = applyStreamUpdates(initial, updates)
             expect(result).toEqual(['x', 'b', 'c'])
         })
 
         it('handles empty updates array', () => {
             const initial = ['a', 'b', 'c']
-            const result = applyObservableUpdates(initial, [])
+            const result = applyStreamUpdates(initial, [])
             expect(result).toEqual(['a', 'b', 'c'])
         })
 
@@ -176,26 +173,26 @@ describe('observable utils', () => {
                 { Truncate: { length: 4 } },
             ]
 
-            const result = applyObservableUpdates(initial, updates)
+            const result = applyStreamUpdates(initial, updates)
             expect(result).toEqual(['0', 'updated', '3', '4'])
         })
     })
 
-    describe('mapObservableUpdate', () => {
+    describe('mapStreamUpdate', () => {
         const doubleString = (s: string) => s + s
 
         it('handles Clear update', () => {
-            const result = mapObservableUpdate('Clear', doubleString)
+            const result = mapStreamUpdate('Clear', doubleString)
             expect(result).toBe('Clear')
         })
 
         it('handles PopFront update', () => {
-            const result = mapObservableUpdate('PopFront', doubleString)
+            const result = mapStreamUpdate('PopFront', doubleString)
             expect(result).toBe('PopFront')
         })
 
         it('handles PopBack update', () => {
-            const result = mapObservableUpdate('PopBack', doubleString)
+            const result = mapStreamUpdate('PopBack', doubleString)
             expect(result).toBe('PopBack')
         })
 
@@ -203,7 +200,7 @@ describe('observable utils', () => {
             const update: VectorDiff<string> = {
                 Append: { values: ['a', 'b'] },
             }
-            const result = mapObservableUpdate(update, doubleString)
+            const result = mapStreamUpdate(update, doubleString)
             expect(result).toEqual({
                 Append: { values: ['aa', 'bb'] },
             })
@@ -213,7 +210,7 @@ describe('observable utils', () => {
             const update: VectorDiff<string> = {
                 PushFront: { value: 'test' },
             }
-            const result = mapObservableUpdate(update, doubleString)
+            const result = mapStreamUpdate(update, doubleString)
             expect(result).toEqual({
                 PushFront: { value: 'testtest' },
             })
@@ -223,7 +220,7 @@ describe('observable utils', () => {
             const update: VectorDiff<string> = {
                 PushBack: { value: 'test' },
             }
-            const result = mapObservableUpdate(update, doubleString)
+            const result = mapStreamUpdate(update, doubleString)
             expect(result).toEqual({
                 PushBack: { value: 'testtest' },
             })
@@ -233,7 +230,7 @@ describe('observable utils', () => {
             const update: VectorDiff<string> = {
                 Insert: { index: 1, value: 'test' },
             }
-            const result = mapObservableUpdate(update, doubleString)
+            const result = mapStreamUpdate(update, doubleString)
             expect(result).toEqual({
                 Insert: { index: 1, value: 'testtest' },
             })
@@ -243,7 +240,7 @@ describe('observable utils', () => {
             const update: VectorDiff<string> = {
                 Set: { index: 2, value: 'test' },
             }
-            const result = mapObservableUpdate(update, doubleString)
+            const result = mapStreamUpdate(update, doubleString)
             expect(result).toEqual({
                 Set: { index: 2, value: 'testtest' },
             })
@@ -253,7 +250,7 @@ describe('observable utils', () => {
             const update: VectorDiff<string> = {
                 Remove: { index: 1 },
             }
-            const result = mapObservableUpdate(update, doubleString)
+            const result = mapStreamUpdate(update, doubleString)
             expect(result).toEqual({
                 Remove: { index: 1 },
             })
@@ -263,7 +260,7 @@ describe('observable utils', () => {
             const update: VectorDiff<string> = {
                 Truncate: { length: 5 },
             }
-            const result = mapObservableUpdate(update, doubleString)
+            const result = mapStreamUpdate(update, doubleString)
             expect(result).toEqual({
                 Truncate: { length: 5 },
             })
@@ -273,7 +270,7 @@ describe('observable utils', () => {
             const update: VectorDiff<string> = {
                 Reset: { values: ['a', 'b', 'c'] },
             }
-            const result = mapObservableUpdate(update, doubleString)
+            const result = mapStreamUpdate(update, doubleString)
             expect(result).toEqual({
                 Reset: { values: ['aa', 'bb', 'cc'] },
             })
@@ -281,9 +278,9 @@ describe('observable utils', () => {
 
         it('throws error for unknown update type', () => {
             const invalidUpdate = { Unknown: { value: 'test' } } as any
-            expect(() =>
-                mapObservableUpdate(invalidUpdate, doubleString),
-            ).toThrow('Unknown update type')
+            expect(() => mapStreamUpdate(invalidUpdate, doubleString)).toThrow(
+                'Unknown update type',
+            )
         })
 
         it('works with type transformation', () => {
@@ -291,14 +288,14 @@ describe('observable utils', () => {
             const update: VectorDiff<string> = {
                 Append: { values: ['hello', 'world'] },
             }
-            const result = mapObservableUpdate(update, stringToNumber)
+            const result = mapStreamUpdate(update, stringToNumber)
             expect(result).toEqual({
                 Append: { values: [5, 5] },
             })
         })
     })
 
-    describe('mapObservableUpdates', () => {
+    describe('mapStreamUpdates', () => {
         const toUpperCase = (s: string) => s.toUpperCase()
 
         it('maps multiple updates', () => {
@@ -309,7 +306,7 @@ describe('observable utils', () => {
                 { Reset: { values: ['new', 'data'] } },
             ]
 
-            const result = mapObservableUpdates(updates, toUpperCase)
+            const result = mapStreamUpdates(updates, toUpperCase)
             expect(result).toEqual([
                 { PushBack: { value: 'HELLO' } },
                 { Append: { values: ['WORLD', 'TEST'] } },
@@ -319,25 +316,12 @@ describe('observable utils', () => {
         })
 
         it('handles empty updates array', () => {
-            const result = mapObservableUpdates([], toUpperCase)
+            const result = mapStreamUpdates([], toUpperCase)
             expect(result).toEqual([])
         })
     })
 
-    describe('makeInitialResetUpdate', () => {
-        it('creates reset update with provided values', () => {
-            const values = ['a', 'b', 'c']
-            const result = makeInitialResetUpdate(values)
-            expect(result).toEqual([{ Reset: { values } }])
-        })
-
-        it('creates reset update with empty array', () => {
-            const result = makeInitialResetUpdate([])
-            expect(result).toEqual([{ Reset: { values: [] } }])
-        })
-    })
-
-    describe('getNewObservableIds', () => {
+    describe('getNewStreamIds', () => {
         interface TestItem {
             id: string
             name: string
@@ -351,7 +335,7 @@ describe('observable utils', () => {
                 { Insert: { index: 1, value: { id: 'id2', name: 'test2' } } },
             ]
 
-            const result = getNewObservableIds(updates, getId)
+            const result = getNewStreamIds(updates, getId)
             expect(result).toEqual(new Set(['id1', 'id2']))
         })
 
@@ -360,7 +344,7 @@ describe('observable utils', () => {
                 { PushFront: { value: { id: 'id1', name: 'test1' } } },
             ]
 
-            const result = getNewObservableIds(updates, getId)
+            const result = getNewStreamIds(updates, getId)
             expect(result).toEqual(new Set(['id1']))
         })
 
@@ -369,7 +353,7 @@ describe('observable utils', () => {
                 { PushBack: { value: { id: 'id1', name: 'test1' } } },
             ]
 
-            const result = getNewObservableIds(updates, getId)
+            const result = getNewStreamIds(updates, getId)
             expect(result).toEqual(new Set(['id1']))
         })
 
@@ -378,7 +362,7 @@ describe('observable utils', () => {
                 { Set: { index: 0, value: { id: 'id1', name: 'test1' } } },
             ]
 
-            const result = getNewObservableIds(updates, getId)
+            const result = getNewStreamIds(updates, getId)
             expect(result).toEqual(new Set(['id1']))
         })
 
@@ -394,7 +378,7 @@ describe('observable utils', () => {
                 },
             ]
 
-            const result = getNewObservableIds(updates, getId)
+            const result = getNewStreamIds(updates, getId)
             expect(result).toEqual(new Set(['id1', 'id2']))
         })
 
@@ -411,7 +395,7 @@ describe('observable utils', () => {
                 },
             ]
 
-            const result = getNewObservableIds(updates, getId)
+            const result = getNewStreamIds(updates, getId)
             expect(result).toEqual(new Set(['id1', 'id2', 'id3']))
         })
 
@@ -424,7 +408,7 @@ describe('observable utils', () => {
                 { Truncate: { length: 5 } },
             ]
 
-            const result = getNewObservableIds(updates, getId)
+            const result = getNewStreamIds(updates, getId)
             expect(result).toEqual(new Set())
         })
 
@@ -444,7 +428,7 @@ describe('observable utils', () => {
                 { Set: { index: 1, value: { id: 'id4', name: 'test4' } } },
             ]
 
-            const result = getNewObservableIds(updates, getId)
+            const result = getNewStreamIds(updates, getId)
             expect(result).toEqual(new Set(['id1', 'id2', 'id3', 'id4']))
         })
 
@@ -470,7 +454,7 @@ describe('observable utils', () => {
                 },
             ]
 
-            const result = getNewObservableIds(updates, getIdWithFalsy)
+            const result = getNewStreamIds(updates, getIdWithFalsy)
             expect(result).toEqual(new Set(['id1', 'id5']))
         })
 
@@ -486,12 +470,12 @@ describe('observable utils', () => {
                 },
             ]
 
-            const result = getNewObservableIds(updates, getId)
+            const result = getNewStreamIds(updates, getId)
             expect(result).toEqual(new Set(['duplicate', 'unique']))
         })
 
         it('handles empty updates array', () => {
-            const result = getNewObservableIds([], getId)
+            const result = getNewStreamIds([], getId)
             expect(result).toEqual(new Set())
         })
     })
@@ -530,7 +514,7 @@ describe('observable utils', () => {
                 { Truncate: { length: 8 } },
             ]
 
-            const finalState = applyObservableUpdates(initialState, updates)
+            const finalState = applyStreamUpdates(initialState, updates)
 
             expect(finalState).toEqual([
                 'beginning',
@@ -548,8 +532,8 @@ describe('observable utils', () => {
             expect(finalState[7]).toBe('final')
 
             const toUpperCase = (s: string) => s.toUpperCase()
-            const mappedUpdates = mapObservableUpdates(updates, toUpperCase)
-            const mappedFinalState = applyObservableUpdates(
+            const mappedUpdates = mapStreamUpdates(updates, toUpperCase)
+            const mappedFinalState = applyStreamUpdates(
                 initialState.map(toUpperCase),
                 mappedUpdates,
             )
@@ -566,7 +550,7 @@ describe('observable utils', () => {
             ])
 
             const getId = (item: string) => item
-            const newIds = getNewObservableIds(updates, getId)
+            const newIds = getNewStreamIds(updates, getId)
             const expectedNewIds = new Set([
                 'start',
                 'end',

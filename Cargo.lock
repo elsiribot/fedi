@@ -6858,6 +6858,7 @@ name = "matrix"
 version = "0.3.0"
 dependencies = [
  "anyhow",
+ "async-stream",
  "fedimint-core",
  "fedimint-derive-secret",
  "futures",

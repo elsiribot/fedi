@@ -5,9 +5,9 @@ use std::sync::{Arc, Weak};
 use std::time::Duration;
 
 use anyhow::{bail, Context, Result};
+use async_stream::stream;
 use fedimint_derive_secret::DerivableSecret;
-use futures::StreamExt;
-use imbl::Vector;
+use futures::{stream, Stream, StreamExt};
 use matrix_sdk::attachment::{
     AttachmentConfig, AttachmentInfo, BaseFileInfo, BaseImageInfo, BaseVideoInfo,
 };
@@ -50,6 +50,7 @@ use matrix_sdk::ruma::{
     assign, EventId, OwnedEventId, OwnedMxcUri, OwnedRoomId, RoomId, UInt, UserId,
 };
 use matrix_sdk::{Client, RoomInfo, RoomMemberships, SessionChange};
+use matrix_sdk_ui::eyeball_im::VectorDiff;
 use matrix_sdk_ui::sync_service::{self, SyncService};
 use matrix_sdk_ui::timeline::{default_event_filter, RoomExt, TimelineEventItemId};
 use matrix_sdk_ui::{room_list_service, Timeline};
@@ -58,7 +59,6 @@ use rpc_types::error::ErrorCode;
 pub use rpc_types::matrix::*;
 use rpc_types::RpcMediaUploadParams;
 use runtime::bridge_runtime::Runtime;
-use runtime::observable::{Observable, ObservableVec, ObservableVecUpdate};
 use runtime::storage::AppState;
 use tokio::sync::{broadcast, watch, Mutex};
 use tracing::{error, info, warn};
@@ -381,59 +381,35 @@ impl Matrix {
         })
     }
 
-    pub async fn observable_cancel(&self, id: u64) -> Result<()> {
-        self.runtime.observable_pool.observable_cancel(id).await
-    }
-
     /// All chats in matrix are rooms, whether DM or group chats.
-    pub async fn room_list(&self, observable_id: u64) -> Result<ObservableVec<RpcRoomId>> {
+    pub async fn room_list(&self) -> impl Stream<Item = Vec<VectorDiff<RpcRoomId>>> {
         const PAGE_SIZE: usize = 1000;
         // manual construction required to to have correct lifetimes
         let room_list_service = self.sync_service.room_list_service();
-        self.runtime
-            .observable_pool
-            .make_observable(observable_id, Vector::new(), move |this, id| async move {
-                let list = room_list_service.all_rooms().await?;
-                let (stream, controller) = list.entries_with_dynamic_adapters(PAGE_SIZE);
-                // setting filter is required to start the controller - so we use no op filter
-                controller.set_filter(Box::new(|_| true));
-                let mut update_index = 0;
-                let mut stream = std::pin::pin!(stream);
-                while let Some(diffs) = stream.next().await {
-                    this.send_observable_update(ObservableVecUpdate::new(
-                        id,
-                        update_index,
-                        diffs
-                            .into_iter()
-                            .map(|diff| diff.map(|x| RpcRoomId::from(x.room_id().to_owned())))
-                            .collect(),
-                    ))
-                    .await;
-                    update_index += 1;
-                }
-                Ok(())
-            })
-            .await
+
+        stream! {
+            let list = room_list_service.all_rooms().await.unwrap();
+            let (entries_stream, controller) = list.entries_with_dynamic_adapters(PAGE_SIZE);
+            // setting filter is required to start the controller - so we use no op filter
+            controller.set_filter(Box::new(|_| true));
+
+            let mut stream = pin!(entries_stream);
+            while let Some(diffs) = stream.next().await {
+                yield diffs
+                    .into_iter()
+                    .map(|diff| diff.map(|x| RpcRoomId::from(x.room_id().to_owned())))
+                    .collect();
+            }
+        }
     }
 
     /// Sync status is used to display "Waiting for network" indicator on
     /// frontend.
-    ///
-    /// We delay the events by 2 seconds to avoid flickering.
-    pub async fn observe_sync_status(
-        &self,
-        observable_id: u64,
-    ) -> Result<Observable<RpcSyncIndicator>> {
-        self.runtime
-            .observable_pool
-            .make_observable_from_stream(
-                observable_id,
-                None,
-                self.sync_service
-                    .room_list_service()
-                    .sync_indicator(Duration::from_secs(2), Duration::from_secs(2)),
-            )
-            .await
+    pub fn subscribe_sync_status(&self) -> impl Stream<Item = RpcSyncIndicator> {
+        self.sync_service
+            .room_list_service()
+            .sync_indicator(Duration::from_secs(2), Duration::from_secs(2))
+            .map(RpcSyncIndicator::from)
     }
 
     pub async fn room(&self, room_id: &RoomId) -> Result<Room, room_list_service::Error> {
@@ -482,15 +458,22 @@ impl Matrix {
 
     pub async fn room_timeline_items(
         &self,
-        observable_id: u64,
         room_id: &RoomId,
-    ) -> Result<ObservableVec<RpcTimelineItem>> {
+    ) -> Result<impl Stream<Item = Vec<VectorDiff<RpcTimelineItem>>>> {
         let timeline = self.timeline(room_id).await?;
         let (initial, stream) = timeline.subscribe().await;
-        self.runtime
-            .observable_pool
-            .make_observable_from_vec_diff_stream(observable_id, initial, stream)
-            .await
+        Ok(stream! {
+            // First emit the initial vector
+            yield vec![VectorDiff::Reset { values:
+                initial.into_iter().map(RpcTimelineItem::from).collect()
+            }];
+
+            // Then emit updates as diffs
+            let mut stream = pin!(stream);
+            while let Some(diffs) = stream.next().await {
+                yield diffs.into_iter().map(|diff| diff.map(RpcTimelineItem::from)).collect();
+            }
+        })
     }
 
     pub async fn room_timeline_items_paginate_backwards(
@@ -503,20 +486,16 @@ impl Matrix {
         Ok(())
     }
 
-    pub async fn room_observe_timeline_items_paginate_backwards_status(
+    pub async fn subscribe_timeline_items_paginate_backwards_status(
         &self,
-        observable_id: u64,
         room_id: &RoomId,
-    ) -> Result<Observable<RpcBackPaginationStatus>> {
+    ) -> Result<impl Stream<Item = RpcBackPaginationStatus>> {
         let timeline = self.timeline(room_id).await?;
         let (current, stream) = timeline
             .live_back_pagination_status()
             .await
             .context("we only have live rooms")?;
-        self.runtime
-            .observable_pool
-            .make_observable_from_stream(observable_id, Some(current), stream)
-            .await
+        Ok(stream::iter([current]).chain(stream).map(Into::into))
     }
 
     pub async fn send_message_text(&self, room_id: &RoomId, message: String) -> anyhow::Result<()> {
@@ -647,16 +626,14 @@ impl Matrix {
         Ok(())
     }
 
-    pub async fn room_observe_info(
+    pub async fn subscribe_room_info(
         &self,
-        observable_id: u64,
         room_id: &RoomId,
-    ) -> Result<Observable<RoomInfo>> {
-        let sub = self.room(room_id).await?.subscribe_info();
-        self.runtime
-            .observable_pool
-            .make_observable_from_subscriber(observable_id, sub)
-            .await
+    ) -> Result<impl Stream<Item = RoomInfo>> {
+        let mut sub = self.room(room_id).await?.subscribe_info();
+        // yield first item immediately
+        sub.reset();
+        Ok(sub)
     }
 
     pub async fn room_invite_user_by_id(&self, room_id: &RoomId, user_id: &UserId) -> Result<()> {
