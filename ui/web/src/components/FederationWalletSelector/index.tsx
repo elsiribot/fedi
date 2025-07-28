@@ -75,7 +75,9 @@ export const FederationWalletSelector: React.FC = () => {
             content={federationList}
             open={isSelectorOpen}
             onOpenChange={setIsSelectorOpen}>
-            <Container aria-label="federation-selector">
+            <Container
+                aria-label="federation-selector"
+                data-testid="federation_wallet_selector">
                 <Wrapper>
                     <Inner key={paymentFederation?.id}>
                         <FederationAvatar
