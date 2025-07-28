@@ -38,6 +38,8 @@ use tokio::sync::Semaphore;
 use tokio::task::JoinSet;
 use tracing::info;
 
+mod matrix;
+
 // nosemgrep: ban-wildcard-imports
 use crate::rpc::*;
 use crate::test_device::{use_lnd_gateway, MockFediApi, TestDevice};
@@ -182,7 +184,7 @@ async fn tests_wrapper_for_bridge() -> anyhow::Result<()> {
     let tests = tests_array![
         test_join_and_leave_and_join,
         test_join_concurrent,
-        test_matrix_login,
+        matrix::test_matrix_login,
         // TODO: re-enable
         // test_lightning_send_and_receive,
         test_ecash,
@@ -348,17 +350,6 @@ async fn wait_for_federation_loading(
             FederationState::Failed(err) => bail!(err),
         }
     }
-}
-
-async fn test_matrix_login(_dev_fed: DevFed) -> anyhow::Result<()> {
-    let td = TestDevice::new();
-    let bridge = td.bridge_full().await?;
-
-    // Wait for matrix to initialize
-    let _matrix = bridge.matrix.wait().await;
-
-    // If we get here, matrix login was successful
-    Ok(())
 }
 
 #[allow(dead_code)]
