@@ -23,6 +23,15 @@ jest.mock('next/router', () => ({
     },
 }))
 
+jest.mock('@fedi/common/utils/log', () => ({
+    makeLog: () => ({
+        error: jest.fn(),
+        debug: jest.fn(),
+        info: jest.fn(),
+        warn: jest.fn(),
+    }),
+}))
+
 global.URL.createObjectURL = jest.fn().mockImplementation(() => '/test-url')
 global.URL.revokeObjectURL = jest.fn()
 

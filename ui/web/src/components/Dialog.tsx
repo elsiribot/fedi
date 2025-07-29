@@ -1,4 +1,5 @@
 import * as RadixDialog from '@radix-ui/react-dialog'
+import { VisuallyHidden } from '@radix-ui/react-visually-hidden'
 import { useCallback } from 'react'
 import { Drawer } from 'vaul'
 
@@ -56,6 +57,12 @@ export const Dialog: React.FC<Props> = ({
     const renderContents = useCallback(() => {
         return (
             <>
+                <VisuallyHidden>
+                    <RadixDialog.Title>{title}</RadixDialog.Title>
+                    <RadixDialog.Description>
+                        {description}
+                    </RadixDialog.Description>
+                </VisuallyHidden>
                 {isMobileOverlay && !disableOverlayHandle && <Drawer.Handle />}
                 {(title || description) && (
                     <Header>

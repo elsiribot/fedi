@@ -8,12 +8,6 @@ import { useLoadMedia } from '../../hooks/media'
 const downloadFileSpy = jest.fn()
 const readFileSpy = jest.fn()
 
-jest.mock('@fedi/common/utils/log', () => ({
-    makeLog: () => ({
-        error: jest.fn(),
-    }),
-}))
-
 jest.mock('../../lib/bridge', () => ({
     fedimint: {
         matrixDownloadFile: () => downloadFileSpy(),
