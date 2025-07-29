@@ -6,7 +6,7 @@ import { FedimintBridge } from '@fedi/common/utils/fedimint'
 import { makeLog } from '@fedi/common/utils/log'
 
 const log = makeLog('common/utils/bridge/remote')
-const rbridgeHost = 'localhost:26722'
+const rbridgeHost = `localhost:${process?.env?.REMOTE_BRIDGE_PORT || 26722}`
 
 export class RemoteBridge {
     private deviceId: string | null = null
@@ -78,6 +78,22 @@ export class RemoteBridge {
         return resultJson.invite_code
     }
 
+    public async generateEcash(amountMsats: number): Promise<string> {
+        const response = await fetch(
+            `http://${rbridgeHost}/generate_ecash/${amountMsats}`,
+        )
+
+        const result = await response.text()
+        const resultJson = JSON.parse(result)
+
+        if (resultJson.error !== undefined) {
+            log.error('generateEcash', resultJson)
+            throw new Error(resultJson.error)
+        }
+
+        return resultJson.ecash
+    }
+
     public async initializeBridge(deviceIdentifier: string) {
         this.deviceId = deviceIdentifier
 
@@ -86,7 +102,12 @@ export class RemoteBridge {
             deviceIdentifier,
             logLevel: 'info',
             appFlavor: {
-                type: isDev() ? 'dev' : 'bravo',
+                type:
+                    process.env.NODE_ENV === 'test'
+                        ? 'tests'
+                        : isDev()
+                          ? 'dev'
+                          : 'bravo',
             },
         }
 
@@ -125,6 +146,15 @@ export class RemoteBridge {
                 }
             }
         }
+    }
+
+    public shutdown() {
+        if (this.websocket) {
+            this.websocket.close()
+            this.websocket = null
+        }
+        this.eventEnabled = false
+        this.deviceId = null
     }
 }
 

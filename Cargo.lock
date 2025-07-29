@@ -9143,6 +9143,7 @@ dependencies = [
  "bridge",
  "clap",
  "devi",
+ "devimint",
  "fedi-ffi",
  "fedimint-core",
  "fedimint-logging",

@@ -11,6 +11,8 @@ use axum::routing::{get, post};
 use axum::{Json, Router};
 use bridge::Bridge;
 use clap::Parser;
+use devimint::cmd;
+use devimint::util::FedimintCli;
 use fediffi::ffi::PathBasedStorage;
 use fediffi::rpc::{fedimint_initialize_async, fedimint_rpc_async};
 use fedimint_logging::TracingSetup;
@@ -114,6 +116,7 @@ async fn run_server(
         .route("/:device_id/rpc/:method", post(handle_rpc))
         .route("/:device_id/events", get(handle_events))
         .route("/invite_code", get(handle_invite_code))
+        .route("/generate_ecash/:amount", get(handle_generate_ecash))
         .layer(cors)
         .with_state(state);
 
@@ -294,5 +297,33 @@ async fn handle_invite_code(
 
     Ok(Json(serde_json::json!({
         "invite_code": invite_code
+    })))
+}
+
+async fn handle_generate_ecash(
+    Path(amount_msats): Path<u64>,
+    State(state): State<AppState>,
+) -> Result<Json<serde_json::Value>, RemoteRpcError> {
+    let _dev_fed = state
+        .dev_fed
+        .as_ref()
+        .context("Dev federation not available - server must be started with --with-devfed")?;
+
+    let amount = fedimint_core::Amount::from_msats(amount_msats);
+
+    let ecash_string = cmd!(
+        FedimintCli,
+        "spend",
+        "--allow-overpay",
+        amount.msats.to_string()
+    )
+    .out_json()
+    .await?["notes"]
+        .as_str()
+        .map(|s| s.to_owned())
+        .context("'notes' key not found generating ecash with fedimint-cli")?;
+
+    Ok(Json(serde_json::json!({
+        "ecash": ecash_string
     })))
 }

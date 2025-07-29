@@ -364,6 +364,7 @@
               (pkgs.matrix-synapse.override { extras = [ ]; })
               pkgs.sccache
               pkgs.ripgrep
+              pkgs.lsof
 
               androidSdk
             ];
