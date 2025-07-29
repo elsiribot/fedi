@@ -20,7 +20,7 @@ if is_remote_bridge_running; then
     # assume whatever is running on port 26722 is the remote bridge
     echo "🔍 Remote bridge is already running on port $DEFAULT_REMOTE_BRIDGE_PORT..."
     echo "🧪 Running tests..."
-    env -C $REPO_ROOT/ui yarn test --force
+    env -C $REPO_ROOT/ui yarn test
     echo "✅ Tests completed against existing remote bridge"
 else
     echo "🚀 Starting remote bridge on random port & running tests..."
