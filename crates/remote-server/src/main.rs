@@ -1,4 +1,6 @@
 use std::collections::HashMap;
+use std::ffi::OsString;
+use std::net::Ipv4Addr;
 use std::path::PathBuf;
 use std::sync::Arc;
 use std::time::Duration;
@@ -11,6 +13,7 @@ use axum::routing::{get, post};
 use axum::{Json, Router};
 use bridge::Bridge;
 use clap::Parser;
+use devimint::cli::exec_user_command;
 use devimint::cmd;
 use devimint::util::FedimintCli;
 use fediffi::ffi::PathBasedStorage;
@@ -72,6 +75,9 @@ struct Cli {
     /// Run with a dev federation
     #[arg(long)]
     with_devfed: bool,
+
+    #[arg(trailing_var_arg = true)]
+    run_after_ready: Option<Vec<OsString>>,
 }
 
 #[tokio::main]
@@ -87,30 +93,19 @@ async fn main() -> Result<()> {
         None
     };
 
-    run_server(cli.data_dir, cli.port, dev_fed).await
-}
-
-async fn run_server(
-    data_dir: PathBuf,
-    port: u16,
-    dev_fed: Option<Arc<devi::DevFed>>,
-) -> Result<()> {
     info!(
         "Starting remote bridge server with data dir: {}",
-        data_dir.display()
+        cli.data_dir.display()
     );
-
     let state = AppState {
         bridges: Arc::new(RwLock::new(HashMap::new())),
-        data_dir,
+        data_dir: cli.data_dir,
         dev_fed,
     };
-
     let cors = CorsLayer::new()
         .allow_origin(Any)
         .allow_methods(Any)
         .allow_headers(Any);
-
     let app = Router::new()
         .route("/:device_id/init", post(handle_init))
         .route("/:device_id/rpc/:method", post(handle_rpc))
@@ -119,20 +114,30 @@ async fn run_server(
         .route("/generate_ecash/:amount", get(handle_generate_ecash))
         .layer(cors)
         .with_state(state);
-
     let mut listenfd = ListenFd::from_env();
     let listener = if let Some(listener) = listenfd.take_tcp_listener(0)? {
         info!("Using listenfd socket");
         listener.set_nonblocking(true)?;
         tokio::net::TcpListener::from_std(listener)?
     } else {
-        let addr = format!("127.0.0.1:{port}");
-        info!("Server listening on {}", addr);
-        tokio::net::TcpListener::bind(&addr).await?
+        tokio::net::TcpListener::bind((Ipv4Addr::LOCALHOST, cli.port)).await?
     };
-
-    axum::serve(listener, app).await?;
-
+    let port = listener.local_addr()?.port();
+    info!("Server listening on 127.0.0.1:{port}");
+    std::env::set_var("REMOTE_BRIDGE_PORT", port.to_string());
+    let shutdown_signal = async {
+        if let Some(command) = cli.run_after_ready {
+            // devimint already prints if command failed
+            let _ = exec_user_command(command).await;
+        } else {
+            tokio::signal::ctrl_c()
+                .await
+                .expect("failed to listen to event")
+        }
+    };
+    axum::serve(listener, app)
+        .with_graceful_shutdown(shutdown_signal)
+        .await?;
     Ok(())
 }
 
