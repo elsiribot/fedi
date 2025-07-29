@@ -1,5 +1,6 @@
 use std::collections::HashMap;
 use std::ffi::OsString;
+use std::net::Ipv4Addr;
 use std::path::PathBuf;
 use std::sync::Arc;
 use std::time::Duration;
@@ -119,11 +120,11 @@ async fn main() -> Result<()> {
         listener.set_nonblocking(true)?;
         tokio::net::TcpListener::from_std(listener)?
     } else {
-        let port = cli.port;
-        let addr = format!("127.0.0.1:{port}");
-        info!("Server listening on {}", addr);
-        tokio::net::TcpListener::bind(&addr).await?
+        tokio::net::TcpListener::bind((Ipv4Addr::LOCALHOST, cli.port)).await?
     };
+    let port = listener.local_addr()?.port();
+    info!("Server listening on 127.0.0.1:{port}");
+    std::env::set_var("REMOTE_BRIDGE_PORT", port.to_string());
     let shutdown_signal = async {
         if let Some(command) = cli.run_after_ready {
             // devimint already prints if command failed
