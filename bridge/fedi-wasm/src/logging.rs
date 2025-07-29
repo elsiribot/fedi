@@ -155,6 +155,8 @@ impl WasmLogFile {
             )?;
 
             write_exact(sync_handle, &buffer[..chunk_size], total_copied)?;
+
+            total_copied += chunk_size as u64;
         }
 
         assert_eq!(total_copied, KEEP_SIZE);
