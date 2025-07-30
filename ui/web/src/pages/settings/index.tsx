@@ -48,7 +48,7 @@ const canLeaveFederation = (federation: FederationListItem): boolean => {
     return (
         federation?.hasWallet &&
         'balance' in federation &&
-        federation?.balance < 100_000
+        federation?.balance < 100000 // allow leave if balance less than 100 sats
     )
 }
 
