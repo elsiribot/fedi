@@ -15,8 +15,8 @@ type Props = {
     mods?: FediMod[]
 }
 
-// These are the mods/apps that we can open inside the web based FediModBrowser
-const whitelist = ['btcmap']
+// We don't have any mods yet but when we do we can add them here
+const whitelist: string[] = []
 
 export const FediModTiles: React.FC<Props> = ({ mods }) => {
     const { isMobile } = useDeviceQuery()
