@@ -177,9 +177,16 @@ export class MatrixChatClient {
                     },
                     status => {
                         if (status.type === 'success') {
+                            log.debug(
+                                'got success from matrixInitializeStatus, unsubscribing...',
+                            )
                             unsubscribe()
                             this.getInitialAuth()
                                 .then(auth => {
+                                    log.debug(
+                                        'resolving auth from getInitialAuth...',
+                                        auth,
+                                    )
                                     // resolve cached auth before fetching anything
                                     // to support offline UX
                                     resolve(auth)
@@ -196,9 +203,21 @@ export class MatrixChatClient {
                                     this.observeRoomList().catch(reject)
                                 })
                                 .catch(err => {
-                                    log.error('matrixInit', err)
+                                    log.error(
+                                        'matrix initialized but failed to start MatrixChatClient',
+                                        err,
+                                    )
                                     reject(err)
                                 })
+                        } else if (status.type === 'error') {
+                            // for now we handle this as a critical error, since it blocks app initialization
+                            // TODO: allow user interaction even if we don't have a success status yet
+                            unsubscribe()
+                            log.error(
+                                'matrixInitializeStatus returned an error',
+                                status.error,
+                            )
+                            reject(status.error)
                         }
                     },
                 )
