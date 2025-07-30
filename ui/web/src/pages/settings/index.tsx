@@ -255,8 +255,11 @@ function AdminPage() {
                             ? 'feature.federations.leave-federation-confirmation'
                             : 'feature.federations.leave-federation-withdraw-first',
                     )}
-                    onClose={() => setLeavingFederationId('')}
                     onConfirm={handleConfirmLeaveFederation}
+                    {...(canLeaveFederation(leavingFederation)
+                        ? { onClose: () => setLeavingFederationId('') }
+                        : {})}
+                    primaryButtonLabel={t('words.okay')}
                 />
             )}
         </ContentBlock>
