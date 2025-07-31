@@ -19,7 +19,7 @@ import { MatrixEventContentType } from '@fedi/common/utils/matrix'
 import { scaleAttachment } from '@fedi/common/utils/media'
 
 import { useAppDispatch, useAppSelector } from '../../../state/hooks'
-import { useMatrixFile } from '../../../utils/hooks/media'
+import { useDownloadResource } from '../../../utils/hooks/media'
 import Flex from '../../ui/Flex'
 import SvgImage from '../../ui/SvgImage'
 
@@ -34,7 +34,7 @@ const ChatImageEvent: React.FC<ChatImageEventProps> = ({
     const matchingPreviewImage = useAppSelector(s =>
         selectPreviewMediaMatchingEventContent(s, event.content),
     )
-    const { uri, isLoading, isError } = useMatrixFile(event.content.file)
+    const { uri, isLoading, isError } = useDownloadResource(event)
     const { theme } = useTheme()
     const { t } = useTranslation()
     const dispatch = useAppDispatch()
