@@ -216,7 +216,18 @@ async fn tests_wrapper_for_bridge() -> anyhow::Result<()> {
     let sem = Arc::new(Semaphore::new(available_parallelism()?.into()));
     let mut tests_names: HashMap<tokio::task::Id, String> = HashMap::new();
 
+    // example: BRIDGE_TEST_WRAPPER_FILTER=nip44,recurring_lnurl,spv2,matrix
+    let filter_set = std::env::var("BRIDGE_TEST_WRAPPER_FILTER")
+        .ok()
+        .filter(|x| !x.is_empty())
+        .map(|x| x.split(",").map(|x| x.to_owned()).collect::<Vec<_>>());
+
     for (test_name, test_future) in tests {
+        if let Some(filter_set) = &filter_set {
+            if !filter_set.iter().any(|filter| test_name.contains(filter)) {
+                continue;
+            }
+        }
         let id = tests_set
             .spawn({
                 let sem = sem.clone();
