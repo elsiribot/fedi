@@ -12,6 +12,7 @@ import {
 } from '@fedi/common/redux'
 import { ChatType, InputAttachment, InputMedia } from '@fedi/common/types'
 import { makeLog } from '@fedi/common/utils/log'
+import { stripFileUriPrefix } from '@fedi/common/utils/media'
 
 import { fedimint } from '../bridge'
 import ChatConversation from '../components/feature/chat/ChatConversation'
@@ -23,7 +24,6 @@ import Flex from '../components/ui/Flex'
 import HoloLoader from '../components/ui/HoloLoader'
 import { useAppDispatch, useAppSelector } from '../state/hooks'
 import type { RootStackParamList } from '../types/navigation'
-import { stripFileUriPrefix } from '../utils/media'
 
 const log = makeLog('ChatRoomConversation')
 

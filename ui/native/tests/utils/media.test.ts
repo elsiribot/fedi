@@ -10,8 +10,6 @@ import {
     doesAssetExceedSize,
     doesDocumentExceedSize,
     makeRandomTempFilePath,
-    prefixFileUri,
-    stripFileUriPrefix,
 } from '../../utils/media'
 
 const testDocument: DocumentPickerResponse = {
@@ -101,34 +99,6 @@ jest.mock('react-native', () => ({
 describe('media', () => {
     beforeAll(() => {
         jest.clearAllMocks()
-    })
-
-    describe('prefixFileUri', () => {
-        it('should prefix a file path with file://', () => {
-            const filePath = '/path/to/file.jpg'
-
-            expect(prefixFileUri(filePath)).toBe('file://' + filePath)
-        })
-
-        it('should not add another file:// prefix to a URI already prefixed with file://', () => {
-            const fileUri = 'file:///path/to/file.jpg'
-
-            expect(prefixFileUri(fileUri)).toBe(fileUri)
-        })
-    })
-
-    describe('stripFileUriPrefix', () => {
-        it('should strip file:// prefix from a file URI', () => {
-            const fileUri = 'file:///path/to/file.jpg'
-
-            expect(stripFileUriPrefix(fileUri)).toBe('/path/to/file.jpg')
-        })
-
-        it('should return the original file path if not prefixed with file://', () => {
-            const filePath = '/path/to/file.jpg'
-
-            expect(stripFileUriPrefix(filePath)).toBe(filePath)
-        })
     })
 
     describe('makeRandomTempFilePath', () => {

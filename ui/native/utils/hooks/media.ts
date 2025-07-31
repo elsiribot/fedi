@@ -22,12 +22,13 @@ import {
     isHttpUri,
     isMxcUri,
     pathJoin,
+    prefixFileUri,
 } from '@fedi/common/utils/media'
 
 import { useDownloadPermission } from '.'
 import { fedimint } from '../../bridge'
 import { useAppDispatch, useAppSelector } from '../../state/hooks'
-import { makeRandomTempFilePath, prefixFileUri } from '../media'
+import { makeRandomTempFilePath } from '../media'
 
 const log = makeLog('native/utils/hooks/media')
 

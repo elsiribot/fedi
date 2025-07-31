@@ -18,11 +18,10 @@ import {
 } from '@fedi/common/redux'
 import { MatrixEvent } from '@fedi/common/types'
 import { MatrixEventContentType } from '@fedi/common/utils/matrix'
-import { scaleAttachment } from '@fedi/common/utils/media'
+import { prefixFileUri, scaleAttachment } from '@fedi/common/utils/media'
 
 import { useAppDispatch, useAppSelector } from '../../../state/hooks'
 import { useDownloadResource } from '../../../utils/hooks/media'
-import { prefixFileUri } from '../../../utils/media'
 import Flex from '../../ui/Flex'
 import SvgImage from '../../ui/SvgImage'
 

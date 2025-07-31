@@ -12,6 +12,7 @@ import {
     uploadAndSetMatrixAvatarUrl,
 } from '@fedi/common/redux'
 import { makeLog } from '@fedi/common/utils/log'
+import { stripFileUriPrefix } from '@fedi/common/utils/media'
 import { ensureNonNullish } from '@fedi/common/utils/neverthrow'
 
 import { fedimint } from '../bridge'
@@ -22,11 +23,7 @@ import { Pressable } from '../components/ui/Pressable'
 import { SafeAreaContainer } from '../components/ui/SafeArea'
 import { useAppDispatch, useAppSelector } from '../state/hooks'
 import { useStoragePermission } from '../utils/hooks'
-import {
-    copyAssetToTempUri,
-    stripFileUriPrefix,
-    tryPickAssets,
-} from '../utils/media'
+import { copyAssetToTempUri, tryPickAssets } from '../utils/media'
 
 const log = makeLog('EditProfile')
 
