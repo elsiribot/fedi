@@ -357,6 +357,7 @@ export function useFederationPreview(
 export function useFederationMembership(
     t: TFunction,
     fedimint: FedimintBridge,
+    federationId: string,
     inviteCode: string,
 ) {
     const { handleCode, ...rest } = useFederationPreview(
@@ -366,11 +367,9 @@ export function useFederationMembership(
     )
     const federations = useCommonSelector(selectFederations)
 
-    const isMember = federations.find(f => {
-        if (f.init_state === 'ready') return f.inviteCode === inviteCode
-
-        return false
-    })
+    const isMember = federations.some(f =>
+        f.init_state === 'ready' && f.id === federationId
+    )
 
     useEffect(() => {
         if (isMember) return
