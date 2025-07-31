@@ -31,7 +31,7 @@ pub async fn init(
     let log_buffer_layer = tracing_subscriber::fmt::layer()
         .json()
         .with_writer(StdMutex::new(WasmLogFile::new(sync_handle)))
-        .without_time();
+        .with_timer(tracing_subscriber::fmt::time::ChronoUtc::default());
     tracing_subscriber::registry()
         .with(log_buffer_layer)
         .with(EnvFilter::new(
