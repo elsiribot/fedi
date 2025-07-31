@@ -21,7 +21,7 @@ use fedimint_core::db::IDatabaseTransactionOpsCore;
 use fedimint_core::encoding::Encodable;
 use fedimint_core::task::sleep_in_test;
 use fedimint_core::util::backoff_util::aggressive_backoff;
-use fedimint_core::util::retry;
+use fedimint_core::util::{retry, BoxFuture};
 use fedimint_core::Amount;
 use fedimint_logging::TracingSetup;
 use nostr::nips::nip44;
@@ -162,22 +162,6 @@ fn should_skip_test_using_stock_fedimintd() -> bool {
     }
 }
 
-macro_rules! spawn_and_attach_name {
-    ($dev_fed:ident, $tests_set:expr, $sem:ident, $tests_names:expr, $test_name:ident) => {
-        let id = $tests_set
-            .spawn({
-                let sem = $sem.clone();
-                let dev_fed = $dev_fed.clone();
-                async move {
-                    let _permit = sem.acquire().await.unwrap();
-                    $test_name(dev_fed).await
-                }
-            })
-            .id();
-        $tests_names.insert(id, stringify!($test_name).to_owned());
-    };
-}
-
 #[tokio::test(flavor = "multi_thread")]
 async fn tests_wrapper_for_bridge() -> anyhow::Result<()> {
     INIT_TRACING.call_once(|| {
@@ -186,148 +170,64 @@ async fn tests_wrapper_for_bridge() -> anyhow::Result<()> {
             .expect("Failed to initialize tracing");
     });
     let dev_fed = DevFed::new_with_setup(4).await?;
+
+    macro_rules! tests_array {
+        ($($test_name:expr),* $(,)?) => {
+            [$(
+                (stringify!($test_name), Box::pin($test_name(dev_fed.clone())) as BoxFuture<_>)
+            ),*]
+        };
+    }
+
+    let tests = tests_array![
+        test_join_and_leave_and_join,
+        test_join_concurrent,
+        test_matrix_login,
+        // TODO: re-enable
+        // test_lightning_send_and_receive,
+        test_ecash,
+        test_ecash_overissue,
+        test_on_chain,
+        test_ecash_cancel,
+        test_backup_and_recovery,
+        test_backup_and_recovery_from_scratch,
+        test_validate_ecash,
+        test_social_backup_and_recovery,
+        test_stability_pool,
+        test_spv2,
+        test_lnurl_sign_message,
+        test_federation_preview,
+        test_onboarding_fails_without_restore_mnemonic,
+        test_transfer_device_registration_post_recovery,
+        test_new_device_registration_post_recovery,
+        test_fee_remittance_on_startup,
+        test_fee_remittance_post_successful_tx,
+        test_recurring_lnurl,
+        test_doesnt_overwrite_seed_in_invalid_fedi_file,
+        test_transfer_device_registration_no_feds,
+        test_preview_and_join_community,
+        test_list_and_leave_community,
+        test_community_meta_bg_refresh,
+        test_existing_device_identifier_v2_migration,
+        test_nip44_encrypt_and_decrypt,
+    ];
+
     let mut tests_set = JoinSet::new();
     let sem = Arc::new(Semaphore::new(available_parallelism()?.into()));
     let mut tests_names: HashMap<tokio::task::Id, String> = HashMap::new();
-    spawn_and_attach_name!(
-        dev_fed,
-        tests_set,
-        sem,
-        tests_names,
-        test_join_and_leave_and_join
-    );
-    spawn_and_attach_name!(dev_fed, tests_set, sem, tests_names, test_join_concurrent);
-    spawn_and_attach_name!(dev_fed, tests_set, sem, tests_names, test_matrix_login);
-    // TODO: re-enable
-    // spawn_and_attach_name!(tests_set, tests_names,
-    // test_lightning_send_and_receive);
-    spawn_and_attach_name!(dev_fed, tests_set, sem, tests_names, test_ecash);
-    spawn_and_attach_name!(dev_fed, tests_set, sem, tests_names, test_ecash_overissue);
-    spawn_and_attach_name!(dev_fed, tests_set, sem, tests_names, test_on_chain);
-    spawn_and_attach_name!(dev_fed, tests_set, sem, tests_names, test_ecash_cancel);
-    spawn_and_attach_name!(
-        dev_fed,
-        tests_set,
-        sem,
-        tests_names,
-        test_backup_and_recovery
-    );
-    spawn_and_attach_name!(
-        dev_fed,
-        tests_set,
-        sem,
-        tests_names,
-        test_backup_and_recovery_from_scratch
-    );
-    spawn_and_attach_name!(dev_fed, tests_set, sem, tests_names, test_validate_ecash);
-    spawn_and_attach_name!(
-        dev_fed,
-        tests_set,
-        sem,
-        tests_names,
-        test_social_backup_and_recovery
-    );
-    spawn_and_attach_name!(dev_fed, tests_set, sem, tests_names, test_stability_pool);
-    spawn_and_attach_name!(dev_fed, tests_set, sem, tests_names, test_spv2);
-    spawn_and_attach_name!(
-        dev_fed,
-        tests_set,
-        sem,
-        tests_names,
-        test_lnurl_sign_message
-    );
-    spawn_and_attach_name!(
-        dev_fed,
-        tests_set,
-        sem,
-        tests_names,
-        test_federation_preview
-    );
-    spawn_and_attach_name!(
-        dev_fed,
-        tests_set,
-        sem,
-        tests_names,
-        test_onboarding_fails_without_restore_mnemonic
-    );
-    spawn_and_attach_name!(
-        dev_fed,
-        tests_set,
-        sem,
-        tests_names,
-        test_transfer_device_registration_post_recovery
-    );
-    spawn_and_attach_name!(
-        dev_fed,
-        tests_set,
-        sem,
-        tests_names,
-        test_new_device_registration_post_recovery
-    );
-    spawn_and_attach_name!(
-        dev_fed,
-        tests_set,
-        sem,
-        tests_names,
-        test_fee_remittance_on_startup
-    );
-    spawn_and_attach_name!(
-        dev_fed,
-        tests_set,
-        sem,
-        tests_names,
-        test_fee_remittance_post_successful_tx
-    );
-    spawn_and_attach_name!(dev_fed, tests_set, sem, tests_names, test_recurring_lnurl);
-    spawn_and_attach_name!(
-        dev_fed,
-        tests_set,
-        sem,
-        tests_names,
-        test_doesnt_overwrite_seed_in_invalid_fedi_file
-    );
-    spawn_and_attach_name!(
-        dev_fed,
-        tests_set,
-        sem,
-        tests_names,
-        test_transfer_device_registration_no_feds
-    );
-    spawn_and_attach_name!(
-        dev_fed,
-        tests_set,
-        sem,
-        tests_names,
-        test_preview_and_join_community
-    );
-    spawn_and_attach_name!(
-        dev_fed,
-        tests_set,
-        sem,
-        tests_names,
-        test_list_and_leave_community
-    );
-    spawn_and_attach_name!(
-        dev_fed,
-        tests_set,
-        sem,
-        tests_names,
-        test_community_meta_bg_refresh
-    );
-    spawn_and_attach_name!(
-        dev_fed,
-        tests_set,
-        sem,
-        tests_names,
-        test_existing_device_identifier_v2_migration
-    );
-    spawn_and_attach_name!(
-        dev_fed,
-        tests_set,
-        sem,
-        tests_names,
-        test_nip44_encrypt_and_decrypt
-    );
+
+    for (test_name, test_future) in tests {
+        let id = tests_set
+            .spawn({
+                let sem = sem.clone();
+                async move {
+                    let _permit = sem.acquire().await.unwrap();
+                    test_future.await
+                }
+            })
+            .id();
+        tests_names.insert(id, test_name.to_owned());
+    }
 
     while let Some(res) = tests_set.join_next_with_id().await {
         match res {
