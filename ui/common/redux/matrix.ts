@@ -175,6 +175,7 @@ const initialState = {
         roomId: undefined as MatrixRoom['id'] | undefined,
         event: null as MatrixEvent | null,
     } satisfies ChatReplyState,
+    tempMediaUriMap: {} as Record<string, string>,
 }
 
 export type MatrixState = typeof initialState
@@ -500,6 +501,12 @@ export const matrixSlice = createSlice({
         clearChatReplyingToMessage(state) {
             state.replyingToMessage = { roomId: undefined, event: null }
         },
+        addTempMediaUriEntry(
+            state,
+            action: PayloadAction<{ uri: string; hash: string }>,
+        ) {
+            state.tempMediaUriMap[action.payload.hash] = action.payload.uri
+        },
     },
     extraReducers: builder => {
         builder.addCase(startMatrixClient.pending, state => {
@@ -692,6 +699,7 @@ export const {
     updateMatrixRoomMultispendEvent,
     setChatReplyingToMessage,
     clearChatReplyingToMessage,
+    addTempMediaUriEntry,
 } = matrixSlice.actions
 
 /*** Async thunk actions ***/
@@ -2475,3 +2483,5 @@ export const selectReplyingToMessageEventForRoom = (
     s.matrix.replyingToMessage.roomId === roomId
         ? s.matrix.replyingToMessage.event
         : null
+export const selectTempMediaUriMap = (s: CommonState) =>
+    s.matrix.tempMediaUriMap
