@@ -11,12 +11,14 @@ import {
     setShouldLockDevice,
     refreshOnboardingStatus,
     selectOnboardingCompleted,
+    selectMatrixAuth,
 } from '@fedi/common/redux'
 import { selectStorageIsReady } from '@fedi/common/redux/storage'
 import {
     DeviceRegistrationEvent,
     PanicEvent,
 } from '@fedi/common/types/bindings'
+import { isDev } from '@fedi/common/utils/environment'
 import { formatErrorMessage } from '@fedi/common/utils/format'
 import { makeLog } from '@fedi/common/utils/log'
 
@@ -24,7 +26,7 @@ import { version } from '../../package.json'
 import { useAppDispatch, useAppSelector } from '../hooks'
 import { fedimint, initializeBridge } from '../lib/bridge'
 import { keyframes, styled, theme } from '../styles'
-import { generateDeviceId } from '../utils/browserInfo'
+import { generateDeviceId, isNightly } from '../utils/browserInfo'
 import { Redirect } from './Redirect'
 import { Text } from './Text'
 
@@ -46,6 +48,7 @@ export const FediBridgeInitializer: React.FC<Props> = ({ children }) => {
         s => s.recovery.deviceIndexRequired,
     )
     const onboardingCompleted = useAppSelector(selectOnboardingCompleted)
+    const matrixAuth = useAppSelector(selectMatrixAuth)
 
     const tRef = useUpdatingRef(t)
     const dispatchRef = useUpdatingRef(dispatch)
@@ -115,6 +118,19 @@ export const FediBridgeInitializer: React.FC<Props> = ({ children }) => {
             unsubscribeDeviceRegistration()
         }
     }, [dispatchRef])
+
+    // this is dev + nightly only logic to force an error if the production homeserver is still being used
+    // TODO: remove this after a few months after all nightly users have updated & migrated
+    useEffect(() => {
+        if ((isNightly() || isDev()) && matrixAuth && matrixAuth.userId) {
+            const [, homeserver] = matrixAuth.userId.split(':')
+            if (homeserver !== 'staging.m1.8fa.in') {
+                setError(
+                    'This is an expected nightly only error intentionally forced to ensure clean metrics. Please uninstall & recover from seed.\n',
+                )
+            }
+        }
+    }, [matrixAuth])
 
     if (isLoading) {
         return (
