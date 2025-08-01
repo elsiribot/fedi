@@ -367,8 +367,8 @@ export function useFederationMembership(
     )
     const federations = useCommonSelector(selectFederations)
 
-    const isMember = federations.some(f =>
-        f.init_state === 'ready' && f.id === federationId
+    const isMember = federations.some(
+        f => f.init_state === 'ready' && f.id === federationId,
     )
 
     useEffect(() => {

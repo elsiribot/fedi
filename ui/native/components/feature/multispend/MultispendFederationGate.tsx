@@ -24,9 +24,7 @@ const MultispendFederationGate: React.FC<{
             : multispendStatus.finalized_group.federationId
 
     return (
-        <FederationGate
-            federationId={federationId}
-            inviteCode={inviteCode}>
+        <FederationGate federationId={federationId} inviteCode={inviteCode}>
             {children}
         </FederationGate>
     )
