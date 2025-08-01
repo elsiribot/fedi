@@ -1,5 +1,6 @@
 use std::collections::HashMap;
 use std::ops::ControlFlow;
+use std::panic;
 use std::path::Path;
 use std::str::{self, FromStr};
 use std::sync::Once;
@@ -242,9 +243,12 @@ async fn tests_wrapper_for_bridge() -> anyhow::Result<()> {
 
     while let Some(res) = tests_set.join_next_with_id().await {
         match res {
-            Err(e) => {
-                bail!("test {} failed: {:?}", &tests_names[&e.id()], e);
-            }
+            Err(e) => match e.try_into_panic() {
+                Ok(reason) => panic::resume_unwind(reason),
+                Err(e) => {
+                    bail!("test {} failed: {:?}", &tests_names[&e.id()], e);
+                }
+            },
             Ok((id, Err(e))) => {
                 bail!("test {} failed: {:?}", &tests_names[&id], e);
             }
