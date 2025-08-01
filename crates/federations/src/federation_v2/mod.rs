@@ -360,8 +360,8 @@ impl FederationV2 {
             if self
                 .spv2_history_service
                 .set(StabilityPoolHistoryService::new(
+                    spv2.client_ctx.clone(),
                     spv2.api.clone(),
-                    spv2.db.clone(),
                     account.id(),
                 ))
                 .is_err()
@@ -1593,6 +1593,9 @@ impl FederationV2 {
                     outpoints: _,
                     extra_meta: _,
                 } => todo!("Implement with sweeper service for spv2, no FE events required"),
+                // No subscription necessary for variant ExternalTransferIn, since we only become
+                // aware of the transfer after it has already been completed
+                StabilityPoolMeta::ExternalTransferIn { .. } => (),
             },
             // FIXME: should I return an error or just log something?
             _ => {
@@ -2950,6 +2953,28 @@ impl FederationV2 {
                     // TXs to sweep idle balance shouldn't log in history
                     return None;
                 }
+                StabilityPoolMeta::ExternalTransferIn { txid } => {
+                    frontend_metadata = None;
+                    transaction_kind = RpcTransactionKind::SPV2TransferIn {
+                        state: if let Some(UserOperationHistoryItem {
+                            amount,
+                            fiat_amount,
+                            kind: UserOperationHistoryItemKind::TransferIn { from, .. },
+                            ..
+                        }) = self.spv2_user_op_history_item(txid).await
+                        {
+                            transaction_amount = RpcAmount(amount);
+                            RpcSPV2TransferInState::CompletedTransfer {
+                                from_account_id: from.to_string(),
+                                amount: RpcAmount(amount),
+                                fiat_amount: fiat_amount.0,
+                            }
+                        } else {
+                            transaction_amount = RpcAmount(Amount::ZERO);
+                            RpcSPV2TransferInState::DataNotInCache
+                        },
+                    }
+                }
             },
             MINT_OPERATION_TYPE => {
                 let mint_meta: MintOperationMeta = entry.meta();
@@ -3575,7 +3600,7 @@ impl FederationV2 {
         Some(spv2.our_account(AccountType::Seeker))
     }
 
-    fn spv2_force_sync(&self) {
+    pub fn spv2_force_sync(&self) {
         self.spawn_cancellable("spv2_force_sync", |fed| async move {
             if let Some(sync_service) = fed.spv2_sync_service.get() {
                 let res = sync_service.update_once().await;

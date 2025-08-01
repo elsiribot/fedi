@@ -3,7 +3,9 @@ use std::ops::Range;
 
 use anyhow::bail;
 use fedimint_api_client::api::DynModuleApi;
-use fedimint_core::db::{Database, DatabaseTransaction, IDatabaseTransactionOpsCoreTyped};
+use fedimint_client::module::module::ClientContext;
+use fedimint_client::OperationId;
+use fedimint_core::db::{DatabaseTransaction, IDatabaseTransactionOpsCoreTyped};
 use fedimint_core::util::backoff_util::{self};
 use fedimint_core::util::retry;
 use fedimint_core::{Amount, TransactionId};
@@ -17,26 +19,31 @@ use tracing::error;
 
 use crate::api::StabilityPoolApiExt;
 use crate::db::{
-    self, AccountHistoryItemKey, AccountHistoryItemKeyPrefix, UserOperationHistoryItem,
-    UserOperationHistoryItemKey, UserOperationHistoryItemKind, UserOperationIndexAccountPrefix,
+    self, AccountHistoryItemKey, AccountHistoryItemKeyPrefix, RecordedTransferItemKey,
+    UserOperationHistoryItem, UserOperationHistoryItemKey, UserOperationHistoryItemKind,
+    UserOperationIndexAccountPrefix,
 };
-use crate::StabilityPoolSyncService;
+use crate::{StabilityPoolClientModule, StabilityPoolMeta, StabilityPoolSyncService};
 
 /// Service that syncs account history from server in the background
 #[derive(Debug)]
 pub struct StabilityPoolHistoryService {
     is_fetching: watch::Sender<bool>,
+    client_ctx: ClientContext<StabilityPoolClientModule>,
     module_api: DynModuleApi,
-    db: Database,
     account_id: AccountId,
 }
 
 impl StabilityPoolHistoryService {
-    pub fn new(module_api: DynModuleApi, db: Database, account_id: AccountId) -> Self {
+    pub fn new(
+        client_ctx: ClientContext<StabilityPoolClientModule>,
+        module_api: DynModuleApi,
+        account_id: AccountId,
+    ) -> Self {
         Self {
             is_fetching: watch::Sender::new(false),
+            client_ctx,
             module_api,
-            db,
             account_id,
         }
     }
@@ -61,9 +68,11 @@ impl StabilityPoolHistoryService {
     }
 
     async fn update_once(&self, sync_response: &SyncResponse) -> anyhow::Result<()> {
-        let local_count =
-            get_account_history_count(&mut self.db.begin_transaction_nc().await, self.account_id)
-                .await;
+        let local_count = get_account_history_count(
+            &mut self.client_ctx.module_db().begin_transaction_nc().await,
+            self.account_id,
+        )
+        .await;
 
         let should_fetch = match sync_response.account_history_count.cmp(&local_count) {
             Ordering::Equal => false,
@@ -77,7 +86,7 @@ impl StabilityPoolHistoryService {
         // If we don't need to fetch new history items, we still need to account for any
         // new unlock requests
         if !should_fetch {
-            let mut dbtx = self.db.begin_transaction().await;
+            let mut dbtx = self.client_ctx.module_db().begin_transaction().await;
             ensure_unlock_request_registered(&mut dbtx.to_ref_nc(), self.account_id, sync_response)
                 .await;
             dbtx.commit_tx().await;
@@ -94,7 +103,7 @@ impl StabilityPoolHistoryService {
                 )
                 .await?;
 
-            let mut dbtx = self.db.begin_transaction().await;
+            let mut dbtx = self.client_ctx.module_db().begin_transaction().await;
             // Store each new item individually
             for (i, item) in new_history_items.into_iter().enumerate() {
                 let key = AccountHistoryItemKey {
@@ -103,6 +112,7 @@ impl StabilityPoolHistoryService {
                 };
                 dbtx.insert_entry(&key, &item).await;
                 update_user_operation_history(
+                    &self.client_ctx,
                     &mut dbtx.to_ref_nc(),
                     self.account_id,
                     sync_response,
@@ -127,7 +137,7 @@ impl StabilityPoolHistoryService {
         &self,
         range: Range<u64>,
     ) -> anyhow::Result<Vec<AccountHistoryItem>> {
-        let mut dbtx = self.db.begin_transaction().await;
+        let mut dbtx = self.client_ctx.module_db().begin_transaction().await;
         Ok(dbtx
             .find_by_range(
                 AccountHistoryItemKey {
@@ -157,7 +167,7 @@ impl StabilityPoolHistoryService {
         limit: usize,
         start_after: Option<u64>,
     ) -> Vec<(u64, UserOperationHistoryItem)> {
-        let mut dbtx = self.db.begin_transaction_nc().await;
+        let mut dbtx = self.client_ctx.module_db().begin_transaction_nc().await;
         let operations: Vec<(u64, TransactionId)> = dbtx
             .find_by_prefix_sorted_descending(&UserOperationIndexAccountPrefix {
                 account_id: self.account_id,
@@ -207,6 +217,7 @@ async fn get_account_history_count(
 // Given the [`AccountHistoryItem`] just received from the server, update the
 // on-disk user operation history.
 async fn update_user_operation_history(
+    client_ctx: &ClientContext<StabilityPoolClientModule>,
     dbtx: &mut DatabaseTransaction<'_>,
     account_id: AccountId,
     sync_response: &SyncResponse,
@@ -345,6 +356,7 @@ async fn update_user_operation_history(
             _,
         ) => {
             add_current_state_amounts();
+            ensure_transfer_in_recorded(client_ctx, dbtx, account_id, acc_history_item.txid).await;
             UserOperationHistoryItemKind::TransferIn {
                 from: *from,
                 meta: meta.to_vec(),
@@ -428,4 +440,38 @@ async fn ensure_unlock_request_registered(
             .await;
         }
     }
+}
+
+// If we see an AccountHistoryItem of kind StagedTransferIn or LockedTransferIn,
+// we check if we already have a local operation corresponding to the
+// AccountHistoryItem's TXID. If we don't, it means that someone else
+// transferred stable balance to us without our client's involvement. In this
+// case, we backfill an entry into our local operation log so that we can keep
+// an accurate local history.
+async fn ensure_transfer_in_recorded(
+    client_ctx: &ClientContext<StabilityPoolClientModule>,
+    dbtx: &mut DatabaseTransaction<'_>,
+    account_id: AccountId,
+    txid: TransactionId,
+) {
+    let db_key = RecordedTransferItemKey { account_id, txid };
+    if dbtx.get_value(&db_key).await.is_some() {
+        return;
+    }
+
+    let new_op_id = OperationId::new_random();
+    // No point storing extra data in the operation log such as amount etc. since we
+    // could potentially have many AccountHistoryItems corresponding to a single
+    // transfer-in. We already use accrual logic to update
+    // UserOperationHistoryItems, and it is straightforward to look it up using the
+    // TXID from the operation log.
+    client_ctx
+        .add_operation_log_entry_dbtx(
+            dbtx,
+            new_op_id,
+            stability_pool_common::KIND.as_str(),
+            StabilityPoolMeta::ExternalTransferIn { txid },
+        )
+        .await;
+    dbtx.insert_entry(&db_key, &new_op_id).await;
 }

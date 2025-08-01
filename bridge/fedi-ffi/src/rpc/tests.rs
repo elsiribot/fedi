@@ -29,7 +29,7 @@ use nostr::nips::nip44;
 use rpc_types::event::TransactionEvent;
 use rpc_types::{
     RpcLnReceiveState, RpcOOBReissueState, RpcOnchainDepositState, RpcReturningMemberStatus,
-    RpcTransactionDirection, RpcTransactionKind,
+    RpcSPV2TransferInState, RpcTransactionDirection, RpcTransactionKind,
 };
 use runtime::constants::{COMMUNITY_INVITE_CODE_HRP, FEDI_FILE_V0_PATH, MILLION};
 use runtime::db::BridgeDbPrefix;
@@ -197,6 +197,7 @@ async fn tests_wrapper_for_bridge() -> anyhow::Result<()> {
         test_validate_ecash,
         test_social_backup_and_recovery,
         test_stability_pool,
+        test_stability_pool_external_transfer_in,
         test_spv2,
         test_lnurl_sign_message,
         test_federation_preview,
@@ -2347,6 +2348,126 @@ async fn test_nip44_encrypt_and_decrypt(_dev_fed: DevFed) -> anyhow::Result<()> 
     // We decrypt other's message
     let our_decrypted = nostrDecrypt(bridge, other_npub.to_string(), ciphertext).await?;
     assert_eq!(other_plaintext, our_decrypted);
+
+    Ok(())
+}
+
+async fn test_stability_pool_external_transfer_in(_dev_fed: DevFed) -> anyhow::Result<()> {
+    if should_skip_test_using_stock_fedimintd() {
+        return Ok(());
+    }
+
+    // This test verifies that external SPv2 transfers (where someone transfers
+    // stable balance to a user without their client's involvement) are properly
+    // recorded in the transaction history with backfilled operation logs.
+
+    // Create two test devices - sender and receiver
+    let td_sender = TestDevice::new();
+    let bridge_sender = td_sender.bridge_full().await?;
+    let federation_sender = td_sender.join_default_fed().await?;
+
+    let td_receiver = TestDevice::new();
+    let federation_receiver = td_receiver.join_default_fed().await?;
+
+    // Sender receives some ecash first
+    let initial_balance = Amount::from_sats(500_000);
+    let ecash = cli_generate_ecash(initial_balance).await?;
+    federation_sender
+        .receive_ecash(ecash, FrontendMetadata::default())
+        .await?;
+    wait_for_ecash_reissue(federation_sender).await?;
+
+    // Sender deposits to SPv2
+    let deposit_amount = Amount::from_sats(400_000);
+    spv2DepositToSeek(
+        federation_sender.clone(),
+        RpcAmount(deposit_amount),
+        FrontendMetadata::default(),
+    )
+    .await?;
+
+    // Wait for deposit to complete
+    loop {
+        if bridge_sender
+            .runtime
+            .event_sink
+            .num_events_of_type("spv2Deposit".into())
+            == 3
+        {
+            break;
+        }
+        fedimint_core::task::sleep_in_test("spv2 deposit", Duration::from_millis(100)).await;
+    }
+
+    let receiver_payment_address = spv2OurPaymentAddress(federation_receiver.clone()).await?;
+
+    // Sender transfers to receiver (external transfer from receiver's perspective)
+    let transfer_amount = RpcFiatAmount(10_00);
+    spv2Transfer(
+        &bridge_sender.federations,
+        receiver_payment_address,
+        transfer_amount,
+        FrontendMetadata::default(),
+    )
+    .await?;
+
+    // Wait for transfer to complete on sender side
+    loop {
+        if bridge_sender
+            .runtime
+            .event_sink
+            .num_events_of_type("spv2Transfer".into())
+            == 2
+        {
+            break;
+        }
+        fedimint_core::task::sleep_in_test("spv2 transfer", Duration::from_millis(100)).await;
+    }
+
+    // Give some time for the transfer to be processed
+    fedimint_core::task::sleep(Duration::from_secs(2)).await;
+
+    let updated_receiver_txs = loop {
+        federation_receiver.spv2_force_sync();
+        let updated_receiver_txs =
+            listTransactions(federation_receiver.clone(), None, None).await?;
+        if !updated_receiver_txs.is_empty() {
+            break updated_receiver_txs;
+        }
+        fedimint_core::task::sleep_in_test("waiting for transaction", Duration::from_millis(10))
+            .await;
+    };
+
+    // Find the transfer-in transaction
+    let transfer_in_tx = updated_receiver_txs
+        .iter()
+        .find(|tx| {
+            matches!(
+                tx.transaction.kind,
+                RpcTransactionKind::SPV2TransferIn { .. }
+            )
+        })
+        .expect("Should find transfer-in transaction in receiver's history");
+
+    // Verify the transaction details
+    match &transfer_in_tx.transaction.kind {
+        RpcTransactionKind::SPV2TransferIn {
+            state:
+                RpcSPV2TransferInState::CompletedTransfer {
+                    amount,
+                    fiat_amount,
+                    ..
+                },
+        } => {
+            // The amount should match what was transferred
+            assert!(amount.0.msats > 0, "Transfer amount should be positive");
+            assert_eq!(
+                *fiat_amount, 10_00,
+                "Fiat amount should match transferred amount"
+            );
+        }
+        _ => panic!("Expected SPV2TransferIn transaction kind"),
+    }
 
     Ok(())
 }
