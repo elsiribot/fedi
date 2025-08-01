@@ -57,58 +57,42 @@ export const Dialog: React.FC<Props> = ({
     const renderContents = useCallback(() => {
         return (
             <>
-                <VisuallyHidden>
-                    <RadixDialog.Title>{title}</RadixDialog.Title>
-                    <RadixDialog.Description>
-                        {description}
-                    </RadixDialog.Description>
-                </VisuallyHidden>
                 {isMobileOverlay && !disableOverlayHandle && <Drawer.Handle />}
-                {(title || description) && (
-                    <Header>
-                        {title && (
-                            <>
-                                <Title
-                                    as={
-                                        isMobileOverlay
-                                            ? Drawer.Title
-                                            : undefined
-                                    }>
-                                    {!disableClose && mobileDismissBack && (
-                                        <BackButtonContainer>
-                                            <IconButton
-                                                icon={ChevronLeftIcon}
-                                                size="md"
-                                                onClick={() =>
-                                                    onOpenChange(false)
-                                                }
-                                            />
-                                        </BackButtonContainer>
-                                    )}
-                                    <TitleText
-                                        variant="body"
-                                        weight="bold"
-                                        center={isSm}>
-                                        {title}
-                                    </TitleText>
-                                </Title>
-                            </>
-                        )}
-                        {description && (
-                            <Description
-                                asChild
-                                as={
-                                    isMobileOverlay
-                                        ? Drawer.Description
-                                        : undefined
-                                }>
-                                <Text variant="caption" weight="medium">
-                                    {description}
-                                </Text>
-                            </Description>
-                        )}
-                    </Header>
-                )}
+                <Header>
+                    {title && (
+                        <>
+                            <Title
+                                as={isMobileOverlay ? Drawer.Title : undefined}>
+                                {!disableClose && mobileDismissBack && (
+                                    <BackButtonContainer>
+                                        <IconButton
+                                            icon={ChevronLeftIcon}
+                                            size="md"
+                                            onClick={() => onOpenChange(false)}
+                                        />
+                                    </BackButtonContainer>
+                                )}
+                                <TitleText
+                                    variant="body"
+                                    weight="bold"
+                                    center={isSm}>
+                                    {title}
+                                </TitleText>
+                            </Title>
+                        </>
+                    )}
+                    {description && (
+                        <Description
+                            asChild
+                            as={
+                                isMobileOverlay ? Drawer.Description : undefined
+                            }>
+                            <Text variant="caption" weight="medium">
+                                {description}
+                            </Text>
+                        </Description>
+                    )}
+                </Header>
                 <Main>{children}</Main>
                 {!disableClose && !mobileDismissBack && (
                     <CloseButton
@@ -154,6 +138,10 @@ export const Dialog: React.FC<Props> = ({
                         onEscapeKeyDown={handleCloseTrigger}
                         onPointerDownOutside={handleCloseTrigger}
                         onInteractOutside={handleCloseTrigger}>
+                        <VisuallyHidden>
+                            <Title>{title || ''}</Title>
+                            <Description>{description || ''}</Description>
+                        </VisuallyHidden>
                         {renderContents()}
                     </Content>
                 </Overlay>
