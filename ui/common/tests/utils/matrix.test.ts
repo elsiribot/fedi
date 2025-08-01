@@ -1,6 +1,5 @@
 import assert from 'assert'
 
-import { GLOBAL_MATRIX_SERVER } from '../../constants/matrix'
 import { MatrixEvent, MatrixEventStatus } from '../../types'
 import {
     decodeFediMatrixUserUri,
@@ -251,13 +250,13 @@ describe('User display name and suffix functions', () => {
 describe('mxcUrlToHttpUrl', () => {
     it('converts a mxc url to a http url', () => {
         expect(mxcUrlToHttpUrl('mxc://example.com/123', 100, 100)).toBe(
-            `${GLOBAL_MATRIX_SERVER}/_matrix/media/r0/thumbnail/example.com/123?width=100&height=100&method=crop`,
+            `https://example.com/_matrix/media/r0/thumbnail/example.com/123?width=100&height=100&method=crop`,
         )
     })
 
     it('converts and adds &method=crop if the `method` argument is passed with `crop`', () => {
         expect(mxcUrlToHttpUrl('mxc://example.com/123', 100, 100, 'crop')).toBe(
-            `${GLOBAL_MATRIX_SERVER}/_matrix/media/r0/thumbnail/example.com/123?width=100&height=100&method=crop`,
+            `https://example.com/_matrix/media/r0/thumbnail/example.com/123?width=100&height=100&method=crop`,
         )
     })
 
@@ -265,7 +264,7 @@ describe('mxcUrlToHttpUrl', () => {
         expect(
             mxcUrlToHttpUrl('mxc://example.com/123', 100, 100, 'scale'),
         ).toBe(
-            `${GLOBAL_MATRIX_SERVER}/_matrix/media/r0/thumbnail/example.com/123?width=100&height=100&method=scale`,
+            `https://example.com/_matrix/media/r0/thumbnail/example.com/123?width=100&height=100&method=scale`,
         )
     })
 })
@@ -279,7 +278,7 @@ describe('mxcHttpUrlToDownloadUrl', () => {
 
         const downloadUrl = mxcHttpUrlToDownloadUrl(thumbnailUrl)
         expect(downloadUrl).toBe(
-            `${GLOBAL_MATRIX_SERVER}/_matrix/media/r0/download/matrix.server/123`,
+            `https://matrix.server/_matrix/media/r0/download/matrix.server/123`,
         )
     })
 

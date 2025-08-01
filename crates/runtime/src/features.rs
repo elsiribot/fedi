@@ -171,7 +171,7 @@ impl FeatureCatalog {
                 service_url: "https://staging-device-control.dev.fedibtc.com/v0".to_string(),
             },
             matrix: MatrixFeatureConfig {
-                home_server: "https://m1.8fa.in".to_string(),
+                home_server: "https://staging.m1.8fa.in".to_string(),
             },
         }
     }

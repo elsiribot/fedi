@@ -4,7 +4,6 @@ import { z } from 'zod'
 
 import { toSha256EncHex } from '@fedi/common/utils/EncryptionUtils'
 
-import { GLOBAL_MATRIX_SERVER } from '../constants/matrix'
 import { FormattedAmounts } from '../hooks/amount'
 import {
     InputMedia,
@@ -62,6 +61,11 @@ export const getLocalizedTextWithFallback = (
 export const matrixIdToUsername = (id: string | null | undefined) =>
     id ? id.split(':')[0].replace('@', '') : '?'
 
+/*
+ * Converts a Matrix Content URI (mxc://) to a HTTP URL
+ * expected mxcUrl: mxc://staging.m1.8fa.in/HDUqmHaKmXbLbgkMHwUoXTry
+ * expected result: https://staging.m1.8fa.in/_matrix/media/r0/thumbnail/staging.m1.8fa.in/HDUqmHaKmXbLbgkMHwUoXTry?width=100&height=100&method=crop
+ */
 export const mxcUrlToHttpUrl = (
     mxcUrl: string,
     width: number,
@@ -70,7 +74,8 @@ export const mxcUrlToHttpUrl = (
 ) => {
     const [serverName, mediaId] = mxcUrl.split('/').slice(2)
     if (!mediaId) return undefined
-    const url = new URL(GLOBAL_MATRIX_SERVER)
+    const homeserverUrl = `https://${serverName}`
+    const url = new URL(homeserverUrl)
     url.pathname = `/_matrix/media/r0/thumbnail/${serverName}/${mediaId}`
     if (width) url.searchParams.set('width', width.toString())
     if (height) url.searchParams.set('height', height.toString())
