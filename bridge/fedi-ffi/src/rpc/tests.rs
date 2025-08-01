@@ -126,6 +126,7 @@ async fn bitcoin_cli_send_to_address(address: &str, amount: &str) -> anyhow::Res
     cmd!(
         BitcoinCli,
         "-rpcport={btc_port}",
+        "-rpcwallet=",
         "sendtoaddress",
         address,
         amount
@@ -133,9 +134,15 @@ async fn bitcoin_cli_send_to_address(address: &str, amount: &str) -> anyhow::Res
     .run()
     .await?;
 
-    cmd!(BitcoinCli, "-rpcport={btc_port}", "-generate", "11")
-        .run()
-        .await?;
+    cmd!(
+        BitcoinCli,
+        "-rpcport={btc_port}",
+        "-rpcwallet=",
+        "-generate",
+        "11"
+    )
+    .run()
+    .await?;
 
     Ok(())
 }

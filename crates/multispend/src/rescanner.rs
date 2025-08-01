@@ -477,8 +477,9 @@ pub async fn all_message_since_retry_decryption(
                     info!(%tries, ?cause, "utd: retrying decryption");
                 }
 
+                // cast_ref_unchecked: notification client in sdk does same
                 event = room
-                    .decrypt_event(raw_event.cast_ref(), push_ctx.as_ref())
+                    .decrypt_event(raw_event.cast_ref_unchecked(), push_ctx.as_ref())
                     .await?;
             }
             if tries != 1 {

@@ -1081,7 +1081,7 @@ export type RpcRoomMember = {
   displayName: string | null;
   avatarUrl: string | null;
   ignored: boolean;
-  powerLevel: number;
+  powerLevel: RpcUserPowerLevel;
   membership: RpcMatrixMembership;
 };
 
@@ -1415,6 +1415,10 @@ export type RpcTransactionListEntry = {
 export type RpcTransferRequestId = string;
 
 export type RpcUserId = string;
+
+export type RpcUserPowerLevel =
+  | { type: "infinite" }
+  | { type: "int"; value: number };
 
 export type RpcVecDiffStreamId<T> = RpcStreamId<Array<VectorDiff<T>>>;
 
