@@ -462,7 +462,7 @@ impl Matrix {
     ) -> Result<impl Stream<Item = Vec<VectorDiff<RpcTimelineItem>>>> {
         let timeline = self.timeline(room_id).await?;
         let (initial, stream) = timeline.subscribe().await;
-        Ok(stream! {
+        let stream = stream! {
             // First emit the initial vector
             yield vec![VectorDiff::Reset { values:
                 initial.into_iter().map(RpcTimelineItem::from).collect()
@@ -473,7 +473,8 @@ impl Matrix {
             while let Some(diffs) = stream.next().await {
                 yield diffs.into_iter().map(|diff| diff.map(RpcTimelineItem::from)).collect();
             }
-        })
+        };
+        Ok(hold_my_timeline(timeline, stream))
     }
 
     pub async fn room_timeline_items_paginate_backwards(
@@ -495,7 +496,10 @@ impl Matrix {
             .live_back_pagination_status()
             .await
             .context("we only have live rooms")?;
-        Ok(stream::iter([current]).chain(stream).map(Into::into))
+        Ok(hold_my_timeline(
+            timeline,
+            stream::iter([current]).chain(stream).map(Into::into),
+        ))
     }
 
     pub async fn send_message_text(&self, room_id: &RoomId, message: String) -> anyhow::Result<()> {
@@ -1024,4 +1028,35 @@ impl Matrix {
             .send(get_media_preview::v1::Request::new(url))
             .await?)
     }
+}
+
+/// because we only store Weak<Timeline> in Matrix::timelines
+/// we need to hold on the Arc<Timeline> while we are streaming.
+///
+/// NOTE: timeline still exists (because it is Timeline has internal Arc) we
+/// just can't access it through our timelines store.
+///
+/// Example if we don't hold the Arc<Timeline>:
+///
+/// -> observeTimelineItems("xxx")
+///  - create Arc1<Arc2<TimelineInner>
+///  - store Weak1<Arc2<TimelineInner> in timelines field
+///  - create the stream (stream references Arc2<TimelineInner>)
+///  - drop(Arc1<Arc2<TimelineInner>>) (on function return)
+///  - Weak1<Arc2<TimelineInner>> is now dead (because all Arc1 got dropped)
+///
+/// -> paginateBackwards("xxx")
+///  - creates a new timeline and original timeline is unaffected, so will be
+///    noop
+///
+/// in ideal version frontend would manage lifetime of Timeline and have special
+/// rpc for drop timeline. but we can't trust frontend.
+fn hold_my_timeline<T>(
+    timeline: Arc<Timeline>,
+    stream: impl Stream<Item = T>,
+) -> impl Stream<Item = T> {
+    stream.map(move |x| {
+        let _capture = &timeline;
+        x
+    })
 }
