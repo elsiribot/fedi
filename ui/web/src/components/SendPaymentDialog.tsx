@@ -23,7 +23,6 @@ import { Button } from './Button'
 import { Dialog } from './Dialog'
 import { DialogStatus, DialogStatusProps } from './DialogStatus'
 import { OmniInput } from './OmniInput'
-import RateFederationDialog from './Onboarding/RateFederationDialog'
 import { SendOffline } from './SendOffline'
 import { Text } from './Text'
 
@@ -64,7 +63,6 @@ export const SendPaymentDialog: React.FC<Props> = ({ open, onOpenChange }) => {
     )
     const isNostrClientEnabled = useAppSelector(selectIsNostrClientEnabled)
 
-    const [showRateFederation, setShowRateFederation] = useState(false)
     const [isSendingOffline, setIsSendingOffline] = useState(false)
     const [isCloseDisabled, setIsCloseDisabled] = useState(false)
     const [isSending, setIsSending] = useState(false)
@@ -105,7 +103,7 @@ export const SendPaymentDialog: React.FC<Props> = ({ open, onOpenChange }) => {
     const handleOpenChange = useCallback(
         (change: boolean) => {
             if (willShowRateFederation && !change) {
-                setShowRateFederation(true)
+                // noop
             }
 
             onOpenChange(change)
@@ -245,14 +243,6 @@ export const SendPaymentDialog: React.FC<Props> = ({ open, onOpenChange }) => {
                     )}
                 </Container>
             </Dialog>
-            {isNostrClientEnabled && (
-                <RateFederationDialog
-                    show={showRateFederation}
-                    onDismiss={() => {
-                        setShowRateFederation(false)
-                    }}
-                />
-            )}
         </>
     )
 }
