@@ -191,10 +191,6 @@ export const refreshOnboardingStatus = createAsyncThunk<
 
     // Extract and store the onboarding method if user is onboarded
     if (status.type === 'onboarded') {
-        dispatch(setOnboardingMethod(status.onboarding_method))
-    }
-
-    if (status.type === 'onboarded') {
         // generate a random display name after matrix client is resolved
         // but only if matrix_setup
         await dispatch(startMatrixClient({ fedimint }))
@@ -206,10 +202,9 @@ export const refreshOnboardingStatus = createAsyncThunk<
         await dispatch(refreshFederations(fedimint)).unwrap()
 
         // extract and store the onboarding method if user is onboarded
-        await dispatch(setOnboardingMethod(status.onboarding_method))
+        dispatch(setOnboardingMethod(status.onboarding_method))
         // navigate to home
-        await dispatch(setOnboardingCompleted(true))
-        return
+        dispatch(setOnboardingCompleted(true))
     } else if (status.type === 'onboarding') {
         switch (status.stage.type) {
             case 'deviceIndexSelection': // Transfer device flow
@@ -222,7 +217,7 @@ export const refreshOnboardingStatus = createAsyncThunk<
                 break
             case 'init':
                 // navigate to splash
-                await dispatch(setOnboardingCompleted(false))
+                dispatch(setOnboardingCompleted(false))
                 break
             default:
                 throw new Error('Unknown onboarding stage')
@@ -234,15 +229,14 @@ export const refreshOnboardingStatus = createAsyncThunk<
             // cloning so we need to prompt them to reinstall and do a device transfer
             // so exit early without proceeding with further initialization
             case 'deviceIdentifierMismatch':
-                await dispatch(setShouldMigrateSeed(true))
+                dispatch(setShouldMigrateSeed(true))
                 break
             case 'internalBridgeExport':
                 // Bridge is ready for export, show migration screen
-                await dispatch(setShouldMigrateSeed(true))
+                dispatch(setShouldMigrateSeed(true))
                 break
             default:
         }
-        return
     } else {
         throw new Error('Unknown bridge status type')
     }
