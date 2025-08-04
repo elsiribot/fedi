@@ -11,6 +11,11 @@ export default class Document extends NextDocument {
                         id="stitches"
                         dangerouslySetInnerHTML={{ __html: getCssText() }}
                     />
+                    <style
+                        dangerouslySetInnerHTML={{
+                            __html: `body { pointer-events: all !important; }`,
+                        }}
+                    />
                 </Head>
                 <body>
                     <Main />

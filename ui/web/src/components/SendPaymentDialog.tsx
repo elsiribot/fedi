@@ -241,7 +241,7 @@ export const SendPaymentDialog: React.FC<Props> = ({ open, onOpenChange }) => {
                 </Container>
             </Dialog>
             {/* temporarily disable federation rating until dialog bug is fixed */}
-            {false && shouldRateFederation && (
+            {shouldRateFederation && (
                 <RateFederationDialog
                     show={showRateFederation}
                     onDismiss={() => {
