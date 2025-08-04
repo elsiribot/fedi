@@ -224,7 +224,7 @@ export const RequestPaymentDialog: React.FC<Props> = ({
 
     const qrData = isLightning ? lightningInvoice?.toUpperCase() : bitcoinUrl
     const copyData = isLightning ? lightningInvoice : bitcoinUrl
-    const showNote = !!notes || !wantsInvoice
+    const showNote = !wantsInvoice
     const amountSats = amountUtils.formatSats(amount)
 
     let content: React.ReactNode
@@ -234,7 +234,7 @@ export const RequestPaymentDialog: React.FC<Props> = ({
         content = (
             <>
                 <Center>
-                    {isOnchainSupported && (
+                    {isOnchainSupported && !wantsInvoice && (
                         <RequestTypeToggle
                             onClick={() => setIsLightning(!isLightning)}>
                             <Text variant="caption" weight="medium">
@@ -324,7 +324,7 @@ export const RequestPaymentDialog: React.FC<Props> = ({
 
     return (
         <Dialog
-            title={t('feature.receive.request-bitcoin')}
+            title={t('feature.receive.bitcoin-request')}
             open={open}
             mobileDismiss="back"
             onOpenChange={onOpenChange}>
