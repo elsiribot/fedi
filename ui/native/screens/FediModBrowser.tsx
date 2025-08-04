@@ -326,6 +326,22 @@ const FediModBrowser: React.FC<Props> = ({ route }) => {
             const decrypted = await fedimint.nostrDecrypt(pubkey, ciphertext)
             return decrypted
         },
+        [InjectionMessageType.nostr_encrypt04]: async ({
+            pubkey,
+            plaintext,
+        }) => {
+            log.info('nostr.encrypt04', pubkey, plaintext)
+            const encrypted = await fedimint.nostrEncrypt04(pubkey, plaintext)
+            return encrypted
+        },
+        [InjectionMessageType.nostr_decrypt04]: async ({
+            pubkey,
+            ciphertext,
+        }) => {
+            log.info('nostr.decrypt04', pubkey, ciphertext)
+            const decrypted = await fedimint.nostrDecrypt04(pubkey, ciphertext)
+            return decrypted
+        },
         [InjectionMessageType.fedi_generateEcash]: async ecashRequestArgs => {
             log.info('fedi.generateEcash', ecashRequestArgs)
 
