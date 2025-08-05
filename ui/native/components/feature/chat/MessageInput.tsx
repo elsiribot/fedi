@@ -45,14 +45,13 @@ import {
     matrixIdToUsername,
     stripReplyFromBody,
 } from '@fedi/common/utils/matrix'
-import { formatFileSize } from '@fedi/common/utils/media'
+import { formatFileSize, prefixFileUri } from '@fedi/common/utils/media'
 import { upsertListItem } from '@fedi/common/utils/redux'
 
 import { fedimint } from '../../../bridge'
 import { useAppDispatch, useAppSelector } from '../../../state/hooks'
 import {
     deriveCopyableFileUri,
-    copyAssetToTempUri,
     tryPickAssets,
     tryPickDocuments,
     mapMixedMediaToMatrixInput,
@@ -174,7 +173,6 @@ const MessageInput: React.FC<MessageInputProps> = ({
     const [documentsPendingUpload, setDocumentsPendingUpload] = useState<
         DocumentPickerResponse[]
     >([])
-    const [mediaPendingUpload, setMediaPendingUpload] = useState<Asset[]>([])
     const [isUploadingMedia, setIsUploadingMedia] = useState(false)
     const [isUploadingDocuments, setIsUploadingDocuments] = useState(false)
 
@@ -188,18 +186,33 @@ const MessageInput: React.FC<MessageInputProps> = ({
         tryPickAssets(imageOptions, t)
             .match(
                 assets => {
-                    setMediaPendingUpload(assets)
-
-                    Promise.allSettled(
-                        assets.map(asset =>
-                            copyAssetToTempUri(asset).map(uri => {
-                                setMediaPendingUpload(pending =>
-                                    pending.filter(p => p.uri !== asset.uri),
+                    if (Platform.OS === 'ios') setMedia(m => [...m, ...assets])
+                    // On Android, the react-native-image-picker library is breaking the gif animation
+                    // somehow when it produces the file URI, so we copy the gif from the original path.
+                    // https://github.com/react-native-image-picker/react-native-image-picker/issues/2064#issuecomment-2460501473
+                    // TODO: Check if this is fixed upstream (perhaps in the turbo module) and remove this workaround
+                    else {
+                        setMedia(m => [
+                            ...m,
+                            ...assets.map(a => {
+                                if (
+                                    a.originalPath &&
+                                    // sometimes animated pics are webp files so we include webp in this workaround
+                                    // even though some webp files are not animated and wouldn't be broken
+                                    // but using the original path works either way, perhaps a small perf hit
+                                    // if rn image-picker is optimizing when producing the file URI
+                                    (a.type?.includes('gif') ||
+                                        a.type?.includes('webp'))
                                 )
-                                setMedia(imgs => [...imgs, { ...asset, uri }])
+                                    return {
+                                        ...a,
+                                        uri: prefixFileUri(a.originalPath),
+                                    }
+
+                                return a
                             }),
-                        ),
-                    )
+                        ])
+                    }
                 },
                 e => {
                     log.error('launchImageLibrary Error: ', e)
@@ -209,7 +222,6 @@ const MessageInput: React.FC<MessageInputProps> = ({
                 },
             )
             .finally(() => {
-                setMediaPendingUpload([])
                 setIsUploadingMedia(false)
             })
     }, [t, toast])
@@ -564,12 +576,8 @@ const MessageInput: React.FC<MessageInputProps> = ({
                     )}
                 </View>
             )}
-            {(media.length > 0 || mediaPendingUpload.length > 0) && (
-                <AssetsList
-                    assets={media}
-                    loadingAssets={mediaPendingUpload}
-                    setAttachments={setMedia}
-                />
+            {media.length > 0 && (
+                <AssetsList assets={media} setAttachments={setMedia} />
             )}
             <View style={style.inputContainer}>
                 <Input

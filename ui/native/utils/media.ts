@@ -6,8 +6,7 @@ import {
 } from '@react-native-documents/picker'
 import { TFunction } from 'i18next'
 import { err, errAsync, ok, okAsync, ResultAsync } from 'neverthrow'
-import { Platform } from 'react-native'
-import RNFS, { TemporaryDirectoryPath } from 'react-native-fs'
+import { TemporaryDirectoryPath } from 'react-native-fs'
 import {
     Asset,
     ImageLibraryOptions,
@@ -89,71 +88,6 @@ export function deriveCopyableFileUri({
     }
 
     return okAsync(document.uri)
-}
-
-export function copyAssetToTempUri(
-    asset: Asset,
-): ResultAsync<string, UnexpectedError | MissingDataError | GenericError> {
-    const { uri, fileName } = asset
-
-    if (!uri)
-        return errAsync(
-            makeError(
-                new Error(`expected asset.uri, got ${asset.uri}`),
-                'MissingDataError',
-            ),
-        )
-
-    if (!fileName)
-        return errAsync(
-            makeError(
-                new Error(`expected asset.fileName, got ${asset.fileName}`),
-                'MissingDataError',
-            ),
-        )
-
-    const { dirPath, uri: resolvedUri } = makeRandomTempFilePath(fileName)
-
-    return ResultAsync.fromPromise(RNFS.mkdir(dirPath), tryTag('GenericError'))
-        .andThrough(() => {
-            const assetUri = prefixFileUri(uri)
-            let copyOrDownloadPromise: Promise<void | RNFS.DownloadResult>
-
-            // Videos don't get copied correctly on iOS
-            if (Platform.OS === 'ios' && asset.type?.includes('video/')) {
-                copyOrDownloadPromise = RNFS.downloadFile({
-                    fromUrl: assetUri,
-                    toFile: resolvedUri,
-                }).promise
-            } else if (
-                // On Android, the react-native-image-picker library is breaking the gif animation
-                // somehow when it produces the file URI, so we copy the gif from the original path.
-                // https://github.com/react-native-image-picker/react-native-image-picker/issues/2064#issuecomment-2460501473
-                // TODO: Check if this is fixed upstream (perhaps in the turbo module) and remove this workaround
-                Platform.OS === 'android' &&
-                asset.originalPath &&
-                // sometimes animated pics are webp files so we include webp in this workaround
-                // even though some webp files are not animated and wouldn't be broken
-                // but using the original path works either way, perhaps a small perf hit
-                // if rn image-picker is optimizing when producing the file URI
-                (asset.type?.includes('gif') || asset.type?.includes('webp'))
-            ) {
-                const animatedImageUri = prefixFileUri(asset.originalPath)
-                copyOrDownloadPromise = RNFS.copyFile(
-                    animatedImageUri,
-                    resolvedUri,
-                )
-            } else {
-                copyOrDownloadPromise = RNFS.copyFile(uri, resolvedUri)
-            }
-
-            return ResultAsync.fromPromise(
-                copyOrDownloadPromise,
-                tryTag('GenericError'),
-            )
-        })
-        .map(() => resolvedUri)
-        .orTee(e => log.error(`Error copying asset ${uri}`, e))
 }
 
 /**
