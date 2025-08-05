@@ -489,15 +489,7 @@ impl Matrix {
         let (initial, stream) = timeline.subscribe().await;
         self.runtime
             .observable_pool
-            .make_observable_from_vec_diff_stream(
-                observable_id,
-                initial,
-                stream.map(move |x| {
-                    // hold the timeline
-                    let _hold = &timeline;
-                    x
-                }),
-            )
+            .make_observable_from_vec_diff_stream(observable_id, initial, stream)
             .await
     }
 
@@ -523,15 +515,7 @@ impl Matrix {
             .context("we only have live rooms")?;
         self.runtime
             .observable_pool
-            .make_observable_from_stream(
-                observable_id,
-                Some(current),
-                stream.map(move |x| {
-                    // hold the timeline
-                    let _hold = &timeline;
-                    x
-                }),
-            )
+            .make_observable_from_stream(observable_id, Some(current), stream)
             .await
     }
 
