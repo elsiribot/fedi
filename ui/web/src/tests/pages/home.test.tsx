@@ -19,6 +19,12 @@ jest.mock('../../hooks/util.ts', () => ({
     }),
 }))
 
+const ratesSpy = jest.fn()
+jest.mock('@fedi/common/hooks/currency.ts', () => ({
+    ...jest.requireActual('@fedi/common/hooks/currency'),
+    useSyncCurrencyRatesAndCache: () => ratesSpy,
+}))
+
 describe('/pages/home', () => {
     let store
     let state: AppState
@@ -43,6 +49,21 @@ describe('/pages/home', () => {
 
             const component = screen.getByLabelText('Install Banner')
             expect(component).toBeInTheDocument()
+        })
+
+        it('should call useSyncCurrencyRatesAndCache', () => {
+            renderWithProviders(<HomePage />, {
+                preloadedState: {
+                    nux: {
+                        steps: {
+                            ...state.nux.steps,
+                            pwaHasDismissedInstallPrompt: false,
+                        },
+                    },
+                },
+            })
+
+            expect(ratesSpy).toHaveBeenCalled()
         })
     })
 

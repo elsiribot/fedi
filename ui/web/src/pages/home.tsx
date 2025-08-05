@@ -1,5 +1,6 @@
 import Link from 'next/link'
 import { useRouter } from 'next/router'
+import { useEffect } from 'react'
 import { Trans, useTranslation } from 'react-i18next'
 
 import ChatIcon from '@fedi/common/assets/svgs/chat.svg'
@@ -8,6 +9,7 @@ import SettingsIcon from '@fedi/common/assets/svgs/cog.svg'
 import userProfile from '@fedi/common/assets/svgs/profile.svg'
 import WordListIcon from '@fedi/common/assets/svgs/word-list.svg'
 import { ErrorBoundary } from '@fedi/common/components/ErrorBoundary'
+import { useSyncCurrencyRatesAndCache } from '@fedi/common/hooks/currency'
 import { useNuxStep } from '@fedi/common/hooks/nux'
 import {
     selectActiveFederation,
@@ -40,6 +42,7 @@ import {
     useInstallPromptContext,
     useShowInstallPromptBanner,
 } from '../hooks'
+import { fedimint } from '../lib/bridge'
 import { styled, theme } from '../styles'
 
 const BACKUP_REMINDER_MIN_BALANCE = 1000000 // 1000000 msats or 1000 sats
@@ -50,6 +53,8 @@ function HomePage() {
     const { isIOS } = useDeviceQuery()
     const { showInstallBanner, handleOnDismiss } = useShowInstallPromptBanner()
     const router = useRouter()
+
+    const syncCurrencyRatesAndCache = useSyncCurrencyRatesAndCache(fedimint)
 
     const [hasSeenDisplayName, completeSeenDisplayName] =
         useNuxStep('displayNameModal')
@@ -80,6 +85,11 @@ function HomePage() {
     const newsItem = newsItems.length > 0 ? newsItems[0] : null
 
     const showFederation = !activeFederation || hasWallet
+
+    // Get rates from cache
+    useEffect(() => {
+        syncCurrencyRatesAndCache()
+    }, [syncCurrencyRatesAndCache])
 
     return (
         <ContentBlock>
