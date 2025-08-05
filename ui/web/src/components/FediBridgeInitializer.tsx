@@ -3,6 +3,10 @@ import React, { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 
 import FediLogo from '@fedi/common/assets/svgs/fedi-logo-icon.svg'
+import {
+    ANDROID_PLAY_STORE_URL,
+    IOS_APP_STORE_URL,
+} from '@fedi/common/constants/linking'
 import { useUpdatingRef } from '@fedi/common/hooks/util'
 import {
     initializeDeviceIdWeb,
@@ -23,10 +27,11 @@ import { formatErrorMessage } from '@fedi/common/utils/format'
 import { makeLog } from '@fedi/common/utils/log'
 
 import { version } from '../../package.json'
-import { useAppDispatch, useAppSelector } from '../hooks'
+import { useAppDispatch, useAppSelector, useDeviceQuery } from '../hooks'
 import { fedimint, initializeBridge } from '../lib/bridge'
 import { keyframes, styled, theme } from '../styles'
 import { generateDeviceId, isNightly } from '../utils/browserInfo'
+import { isDeepLink, getDeepLinkPath } from '../utils/linking'
 import { Redirect } from './Redirect'
 import { Text } from './Text'
 
@@ -40,6 +45,7 @@ export const FediBridgeInitializer: React.FC<Props> = ({ children }) => {
     const dispatch = useAppDispatch()
     const { t } = useTranslation()
     const { asPath, pathname, query } = useRouter()
+    const { isMobile, isIOS } = useDeviceQuery()
 
     const hasLoadedStorage = useAppSelector(selectStorageIsReady)
     const socialRecoveryId = useAppSelector(selectSocialRecoveryQr)
@@ -179,6 +185,21 @@ export const FediBridgeInitializer: React.FC<Props> = ({ children }) => {
     // If mid social recovery, force them to stay on the page
     if (socialRecoveryId && asPath !== '/onboarding/recover/social') {
         return <Redirect path="/onboarding/recover/social" />
+    }
+
+    // Handle deep links
+    if (isDeepLink(asPath)) {
+        // if the user is on mobile and has not completed onboarding
+        // then redirect them to the app store
+        if (!onboardingCompleted && isMobile) {
+            return (
+                <Redirect
+                    path={isIOS ? IOS_APP_STORE_URL : ANDROID_PLAY_STORE_URL}
+                />
+            )
+        }
+
+        return <Redirect path={getDeepLinkPath(asPath)} />
     }
 
     // If onboarding is not completed, redirect to Welcome page
