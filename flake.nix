@@ -468,6 +468,9 @@
               lib.optionals stdenv.isDarwin [
                 pkgs.bundler
                 pkgs.cocoapods
+                pkgs.rsync
+                pkgs.unzip
+                pkgs.darwin.shell_cmds
                 (pkgs.hiPrio xcode-wrapper)
                 pkgs.fs-dir-cache
               ]
