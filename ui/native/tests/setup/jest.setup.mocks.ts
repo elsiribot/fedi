@@ -143,6 +143,9 @@ jest.mock('react-native', () => ({
     Easing: jest.requireActual('react-native').Easing,
     Image: jest.requireActual('react-native').Image,
     ImageBackground: jest.requireActual('react-native').ImageBackground,
+    Insets: jest.requireActual('react-native').Insets,
+    Keyboard: jest.requireActual('react-native').Keyboard,
+    KeyboardEvent: jest.requireActual('react-native').KeyboardEvent,
     KeyboardAvoidingView:
         jest.requireActual('react-native').KeyboardAvoidingView,
     Modal: jest.requireActual('react-native').Modal,
@@ -169,6 +172,21 @@ jest.mock('react-native', () => ({
         BridgeNativeEventEmitter: {},
         FedimintFfi: {},
     },
+}))
+
+jest.mock('react-native-gesture-handler', () => ({
+    // Use React Native's ScrollView instead
+    // because react-native-gesture-handler uses native modules
+    // (they don't exist in the Jest environment)
+    ScrollView: jest.requireActual('react-native').ScrollView,
+}))
+
+jest.mock('react-native-reanimated', () => ({
+    useSharedValue: jest.fn(),
+    useAnimatedStyle: jest.fn(),
+    withSequence: jest.fn(),
+    withTiming: jest.fn(),
+    View: jest.requireActual('react-native').View,
 }))
 
 // mock a theme object with values for colors, spacing, etc
