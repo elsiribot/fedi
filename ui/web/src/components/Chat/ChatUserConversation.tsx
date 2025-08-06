@@ -59,14 +59,12 @@ export const ChatUserConversation: React.FC<Props> = ({ userId }) => {
     )
 
     return (
-        <>
-            <ChatConversation
-                type={ChatType.direct}
-                id={userId}
-                name={name}
-                events={[]}
-                onSendMessage={handleSend}
-            />
-        </>
+        <ChatConversation
+            type={ChatType.direct}
+            id={userId}
+            name={name}
+            events={[]}
+            onSendMessage={handleSend}
+        />
     )
 }
