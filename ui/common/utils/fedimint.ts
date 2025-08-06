@@ -479,6 +479,18 @@ export class FedimintBridge {
         })
     }
 
+    async nostrRateFederation(
+        federationId: string,
+        rating: number,
+        includeInviteCode: boolean,
+    ) {
+        return this.rpcTyped('nostrRateFederation', {
+            federationId,
+            rating,
+            includeInviteCode,
+        })
+    }
+
     async listGateways(federationId: string) {
         return this.rpcTyped('listGateways', { federationId })
     }

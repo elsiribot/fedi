@@ -181,7 +181,9 @@ impl FeatureCatalog {
             runtime_env: RuntimeEnvironment::Prod,
             encrypted_sync: None,
             override_localhost: None,
-            nostr_client: None,
+            nostr_client: Some(NostrClientFeatureCatalog {
+                relays: vec![Url::parse("wss://nostr-rs-relay.dev.fedibtc.com").unwrap()],
+            }),
             device_registration: DeviceRegistrationFeatureConfig {
                 service_url: "https://prod-device-control.dev.fedibtc.com/v0".to_string(),
             },

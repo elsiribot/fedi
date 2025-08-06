@@ -13,6 +13,7 @@ import {
     previewCommunityDefaultChats,
     previewGlobalDefaultChats,
     selectIsInternetUnreachable,
+    selectIsNostrClientEnabled,
 } from '.'
 import { FEDI_GLOBAL_COMMUNITY } from '../constants/community'
 import {
@@ -28,7 +29,11 @@ import {
     Sats,
     StabilityPoolConfig,
 } from '../types'
-import { RpcLightningGateway, RpcStabilityPoolConfig } from '../types/bindings'
+import {
+    RpcFederationId,
+    RpcLightningGateway,
+    RpcStabilityPoolConfig,
+} from '../types/bindings'
 import amountUtils from '../utils/AmountUtils'
 import {
     coerceFederationListItem,
@@ -329,33 +334,25 @@ export const {
 
 export const rateFederation = createAsyncThunk<
     void,
-    { fedimint: FedimintBridge; rating: number },
+    { fedimint: FedimintBridge; rating: number; federationId: RpcFederationId },
     { state: CommonState }
 >(
     'federation/rateFederation',
-    async ({ fedimint, rating }, { getState, dispatch }) => {
-        const federationId = selectActiveFederationId(getState())
-
+    async ({ fedimint, rating, federationId }, { dispatch }) => {
         if (!federationId) return
 
-        await fedimint
-            .rpcResult('nostrRateFederation', {
-                federationId,
-                rating,
-                includeInviteCode: false,
-            })
-            .match(
-                () => {
-                    dispatch(
-                        setSeenFederationRating({
-                            federationId,
-                        }),
-                    )
-                },
-                e => {
-                    log.error(`nostrRateFederation failed`, e)
-                },
+        try {
+            log.debug(`rating federation ${federationId} with rating ${rating}`)
+            await fedimint.nostrRateFederation(federationId, rating, false)
+            log.debug(`adding ${federationId} to seenFederationRatings state`)
+            dispatch(
+                setSeenFederationRating({
+                    federationId,
+                }),
             )
+        } catch (e) {
+            log.error(`nostrRateFederation failed`, e)
+        }
     },
 )
 
@@ -1082,3 +1079,23 @@ export const selectHasSeenFederationRating = (
     state: CommonState,
     federationId: string,
 ) => state.federation.seenFederationRatings.includes(federationId)
+
+export const selectShouldRateFederation = createSelector(
+    (s: CommonState) => s.federation.seenFederationRatings,
+    (s: CommonState) => selectIsNostrClientEnabled(s),
+    (s: CommonState) => selectPaymentFederation(s),
+    (seenFederationRatings, isNostrClientEnabled, paymentFederation) => {
+        log.debug('selectShouldRateFederation', {
+            seenFederationRatings,
+            isNostrClientEnabled,
+            paymentFederation: `${paymentFederation?.id} - ${paymentFederation?.name}`,
+        })
+        // dont rate if the user has no wallet federations
+        if (!paymentFederation) return false
+        // dont rate if the user has already rated this federation
+        if (seenFederationRatings.includes(paymentFederation.id)) return false
+        // dont rate if nostr client is not enabled
+        if (!isNostrClientEnabled) return false
+        return true
+    },
+)
