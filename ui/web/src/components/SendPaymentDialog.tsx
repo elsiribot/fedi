@@ -97,8 +97,8 @@ export const SendPaymentDialog: React.FC<Props> = ({ open, onOpenChange }) => {
     }, [open, sendRouteState, handleOmniInput])
 
     const handleOpenChange = useCallback(
-        (change: boolean) => {
-            if (shouldRateFederation && !change) {
+        (change: boolean, sent?: boolean) => {
+            if (shouldRateFederation && !change && sent) {
                 setShowRateFederation(true)
             }
 
@@ -121,7 +121,9 @@ export const SendPaymentDialog: React.FC<Props> = ({ open, onOpenChange }) => {
         try {
             await handleOmniSend(inputAmount)
             setHasSent(true)
-            setTimeout(() => handleOpenChange(false), 2500)
+            // handleOpenChange is called with a second `sent` arg
+            // since `hasSent` will not be updated unless handleOpenChange is called after a re-render
+            setTimeout(() => handleOpenChange(false, true), 2500)
         } catch (err) {
             setSendError(formatErrorMessage(t, err, 'errors.unknown-error'))
         }
