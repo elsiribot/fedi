@@ -21,7 +21,7 @@ import { AmountInput } from './AmountInput'
 import { Button } from './Button'
 import { Dialog } from './Dialog'
 import { DialogStatus, DialogStatusProps } from './DialogStatus'
-import { OmniInput } from './OmniInput'
+import { OmniInput, type OmniCustomAction } from './OmniInput'
 import RateFederationDialog from './Onboarding/RateFederationDialog'
 import { SendOffline } from './SendOffline'
 import { Text } from './Text'
@@ -198,23 +198,24 @@ export const SendPaymentDialog: React.FC<Props> = ({ open, onOpenChange }) => {
             />
         )
     } else {
+        const customActions: OmniCustomAction[] = ['paste']
+
+        if (isOfflineWalletSupported) {
+            customActions.push({
+                label: t('feature.send.send-offline'),
+                icon: OfflineIcon,
+                onClick: () => setIsSendingOffline(true),
+            })
+        }
+
         content = (
             <OmniInputContainer>
                 <OmniInput
                     expectedInputTypes={expectedInputTypes}
                     onExpectedInput={handleOmniInput}
                     onUnexpectedSuccess={() => handleOpenChange(false)}
-                    customActions={
-                        isOfflineWalletSupported
-                            ? [
-                                  {
-                                      label: t('feature.send.send-offline'),
-                                      icon: OfflineIcon,
-                                      onClick: () => setIsSendingOffline(true),
-                                  },
-                              ]
-                            : undefined
-                    }></OmniInput>
+                    customActions={customActions}
+                />
             </OmniInputContainer>
         )
     }
