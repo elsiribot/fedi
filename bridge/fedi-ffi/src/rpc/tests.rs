@@ -1338,6 +1338,26 @@ async fn test_spv2_with_fedi_fees(
         fedimint_core::task::sleep(Duration::from_millis(100)).await;
     }
 
+    // At this point, we will have two SP transactions: one pending deposit, and one
+    // completed withdrawal. listTransactions returns transactions in reverse
+    // chronological order
+    let transactions = listTransactions(federation.clone(), None, None).await?;
+    let last_tx = transactions.first().expect("must exist");
+    assert!(matches!(
+        last_tx.transaction.kind,
+        RpcTransactionKind::SPV2Withdrawal {
+            state: rpc_types::RpcSPV2WithdrawalState::CompletedWithdrawal { .. }
+        }
+    ));
+
+    let second_last_tx = transactions.get(1).expect("must exist");
+    assert!(matches!(
+        second_last_tx.transaction.kind,
+        RpcTransactionKind::SPV2Deposit {
+            state: rpc_types::RpcSPV2DepositState::PendingDeposit { .. }
+        }
+    ));
+
     assert_eq!(
         (receive_amount
             .checked_sub(amount_to_deposit)
@@ -1358,6 +1378,47 @@ async fn test_spv2_with_fedi_fees(
     );
     assert!(sync_response.pending_unlock_request.is_none());
     assert_eq!(sync_response.locked_balance.0, Amount::ZERO);
+
+    // Let's withdraw the remaining amount
+    federation
+        .spv2_withdraw(FiatOrAll::All, FrontendMetadata::default())
+        .await?;
+    loop {
+        // Wait until withdrawal operation succeeds
+        // Initiated -> UnlockTxAccepted -> WithdrawalInitiated -> WithdrawalTxAccepted
+        // -> Success
+        if bridge
+            .runtime
+            .event_sink
+            .num_events_of_type("spv2Withdrawal".into())
+            == 5
+        {
+            break;
+        }
+
+        fedimint_core::task::sleep(Duration::from_millis(100)).await;
+    }
+
+    // At this point, our SP deposit will be marked as completed since it has been
+    // fully drained and we shouldn't expect to have a lingering pending deposit
+    loop {
+        // Force an SPv2 sync and wait for it to complete
+        federation.spv2_force_sync();
+
+        let transactions = listTransactions(federation.clone(), None, None).await?;
+        let third_last_tx = transactions.get(2).expect("must exist");
+        if matches!(
+            third_last_tx.transaction.kind,
+            RpcTransactionKind::SPV2Deposit {
+                state: rpc_types::RpcSPV2DepositState::CompletedDeposit { .. }
+            }
+        ) {
+            break;
+        }
+
+        fedimint_core::task::sleep(Duration::from_millis(100)).await;
+    }
+
     Ok(())
 }
 
