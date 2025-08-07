@@ -588,6 +588,37 @@ export const leaveFederation = createAsyncThunk<
     },
 )
 
+export const setSuggestedPaymentFederation = createAsyncThunk<
+    void,
+    void,
+    { state: CommonState }
+>(
+    'federation/setSuggestedPaymentFederation',
+    async (_, { getState, dispatch }) => {
+        const state = getState()
+        const paymentFederation = selectPaymentFederation(state)
+        const walletFederations = selectWalletFederations(state)
+
+        // If no payment federation is set (e.g. your active federation is a non-wallet community),
+        // find and select the best possible wallet federation
+        if (!paymentFederation) {
+            const firstWalletFederation = walletFederations
+                // Sort by balance
+                .sort((a, b) => b.balance - a.balance)
+                // Prioritize mainnet federations
+                .sort(
+                    (a, b) =>
+                        // Resolves to either 0 or 1 for true/false
+                        // Sorts in descending order by network === bitcoin - network !== bitcoin
+                        Number(b.network === 'bitcoin') -
+                        Number(a.network === 'bitcoin'),
+                )[0]
+
+            dispatch(setPayFromFederationId(firstWalletFederation?.id ?? null))
+        }
+    },
+)
+
 export const listGateways = createAsyncThunk<
     {
         nodePubKey: string
