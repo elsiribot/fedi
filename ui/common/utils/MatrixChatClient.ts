@@ -54,6 +54,7 @@ import {
     encodeFediMatrixRoomUri,
     formatMatrixEventContent,
     mxcUrlToHttpUrl,
+    stripReplyFromPreview,
 } from './matrix'
 import {
     getNewObservableIds,
@@ -1013,6 +1014,7 @@ export class MatrixChatClient {
         const avatarUrl = directUserId
             ? room.summary?.room_heroes?.[0]?.avatar_url
             : room.base_info.avatar?.Original?.content?.url
+
         let preview: MatrixRoom['preview']
         if (room.latest_event) {
             const { event, sender_profile } = room.latest_event
@@ -1048,13 +1050,14 @@ export class MatrixChatClient {
                             senderContent.displayname,
                         ),
                         avatarUrl: senderContent.avatar_url,
-                        body: previewEvent.content.body,
+                        body: stripReplyFromPreview(previewEvent.content.body),
                         isDeleted,
                         timestamp,
                     }
                 }
             }
         }
+
         // TODO (cleanup): Remove base_info.name fallback
         // cached_display_name seems to be the best source of truth for the room name
         // for both groups and DMS assuming matrix-rust-sdk handles computing it correctly

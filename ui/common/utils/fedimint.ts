@@ -668,6 +668,18 @@ export class FedimintBridge {
         })
     }
 
+    async matrixSendReply(
+        roomId: RpcRoomId,
+        replyToEventId: string,
+        message: string,
+    ) {
+        return this.rpcTyped('matrixSendReply', {
+            roomId,
+            replyToEventId,
+            message,
+        })
+    }
+
     async matrixEndPoll(roomId: RpcRoomId, pollStartId: string) {
         return this.rpcTyped('matrixEndPoll', { roomId, pollStartId })
     }

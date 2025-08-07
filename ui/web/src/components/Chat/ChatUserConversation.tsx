@@ -11,6 +11,7 @@ import {
 import { ChatType } from '@fedi/common/types'
 
 import { useAppDispatch, useAppSelector } from '../../hooks'
+import { fedimint } from '../../lib/bridge'
 import { ChatConversation } from './ChatConversation'
 
 interface Props {
@@ -51,7 +52,7 @@ export const ChatUserConversation: React.FC<Props> = ({ userId }) => {
     const handleSend = useCallback(
         async (body: string) => {
             const res = await dispatch(
-                sendMatrixDirectMessage({ userId, body }),
+                sendMatrixDirectMessage({ fedimint, userId, body }),
             ).unwrap()
             replace(`/chat/room/${res.roomId}`)
         },
