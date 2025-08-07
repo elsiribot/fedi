@@ -19,9 +19,9 @@ use tracing::error;
 
 use crate::api::StabilityPoolApiExt;
 use crate::db::{
-    self, AccountHistoryItemKey, AccountHistoryItemKeyPrefix, RecordedTransferItemKey,
-    UserOperationHistoryItem, UserOperationHistoryItemKey, UserOperationHistoryItemKind,
-    UserOperationIndexAccountPrefix,
+    self, AccountHistoryItemKey, AccountHistoryItemKeyPrefix, DepositSequenceTransactionLookupKey,
+    DepositSequenceTransactionLookupValue, RecordedTransferItemKey, UserOperationHistoryItem,
+    UserOperationHistoryItemKey, UserOperationHistoryItemKind, UserOperationIndexAccountPrefix,
 };
 use crate::{StabilityPoolClientModule, StabilityPoolMeta, StabilityPoolSyncService};
 
@@ -258,6 +258,21 @@ async fn update_user_operation_history(
         // locking. We don't care about deposits getting kicked out (due to low liquidity) and then
         // getting relocked -- for now.
         (AccountHistoryItemKind::DepositToStaged, None, _) => {
+            // The first time the server sends us details on a user-initiated deposit (in
+            // pending state), we populate our local deposit_sequence=>(account_id, txid)
+            // mapping.
+            dbtx.insert_entry(
+                &DepositSequenceTransactionLookupKey {
+                    deposit_sequence: acc_history_item.deposit_sequence,
+                },
+                &DepositSequenceTransactionLookupValue {
+                    account_id,
+                    txid: acc_history_item.txid,
+                    original_amount: acc_history_item.amount,
+                    drained_amount: Amount::ZERO,
+                },
+            )
+            .await;
             UserOperationHistoryItemKind::PendingDeposit
         }
         (AccountHistoryItemKind::DepositToStaged, Some(_), _) => {
@@ -268,6 +283,12 @@ async fn update_user_operation_history(
         }
         (AccountHistoryItemKind::StagedToLocked, Some(state), _) => match state {
             UserOperationHistoryItemKind::PendingDeposit => {
+                // When a PendingDeposit undergoes a StagedToLocked transition, we clear our
+                // local deposit_sequence=>(account_id, txid) mapping.
+                dbtx.remove_entry(&DepositSequenceTransactionLookupKey {
+                    deposit_sequence: acc_history_item.deposit_sequence,
+                })
+                .await;
                 UserOperationHistoryItemKind::CompletedDeposit
             }
             UserOperationHistoryItemKind::CompletedDeposit => return,
@@ -396,6 +417,19 @@ async fn update_user_operation_history(
         }
     };
 
+    // If the account_history_item kind is "StagedToIdle", and we have knowledge of
+    // the pending deposit that is being drained, we want to mark that deposit as
+    // "completed" iff it is fully drained. Otherwise, we will have a perpetual
+    // pending deposit.
+    if acc_history_item.kind == AccountHistoryItemKind::StagedToIdle {
+        maybe_mark_pending_deposit_as_completed(
+            dbtx,
+            acc_history_item.deposit_sequence,
+            acc_history_item.amount,
+        )
+        .await;
+    }
+
     db::insert_user_operation_history_item(
         dbtx,
         &user_op_key,
@@ -474,4 +508,67 @@ async fn ensure_transfer_in_recorded(
         )
         .await;
     dbtx.insert_entry(&db_key, &new_op_id).await;
+}
+
+// Mark that deposit as "completed" iff it is fully drained. Otherwise, we will
+// have a perpetual pending deposit.
+async fn maybe_mark_pending_deposit_as_completed(
+    dbtx: &mut DatabaseTransaction<'_>,
+    deposit_sequence: u64,
+    to_drain: Amount,
+) {
+    let sequence_db_key = DepositSequenceTransactionLookupKey { deposit_sequence };
+    let Some(DepositSequenceTransactionLookupValue {
+        account_id,
+        txid,
+        original_amount,
+        drained_amount,
+    }) = dbtx.get_value(&sequence_db_key).await
+    else {
+        return;
+    };
+
+    let user_op_db_key = UserOperationHistoryItemKey { account_id, txid };
+    let Some(UserOperationHistoryItem {
+        txid,
+        cycle,
+        amount,
+        fiat_amount,
+        kind: UserOperationHistoryItemKind::PendingDeposit,
+    }) = dbtx.get_value(&user_op_db_key).await
+    else {
+        // If a valid user operation history item doesn't exist, remove sequence_db_key
+        // as well
+        dbtx.remove_entry(&sequence_db_key).await;
+        return;
+    };
+
+    // If we are now fully draining the pending deposit, remove sequence_db_key and
+    // mark the deposit as completed
+    if drained_amount + to_drain >= original_amount {
+        dbtx.remove_entry(&sequence_db_key).await;
+        dbtx.insert_entry(
+            &user_op_db_key,
+            &UserOperationHistoryItem {
+                txid,
+                cycle,
+                amount,
+                fiat_amount,
+                kind: UserOperationHistoryItemKind::CompletedDeposit,
+            },
+        )
+        .await;
+    } else {
+        // Otherwise, just update sequence_db_key's drained_amount
+        dbtx.insert_entry(
+            &sequence_db_key,
+            &DepositSequenceTransactionLookupValue {
+                account_id,
+                txid,
+                original_amount,
+                drained_amount: drained_amount + to_drain,
+            },
+        )
+        .await;
+    }
 }

@@ -32,6 +32,13 @@ pub enum DbKeyPrefix {
     /// server will include the transfer. So this mapping helps us with
     /// backfilling the local operation log.
     RecordedTransfer = 0x06,
+    /// Deposit sequence => (AccountId, TXID)
+    /// The server assigns each deposit a unique "sequence" (nonce). Sometimes
+    /// it is useful for the client to be able to reverse-lookup the deposit
+    /// transaction from the deposit sequence. This is particularly useful in
+    /// the case of marking pending deposits that have been fully withdrawn as
+    /// "completed". This entry is short-lived: only while a deposit is pending.
+    DepositSequenceTransactionLookup = 0x07,
 }
 
 #[derive(Debug, Encodable, Decodable)]
@@ -256,4 +263,23 @@ impl_db_record!(
 impl_db_lookup!(
     key = RecordedTransferItemKey,
     query_prefix = RecordedTransferAccountPrefix,
+);
+
+#[derive(Debug, Encodable, Decodable)]
+pub struct DepositSequenceTransactionLookupKey {
+    pub deposit_sequence: u64,
+}
+
+#[derive(Debug, Encodable, Decodable)]
+pub struct DepositSequenceTransactionLookupValue {
+    pub account_id: AccountId,
+    pub txid: TransactionId,
+    pub original_amount: Amount,
+    pub drained_amount: Amount,
+}
+
+impl_db_record!(
+    key = DepositSequenceTransactionLookupKey,
+    value = DepositSequenceTransactionLookupValue,
+    db_prefix = DbKeyPrefix::DepositSequenceTransactionLookup,
 );
