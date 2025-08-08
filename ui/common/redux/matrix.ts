@@ -1355,15 +1355,21 @@ export const checkForReceivablePayments = createAsyncThunk<
             if (receivedPayments.has(event.content.paymentId)) return
             receivedPayments.add(event.content.paymentId)
 
+            // Remove the `ecash` field from the event before logging, to respect user privacy
+            const eventToLog = {
+                ...event,
+                content: { ...event.content, ecash: undefined },
+            }
+
             log.info(
                 'Unclaimed matrix payment event detected, attempting to claim',
-                event,
+                eventToLog,
             )
 
             dispatch(claimMatrixPayment({ fedimint, event }))
                 .unwrap()
                 .then(() => {
-                    log.info('Successfully claimed matrix payment', event)
+                    log.info('Successfully claimed matrix payment', eventToLog)
                 })
                 .catch(err => {
                     log.warn(
