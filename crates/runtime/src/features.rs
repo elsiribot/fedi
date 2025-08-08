@@ -182,7 +182,10 @@ impl FeatureCatalog {
             encrypted_sync: None,
             override_localhost: None,
             nostr_client: Some(NostrClientFeatureCatalog {
-                relays: vec![Url::parse("wss://nostr-rs-relay.dev.fedibtc.com").unwrap()],
+                relays: vec![
+                    Url::parse("wss://nostr-rs-relay.dev.fedibtc.com").unwrap(),
+                    Url::parse("wss://relay.damus.io/").unwrap(),
+                ],
             }),
             device_registration: DeviceRegistrationFeatureConfig {
                 service_url: "https://prod-device-control.dev.fedibtc.com/v0".to_string(),
