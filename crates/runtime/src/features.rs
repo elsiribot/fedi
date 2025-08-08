@@ -128,7 +128,7 @@ impl FeatureCatalog {
             }),
             override_localhost: Some(OverrideLocalhostFeatureConfig {}),
             nostr_client: Some(NostrClientFeatureCatalog {
-                relays: vec![Url::parse("wss://nostr-rs-relay.dev.fedibtc.com").unwrap()],
+                relays: vec![Url::parse("wss://nostr-rs-relay-staging.dev.fedibtc.com").unwrap()],
             }),
             device_registration: DeviceRegistrationFeatureConfig {
                 service_url: "https://staging-device-control.dev.fedibtc.com/v0".to_string(),
@@ -147,7 +147,7 @@ impl FeatureCatalog {
             }),
             override_localhost: Some(OverrideLocalhostFeatureConfig {}),
             nostr_client: Some(NostrClientFeatureCatalog {
-                relays: vec![Url::parse("wss://nostr-rs-relay.dev.fedibtc.com").unwrap()],
+                relays: vec![Url::parse("wss://nostr-rs-relay-staging.dev.fedibtc.com").unwrap()],
             }),
             device_registration: DeviceRegistrationFeatureConfig {
                 service_url: "https://staging-device-control.dev.fedibtc.com/v0".to_string(),
@@ -165,7 +165,7 @@ impl FeatureCatalog {
             encrypted_sync: None,
             override_localhost: None,
             nostr_client: Some(NostrClientFeatureCatalog {
-                relays: vec![Url::parse("wss://nostr-rs-relay.dev.fedibtc.com").unwrap()],
+                relays: vec![Url::parse("wss://nostr-rs-relay-staging.dev.fedibtc.com").unwrap()],
             }),
             device_registration: DeviceRegistrationFeatureConfig {
                 service_url: "https://staging-device-control.dev.fedibtc.com/v0".to_string(),
