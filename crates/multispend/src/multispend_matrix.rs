@@ -220,7 +220,7 @@ impl MultispendMatrix {
     pub async fn subscribe_multispend_group(
         self: &Arc<Self>,
         room_id: OwnedRoomId,
-    ) -> impl Stream<Item = RpcMultispendGroupStatus> {
+    ) -> impl Stream<Item = RpcMultispendGroupStatus> + use<> {
         let this = self.clone();
         stream! {
             let mut stream = pin!(this.rescanner.scan_complete_stream(&room_id));
@@ -239,7 +239,7 @@ impl MultispendMatrix {
         federation_id: String,
         room_id: OwnedRoomId,
         finalized_group: &FinalizedGroup,
-    ) -> impl Stream<Item = Result<RpcSPv2SyncResponse, NetworkError>> {
+    ) -> impl Stream<Item = Result<RpcSPv2SyncResponse, NetworkError>> + use<> {
         let account_id = finalized_group.spv2_account.id();
         let this = self.clone();
 
@@ -417,7 +417,7 @@ impl MultispendMatrix {
         self: &Arc<Self>,
         room_id: RpcRoomId,
         event_id: RpcEventId,
-    ) -> Result<impl Stream<Item = MsEventData>> {
+    ) -> Result<impl Stream<Item = MsEventData> + use<>> {
         let this = self.clone();
         let typed_room_id = room_id.into_typed()?;
         this.rescanner.wait_for_scanned(&typed_room_id).await;

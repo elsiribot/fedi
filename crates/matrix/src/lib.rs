@@ -382,7 +382,7 @@ impl Matrix {
     }
 
     /// All chats in matrix are rooms, whether DM or group chats.
-    pub async fn room_list(&self) -> impl Stream<Item = Vec<VectorDiff<RpcRoomId>>> {
+    pub async fn room_list(&self) -> impl Stream<Item = Vec<VectorDiff<RpcRoomId>>> + use<> {
         const PAGE_SIZE: usize = 1000;
         // manual construction required to to have correct lifetimes
         let room_list_service = self.sync_service.room_list_service();
@@ -405,7 +405,7 @@ impl Matrix {
 
     /// Sync status is used to display "Waiting for network" indicator on
     /// frontend.
-    pub fn subscribe_sync_status(&self) -> impl Stream<Item = RpcSyncIndicator> {
+    pub fn subscribe_sync_status(&self) -> impl Stream<Item = RpcSyncIndicator> + use<> {
         self.sync_service
             .room_list_service()
             .sync_indicator(Duration::from_secs(2), Duration::from_secs(2))
@@ -459,7 +459,7 @@ impl Matrix {
     pub async fn room_timeline_items(
         &self,
         room_id: &RoomId,
-    ) -> Result<impl Stream<Item = Vec<VectorDiff<RpcTimelineItem>>>> {
+    ) -> Result<impl Stream<Item = Vec<VectorDiff<RpcTimelineItem>>> + use<>> {
         let timeline = self.timeline(room_id).await?;
         let (initial, stream) = timeline.subscribe().await;
         let stream = stream! {
@@ -490,7 +490,7 @@ impl Matrix {
     pub async fn subscribe_timeline_items_paginate_backwards_status(
         &self,
         room_id: &RoomId,
-    ) -> Result<impl Stream<Item = RpcBackPaginationStatus>> {
+    ) -> Result<impl Stream<Item = RpcBackPaginationStatus> + use<>> {
         let timeline = self.timeline(room_id).await?;
         let (current, stream) = timeline
             .live_back_pagination_status()
@@ -633,7 +633,7 @@ impl Matrix {
     pub async fn subscribe_room_info(
         &self,
         room_id: &RoomId,
-    ) -> Result<impl Stream<Item = RoomInfo>> {
+    ) -> Result<impl Stream<Item = RoomInfo> + use<>> {
         let mut sub = self.room(room_id).await?.subscribe_info();
         // yield first item immediately
         sub.reset();

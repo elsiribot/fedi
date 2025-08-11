@@ -270,7 +270,7 @@ impl ClientModule for StabilityPoolClientModule {
 
             CliCommand::SimpleTransfer { to_account, amount } => {
                 let request = TransferRequest::new(
-                    rand::thread_rng().gen(),
+                    rand::thread_rng().r#gen(),
                     self.our_account(AccountType::Seeker),
                     amount,
                     to_account,

@@ -3188,7 +3188,7 @@ impl FederationV2 {
     /// emits new values whenever the CachedSyncResponse in the DB updates.
     pub async fn spv2_subscribe_account_info(
         &self,
-    ) -> Result<impl Stream<Item = RpcSPv2CachedSyncResponse>> {
+    ) -> Result<impl Stream<Item = RpcSPv2CachedSyncResponse> + use<>> {
         self.client.spv2()?;
         let Some(sync_service) = self.spv2_sync_service.get() else {
             bail!("Unexpected: sync service must have been initialized");
@@ -3437,7 +3437,7 @@ impl FederationV2 {
         let spv2 = self.client.spv2()?;
 
         let request = TransferRequest::new(
-            rand::thread_rng().gen(),
+            rand::thread_rng().r#gen(),
             spv2.our_account(AccountType::Seeker),
             amount,
             to_account,
@@ -4361,7 +4361,7 @@ impl FederationV2 {
     ) -> anyhow::Result<TransferRequest> {
         let spv2 = self.client.spv2()?;
         let transfer_request = TransferRequest::new(
-            rand::thread_rng().gen(),
+            rand::thread_rng().r#gen(),
             group_account,
             FiatAmount(amount.0),
             spv2.our_account(AccountType::Seeker).id(),

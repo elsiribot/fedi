@@ -155,7 +155,7 @@ impl StabilityPoolHistoryService {
     }
 
     /// Subscribe to history fetch updates to show a loading.
-    pub fn subscribe_to_fetches(&self) -> impl Stream<Item = bool> {
+    pub fn subscribe_to_fetches(&self) -> impl Stream<Item = bool> + use<> {
         WatchStream::new(self.is_fetching.subscribe())
     }
 

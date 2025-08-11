@@ -47,7 +47,7 @@ impl BgMatrix {
         bg_matrix
     }
 
-    pub fn subscribe_status(&self) -> impl Stream<Item = MatrixInitializeStatus> {
+    pub fn subscribe_status(&self) -> impl Stream<Item = MatrixInitializeStatus> + use<> {
         tokio_stream::wrappers::WatchStream::new(self.status.subscribe())
     }
 

@@ -91,8 +91,10 @@ impl DevFed {
 
         info!(target: LOG_DEVIMINT, "Pegins completed");
 
-        std::env::set_var(FM_INVITE_CODE_ENV, dev_fed.fed().await?.invite_code()?);
-        std::env::set_var("DEVI_SYNAPSE_SERVER", &synapse.url);
+        // TODO: Audit that the environment access only happens in single-threaded code.
+        unsafe { std::env::set_var(FM_INVITE_CODE_ENV, dev_fed.fed().await?.invite_code()?) };
+        // TODO: Audit that the environment access only happens in single-threaded code.
+        unsafe { std::env::set_var("DEVI_SYNAPSE_SERVER", &synapse.url) };
 
         dev_fed.finalize(&process_mgr).await?;
         info!(target: LOG_DEVIMINT, "Devfed ready");
@@ -132,7 +134,8 @@ impl DevFed {
 
         for (var, value) in globals.vars() {
             debug!(var, value, "Env variable set");
-            std::env::set_var(var, value);
+            // TODO: Audit that the environment access only happens in single-threaded code.
+            unsafe { std::env::set_var(var, value) };
         }
         let process_mgr = ProcessManager::new(globals);
         let task_group = TaskGroup::new();

@@ -109,7 +109,7 @@ mod tests {
     use super::*;
 
     fn mk_secret() -> DerivableSecret {
-        let (key, salt): ([u8; 32], [u8; 32]) = thread_rng().gen();
+        let (key, salt): ([u8; 32], [u8; 32]) = thread_rng().r#gen();
         DerivableSecret::new_root(&key, &salt)
     }
 

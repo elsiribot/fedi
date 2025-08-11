@@ -110,7 +110,7 @@ impl StabilityPoolSyncService {
     }
 
     /// Subscribe to sync data updates
-    pub fn subscribe_to_updates(&self) -> impl Stream<Item = Option<CachedSyncResponseValue>> {
+    pub fn subscribe_to_updates(&self) -> impl Stream<Item = Option<CachedSyncResponseValue>> + use<> {
         WatchStream::new(self.sync_response.subscribe())
     }
 }
