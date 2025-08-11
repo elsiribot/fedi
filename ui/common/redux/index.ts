@@ -47,7 +47,7 @@ import {
     setReadyToSave,
     storageSlice,
 } from './storage'
-import { supportSlice } from './support'
+import { checkSurveyCondition, supportSlice } from './support'
 import { toastSlice } from './toast'
 import { transactionsSlice, updateTransaction } from './transactions'
 import { walletSlice } from './wallet'
@@ -265,6 +265,8 @@ export function initializeCommonStore({
                 dispatch(saveToStorage({ storage }))
             },
         })
+        // Check the survey form prompt condition once on startup AFTER storage is ready
+        dispatch(checkSurveyCondition())
         dispatch(setReadyToSave(true))
     })
 

@@ -23,6 +23,7 @@ import DisplayNameOverlay from '../components/feature/home/DisplayNameOverlay'
 import HomeWallets from '../components/feature/home/HomeWallets'
 import HomeWalletsPlaceholder from '../components/feature/home/HomeWalletsPlaceholder'
 import ShortcutsList from '../components/feature/home/ShortcutsList'
+import SurveyOverlay from '../components/feature/home/SurveyOverlay'
 import WelcomeMessage from '../components/feature/home/WelcomeMessage'
 import RecoveryInProgress from '../components/feature/recovery/RecoveryInProgress'
 import Flex from '../components/ui/Flex'
@@ -162,6 +163,7 @@ const Home: React.FC<Props> = ({ offline }) => {
                 show={showCommunityOverlay}
                 onDismiss={handleCommunityDismiss}
             />
+            <SurveyOverlay />
         </View>
     )
 }

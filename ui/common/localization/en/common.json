@@ -1144,9 +1144,12 @@
             "effective-support-help-center": "Help Center",
             "effective-support-2a": "Prefer not to share? No problem! You\ncan always explore our ",
             "effective-support-2b": " for a wealth of Fedi knowledge.",
+            "give-feedback": "Give feedback",
             "open-chat": "Open chat",
             "permssion-granted": "Support Center",
             "how-to-launch": "If you need help, you may launch the support chat by clicking the button below.",
+            "survey-description": "Just one click to help us improve. We appreciate it.",
+            "survey-title": "Help us help you",
             "zendesk-initialization-failed": "We couldn't reach the support chat. Please check your internet connection and try again."
         },
         "wallet": {
