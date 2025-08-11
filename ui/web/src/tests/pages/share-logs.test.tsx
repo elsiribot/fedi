@@ -1,4 +1,4 @@
-import { screen, cleanup, waitFor } from '@testing-library/react'
+import { screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 
 import {
@@ -24,14 +24,6 @@ jest.mock('@fedi/web/src/hooks/export', () => ({
     }),
 }))
 
-const mockToastShow = jest.fn()
-jest.mock('@fedi/common/hooks/toast', () => ({
-    ...jest.requireActual('@fedi/common/hooks/toast'),
-    useToast: () => ({
-        show: mockToastShow,
-    }),
-}))
-
 describe('ShareLogs screen', () => {
     let store: ReturnType<typeof setupStore>
     const user = userEvent.setup()
@@ -44,10 +36,6 @@ describe('ShareLogs screen', () => {
         jest.clearAllMocks()
     })
 
-    afterEach(() => {
-        cleanup()
-    })
-
     it('should render a text field and submit button on screen', async () => {
         renderWithProviders(<ShareLogs />)
 
@@ -55,8 +43,7 @@ describe('ShareLogs screen', () => {
         const ticketNumberInput = screen.getByPlaceholderText(ticketNumberText)
         expect(ticketNumberInput).toBeInTheDocument()
 
-        const submitText = i18n.t('words.submit')
-        const submitButton = screen.getByText(submitText)
+        const submitButton = screen.getByText('Submit')
         expect(submitButton).toBeInTheDocument()
     })
 
@@ -94,13 +81,15 @@ describe('ShareLogs screen', () => {
         await user.click(submitButton)
 
         await waitFor(() =>
+            // Expects two elements with the text "Select Federation"
+            // The second element is visually hidden for accessibility reasons
             expect(
-                screen.getByText(i18n.t('phrases.select-federation')),
-            ).toBeInTheDocument(),
+                screen.getAllByText(i18n.t('phrases.select-federation')),
+            ).toHaveLength(2),
         )
 
-        const federationWalletSelector = screen.getByTestId(
-            'federation_wallet_selector',
+        const federationWalletSelector = screen.getByLabelText(
+            'federation-selector',
         )
         const continueButton = screen.getByText(i18n.t('words.continue'))
         expect(federationWalletSelector).toBeInTheDocument()
