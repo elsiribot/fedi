@@ -155,7 +155,7 @@ pub struct RpcTimelineItemEvent {
     pub(crate) id: String,
     pub(crate) txn_id: Option<String>,
     pub(crate) event_id: Option<String>,
-    pub(crate) content: RpcTimelineItemContent,
+    pub content: RpcTimelineItemContent,
     pub(crate) local_echo: bool,
     #[ts(type = "number")]
     pub(crate) timestamp: MilliSecondsSinceUnixEpoch,

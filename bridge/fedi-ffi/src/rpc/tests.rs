@@ -186,6 +186,7 @@ async fn tests_wrapper_for_bridge() -> anyhow::Result<()> {
         test_join_and_leave_and_join,
         test_join_concurrent,
         matrix::test_matrix_login,
+        matrix::test_matrix_dms,
         // TODO: re-enable
         // test_lightning_send_and_receive,
         test_ecash,

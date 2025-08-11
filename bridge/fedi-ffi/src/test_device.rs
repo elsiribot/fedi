@@ -16,6 +16,8 @@ use fedimint_client::secret::RootSecretStrategy as _;
 use fedimint_client::ModuleKind;
 use fedimint_core::{apply, async_trait_maybe_send, Amount};
 use lightning_invoice::Bolt11Invoice;
+use matrix::Matrix;
+use multispend::multispend_matrix::MultispendMatrix;
 use nostr::secp256k1::PublicKey;
 use runtime::api::{IFediApi, RegisterDeviceError, RegisteredDevice, TransactionDirection};
 use runtime::event::IEventSink;
@@ -155,6 +157,14 @@ impl TestDevice {
                 Ok(bridge.full()?.clone())
             })
             .await
+    }
+
+    pub async fn matrix(&self) -> anyhow::Result<&Arc<Matrix>> {
+        Ok(self.bridge_full().await?.matrix.wait().await)
+    }
+
+    pub async fn multispend(&self) -> anyhow::Result<&Arc<MultispendMatrix>> {
+        Ok(self.bridge_full().await?.matrix.wait_multispend().await)
     }
 
     pub async fn join_default_fed(&self) -> anyhow::Result<&Arc<FederationV2>> {
