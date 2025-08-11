@@ -28,22 +28,14 @@ import {
     UnexpectedError,
 } from '@fedi/common/utils/errors'
 import { makeLog } from '@fedi/common/utils/log'
-import { formatFileSize, pathJoin } from '@fedi/common/utils/media'
+import {
+    formatFileSize,
+    pathJoin,
+    prefixFileUri,
+} from '@fedi/common/utils/media'
 import { ensureNonNullish } from '@fedi/common/utils/neverthrow'
 
 const log = makeLog('utils/media')
-
-/**
- * Ensures that the file URI is prefixed with `file://` if it is not already.
- */
-export const prefixFileUri = (uri: string) =>
-    uri.startsWith('file://') ? uri : `file://${uri}`
-
-/**
- * Strips off file:// from a file URI if it is present.
- */
-export const stripFileUriPrefix = (uri: string) =>
-    uri.startsWith('file://') ? uri.slice(7) : uri
 
 export function makeRandomTempFilePath(fileName: string) {
     const dirName = `${Date.now()}-${Math.random().toString(16).slice(2)}`
