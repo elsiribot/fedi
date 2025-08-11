@@ -333,41 +333,51 @@
           // craneMultiBuild.commonArgs
           // {
             toolchain = toolchainAll;
-            nativeBuildInputs = craneMultiBuild.commonArgs.nativeBuildInputs ++ [
-              fedimint-pkgs.packages.${system}.gateway-pkgs
-              fedimint-pkgs.packages.${system}.fedimint-recurringd
-              pkgs.fs-dir-cache
-              pkgs.cargo-nextest
-              pkgs.cargo-audit
-              pkgs.cargo-udeps
-              pkgs.curl # wasm build needs it for some reason
-              pkgs.wasm-pack
-              pkgs.wasm-bindgen-cli
-              pkgs.binaryen
-              pkgs.gnused
-              pkgs.yarn
-              pkgs.nodejs_22
-              pkgs.nodePackages.prettier # for ts-bindgen
-              pkgs.jdk17
-              pkgs.nodePackages.typescript-language-server
-              # tools for managing native app deployments
-              pkgs.fastlane
-              pkgs.ruby
-              pkgs.perl
-              pkgs.pkg-config
-              pkgs.mprocs
-              pkgs.bitcoind
-              pkgs.electrs
-              pkgs.esplora-electrs
-              pkgs.clightning
-              pkgs.lnd
-              (pkgs.matrix-synapse.override { extras = [ ]; })
-              pkgs.sccache
-              pkgs.ripgrep
-              pkgs.lsof
+            nativeBuildInputs =
+              craneMultiBuild.commonArgs.nativeBuildInputs
+              ++ [
+                fedimint-pkgs.packages.${system}.gateway-pkgs
+                fedimint-pkgs.packages.${system}.fedimint-recurringd
+                pkgs.fs-dir-cache
+                pkgs.cargo-nextest
+                pkgs.cargo-audit
+                pkgs.cargo-udeps
+                pkgs.curl # wasm build needs it for some reason
+                pkgs.wasm-pack
+                pkgs.wasm-bindgen-cli
+                pkgs.binaryen
+                pkgs.gnused
+                pkgs.yarn
+                pkgs.nodejs_22
+                pkgs.nodePackages.prettier # for ts-bindgen
+                pkgs.jdk17
+                pkgs.nodePackages.typescript-language-server
+                # tools for managing native app deployments
+                pkgs.fastlane
+                pkgs.ruby
+                pkgs.perl
+                pkgs.pkg-config
+                pkgs.mprocs
+                pkgs.bitcoind
+                pkgs.electrs
+                pkgs.esplora-electrs
+                pkgs.clightning
+                pkgs.lnd
+                (pkgs.matrix-synapse.override { extras = [ ]; })
+                pkgs.sccache
+                pkgs.ripgrep
+                pkgs.lsof
 
-              androidSdk
-            ];
+                androidSdk
+              ]
+              ++ lib.optionals pkgs.stdenv.isDarwin [
+                # add some darwin pkgs if on macos
+                pkgs.darwin.text_cmds
+                pkgs.darwin.shell_cmds
+                pkgs.darwin.system_cmds
+                pkgs.darwin.ditto
+                pkgs.darwin.ps
+              ];
 
             buildInputs = craneMultiBuild.commonArgs.buildInputs ++ [ pkgs.openssl ];
 
@@ -416,6 +426,9 @@
             # ln -s /usr/bin/xcodebuild $out/bin/xcodebuild
             ln -s /Applications/Xcode.app/Contents/Developer/usr/bin/xcodebuild $out/bin/xcodebuild
             ln -s /usr/bin/xcrun $out/bin/xcrun
+            ln -s /usr/bin/xcode-select $out/bin/xcode-select
+            ln -s /usr/bin/security $out/bin/security
+            ln -s /usr/bin/codesign $out/bin/codesign
             ls -alh $out/bin
             $out/bin/xcodebuild -version
             # Check if we have the xcodebuild version that we want
@@ -470,7 +483,6 @@
                 pkgs.cocoapods
                 pkgs.rsync
                 pkgs.unzip
-                pkgs.darwin.shell_cmds
                 (pkgs.hiPrio xcode-wrapper)
                 pkgs.fs-dir-cache
               ]
