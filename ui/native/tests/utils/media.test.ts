@@ -1,12 +1,15 @@
+import {
+    DocumentPickerResponse,
+    keepLocalCopy,
+} from '@react-native-documents/picker'
 import { Platform } from 'react-native'
-import { DocumentPickerResponse } from 'react-native-document-picker'
 import { TemporaryDirectoryPath } from 'react-native-fs'
 import * as RNFS from 'react-native-fs'
 import { Asset } from 'react-native-image-picker'
 
 import {
     copyAssetToTempUri,
-    copyDocumentToTempUri,
+    deriveCopyableFileUri,
     doesAssetExceedSize,
     doesDocumentExceedSize,
     makeRandomTempFilePath,
@@ -17,18 +20,28 @@ import {
 const testDocument: DocumentPickerResponse = {
     uri: 'file:///Users/test/Documents/file.txt',
     name: 'file.txt',
-    fileCopyUri: 'file:///Users/test/Documents/file.txt',
     type: 'text/plain',
     size: 1024,
+    error: null,
+    nativeType: 'text/plain',
+    isVirtual: null,
+    convertibleToMimeTypes: [],
+    hasRequestedType: true,
 }
 
 const testContentDocument: DocumentPickerResponse = {
     uri: 'content://com.android.providers.downloads.documents/document/file.txt',
     name: 'file.txt',
-    fileCopyUri: 'file:///Users/test/Documents/file.txt',
     type: 'text/plain',
     size: 1024,
+    error: null,
+    nativeType: 'text/plain',
+    isVirtual: null,
+    convertibleToMimeTypes: [],
+    hasRequestedType: true,
 }
+
+const testLocalContentDocumentUri = 'file:///Users/documents/document/file.txt'
 
 const testImage: Asset = {
     fileName: 'test.png',
@@ -57,10 +70,17 @@ const testVideo: Asset = {
     height: 1024,
 }
 
-jest.mock('react-native-document-picker', () => ({
-    DocumentPicker: {
-        pick: async () => testDocument,
-    },
+jest.mock('@react-native-documents/picker', () => ({
+    pick: async () => [testDocument],
+    keepLocalCopy: jest.fn(async () => {
+        return [
+            {
+                status: 'success',
+                sourceUri: testDocument.uri,
+                localUri: testLocalContentDocumentUri,
+            },
+        ]
+    }),
 }))
 
 jest.mock('react-native-image-picker', () => ({
@@ -73,9 +93,6 @@ jest.mock('react-native-fs', () => ({
     TemporaryDirectoryPath: '/tmp',
     readFile: jest.fn(async () => {
         return 'file:///tmp/test.jpg'
-    }),
-    writeFile: jest.fn(async () => {
-        /* no-op */
     }),
     downloadFile: jest.fn(() => {
         return {
@@ -160,45 +177,36 @@ describe('media', () => {
 
     describe('copyDocumentToTempUri', () => {
         it('should return the original document URI if it is not an android content URI', async () => {
-            const result = await copyDocumentToTempUri(testDocument)
+            const result = await deriveCopyableFileUri(testDocument)
 
             expect(result.isOk()).toBeTruthy()
             expect(result.isErr()).toBeFalsy()
             expect(result._unsafeUnwrap()).toBe(testDocument.uri)
         })
 
-        it('should write a copy of the document to a random temporary URI if it is an android content URI', async () => {
-            const result = await copyDocumentToTempUri(testContentDocument)
+        it('should make a local copy of the document if it is an android content URI', async () => {
+            const result = await deriveCopyableFileUri(testContentDocument)
 
             expect(result.isOk()).toBeTruthy()
             expect(result.isErr()).toBeFalsy()
 
             const uri = result._unsafeUnwrap()
 
-            expect(uri.startsWith('file:///')).toBeTruthy()
-            expect(uri).toContain(TemporaryDirectoryPath)
-            expect(
-                uri.endsWith(testContentDocument.name as string),
-            ).toBeTruthy()
+            expect(uri).toBe(testLocalContentDocumentUri)
         })
 
-        it('should short-circuit with a GenericError (android content URI) if readFile errors', async () => {
-            ;(RNFS.readFile as jest.Mock).mockImplementation(async () => {
-                throw new Error('File not found')
+        it('should short-circuit with a GenericError (android content URI) if keepLocalCopy errors', async () => {
+            ;(keepLocalCopy as jest.Mock).mockImplementation(async () => {
+                return [
+                    {
+                        status: 'error',
+                        sourceUri: testContentDocument.uri,
+                        copyError: 'failed to copy',
+                    },
+                ]
             })
 
-            const result = await copyDocumentToTempUri(testContentDocument)
-
-            expect(result.isErr()).toBeTruthy()
-            expect(result._unsafeUnwrapErr()._tag).toBe('GenericError')
-        })
-
-        it('should short-circuit with a GenericError (android content URI) if writeFile errors', async () => {
-            ;(RNFS.writeFile as jest.Mock).mockImplementation(async () => {
-                throw new Error('File not found')
-            })
-
-            const result = await copyDocumentToTempUri(testContentDocument)
+            const result = await deriveCopyableFileUri(testContentDocument)
 
             expect(result.isErr()).toBeTruthy()
             expect(result._unsafeUnwrapErr()._tag).toBe('GenericError')
