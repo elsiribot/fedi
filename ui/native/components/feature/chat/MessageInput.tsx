@@ -328,7 +328,12 @@ const MessageInput: React.FC<MessageInputProps> = ({
             setMessageText('')
             setMedia([])
             setDocuments([])
-            if (repliedEvent) dispatch(clearChatReplyingToMessage())
+
+            if (repliedEvent) {
+                requestAnimationFrame(() => {
+                    dispatch(clearChatReplyingToMessage())
+                })
+            }
         } catch (e) {
             toast.error(t, e, 'errors.chat-unavailable')
         } finally {

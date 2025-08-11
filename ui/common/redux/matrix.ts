@@ -1030,16 +1030,13 @@ export const sendMatrixMessage = createAsyncThunk<
     }
 >(
     'matrix/sendMatrixMessage',
-    async (
-        {
-            fedimint,
-            roomId,
-            body,
-            repliedEventId,
-            options = { interceptBolt11: false },
-        },
-        { dispatch },
-    ) => {
+    async ({
+        fedimint,
+        roomId,
+        body,
+        repliedEventId,
+        options = { interceptBolt11: false },
+    }) => {
         const client = getMatrixClient()
 
         if (options.interceptBolt11) {
@@ -1075,7 +1072,6 @@ export const sendMatrixMessage = createAsyncThunk<
                     'Not a valid bolt11 invoice or failed to decode... sending as regular text message',
                     error,
                 )
-                // fall through to send as regular text message
             }
         }
 
@@ -1087,11 +1083,6 @@ export const sendMatrixMessage = createAsyncThunk<
                 msgtype: 'm.text',
                 body,
             })
-        }
-
-        // Clear reply for regular text messages (not needed for payments since they exit early)
-        if (repliedEventId) {
-            dispatch(clearChatReplyingToMessage())
         }
     },
 )
@@ -1107,10 +1098,7 @@ export const sendMatrixDirectMessage = createAsyncThunk<
     { state: CommonState }
 >(
     'matrix/sendMatrixDirectMessage',
-    async (
-        { fedimint, userId, body, repliedEventId },
-        { getState, dispatch },
-    ) => {
+    async ({ fedimint, userId, body, repliedEventId }, { getState }) => {
         const client = getMatrixClient()
         const state = getState()
 
@@ -1127,7 +1115,7 @@ export const sendMatrixDirectMessage = createAsyncThunk<
                 repliedEventId,
                 body,
             )
-            dispatch(clearChatReplyingToMessage())
+
             return { roomId: existingRoom.id }
         }
 
