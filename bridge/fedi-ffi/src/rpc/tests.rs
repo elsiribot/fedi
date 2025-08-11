@@ -14,7 +14,6 @@ use communities::CommunityInvite;
 use devi::DevFed;
 use devimint::cmd;
 use devimint::util::{FedimintCli, LnCli};
-use env::envs::FEDI_SOCIAL_RECOVERY_MODULE_ENABLE_ENV;
 use federations::federation_sm::FederationState;
 use federations::federation_v2::FederationV2;
 use fedi_social_client::common::VerificationDocument;
@@ -939,8 +938,6 @@ async fn test_social_backup_and_recovery(_dev_fed: DevFed) -> anyhow::Result<()>
     if should_skip_test_using_stock_fedimintd() {
         return Ok(());
     }
-
-    std::env::set_var(FEDI_SOCIAL_RECOVERY_MODULE_ENABLE_ENV, "1");
 
     let mut td1 = TestDevice::new();
     let original_bridge = td1.bridge_full().await?;
