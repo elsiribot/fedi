@@ -75,9 +75,6 @@
               # remove after upgrading pkgs-fedimint
               bitcoind = pkgs-fedimint.bitcoind;
 
-              # https://github.com/rustwasm/wasm-bindgen/pull/4380
-              wasm-bindgen-cli = final.callPackage ./nix/pkgs/wasm-bindgen-cli { };
-
               binaryen = pkgs-unstable.binaryen;
               snappy = prev.snappy.overrideAttrs (
                 f: p: rec {
@@ -226,7 +223,7 @@
             args = {
               nativeBuildInputs =
                 [
-                  pkgs.wasm-bindgen-cli
+                  pkgs.wasm-bindgen-cli_0_2_100
                   pkgs.geckodriver
                   pkgs.wasm-pack
                 ]
@@ -344,7 +341,7 @@
                 pkgs.cargo-udeps
                 pkgs.curl # wasm build needs it for some reason
                 pkgs.wasm-pack
-                pkgs.wasm-bindgen-cli
+                pkgs.wasm-bindgen-cli_0_2_100
                 pkgs.binaryen
                 pkgs.gnused
                 pkgs.yarn
