@@ -411,7 +411,7 @@ async fn test_lightning_send_and_receive_with_fedi_fees(
 
     // check for event of type transaction that has ln_state
     'check: loop {
-        let events = bridge.runtime.event_sink.events();
+        let events = td.event_sink().events();
         for (_, ev_body) in events
             .iter()
             .rev()
@@ -658,7 +658,7 @@ async fn test_on_chain_with_fedi_fees(
     // check for event of type transaction that has onchain_state of
     // DepositState::Claimed
     'check: loop {
-        let events = bridge.runtime.event_sink.events();
+        let events = td.event_sink().events();
         for (_, ev_body) in events
             .iter()
             .rev()
@@ -746,7 +746,7 @@ async fn test_on_chain_with_fedi_fees_with_restart(
     // check for event of type transaction that has onchain_state of
     // DepositState::Claimed
     'check: loop {
-        let events = bridge.runtime.event_sink.events();
+        let events = td.event_sink().events();
         for (_, ev_body) in events
             .iter()
             .rev()
@@ -894,9 +894,8 @@ async fn test_backup_and_recovery_inner(from_scratch: bool) -> anyhow::Result<()
     drop(recovery_federation);
     loop {
         // Wait until recovery complete
-        if recovery_bridge
-            .runtime
-            .event_sink
+        if td
+            .event_sink()
             .num_events_of_type("recoveryComplete".into())
             == 1
         {
@@ -1070,9 +1069,8 @@ async fn test_social_backup_and_recovery(_dev_fed: DevFed) -> anyhow::Result<()>
     drop(recovery_federation);
     loop {
         // Wait until recovery complete
-        if recovery_bridge
-            .runtime
-            .event_sink
+        if td2
+            .event_sink()
             .num_events_of_type("recoveryComplete".into())
             == 1
         {
@@ -1149,9 +1147,8 @@ async fn test_stability_pool_with_fedi_fees(
     loop {
         // Wait until deposit operation succeeds
         // Initiated -> TxAccepted -> Success
-        if bridge
-            .runtime
-            .event_sink
+        if td
+            .event_sink()
             .num_events_of_type("stabilityPoolDeposit".into())
             == 3
         {
@@ -1189,9 +1186,8 @@ async fn test_stability_pool_with_fedi_fees(
         // Wait until withdrawal operation succeeds
         // WithdrawUnlockedInitiated -> WithdrawUnlockedAccepted ->
         // Success
-        if bridge
-            .runtime
-            .event_sink
+        if td
+            .event_sink()
             .num_events_of_type("stabilityPoolWithdrawal".into())
             == 3
         {
@@ -1281,12 +1277,7 @@ async fn test_spv2_with_fedi_fees(
     loop {
         // Wait until deposit operation succeeds
         // Initiated -> TxAccepted -> Success
-        if bridge
-            .runtime
-            .event_sink
-            .num_events_of_type("spv2Deposit".into())
-            == 3
-        {
+        if td.event_sink().num_events_of_type("spv2Deposit".into()) == 3 {
             break;
         }
 
@@ -1327,12 +1318,7 @@ async fn test_spv2_with_fedi_fees(
         // Wait until withdrawal operation succeeds
         // Initiated -> UnlockTxAccepted -> WithdrawalInitiated -> WithdrawalTxAccepted
         // -> Success
-        if bridge
-            .runtime
-            .event_sink
-            .num_events_of_type("spv2Withdrawal".into())
-            == 5
-        {
+        if td.event_sink().num_events_of_type("spv2Withdrawal".into()) == 5 {
             break;
         }
 
@@ -1388,12 +1374,7 @@ async fn test_spv2_with_fedi_fees(
         // Wait until withdrawal operation succeeds
         // Initiated -> UnlockTxAccepted -> WithdrawalInitiated -> WithdrawalTxAccepted
         // -> Success
-        if bridge
-            .runtime
-            .event_sink
-            .num_events_of_type("spv2Withdrawal".into())
-            == 5
-        {
+        if td.event_sink().num_events_of_type("spv2Withdrawal".into()) == 5 {
             break;
         }
 
@@ -1674,9 +1655,8 @@ async fn test_transfer_device_registration_post_recovery(_dev_fed: DevFed) -> an
     drop(recovery_federation);
     loop {
         // Wait until recovery complete
-        if recovery_bridge
-            .runtime
-            .event_sink
+        if td2
+            .event_sink()
             .num_events_of_type("recoveryComplete".into())
             == 1
         {
@@ -2074,9 +2054,8 @@ async fn test_fee_remittance_on_startup(dev_fed: DevFed) -> anyhow::Result<()> {
     loop {
         // Wait until deposit operation succeeds
         // Initiated -> TxAccepted -> Success
-        if bridge
-            .runtime
-            .event_sink
+        if td
+            .event_sink()
             .num_events_of_type("stabilityPoolDeposit".into())
             == 3
         {
@@ -2162,9 +2141,8 @@ async fn test_fee_remittance_post_successful_tx(dev_fed: DevFed) -> anyhow::Resu
     loop {
         // Wait until deposit operation succeeds
         // Initiated -> TxAccepted -> Success
-        if bridge
-            .runtime
-            .event_sink
+        if td
+            .event_sink()
             .num_events_of_type("stabilityPoolDeposit".into())
             == 3
         {
@@ -2244,7 +2222,7 @@ async fn test_bridge_handles_federation_offline() -> anyhow::Result<()> {
         // Wait for federation ready event for a max of 2s
         let rpc_federation = fedimint_core::task::timeout(Duration::from_secs(2), async move {
             'check: loop {
-                let events = bridge.runtime.event_sink.events();
+                let events = td.event_sink().events();
                 for (_, ev_body) in events.iter().rev().filter(|(kind, _)| kind == "federation") {
                     let ev_body =
                         serde_json::from_str::<RpcFederationMaybeLoading>(ev_body).unwrap();
@@ -2450,9 +2428,8 @@ async fn test_stability_pool_external_transfer_in(_dev_fed: DevFed) -> anyhow::R
 
     // Wait for deposit to complete
     loop {
-        if bridge_sender
-            .runtime
-            .event_sink
+        if td_sender
+            .event_sink()
             .num_events_of_type("spv2Deposit".into())
             == 3
         {
@@ -2475,9 +2452,8 @@ async fn test_stability_pool_external_transfer_in(_dev_fed: DevFed) -> anyhow::R
 
     // Wait for transfer to complete on sender side
     loop {
-        if bridge_sender
-            .runtime
-            .event_sink
+        if td_sender
+            .event_sink()
             .num_events_of_type("spv2Transfer".into())
             == 2
         {

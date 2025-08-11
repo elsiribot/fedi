@@ -39,7 +39,7 @@ pub struct TestDevice {
     device_identifier: OnceLock<DeviceIdentifier>,
     fedi_api: OnceLock<Arc<MockFediApi>>,
     feature_catalog: OnceLock<Arc<FeatureCatalog>>,
-    event_sink: OnceLock<Arc<dyn IEventSink>>,
+    event_sink: OnceLock<Arc<FakeEventSink>>,
     bridge_uncommited: OnceCell<Arc<Bridge>>,
     bridge_full: OnceCell<Arc<BridgeFull>>,
     default_client: OnceCell<Arc<FederationV2>>,
@@ -85,11 +85,6 @@ impl TestDevice {
         self
     }
 
-    pub fn with_event_sink(&mut self, event_sink: Arc<dyn IEventSink>) -> &mut Self {
-        self.event_sink = OnceLock::from(event_sink);
-        self
-    }
-
     pub async fn storage(&self) -> anyhow::Result<&Storage> {
         self.storage
             .get_or_try_init(|| async {
@@ -119,7 +114,7 @@ impl TestDevice {
             .clone()
     }
 
-    fn event_sink(&self) -> Arc<dyn IEventSink> {
+    pub fn event_sink(&self) -> Arc<FakeEventSink> {
         self.event_sink
             .get_or_init(|| Arc::new(FakeEventSink::default()))
             .clone()
@@ -331,13 +326,16 @@ impl IEventSink for FakeEventSink {
             .expect("couldn't acquire FakeEventSink lock");
         events.push((event_type, body));
     }
-    fn events(&self) -> Vec<(String, String)> {
+}
+
+impl FakeEventSink {
+    pub fn events(&self) -> Vec<(String, String)> {
         self.events
             .read()
             .expect("FakeEventSink could not acquire read lock")
             .clone()
     }
-    fn num_events_of_type(&self, event_type: String) -> usize {
+    pub fn num_events_of_type(&self, event_type: String) -> usize {
         self.events().iter().filter(|e| e.0 == event_type).count()
     }
 }
