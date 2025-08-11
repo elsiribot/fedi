@@ -4,9 +4,9 @@ use std::sync::Arc;
 use anyhow::{anyhow, bail};
 use async_recursion::async_recursion;
 use bitcoin::Network;
+use fedimint_core::Amount;
 use fedimint_core::core::ModuleKind;
 use fedimint_core::db::IDatabaseTransactionOpsCoreTyped;
-use fedimint_core::Amount;
 use fedimint_ln_client::OutgoingLightningPayment;
 use futures::StreamExt;
 use lightning_invoice::Bolt11Invoice;
@@ -22,7 +22,7 @@ use crate::federation_v2::client::ClientExt;
 use crate::federation_v2::db::{
     OutstandingFediFeesPerTXTypeKey, OutstandingFediFeesPerTXTypeKeyPrefix,
 };
-use crate::federation_v2::{zero_gateway_fees, FederationV2};
+use crate::federation_v2::{FederationV2, zero_gateway_fees};
 
 /// Helper struct to encapsulate all state and logic related to Fedi fee. This
 /// struct can be consumed by both the bridge and each individual federation

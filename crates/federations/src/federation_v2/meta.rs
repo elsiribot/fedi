@@ -5,7 +5,7 @@ use fedimint_api_client::api::DynGlobalApi;
 use fedimint_client::db::{MetaFieldPrefix, MetaServiceInfoKey};
 use fedimint_client::meta::MetaService;
 use fedimint_client::module::meta::{
-    fetch_meta_overrides, FetchKind, MetaFieldKey, MetaFieldValue, MetaSource, MetaValues,
+    FetchKind, MetaFieldKey, MetaFieldValue, MetaSource, MetaValues, fetch_meta_overrides,
 };
 use fedimint_core::config::ClientConfig;
 use fedimint_core::db::{Database, IDatabaseTransactionOpsCoreTyped};
@@ -50,7 +50,7 @@ impl MetaServiceExt for MetaService {
         let entries: MetaEntries = dbtx
             .find_by_prefix(&MetaFieldPrefix)
             .await
-            .map(|(k, v)| (k.0 .0, v.0 .0))
+            .map(|(k, v)| (k.0.0, v.0.0))
             .collect()
             .await;
         Some(entries)

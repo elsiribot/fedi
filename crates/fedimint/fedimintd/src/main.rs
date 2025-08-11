@@ -8,8 +8,8 @@ use env::envs::{
 };
 use fedi_social_common::config::FediSocialGenParams;
 use fedi_social_server::FediSocialInit;
-use fedimint_core::envs::is_env_var_set;
 use fedimint_core::Amount;
+use fedimint_core::envs::is_env_var_set;
 use fedimint_server_core::ServerModuleInit as _;
 use fedimintd::Fedimintd;
 use tracing::warn;
@@ -62,7 +62,9 @@ async fn main() -> anyhow::Result<()> {
     }
 
     if include_social_recovery {
-        warn!("Warning: Fedi Social Recovery module is currently experimental and not recommended to use in Federations without explicit Fedi support");
+        warn!(
+            "Warning: Fedi Social Recovery module is currently experimental and not recommended to use in Federations without explicit Fedi support"
+        );
         fedimintd = fedimintd
             .with_module_kind(FediSocialInit)
             .with_module_instance(FediSocialInit::kind(), FediSocialGenParams::new());
@@ -70,15 +72,16 @@ async fn main() -> anyhow::Result<()> {
 
     if include_stability_pool_v2 {
         let use_test_params = is_env_var_set(FEDI_STABILITY_POOL_MODULE_TEST_PARAMS_ENV);
-        let cycle_duration_secs = match std::env::var(
-            FEDI_STABILITY_POOL_V2_CYCLE_DURATION_SECS_ENV,
-        ) {
-            Ok(val) => val.parse::<u64>()?,
-            Err(std::env::VarError::NotPresent) => 600,
-            Err(std::env::VarError::NotUnicode(_)) => {
-                bail!("{FEDI_STABILITY_POOL_V2_CYCLE_DURATION_SECS_ENV} contains invalid Unicode.")
-            }
-        };
+        let cycle_duration_secs =
+            match std::env::var(FEDI_STABILITY_POOL_V2_CYCLE_DURATION_SECS_ENV) {
+                Ok(val) => val.parse::<u64>()?,
+                Err(std::env::VarError::NotPresent) => 600,
+                Err(std::env::VarError::NotUnicode(_)) => {
+                    bail!(
+                        "{FEDI_STABILITY_POOL_V2_CYCLE_DURATION_SECS_ENV} contains invalid Unicode."
+                    )
+                }
+            };
         fedimintd = fedimintd
             .with_module_kind(stability_pool_server::StabilityPoolInit)
             .with_module_instance(

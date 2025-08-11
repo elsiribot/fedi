@@ -1,7 +1,7 @@
 [package]
 name = "federations"
 version = "0.3.0"
-edition = "2021"
+edition = "2024"
 
 [features]
 # to disable SP sweepers in tests

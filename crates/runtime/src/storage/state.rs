@@ -12,12 +12,12 @@ use std::ops::{Deref, DerefMut};
 use std::str::FromStr;
 use std::time::SystemTime;
 
-use anyhow::{anyhow, ensure, Context};
+use anyhow::{Context, anyhow, ensure};
 use fedi_social_client::SocialRecoveryState;
-use fedimint_aead::{decrypt, LessSafeKey};
+use fedimint_aead::{LessSafeKey, decrypt};
 use fedimint_bip39::Bip39RootSecretStrategy;
-use fedimint_client::secret::RootSecretStrategy;
 use fedimint_client::ModuleKind;
+use fedimint_client::secret::RootSecretStrategy;
 use fedimint_core::encoding::{Decodable, DecodeError, Encodable};
 use fedimint_core::module::registry::ModuleDecoderRegistry;
 use fedimint_derive_secret::DerivableSecret;

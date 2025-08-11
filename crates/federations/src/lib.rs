@@ -2,7 +2,7 @@ use std::collections::BTreeMap;
 use std::str::FromStr;
 use std::sync::{Arc, Mutex};
 
-use anyhow::{bail, Context};
+use anyhow::{Context, bail};
 use federation_sm::{FederationState, FederationStateMachine};
 use federation_v2::FederationV2;
 use federations_locker::FederationsLocker;

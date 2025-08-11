@@ -1,23 +1,23 @@
-use std::collections::{hash_map, HashMap};
+use std::collections::{HashMap, hash_map};
 use std::path::Path;
 use std::pin::pin;
 use std::sync::{Arc, Weak};
 use std::time::Duration;
 
-use anyhow::{bail, Context, Result};
+use anyhow::{Context, Result, bail};
 use async_stream::stream;
 use fedimint_derive_secret::DerivableSecret;
-use futures::{stream, Stream, StreamExt};
+use futures::{Stream, StreamExt, stream};
 use matrix_sdk::attachment::{
     AttachmentConfig, AttachmentInfo, BaseFileInfo, BaseImageInfo, BaseVideoInfo,
 };
-use matrix_sdk::encryption::recovery::RecoveryState;
 use matrix_sdk::encryption::BackupDownloadStrategy;
+use matrix_sdk::encryption::recovery::RecoveryState;
 use matrix_sdk::media::{MediaFormat, MediaRequestParameters};
 use matrix_sdk::notification_settings::NotificationSettings;
+use matrix_sdk::room::Room;
 use matrix_sdk::room::edit::EditedContent;
 use matrix_sdk::room::reply::{EnforceThread, Reply};
-use matrix_sdk::room::Room;
 pub use matrix_sdk::ruma::api::client::account::register::v3 as register;
 use matrix_sdk::ruma::api::client::authenticated_media::get_media_preview;
 use matrix_sdk::ruma::api::client::directory::get_public_rooms_filtered::v3 as get_public_rooms_filtered;
@@ -25,8 +25,8 @@ use matrix_sdk::ruma::api::client::message::get_message_events;
 use matrix_sdk::ruma::api::client::profile::get_profile;
 use matrix_sdk::ruma::api::client::push::Pusher;
 use matrix_sdk::ruma::api::client::receipt::create_receipt::v3::ReceiptType;
-pub use matrix_sdk::ruma::api::client::room::create_room::v3 as create_room;
 use matrix_sdk::ruma::api::client::room::Visibility;
+pub use matrix_sdk::ruma::api::client::room::create_room::v3 as create_room;
 use matrix_sdk::ruma::api::client::state::send_state_event;
 use matrix_sdk::ruma::api::client::uiaa;
 use matrix_sdk::ruma::directory::PublicRoomsChunk;
@@ -37,30 +37,30 @@ use matrix_sdk::ruma::events::poll::unstable_start::{
     NewUnstablePollStartEventContent, UnstablePollAnswer, UnstablePollAnswers,
     UnstablePollStartContentBlock,
 };
+use matrix_sdk::ruma::events::room::MediaSource;
 use matrix_sdk::ruma::events::room::encryption::RoomEncryptionEventContent;
 use matrix_sdk::ruma::events::room::message::{
     MessageType, RoomMessageEventContent, RoomMessageEventContentWithoutRelation,
 };
 use matrix_sdk::ruma::events::room::power_levels::RoomPowerLevelsEventContent;
-use matrix_sdk::ruma::events::room::MediaSource;
 use matrix_sdk::ruma::events::{
     AnyMessageLikeEventContent, AnySyncTimelineEvent, InitialStateEvent,
 };
 use matrix_sdk::ruma::{
-    assign, EventId, OwnedEventId, OwnedMxcUri, OwnedRoomId, RoomId, UInt, UserId,
+    EventId, OwnedEventId, OwnedMxcUri, OwnedRoomId, RoomId, UInt, UserId, assign,
 };
 use matrix_sdk::{Client, RoomInfo, RoomMemberships, SessionChange};
 use matrix_sdk_ui::eyeball_im::VectorDiff;
 use matrix_sdk_ui::sync_service::{self, SyncService};
-use matrix_sdk_ui::timeline::{default_event_filter, RoomExt, TimelineEventItemId};
-use matrix_sdk_ui::{room_list_service, Timeline};
+use matrix_sdk_ui::timeline::{RoomExt, TimelineEventItemId, default_event_filter};
+use matrix_sdk_ui::{Timeline, room_list_service};
 use mime::Mime;
+use rpc_types::RpcMediaUploadParams;
 use rpc_types::error::ErrorCode;
 pub use rpc_types::matrix::*;
-use rpc_types::RpcMediaUploadParams;
 use runtime::bridge_runtime::Runtime;
 use runtime::storage::AppState;
-use tokio::sync::{broadcast, watch, Mutex};
+use tokio::sync::{Mutex, broadcast, watch};
 use tracing::{error, info, warn};
 
 pub struct Matrix {
@@ -382,7 +382,7 @@ impl Matrix {
     }
 
     /// All chats in matrix are rooms, whether DM or group chats.
-    pub async fn room_list(&self) -> impl Stream<Item = Vec<VectorDiff<RpcRoomId>>> {
+    pub async fn room_list(&self) -> impl Stream<Item = Vec<VectorDiff<RpcRoomId>>> + use<> {
         const PAGE_SIZE: usize = 1000;
         // manual construction required to to have correct lifetimes
         let room_list_service = self.sync_service.room_list_service();
@@ -405,7 +405,7 @@ impl Matrix {
 
     /// Sync status is used to display "Waiting for network" indicator on
     /// frontend.
-    pub fn subscribe_sync_status(&self) -> impl Stream<Item = RpcSyncIndicator> {
+    pub fn subscribe_sync_status(&self) -> impl Stream<Item = RpcSyncIndicator> + use<> {
         self.sync_service
             .room_list_service()
             .sync_indicator(Duration::from_secs(2), Duration::from_secs(2))
@@ -459,7 +459,7 @@ impl Matrix {
     pub async fn room_timeline_items(
         &self,
         room_id: &RoomId,
-    ) -> Result<impl Stream<Item = Vec<VectorDiff<RpcTimelineItem>>>> {
+    ) -> Result<impl Stream<Item = Vec<VectorDiff<RpcTimelineItem>>> + use<>> {
         let timeline = self.timeline(room_id).await?;
         let (initial, stream) = timeline.subscribe().await;
         let stream = stream! {
@@ -490,7 +490,7 @@ impl Matrix {
     pub async fn subscribe_timeline_items_paginate_backwards_status(
         &self,
         room_id: &RoomId,
-    ) -> Result<impl Stream<Item = RpcBackPaginationStatus>> {
+    ) -> Result<impl Stream<Item = RpcBackPaginationStatus> + use<>> {
         let timeline = self.timeline(room_id).await?;
         let (current, stream) = timeline
             .live_back_pagination_status()
@@ -589,10 +589,10 @@ impl Matrix {
         mut request: create_room::Request,
     ) -> Result<matrix_sdk::ruma::OwnedRoomId> {
         if request.visibility != Visibility::Public {
-            request.initial_state = vec![InitialStateEvent::new(
-                RoomEncryptionEventContent::with_recommended_defaults(),
-            )
-            .to_raw_any()];
+            request.initial_state = vec![
+                InitialStateEvent::new(RoomEncryptionEventContent::with_recommended_defaults())
+                    .to_raw_any(),
+            ];
         }
         let room = self.client.create_room(request).await?;
         self.wait_for_room_id(room.room_id()).await?;
@@ -633,7 +633,7 @@ impl Matrix {
     pub async fn subscribe_room_info(
         &self,
         room_id: &RoomId,
-    ) -> Result<impl Stream<Item = RoomInfo>> {
+    ) -> Result<impl Stream<Item = RoomInfo> + use<>> {
         let mut sub = self.room(room_id).await?.subscribe_info();
         // yield first item immediately
         sub.reset();

@@ -20,11 +20,11 @@ use fediffi::ffi::PathBasedStorage;
 use fediffi::rpc::{fedimint_initialize_async, fedimint_rpc_async};
 use fedimint_logging::TracingSetup;
 use listenfd::ListenFd;
-use rpc_types::error::RpcError;
 use rpc_types::RpcInitOpts;
+use rpc_types::error::RpcError;
 use runtime::event::IEventSink;
 use serde::{Deserialize, Serialize};
-use tokio::sync::{mpsc, Mutex, RwLock};
+use tokio::sync::{Mutex, RwLock, mpsc};
 use tower_http::cors::{Any, CorsLayer};
 use tracing::{debug, error, info};
 
@@ -124,7 +124,9 @@ async fn main() -> Result<()> {
     };
     let port = listener.local_addr()?.port();
     info!("Server listening on 127.0.0.1:{port}");
-    std::env::set_var("REMOTE_BRIDGE_PORT", port.to_string());
+    unsafe {
+        std::env::set_var("REMOTE_BRIDGE_PORT", port.to_string());
+    }
     let shutdown_signal = async {
         if let Some(command) = cli.run_after_ready {
             // devimint already prints if command failed

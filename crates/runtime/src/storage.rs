@@ -2,7 +2,7 @@ use std::collections::BTreeMap;
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
 
-use anyhow::{bail, Context as _};
+use anyhow::{Context as _, bail};
 use either::Either;
 use fedi_social_client::SocialRecoveryState;
 use fedimint_bip39::Bip39RootSecretStrategy;
@@ -14,8 +14,8 @@ use fedimint_core::{apply, async_trait_maybe_send, impl_db_record};
 use fedimint_derive_secret::DerivableSecret;
 use rand::rngs::OsRng;
 use state::{
-    default_next_federation_prefix, AppStateJson, AppStateJsonBase, AppStateJsonOnboarded,
-    AppStateJsonOnboarding, DeviceIdentifier, OnboardingMethod, OnboardingStage,
+    AppStateJson, AppStateJsonBase, AppStateJsonOnboarded, AppStateJsonOnboarding,
+    DeviceIdentifier, OnboardingMethod, OnboardingStage, default_next_federation_prefix,
 };
 use tokio::sync::RwLock;
 

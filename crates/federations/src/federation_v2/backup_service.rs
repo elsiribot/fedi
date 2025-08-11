@@ -1,10 +1,10 @@
 use std::time::{Duration, SystemTime};
 
 use anyhow::Result;
-use fedimint_client::backup::Metadata;
 use fedimint_client::Client;
+use fedimint_client::backup::Metadata;
 use fedimint_core::db::{DatabaseTransaction, IDatabaseTransactionOpsCoreTyped};
-use fedimint_core::util::backoff_util::{custom_backoff, FibonacciBackoff};
+use fedimint_core::util::backoff_util::{FibonacciBackoff, custom_backoff};
 use fedimint_core::util::retry;
 use fedimint_core::util::update_merge::UpdateMerge;
 use futures::lock::Mutex;

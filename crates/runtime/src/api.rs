@@ -15,7 +15,7 @@ use fedimint_bip39::Bip39RootSecretStrategy;
 use fedimint_client::secret::RootSecretStrategy;
 use fedimint_core::core::ModuleKind;
 use fedimint_core::task::{MaybeSend, MaybeSync};
-use fedimint_core::{apply, async_trait_maybe_send, Amount};
+use fedimint_core::{Amount, apply, async_trait_maybe_send};
 use lightning_invoice::Bolt11Invoice;
 use reqwest::{Client, StatusCode};
 
