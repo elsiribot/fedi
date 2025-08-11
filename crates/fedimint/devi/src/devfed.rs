@@ -10,8 +10,8 @@ use devimint::util::ProcessManager;
 use devimint::vars::{self, mkdir};
 use fedimint_core::task::TaskGroup;
 use fedimint_logging::LOG_DEVIMINT;
-use rand::distributions::Alphanumeric;
 use rand::Rng;
+use rand::distributions::Alphanumeric;
 use tracing::{debug, info, trace};
 
 use crate::Synapse;

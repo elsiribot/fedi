@@ -3,7 +3,7 @@ use std::fmt::Debug;
 use std::marker::PhantomData;
 use std::sync::Arc;
 
-use anyhow::{bail, Result};
+use anyhow::{Result, bail};
 use eyeball_im::VectorDiff;
 use fedimint_core::task::{MaybeSend, TaskGroup};
 use futures::{Stream, StreamExt};

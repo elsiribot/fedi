@@ -2,7 +2,7 @@ use std::collections::BTreeSet;
 use std::pin::pin;
 use std::sync::Arc;
 
-use anyhow::{bail, Context, Result};
+use anyhow::{Context, Result, bail};
 use async_stream::stream;
 use fedimint_core::db::IDatabaseTransactionOpsCoreTyped;
 use futures::{Stream, StreamExt};
@@ -17,7 +17,7 @@ use rpc_types::{NetworkError, RpcEventId, RpcPublicKey, RpcSPv2SyncResponse};
 use runtime::bridge_runtime::Runtime;
 use runtime::utils::PoisonedLockExt as _;
 use stability_pool_client::common::TransferRequest;
-use tokio::sync::{mpsc, Mutex};
+use tokio::sync::{Mutex, mpsc};
 
 use super::db::{MultispendGroupStatus, MultispendMarkedForScanning, RpcMultispendGroupStatus};
 use super::rescanner::RoomRescannerManager;

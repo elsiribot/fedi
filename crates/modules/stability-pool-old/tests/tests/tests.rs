@@ -8,7 +8,7 @@ use anyhow::anyhow;
 use devimint::external::Bitcoind;
 use devimint::federation::Federation;
 use devimint::util::{Command, ProcessManager};
-use devimint::{cmd, dev_fed, vars, DevFed};
+use devimint::{DevFed, cmd, dev_fed, vars};
 use fedimint_core::task::TaskGroup;
 use fedimint_core::util::write_overwrite_async;
 use tokio::fs;

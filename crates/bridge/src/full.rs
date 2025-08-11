@@ -2,7 +2,7 @@ use std::fmt::Display;
 use std::path::PathBuf;
 use std::sync::Arc;
 
-use anyhow::{anyhow, Result};
+use anyhow::{Result, anyhow};
 use communities::Communities;
 use device_registration::DeviceRegistrationService;
 use federations::Federations;
@@ -53,7 +53,10 @@ pub enum BridgeOffboardingReason {
 impl Display for BridgeOffboardingReason {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
-            Self::DeviceIdentifierMismatch { existing, new } => write!(f, "Expected device ID {existing} but received {new}. Likely app has been cloned on a new device."),
+            Self::DeviceIdentifierMismatch { existing, new } => write!(
+                f,
+                "Expected device ID {existing} but received {new}. Likely app has been cloned on a new device."
+            ),
             Self::InternalBridgeExport => write!(f, "Bridge is ready for export"),
         }
     }

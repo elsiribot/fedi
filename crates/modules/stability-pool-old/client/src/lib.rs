@@ -8,9 +8,9 @@ use anyhow::bail;
 use async_stream::stream;
 use common::config::StabilityPoolClientConfig;
 use common::{
-    amount_to_cents, AccountInfo, CancelRenewal, IntendedAction, LiquidityStats, Provide, Seek,
+    AccountInfo, BPS_UNIT, CancelRenewal, IntendedAction, LiquidityStats, Provide, Seek,
     StabilityPoolCommonGen, StabilityPoolInput, StabilityPoolModuleTypes, StabilityPoolOutput,
-    BPS_UNIT,
+    amount_to_cents,
 };
 use db::AccountInfoKey;
 use fedimint_api_client::api::{DynModuleApi, FederationApiExt as _, FederationError};
@@ -26,7 +26,7 @@ use fedimint_client::transaction::{
     ClientInput, ClientInputBundle, ClientInputSM, ClientOutput, ClientOutputBundle,
     ClientOutputSM, TransactionBuilder,
 };
-use fedimint_client::{sm_enum_variant_translation, ClientModule, DynGlobalClientContext};
+use fedimint_client::{ClientModule, DynGlobalClientContext, sm_enum_variant_translation};
 use fedimint_core::core::{IntoDynInstance, ModuleInstanceId, ModuleKind, OperationId};
 use fedimint_core::db::{Database, DatabaseTransaction, IDatabaseTransactionOpsCoreTyped};
 use fedimint_core::encoding::{Decodable, Encodable};
@@ -34,7 +34,7 @@ use fedimint_core::module::{
     ApiRequestErased, ApiVersion, CommonModuleInit, ModuleInit, MultiApiVersion,
 };
 use fedimint_core::task::timeout;
-use fedimint_core::{apply, async_trait_maybe_send, Amount, OutPoint, TransactionId};
+use fedimint_core::{Amount, OutPoint, TransactionId, apply, async_trait_maybe_send};
 use futures::{Stream, StreamExt};
 use secp256k1::{Keypair, Secp256k1};
 use serde::{Deserialize, Serialize};
@@ -171,10 +171,10 @@ impl ClientModule for StabilityPoolClientModule {
                 while let Some(update) = updates.next().await {
                     match update {
                         StabilityPoolDepositOperationState::TxRejected(e) => {
-                            return Err(anyhow::Error::msg(format!("TX rejected: {e}")))
+                            return Err(anyhow::Error::msg(format!("TX rejected: {e}")));
                         }
                         StabilityPoolDepositOperationState::PrimaryOutputError(e) => {
-                            return Err(anyhow::Error::msg(format!("Change output error: {e}")))
+                            return Err(anyhow::Error::msg(format!("Change output error: {e}")));
                         }
                         _ => info!("Update: {:?}", update),
                     }
@@ -204,10 +204,10 @@ impl ClientModule for StabilityPoolClientModule {
                 while let Some(update) = updates.next().await {
                     match update {
                         StabilityPoolDepositOperationState::TxRejected(e) => {
-                            return Err(anyhow::Error::msg(format!("TX rejected: {e}")))
+                            return Err(anyhow::Error::msg(format!("TX rejected: {e}")));
                         }
                         StabilityPoolDepositOperationState::PrimaryOutputError(e) => {
-                            return Err(anyhow::Error::msg(format!("Change output error: {e}")))
+                            return Err(anyhow::Error::msg(format!("Change output error: {e}")));
                         }
                         _ => info!("Update: {:?}", update),
                     }
@@ -232,25 +232,25 @@ impl ClientModule for StabilityPoolClientModule {
                 while let Some(update) = updates.next().await {
                     match update {
                         StabilityPoolWithdrawalOperationState::TxRejected(e) => {
-                            return Err(anyhow::Error::msg(format!("TX rejected: {e}")))
+                            return Err(anyhow::Error::msg(format!("TX rejected: {e}")));
                         }
                         StabilityPoolWithdrawalOperationState::PrimaryOutputError(e) => {
-                            return Err(anyhow::Error::msg(format!("Primary output error: {e}")))
+                            return Err(anyhow::Error::msg(format!("Primary output error: {e}")));
                         }
                         StabilityPoolWithdrawalOperationState::CancellationSubmissionFailure(e) => {
                             return Err(anyhow::Error::msg(format!(
                                 "Cancellation submission failure: {e}"
-                            )))
+                            )));
                         }
                         StabilityPoolWithdrawalOperationState::AwaitCycleTurnoverError(e) => {
                             return Err(anyhow::Error::msg(format!(
                                 "Await cycle turnover error: {e}"
-                            )))
+                            )));
                         }
                         StabilityPoolWithdrawalOperationState::WithdrawIdleSubmissionFailure(e) => {
                             return Err(anyhow::Error::msg(format!(
                                 "Withdraw idle submission failure: {e}"
-                            )))
+                            )));
                         }
                         _ => info!("Update: {:?}", update),
                     }

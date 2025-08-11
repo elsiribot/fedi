@@ -13,18 +13,18 @@ use common::config::{
     StabilityPoolGenParams,
 };
 use common::{
-    amount_to_cents, CancelRenewal, IntendedAction, LockedProvide, LockedSeek, Provide, Seek,
-    SeekMetadata, StabilityPoolCommonGen, StabilityPoolConsensusItem, StabilityPoolInput,
+    BPS_UNIT, CONSENSUS_VERSION, CancelRenewal, IntendedAction, LockedProvide, LockedSeek, Provide,
+    Seek, SeekMetadata, StabilityPoolCommonGen, StabilityPoolConsensusItem, StabilityPoolInput,
     StabilityPoolInputError, StabilityPoolModuleTypes, StabilityPoolOutput,
     StabilityPoolOutputError, StabilityPoolOutputOutcome, StabilityPoolOutputOutcomeV0,
-    StagedProvide, StagedSeek, BPS_UNIT, CONSENSUS_VERSION,
+    StagedProvide, StagedSeek, amount_to_cents,
 };
 use db::{
-    migrate_to_v2, CurrentCycleKey, CurrentCycleKeyPrefix, Cycle, CycleChangeVoteIndexPrefix,
-    CycleChangeVoteKey, IdleBalance, IdleBalanceKey, IdleBalanceKeyPrefix, PastCycleKey,
-    SeekMetadataKey, StagedCancellationKey, StagedCancellationKeyPrefix, StagedProvideSequenceKey,
+    CurrentCycleKey, CurrentCycleKeyPrefix, Cycle, CycleChangeVoteIndexPrefix, CycleChangeVoteKey,
+    IdleBalance, IdleBalanceKey, IdleBalanceKeyPrefix, PastCycleKey, SeekMetadataKey,
+    StagedCancellationKey, StagedCancellationKeyPrefix, StagedProvideSequenceKey,
     StagedProvidesKey, StagedProvidesKeyPrefix, StagedSeekSequenceKey, StagedSeeksKey,
-    StagedSeeksKeyPrefix,
+    StagedSeeksKeyPrefix, migrate_to_v2,
 };
 use fedimint_core::config::{
     ConfigGenModuleParams, ServerModuleConfig, ServerModuleConsensusConfig,
@@ -41,7 +41,7 @@ use fedimint_core::{Amount, InPoint, NumPeersExt, OutPoint, PeerId, TransactionI
 use fedimint_server_core::config::PeerHandleOps;
 use fedimint_server_core::migration::ServerModuleDbMigrationFn;
 use fedimint_server_core::{ServerModule, ServerModuleInit, ServerModuleInitArgs};
-use futures::{stream, FutureExt, StreamExt};
+use futures::{FutureExt, StreamExt, stream};
 use itertools::Itertools;
 use oracle::{AggregateOracle, MockOracle, Oracle};
 use secp256k1::PublicKey;

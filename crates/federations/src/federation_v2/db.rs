@@ -3,7 +3,7 @@ use std::time::SystemTime;
 use bitcoin::secp256k1;
 use fedimint_core::core::{ModuleKind, OperationId};
 use fedimint_core::encoding::{Decodable, Encodable};
-use fedimint_core::{impl_db_lookup, impl_db_record, Amount};
+use fedimint_core::{Amount, impl_db_lookup, impl_db_record};
 use rpc_types::{OperationFediFeeStatus, RpcTransactionDirection};
 use runtime::storage::state::FiatFXInfo;
 

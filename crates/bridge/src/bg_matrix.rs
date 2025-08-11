@@ -12,7 +12,7 @@ use rpc_types::error::RpcError;
 use rpc_types::matrix::MatrixInitializeStatus;
 use runtime::bridge_runtime::Runtime;
 use runtime::constants::MATRIX_CHILD_ID;
-use tokio::sync::{watch, OnceCell};
+use tokio::sync::{OnceCell, watch};
 
 pub struct BgMatrix {
     initialized: OnceCell<(Arc<Matrix>, Arc<MultispendMatrix>)>,

@@ -14,10 +14,10 @@ use std::sync::{Arc, Weak};
 use std::time::Duration;
 
 use ::serde::{Deserialize, Serialize};
-use anyhow::{anyhow, bail, ensure, Context, Result};
+use anyhow::{Context, Result, anyhow, bail, ensure};
 use bitcoin::address::NetworkUnchecked;
 use bitcoin::hex::DisplayHex;
-use bitcoin::secp256k1::{self, schnorr, PublicKey};
+use bitcoin::secp256k1::{self, PublicKey, schnorr};
 use bitcoin::{Address, Network};
 use bug_report::reused_ecash_proofs::{self, SerializedReusedEcashProofs};
 use client::ClientExt;
@@ -26,18 +26,18 @@ use db::{
 };
 use fedi_social_client::common::VerificationDocument;
 use fedi_social_client::{
-    FediSocialClientInit, RecoveryFile, RecoveryId, SocialBackup, SocialRecoveryClient,
-    SocialRecoveryState, SocialVerification, UserSeedPhrase, SOCIAL_RECOVERY_SECRET_CHILD_ID,
+    FediSocialClientInit, RecoveryFile, RecoveryId, SOCIAL_RECOVERY_SECRET_CHILD_ID, SocialBackup,
+    SocialRecoveryClient, SocialRecoveryState, SocialVerification, UserSeedPhrase,
 };
 use fedimint_api_client::api::net::Connector;
 use fedimint_api_client::api::{DynGlobalApi, DynModuleApi, FederationApiExt as _, StatusResponse};
 use fedimint_bip39::Bip39RootSecretStrategy;
 use fedimint_client::db::{CachedApiVersionSetKey, ChronologicalOperationLogKey};
 use fedimint_client::meta::MetaService;
+use fedimint_client::module::ClientModule;
 use fedimint_client::module::meta::{FetchKind, MetaSource};
 use fedimint_client::module::module::recovery::RecoveryProgress;
 use fedimint_client::module::oplog::{OperationLogEntry, UpdateStreamOrOutcome};
-use fedimint_client::module::ClientModule;
 use fedimint_client::secret::RootSecretStrategy;
 use fedimint_client::{Client, ClientBuilder, ClientHandle};
 use fedimint_core::config::{ClientConfig, FederationId};
@@ -49,12 +49,12 @@ use fedimint_core::encoding::Encodable;
 use fedimint_core::invite_code::InviteCode;
 use fedimint_core::module::registry::ModuleDecoderRegistry;
 use fedimint_core::module::{ApiRequestErased, ApiVersion};
-use fedimint_core::task::{timeout, MaybeSend, MaybeSync, TaskGroup};
+use fedimint_core::task::{MaybeSend, MaybeSync, TaskGroup, timeout};
 use fedimint_core::timing::TimeReporter;
 use fedimint_core::util::backoff_util::{aggressive_backoff, background_backoff};
-use fedimint_core::util::{retry, SafeUrl};
+use fedimint_core::util::{SafeUrl, retry};
 use fedimint_core::{
-    apply, async_trait_maybe_send, maybe_add_send_sync, Amount, PeerId, TransactionId,
+    Amount, PeerId, TransactionId, apply, async_trait_maybe_send, maybe_add_send_sync,
 };
 use fedimint_derive_secret::{ChildId, DerivableSecret};
 use fedimint_ln_client::pay::GatewayPayError;
@@ -63,15 +63,15 @@ use fedimint_ln_client::{
     LightningOperationMetaVariant, LnPayState, LnReceiveState, OutgoingLightningPayment,
     PayBolt11InvoiceError, PayType,
 };
-use fedimint_ln_common::config::FeeToAmount;
 use fedimint_ln_common::LightningGateway;
+use fedimint_ln_common::config::FeeToAmount;
 use fedimint_meta_client::MetaModuleMetaSourceWithFallback;
 use fedimint_mint_client::api::MintFederationApi;
 use fedimint_mint_client::config::MintClientConfig;
 use fedimint_mint_client::{
-    spendable_notes_to_operation_id, MintClientInit, MintClientModule, MintOperationMeta,
-    MintOperationMetaVariant, OOBNotes, ReissueExternalNotesState, SelectNotesWithAtleastAmount,
-    SelectNotesWithExactAmount, SpendOOBState,
+    MintClientInit, MintClientModule, MintOperationMeta, MintOperationMetaVariant, OOBNotes,
+    ReissueExternalNotesState, SelectNotesWithAtleastAmount, SelectNotesWithExactAmount,
+    SpendOOBState, spendable_notes_to_operation_id,
 };
 use fedimint_wallet_client::{
     DepositStateV2, PegOutFees, WalletClientInit, WalletOperationMeta, WalletOperationMetaVariant,
@@ -123,7 +123,7 @@ use stability_pool_client::{
 };
 use stability_pool_client_old::ClientAccountInfo;
 use tokio::sync::{Mutex, OnceCell};
-use tracing::{error, info, instrument, warn, Level};
+use tracing::{Level, error, info, instrument, warn};
 
 use self::backup_service::BackupService;
 pub use self::backup_service::BackupServiceStatus;
@@ -780,7 +780,7 @@ impl FederationV2 {
                         return GuardianStatus::Error {
                             guardian: guardian.to_string(),
                             error: e.to_string(),
-                        }
+                        };
                     }
                 };
                 let start = fedimint_core::time::now();
