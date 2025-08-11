@@ -29,6 +29,13 @@ describe('utils/nav', () => {
                 })
             })
 
+            describe('Scan page route', () => {
+                it('should show the nav bar', () => {
+                    const result = shouldHideNavigation('/home', false)
+                    expect(result).toBe(false)
+                })
+            })
+
             describe('Onboarding page route', () => {
                 it('should hide the nav bar', () => {
                     const result = shouldHideNavigation('/onboarding', false)
@@ -49,6 +56,13 @@ describe('utils/nav', () => {
             describe('ChatRoom page route', () => {
                 it('should show the nav bar', () => {
                     const result = shouldHideNavigation('/chat/room/123', false)
+                    expect(result).toBe(false)
+                })
+            })
+
+            describe('Transactions page route', () => {
+                it('should show the nav bar', () => {
+                    const result = shouldHideNavigation('/transactions', false)
                     expect(result).toBe(false)
                 })
             })
@@ -81,6 +95,13 @@ describe('utils/nav', () => {
                 })
             })
 
+            describe('Scan page route', () => {
+                it('should show the nav bar', () => {
+                    const result = shouldHideNavigation('/home', true)
+                    expect(result).toBe(false)
+                })
+            })
+
             describe('Onboarding page route', () => {
                 it('should hide the nav bar', () => {
                     const result = shouldHideNavigation('/onboarding', true)
@@ -96,8 +117,15 @@ describe('utils/nav', () => {
             })
 
             describe('ChatRoom page route', () => {
-                it('should show the nav bar', () => {
+                it('should hide the nav bar', () => {
                     const result = shouldHideNavigation('/chat/room/123', true)
+                    expect(result).toBe(true)
+                })
+            })
+
+            describe('Transactions page route', () => {
+                it('should hide the nav bar', () => {
+                    const result = shouldHideNavigation('/transactions', true)
                     expect(result).toBe(true)
                 })
             })
