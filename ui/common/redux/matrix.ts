@@ -34,13 +34,13 @@ import {
     MatrixPowerLevel,
     MatrixRoom,
     MatrixRoomListItem,
-    MatrixRoomListObservableUpdates,
+    MatrixRoomListStreamUpdates,
     MatrixRoomMember,
     MatrixRoomPowerLevels,
     MatrixSearchResults,
     MatrixSyncStatus,
     MatrixTimelineItem,
-    MatrixTimelineObservableUpdates,
+    MatrixTimelineStreamUpdates,
     MatrixUser,
     MultispendActiveInvitation,
     MultispendFinalized,
@@ -88,9 +88,9 @@ import {
     isMultispendFinancialTransaction,
     MatrixFormResponse,
 } from '../utils/matrix'
-import { applyObservableUpdates } from '../utils/observable'
 import { isBolt11 } from '../utils/parser'
 import { upsertListItem, upsertRecordEntity } from '../utils/redux'
+import { applyStreamUpdates } from '../utils/stream'
 import { loadFromStorage } from './storage'
 
 const log = makeLog('redux/matrix')
@@ -228,14 +228,11 @@ export const matrixSlice = createSlice({
         addMatrixRoomInfo(state, action: PayloadAction<MatrixRoom>) {
             state.roomInfo = upsertRecordEntity(state.roomInfo, action.payload)
         },
-        handleMatrixRoomListObservableUpdates(
+        handleMatrixRoomListStreamUpdates(
             state,
-            action: PayloadAction<MatrixRoomListObservableUpdates>,
+            action: PayloadAction<MatrixRoomListStreamUpdates>,
         ) {
-            state.roomList = applyObservableUpdates(
-                state.roomList,
-                action.payload,
-            )
+            state.roomList = applyStreamUpdates(state.roomList, action.payload)
         },
         addMatrixRoomMember(state, action: PayloadAction<MatrixRoomMember>) {
             const { roomId } = action.payload
@@ -272,15 +269,15 @@ export const matrixSlice = createSlice({
                 {},
             )
         },
-        handleMatrixRoomTimelineObservableUpdates(
+        handleMatrixRoomTimelineStreamUpdates(
             state,
             action: PayloadAction<{
                 roomId: string
-                updates: MatrixTimelineObservableUpdates
+                updates: MatrixTimelineStreamUpdates
             }>,
         ) {
             const { roomId, updates } = action.payload
-            state.roomTimelines[roomId] = applyObservableUpdates(
+            state.roomTimelines[roomId] = applyStreamUpdates(
                 state.roomTimelines[roomId] || [],
                 updates,
             )
@@ -682,8 +679,8 @@ export const {
     setMatrixRoomMultispendTransactions,
     updateMatrixRoomMultispendTxns,
     addMatrixError,
-    handleMatrixRoomListObservableUpdates,
-    handleMatrixRoomTimelineObservableUpdates,
+    handleMatrixRoomListStreamUpdates,
+    handleMatrixRoomTimelineStreamUpdates,
     handleMatrixRoomTimelinePaginationStatus,
     resetMatrixState,
     setChatDraft,
@@ -781,7 +778,7 @@ export const startMatrixClient = createAsyncThunk<
     // Bind all the listeners we need to dispatch actions
     client.on('auth', auth => dispatch(setMatrixAuth(auth)))
     client.on('roomListUpdate', updates => {
-        dispatch(handleMatrixRoomListObservableUpdates(updates))
+        dispatch(handleMatrixRoomListStreamUpdates(updates))
     })
     client.on('roomInfo', room => {
         dispatch(addMatrixRoomInfo(room))
@@ -792,7 +789,7 @@ export const startMatrixClient = createAsyncThunk<
     client.on('roomMember', member => dispatch(addMatrixRoomMember(member)))
     client.on('roomMembers', ev => dispatch(setMatrixRoomMembers(ev)))
     client.on('roomTimelineUpdate', ev =>
-        dispatch(handleMatrixRoomTimelineObservableUpdates(ev)),
+        dispatch(handleMatrixRoomTimelineStreamUpdates(ev)),
     )
     client.on('roomTimelinePaginationStatus', ev =>
         dispatch(handleMatrixRoomTimelinePaginationStatus(ev)),

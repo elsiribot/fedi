@@ -1,13 +1,10 @@
-import { ObservableVecUpdate, VectorDiff } from '../types/bindings'
+import { VectorDiff } from '../types/bindings'
 
 /**
- * Apply diff from bridge VectorDiff to an observable list.
+ * Apply diff from bridge VectorDiff to a stream list.
  * TODO: Return identical reference if no changes are made, like upsertListItem.
  */
-export function applyObservableUpdate<T>(
-    prev: T[],
-    update: VectorDiff<T>,
-): T[] {
+export function applyStreamUpdate<T>(prev: T[], update: VectorDiff<T>): T[] {
     if (update === 'Clear') {
         return []
     } else if (update === 'PopFront') {
@@ -47,15 +44,11 @@ export function applyObservableUpdate<T>(
 }
 
 /**
- * Apply a set of diffs from bridge VectorDiff to an observable list.
- * TODO: Return identical reference if no changes are made, like upsertListItem.
+ * Apply sequential diffs from bridge VectorDiff to a stream list.
  */
-export function applyObservableUpdates<T>(
-    original: T[],
-    updates: ObservableVecUpdate<T>['update'],
-) {
+export function applyStreamUpdates<T>(original: T[], updates: VectorDiff<T>[]) {
     return updates.reduce((prev, update) => {
-        return applyObservableUpdate(prev, update)
+        return applyStreamUpdate(prev, update)
     }, original)
 }
 
@@ -63,7 +56,7 @@ export function applyObservableUpdates<T>(
  * Given an observable update, apply a mapping function to it. Handles the
  * various kinds of updates with their different shapes.
  */
-export function mapObservableUpdate<T, R>(
+export function mapStreamUpdate<T, R>(
     update: VectorDiff<T>,
     map: (value: T) => R,
 ): VectorDiff<R> {
@@ -101,23 +94,19 @@ export function mapObservableUpdate<T, R>(
  * Given a set of observable updates, apply a mapping function to them. Handles
  * the various kinds of updates with their different shapes.
  */
-export function mapObservableUpdates<T, R>(
-    updates: ObservableVecUpdate<T>['update'],
+export function mapStreamUpdates<T, R>(
+    updates: VectorDiff<T>[],
     map: (value: T) => R,
 ) {
-    return updates.map(update => mapObservableUpdate(update, map))
-}
-
-export function makeInitialResetUpdate<T>(values: T[]): VectorDiff<T>[] {
-    return [{ Reset: { values } }]
+    return updates.map(update => mapStreamUpdate(update, map))
 }
 
 /**
  * Given a set of observable updates, get a set of IDs that belong to items
  * that have been added to the list.
  */
-export function getNewObservableIds<T>(
-    updates: ObservableVecUpdate<T>['update'],
+export function getNewStreamIds<T>(
+    updates: VectorDiff<T>[],
     getId: (value: T) => string | false | null | undefined,
 ) {
     const ids = new Set<string>()

@@ -34,7 +34,7 @@ import {
 } from './federation'
 import {
     checkForReceivablePayments,
-    handleMatrixRoomTimelineObservableUpdates,
+    handleMatrixRoomTimelineStreamUpdates,
     matrixSlice,
 } from './matrix'
 import { modSlice } from './mod'
@@ -277,12 +277,12 @@ export function initializeCommonStore({
     const unsubscribeMatrixPayments = listenerMiddleware.startListening({
         matcher: isAnyOf(
             joinFederation.fulfilled,
-            handleMatrixRoomTimelineObservableUpdates,
+            handleMatrixRoomTimelineStreamUpdates,
         ),
         effect: (
             action:
                 | ReturnType<typeof joinFederation.fulfilled>
-                | ReturnType<typeof handleMatrixRoomTimelineObservableUpdates>,
+                | ReturnType<typeof handleMatrixRoomTimelineStreamUpdates>,
             api,
         ) => {
             const roomId =

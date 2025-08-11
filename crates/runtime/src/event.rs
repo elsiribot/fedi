@@ -3,7 +3,7 @@ use std::sync::Arc;
 use fedimint_core::task::{MaybeSend, MaybeSync};
 use serde::Serialize;
 
-use crate::observable::ObservableUpdate;
+use crate::rpc_stream::RpcStreamUpdate;
 
 /// Sends events to iOS / Android layer
 pub trait IEventSink: MaybeSend + MaybeSync + 'static {
@@ -20,10 +20,10 @@ pub trait IEventSink: MaybeSend + MaybeSync + 'static {
 pub type EventSink = Arc<dyn IEventSink>;
 
 impl dyn IEventSink {
-    pub fn observable_update<T: Serialize>(&self, update: ObservableUpdate<T>) {
+    pub fn stream_update<T: Serialize>(&self, update: RpcStreamUpdate<T>) {
         IEventSink::event(
             self,
-            "observableUpdate".into(),
+            "streamUpdate".into(),
             serde_json::to_string(&update).expect("failed to json serialize"),
         );
     }

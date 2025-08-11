@@ -147,10 +147,20 @@ async fn send_dm() -> Result<()> {
     matrix2.room_join(&room_id).await?;
     let id_gen = AtomicU64::new(0);
     let items1 = matrix1
-        .room_timeline_items(id_gen.fetch_add(1, Ordering::Relaxed), &room_id)
+        .runtime
+        .observable_pool
+        .make_observable(
+            id_gen.fetch_add(1, Ordering::Relaxed),
+            matrix1.room_timeline_items(&room_id).await?,
+        )
         .await?;
     let items2 = matrix2
-        .room_timeline_items(id_gen.fetch_add(1, Ordering::Relaxed), &room_id)
+        .runtime
+        .observable_pool
+        .make_observable(
+            id_gen.fetch_add(1, Ordering::Relaxed),
+            matrix2.room_timeline_items(&room_id).await?,
+        )
         .await?;
     info!(?items1, ?items2, "### initial items");
     matrix1
@@ -214,7 +224,12 @@ async fn test_recovery() -> Result<()> {
     matrix1_new.wait_for_room_id(&room_id).await?;
     let id_gen = AtomicU64::new(0);
     let initial_item = matrix1_new
-        .room_timeline_items(id_gen.fetch_add(1, Ordering::Relaxed), &room_id)
+        .runtime
+        .observable_pool
+        .make_observable(
+            id_gen.fetch_add(1, Ordering::Relaxed),
+            matrix1_new.room_timeline_items(&room_id).await?,
+        )
         .await?;
     info!("### waiting for user 2 message");
     if !serde_json::to_string(&initial_item)?.contains("hello from user2") {

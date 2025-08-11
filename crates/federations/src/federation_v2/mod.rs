@@ -77,7 +77,7 @@ use fedimint_wallet_client::{
     DepositStateV2, PegOutFees, WalletClientInit, WalletOperationMeta, WalletOperationMetaVariant,
     WithdrawState,
 };
-use futures::{FutureExt, StreamExt};
+use futures::{FutureExt, Stream, StreamExt};
 use lightning_invoice::{Bolt11Invoice, RoutingFees};
 use meta::{LegacyMetaSourceWithExternalUrl, MetaEntries, MetaServiceExt};
 use rand::Rng;
@@ -103,7 +103,6 @@ use runtime::constants::{
     STABILITY_POOL_V2_OPERATION_TYPE, WALLET_OPERATION_TYPE,
 };
 use runtime::db::FederationPendingRejoinFromScratchKey;
-use runtime::observable::Observable;
 use runtime::storage::state::{DatabaseInfo, FederationInfo, FediFeeSchedule};
 use runtime::utils::{display_currency, to_unix_time};
 use serde::de::DeserializeOwned;
@@ -3187,27 +3186,17 @@ impl FederationV2 {
 
     /// Same as [`spv2_account_info`] except that it returns an Observable that
     /// emits new values whenever the CachedSyncResponse in the DB updates.
-    pub async fn spv2_observe_account_info(
+    pub async fn spv2_subscribe_account_info(
         &self,
-        observable_id: u32,
-    ) -> Result<Observable<RpcSPv2CachedSyncResponse>> {
+    ) -> Result<impl Stream<Item = RpcSPv2CachedSyncResponse>> {
         self.client.spv2()?;
         let Some(sync_service) = self.spv2_sync_service.get() else {
             bail!("Unexpected: sync service must have been initialized");
         };
 
-        let update_stream = sync_service
+        Ok(sync_service
             .subscribe_to_updates()
-            .filter_map(|sync| async { sync.map(|sync| sync.into()) });
-
-        self.runtime
-            .observable_pool
-            .make_observable_from_stream(
-                observable_id.into(),
-                None::<RpcSPv2CachedSyncResponse>,
-                update_stream,
-            )
-            .await
+            .filter_map(|sync| async { sync.map(|sync| sync.into()) }))
     }
 
     /// Returns the start time of the next cycle by adding cycle duration to the
