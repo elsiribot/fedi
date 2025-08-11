@@ -945,7 +945,7 @@ impl Matrix {
         let content = self
             .client
             .media()
-            .get_media_content(&request, false)
+            .get_media_content(&request, true)
             .await?;
         Ok(content)
     }
