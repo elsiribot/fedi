@@ -12,17 +12,17 @@ describe('stream utils', () => {
         const initialArray = ['a', 'b', 'c', 'd']
 
         it('handles Clear update', () => {
-            const result = applyStreamUpdate(initialArray, 'Clear')
+            const result = applyStreamUpdate(initialArray, { Clear: {} })
             expect(result).toEqual([])
         })
 
         it('handles PopFront update', () => {
-            const result = applyStreamUpdate(initialArray, 'PopFront')
+            const result = applyStreamUpdate(initialArray, { PopFront: {} })
             expect(result).toEqual(['b', 'c', 'd'])
         })
 
         it('handles PopBack update', () => {
-            const result = applyStreamUpdate(initialArray, 'PopBack')
+            const result = applyStreamUpdate(initialArray, { PopBack: {} })
             expect(result).toEqual(['a', 'b', 'c'])
         })
 
@@ -132,9 +132,9 @@ describe('stream utils', () => {
         it('handles empty array operations', () => {
             const emptyArray: string[] = []
 
-            expect(applyStreamUpdate(emptyArray, 'Clear')).toEqual([])
-            expect(applyStreamUpdate(emptyArray, 'PopFront')).toEqual([])
-            expect(applyStreamUpdate(emptyArray, 'PopBack')).toEqual([])
+            expect(applyStreamUpdate(emptyArray, { Clear: {} })).toEqual([])
+            expect(applyStreamUpdate(emptyArray, { PopFront: {} })).toEqual([])
+            expect(applyStreamUpdate(emptyArray, { PopBack: {} })).toEqual([])
 
             const pushFront: VectorDiff<string> = {
                 PushFront: { value: 'first' },
@@ -182,18 +182,18 @@ describe('stream utils', () => {
         const doubleString = (s: string) => s + s
 
         it('handles Clear update', () => {
-            const result = mapStreamUpdate('Clear', doubleString)
-            expect(result).toBe('Clear')
+            const result = mapStreamUpdate({ Clear: {} }, doubleString)
+            expect(result).toEqual({ Clear: {} })
         })
 
         it('handles PopFront update', () => {
-            const result = mapStreamUpdate('PopFront', doubleString)
-            expect(result).toBe('PopFront')
+            const result = mapStreamUpdate({ PopFront: {} }, doubleString)
+            expect(result).toEqual({ PopFront: {} })
         })
 
         it('handles PopBack update', () => {
-            const result = mapStreamUpdate('PopBack', doubleString)
-            expect(result).toBe('PopBack')
+            const result = mapStreamUpdate({ PopBack: {} }, doubleString)
+            expect(result).toEqual({ PopBack: {} })
         })
 
         it('handles Append update', () => {
@@ -302,7 +302,7 @@ describe('stream utils', () => {
             const updates: VectorDiff<string>[] = [
                 { PushBack: { value: 'hello' } },
                 { Append: { values: ['world', 'test'] } },
-                'Clear',
+                { Clear: {} },
                 { Reset: { values: ['new', 'data'] } },
             ]
 
@@ -310,7 +310,7 @@ describe('stream utils', () => {
             expect(result).toEqual([
                 { PushBack: { value: 'HELLO' } },
                 { Append: { values: ['WORLD', 'TEST'] } },
-                'Clear',
+                { Clear: {} },
                 { Reset: { values: ['NEW', 'DATA'] } },
             ])
         })
@@ -401,9 +401,9 @@ describe('stream utils', () => {
 
         it('ignores updates that do not add items', () => {
             const updates: VectorDiff<TestItem>[] = [
-                'Clear',
-                'PopFront',
-                'PopBack',
+                { Clear: {} },
+                { PopFront: {} },
+                { PopBack: {} },
                 { Remove: { index: 0 } },
                 { Truncate: { length: 5 } },
             ]
@@ -415,7 +415,7 @@ describe('stream utils', () => {
         it('handles mixed updates', () => {
             const updates: VectorDiff<TestItem>[] = [
                 { PushFront: { value: { id: 'id1', name: 'test1' } } },
-                'Clear',
+                { Clear: {} },
                 {
                     Append: {
                         values: [
@@ -497,8 +497,8 @@ describe('stream utils', () => {
                 { Set: { index: 10, value: 'replaced2' } },
                 { Remove: { index: 1 } },
                 { Remove: { index: 8 } },
-                'PopFront',
-                'PopBack',
+                { PopFront: {} },
+                { PopBack: {} },
                 { Insert: { index: 5, value: 'inserted' } },
                 { PushFront: { value: 'newstart' } },
                 { Append: { values: ['y1', 'y2'] } },
@@ -507,7 +507,7 @@ describe('stream utils', () => {
                 { Insert: { index: 5, value: 'extra' } },
                 { Remove: { index: 2 } },
                 { PushBack: { value: 'last' } },
-                'PopFront',
+                { PopFront: {} },
                 { Append: { values: ['z1', 'z2', 'z3'] } },
                 { Remove: { index: 7 } },
                 { Set: { index: 0, value: 'beginning' } },

@@ -5,11 +5,11 @@ import { VectorDiff } from '../types/bindings'
  * TODO: Return identical reference if no changes are made, like upsertListItem.
  */
 export function applyStreamUpdate<T>(prev: T[], update: VectorDiff<T>): T[] {
-    if (update === 'Clear') {
+    if ('Clear' in update) {
         return []
-    } else if (update === 'PopFront') {
+    } else if ('PopFront' in update) {
         return prev.slice(1)
-    } else if (update === 'PopBack') {
+    } else if ('PopBack' in update) {
         return prev.slice(0, prev.length - 1)
     } else if ('Append' in update) {
         return [...prev, ...update.Append.values]
@@ -60,7 +60,7 @@ export function mapStreamUpdate<T, R>(
     update: VectorDiff<T>,
     map: (value: T) => R,
 ): VectorDiff<R> {
-    if (update === 'Clear' || update === 'PopFront' || update === 'PopBack') {
+    if ('Clear' in update || 'PopFront' in update || 'PopBack' in update) {
         return update
     } else if ('Append' in update) {
         return { Append: { values: update.Append.values.map(map) } }
@@ -111,11 +111,7 @@ export function getNewStreamIds<T>(
 ) {
     const ids = new Set<string>()
     for (const update of updates) {
-        if (
-            update === 'Clear' ||
-            update === 'PopFront' ||
-            update === 'PopBack'
-        ) {
+        if ('Clear' in update || 'PopFront' in update || 'PopBack' in update) {
             // nothing
         } else if ('Insert' in update) {
             const id = getId(update.Insert.value)

@@ -13,7 +13,7 @@ pub enum TsVectorDiff<T: Clone> {
         values: Vector<T>,
     },
     /// The vector was cleared.
-    Clear,
+    Clear {},
     /// An element was added at the front.
     PushFront {
         /// The new element.
@@ -25,9 +25,9 @@ pub enum TsVectorDiff<T: Clone> {
         value: T,
     },
     /// The element at the front was removed.
-    PopFront,
+    PopFront {},
     /// The element at the back was removed.
-    PopBack,
+    PopBack {},
     /// An element was inserted at the given position.
     Insert {
         /// The index of the new element.

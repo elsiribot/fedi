@@ -1340,7 +1340,7 @@ export type VectorDiff<T> =
         values: T[];
       };
     }
-  | "Clear"
+  | { Clear: Record<string, never> }
   | {
       PushFront: {
         /**
@@ -1357,8 +1357,8 @@ export type VectorDiff<T> =
         value: T;
       };
     }
-  | "PopFront"
-  | "PopBack"
+  | { PopFront: Record<string, never> }
+  | { PopBack: Record<string, never> }
   | {
       Insert: {
         /**
