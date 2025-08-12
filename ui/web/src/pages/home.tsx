@@ -34,7 +34,7 @@ import { InstallBanner } from '../components/InstallBanner'
 import * as Layout from '../components/Layout'
 import { Modal } from '../components/Modal'
 import { RecoveryInProgress } from '../components/RecoveryInProgress'
-import SurveyDialog from '../components/SurveyDialog'
+import SurveyModal from '../components/SurveyModal'
 import { Text } from '../components/Text'
 import {
     useAppSelector,
@@ -297,7 +297,7 @@ function HomePage() {
                     </Text>
                 </ModalContent>
             </Modal>
-            <SurveyDialog />
+            <SurveyModal />
         </ContentBlock>
     )
 }

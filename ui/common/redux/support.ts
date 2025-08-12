@@ -17,6 +17,7 @@ const initialState = {
     zendeskUnreadMessageCount: 0,
     lastShownSurveyTimestamp: null as number | null,
     showSurveyModal: false,
+    hasSurveyedUser: false,
 }
 
 export type SupportState = typeof initialState
@@ -46,6 +47,9 @@ export const supportSlice = createSlice({
             state.showSurveyModal = false
             state.lastShownSurveyTimestamp = Date.now()
         },
+        setHasSurveyedUser(state, action: PayloadAction<boolean>) {
+            state.hasSurveyedUser = action.payload
+        },
     },
     extraReducers: builder => {
         builder.addCase(loadFromStorage.fulfilled, (state, action) => {
@@ -73,6 +77,7 @@ export const {
     setZendeskUnreadMessageCount,
     setShouldShowSurveyModal,
     dismissSurveyModal,
+    setHasSurveyedUser,
 } = supportSlice.actions
 
 /*** Asynchronous thonkers ***/
@@ -83,6 +88,9 @@ export const checkSurveyCondition = createAsyncThunk<
     { state: CommonState }
 >('support/checkSurveyCondition', async (_, { getState, dispatch }) => {
     const state = getState()
+
+    // If the user has already opened the survey, don't even try to show it again
+    if (state.support.hasSurveyedUser) return
 
     const oneWeekMs = 7 * 24 * 60 * 60 * 1000
     const lastShownTimestamp = state.support.lastShownSurveyTimestamp

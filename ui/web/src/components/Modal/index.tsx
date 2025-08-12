@@ -12,6 +12,8 @@ interface Props {
     onClick(): void
     title?: string
     description?: string
+    buttonText?: string
+    onOpenChange?(open: boolean): void
 }
 
 export const Modal: React.FC<Props> = ({
@@ -20,13 +22,15 @@ export const Modal: React.FC<Props> = ({
     onClick,
     title,
     description,
+    buttonText,
+    onOpenChange,
 }) => {
     const { t } = useTranslation()
 
     return (
-        <RadixAlertDialog.Root open={open}>
+        <RadixAlertDialog.Root open={open} onOpenChange={onOpenChange}>
             <RadixAlertDialog.Portal>
-                <Overlay>
+                <Overlay onClick={() => onOpenChange?.(false)}>
                     <Content>
                         <VisuallyHidden>
                             <RadixAlertDialog.Title>
@@ -43,7 +47,7 @@ export const Modal: React.FC<Props> = ({
                                 variant="primary"
                                 onClick={onClick}
                                 width="full">
-                                {t('words.continue')}
+                                {buttonText ?? t('words.continue')}
                             </Button>
                         </Actions>
                     </Content>

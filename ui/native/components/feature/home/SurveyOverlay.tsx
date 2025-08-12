@@ -11,6 +11,7 @@ import { i18nLanguages } from '@fedi/common/localization'
 import { selectLanguage } from '@fedi/common/redux'
 import {
     dismissSurveyModal,
+    setHasSurveyedUser,
     shouldShowSurveyModal,
 } from '@fedi/common/redux/support'
 
@@ -46,6 +47,7 @@ const SurveyOverlay: React.FC = () => {
         }
 
         handleDismiss()
+        dispatch(setHasSurveyedUser(true))
 
         // wait for the modal's close animation + unmount to finish
         // immediately navigating while the modal is actively unmounting causes the screen to be unresponsive
@@ -54,7 +56,7 @@ const SurveyOverlay: React.FC = () => {
                 url: surveyUrl.toString(),
             })
         }, 500)
-    }, [language, navigation, handleDismiss])
+    }, [language, navigation, handleDismiss, dispatch])
 
     return (
         <CenterOverlay
