@@ -127,7 +127,6 @@ use tokio::sync::{Mutex, OnceCell};
 use tracing::{Level, error, info, instrument, warn};
 
 use self::backup_service::BackupService;
-pub use self::backup_service::BackupServiceStatus;
 use self::db::{
     LastStabilityPoolDepositCycleKey, OperationFediFeeStatusKey, OutstandingFediFeesPerTXTypeKey,
     OutstandingFediFeesPerTXTypeKeyPrefix, PendingFediFeesPerTXTypeKey,
@@ -2254,10 +2253,6 @@ impl FederationV2 {
         .await
         .context(ErrorCode::Timeout)??;
         Ok(())
-    }
-
-    pub async fn backup_status(&self) -> Result<BackupServiceStatus> {
-        Ok(self.backup_service.status(&self.client).await)
     }
 
     //
