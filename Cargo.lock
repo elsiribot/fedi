@@ -2578,6 +2578,7 @@ dependencies = [
  "fedimint-core",
  "rpc-types",
  "runtime",
+ "tokio",
  "tracing",
 ]
 
@@ -3136,6 +3137,7 @@ dependencies = [
  "bip39",
  "bitcoin",
  "bug-report",
+ "device-registration",
  "fedi-social-client",
  "fedimint-api-client",
  "fedimint-bip39",

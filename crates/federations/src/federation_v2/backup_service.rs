@@ -1,6 +1,8 @@
+use std::sync::Arc;
 use std::time::{Duration, SystemTime};
 
 use anyhow::Result;
+use device_registration::DeviceRegistrationService;
 use fedimint_client::Client;
 use fedimint_client::backup::Metadata;
 use fedimint_core::db::{DatabaseTransaction, IDatabaseTransactionOpsCoreTyped};
@@ -17,10 +19,10 @@ use ts_rs::TS;
 
 use super::db::LastBackupTimestampKey;
 
-#[derive(Default)]
 pub struct BackupService {
     state: Mutex<BackupServiceState>,
     update_merge: UpdateMerge,
+    device_registration_service: Arc<DeviceRegistrationService>,
 }
 
 #[derive(Clone, Debug, Serialize, TS)]
@@ -47,6 +49,14 @@ pub enum BackupServiceState {
 }
 
 impl BackupService {
+    pub fn new(device_registration_service: Arc<DeviceRegistrationService>) -> Self {
+        Self {
+            state: Mutex::new(BackupServiceState::default()),
+            update_merge: UpdateMerge::default(),
+            device_registration_service,
+        }
+    }
+
     pub async fn last_backup_timestamp(dbtx: &mut DatabaseTransaction<'_>) -> Option<SystemTime> {
         dbtx.get_value(&LastBackupTimestampKey).await
     }
@@ -108,6 +118,11 @@ impl BackupService {
                 info!(?sleep_duration, "waiting for peroidic backup");
                 fedimint_core::task::sleep(sleep_duration).await;
             }
+
+            // Wait for device registration to be recently renewed before backing up
+            self.device_registration_service
+                .wait_for_recently_renewed()
+                .await;
 
             *self.state.lock().await = BackupServiceState::Running;
             self.backup(
