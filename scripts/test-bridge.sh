@@ -11,4 +11,4 @@ else
 fi
 
 own_dir="$(dirname "${BASH_SOURCE[0]}")"
-source "${own_dir}/test-bridge-current.inner.sh" "$@"
+source "${own_dir}/test-bridge.inner.sh" "$@"
