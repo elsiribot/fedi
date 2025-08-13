@@ -44,7 +44,6 @@
         "react-dom": "^18.2.0",
         "react-i18next": "^14.1.0",
         "react-redux": "^8.0.5",
-        "vaul": "^1.1.2",
         "zod": "^3.22.5"
     },
     "devDependencies": {
