@@ -169,7 +169,6 @@ jest.mock('react-native', () => ({
         BridgeNativeEventEmitter: {},
         FedimintFfi: {},
     },
-    Modal: jest.requireActual('react-native').Modal,
 }))
 
 // mock a theme object with values for colors, spacing, etc
