@@ -96,17 +96,6 @@ export const SendPaymentDialog: React.FC<Props> = ({ open, onOpenChange }) => {
         handleOmniInput(sendRouteState)
     }, [open, sendRouteState, handleOmniInput])
 
-    const handleOpenChange = useCallback(
-        (change: boolean, sent?: boolean) => {
-            if (shouldRateFederation && !change && sent) {
-                setShowRateFederation(true)
-            }
-
-            onOpenChange(change)
-        },
-        [shouldRateFederation, onOpenChange],
-    )
-
     const handleChangeAmount = useCallback(
         (amount: Sats) => {
             setSubmitAttempts(0)
@@ -121,14 +110,16 @@ export const SendPaymentDialog: React.FC<Props> = ({ open, onOpenChange }) => {
         try {
             await handleOmniSend(inputAmount)
             setHasSent(true)
-            // handleOpenChange is called with a second `sent` arg
-            // since `hasSent` will not be updated unless handleOpenChange is called after a re-render
-            setTimeout(() => handleOpenChange(false, true), 2500)
+            setTimeout(() => {
+                onOpenChange(false)
+
+                if (shouldRateFederation) setShowRateFederation(true)
+            }, 2500)
         } catch (err) {
             setSendError(formatErrorMessage(t, err, 'errors.unknown-error'))
         }
         setIsSending(false)
-    }, [handleOmniSend, inputAmount, handleOpenChange, t])
+    }, [handleOmniSend, inputAmount, onOpenChange, t, shouldRateFederation])
 
     if (typeof balance !== 'number') return null
 
@@ -196,7 +187,11 @@ export const SendPaymentDialog: React.FC<Props> = ({ open, onOpenChange }) => {
         content = (
             <SendOffline
                 onEcashGenerated={() => setIsCloseDisabled(true)}
-                onPaymentSent={() => handleOpenChange(false)}
+                onPaymentSent={() => {
+                    onOpenChange(false)
+
+                    if (shouldRateFederation) setShowRateFederation(true)
+                }}
             />
         )
     } else {
@@ -215,7 +210,7 @@ export const SendPaymentDialog: React.FC<Props> = ({ open, onOpenChange }) => {
                 <OmniInput
                     expectedInputTypes={expectedInputTypes}
                     onExpectedInput={handleOmniInput}
-                    onUnexpectedSuccess={() => handleOpenChange(false)}
+                    onUnexpectedSuccess={() => onOpenChange(false)}
                     customActions={customActions}
                 />
             </OmniInputContainer>
@@ -234,7 +229,7 @@ export const SendPaymentDialog: React.FC<Props> = ({ open, onOpenChange }) => {
                 open={open}
                 disableClose={isCloseDisabled}
                 mobileDismiss="back"
-                onOpenChange={handleOpenChange}>
+                onOpenChange={onOpenChange}>
                 <Container ref={containerRef}>
                     {content}
                     {dialogStatusProps && (
