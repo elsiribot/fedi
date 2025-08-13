@@ -5,7 +5,7 @@ use std::path::PathBuf;
 use std::sync::Arc;
 use std::time::Duration;
 
-use anyhow::{Context, Result};
+use anyhow::{Context, Result, bail};
 use axum::extract::ws::{Message, WebSocket, WebSocketUpgrade};
 use axum::extract::{Path, State};
 use axum::response::IntoResponse;
@@ -24,7 +24,7 @@ use rpc_types::RpcInitOpts;
 use rpc_types::error::RpcError;
 use runtime::event::IEventSink;
 use serde::{Deserialize, Serialize};
-use tokio::sync::{Mutex, RwLock, mpsc};
+use tokio::sync::{Mutex, OnceCell, RwLock, mpsc};
 use tower_http::cors::{Any, CorsLayer};
 use tracing::{debug, error, info};
 
@@ -127,10 +127,14 @@ async fn main() -> Result<()> {
     unsafe {
         std::env::set_var("REMOTE_BRIDGE_PORT", port.to_string());
     }
-    let shutdown_signal = async {
+    let user_cmd_failed = Arc::new(OnceCell::new());
+    let user_cmd_failed2 = user_cmd_failed.clone();
+    let shutdown_signal = async move {
         if let Some(command) = cli.run_after_ready {
             // devimint already prints if command failed
-            let _ = exec_user_command(command).await;
+            if exec_user_command(command).await.is_err() {
+                user_cmd_failed2.set(true).unwrap();
+            }
         } else {
             tokio::signal::ctrl_c()
                 .await
@@ -140,6 +144,11 @@ async fn main() -> Result<()> {
     axum::serve(listener, app)
         .with_graceful_shutdown(shutdown_signal)
         .await?;
+
+    if user_cmd_failed.get().is_some_and(|x| *x) {
+        bail!("User command failed");
+    }
+
     Ok(())
 }
 
