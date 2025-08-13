@@ -23,7 +23,7 @@ import { Pressable } from '../components/ui/Pressable'
 import { SafeAreaContainer } from '../components/ui/SafeArea'
 import { useAppDispatch, useAppSelector } from '../state/hooks'
 import { useStoragePermission } from '../utils/hooks'
-import { copyAssetToTempUri, tryPickAssets } from '../utils/media'
+import { tryPickAssets } from '../utils/media'
 
 const log = makeLog('EditProfile')
 
@@ -67,7 +67,8 @@ const EditProfileSettings: React.FC = () => {
                 .map(assets => assets[0])
                 .andThen(ensureNonNullish)
                 .andTee(({ type }) => setProfileImageMimeType(type ?? ''))
-                .andThen(copyAssetToTempUri)
+                .map(asset => asset.uri)
+                .andThen(ensureNonNullish)
                 .match(setProfileImageUri, e => {
                     log.error('Failed to launch image library', e)
 

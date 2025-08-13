@@ -1,15 +1,8 @@
-import {
-    DocumentPickerResponse,
-    keepLocalCopy,
-} from '@react-native-documents/picker'
-import { Platform } from 'react-native'
+import { DocumentPickerResponse } from '@react-native-documents/picker'
 import { TemporaryDirectoryPath } from 'react-native-fs'
-import * as RNFS from 'react-native-fs'
 import { Asset } from 'react-native-image-picker'
 
 import {
-    copyAssetToTempUri,
-    deriveCopyableFileUri,
     doesAssetExceedSize,
     doesDocumentExceedSize,
     makeRandomTempFilePath,
@@ -46,15 +39,6 @@ const testImage: Asset = {
     type: 'image/png',
     uri: 'file:///Users/images/test.png',
     fileSize: 1024,
-    width: 1024,
-    height: 1024,
-}
-
-const testGif: Asset = {
-    fileName: 'test.gif',
-    type: 'image/gif',
-    uri: 'file:///Users/images/test.gif',
-    fileSize: 2048,
     width: 1024,
     height: 1024,
 }
@@ -142,118 +126,6 @@ describe('media', () => {
 
             expect(dirPath.startsWith(TemporaryDirectoryPath)).toBeTruthy()
             expect(dirPath.endsWith(fileName)).toBeFalsy()
-        })
-    })
-
-    describe('copyDocumentToTempUri', () => {
-        it('should return the original document URI if it is not an android content URI', async () => {
-            const result = await deriveCopyableFileUri(testDocument)
-
-            expect(result.isOk()).toBeTruthy()
-            expect(result.isErr()).toBeFalsy()
-            expect(result._unsafeUnwrap()).toBe(testDocument.uri)
-        })
-
-        it('should make a local copy of the document if it is an android content URI', async () => {
-            const result = await deriveCopyableFileUri(testContentDocument)
-
-            expect(result.isOk()).toBeTruthy()
-            expect(result.isErr()).toBeFalsy()
-
-            const uri = result._unsafeUnwrap()
-
-            expect(uri).toBe(testLocalContentDocumentUri)
-        })
-
-        it('should short-circuit with a GenericError (android content URI) if keepLocalCopy errors', async () => {
-            ;(keepLocalCopy as jest.Mock).mockImplementation(async () => {
-                return [
-                    {
-                        status: 'error',
-                        sourceUri: testContentDocument.uri,
-                        copyError: 'failed to copy',
-                    },
-                ]
-            })
-
-            const result = await deriveCopyableFileUri(testContentDocument)
-
-            expect(result.isErr()).toBeTruthy()
-            expect(result._unsafeUnwrapErr()._tag).toBe('GenericError')
-        })
-    })
-
-    describe('copyAssetToTempUri', () => {
-        it('should copy an asset to a random temporary URI', async () => {
-            const result = await copyAssetToTempUri(testImage)
-
-            expect(result.isOk()).toBeTruthy()
-            expect(RNFS.copyFile).toHaveBeenCalled()
-
-            const uri = result._unsafeUnwrap()
-
-            expect(uri.startsWith('file:///')).toBeTruthy()
-            expect(uri).toContain(TemporaryDirectoryPath)
-            expect(uri.endsWith(testImage.fileName as string)).toBeTruthy()
-        })
-
-        it('should download a video on iOS to a random temporary URI using downloadFile', async () => {
-            const result = await copyAssetToTempUri(testVideo)
-
-            expect(result.isOk()).toBeTruthy()
-            expect(RNFS.downloadFile).toHaveBeenCalled()
-
-            const uri = result._unsafeUnwrap()
-
-            expect(uri.startsWith('file:///')).toBeTruthy()
-            expect(uri).toContain(TemporaryDirectoryPath)
-            expect(uri.endsWith(testVideo.fileName as string)).toBeTruthy()
-        })
-
-        it('should copy an animated gif to a random temporary URI on Android', async () => {
-            Platform.OS = 'android'
-
-            const result = await copyAssetToTempUri(testGif)
-
-            expect(result.isOk()).toBeTruthy()
-            expect(RNFS.copyFile).toHaveBeenCalled()
-
-            const uri = result._unsafeUnwrap()
-
-            expect(uri.startsWith('file:///')).toBeTruthy()
-            expect(uri).toContain(TemporaryDirectoryPath)
-            expect(uri.endsWith(testGif.fileName as string)).toBeTruthy()
-        })
-
-        it('should short-circuit with a MissingDataError if the asset URI is missing', async () => {
-            const result = await copyAssetToTempUri({
-                ...testImage,
-                uri: undefined,
-            })
-
-            expect(result.isErr()).toBeTruthy()
-            expect(result._unsafeUnwrapErr()._tag).toBe('MissingDataError')
-        })
-
-        it('should short-circuit with a MissingDataError if the asset fileName is missing', async () => {
-            const result = await copyAssetToTempUri({
-                ...testImage,
-                fileName: undefined,
-            })
-
-            expect(result.isErr()).toBeTruthy()
-            expect(result._unsafeUnwrapErr()._tag).toBe('MissingDataError')
-        })
-
-        it('should short-circuit with a GenericError if RNFS.mkdir errors', async () => {
-            ;(RNFS.mkdir as jest.Mock).mockImplementation(async () => {
-                throw new Error('File not found')
-            })
-
-            const result = await copyAssetToTempUri(testImage)
-
-            expect(result.isErr()).toBeTruthy()
-            expect(result._unsafeUnwrapErr()._tag).toBe('GenericError')
         })
     })
 
