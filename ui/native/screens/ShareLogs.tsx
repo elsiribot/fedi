@@ -115,6 +115,13 @@ const ShareLogs: React.FC<Props> = ({ navigation, route }) => {
         walletFederations,
     ])
 
+    const handleChooseWalletFederation = useCallback(() => {
+        if (!paymentFederation) return
+
+        dispatch(setActiveFederationId(paymentFederation?.id))
+        setIsSelectingFederation(false)
+    }, [paymentFederation, dispatch])
+
     return (
         <SafeScrollArea edges="notop">
             <Flex grow gap="lg" style={style.form}>
@@ -193,7 +200,7 @@ const ShareLogs: React.FC<Props> = ({ navigation, route }) => {
             </Flex>
             <CustomOverlay
                 show={isSelectingFederation}
-                onBackdropPress={() => setIsSelectingFederation(false)}
+                onBackdropPress={handleChooseWalletFederation}
                 contents={{
                     title: t('phrases.select-federation'),
                     description: t(
@@ -203,17 +210,7 @@ const ShareLogs: React.FC<Props> = ({ navigation, route }) => {
                     buttons: [
                         {
                             text: t('words.continue'),
-                            onPress: () => {
-                                if (!paymentFederation) return
-
-                                setIsSelectingFederation(false)
-                                dispatch(
-                                    setActiveFederationId(
-                                        paymentFederation?.id,
-                                    ),
-                                )
-                                handleSubmit()
-                            },
+                            onPress: handleChooseWalletFederation,
                             primary: true,
                         },
                     ],
