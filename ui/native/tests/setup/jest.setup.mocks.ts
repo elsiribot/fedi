@@ -278,3 +278,10 @@ jest.mock('rn-fetch-blob', () => ({
         },
     },
 }))
+
+jest.mock('@react-native-documents/picker', () => ({
+    DocumentPickerOptions: {},
+    DocumentPickerResponse: {},
+    pick: jest.fn(),
+    keepLocalCopy: jest.fn(),
+}))

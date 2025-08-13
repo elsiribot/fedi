@@ -11,8 +11,8 @@ import {
 } from '@fedi/common/tests/mock-data/matrix-event'
 import { pathJoin } from '@fedi/common/utils/media'
 
-import { useDownloadResource } from '../../../utils/hooks/media'
-import { renderHookWithProviders } from '../render'
+import { useDownloadResource } from '../../utils/hooks/media'
+import { renderHookWithProviders } from '../utils/render'
 
 const testMxcUrl = 'mxc://m1.8fa.in/id'
 const testHttpUrl = 'https://example.com/test.png'
@@ -36,12 +36,6 @@ jest.mock('@fedi/native/bridge', () => ({
     ...jest.requireActual('@fedi/native/bridge'),
     fedimint: {
         matrixDownloadFile: (...args: any[]) => mockMatrixDownloadFile(...args),
-    },
-}))
-
-jest.mock('react-native-document-picker', () => ({
-    DocumentPicker: {
-        pick: jest.fn(),
     },
 }))
 
