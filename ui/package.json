@@ -27,6 +27,7 @@
         "postinstall": "patch-package"
     },
     "devDependencies": {
+        "appium": "^2.18.0",
         "@types/node": "^22.9.0",
         "knip": "^5.36.5",
         "patch-package": "^8.0.0",

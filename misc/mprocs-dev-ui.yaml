@@ -21,5 +21,5 @@ procs:
     remote-bridge:
         shell: bash scripts/bridge/run-remote.sh
     appium:
-        shell: bash scripts/ui/start-appium.sh
+        shell: nix develop -c env PROMPT=true bash scripts/ui/setup-and-start-appium.sh
         stop: SIGKILL

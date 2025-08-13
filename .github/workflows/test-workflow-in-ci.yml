@@ -9,22 +9,91 @@ on:
 jobs:
     test-ci-workflow:
         name: Test CI Workflow
-        timeout-minutes: 90
-        runs-on: [self-hosted, macos, arm64, legacy]
+        # runs-on: [self-hosted, macos, arm64, mac2]
+        strategy:
+            fail-fast: false
+            matrix:
+                runner: 
+                    - [self-hosted, macos, arm64, xcode]
+                    - [self-hosted, macos, arm64, mac2]
+        runs-on: ${{ matrix.runner }}
+        timeout-minutes: 200
+        env:
+            BUILD_ANDROID: 1
+            BUILD_IOS: 1
+            RUN_TESTS: 1
+            TESTS_TO_RUN: all
+            E2E_CI: 1
         steps:
-            - name: Checkout repo
-              uses: actions/checkout@v4
-
+            - uses: actions/checkout@v4
             - uses: cachix/install-nix-action@v30
               with:
                   nix_path: nixpkgs=channel:nixos-22.05
-
             - uses: cachix/cachix-action@v15
               with:
                   name: fedibtc
                   authToken: '${{ secrets.CACHIX_AUTH_TOKEN }}'
               continue-on-error: true
-
-            - name: Test script
+            
+            - name: Debug environment
               run: |
-                  echo "Add your scripts here"
+                echo "PATH=$PATH"
+
+            - name: Build iOS bridge artifacts
+              # note: can't use --ignore-environment as it uses globally installed xcode
+              run: nix develop -L .#xcode --command env HOME="$HOME" BUILD_ALL_BRIDGE_TARGETS=1 CARGO_PROFILE=ci scripts/ci/run-in-fs-dir-cache.sh build-bridge-ios ./scripts/bridge/build-bridge-ios.sh
+
+            - name: Build Android bridge artifacts
+              run: nix develop -c env BUILD_ALL_BRIDGE_TARGETS=1 CARGO_PROFILE=ci ./scripts/bridge/build-bridge-android.sh
+
+            - name: Build UI dependencies
+              run: nix develop -c ./scripts/ui/build-deps.sh
+
+            - name: Install iOS dependencies (Cocoapods)
+              # xcode shell ensures we have cocoapods installed
+              run: nix develop .#xcode -c ./scripts/ui/install-ios-deps.sh
+
+            # TODO: figure out how to share these bundle artifacts between jobs to optimize this workflow
+            - name: Build Android debug bundle
+              run: nix develop -c ./scripts/ci/build-android.sh
+
+            - name: Build iOS debug bundle
+              run: nix develop .#xcode -c ./scripts/ci/build-ios.sh
+   
+            - name: Setup and Start Appium
+              run: nix develop -c ./scripts/ui/setup-and-start-appium.sh
+
+            - name: Start Android Emulators
+              run: nix develop -c ./scripts/ui/start-android-emulators.sh
+
+            - name: Start iOS simulators
+              run: nix develop .#xcode -c ./scripts/ui/start-ios-simulators.sh
+
+            - name: Start Metro
+              run: nix develop -c ./scripts/ci/start-metro.sh
+
+            - name: Run Android 7.1 tests
+              run: nix develop -c ./scripts/ci/run-android-tests.sh emulator-5554 "./ui/native/android/app/build/outputs/apk/production/debug/app-production-debug.apk" "Android 7.1"
+
+            - name: Run Android 14 tests
+              run: nix develop -c ./scripts/ci/run-android-tests.sh emulator-5556 "./ui/native/android/app/build/outputs/apk/production/debug/app-production-debug.apk" "Android 14"
+
+            - name: Run iOS 15 tests
+              run: nix develop .#xcode -c ./scripts/ci/run-ios-tests.sh "$IOS_15_UDID" "./ui/native/ios/build/Build/Products/Debug-iphonesimulator/FediReactNative.app" "iOS 15"
+
+            - name: Run iOS 18 tests
+              run: nix develop .#xcode -c ./scripts/ci/run-ios-tests.sh "$IOS_18_UDID" "./ui/native/ios/build/Build/Products/Debug-iphonesimulator/FediReactNative.app" "iOS 18"
+
+            - name: Upload logs & screenshots
+              uses: actions/upload-artifact@v4
+              if: ${{ always() }}
+              with:
+                name: logs
+                path: |
+                  ./*.log
+                  ./**/screenshots/*.png
+
+            - name: Stop all servers & emulators
+              continue-on-error: true
+              if: ${{ always() }}
+              run: nix develop .#xcode -c ./scripts/ci/stop-all-e2e-services.sh
