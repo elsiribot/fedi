@@ -18,7 +18,7 @@ import {
 } from '@fedi/common/redux'
 import { MatrixEvent } from '@fedi/common/types'
 import { MatrixEventContentType } from '@fedi/common/utils/matrix'
-import { prefixFileUri, scaleAttachment } from '@fedi/common/utils/media'
+import { scaleAttachment } from '@fedi/common/utils/media'
 
 import { useAppDispatch, useAppSelector } from '../../../state/hooks'
 import { useDownloadResource } from '../../../utils/hooks/media'
@@ -36,7 +36,7 @@ const ChatVideoEvent: React.FC<ChatVideoEventProps> = ({
     const matchingPreviewVideo = useAppSelector(s =>
         selectPreviewMediaMatchingEventContent(s, event.content),
     )
-    const { uri, isLoading, isError, setIsError } = useDownloadResource(event)
+    const { uri, isError, setIsError } = useDownloadResource(event)
     const [paused, setPaused] = useState(true)
     const { theme } = useTheme()
     const { t } = useTranslation()
@@ -44,9 +44,7 @@ const ChatVideoEvent: React.FC<ChatVideoEventProps> = ({
     const dispatch = useAppDispatch()
     const navigation = useNavigation()
 
-    const resolvedUri = prefixFileUri(
-        matchingPreviewVideo?.media?.uri ?? uri ?? '',
-    )
+    const resolvedUri = uri ?? matchingPreviewVideo?.media?.uri ?? ''
 
     const handleLongPress = () => {
         dispatch(setSelectedChatMessage(event))
@@ -63,59 +61,65 @@ const ChatVideoEvent: React.FC<ChatVideoEventProps> = ({
 
     const videoBaseStyle = [style.videoBase, dimensions]
 
-    return (isLoading && !uri) || isError ? (
-        <View style={videoBaseStyle}>
-            {isError ? (
+    if (resolvedUri)
+        return (
+            <View style={style.videoContainer}>
+                <Video
+                    ref={videoRef}
+                    source={{ uri: resolvedUri }}
+                    style={videoBaseStyle}
+                    onError={() => setIsError(true)}
+                    paused={paused}
+                    onFullscreenPlayerDidPresent={() => {
+                        setPaused(false)
+                    }}
+                    onFullscreenPlayerDidDismiss={() => {
+                        setPaused(true)
+                    }}
+                    onLoad={() => {
+                        videoRef.current?.seek(0)
+                        dispatch(matchAndRemovePreviewMedia(event.content))
+                    }}
+                    resizeMode="cover"
+                    // Prevents videos from being layered over each other
+                    useTextureView
+                />
+                <TouchableOpacity
+                    style={style.overlay}
+                    onPress={() => {
+                        // Android doesn't have a native fullscreen video player
+                        if (Platform.OS === 'android') {
+                            navigation.navigate('ChatVideoViewer', {
+                                uri: resolvedUri,
+                            })
+                        } else {
+                            // iOS has a native fullscreen video player
+                            videoRef.current?.presentFullscreenPlayer()
+                        }
+                    }}
+                    onLongPress={handleLongPress}>
+                    <View style={style.playButton}>
+                        <SvgImage name="Play" color={theme.colors.white} />
+                    </View>
+                </TouchableOpacity>
+            </View>
+        )
+
+    if (isError)
+        return (
+            <View style={videoBaseStyle}>
                 <Flex align="center" gap="md">
                     <SvgImage name="VideoOff" color={theme.colors.grey} />
                     <Text caption style={style.errorCaption}>
                         {t('errors.failed-to-load-video')}
                     </Text>
                 </Flex>
-            ) : (
-                <ActivityIndicator />
-            )}
-        </View>
-    ) : (
-        <View style={style.videoContainer}>
-            <Video
-                ref={videoRef}
-                source={{ uri: resolvedUri }}
-                style={videoBaseStyle}
-                onError={() => setIsError(true)}
-                paused={paused}
-                onFullscreenPlayerDidPresent={() => {
-                    setPaused(false)
-                }}
-                onFullscreenPlayerDidDismiss={() => {
-                    setPaused(true)
-                }}
-                onLoad={() => {
-                    videoRef.current?.seek(0)
-                    dispatch(matchAndRemovePreviewMedia(event.content))
-                }}
-                resizeMode="cover"
-                // Prevents videos from being layered over each other
-                useTextureView
-            />
-            <TouchableOpacity
-                style={style.overlay}
-                onPress={() => {
-                    // Android doesn't have a native fullscreen video player
-                    if (Platform.OS === 'android') {
-                        navigation.navigate('ChatVideoViewer', {
-                            uri: resolvedUri,
-                        })
-                    } else {
-                        // iOS has a native fullscreen video player
-                        videoRef.current?.presentFullscreenPlayer()
-                    }
-                }}
-                onLongPress={handleLongPress}>
-                <View style={style.playButton}>
-                    <SvgImage name="Play" color={theme.colors.white} />
-                </View>
-            </TouchableOpacity>
+            </View>
+        )
+
+    return (
+        <View style={videoBaseStyle}>
+            <ActivityIndicator />
         </View>
     )
 }

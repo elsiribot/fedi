@@ -34,13 +34,13 @@ const ChatImageEvent: React.FC<ChatImageEventProps> = ({
     const matchingPreviewImage = useAppSelector(s =>
         selectPreviewMediaMatchingEventContent(s, event.content),
     )
-    const { uri, isLoading, isError } = useDownloadResource(event)
+    const { uri, isError } = useDownloadResource(event)
     const { theme } = useTheme()
     const { t } = useTranslation()
     const dispatch = useAppDispatch()
     const navigation = useNavigation()
 
-    const resolvedUri = matchingPreviewImage?.media.uri ?? uri ?? ''
+    const resolvedUri = uri ?? matchingPreviewImage?.media.uri ?? ''
 
     const handleLongPress = () => {
         dispatch(setSelectedChatMessage(event))
@@ -57,33 +57,39 @@ const ChatImageEvent: React.FC<ChatImageEventProps> = ({
 
     const imageBaseStyle = [style.imageBase, dimensions]
 
-    return (isLoading && !uri) || isError ? (
-        <View style={imageBaseStyle}>
-            {isError ? (
+    if (resolvedUri)
+        return (
+            <Pressable
+                onPress={() =>
+                    navigation.navigate('ChatImageViewer', { uri: resolvedUri })
+                }
+                onLongPress={handleLongPress}>
+                <Image
+                    source={{ uri: resolvedUri }}
+                    style={imageBaseStyle}
+                    onLoad={() => {
+                        dispatch(matchAndRemovePreviewMedia(event.content))
+                    }}
+                />
+            </Pressable>
+        )
+
+    if (isError)
+        return (
+            <View style={imageBaseStyle}>
                 <Flex align="center">
                     <SvgImage name="ImageOff" color={theme.colors.grey} />
                     <Text caption color={theme.colors.darkGrey}>
                         {t('errors.failed-to-load-image')}
                     </Text>
                 </Flex>
-            ) : (
-                <ActivityIndicator />
-            )}
+            </View>
+        )
+
+    return (
+        <View style={imageBaseStyle}>
+            <ActivityIndicator />
         </View>
-    ) : (
-        <Pressable
-            onPress={() =>
-                navigation.navigate('ChatImageViewer', { uri: resolvedUri })
-            }
-            onLongPress={handleLongPress}>
-            <Image
-                source={{ uri: resolvedUri }}
-                style={imageBaseStyle}
-                onLoad={() => {
-                    dispatch(matchAndRemovePreviewMedia(event.content))
-                }}
-            />
-        </Pressable>
     )
 }
 

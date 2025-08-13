@@ -222,7 +222,7 @@ export const useDownloadResource = (
     ])
 
     useEffect(() => {
-        if (!loadResourceInitially) return
+        if (!loadResourceInitially || !resourceHash) return
 
         handleCopyResource()
     }, [
