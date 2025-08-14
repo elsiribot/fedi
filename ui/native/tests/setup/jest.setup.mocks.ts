@@ -165,6 +165,7 @@ jest.mock('react-native', () => ({
         BridgeNativeEventEmitter: {},
         FedimintFfi: {},
     },
+    Modal: jest.requireActual('react-native').Modal,
 }))
 
 // mock a theme object with values for colors, spacing, etc
@@ -177,6 +178,7 @@ jest.mock('@rneui/themed', () => ({
     Button: jest.requireActual('@rneui/themed').Button,
     Input: jest.requireActual('@rneui/themed').Input,
     Text: jest.requireActual('@rneui/themed').Text,
+    Overlay: jest.requireActual('@rneui/themed').Overlay,
     useTheme: () => ({
         theme: mockTheme,
     }),
@@ -284,4 +286,8 @@ jest.mock('@react-native-documents/picker', () => ({
     DocumentPickerResponse: {},
     pick: jest.fn(),
     keepLocalCopy: jest.fn(),
+}))
+
+jest.mock('react-native-gesture-handler', () => ({
+    ScrollView: jest.requireActual('react-native').ScrollView,
 }))
