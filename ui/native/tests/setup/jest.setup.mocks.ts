@@ -136,12 +136,16 @@ jest.mock('@fedi/common/utils/log', () => ({
 // mocks for commonly used react native components
 // add more here as needed
 jest.mock('react-native', () => ({
+    ActivityIndicator: jest.requireActual('react-native').ActivityIndicator,
     Animated: jest.requireActual('react-native').Animated,
     Button: jest.requireActual('react-native').Button,
     Dimensions: jest.requireActual('react-native').Dimensions,
     Easing: jest.requireActual('react-native').Easing,
     Image: jest.requireActual('react-native').Image,
     ImageBackground: jest.requireActual('react-native').ImageBackground,
+    KeyboardAvoidingView:
+        jest.requireActual('react-native').KeyboardAvoidingView,
+    Modal: jest.requireActual('react-native').Modal,
     PanResponder: jest.requireActual('react-native').PanResponder,
     Pressable: jest.requireActual('react-native').Pressable,
     ScrollView: jest.requireActual('react-native').ScrollView,
@@ -165,13 +169,13 @@ jest.mock('react-native', () => ({
         BridgeNativeEventEmitter: {},
         FedimintFfi: {},
     },
-    Modal: jest.requireActual('react-native').Modal,
 }))
 
 // mock a theme object with values for colors, spacing, etc
 export const mockTheme = {
     ...themeDefaults,
 }
+
 jest.mock('@rneui/themed', () => ({
     createTheme: jest.fn(),
     ThemeProvider: jest.requireActual('@rneui/themed').ThemeProvider,
@@ -184,9 +188,17 @@ jest.mock('@rneui/themed', () => ({
     }),
 }))
 
+jest.mock('react-native-gesture-handler', () => ({
+    // Use React Native's ScrollView instead
+    // because react-native-gesture-handler uses native modules
+    // (they don't exist in the Jest environment)
+    ScrollView: jest.requireActual('react-native').ScrollView,
+}))
+
 // mock so the navigation hook returns a mock function
 export const mockNavigation = {
     navigate: jest.fn(),
+    push: jest.fn(),
 }
 export const mockRoute = {}
 jest.mock('@react-navigation/native', () => ({
