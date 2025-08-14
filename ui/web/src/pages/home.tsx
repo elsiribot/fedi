@@ -5,8 +5,7 @@ import { Trans, useTranslation } from 'react-i18next'
 
 import ChatIcon from '@fedi/common/assets/svgs/chat.svg'
 import ArrowRightIcon from '@fedi/common/assets/svgs/chevron-right.svg'
-import SettingsIcon from '@fedi/common/assets/svgs/cog.svg'
-import userProfile from '@fedi/common/assets/svgs/profile.svg'
+import ProfileIcon from '@fedi/common/assets/svgs/profile.svg'
 import WordListIcon from '@fedi/common/assets/svgs/word-list.svg'
 import { ErrorBoundary } from '@fedi/common/components/ErrorBoundary'
 import { useSyncCurrencyRatesAndCache } from '@fedi/common/hooks/currency'
@@ -243,7 +242,7 @@ function HomePage() {
                 description={matrixAuth?.displayName}>
                 <ModalContent aria-label="test">
                     <ModalIconWrapper>
-                        <Icon icon={userProfile} size="xl" />
+                        <Icon icon={ProfileIcon} size="xl" />
                     </ModalIconWrapper>
                     <ModalTextWrapper>
                         <Text variant="h2">
@@ -259,7 +258,7 @@ function HomePage() {
                         <Trans
                             i18nKey="feature.home.profile-change-icon"
                             components={{
-                                icon: <ModalIcon icon={SettingsIcon} />,
+                                icon: <ModalIcon icon={ProfileIcon} />,
                             }}
                         />
                     </ModalTextWithIcon>
