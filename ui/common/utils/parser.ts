@@ -242,11 +242,12 @@ async function parseLnurl(
     | ParsedBolt11
     | undefined
 > {
+    const lowerCaseRaw = raw.toLowerCase()
     // Ignore Fedi URIs, they can sometimes look like URLs.
-    if (raw.toLowerCase().startsWith('fedi:')) return
+    if (lowerCaseRaw.startsWith('fedi:')) return
 
     // Strip lightning/lnurl protocol for uniformity, keep track of if we were passed a full URL.
-    const lnRaw = stripProtocol(raw, 'lnurl', 'lightning').toLowerCase()
+    const lnRaw = stripProtocol(lowerCaseRaw, 'lnurl', 'lightning')
     let lnurlParamPromise: ReturnType<typeof getLnurlParams> | undefined
     const isWebsiteUrl = validateWebsiteUrl(raw)
     const isValidIdentifier = isValidInternetIdentifier(lnRaw)
@@ -671,8 +672,19 @@ async function parseCashuEcash(
  */
 function stripProtocol(raw: string, ...protocol: string[]) {
     for (const p of protocol) {
-        if (raw.startsWith(p))
-            return raw.replace(new RegExp(`^${p}:\\/?\\/?`, 'i'), '')
+        /**
+         * "^" operand matches the start of string,
+         * which in this case consists of ${p} string, followed by ":" and optionally one or two forward slashes,
+         * which are preceeded by a double backslash:
+         * - the first backslash acts as an escape character for the following backslash within the context of the JS string;
+         * - the second backslash acts as an escape character within the context of the RegExp for the forward slash;
+         * - the following "?" acts as an optional modifier for the slashes,
+         * so that 'protocol:', 'protocol:/' and 'protocol://' prefixes satisfy the RegExp.
+         *
+         * The 'i' flag makes the entire RegExp case-insensitive, because QR code standards sometimes use uppercase strings
+         */
+        const pattern = new RegExp(`^${p}:\\/?\\/?`, 'i')
+        if (pattern.test(raw)) return raw.replace(pattern, '')
     }
     return raw
 }
