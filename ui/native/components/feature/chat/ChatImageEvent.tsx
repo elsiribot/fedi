@@ -1,5 +1,6 @@
 import { useNavigation } from '@react-navigation/native'
 import { Text, Theme, useTheme } from '@rneui/themed'
+import { useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
 import {
     ActivityIndicator,
@@ -10,7 +11,6 @@ import {
 } from 'react-native'
 
 import {
-    matchAndRemovePreviewMedia,
     selectPreviewMediaMatchingEventContent,
     setSelectedChatMessage,
 } from '@fedi/common/redux'
@@ -24,22 +24,27 @@ import SvgImage from '../../ui/SvgImage'
 
 type ChatImageEventProps = {
     event: MatrixEvent<'m.image'>
+    isInViewport?: boolean
 }
 
 const ChatImageEvent: React.FC<ChatImageEventProps> = ({
     event,
+    isInViewport = true,
 }: ChatImageEventProps) => {
     // If the user sends an image, try to find the preview image matching the `event.content` to derive the existing URI
     const matchingPreviewImage = useAppSelector(s =>
         selectPreviewMediaMatchingEventContent(s, event.content),
     )
-    const { uri, isError } = useDownloadResource(event)
+    const { uri, isError, setIsError, handleCopyResource } =
+        useDownloadResource(event, {
+            loadResourceInitially: false,
+        })
     const { theme } = useTheme()
     const { t } = useTranslation()
     const dispatch = useAppDispatch()
     const navigation = useNavigation()
 
-    const resolvedUri = uri ?? matchingPreviewImage?.media.uri ?? ''
+    const resolvedUri = matchingPreviewImage?.media.uri ?? uri ?? ''
 
     const handleLongPress = () => {
         dispatch(setSelectedChatMessage(event))
@@ -56,6 +61,12 @@ const ChatImageEvent: React.FC<ChatImageEventProps> = ({
 
     const imageBaseStyle = [style.imageBase, dimensions]
 
+    useEffect(() => {
+        if (resolvedUri || !isInViewport) return
+
+        handleCopyResource()
+    }, [resolvedUri, isInViewport, handleCopyResource])
+
     if (resolvedUri)
         return (
             <Pressable
@@ -64,11 +75,9 @@ const ChatImageEvent: React.FC<ChatImageEventProps> = ({
                 }
                 onLongPress={handleLongPress}>
                 <Image
-                    source={{ uri: resolvedUri }}
+                    source={{ uri: resolvedUri, cache: 'force-cache' }}
                     style={imageBaseStyle}
-                    onLoad={() => {
-                        dispatch(matchAndRemovePreviewMedia(event.content))
-                    }}
+                    onError={() => setIsError(true)}
                 />
             </Pressable>
         )

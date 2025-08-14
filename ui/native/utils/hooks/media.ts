@@ -247,6 +247,7 @@ export const useDownloadResource = (
         isError,
         isDownloading,
         handleDownload,
+        handleCopyResource,
         setIsError,
     }
 }

@@ -27,6 +27,7 @@ interface Props {
     events: MatrixEvent[]
     onReplyTap?: (eventId: string) => void
     highlightedMessageId?: string | null
+    isInViewport?: boolean
 }
 
 const ChatEventTimeFrame = memo(
@@ -38,6 +39,7 @@ const ChatEventTimeFrame = memo(
         onSelect,
         onReplyTap,
         highlightedMessageId,
+        isInViewport = true,
     }: Props) => {
         const matrixAuth = useAppSelector(selectMatrixAuth)
         const canSwipe = useAppSelector(s => selectCanReply(s, roomId))
@@ -129,6 +131,7 @@ const ChatEventTimeFrame = memo(
                                         highlightedMessageId={
                                             highlightedMessageId
                                         }
+                                        isInViewport={isInViewport}
                                     />
                                 </View>
                             )
@@ -152,6 +155,9 @@ const ChatEventTimeFrame = memo(
         )
     },
     (prev, curr) => {
+        if (prev.isInViewport !== curr.isInViewport) {
+            return false
+        }
         if (prev.highlightedMessageId !== curr.highlightedMessageId) {
             return false
         }
