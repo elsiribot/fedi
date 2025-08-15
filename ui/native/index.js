@@ -14,6 +14,7 @@ import 'react-native-gesture-handler'
 import 'react-native-get-random-values'
 import { install } from 'react-native-quick-crypto'
 import 'react-native-reanimated'
+import TurboImage from 'react-native-turbo-image'
 import 'react-native-url-polyfill/auto'
 import * as Zendesk from 'react-native-zendesk-messaging'
 import { v4 as uuidv4 } from 'uuid'
@@ -27,6 +28,7 @@ import {
 import App from './App'
 import { name as appName } from './app.json'
 import i18next from './localization/i18n'
+import { MMKVCacheManager } from './utils/cache'
 import { logFileApi } from './utils/logfile'
 import {
     handleBackgroundFCMReceived,
@@ -42,6 +44,17 @@ import {
 
 const { PushNotificationEmitter } = NativeModules
 const log = makeLog('native/index')
+
+const initializeCacheManagement = () => {
+    try {
+        const cacheManager = MMKVCacheManager.getInstance()
+        cacheManager.logCacheStats()
+        return cacheManager
+    } catch (error) {
+        log.error('Failed to initialize cache management:', error)
+        return null
+    }
+}
 
 const initializePushNotificationListeners = () => {
     ///////////////////////////////
@@ -205,6 +218,9 @@ async function handleFCMNotification(m, isForeground = true) {
 //startup code
 install()
 initializePushNotificationListeners()
+
+const cacheManager = initializeCacheManagement()
+
 //end startup code
 // Register the app component
 AppRegistry.registerComponent(appName, () => App)
@@ -220,6 +236,16 @@ if (process.env.ENABLE_LOGBOX === '1') {
 configureLogging(logFileApi)
 AppState.addEventListener('change', state => {
     if (state === 'background' || state === 'inactive') {
+        try {
+            TurboImage.clearMemoryCache()
+        } catch (error) {
+            log.warn('Failed to clear TurboImage memory cache:', error)
+        }
+
+        if (cacheManager) {
+            cacheManager.cleanupIfNeeded()
+        }
+
         saveLogsToStorage()
     }
 })

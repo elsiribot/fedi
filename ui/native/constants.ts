@@ -63,3 +63,12 @@ export const ZENDESK_USER_SCOPE = 'user'
 */
 
 export const ZENDESK_PUSH_NOTIFICATION_CHANNEL = 'and-notification-channel'
+
+/*
+    -----
+    Image Cache
+    -----
+*/
+
+export const FEDIMOD_IMAGE_CACHE_PREFIX = 'fedimod_'
+export const FEDIMOD_SVG_CACHE_PREFIX = 'fedimod_svg_'

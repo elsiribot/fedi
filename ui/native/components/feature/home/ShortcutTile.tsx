@@ -7,7 +7,7 @@ import {
     View,
     useWindowDimensions,
 } from 'react-native'
-import { SvgUri } from 'react-native-svg'
+import TurboImage from 'react-native-turbo-image'
 
 import { selectIsActiveFederationRecovering } from '@fedi/common/redux'
 import { tryFetchUrlMetadata } from '@fedi/common/utils/fedimods'
@@ -15,8 +15,17 @@ import { makeLog } from '@fedi/common/utils/log'
 import { constructUrl } from '@fedi/common/utils/neverthrow'
 
 import { FediModImages } from '../../../assets/images'
+import {
+    FEDIMOD_IMAGE_CACHE_PREFIX,
+    FEDIMOD_SVG_CACHE_PREFIX,
+} from '../../../constants'
 import { useAppSelector } from '../../../state/hooks'
 import { FediMod, Shortcut, ShortcutType } from '../../../types'
+import {
+    getMetadataCacheKey,
+    cacheMetadataWithTimestamp,
+    getCachedMetadata,
+} from '../../../utils/cache'
 import { BubbleView } from '../../ui/BubbleView'
 import Flex from '../../ui/Flex'
 import { Pressable } from '../../ui/Pressable'
@@ -47,23 +56,40 @@ const ShortcutTile = ({ shortcut, onHold, onSelect }: ShortcutTileProps) => {
 
     useEffect(() => {
         if (isMod(shortcut)) {
-            // use local image if we have it
             if (FediModImages[shortcut.id]) {
                 setImageSrc(FediModImages[shortcut.id])
             } else if (shortcut.imageUrl) {
-                // then try image url
-                setImageSrc({ uri: shortcut.imageUrl, cache: 'force-cache' })
+                setImageSrc({ uri: shortcut.imageUrl })
             } else {
-                constructUrl(shortcut.url)
-                    .asyncAndThen(tryFetchUrlMetadata)
-                    .match(
-                        ({ icon }) => {
-                            setImageSrc({ uri: icon, cache: 'force-cache' })
-                        },
-                        e => {
-                            log.error('Failed to fetch fedi mod metadata', e)
-                        },
+                const loadMetadata = async () => {
+                    const cacheKey = getMetadataCacheKey(
+                        shortcut.id,
+                        shortcut.url,
                     )
+
+                    const cachedIconUri = getCachedMetadata(cacheKey)
+                    if (cachedIconUri) {
+                        setImageSrc({ uri: cachedIconUri })
+                        return
+                    }
+
+                    constructUrl(shortcut.url)
+                        .asyncAndThen(tryFetchUrlMetadata)
+                        .match(
+                            ({ icon }) => {
+                                cacheMetadataWithTimestamp(cacheKey, icon)
+                                setImageSrc({ uri: icon })
+                            },
+                            e => {
+                                log.error(
+                                    'Failed to fetch fedi mod metadata',
+                                    e,
+                                )
+                            },
+                        )
+                }
+
+                loadMetadata()
             }
         }
     }, [shortcut])
@@ -86,26 +112,60 @@ const ShortcutTile = ({ shortcut, onHold, onSelect }: ShortcutTileProps) => {
                 typeof imageSrc !== 'number' &&
                 imageSrc.uri?.endsWith('svg')
 
-            if (isSvg) {
+            if (isSvg && imageSrc.uri) {
+                const cacheKey = `${FEDIMOD_SVG_CACHE_PREFIX}${shortcut.id}_${imageSrc.uri}`
+
                 return (
-                    <SvgUri
-                        uri={imageSrc.uri ?? null}
-                        onError={() => {
+                    <TurboImage
+                        source={{
+                            uri: imageSrc.uri,
+                            cacheKey: cacheKey,
+                        }}
+                        style={style.iconImage}
+                        cachePolicy="dataCache"
+                        resizeMode="contain"
+                        format="svg"
+                        fadeDuration={200}
+                        onFailure={error => {
+                            log.warn(
+                                `Failed to load SVG for ${shortcut.title}:`,
+                                error,
+                            )
                             setImageSrc(FediModImages.default)
                         }}
-                        width={48}
-                        height={48}
+                        allowHardware={true}
+                        showPlaceholderOnFailure={false}
+                    />
+                )
+            }
+
+            const isRemoteImage =
+                !Array.isArray(imageSrc) &&
+                typeof imageSrc !== 'number' &&
+                imageSrc.uri
+
+            if (isRemoteImage && imageSrc.uri) {
+                const cacheKey = `${FEDIMOD_IMAGE_CACHE_PREFIX}${shortcut.id}_${imageSrc.uri}`
+
+                return (
+                    <TurboImage
+                        source={{
+                            uri: imageSrc.uri,
+                            cacheKey: cacheKey,
+                        }}
                         style={style.iconImage}
-                        fallback={
-                            <Image
-                                style={style.iconImage}
-                                source={FediModImages.default}
-                                resizeMode="contain"
-                            />
-                        }
-                        // Ensure the SVG is always contained and centered
-                        // Does the equivalent of resizeMode="contain" for SVGs
-                        preserveAspectRatio="xMidYMid meet"
+                        cachePolicy="dataCache"
+                        resizeMode="contain"
+                        fadeDuration={200}
+                        onFailure={error => {
+                            log.warn(
+                                `Failed to load image for ${shortcut.title}:`,
+                                error,
+                            )
+                            setImageSrc(FediModImages.default)
+                        }}
+                        allowHardware={true}
+                        showPlaceholderOnFailure={false}
                     />
                 )
             }
@@ -115,7 +175,6 @@ const ShortcutTile = ({ shortcut, onHold, onSelect }: ShortcutTileProps) => {
                     style={style.iconImage}
                     source={imageSrc}
                     resizeMode="contain"
-                    // use fallback if url fails to load
                     onError={() => {
                         setImageSrc(FediModImages.default)
                     }}
@@ -140,6 +199,8 @@ const ShortcutTile = ({ shortcut, onHold, onSelect }: ShortcutTileProps) => {
                 />
             )
         }
+
+        return null
     }
 
     return (

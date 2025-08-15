@@ -71,6 +71,7 @@
         "react-native-share": "^11.0.4",
         "react-native-splash-screen": "^3.3.0",
         "react-native-svg": "^15.8.0",
+        "react-native-turbo-image": "^1.22.4",
         "react-native-url-polyfill": "^2.0.0",
         "react-native-vector-icons": "^10.0.0",
         "react-native-video": "^6.7.0",
