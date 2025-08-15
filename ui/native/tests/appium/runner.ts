@@ -140,14 +140,8 @@ async function runTests(testNames: string[]): Promise<void> {
 
                         fs.writeFileSync(screenshotPath, screenshot, 'base64')
                         console.log(`Screenshot saved to: ${screenshotPath}`)
-                        if (currentPlatform === Platform.IOS) {
-                            // Android doesn't have this yet
-                            console.log('Dumping XML tree')
-                            await appiumManager.driver.executeScript(
-                                'mobile: source',
-                                [{ format: 'xml' }],
-                            )
-                        }
+                        console.log('Dumping XML tree')
+                        await appiumManager.driver.getPageSource()
                     }
                 } catch (screenshotError) {
                     console.error(
