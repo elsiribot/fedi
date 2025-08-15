@@ -67,10 +67,10 @@ jobs:
               run: nix develop -c ./scripts/ui/start-metro.sh
 
             - name: Run Android 7.1 tests
-              run: nix develop -c ./scripts/ci/run-android-tests.sh emulator-5554 "./ui/native/android/app/build/outputs/apk/production/debug/app-production-debug.apk" "Android 7.1"
+              run: nix develop -c ./scripts/ci/run-android-tests.sh android-7.1 "./ui/native/android/app/build/outputs/apk/production/debug/app-production-debug.apk" "Android 7.1"
 
             - name: Run Android 14 tests
-              run: nix develop -c ./scripts/ci/run-android-tests.sh emulator-5556 "./ui/native/android/app/build/outputs/apk/production/debug/app-production-debug.apk" "Android 14"
+              run: nix develop -c ./scripts/ci/run-android-tests.sh android-14 "./ui/native/android/app/build/outputs/apk/production/debug/app-production-debug.apk" "Android 14"
 
             - name: Run iOS 15 tests
               run: nix develop .#xcode -c ./scripts/ci/run-ios-tests.sh "$IOS_15_UDID" "./ui/native/ios/build/Build/Products/Debug-iphonesimulator/FediReactNative.app" "iOS 15"
