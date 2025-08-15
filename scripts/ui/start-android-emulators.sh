@@ -40,8 +40,8 @@ SCREEN_DENSITY["android-7.1"]=404
 if [[ -n "${CI:-}" ]]; then
   echo "Starting all configured AVDs"
   ANDROID_DEVICES=("emulator-5554" "emulator-5556")
-  AVD_NAMES=("android-14" "android-7.1")
-  BOOT_OPTIONS="-no-audio -no-boot-anim -no-window"
+  AVD_NAMES=("android-7.1" "android-14")
+  BOOT_OPTIONS="-no-audio -no-boot-anim -no-window -wipe-data"
 else
   echo "Starting only android-14 AVD"
   ANDROID_DEVICES=("emulator-5554")
