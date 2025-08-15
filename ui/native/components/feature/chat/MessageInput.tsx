@@ -163,11 +163,22 @@ const MessageInput: React.FC<MessageInputProps> = ({
 
     useDebouncedEffect(
         () => {
-            dispatch(setChatDraft({ roomId: id, text: messageText }))
+            // don't save drafts when editing a message & ensure we're saving for the correct room
+            if (!isEditingMessage) {
+                dispatch(setChatDraft({ roomId: id, text: messageText }))
+            }
         },
-        [messageText, dispatch],
+        [messageText, dispatch, isEditingMessage, id],
         500,
     )
+
+    // only update message text when not editing and when room changes
+    useEffect(() => {
+        if (!isEditingMessage) {
+            setMessageText(drafts[id] ?? '')
+        }
+    }, [id, drafts, isEditingMessage])
+
     const [documents, setDocuments] = useState<DocumentPickerResponse[]>([])
     const [media, setMedia] = useState<Asset[]>([])
     const [documentsPendingUpload, setDocumentsPendingUpload] = useState<
@@ -321,11 +332,16 @@ const MessageInput: React.FC<MessageInputProps> = ({
         }
     }, [])
 
+    // handle edit message: set text if editing current room's message, clear edit state if from different room
     useEffect(() => {
         if (editingMessage) {
-            setMessageText(editingMessage.content.body)
+            if (editingMessage.roomId === id) {
+                setMessageText(editingMessage.content.body)
+            } else {
+                dispatch(setMessageToEdit(null))
+            }
         }
-    }, [editingMessage])
+    }, [editingMessage, id, dispatch])
 
     const handleSend = useCallback(async () => {
         if (
