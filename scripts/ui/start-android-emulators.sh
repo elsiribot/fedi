@@ -32,9 +32,9 @@ AVD_CONFIGS["android-7.1"]="system-images;android-25;google_apis;arm64-v8a"
 SCREEN_WIDTH["android-14"]=1440
 SCREEN_HEIGHT["android-14"]=3120
 SCREEN_DENSITY["android-14"]=505
-SCREEN_WIDTH["android-7.1"]=1080
-SCREEN_HEIGHT["android-7.1"]=2408
-SCREEN_DENSITY["android-7.1"]=404
+SCREEN_WIDTH["android-7.1"]=720
+SCREEN_HEIGHT["android-7.1"]=1280
+SCREEN_DENSITY["android-7.1"]=320
 
 # In CI we start all configured AVDs; locally we only start android-14
 if [[ -n "${CI:-}" ]]; then
