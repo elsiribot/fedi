@@ -63,6 +63,7 @@ export class JoinLeaveFederation extends AppiumTestBase {
                 `Failed - Bitcoin Principles accordion is not in the account settings`,
             )
         }
+        await this.scrollToElement('Leave Federation')
         await this.clickElementByKey('Leave Federation')
         await this.acceptAlert('Yes')
         if (
