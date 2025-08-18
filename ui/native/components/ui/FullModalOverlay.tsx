@@ -147,6 +147,7 @@ const FullModalOverlay: React.FC<CustomOverlayProps> = ({
         <Modal
             isVisible={isShowing}
             onBackdropPress={onBackdropPress}
+            onBackButtonPress={onBackdropPress}
             backdropOpacity={0.5}
             animationIn="fadeIn"
             animationOut="fadeOut"
