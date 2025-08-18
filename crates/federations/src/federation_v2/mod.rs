@@ -24,6 +24,7 @@ use client::ClientExt;
 use db::{
     FediRawClientConfigKey, InviteCodeKey, LastStabilityPoolV2DepositCycleKey, TransactionNotesKey,
 };
+use device_registration::DeviceRegistrationService;
 use fedi_social_client::common::VerificationDocument;
 use fedi_social_client::{
     FediSocialClientInit, RecoveryFile, RecoveryId, SOCIAL_RECOVERY_SECRET_CHILD_ID, SocialBackup,
@@ -259,6 +260,7 @@ impl FederationV2 {
         auxiliary_secret: DerivableSecret,
         fedi_fee_helper: Arc<FediFeeHelper>,
         multispend_services: Arc<dyn MultispendNotifications>,
+        device_registration_service: Arc<DeviceRegistrationService>,
     ) -> Arc<Self> {
         let recovering = client.has_pending_recoveries();
         let federation = Arc::new_cyclic(|weak| Self {
@@ -267,7 +269,7 @@ impl FederationV2 {
             operation_states: Default::default(),
             auxiliary_secret,
             fedi_fee_helper,
-            backup_service: BackupService::default(),
+            backup_service: BackupService::new(device_registration_service),
             fedi_fee_remittance_service: OnceCell::new(),
             recovering,
             gateway_service: OnceCell::new(),
@@ -425,6 +427,7 @@ impl FederationV2 {
         guard: FederationLockGuard,
         fedi_fee_helper: Arc<FediFeeHelper>,
         multispend_services: Arc<dyn MultispendNotifications>,
+        device_registration_service: Arc<DeviceRegistrationService>,
     ) -> anyhow::Result<Arc<Self>> {
         let root_mnemonic = runtime.app_state.root_mnemonic().await;
         let device_index = runtime.app_state.device_index().await;
@@ -462,6 +465,7 @@ impl FederationV2 {
             auxiliary_secret,
             fedi_fee_helper,
             multispend_services,
+            device_registration_service,
         )
         .await)
     }
@@ -527,6 +531,7 @@ impl FederationV2 {
 
     /// Download federation configs using an invite code. Save client config to
     /// correct database with Storage.
+    #[allow(clippy::too_many_arguments)]
     pub async fn join(
         runtime: Arc<Runtime>,
         federation_id_string: String,
@@ -535,6 +540,7 @@ impl FederationV2 {
         recover_from_scratch: bool,
         fedi_fee_helper: Arc<FediFeeHelper>,
         multispend_services: Arc<dyn MultispendNotifications>,
+        device_registration_service: Arc<DeviceRegistrationService>,
     ) -> Result<Arc<Self>> {
         let db_prefix = runtime
             .app_state
@@ -624,6 +630,7 @@ impl FederationV2 {
             auxiliary_secret,
             fedi_fee_helper,
             multispend_services,
+            device_registration_service,
         )
         .await;
 

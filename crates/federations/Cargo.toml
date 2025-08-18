@@ -20,6 +20,7 @@ fedi-social-client = { workspace = true }
 stability-pool-client-old = { workspace = true }
 stability-pool-client = { workspace = true }
 bug-report = { workspace = true }
+device-registration = { workspace = true }
 matrix = { workspace = true }
 fedimint-derive-secret = { workspace = true }
 fedimint-bip39 = { workspace = true }
