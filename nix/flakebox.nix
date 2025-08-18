@@ -426,14 +426,10 @@ in
       }
     );
 
-    testBridgeAll = pkgs.linkFarmFromDrvs "fedi-test-bridge-all" [
-      testBridgeCurrent
-    ];
-
-    testBridgeCurrent = craneLib.buildCommand (
+    testBridge = craneLib.buildCommand (
       commonTestArgs
       // {
-        pname = "fedi-test-bridge-current";
+        pname = "fedi-test-bridge";
         cargoArtifacts = workspaceBuild;
         doInstallCargoArtifacts = false;
         src = rustTestSrc;
@@ -448,7 +444,7 @@ in
           done
 
           export HOME=/tmp
-          ./scripts/test-bridge-current.sh
+          ./scripts/test-bridge.sh
         '';
       }
     );
