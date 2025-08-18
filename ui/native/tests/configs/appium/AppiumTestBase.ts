@@ -395,34 +395,42 @@ export abstract class AppiumTestBase {
         )
         const startTime = Date.now()
         let attempts = 0
+        let targetFound = false
 
-        while (Date.now() - startTime < timeout) {
+        while (Date.now() - startTime < timeout && !targetFound) {
             attempts++
             console.log(`Attempt ${attempts}`)
+
             try {
                 await this.clickElementByKey(keyOfElementToClick, 1000)
             } catch (error) {
                 console.warn(
                     `Clicking element ${keyOfElementToClick} failed: ${(error as Error).message}`,
                 )
-            } finally {
-                if (await this.elementIsDisplayed(keyOfElementToCheck, 1000)) {
-                    console.log(
-                        `Success! Target element "${keyOfElementToCheck}" is displayed after ${attempts} attempt(s)`,
-                    )
-                }
             }
 
-            const remainingTime = timeout - (Date.now() - startTime)
-            if (remainingTime <= 0) break
+            targetFound = await this.elementIsDisplayed(
+                keyOfElementToCheck,
+                1000,
+            )
 
-            const waitTime = Math.min(retryDelay, remainingTime)
-            await new Promise(resolve => setTimeout(resolve, waitTime))
+            if (targetFound) {
+                console.log(
+                    `Success! Target element "${keyOfElementToCheck}" is displayed after ${attempts} attempt(s)`,
+                )
+            } else {
+                const remainingTime = timeout - (Date.now() - startTime)
+                if (remainingTime <= retryDelay) break
+
+                await new Promise(resolve => setTimeout(resolve, retryDelay))
+            }
         }
 
-        throw new Error(
-            `Element ${keyOfElementToCheck} was not displayed after clicking ${keyOfElementToClick} ${attempts} times`,
-        )
+        if (!targetFound) {
+            throw new Error(
+                `Element ${keyOfElementToCheck} was not displayed after clicking ${keyOfElementToClick} ${attempts} times`,
+            )
+        }
     }
 
     async typeIntoElementByKey(
