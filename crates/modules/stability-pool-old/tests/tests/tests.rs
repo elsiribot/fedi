@@ -29,7 +29,6 @@ async fn flaky_starter_test() -> anyhow::Result<()> {
         fed,
         gw_lnd,
         gw_ldk,
-        electrs,
         esplora,
         gw_ldk_second,
         recurringd,

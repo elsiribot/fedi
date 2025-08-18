@@ -80,7 +80,7 @@ use fedimint_wallet_client::{
 };
 use futures::{FutureExt, Stream, StreamExt};
 use lightning_invoice::{Bolt11Invoice, RoutingFees};
-use meta::{LegacyMetaSourceWithExternalUrl, MetaEntries, MetaServiceExt};
+use meta::{LegacyMetaSourceWithExternalUrl, MetaEntries};
 use rand::Rng;
 use rpc_types::error::ErrorCode;
 use rpc_types::event::{Event, RecoveryProgressEvent, TypedEventExt};
@@ -448,10 +448,12 @@ impl FederationV2 {
             info!("started federation loading");
             let _g = TimeReporter::new("federation loading").level(Level::INFO);
             client_builder
-                .open(Self::client_root_secret_from_root_mnemonic(
-                    &root_mnemonic,
-                    &federation_id,
-                    device_index,
+                .open(fedimint_client::RootSecret::Custom(
+                    Self::client_root_secret_from_root_mnemonic(
+                        &root_mnemonic,
+                        &federation_id,
+                        device_index,
+                    ),
                 ))
                 .await?
         };
@@ -577,23 +579,23 @@ impl FederationV2 {
 
         let client_builder = Self::build_client_builder(federation_db.clone()).await?;
         let federation_id = client_config.calculate_federation_id();
-        let client_secret = Self::client_root_secret_from_root_mnemonic(
-            &root_mnemonic,
-            &federation_id,
-            device_index,
-        );
+        let client_secret =
+            fedimint_client::RootSecret::Custom(Self::client_root_secret_from_root_mnemonic(
+                &root_mnemonic,
+                &federation_id,
+                device_index,
+            ));
         let auxiliary_secret =
             Self::auxiliary_secret_from_root_mnemonic(&root_mnemonic, &federation_id, device_index);
         // restore from scratch is not used because it takes too much time.
         // FIXME: api secret
-        let client_backup = client_builder
-            .download_backup_from_federation(&client_secret, &client_config, None)
+        let client_preview = client_builder.preview(&invite_code).await?;
+        let client_backup = client_preview
+            .download_backup_from_federation(client_secret.clone())
             .await?;
         let client = if recover_from_scratch {
             info!("recovering from scratch");
-            client_builder
-                .recover(client_secret, client_config, None, None)
-                .await?
+            client_preview.recover(client_secret, None).await?
         } else if let Some(client_backup) = client_backup {
             // Ensure that rejoin attempt after nonce reuse check failure can never enter
             // this branch
@@ -612,15 +614,13 @@ impl FederationV2 {
                 );
             }
             info!("backup found {:?}", client_backup);
-            client_builder
-                .recover(client_secret, client_config, None, Some(client_backup))
+            client_preview
+                .recover(client_secret, Some(client_backup))
                 .await?
         } else {
             info!("backup not found");
             // FIXME: api secret
-            client_builder
-                .join(client_secret, client_config, None)
-                .await?
+            client_preview.join(client_secret).await?
         };
         let this = Self::new(
             runtime.clone(),
@@ -706,12 +706,7 @@ impl FederationV2 {
                     "Timeout when fetching meta for federation ID {}",
                     self.federation_id()
                 );
-                match self
-                    .client
-                    .meta_service()
-                    .entries_from_db(self.client.db())
-                    .await
-                {
+                match self.client.meta_service().entries(self.client.db()).await {
                     Some(entries) => entries,
                     None => cfg_fetcher.await,
                 }
@@ -1618,10 +1613,7 @@ impl FederationV2 {
         let Ok(wallet) = self.client.wallet() else {
             return;
         };
-        let Ok(tweak_idxes) = wallet.list_peg_in_tweak_idxes().await else {
-            // failed to get peg in tweak idxes
-            return;
-        };
+        let tweak_idxes = wallet.list_peg_in_tweak_idxes().await;
 
         for tweak_data in tweak_idxes.into_values() {
             self.subscribe_deposit(tweak_data.operation_id);

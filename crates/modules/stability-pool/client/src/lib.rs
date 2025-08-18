@@ -17,7 +17,6 @@ use fedimint_client::module::module::init::{ClientModuleInit, ClientModuleInitAr
 use fedimint_client::module::module::recovery::NoModuleBackup;
 use fedimint_client::module::module::{ClientContext, OutPointRange};
 use fedimint_client::module::oplog::{OperationLogEntry, UpdateStreamOrOutcome};
-use fedimint_client::module::sm::util::MapStateTransitions;
 use fedimint_client::module::sm::{
     ClientSMDatabaseTransaction, Context, DynState, ModuleNotifier, State, StateTransition,
 };

@@ -12,8 +12,7 @@ use anyhow::bail;
 use async_trait::async_trait;
 use common::config::{
     CollateralRatio, OracleConfig, StabilityPoolClientConfig, StabilityPoolConfig,
-    StabilityPoolConfigConsensus, StabilityPoolConfigLocal, StabilityPoolConfigPrivate,
-    StabilityPoolGenParams,
+    StabilityPoolConfigConsensus, StabilityPoolConfigPrivate, StabilityPoolGenParams,
 };
 use common::{
     CONSENSUS_VERSION, Provide, Seek, StabilityPoolCommonGen, StabilityPoolConsensusItem,
@@ -106,7 +105,6 @@ impl ServerModuleInit for StabilityPoolInit {
             .iter()
             .map(|&peer| {
                 let config = StabilityPoolConfig {
-                    local: StabilityPoolConfigLocal,
                     private: StabilityPoolConfigPrivate,
                     consensus: StabilityPoolConfigConsensus {
                         consensus_threshold: peers.to_num_peers().threshold() as _,
@@ -141,7 +139,6 @@ impl ServerModuleInit for StabilityPoolInit {
             .expect("Invalid mint params");
 
         let server = StabilityPoolConfig {
-            local: StabilityPoolConfigLocal,
             private: StabilityPoolConfigPrivate,
             consensus: StabilityPoolConfigConsensus {
                 consensus_threshold: peers.num_peers().threshold() as _,

@@ -3,8 +3,8 @@ use std::collections::BTreeMap;
 use async_trait::async_trait;
 use common::common::{SignedRecoveryRequest, VerificationDocument};
 use common::config::{
-    FediSocialClientConfig, FediSocialConfig, FediSocialConfigLocal, FediSocialConsensusConfig,
-    FediSocialGenParams, FediSocialPrivateConfig,
+    FediSocialClientConfig, FediSocialConfig, FediSocialConsensusConfig, FediSocialGenParams,
+    FediSocialPrivateConfig,
 };
 use common::db::{
     BackupKeyPrefix, DbKeyPrefix, DecryptionShareId, DecryptionSharePrefix, RecoveryPrefix,
@@ -153,7 +153,6 @@ impl ServerModuleInit for FediSocialInit {
                             .expect("must not fail"),
                         pk_set: pks.clone(),
                     },
-                    local: FediSocialConfigLocal {},
                 }
                 .to_erased(),
             )
@@ -179,7 +178,6 @@ impl ServerModuleInit for FediSocialInit {
                 )),
                 threshold: u32::try_from(peers.num_peers().threshold()).expect("must not fail"),
             },
-            local: FediSocialConfigLocal {},
         };
 
         Ok(server.to_erased())

@@ -10,6 +10,7 @@ test-support = []
 [dependencies]
 fedimint-core = { workspace = true }
 fedimint-client = { workspace = true }
+fedimint-client-module = { workspace = true }
 fedimint-mint-client = { workspace = true }
 fedimint-ln-client = { workspace = true }
 fedimint-api-client = { workspace = true }
