@@ -9,49 +9,20 @@ use fedimint_core::db::{DatabaseTransaction, IDatabaseTransactionOpsCoreTyped};
 use fedimint_core::util::backoff_util::{FibonacciBackoff, custom_backoff};
 use fedimint_core::util::retry;
 use fedimint_core::util::update_merge::UpdateMerge;
-use futures::lock::Mutex;
 use rpc_types::FediBackupMetadata;
 use runtime::constants::BACKUP_FREQUENCY;
-use runtime::utils::to_unix_time;
-use serde::Serialize;
 use tracing::{error, info, instrument};
-use ts_rs::TS;
 
 use super::db::LastBackupTimestampKey;
 
 pub struct BackupService {
-    state: Mutex<BackupServiceState>,
     update_merge: UpdateMerge,
     device_registration_service: Arc<DeviceRegistrationService>,
-}
-
-#[derive(Clone, Debug, Serialize, TS)]
-#[serde(rename_all = "camelCase")]
-#[ts(export)]
-pub struct BackupServiceStatus {
-    #[ts(type = "number | null")]
-    last_backup_timestamp: Option<u64>,
-    state: BackupServiceState,
-}
-
-#[derive(Clone, Debug, Serialize, TS, Default)]
-#[serde(rename_all = "camelCase")]
-#[serde(tag = "type")]
-#[ts(export)]
-pub enum BackupServiceState {
-    #[default]
-    Initializing,
-    Waiting {
-        #[ts(type = "number | null")]
-        next_backup_timestamp: Option<u64>,
-    },
-    Running,
 }
 
 impl BackupService {
     pub fn new(device_registration_service: Arc<DeviceRegistrationService>) -> Self {
         Self {
-            state: Mutex::new(BackupServiceState::default()),
             update_merge: UpdateMerge::default(),
             device_registration_service,
         }
@@ -59,19 +30,6 @@ impl BackupService {
 
     pub async fn last_backup_timestamp(dbtx: &mut DatabaseTransaction<'_>) -> Option<SystemTime> {
         dbtx.get_value(&LastBackupTimestampKey).await
-    }
-
-    // FIXME: change this to observable when have it on master.
-    pub async fn status(&self, client: &Client) -> BackupServiceStatus {
-        let state = self.state.lock().await.clone();
-        let last_backup_timestamp =
-            Self::last_backup_timestamp(&mut client.db().begin_transaction_nc().await)
-                .await
-                .and_then(|x| to_unix_time(x).ok());
-        BackupServiceStatus {
-            state,
-            last_backup_timestamp,
-        }
     }
 
     #[instrument(err, ret, skip_all)]
@@ -109,12 +67,6 @@ impl BackupService {
                             .ok()
                     });
             if let Some(sleep_duration) = sleep_duration {
-                *self.state.lock().await = BackupServiceState::Waiting {
-                    next_backup_timestamp: to_unix_time(
-                        fedimint_core::time::now() + sleep_duration,
-                    )
-                    .ok(),
-                };
                 info!(?sleep_duration, "waiting for peroidic backup");
                 fedimint_core::task::sleep(sleep_duration).await;
             }
@@ -124,7 +76,6 @@ impl BackupService {
                 .wait_for_recently_renewed()
                 .await;
 
-            *self.state.lock().await = BackupServiceState::Running;
             self.backup(
                 client,
                 custom_backoff(Duration::from_secs(1), Duration::from_secs(20 * 60), None),

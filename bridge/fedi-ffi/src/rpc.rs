@@ -17,7 +17,7 @@ use bug_report::reused_ecash_proofs::SerializedReusedEcashProofs;
 use federations::federation_sm::FederationState;
 use federations::federation_v2::client::ClientExt;
 use federations::federation_v2::spv2_pay_address::Spv2PaymentAddress;
-use federations::federation_v2::{BackupServiceStatus, FederationV2};
+use federations::federation_v2::FederationV2;
 use federations::Federations;
 use fedimint_client::db::ChronologicalOperationLogKey;
 use fedimint_core::core::OperationId;
@@ -687,11 +687,6 @@ async fn getRecurringdLnurl(federation: Arc<FederationV2>) -> anyhow::Result<Str
 async fn backupNow(federation: Arc<FederationV2>) -> anyhow::Result<()> {
     federation.backup().await?;
     Ok(())
-}
-
-#[macro_rules_derive(federation_rpc_method!)]
-async fn backupStatus(federation: Arc<FederationV2>) -> anyhow::Result<BackupServiceStatus> {
-    federation.backup_status().await
 }
 
 #[macro_rules_derive(rpc_method!)]
@@ -2260,8 +2255,6 @@ rpc_methods!(RpcMethods {
     signLnurlMessage,
     supportsRecurringdLnurl,
     getRecurringdLnurl,
-    // backup
-    backupStatus,
     // Nostr
     getNostrPubkey,
     getNostrSecret,
