@@ -32,16 +32,16 @@ AVD_CONFIGS["android-7.1"]="system-images;android-25;google_apis;arm64-v8a"
 SCREEN_WIDTH["android-14"]=1440
 SCREEN_HEIGHT["android-14"]=3120
 SCREEN_DENSITY["android-14"]=505
-SCREEN_WIDTH["android-7.1"]=1080
-SCREEN_HEIGHT["android-7.1"]=2408
-SCREEN_DENSITY["android-7.1"]=404
+SCREEN_WIDTH["android-7.1"]=720
+SCREEN_HEIGHT["android-7.1"]=1280
+SCREEN_DENSITY["android-7.1"]=320
 
 # In CI we start all configured AVDs; locally we only start android-14
 if [[ -n "${CI:-}" ]]; then
   echo "Starting all configured AVDs"
   ANDROID_DEVICES=("emulator-5554" "emulator-5556")
-  AVD_NAMES=("android-14" "android-7.1")
-  BOOT_OPTIONS="-no-audio -no-boot-anim -no-window"
+  AVD_NAMES=("android-7.1" "android-14")
+  BOOT_OPTIONS="-no-audio -no-boot-anim -no-window -wipe-data"
 else
   echo "Starting only android-14 AVD"
   ANDROID_DEVICES=("emulator-5554")
