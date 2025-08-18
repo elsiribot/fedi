@@ -4,7 +4,6 @@ import path from 'path'
 
 import AppiumManager from '../configs/appium/AppiumManager'
 import { AppiumTestBase } from '../configs/appium/AppiumTestBase'
-import { currentPlatform, Platform } from '../configs/appium/types'
 import { JoinLeaveFederation } from './common/JoinLeaveFederation.test'
 import { OnboardingTest } from './common/onboarding.test'
 

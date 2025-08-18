@@ -410,7 +410,6 @@ export abstract class AppiumTestBase {
                     console.log(
                         `Success! Target element "${keyOfElementToCheck}" is displayed after ${attempts} attempt(s)`,
                     )
-                    return
                 }
             }
 
@@ -455,20 +454,18 @@ export abstract class AppiumTestBase {
     private async isElementClickable(
         element: ChainablePromiseElement,
     ): Promise<boolean> {
+        let attr
         switch (currentPlatform) {
-            case 'android':
-                const clickableAttr = await element.getAttribute('clickable')
-                return clickableAttr === 'true'
+            case Platform.ANDROID:
+                attr = await element.getAttribute('clickable')
+                return attr === 'true'
 
-            case 'ios':
-                const hittableAttr = await element.getAttribute('hittable')
-                return hittableAttr === 'true'
+            case Platform.IOS:
+                attr = await element.getAttribute('hittable')
+                return attr === 'true'
 
-            case 'pwa':
+            case Platform.PWA:
                 return await element.isClickable()
-
-            default:
-                throw new Error(`Unsupported platform: ${currentPlatform}`)
         }
     }
 
