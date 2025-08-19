@@ -190,7 +190,6 @@ export const AmountInput: React.FC<Props> = ({
                                 onChange={ev =>
                                     handleChangeSats(ev.currentTarget.value)
                                 }
-                                data-testid="amount-input-sats"
                             />
                             <div>{satsValue}</div>
                         </SnugInput>
@@ -210,7 +209,6 @@ export const AmountInput: React.FC<Props> = ({
                                 onChange={ev =>
                                     handleChangeFiat(ev.currentTarget.value)
                                 }
-                                data-testid="amount-input-fiat"
                             />
                             <div>{fiatValue}</div>
                         </SnugInput>
@@ -221,10 +219,7 @@ export const AmountInput: React.FC<Props> = ({
                         <Error
                             needsReminder={submitAttempts > 1}
                             ref={errorElRef}>
-                            <Text
-                                variant="caption"
-                                weight="medium"
-                                data-testid="amount-input-error">
+                            <Text variant="caption" weight="medium">
                                 {error}
                             </Text>
                         </Error>
