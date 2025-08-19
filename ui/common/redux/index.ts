@@ -265,7 +265,6 @@ export function initializeCommonStore({
                 dispatch(saveToStorage({ storage }))
             },
         })
-        // Check the survey form prompt condition once on startup AFTER storage is ready
         dispatch(setReadyToSave(true))
     })
 

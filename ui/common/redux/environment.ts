@@ -16,10 +16,10 @@ import {
     OnboardingMethod,
 } from '../types/bindings'
 import { FediModCacheMode } from '../types/fediInternal'
+import { I18nLanguage } from '../types/localization'
 import { FedimintBridge } from '../utils/fedimint'
 import { makeLog } from '../utils/log'
 import { loadFromStorage } from './storage'
-import { I18nLanguage } from '../types/localization'
 
 const log = makeLog('redux/environment')
 
