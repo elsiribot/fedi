@@ -174,6 +174,8 @@ jest.mock('react-native', () => ({
     },
 }))
 
+jest.mock('react-native-modal', () => jest.requireActual('react-native').Modal)
+
 jest.mock('react-native-gesture-handler', () => ({
     // Use React Native's ScrollView instead
     // because react-native-gesture-handler uses native modules
