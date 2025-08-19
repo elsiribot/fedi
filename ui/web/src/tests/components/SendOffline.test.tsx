@@ -176,9 +176,12 @@ describe('SendOffline', () => {
 
         for (let i = 0; i < 4; i++) await user.click(button3)
 
-        const amountInputError = screen.getByTestId('amount-input-error')
+        const amountInputError = screen.getByText(
+            'The max you can send is',
+        )
 
         expect(amountInputError).toBeInTheDocument()
+        // The node with `1,999 sats` is a clickable button and isn't matchable with `getByText`
         expect(amountInputError).toHaveTextContent(
             'The max you can send is 1,999 sats',
         )
@@ -225,7 +228,9 @@ describe('SendOffline', () => {
 
         for (let i = 0; i < 4; i++) await user.click(button3)
 
-        const amountInputError = screen.getByTestId('amount-input-error')
+        const amountInputError = screen.getByText(
+            'The max you can send is',
+        )
 
         expect(amountInputError).toBeInTheDocument()
         expect(amountInputError).toHaveTextContent(
