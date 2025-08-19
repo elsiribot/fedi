@@ -19,6 +19,7 @@ import { FediModCacheMode } from '../types/fediInternal'
 import { FedimintBridge } from '../utils/fedimint'
 import { makeLog } from '../utils/log'
 import { loadFromStorage } from './storage'
+import { I18nLanguage } from '../types/localization'
 
 const log = makeLog('redux/environment')
 
@@ -352,7 +353,8 @@ export const selectFediModCacheMode = (s: CommonState) =>
 export const selectOnchainDepositsEnabled = (s: CommonState) =>
     s.environment.onchainDepositsEnabled
 
-export const selectLanguage = (s: CommonState) => s.environment.language
+export const selectLanguage = (s: CommonState) =>
+    s.environment.language as I18nLanguage
 
 export const selectAmountInputType = (s: CommonState) =>
     s.environment.amountInputType

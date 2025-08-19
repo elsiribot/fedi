@@ -16,8 +16,6 @@ const initialState = {
     zendeskInitialized: false,
     zendeskUnreadMessageCount: 0,
     lastShownSurveyTimestamp: null as number | null,
-    showSurveyModal: false,
-    hasSurveyedUser: false,
 }
 
 export type SupportState = typeof initialState
@@ -40,15 +38,8 @@ export const supportSlice = createSlice({
         setZendeskUnreadMessageCount(state, action: PayloadAction<number>) {
             state.zendeskUnreadMessageCount = action.payload
         },
-        setShouldShowSurveyModal(state, action: PayloadAction<boolean>) {
-            state.showSurveyModal = action.payload
-        },
-        dismissSurveyModal(state) {
-            state.showSurveyModal = false
+        resetSurveyTimestamp(state) {
             state.lastShownSurveyTimestamp = Date.now()
-        },
-        setHasSurveyedUser(state, action: PayloadAction<boolean>) {
-            state.hasSurveyedUser = action.payload
         },
     },
     extraReducers: builder => {
@@ -75,34 +66,33 @@ export const {
     setZendeskPushNotificationToken,
     setZendeskInitialized,
     setZendeskUnreadMessageCount,
-    setShouldShowSurveyModal,
-    dismissSurveyModal,
-    setHasSurveyedUser,
+    resetSurveyTimestamp,
 } = supportSlice.actions
 
 /*** Asynchronous thonkers ***/
 
 export const checkSurveyCondition = createAsyncThunk<
-    void,
+    { shouldShow: boolean },
     undefined,
     { state: CommonState }
->('support/checkSurveyCondition', async (_, { getState, dispatch }) => {
+>('support/checkSurveyCondition', async (_, { getState }) => {
     const state = getState()
-
-    // If the user has already opened the survey, don't even try to show it again
-    if (state.support.hasSurveyedUser) return
 
     const oneWeekMs = 7 * 24 * 60 * 60 * 1000
     const lastShownTimestamp = state.support.lastShownSurveyTimestamp
     const hasBeenSevenDays =
         lastShownTimestamp && Date.now() - lastShownTimestamp >= oneWeekMs
 
-    if (!hasBeenSevenDays) return
+    // If it has been 7 days since the last survey
+    // OR if the user has already accepted the survey
+    // don't show the survey again
+    if (!hasBeenSevenDays || state.nux.steps.hasAcceptedSurvey)
+        return { shouldShow: false }
 
     // TODO: make a fetch to the server endpoint once implemented
-    Promise.resolve(false).then(shouldShow => {
-        dispatch(setShouldShowSurveyModal(shouldShow))
-    })
+    const shouldShow = await Promise.resolve(false)
+
+    return { shouldShow }
 })
 
 /*** Selectors ***/
@@ -118,9 +108,6 @@ export const selectZendeskInitialized = (s: CommonState) =>
 
 export const selectZendeskUnreadMessageCount = (s: CommonState) =>
     s.support.zendeskUnreadMessageCount
-
-export const shouldShowSurveyModal = (s: CommonState) =>
-    s.support.showSurveyModal
 
 /*** Synchronous wrapper actions ***/
 

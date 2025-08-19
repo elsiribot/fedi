@@ -638,7 +638,8 @@ async function migrateStoredState(
         migrationState = {
             ...migrationState,
             version: 27,
-            lastShownSurveyTimestamp: Date.now(),
+            // The timestamp is initially set to -1 so it doesn't take a whole week to show up in prod
+            lastShownSurveyTimestamp: -1,
         }
     }
 

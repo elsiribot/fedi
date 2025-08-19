@@ -3,17 +3,11 @@ import { Text, Button, useTheme } from '@rneui/themed'
 import { useCallback } from 'react'
 import { useTranslation } from 'react-i18next'
 
-import {
-    i18nToWeglotLanguageMap,
-    SURVEY_URL,
-} from '@fedi/common/constants/support'
-import { i18nLanguages } from '@fedi/common/localization'
+import { SURVEY_URL } from '@fedi/common/constants/support'
+import { useNuxStep } from '@fedi/common/hooks/nux'
 import { selectLanguage } from '@fedi/common/redux'
-import {
-    dismissSurveyModal,
-    setHasSurveyedUser,
-    shouldShowSurveyModal,
-} from '@fedi/common/redux/support'
+import { resetSurveyTimestamp } from '@fedi/common/redux/support'
+import { getSurveyLanguage } from '@fedi/common/utils/survey'
 
 import { useAppDispatch, useAppSelector } from '../../../state/hooks'
 import CenterOverlay from '../../ui/CenterOverlay'
@@ -21,8 +15,14 @@ import Flex from '../../ui/Flex'
 import HoloCircle from '../../ui/HoloCircle'
 import SvgImage from '../../ui/SvgImage'
 
-const SurveyOverlay: React.FC = () => {
-    const show = useAppSelector(shouldShowSurveyModal)
+interface Props {
+    open: boolean
+    onOpenChange(open: boolean): void
+}
+
+const SurveyOverlay: React.FC<Props> = ({ open, onOpenChange }) => {
+    const [, completeAcceptSurvey] = useNuxStep('hasAcceptedSurvey')
+
     const language = useAppSelector(selectLanguage)
     const dispatch = useAppDispatch()
     const navigation = useNavigation()
@@ -31,23 +31,19 @@ const SurveyOverlay: React.FC = () => {
     const { theme } = useTheme()
 
     const handleDismiss = useCallback(() => {
-        dispatch(dismissSurveyModal())
-    }, [dispatch])
+        dispatch(resetSurveyTimestamp())
+        onOpenChange(false)
+    }, [dispatch, onOpenChange])
 
     const handleOpenSurveyLink = useCallback(() => {
         const surveyUrl = new URL(SURVEY_URL)
 
         if (language) {
-            surveyUrl.searchParams.set(
-                'lang',
-                i18nToWeglotLanguageMap[
-                    language as keyof typeof i18nLanguages
-                ] ?? 'en',
-            )
+            surveyUrl.searchParams.set('lang', getSurveyLanguage(language))
         }
 
         handleDismiss()
-        dispatch(setHasSurveyedUser(true))
+        completeAcceptSurvey()
 
         // wait for the modal's close animation + unmount to finish
         // immediately navigating while the modal is actively unmounting causes the screen to be unresponsive
@@ -56,11 +52,11 @@ const SurveyOverlay: React.FC = () => {
                 url: surveyUrl.toString(),
             })
         }, 500)
-    }, [language, navigation, handleDismiss, dispatch])
+    }, [language, navigation, handleDismiss, completeAcceptSurvey])
 
     return (
         <CenterOverlay
-            show={show}
+            show={open}
             onBackdropPress={handleDismiss}
             showCloseButton>
             <Flex gap="lg" align="center" fullWidth>

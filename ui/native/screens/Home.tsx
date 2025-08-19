@@ -1,7 +1,7 @@
 import type { BottomTabScreenProps } from '@react-navigation/bottom-tabs'
 import { useIsFocused } from '@react-navigation/native'
 import { useTheme, type Theme } from '@rneui/themed'
-import React, { useRef } from 'react'
+import React, { useEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { ScrollView, StyleSheet, View } from 'react-native'
 
@@ -13,8 +13,8 @@ import {
     selectIsActiveFederationRecovering,
     selectOnboardingMethod,
 } from '@fedi/common/redux'
+import { checkSurveyCondition } from '@fedi/common/redux/support'
 
-import { useCommonSelector } from '../../common/hooks/redux'
 import FirstTimeCommunityEntryOverlay, {
     FirstTimeCommunityEntryItem,
 } from '../components/feature/federations/FirstTimeCommunityEntryOverlay'
@@ -27,6 +27,7 @@ import SurveyOverlay from '../components/feature/home/SurveyOverlay'
 import WelcomeMessage from '../components/feature/home/WelcomeMessage'
 import RecoveryInProgress from '../components/feature/recovery/RecoveryInProgress'
 import Flex from '../components/ui/Flex'
+import { useAppDispatch, useAppSelector } from '../state/hooks'
 import type {
     RootStackParamList,
     TabsNavigatorParamList,
@@ -44,12 +45,13 @@ const Home: React.FC<Props> = ({ offline }) => {
     const { theme } = useTheme()
     const isFocused = useIsFocused()
 
-    const federations = useCommonSelector(selectFederations)
-    const recoveryInProgress = useCommonSelector(
+    const federations = useAppSelector(selectFederations)
+    const recoveryInProgress = useAppSelector(
         selectIsActiveFederationRecovering,
     )
-    const pinnedMessage = useCommonSelector(selectFederationPinnedMessage)
-    const onboardingMethod = useCommonSelector(selectOnboardingMethod)
+    const pinnedMessage = useAppSelector(selectFederationPinnedMessage)
+    const onboardingMethod = useAppSelector(selectOnboardingMethod)
+    const dispatch = useAppDispatch()
 
     const homeFirstTimeOverlayItems: FirstTimeCommunityEntryItem[] = [
         {
@@ -67,6 +69,8 @@ const Home: React.FC<Props> = ({ offline }) => {
         useNuxStep('displayNameModal')
     const [hasSeenCommunity, completeSeenCommunity] =
         useNuxStep('communityModal')
+
+    const [showSurvey, setShowSurvey] = useState(false)
 
     /**
      * Guards against showing more than one overlay during the current focus.
@@ -106,12 +110,20 @@ const Home: React.FC<Props> = ({ offline }) => {
         completeSeenDisplayName()
     }
 
+    useEffect(() => {
+        dispatch(checkSurveyCondition())
+            .unwrap()
+            .then(({ shouldShow }) => {
+                if (shouldShow) setShowSurvey(true)
+            })
+    }, [showSurvey, dispatch])
+
+    const style = styles(theme)
+
     // Show placeholder wallet if no federations
     if (federations.length === 0) {
         return <HomeWalletsPlaceholder />
     }
-
-    const style = styles(theme)
 
     return (
         <View>
@@ -163,7 +175,7 @@ const Home: React.FC<Props> = ({ offline }) => {
                 show={showCommunityOverlay}
                 onDismiss={handleCommunityDismiss}
             />
-            <SurveyOverlay />
+            <SurveyOverlay open={showSurvey} onOpenChange={setShowSurvey} />
         </View>
     )
 }

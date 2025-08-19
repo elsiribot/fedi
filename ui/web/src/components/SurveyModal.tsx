@@ -3,56 +3,52 @@ import { useTranslation } from 'react-i18next'
 
 import closeIcon from '@fedi/common/assets/svgs/close.svg'
 import tooltipIcon from '@fedi/common/assets/svgs/tooltip.svg'
-import {
-    i18nToWeglotLanguageMap,
-    SURVEY_URL,
-} from '@fedi/common/constants/support'
+import { SURVEY_URL } from '@fedi/common/constants/support'
 import { theme } from '@fedi/common/constants/theme'
-import { i18nLanguages } from '@fedi/common/localization'
+import { useNuxStep } from '@fedi/common/hooks/nux'
 import { selectLanguage } from '@fedi/common/redux'
-import {
-    dismissSurveyModal,
-    setHasSurveyedUser,
-    shouldShowSurveyModal,
-} from '@fedi/common/redux/support'
+import { resetSurveyTimestamp } from '@fedi/common/redux/support'
+import { getSurveyLanguage } from '@fedi/common/utils/survey'
 
 import { useAppDispatch, useAppSelector } from '../hooks'
 import { styled } from '../styles'
 import { Icon } from './Icon'
 import { Modal } from './Modal'
 
-const SurveyModal: React.FC = () => {
-    const show = useAppSelector(shouldShowSurveyModal)
+interface Props {
+    open: boolean
+    onOpenChange: (open: boolean) => void
+}
+
+const SurveyModal: React.FC<Props> = ({ open, onOpenChange }) => {
+    const [, completeAcceptSurvey] = useNuxStep('hasAcceptedSurvey')
+
     const language = useAppSelector(selectLanguage)
     const dispatch = useAppDispatch()
 
     const { t } = useTranslation()
 
     const handleDismiss = useCallback(() => {
-        dispatch(dismissSurveyModal())
-    }, [dispatch])
+        dispatch(resetSurveyTimestamp())
+        onOpenChange(false)
+    }, [dispatch, onOpenChange])
 
     const handleOpenSurveyLink = useCallback(() => {
         const surveyUrl = new URL(SURVEY_URL)
 
         if (language) {
-            surveyUrl.searchParams.set(
-                'lang',
-                i18nToWeglotLanguageMap[
-                    language as keyof typeof i18nLanguages
-                ] ?? 'en',
-            )
+            surveyUrl.searchParams.set('lang', getSurveyLanguage(language))
         }
 
         handleDismiss()
-        dispatch(setHasSurveyedUser(true))
+        completeAcceptSurvey()
 
         window.open(surveyUrl.toString(), '_blank')
-    }, [language, handleDismiss, dispatch])
+    }, [language, handleDismiss, completeAcceptSurvey])
 
     return (
         <Modal
-            open={show}
+            open={open}
             onClick={handleOpenSurveyLink}
             onOpenChange={handleDismiss}
             buttonText={t('feature.support.give-feedback')}
