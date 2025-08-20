@@ -1,79 +1,126 @@
-import fetchMock from 'jest-fetch-mock'
+import { TaggedError, UnexpectedError } from '../../utils/errors'
+import { makeLog } from '../../utils/log'
 
-import { isErrorInstance, makeError, UnexpectedError } from '../../utils/errors'
-
-fetchMock.enableMocks()
+const mockLog = {
+    error: jest.fn(),
+} as unknown as ReturnType<typeof makeLog>
 
 describe('errors', () => {
-    describe('makeError', () => {
-        it('should tag an error if it matches the tag error type', () => {
-            // GenericError: Error
-            const error = makeError(new Error('test'), 'GenericError')
+    beforeEach(() => {
+        jest.clearAllMocks()
+    })
+
+    describe('TaggedError', () => {
+        it('should create a tagged error with the correct tag and message', () => {
+            const error = new TaggedError('GenericError').withMessage('test')
 
             expect(error._tag).toBe('GenericError')
+            expect(error.message).toBe('test')
         })
 
-        it('should not tag an error if it does not match the tag error type', () => {
-            // UrlConstructError: TypeError
-            const error = makeError(new Error('test'), 'UrlConstructError')
+        it('.logged(logFn) should log the error as a side effect', () => {
+            const error = new TaggedError('LoggedError')
+                .withMessage('test')
+                .logged(mockLog)
 
-            expect(error._tag).toBe('UnexpectedError')
-        })
-
-        it('should not re-tag an already-tagged error', () => {
-            const error1 = makeError(new Error('test'), 'GenericError')
-            const error2 = makeError(error1, 'FetchError')
-
-            expect(error1._tag).toBe('GenericError')
-            expect(error2._tag).toBe('UnexpectedError')
-            expect(error2).toBeInstanceOf(UnexpectedError)
-            expect((error2 as UnexpectedError).message).toBe(
-                'Failed to construct FetchError from GenericError',
+            expect(mockLog.error).toHaveBeenCalledWith(
+                `[${error._tag}]: ${error.message}`,
+                error,
             )
         })
 
-        it('should return an UnexpectedError if the passed-in object is not an Error', () => {
-            const strErr = makeError('not an error', 'GenericError')
-            const numErr = makeError(1, 'GenericError')
-            const boolErr = makeError(true, 'GenericError')
-            const nullErr = makeError(null, 'GenericError')
-            const undefinedErr = makeError(undefined, 'GenericError')
+        it('.intoErr() / .intoErrAsync() should return the TaggedError wrapped in a neverthrow err() / errAsync()', async () => {
+            const error = new TaggedError('GenericError')
 
-            expect(strErr._tag).toBe('UnexpectedError')
-            expect(numErr._tag).toBe('UnexpectedError')
-            expect(boolErr._tag).toBe('UnexpectedError')
-            expect(nullErr._tag).toBe('UnexpectedError')
-            expect(undefinedErr._tag).toBe('UnexpectedError')
+            const neverthrowErr = error.intoErr()
+            const neverthrowErrAsync = await error.intoErrAsync()
+
+            expect(neverthrowErr.isErr()).toBe(true)
+            expect(neverthrowErr._unsafeUnwrapErr()).toBe(error)
+            expect(neverthrowErrAsync.isErr()).toBe(true)
+            expect(neverthrowErrAsync._unsafeUnwrapErr()).toBe(error)
+        })
+
+        describe('tryInto', () => {
+            it('should create a tagged error from a matching `Error` constructor', () => {
+                const errorMessage = 'test'
+                const error = new Error(errorMessage)
+                const tryIntoFn = new TaggedError('GenericError').tryInto(Error)
+                const taggedError = tryIntoFn(error)
+
+                expect(taggedError._tag).toBe('GenericError')
+                expect(taggedError.message).toBe(errorMessage)
+            })
+
+            it('should return an UnexpectedError if the passed-in value is not an instance of the constructor in tryInto()', () => {
+                const errorMessage = 'test'
+                const error = new Error(errorMessage)
+                const tryIntoFn = new TaggedError('GenericError').tryInto(
+                    TypeError,
+                )
+                // Error is not an instance of TypeError
+                const unexpectedError = tryIntoFn(error)
+
+                expect(unexpectedError._tag).toBe('UnexpectedError')
+                expect(unexpectedError.message).toBe(
+                    'Failed to construct GenericError from unknown value',
+                )
+            })
+
+            it('should return an UnexpectedError if the passed-in value is already a tagged error', () => {
+                const taggedError = new TaggedError('AlreadyTaggedError')
+                const tryIntoFn = new TaggedError('ReTaggedError').tryInto(
+                    Error,
+                )
+                const unexpectedError = tryIntoFn(taggedError)
+
+                expect(unexpectedError._tag).toBe('UnexpectedError')
+                expect(unexpectedError.message).toBe(
+                    'Failed to construct ReTaggedError from AlreadyTaggedError',
+                )
+            })
+
+            it('should return an UnexpectedError if the passed-in value is not an Error', () => {
+                const tryIntoFn = new TaggedError('GenericError').tryInto(Error)
+                const strErr = tryIntoFn('not an error')
+                const numErr = tryIntoFn(1)
+                const boolErr = tryIntoFn(true)
+                const nullErr = tryIntoFn(null)
+                const undefinedErr = tryIntoFn(undefined)
+
+                expect(strErr._tag).toBe('UnexpectedError')
+                expect(numErr._tag).toBe('UnexpectedError')
+                expect(boolErr._tag).toBe('UnexpectedError')
+                expect(nullErr._tag).toBe('UnexpectedError')
+                expect(undefinedErr._tag).toBe('UnexpectedError')
+            })
         })
     })
 
-    describe('isErrorInstance', () => {
-        it('should return true if the value passed is an instance of the tag error type', () => {
-            const error = new Error('Normal Error')
+    describe('UnexpectedError', () => {
+        it('should initialize with the correct tag and message', () => {
+            const unexpectedError = new UnexpectedError(
+                new Error('test'),
+                'GenericError',
+            )
 
-            // GenericError is an Error
-            expect(isErrorInstance(error, 'GenericError')).toBe(true)
+            expect(unexpectedError._tag).toBe('UnexpectedError')
+            expect(unexpectedError.message).toBe(
+                'Failed to construct GenericError from unknown value',
+            )
         })
 
-        it('should return false if the value passed is not an instance of the tag error type', () => {
-            const error = new Error('Type Error')
+        it('should display the attempted tag if the passed-in value is already a tagged error', () => {
+            const taggedError = new TaggedError('GenericError')
+            const unexpectedError = new UnexpectedError(
+                taggedError,
+                'DifferentError',
+            )
 
-            // UrlConstructError is a TypeError
-            expect(isErrorInstance(error, 'UrlConstructError')).toBe(false)
-        })
-
-        it('should return true if the value passed extends the tag error type', () => {
-            const error = new Error('Normal Error')
-            const typeError = new TypeError('Type Error')
-            const syntaxError = new SyntaxError('Syntax Error')
-            const uriError = new URIError('URI Error')
-            const rangeError = new RangeError('Range Error')
-
-            expect(isErrorInstance(error, 'GenericError')).toBe(true)
-            expect(isErrorInstance(typeError, 'GenericError')).toBe(true)
-            expect(isErrorInstance(syntaxError, 'GenericError')).toBe(true)
-            expect(isErrorInstance(uriError, 'GenericError')).toBe(true)
-            expect(isErrorInstance(rangeError, 'GenericError')).toBe(true)
+            expect(unexpectedError._tag).toBe('UnexpectedError')
+            expect(unexpectedError.message).toBe(
+                'Failed to construct DifferentError from GenericError',
+            )
         })
     })
 })
