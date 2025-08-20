@@ -2,6 +2,7 @@ import Image from 'next/image'
 import { useEffect, useRef, useState } from 'react'
 
 import CloseIcon from '@fedi/common/assets/svgs/close.svg'
+import FileIcon from '@fedi/common/assets/svgs/file.svg'
 
 import { styled, theme } from '../../styles'
 import { Icon } from '../Icon'
@@ -13,7 +14,10 @@ type Props = {
 
 const THUMBNAIL_SIZE = 40
 
-export const ChatMediaThumbnail: React.FC<Props> = ({ file, onRemove }) => {
+export const ChatAttachmentThumbnail: React.FC<Props> = ({
+    file,
+    onRemove,
+}) => {
     const videoRef = useRef<HTMLVideoElement>(null)
 
     const [src, setSrc] = useState<string | null>(null)
@@ -45,6 +49,39 @@ export const ChatMediaThumbnail: React.FC<Props> = ({ file, onRemove }) => {
         return () => video.removeEventListener('loadeddata', handleLoad)
     }, [src])
 
+    const generateThumbnail = (attachment: File, attachmentSrc: string) => {
+        const { type } = attachment
+
+        if (type.startsWith('image/')) {
+            return (
+                <ImageThumbnail
+                    src={attachmentSrc}
+                    alt="image-thumbnail"
+                    width={0}
+                    height={0}
+                />
+            )
+        } else if (type.startsWith('video/')) {
+            return (
+                <VideoThumbnail
+                    ref={videoRef}
+                    autoPlay // required
+                    src={attachmentSrc}
+                    muted
+                    preload="metadata"
+                    aria-label="video-thumbnail"
+                />
+            )
+        } else {
+            // pdf, docx etc
+            return (
+                <AttachmentThumbnail aria-label="file-thumbnail">
+                    <Icon icon={FileIcon} size={24} />
+                </AttachmentThumbnail>
+            )
+        }
+    }
+
     if (!src) return null
 
     return (
@@ -52,23 +89,7 @@ export const ChatMediaThumbnail: React.FC<Props> = ({ file, onRemove }) => {
             <RemoveIconWrapper aria-label="remove-button" onClick={onRemove}>
                 <RemoveIcon icon={CloseIcon} size={16} />
             </RemoveIconWrapper>
-            {file.type.startsWith('image/') ? (
-                <ImageThumbnail
-                    src={src}
-                    alt="image-thumbnail"
-                    width={0}
-                    height={0}
-                />
-            ) : (
-                <VideoThumbnail
-                    ref={videoRef}
-                    autoPlay // required
-                    src={src}
-                    muted
-                    preload="metadata"
-                    aria-label="video-thumbnail"
-                />
-            )}
+            {generateThumbnail(file, src)}
         </ThumbnailWrapper>
     )
 }
@@ -100,13 +121,23 @@ const RemoveIcon = styled(Icon, {
 })
 
 const ImageThumbnail = styled(Image, {
+    borderRadius: 4,
     height: '100%',
     objectFit: 'cover',
     width: '100%',
 })
 
 const VideoThumbnail = styled('video', {
+    borderRadius: 4,
     height: '100%',
     objectFit: 'cover',
+    width: '100%',
+})
+
+const AttachmentThumbnail = styled('div', {
+    alignItems: 'center',
+    display: 'flex',
+    justifyContent: 'center',
+    height: '100%',
     width: '100%',
 })

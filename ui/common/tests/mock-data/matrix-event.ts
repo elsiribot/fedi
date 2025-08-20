@@ -157,7 +157,7 @@ export const mockMatrixEventFile: MatrixEvent<
     MatrixEventContentType<'m.file'>
 > = {
     content: {
-        body: 'B27534A5-B070-480F-9093-3A2EFA8BF3F4.mp4',
+        body: 'test-file.pdf',
         msgtype: 'm.file',
         info: {
             mimetype: 'application/pdf',

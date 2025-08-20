@@ -2,7 +2,7 @@ import '@testing-library/jest-dom'
 import { render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 
-import { ChatMediaThumbnail } from '../../../components/Chat/ChatMediaThumbnail'
+import { ChatAttachmentThumbnail } from '../../../components/Chat/ChatAttachmentThumbnail'
 
 const drawImageToCanvasSpy = jest.fn()
 const drawVideoToCanvasSpy = jest.fn()
@@ -12,15 +12,19 @@ jest.mock('../../../utils/media', () => ({
     drawVideoToCanvas: () => drawVideoToCanvasSpy(),
 }))
 
+const mockImageFile = {
+    type: 'image/png',
+} as File
+
+const mockVideoFile = {
+    type: 'video/mp4',
+} as File
+
+const mockPdfFile = {
+    type: 'application/pdf',
+} as File
+
 describe('/components/Chat/ChatImageEvent', () => {
-    const mockImageFile = {
-        type: 'image/png',
-    } as File
-
-    const mockVideoFile = {
-        type: 'video/mp4',
-    } as File
-
     afterEach(() => {
         jest.clearAllMocks()
     })
@@ -28,26 +32,42 @@ describe('/components/Chat/ChatImageEvent', () => {
     describe('when the component is passed an image file', () => {
         it('should render an image thumbnail', async () => {
             render(
-                <ChatMediaThumbnail file={mockImageFile} onRemove={() => {}} />,
+                <ChatAttachmentThumbnail
+                    file={mockImageFile}
+                    onRemove={() => {}}
+                />,
             )
 
-            await waitFor(() => {
-                const image = screen.getByAltText('image-thumbnail')
-                expect(image).toBeInTheDocument()
-            })
+            const image = screen.getByAltText('image-thumbnail')
+            expect(image).toBeInTheDocument()
         })
     })
 
     describe('when the component is passed a video file', () => {
         it('should render a video thumbnail', async () => {
             render(
-                <ChatMediaThumbnail file={mockVideoFile} onRemove={() => {}} />,
+                <ChatAttachmentThumbnail
+                    file={mockVideoFile}
+                    onRemove={() => {}}
+                />,
             )
 
-            await waitFor(() => {
-                const video = screen.getByLabelText('video-thumbnail')
-                expect(video).toBeInTheDocument()
-            })
+            const video = screen.getByLabelText('video-thumbnail')
+            expect(video).toBeInTheDocument()
+        })
+    })
+
+    describe('when the component is passed a pdf file', () => {
+        it('should render a file thumbnail', async () => {
+            render(
+                <ChatAttachmentThumbnail
+                    file={mockPdfFile}
+                    onRemove={() => {}}
+                />,
+            )
+
+            const file = screen.getByLabelText('file-thumbnail')
+            expect(file).toBeInTheDocument()
         })
     })
 
@@ -56,7 +76,7 @@ describe('/components/Chat/ChatImageEvent', () => {
             const onRemoveSpy = jest.fn()
 
             render(
-                <ChatMediaThumbnail
+                <ChatAttachmentThumbnail
                     file={mockImageFile}
                     onRemove={onRemoveSpy}
                 />,

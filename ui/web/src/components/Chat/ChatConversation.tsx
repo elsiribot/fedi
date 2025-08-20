@@ -1,7 +1,7 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 
-import ImageIcon from '@fedi/common/assets/svgs/image.svg'
+import PlusIcon from '@fedi/common/assets/svgs/plus.svg'
 import SendArrowUpCircleIcon from '@fedi/common/assets/svgs/send-arrow-up-circle.svg'
 import WalletIcon from '@fedi/common/assets/svgs/wallet.svg'
 import { useToast } from '@fedi/common/hooks/toast'
@@ -24,9 +24,9 @@ import { CircularLoader } from '../CircularLoader'
 import { Icon } from '../Icon'
 import * as Layout from '../Layout'
 import { Text } from '../Text'
+import { ChatAttachmentThumbnail } from './ChatAttachmentThumbnail'
 import { ChatAvatar } from './ChatAvatar'
 import { ChatEventCollection } from './ChatEventCollection'
-import { ChatMediaThumbnail } from './ChatMediaThumbnail'
 
 interface Props {
     type: ChatType
@@ -215,7 +215,7 @@ export const ChatConversation: React.FC<Props> = ({
                 {files.length > 0 && (
                     <ThumbnailsRow>
                         {files.map((file, idx: number) => (
-                            <ChatMediaThumbnail
+                            <ChatAttachmentThumbnail
                                 key={`${file.name}-${idx}`}
                                 file={file}
                                 onRemove={() => handleOnRemoveThumbnail(idx)}
@@ -244,7 +244,7 @@ export const ChatConversation: React.FC<Props> = ({
                         type="file"
                         ref={fileRef}
                         hidden
-                        accept="image/*, video/*"
+                        accept="image/*, video/*, .csv, .doc, .docx, .pdf, .ppt, .pptx, .xls, .xlsx, .txt, .zip"
                         onChange={handleOnUploadMedia}
                     />
                 </InputRow>
@@ -260,8 +260,8 @@ export const ChatConversation: React.FC<Props> = ({
                                     onClick={onWalletClick}
                                 />
                                 <Icon
-                                    aria-label="image-icon"
-                                    icon={ImageIcon}
+                                    aria-label="plus-icon"
+                                    icon={PlusIcon}
                                     size={26}
                                     onClick={handleOnMediaClick}
                                 />
