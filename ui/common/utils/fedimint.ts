@@ -436,6 +436,10 @@ export class FedimintBridge {
         })
     }
 
+    async calculateMaxGenerateEcash(federationId: string) {
+        return this.rpcTyped('calculateMaxGenerateEcash', { federationId })
+    }
+
     async generateReusedEcashProofs(federationId: string) {
         return this.rpcTyped('generateReusedEcashProofs', { federationId })
     }

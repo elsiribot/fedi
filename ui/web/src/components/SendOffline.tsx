@@ -1,5 +1,5 @@
 import { dataToFrames } from 'qrloop'
-import React, { useCallback, useState } from 'react'
+import React, { useCallback, useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 
 import { useMinMaxSendAmount } from '@fedi/common/hooks/amount'
@@ -37,6 +37,8 @@ export const SendOffline: React.FC<Props> = ({
     const [qrFrames, setQrFrames] = useState<string[] | null>(null)
     const [hasConfirmedPayment, setHasConfirmedPayment] = useState(false)
     const [submitAttempts, setSubmitAttempts] = useState(0)
+    const [maxSendEcashAmount, setMaxSendEcashAmount] =
+        useState<Sats>(maximumAmount)
 
     const federationId = activeFederation?.id
 
@@ -77,6 +79,15 @@ export const SendOffline: React.FC<Props> = ({
         t,
     ])
 
+    useEffect(() => {
+        if (!activeFederation) return
+
+        fedimint
+            .calculateMaxGenerateEcash(activeFederation.id)
+            .then(max => setMaxSendEcashAmount(amountUtils.msatToSat(max)))
+            .catch(() => setMaxSendEcashAmount(maximumAmount))
+    }, [amount, maximumAmount, activeFederation])
+
     if (offlinePayment && qrFrames) {
         return (
             <>
@@ -105,7 +116,9 @@ export const SendOffline: React.FC<Props> = ({
                         readOnly={isGeneratingEcash}
                         verb={t('words.send')}
                         minimumAmount={minimumAmount}
-                        maximumAmount={maximumAmount}
+                        maximumAmount={
+                            Math.min(maxSendEcashAmount, maximumAmount) as Sats
+                        }
                         submitAttempts={submitAttempts}
                     />
                 </AmountContainer>
