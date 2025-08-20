@@ -56,11 +56,11 @@ echo "Using appium: $(command -v appium)"
 echo "Appium version: $appium_version"
 echo "APPIUM_HOME: ${APPIUM_HOME:-unset}"
 
-if ! check_version "$appium_version" "2"; then
-    echo "❌ Appium version 2.x is required, but found version $appium_version"
+if ! check_version "$appium_version" "3"; then
+    echo "❌ Appium version 3.x is required, but found version $appium_version"
     exit 1
 else
-    echo "✓ Appium 2.x is installed"
+    echo "✓ Appium 3.x is installed"
 fi
 
 DRIVER_LIST_FILE=$(mktemp)
@@ -73,19 +73,19 @@ echo "=== Setting up Android driver ==="
 android_driver_output=$(grep -i uiautomator2 "$DRIVER_LIST_FILE" || echo "")
 if [[ -n "$android_driver_output" ]]; then
   android_version=$(echo "$android_driver_output" | grep -oE '[0-9]+\.[0-9]+\.[0-9]+' | head -1)
-  if check_version "$android_version" "4"; then
+  if check_version "$android_version" "5"; then
     echo "✓ UiAutomator2 driver $android_version is correct version"
   else
-    echo "❌ UiAutomator2 driver version $android_version is wrong, need 4.x"
-    if appium driver uninstall uiautomator2 && appium driver install uiautomator2@4.0.0; then
-      echo "✓ Installed UiAutomator2 driver 4.0.0"
+    echo "❌ UiAutomator2 driver version $android_version is wrong, need 5.x"
+    if appium driver uninstall uiautomator2 && appium driver install uiautomator2@5; then
+      echo "✓ Installed UiAutomator2 driver 5.x"
     else
       echo "❌ Failed to install UiAutomator2 driver"
     fi
   fi
 else
-  if appium driver install uiautomator2@4.0.0; then
-    echo "✓ Installed UiAutomator2 driver 4.0.0"
+  if appium driver install uiautomator2; then
+    echo "✓ Installed UiAutomator2 driver"
   else
     echo "❌ Failed to install UiAutomator2 driver"
   fi
@@ -103,10 +103,10 @@ echo "=== Setting up iOS driver ==="
 ios_driver_output=$(grep -i xcuitest "$DRIVER_LIST_FILE" || echo "")
 if [[ -n "$ios_driver_output" ]]; then
   ios_version=$(echo "$ios_driver_output" | grep -oE '[0-9]+\.[0-9]+\.[0-9]+' | head -1)
-  if check_version "$ios_version" "9"; then
+  if check_version "$ios_version" "10"; then
     echo "✓ XCUITest driver $ios_version is correct version"
   else
-    echo "❌ XCUITest driver version $ios_version is wrong, need 9.x"
+    echo "❌ XCUITest driver version $ios_version is wrong, need 10.x"
     if appium driver uninstall xcuitest && appium driver install xcuitest; then
       echo "✓ Installed XCUITest driver"
     else
