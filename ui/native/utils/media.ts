@@ -5,7 +5,7 @@ import {
     pick,
 } from '@react-native-documents/picker'
 import { TFunction } from 'i18next'
-import { err, errAsync, ok, okAsync, ResultAsync } from 'neverthrow'
+import { ok, okAsync, ResultAsync } from 'neverthrow'
 import { TemporaryDirectoryPath } from 'react-native-fs'
 import {
     Asset,
@@ -15,17 +15,7 @@ import {
 
 import { MAX_FILE_SIZE, MAX_IMAGE_SIZE } from '@fedi/common/constants/matrix'
 import { InputAttachment, InputMedia } from '@fedi/common/types'
-import {
-    GenericError,
-    MissingDataError,
-    UserError,
-} from '@fedi/common/types/errors'
-import {
-    makeError,
-    makeLocalizedError,
-    tryTag,
-    UnexpectedError,
-} from '@fedi/common/utils/errors'
+import { TaggedError, UnexpectedError } from '@fedi/common/utils/errors'
 import { makeLog } from '@fedi/common/utils/log'
 import {
     formatFileSize,
@@ -54,15 +44,14 @@ export function deriveCopyableFileUri({
     ...document
 }: DocumentPickerResponse): ResultAsync<
     string,
-    UnexpectedError | MissingDataError | GenericError
+    | TaggedError<'MissingDataError'>
+    | TaggedError<'GenericError'>
+    | UnexpectedError
 > {
     if (!name)
-        return errAsync(
-            makeError(
-                new Error(`expected document.name, got ${name}`),
-                'MissingDataError',
-            ),
-        )
+        return new TaggedError('MissingDataError')
+            .withMessage(`expected document.name, got ${name}`)
+            .intoErrAsync()
 
     if (document.uri.startsWith('content://')) {
         return ResultAsync.fromPromise(
@@ -75,14 +64,14 @@ export function deriveCopyableFileUri({
                 ],
                 destination: 'cachesDirectory',
             }),
-            tryTag('GenericError'),
+            new TaggedError('GenericError').tryInto(Error),
         )
             .andThen(([result]) => {
                 if (result.status === 'success') return ok(result.localUri)
 
-                return err(
-                    makeError(new Error(result.copyError), 'GenericError'),
-                )
+                return new TaggedError('GenericError')
+                    .withMessage(result.copyError)
+                    .intoErr()
             })
             .orTee(e => log.error(`Error copying document ${document.uri}`, e))
     }
@@ -99,20 +88,20 @@ export function tryPickAssets(
     t: TFunction,
 ): ResultAsync<
     Array<Asset>,
-    UnexpectedError | GenericError | MissingDataError | UserError
+    | TaggedError<'MissingDataError'>
+    | TaggedError<'GenericError'>
+    | TaggedError<'UserError'>
+    | UnexpectedError
 > {
     return ResultAsync.fromPromise(
         launchImageLibrary(imageOptions),
-        tryTag('GenericError'),
+        new TaggedError('GenericError').tryInto(Error),
     )
         .andThen(library => {
             if (library.didCancel)
-                return err(
-                    makeError(
-                        new Error('Image library cancelled'),
-                        'GenericError',
-                    ),
-                )
+                return new TaggedError('UserError')
+                    .withMessage('Image library cancelled')
+                    .intoErr()
 
             return ok(library.assets)
         })
@@ -126,29 +115,23 @@ export function tryPickAssets(
                 .some(asset => doesAssetExceedSize(asset, MAX_FILE_SIZE))
 
             if (anyImageExceedsSize) {
-                return err(
-                    makeLocalizedError(
-                        t,
-                        'UserError',
-                        'errors.images-may-not-exceed-size',
-                        {
+                return new TaggedError('UserError')
+                    .withMessage(
+                        t('errors.images-may-not-exceed-size', {
                             size: formatFileSize(MAX_IMAGE_SIZE),
-                        },
-                    ),
-                )
+                        }),
+                    )
+                    .intoErr()
             }
 
             if (anyVideoExceedsSize) {
-                return err(
-                    makeLocalizedError(
-                        t,
-                        'UserError',
-                        'errors.videos-may-not-exceed-size',
-                        {
+                return new TaggedError('UserError')
+                    .withMessage(
+                        t('errors.videos-may-not-exceed-size', {
                             size: formatFileSize(MAX_FILE_SIZE),
-                        },
-                    ),
-                )
+                        }),
+                    )
+                    .intoErr()
             }
 
             return ok()
@@ -164,24 +147,22 @@ export function tryPickDocuments(
     t: TFunction,
 ): ResultAsync<
     Array<DocumentPickerResponse>,
-    UnexpectedError | GenericError | UserError
+    TaggedError<'GenericError'> | TaggedError<'UserError'> | UnexpectedError
 > {
     return ResultAsync.fromPromise(
         pick(options),
-        tryTag('GenericError'),
+        new TaggedError('GenericError').tryInto(Error),
     ).andThrough(documents => {
         if (documents.some(doc => doesDocumentExceedSize(doc, MAX_FILE_SIZE))) {
-            return err(
-                makeLocalizedError(
-                    t,
-                    'UserError',
-                    'errors.files-may-not-exceed-size',
-                    {
+            return new TaggedError('UserError')
+                .withMessage(
+                    t('errors.files-may-not-exceed-size', {
                         size: formatFileSize(MAX_FILE_SIZE),
-                    },
-                ),
-            )
+                    }),
+                )
+                .intoErr()
         }
+
         return ok()
     })
 }

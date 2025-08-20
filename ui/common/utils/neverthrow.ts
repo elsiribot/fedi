@@ -1,13 +1,7 @@
-import { err, ok, Result, ResultAsync } from 'neverthrow'
-import { ZodSchema, z } from 'zod'
+import { ok, Result, ResultAsync } from 'neverthrow'
+import { ZodError, ZodSchema, z } from 'zod'
 
-import {
-    FetchError,
-    MalformedDataError,
-    MissingDataError,
-    UrlConstructError,
-} from '../types/errors'
-import { isErrorInstance, makeError, tryTag, UnexpectedError } from './errors'
+import { TaggedError, UnexpectedError } from './errors'
 
 /**
  * Attempts to pass unknown data through a zod schema
@@ -25,7 +19,10 @@ import { isErrorInstance, makeError, tryTag, UnexpectedError } from './errors'
  */
 export const throughZodSchema = <T extends ZodSchema>(schema: T) => {
     const parse = (data: unknown): z.infer<T> => schema.parse(data)
-    return Result.fromThrowable(parse, tryTag('SchemaValidationError'))
+    return Result.fromThrowable(
+        parse,
+        new TaggedError('SchemaValidationError').tryInto(ZodError),
+    )
 }
 
 /**
@@ -36,16 +33,18 @@ export const throughZodSchema = <T extends ZodSchema>(schema: T) => {
  */
 export const fetchResult = (
     ...args: Parameters<typeof fetch>
-): ResultAsync<Response, UrlConstructError | FetchError | UnexpectedError> =>
+): ResultAsync<
+    Response,
+    | TaggedError<'UrlConstructError'>
+    | TaggedError<'FetchError'>
+    | UnexpectedError
+> =>
     ResultAsync.fromPromise(fetch(...args), e => {
-        if (
-            isErrorInstance(e, 'UrlConstructError') &&
-            e.message.includes('URL')
-        ) {
-            return makeError(e, 'UrlConstructError')
+        if (e instanceof Error && e.message.includes('URL')) {
+            return new TaggedError('UrlConstructError').tryInto(Error)(e)
         }
 
-        return makeError(e, 'FetchError')
+        return new TaggedError('FetchError').tryInto(Error)(e)
     })
 
 /**
@@ -60,8 +59,11 @@ export const fetchResult = (
  */
 export const thenJson = (
     res: Response,
-): ResultAsync<unknown, MalformedDataError | UnexpectedError> =>
-    ResultAsync.fromPromise(res.json(), tryTag('MalformedDataError'))
+): ResultAsync<unknown, TaggedError<'MalformedDataError'> | UnexpectedError> =>
+    ResultAsync.fromPromise(
+        res.json(),
+        new TaggedError('MalformedDataError').tryInto(Error),
+    )
 
 /**
  * Attempts to construct a `URL` from a string or a `URL` object
@@ -69,7 +71,7 @@ export const thenJson = (
  */
 export const constructUrl = Result.fromThrowable(
     (...args: ConstructorParameters<typeof URL>) => new URL(...args),
-    tryTag('UrlConstructError'),
+    new TaggedError('UrlConstructError').tryInto(Error),
 )
 
 /**
@@ -87,14 +89,11 @@ export const constructUrl = Result.fromThrowable(
  */
 export const ensureNonNullish = <T>(
     value: T,
-): Result<NonNullable<T>, MissingDataError | UnexpectedError> => {
+): Result<NonNullable<T>, TaggedError<'MissingDataError'>> => {
     if (value === null || value === undefined)
-        return err(
-            makeError(
-                new Error(`expected non-nullish value, got ${value}`),
-                'MissingDataError',
-            ),
-        )
+        return new TaggedError('MissingDataError')
+            .withMessage(`Expected non-nullish value, got ${value}`)
+            .intoErr()
 
     return ok(value as NonNullable<T>)
 }
