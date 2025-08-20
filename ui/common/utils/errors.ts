@@ -1,13 +1,37 @@
-import { TFunction } from 'i18next'
+import { err, errAsync } from 'neverthrow'
 
-import { TagToErrorConstructorMap } from '../constants/errors'
 import { ErrorCode, RpcError } from '../types/bindings'
-import { ErrorTag, TaggedError } from '../types/errors'
+import { makeLog } from './log'
+
+type ErrString = `${string}Error`
+
+abstract class CustomError extends Error {
+    public abstract _tag: ErrString
+
+    /**
+     * Chainable method that logs the error instance with the provided `logFunction` as a side effect
+     */
+    public logged(logFunction: ReturnType<typeof makeLog>) {
+        logFunction.error(`[${this._tag}]: ${this.message}`, this)
+
+        return this
+    }
+
+    /** Wraps the error instance in a `neverthrow` `err()` */
+    public intoErr() {
+        return err(this)
+    }
+
+    /** Wraps the error instance in a `neverthrow` `errAsync()` */
+    public intoErrAsync() {
+        return errAsync(this)
+    }
+}
 
 /**
  * Specific error type used when a fedimint bridge rpc call fails
  */
-export class BridgeError extends Error {
+export class BridgeError extends CustomError {
     public _tag = 'BridgeError' as const
     public detail: string
     public error: string
@@ -27,10 +51,58 @@ export class BridgeError extends Error {
     }
 }
 
+export class TaggedError<T extends ErrString> extends CustomError {
+    public _tag: T
+
+    constructor(tag: T) {
+        super(tag)
+
+        this._tag = tag
+    }
+
+    /**
+     * Tries to convert an unknown value into a `TaggedError` instance
+     * If the unknown value cannot be converted, returns an `UnexpectedError`
+     */
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    public tryInto<E extends new (...args: any[]) => any>(
+        constructor: E,
+    ): (e: unknown) => TaggedError<T> | UnexpectedError {
+        return (e: unknown) => {
+            if (e instanceof constructor && !('_tag' in e)) {
+                // Serializes `e` into a plain object to be used in `Object.assign`
+                const serializedError =
+                    // `getOwnPropertyNames` works similar to `Object.keys` but returns both enumerable and non-enumerable properties
+                    // `Error.message`, `Error.stack`, etc are non-enumerable properties and are not included in `Object.keys`, `Object.entries`, `JSON.stringify`, etc
+                    // See https://developer.mozilla.org/en-US/docs/Web/JavaScript/Guide/Enumerability_and_ownership_of_properties
+                    Object.getOwnPropertyNames(e).reduce((acc, prop) => {
+                        acc[prop] = e[prop]
+                        return acc
+                    }, {} as InstanceType<E>)
+
+                // Mutates the `this` object to include the properties of the serialized error
+                // Using `Object.assign(this, e)` will NOT work because `Error.message`, `Error.stack`, etc are non-enumerable properties
+                return Object.assign(this, serializedError)
+            }
+
+            return new UnexpectedError(e, this._tag)
+        }
+    }
+
+    /**
+     * Chainable method that adds a message to the `TaggedError` instance
+     */
+    public withMessage(message: string) {
+        this.message = message
+
+        return this
+    }
+}
+
 /**
  * Specific error type used when a TaggedError fails to be be constructed from an unknown value
  */
-export class UnexpectedError extends Error {
+export class UnexpectedError extends CustomError {
     public _tag = 'UnexpectedError' as const
     unexpectedError: unknown
 
@@ -50,62 +122,4 @@ export class UnexpectedError extends Error {
         super(`Failed to construct ${attemptedTag} from ${unknownValue}`)
         this.unexpectedError = _unexpectedError
     }
-}
-
-export function isErrorInstance<T extends ErrorTag>(
-    e: unknown,
-    tag: T,
-): e is InstanceType<(typeof TagToErrorConstructorMap)[T]> {
-    const cstr = TagToErrorConstructorMap[tag]
-    return e instanceof cstr
-}
-
-function hasTag(e: unknown): e is TaggedError<ErrorTag> {
-    if (typeof e !== 'object' || e === null) return false
-    return '_tag' in e
-}
-
-export function hasErrorTag<T extends ErrorTag>(
-    e: unknown,
-    tag: T,
-): e is TaggedError<T> {
-    if (typeof e !== 'object' || e === null) return false
-    return (e as { _tag?: unknown })._tag === tag
-}
-
-export function makeError<T extends ErrorTag>(e: unknown, tag: T) {
-    if (isErrorInstance(e, tag) && !hasTag(e)) {
-        return Object.assign(e, {
-            _tag: tag,
-        }) satisfies TaggedError<T>
-    }
-
-    return new UnexpectedError(e, tag)
-}
-
-export function makeLocalizedError<T extends ErrorTag>(
-    t: TFunction,
-    tag: T,
-    ...params: Parameters<typeof t>
-) {
-    return makeError(new Error(t(...params)), tag)
-}
-
-/**
- * Checks to see if an unknown value is an instance of a given error-like constructor
- * and attempts to tag it.
- *
- * Upon failure, returns an `UnexpectedError` with the original error.
- *
- * @example
- * ```typescript
- * ResultAsync.fromPromise(
- *   promise,
- *   // UrlConstructError | UnexpectedError
- *   tryTag('UrlConstructError')
- * )
- * ```
- */
-export function tryTag<T extends ErrorTag>(_tag: T) {
-    return (e: unknown) => makeError(e, _tag)
 }
