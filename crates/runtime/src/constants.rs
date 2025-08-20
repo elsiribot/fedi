@@ -56,3 +56,6 @@ pub const FEDI_INVOICE_API_URL_MAINNET: &str =
 pub const COMMUNITY_INVITE_CODE_HRP: Hrp = Hrp::parse_unchecked("fedi:community");
 
 pub const RECURRINGD_API_META: &str = "recurringd_api";
+
+// TODO shaurya add this in!
+pub const FEDI_DEFAULT_COMMUNITY_INVITE_CODE: &str = "FEDI_DEFAULT_COMMUNITY_INVITE_CODE";

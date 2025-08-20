@@ -1,4 +1,5 @@
-use std::collections::BTreeMap;
+use std::collections::{BTreeMap, BTreeSet};
+use std::ops::Not;
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
 
@@ -19,7 +20,7 @@ use state::{
 };
 use tokio::sync::RwLock;
 
-use crate::constants::FEDI_FILE_V0_PATH;
+use crate::constants::{FEDI_DEFAULT_COMMUNITY_INVITE_CODE, FEDI_FILE_V0_PATH};
 use crate::db::BridgeDbPrefix;
 
 pub mod state;
@@ -153,7 +154,32 @@ impl AppState {
             bridge_db,
         };
         if onboarding_complete {
-            Ok(Either::Left(AppState { store }))
+            let app_state = AppState { store };
+            // Backfill fields for "Fedi Gift" project if necessary
+            app_state
+                .with_write_lock(|state| {
+                    let mut invite_codes: BTreeSet<_> =
+                        state.joined_communities.keys().cloned().collect();
+
+                    // First remove default community invite code from consideration
+                    invite_codes.remove(FEDI_DEFAULT_COMMUNITY_INVITE_CODE);
+
+                    // Backfilling is necessary iff:
+                    // - "first community" is None (never set)
+                    // - There are pre-existing joined communities
+                    if state.first_comm_invite_code.is_none() && invite_codes.is_empty().not() {
+                        // Then evaluate the remaining communities
+                        if invite_codes.len() == 1 {
+                            state.first_comm_invite_code = Some(Some(
+                                invite_codes.first().expect("checked above").to_string(),
+                            ));
+                        } else {
+                            state.first_comm_invite_code = Some(None); // can never be set now
+                        }
+                    }
+                })
+                .await?;
+            Ok(Either::Left(app_state))
         } else {
             Ok(Either::Right(AppStateOnboarding { store }))
         }
