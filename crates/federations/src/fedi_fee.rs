@@ -389,10 +389,7 @@ impl FediFeeRemittanceService {
         let mutex = OwnedMutexGuard::mutex(&guard).clone();
         drop(guard);
         // If payment fails, un-zero the oustanding fee before returning the error.
-        if let Err(e) = fed
-            .subscribe_to_ln_pay(payment_type, extra_meta, invoice.clone())
-            .await
-        {
+        if let Err(e) = fed.subscribe_to_ln_pay(payment_type, extra_meta).await {
             let _guard = mutex.lock().await;
             fed.client
                 .db()

@@ -1229,9 +1229,7 @@ impl FederationV2 {
                 Amount::from_msats(est_total_spend),
             )
             .await;
-        let response = self
-            .subscribe_to_ln_pay(payment_type, extra_meta, invoice.clone())
-            .await?;
+        let response = self.subscribe_to_ln_pay(payment_type, extra_meta).await?;
 
         Ok(response)
     }
@@ -1466,7 +1464,6 @@ impl FederationV2 {
                                     PayType::Lightning(operation_id)
                                 },
                                 extra_meta,
-                                pay_meta.invoice,
                             )
                             .await
                         {
@@ -1624,7 +1621,6 @@ impl FederationV2 {
         &self,
         pay_type: PayType,
         extra_meta: LightningSendMetadata,
-        _invoice: Bolt11Invoice,
     ) -> Result<RpcPayInvoiceResponse> {
         let ln = self.client.ln()?;
         match pay_type {
