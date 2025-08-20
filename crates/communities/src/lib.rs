@@ -12,7 +12,7 @@ use rpc_types::RpcCommunity;
 use rpc_types::error::ErrorCode;
 use rpc_types::event::{Event, EventSink, TypedEventExt};
 use runtime::bridge_runtime::Runtime;
-use runtime::constants::COMMUNITY_INVITE_CODE_HRP;
+use runtime::constants::{COMMUNITY_INVITE_CODE_HRP, FEDI_DEFAULT_COMMUNITY_INVITE_CODE};
 use runtime::storage::AppState;
 use runtime::storage::state::{CommunityInfo, CommunityJson};
 use serde::{Deserialize, Serialize};
@@ -116,6 +116,15 @@ impl Communities {
                 state
                     .joined_communities
                     .insert(invite_code.to_owned(), CommunityInfo { meta: meta.clone() });
+
+                // If this is not the default Fedi community
+                if invite_code != FEDI_DEFAULT_COMMUNITY_INVITE_CODE {
+                    // And if "first community" has never been set
+                    if state.first_comm_invite_code.is_none() {
+                        // Then record this as the "first community"
+                        state.first_comm_invite_code = Some(Some(invite_code.to_owned()));
+                    }
+                }
             })
             .await?;
 
@@ -132,6 +141,15 @@ impl Communities {
         self.app_state
             .with_write_lock(|state| {
                 state.joined_communities.remove(invite_code);
+
+                // If we're leaving our "first community", we need to perma-clear that field
+                let Some(Some(ref first_invite_code)) = state.first_comm_invite_code else {
+                    return;
+                };
+
+                if first_invite_code == invite_code {
+                    state.first_comm_invite_code = Some(None);
+                }
             })
             .await?;
         Ok(())
