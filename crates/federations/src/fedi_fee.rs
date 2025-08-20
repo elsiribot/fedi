@@ -4,7 +4,9 @@ use std::sync::Arc;
 use anyhow::{anyhow, bail};
 use async_recursion::async_recursion;
 use bitcoin::Network;
+use bitcoin::hex::DisplayHex;
 use fedimint_core::Amount;
+use fedimint_core::config::FederationId;
 use fedimint_core::core::ModuleKind;
 use fedimint_core::db::IDatabaseTransactionOpsCoreTyped;
 use fedimint_ln_client::OutgoingLightningPayment;
@@ -13,8 +15,9 @@ use lightning_invoice::Bolt11Invoice;
 use rpc_types::{LightningSendMetadata, RpcTransactionDirection};
 use runtime::api::TransactionDirection;
 use runtime::bridge_runtime::Runtime;
-use runtime::constants::MILLION;
+use runtime::constants::{FEDI_DEFAULT_COMMUNITY_INVITE_CODE, FEDI_GIFT_CHILD_ID, MILLION};
 use runtime::storage::state::{FediFeeSchedule, ModuleFediFeeSchedule};
+use stability_pool_client::common::AccountId;
 use tokio::sync::{Mutex, OwnedMutexGuard};
 use tracing::{error, info, instrument, warn};
 
@@ -190,7 +193,45 @@ impl FediFeeHelper {
         network: Network,
         module: ModuleKind,
         tx_direction: RpcTransactionDirection,
+        federation_id: FederationId,
+        spv2_account_id: Option<AccountId>,
     ) -> anyhow::Result<Bolt11Invoice> {
+        let stable_user_id = self
+            .runtime
+            .app_state
+            .root_secret()
+            .await
+            .child_key(FEDI_GIFT_CHILD_ID)
+            .to_random_bytes::<32>()
+            .to_lower_hex_string();
+        let (first_comm_invite_code, all_comm_invite_codes) = self
+            .runtime
+            .app_state
+            .with_read_lock(|state| {
+                (
+                    state.first_comm_invite_code.clone().flatten(),
+                    state.joined_communities.keys().cloned().collect::<Vec<_>>(),
+                )
+            })
+            .await;
+        let other_comm_invite_codes = all_comm_invite_codes
+            .into_iter()
+            .filter(|code| {
+                // Exclude "first community" if present, and the default fedi community
+                if first_comm_invite_code
+                    .as_ref()
+                    .is_some_and(|first| first == code)
+                {
+                    return false;
+                }
+
+                if code == FEDI_DEFAULT_COMMUNITY_INVITE_CODE {
+                    return false;
+                }
+
+                true
+            })
+            .collect();
         self.runtime
             .fedi_api
             .fetch_fedi_fee_invoice(
@@ -201,6 +242,11 @@ impl FediFeeHelper {
                     RpcTransactionDirection::Receive => TransactionDirection::Receive,
                     RpcTransactionDirection::Send => TransactionDirection::Send,
                 },
+                stable_user_id,
+                spv2_account_id,
+                federation_id,
+                first_comm_invite_code,
+                other_comm_invite_codes,
             )
             .await
     }
@@ -339,6 +385,11 @@ impl FediFeeRemittanceService {
                 ))?,
                 module.clone(),
                 tx_direction.clone(),
+                fed.federation_id(),
+                fed.client.spv2().ok().map(|spv2| {
+                    spv2.our_account(stability_pool_client::common::AccountType::Seeker)
+                        .id()
+                }),
             )
             .await?;
 

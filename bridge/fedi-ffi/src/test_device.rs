@@ -14,6 +14,7 @@ use federations::federation_v2::FederationV2;
 use fedimint_bip39::Bip39RootSecretStrategy;
 use fedimint_client::secret::RootSecretStrategy as _;
 use fedimint_client::ModuleKind;
+use fedimint_core::config::FederationId;
 use fedimint_core::{apply, async_trait_maybe_send, Amount};
 use lightning_invoice::Bolt11Invoice;
 use matrix::Matrix;
@@ -24,6 +25,7 @@ use runtime::event::IEventSink;
 use runtime::features::{FeatureCatalog, RuntimeEnvironment};
 use runtime::storage::state::{DeviceIdentifier, FediFeeSchedule};
 use runtime::storage::{OnboardingCompletionMethod, Storage};
+use stability_pool_client::common::AccountId;
 use tempfile::TempDir;
 use tokio::sync::{Mutex, OnceCell};
 
@@ -246,6 +248,11 @@ impl IFediApi for MockFediApi {
         _network: Network,
         _module: ModuleKind,
         _tx_direction: TransactionDirection,
+        _stable_user_id: String,
+        _spv2_account_id: Option<AccountId>,
+        _federation_id: FederationId,
+        _first_comm_invite_code: Option<String>,
+        _other_comm_invite_codes: Vec<String>,
     ) -> anyhow::Result<Bolt11Invoice> {
         self.fedi_fee_invoice
             .clone()

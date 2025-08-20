@@ -15,6 +15,7 @@ pub const NOSTR_CHILD_ID: ChildId = ChildId(12);
 pub const MILLION: u64 = 1_000_000;
 pub const MATRIX_CHILD_ID: u64 = 13;
 pub const DEVICE_REGISTRATION_CHILD_ID: ChildId = ChildId(14);
+pub const FEDI_GIFT_CHILD_ID: ChildId = ChildId(15);
 
 // Desired length for device identifier string before encrypting and uploading
 // to Fedi's device registration servers. We add padding as desired. Having a
@@ -49,9 +50,9 @@ pub const FEDI_FEE_API_URL_MAINNET: &str =
 
 // URL for Fedi fee lightning invoice generator API
 pub const FEDI_INVOICE_API_URL_MUTINYNET: &str =
-    "https://staging.fee-collection.dev.fedibtc.com/v1/generate-invoice";
+    "https://staging.fee-collection.dev.fedibtc.com/v2/generate-invoice";
 pub const FEDI_INVOICE_API_URL_MAINNET: &str =
-    "https://prod.fee-collection.dev.fedibtc.com/v1/generate-invoice";
+    "https://prod.fee-collection.dev.fedibtc.com/v2/generate-invoice";
 
 pub const COMMUNITY_INVITE_CODE_HRP: Hrp = Hrp::parse_unchecked("fedi:community");
 
