@@ -1,7 +1,6 @@
 import { useCallback } from 'react'
 import { useTranslation } from 'react-i18next'
 
-import closeIcon from '@fedi/common/assets/svgs/close.svg'
 import tooltipIcon from '@fedi/common/assets/svgs/tooltip.svg'
 import { SURVEY_URL } from '@fedi/common/constants/support'
 import { theme } from '@fedi/common/constants/theme'
@@ -53,11 +52,9 @@ const SurveyModal: React.FC<Props> = ({ open, onOpenChange }) => {
             onOpenChange={handleDismiss}
             buttonText={t('feature.support.give-feedback')}
             title={t('feature.support.survey-title')}
-            description={t('feature.support.survey-description')}>
+            description={t('feature.support.survey-description')}
+            showCloseButton>
             <ModalContents>
-                <Close onClick={handleDismiss}>
-                    <Icon icon={closeIcon} size={20} />
-                </Close>
                 <IconWrapper>
                     <Icon icon={tooltipIcon} size="md" />
                 </IconWrapper>
@@ -69,14 +66,6 @@ const SurveyModal: React.FC<Props> = ({ open, onOpenChange }) => {
         </Modal>
     )
 }
-
-const Close = styled('button', {
-    position: 'absolute',
-    top: 0,
-    right: 0,
-    width: 20,
-    height: 20,
-})
 
 const ModalContents = styled('div', {
     display: 'flex',

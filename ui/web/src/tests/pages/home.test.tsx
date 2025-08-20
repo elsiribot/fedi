@@ -79,7 +79,7 @@ describe('/pages/home', () => {
                 },
             })
 
-            const modal = screen.getByRole('alertdialog')
+            const modal = screen.getByRole('dialog')
             expect(modal).toBeInTheDocument()
         })
     })

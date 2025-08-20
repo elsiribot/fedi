@@ -1,10 +1,13 @@
-import * as RadixAlertDialog from '@radix-ui/react-alert-dialog'
+import * as RadixDialog from '@radix-ui/react-dialog'
 import { VisuallyHidden } from '@radix-ui/react-visually-hidden'
 import React from 'react'
 import { useTranslation } from 'react-i18next'
 
+import closeIcon from '@fedi/common/assets/svgs/close.svg'
+
 import { keyframes, styled, theme } from '../../styles'
 import { Button } from '../Button'
+import { Icon } from '../Icon'
 
 interface Props {
     open: boolean
@@ -14,6 +17,7 @@ interface Props {
     description?: string
     buttonText?: string
     onOpenChange?(open: boolean): void
+    showCloseButton?: boolean
 }
 
 export const Modal: React.FC<Props> = ({
@@ -24,21 +28,26 @@ export const Modal: React.FC<Props> = ({
     description,
     buttonText,
     onOpenChange,
+    showCloseButton,
 }) => {
     const { t } = useTranslation()
 
     return (
-        <RadixAlertDialog.Root open={open} onOpenChange={onOpenChange}>
-            <RadixAlertDialog.Portal>
+        <RadixDialog.Root open={open} onOpenChange={onOpenChange}>
+            <RadixDialog.Portal>
                 <Overlay onClick={() => onOpenChange?.(false)}>
                     <Content>
+                        {showCloseButton && (
+                            <Close onClick={() => onOpenChange?.(false)}>
+                                <Icon icon={closeIcon} size={20} />
+                            </Close>
+                        )}
+
                         <VisuallyHidden>
-                            <RadixAlertDialog.Title>
-                                {title}
-                            </RadixAlertDialog.Title>
-                            <RadixAlertDialog.Description>
+                            <RadixDialog.Title>{title}</RadixDialog.Title>
+                            <RadixDialog.Description>
                                 {description}
-                            </RadixAlertDialog.Description>
+                            </RadixDialog.Description>
                         </VisuallyHidden>
 
                         <Children>{children}</Children>
@@ -52,8 +61,8 @@ export const Modal: React.FC<Props> = ({
                         </Actions>
                     </Content>
                 </Overlay>
-            </RadixAlertDialog.Portal>
-        </RadixAlertDialog.Root>
+            </RadixDialog.Portal>
+        </RadixDialog.Root>
     )
 }
 
@@ -62,7 +71,7 @@ const overlayShow = keyframes({
     '100%': { opacity: 1 },
 })
 
-const Overlay = styled(RadixAlertDialog.Overlay, {
+const Overlay = styled(RadixDialog.Overlay, {
     animation: `${overlayShow} 150ms ease`,
     background: theme.colors.primary80,
     display: 'grid',
@@ -71,6 +80,14 @@ const Overlay = styled(RadixAlertDialog.Overlay, {
     position: 'fixed',
     placeItems: 'center',
     textAlign: 'center',
+})
+
+const Close = styled(RadixDialog.Close, {
+    position: 'absolute',
+    top: 20,
+    right: 20,
+    width: 20,
+    height: 20,
 })
 
 const contentShow = keyframes({
@@ -84,7 +101,7 @@ const contentShow = keyframes({
     },
 })
 
-const Content = styled(RadixAlertDialog.Content, {
+const Content = styled(RadixDialog.Content, {
     animation: `${contentShow} 150ms ease`,
     background: theme.colors.white,
     boxSizing: 'border-box',
