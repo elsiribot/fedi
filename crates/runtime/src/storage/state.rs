@@ -103,6 +103,33 @@ pub struct AppStateJsonOnboarded {
     #[serde(default)]
     pub onboarding_method: Option<OnboardingMethod>,
 
+    /// As part of the "Fedi Gift" project, we track the first community that
+    /// the user joins (barring the default Fedi community).
+    ///
+    /// For users that are already part of non-default communities, the
+    /// following logic applies:
+    /// - If they are part of only one non-default community, that becomes their
+    ///   "first community". Should they leave this community in the future,
+    ///   their "first community" remains null forever.
+    /// - If they are part of multiple non-default communities, their "first
+    ///   community" remains null forever
+    ///
+    /// For users that are not part of non-default communities, the following
+    /// logic applies:
+    /// - The first non-default community that they join becomes their "first
+    ///   community". Should they leave this community in the future, their
+    ///   "first community" remains null forever.
+    ///
+    /// We see from the above logic that we need to simulate a tri-state enum,
+    /// and we do this through a nested Option.
+    /// - `None` means the first community has never been set and may be set in
+    ///   the future
+    /// - `Some(Some(<String>))` means the first community has been set
+    /// - `Some(None)` means the first community may or may not have been set in
+    ///   the past, but can never be set going forward.
+    #[serde(default)]
+    pub first_comm_invite_code: Option<Option<String>>,
+
     #[serde(flatten)]
     pub base: AppStateJsonBase,
 }
@@ -391,6 +418,7 @@ impl AppStateJson {
                     social_recovery_state,
                     internal_bridge_export: false,
                     onboarding_method: None,
+                    first_comm_invite_code: None,
                     base: value.base,
                 })
             }

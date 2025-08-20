@@ -427,6 +427,7 @@ impl AppStateOnboarding {
                     matrix_session: None,
                     internal_bridge_export: false,
                     onboarding_method: Some(onboarding_method),
+                    first_comm_invite_code: None,
                     base: AppStateJsonBase {
                         root_mnemonic,
                         joined_federations: BTreeMap::new(),
