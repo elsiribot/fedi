@@ -406,10 +406,13 @@ impl Matrix {
     /// Sync status is used to display "Waiting for network" indicator on
     /// frontend.
     pub fn subscribe_sync_status(&self) -> impl Stream<Item = RpcSyncIndicator> + use<> {
-        self.sync_service
-            .room_list_service()
-            .sync_indicator(Duration::from_secs(2), Duration::from_secs(2))
-            .map(RpcSyncIndicator::from)
+        self.sync_service.state().map(|x| match x {
+            sync_service::State::Offline
+            | sync_service::State::Error
+            | sync_service::State::Idle
+            | sync_service::State::Terminated => RpcSyncIndicator::Show,
+            sync_service::State::Running => RpcSyncIndicator::Hide,
+        })
     }
 
     pub async fn room(&self, room_id: &RoomId) -> Result<Room, room_list_service::Error> {
