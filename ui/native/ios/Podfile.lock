@@ -1505,6 +1505,27 @@ PODS:
     - ReactCommon/turbomodule/bridging
     - ReactCommon/turbomodule/core
     - Yoga
+  - react-native-view-shot (4.0.3):
+    - DoubleConversion
+    - glog
+    - hermes-engine
+    - RCT-Folly (= 2024.01.01.00)
+    - RCTRequired
+    - RCTTypeSafety
+    - React-Core
+    - React-debug
+    - React-Fabric
+    - React-featureflags
+    - React-graphics
+    - React-ImageManager
+    - React-NativeModulesApple
+    - React-RCTFabric
+    - React-rendererdebug
+    - React-utils
+    - ReactCodegen
+    - ReactCommon/turbomodule/bridging
+    - ReactCommon/turbomodule/core
+    - Yoga
   - react-native-webview (13.13.5):
     - DoubleConversion
     - glog
@@ -2188,6 +2209,7 @@ DEPENDENCIES:
   - react-native-safe-area-context (from `../../node_modules/react-native-safe-area-context`)
   - react-native-splash-screen (from `../../node_modules/react-native-splash-screen`)
   - react-native-video (from `../../node_modules/react-native-video`)
+  - react-native-view-shot (from `../../node_modules/react-native-view-shot`)
   - react-native-webview (from `../../node_modules/react-native-webview`)
   - react-native-worklets-core (from `../../node_modules/react-native-worklets-core`)
   - react-native-zendesk-messaging (from `../../node_modules/react-native-zendesk-messaging`)
@@ -2367,6 +2389,8 @@ EXTERNAL SOURCES:
     :path: "../../node_modules/react-native-splash-screen"
   react-native-video:
     :path: "../../node_modules/react-native-video"
+  react-native-view-shot:
+    :path: "../../node_modules/react-native-view-shot"
   react-native-webview:
     :path: "../../node_modules/react-native-webview"
   react-native-worklets-core:
@@ -2530,6 +2554,7 @@ SPEC CHECKSUMS:
   react-native-safe-area-context: 4532f1a0c5d34a46b9324ccaaedcb5582a302b7d
   react-native-splash-screen: 4312f786b13a81b5169ef346d76d33bc0c6dc457
   react-native-video: b687b8d0a8576535185adf78f0eeb27c7dc46b86
+  react-native-view-shot: 8c2a4beffea24492167dc347fa29664d0f41fddf
   react-native-webview: b4410bec39abb8dab6063b20675e7519267eda26
   react-native-worklets-core: 13837e78b876fb75154ff3594efef190befebcf9
   react-native-zendesk-messaging: c6fd4bf206fd6d295700b9ce3ef9a82deb123e90
