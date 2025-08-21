@@ -128,6 +128,7 @@ export { default as RadioUnselected } from '@fedi/common/assets/svgs/radio-unsel
 export { default as Recovery } from '@fedi/common/assets/svgs/recovery.svg'
 export { default as Retry } from '@fedi/common/assets/svgs/retry.svg'
 export { default as Room } from '@fedi/common/assets/svgs/room.svg'
+export { default as ScanLightning } from '@fedi/common/assets/svgs/scan-lightning.svg'
 export { default as ScanSad } from '@fedi/common/assets/svgs/scan-sad.svg'
 export { default as Scale } from '@fedi/common/assets/svgs/scale.svg'
 export { default as Scan } from '@fedi/common/assets/svgs/scan.svg'

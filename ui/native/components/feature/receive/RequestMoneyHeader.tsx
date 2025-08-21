@@ -1,8 +1,8 @@
 import { useNavigation } from '@react-navigation/native'
-import { Text, useTheme } from '@rneui/themed'
+import { Text, Theme, useTheme } from '@rneui/themed'
 import React from 'react'
 import { useTranslation } from 'react-i18next'
-import { Pressable, StyleSheet } from 'react-native'
+import { StyleSheet } from 'react-native'
 
 import { useLnurlReceiveCode } from '@fedi/common/hooks/pay'
 import { selectActiveFederationId } from '@fedi/common/redux'
@@ -10,14 +10,15 @@ import { selectActiveFederationId } from '@fedi/common/redux'
 import { fedimint } from '../../../bridge'
 import { useAppSelector } from '../../../state/hooks'
 import { NavigationHook } from '../../../types/navigation'
+import Flex from '../../ui/Flex'
 import Header from '../../ui/Header'
-import SvgImage, { SvgImageSize } from '../../ui/SvgImage'
+import { PressableIcon } from '../../ui/PressableIcon'
 
-const ReceiveLightningHeader: React.FC = () => {
+const RequestMoneyHeader: React.FC = () => {
     const { t } = useTranslation()
+    const { theme } = useTheme()
     const navigation = useNavigation<NavigationHook>()
     const { routes } = navigation.getState()
-    const { theme } = useTheme()
     const activeFederationId = useAppSelector(selectActiveFederationId)
 
     // Show back button only if we can go back
@@ -36,34 +37,34 @@ const ReceiveLightningHeader: React.FC = () => {
             closeButton={shouldShowClose}
             headerCenter={
                 <Text bold numberOfLines={1} adjustsFontSizeToFit>
-                    {t('feature.receive.add-amount')}
+                    {t('feature.receive.request-money')}
                 </Text>
             }
+            rightContainerStyle={styles(theme).rightContainer}
             headerRight={
-                supportsLnurl ? (
-                    <Pressable
-                        style={styles.LnurlText}
-                        onPress={() => navigation.navigate('ReceiveLnurl')}>
-                        <SvgImage
-                            name="Bolt"
-                            size={SvgImageSize.sm}
-                            color={theme.colors.orange}
+                <Flex gap="sm" row>
+                    <PressableIcon
+                        svgName="Scan"
+                        onPress={() => navigation.navigate('Receive')}
+                    />
+                    {supportsLnurl && (
+                        <PressableIcon
+                            svgName="ScanLightning"
+                            onPress={() => navigation.navigate('ReceiveLnurl')}
                         />
-                        <Text bold color={theme.colors.orange}>
-                            {t('words.lnurl')}
-                        </Text>
-                    </Pressable>
-                ) : undefined
+                    )}
+                </Flex>
             }
         />
     )
 }
+const styles = (_theme: Theme) =>
+    StyleSheet.create({
+        rightContainer: {
+            flexDirection: 'row',
+            alignItems: 'center',
+            justifyContent: 'flex-end',
+        },
+    })
 
-export default ReceiveLightningHeader
-
-const styles = StyleSheet.create({
-    LnurlText: {
-        flexDirection: 'row',
-        alignItems: 'center',
-    },
-})
+export default RequestMoneyHeader

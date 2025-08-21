@@ -888,6 +888,7 @@
             "redeem-lnurl-withdraw": "Redeem LNURL withdrawal",
             "reject-payment": "Reject payment",
             "request-bitcoin": "Request bitcoin",
+            "request-money": "Request Money",
             "request-sats": "Request {{amount}} SATS",
             "request-via-lightning": "Request via lightning",
             "send-a-lightning-request": "Send a lightning request to {{username}}",
