@@ -63,7 +63,10 @@ import {
     RpcSPv2SyncResponse,
 } from '../types/bindings'
 import amountUtils from '../utils/AmountUtils'
-import { getFederationGroupChats } from '../utils/FederationUtils'
+import {
+    getFederationGroupChats,
+    shouldShowInviteCode,
+} from '../utils/FederationUtils'
 import { MatrixChatClient } from '../utils/MatrixChatClient'
 import { FedimintBridge } from '../utils/fedimint'
 import { makeLog } from '../utils/log'
@@ -1192,6 +1195,7 @@ export const sendMatrixPaymentPush = createAsyncThunk<
 
         const msats = amountUtils.satToMsat(amount)
         const client = getMatrixClient()
+        const includeInvite = shouldShowInviteCode(federation.meta)
 
         const frontendMetadata = {
             recipientMatrixId: recipientId,
@@ -1202,7 +1206,7 @@ export const sendMatrixPaymentPush = createAsyncThunk<
         const { ecash, operationId } = await fedimint.generateEcash(
             msats,
             federationId,
-            true,
+            includeInvite,
             frontendMetadata,
         )
 
@@ -1220,7 +1224,7 @@ export const sendMatrixPaymentPush = createAsyncThunk<
             recipientId,
             amount: msats,
             ecash,
-            federationId: federation.id,
+            federationId: includeInvite ? federation.id : undefined,
         })
 
         return senderOperationId
@@ -1414,6 +1418,10 @@ export const acceptMatrixPaymentRequest = createAsyncThunk<
         if (!federationId) throw new Error('Payment missing federationId')
         if (!amount) throw new Error('Payment request missing amount')
 
+        const federationMeta =
+            selectLoadedFederation(getState(), federationId)?.meta ?? {}
+        const includeInvite = shouldShowInviteCode(federationMeta)
+
         const msats = amount as MSats
 
         const frontendMetadata = {
@@ -1426,7 +1434,7 @@ export const acceptMatrixPaymentRequest = createAsyncThunk<
             await fedimint.generateEcash(
                 msats,
                 federationId,
-                true,
+                includeInvite,
                 frontendMetadata,
             )
 

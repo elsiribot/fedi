@@ -3,6 +3,7 @@ import React, { useCallback, useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 
 import { useMinMaxSendAmount } from '@fedi/common/hooks/amount'
+import { useIsInviteSupported } from '@fedi/common/hooks/federation'
 import { useToast } from '@fedi/common/hooks/toast'
 import { selectActiveFederation } from '@fedi/common/redux'
 import { Sats } from '@fedi/common/types'
@@ -30,6 +31,7 @@ export const SendOffline: React.FC<Props> = ({
     const { t } = useTranslation()
     const toast = useToast()
     const activeFederation = useAppSelector(selectActiveFederation)
+    const includeInvite = useIsInviteSupported()
     const { minimumAmount, maximumAmount } = useMinMaxSendAmount()
     const [amount, setAmount] = useState(0 as Sats)
     const [isGeneratingEcash, setIsGeneratingEcash] = useState(false)
@@ -61,6 +63,7 @@ export const SendOffline: React.FC<Props> = ({
             const { ecash } = await fedimint.generateEcash(
                 amountUtils.satToMsat(amount),
                 federationId,
+                includeInvite,
             )
             onEcashGenerated()
             setOfflinePayment(ecash)
@@ -77,6 +80,7 @@ export const SendOffline: React.FC<Props> = ({
         toast,
         onEcashGenerated,
         t,
+        includeInvite,
     ])
 
     useEffect(() => {
