@@ -406,7 +406,9 @@ impl Matrix {
     /// Sync status is used to display "Waiting for network" indicator on
     /// frontend.
     pub fn subscribe_sync_status(&self) -> impl Stream<Item = RpcSyncIndicator> + use<> {
-        self.sync_service.state().map(|x| match x {
+        let mut sub = self.sync_service.state();
+        sub.reset();
+        sub.map(|x| match x {
             sync_service::State::Offline
             | sync_service::State::Error
             | sync_service::State::Idle
