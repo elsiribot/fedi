@@ -323,3 +323,5 @@ jest.mock('@react-native-documents/picker', () => ({
 jest.mock('react-native-gesture-handler', () => ({
     ScrollView: jest.requireActual('react-native').ScrollView,
 }))
+
+jest.mock('react-native-modal', () => jest.requireActual('react-native').Modal)

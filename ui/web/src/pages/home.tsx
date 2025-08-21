@@ -1,6 +1,6 @@
 import Link from 'next/link'
 import { useRouter } from 'next/router'
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import { Trans, useTranslation } from 'react-i18next'
 
 import ChatIcon from '@fedi/common/assets/svgs/chat.svg'
@@ -22,6 +22,7 @@ import {
     selectCoreMods,
     selectVisibleCommunityMods,
 } from '@fedi/common/redux/mod'
+import { checkSurveyCondition } from '@fedi/common/redux/support'
 import stringUtils from '@fedi/common/utils/StringUtils'
 
 import { Avatar } from '../components/Avatar'
@@ -34,8 +35,10 @@ import { InstallBanner } from '../components/InstallBanner'
 import * as Layout from '../components/Layout'
 import { Modal } from '../components/Modal'
 import { RecoveryInProgress } from '../components/RecoveryInProgress'
+import SurveyModal from '../components/SurveyModal'
 import { Text } from '../components/Text'
 import {
+    useAppDispatch,
     useAppSelector,
     useDeviceQuery,
     useInstallPromptContext,
@@ -52,6 +55,7 @@ function HomePage() {
     const { isIOS } = useDeviceQuery()
     const { showInstallBanner, handleOnDismiss } = useShowInstallPromptBanner()
     const router = useRouter()
+    const dispatch = useAppDispatch()
 
     const syncCurrencyRatesAndCache = useSyncCurrencyRatesAndCache(fedimint)
 
@@ -60,6 +64,8 @@ function HomePage() {
     const [hasPerformedPersonalBackup] = useNuxStep(
         'hasPerformedPersonalBackup',
     )
+
+    const [showSurvey, setShowSurvey] = useState(false)
 
     const handleOnInstall = async () => {
         await deferredPrompt?.prompt()
@@ -89,6 +95,14 @@ function HomePage() {
     useEffect(() => {
         syncCurrencyRatesAndCache()
     }, [syncCurrencyRatesAndCache])
+
+    useEffect(() => {
+        dispatch(checkSurveyCondition())
+            .unwrap()
+            .then(({ shouldShow }) => {
+                if (shouldShow) setShowSurvey(true)
+            })
+    }, [showSurvey, dispatch])
 
     return (
         <ContentBlock>
@@ -296,6 +310,7 @@ function HomePage() {
                     </Text>
                 </ModalContent>
             </Modal>
+            <SurveyModal open={showSurvey} onOpenChange={setShowSurvey} />
         </ContentBlock>
     )
 }
