@@ -135,9 +135,11 @@ export const ChatConversation: React.FC<Props> = ({
         event: React.ChangeEvent<HTMLInputElement>,
     ) => {
         if (!event.target.files || !event.target.files.length) return
-        const file = event.target.files[0]
 
-        setFiles(prev => [...prev, file])
+        // converts FileList to Array
+        const filesArr = Array.from(event.target.files)
+
+        setFiles(prev => [...prev, ...filesArr])
     }
 
     const handleOnRemoveThumbnail = (idx: number) => {
@@ -246,6 +248,7 @@ export const ChatConversation: React.FC<Props> = ({
                         hidden
                         accept="image/*, video/*, .csv, .doc, .docx, .pdf, .ppt, .pptx, .xls, .xlsx, .txt, .zip"
                         onChange={handleOnUploadMedia}
+                        multiple
                     />
                 </InputRow>
 
