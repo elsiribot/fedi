@@ -1,4 +1,5 @@
 import { Text, Theme, useTheme, Button, Input } from '@rneui/themed'
+import { ResultAsync } from 'neverthrow'
 import React, { useCallback, useEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import {
@@ -11,8 +12,12 @@ import {
 } from 'react-native'
 
 import { useToast } from '@fedi/common/hooks/toast'
+import { useTransactionHistory } from '@fedi/common/hooks/transactions'
 import { selectActiveFederationId } from '@fedi/common/redux'
 import { hexToRgba } from '@fedi/common/utils/color'
+import { tryTag } from '@fedi/common/utils/errors'
+import { makeLog } from '@fedi/common/utils/log'
+import { ensureNonNullish } from '@fedi/common/utils/neverthrow'
 
 import { fedimint } from '../../../bridge'
 import { useAppSelector } from '../../../state/hooks'
@@ -34,6 +39,10 @@ export type HistoryDetailProps = {
     onClose: () => void
 }
 
+const log = makeLog(
+    'native/components/feature/transaction-history/HistoryDetail',
+)
+
 export const HistoryDetail: React.FC<HistoryDetailProps> = ({
     icon,
     title,
@@ -54,6 +63,7 @@ export const HistoryDetail: React.FC<HistoryDetailProps> = ({
     const [checkLoading, setCheckLoading] = useState(false)
     const activeFederationId = useAppSelector(selectActiveFederationId)
     const toast = useToast()
+    const { fetchTransactions } = useTransactionHistory(fedimint)
 
     // If notes prop changes, update notes state
     useEffect(() => {
@@ -80,38 +90,52 @@ export const HistoryDetail: React.FC<HistoryDetailProps> = ({
         onClose()
     }, [handleSaveNotes, onClose])
 
-    const checkAndToastOnchainReceiveStatus = useCallback(async () => {
-        if (txn.kind !== 'onchainDeposit') return
-
-        handleClose()
-        if (txn.state?.type === 'claimed') {
-            toast.show({
-                status: 'success',
-                content: t('feature.receive.onchain-funds-received'),
-            })
-        } else {
-            toast.show({
-                status: 'info',
-                content: t('feature.receive.no-incoming-funds-detected'),
-            })
-        }
-    }, [t, toast, txn, handleClose])
-
-    const handleCheckIncomingFunds = useCallback(async () => {
+    const handleCheckIncomingFunds = useCallback(() => {
         if (!activeFederationId) return
 
         setCheckLoading(true)
-        await fedimint.recheckPeginAddress({
-            federationId: activeFederationId,
-            operationId: id,
-        })
-        // Needs a timeout to check if the item has updated because the RPC triggers a bridge observable
-        setTimeout(() => {
-            // Needs to be called in a different callback since `hasReceivedBitcoin` points to the value at the time of the function call
-            checkAndToastOnchainReceiveStatus()
-            setCheckLoading(false)
-        }, 10000)
-    }, [activeFederationId, id, checkAndToastOnchainReceiveStatus])
+        fedimint
+            .rpcResult('recheckPeginAddress', {
+                federationId: activeFederationId,
+                operationId: id,
+            })
+            .andThen(() =>
+                ResultAsync.fromPromise(
+                    fetchTransactions(),
+                    tryTag('GenericError'),
+                ),
+            )
+            .map(transactions =>
+                transactions.find(
+                    tx =>
+                        tx.kind === 'onchainDeposit' &&
+                        tx.id === id &&
+                        tx.state?.type === 'claimed',
+                ),
+            )
+            .andThen(ensureNonNullish)
+            .match(
+                () =>
+                    toast.show({
+                        status: 'success',
+                        content: t('feature.receive.onchain-funds-received'),
+                    }),
+                e => {
+                    if (e._tag === 'MissingDataError') {
+                        toast.show({
+                            status: 'info',
+                            content: t(
+                                'feature.receive.no-incoming-funds-detected',
+                            ),
+                        })
+                    } else {
+                        log.error('Failed to check incoming funds', e)
+                        toast.error(t, e)
+                    }
+                },
+            )
+            .finally(() => setCheckLoading(false))
+    }, [activeFederationId, id, fetchTransactions, t, toast])
 
     const style = styles(theme)
 
