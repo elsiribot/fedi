@@ -1,3 +1,4 @@
+use std::cmp::Ordering;
 use std::collections::{BTreeMap, HashMap, HashSet};
 use std::sync::Arc;
 
@@ -15,7 +16,9 @@ use lightning_invoice::Bolt11Invoice;
 use rpc_types::{LightningSendMetadata, RpcTransactionDirection};
 use runtime::api::TransactionDirection;
 use runtime::bridge_runtime::Runtime;
-use runtime::constants::{FEDI_DEFAULT_COMMUNITY_INVITE_CODE, FEDI_GIFT_CHILD_ID, MILLION};
+use runtime::constants::{
+    FEDI_DEFAULT_COMMUNITY_INVITE_CODE, FEDI_FEE_REMITTANCE_MAX_DELAY, FEDI_GIFT_CHILD_ID, MILLION,
+};
 use runtime::storage::state::{FediFeeSchedule, ModuleFediFeeSchedule};
 use stability_pool_client::common::AccountId;
 use tokio::sync::{Mutex, OwnedMutexGuard};
@@ -23,7 +26,8 @@ use tracing::{error, info, instrument, warn};
 
 use crate::federation_v2::client::ClientExt;
 use crate::federation_v2::db::{
-    OutstandingFediFeesPerTXTypeKey, OutstandingFediFeesPerTXTypeKeyPrefix,
+    FediFeesRemittanceTimestampPerTXTypeKey, OutstandingFediFeesPerTXTypeKey,
+    OutstandingFediFeesPerTXTypeKeyPrefix,
 };
 use crate::federation_v2::{FederationV2, zero_gateway_fees};
 
@@ -289,7 +293,8 @@ impl FediFeeRemittanceService {
         service
     }
     /// Checks whether the accrued outstanding fedi fees has surpassed the
-    /// remittance threshold. If yes, queries the fee helper to obtain a
+    /// remittance threshold, or if enough time has passed since the last
+    /// successful remittance. If yes, queries the fee helper to obtain a
     /// lightning invoice to remit the fees. If the fees HAS surpassed
     /// the threshold, and spawns a task in background to remit fees.
     #[instrument(skip(self, fed))]
@@ -322,9 +327,35 @@ impl FediFeeRemittanceService {
             ))
             .await
             .unwrap_or(Amount::ZERO);
+        // If last_remittance_timestamp has never been set, we don't force set it. We
+        // simply let the next organic threshold-based remittance set it.
+        let last_remittance_timestamp = fed
+            .dbtx()
+            .await
+            .into_nc()
+            .get_value(&FediFeesRemittanceTimestampPerTXTypeKey(
+                module.clone(),
+                tx_direction.clone(),
+            ))
+            .await;
         let remittance_threshold = fed.fedi_fee_schedule().await.remittance_threshold_msat;
-        if outstanding_fees.msats < remittance_threshold {
-            info!("Fedi fee remittance not initiated, accrued fee doesn't exceed threshold");
+        let should_remit = match (
+            outstanding_fees.msats.cmp(&remittance_threshold),
+            last_remittance_timestamp,
+        ) {
+            (Ordering::Equal, _) | (Ordering::Greater, _) => true,
+            (Ordering::Less, Some(last_timestamp))
+                if fedimint_core::time::now()
+                    .duration_since(last_timestamp)
+                    .unwrap_or_default()
+                    > FEDI_FEE_REMITTANCE_MAX_DELAY =>
+            {
+                true
+            }
+            _ => false,
+        };
+        if !should_remit {
+            info!("Fedi fee remittance not initiated, threshold not met AND max delay not hit");
             return;
         }
         fed.spawn_cancellable("remit_fedi_fee", move |fed2| async move {
@@ -409,6 +440,13 @@ impl FediFeeRemittanceService {
         let OutgoingLightningPayment { payment_type, .. } = ln
             .pay_bolt11_invoice(gateway, invoice.to_owned(), extra_meta.clone())
             .await?;
+
+        // We are going to optimistically update the remittance timestamp in the
+        // autocommit block below, so we record the current value in case we need to
+        // roll it back.
+        let timestamp_key =
+            FediFeesRemittanceTimestampPerTXTypeKey(module.clone(), tx_direction.clone());
+        let old_timestamp = fed.dbtx().await.into_nc().get_value(&timestamp_key).await;
         fed.client
             .db()
             .autocommit(
@@ -416,6 +454,10 @@ impl FediFeeRemittanceService {
                     Box::pin({
                         let outstanding_key =
                             OutstandingFediFeesPerTXTypeKey(module.clone(), tx_direction.clone());
+                        let timestamp_key = FediFeesRemittanceTimestampPerTXTypeKey(
+                            module.clone(),
+                            tx_direction.clone(),
+                        );
                         async move {
                             let current_outstanding_fees = dbtx
                                 .get_value(&outstanding_key)
@@ -424,6 +466,8 @@ impl FediFeeRemittanceService {
                             let new_outstanding_fees =
                                 current_outstanding_fees.saturating_sub(outstanding_fees);
                             dbtx.insert_entry(&outstanding_key, &new_outstanding_fees)
+                                .await;
+                            dbtx.insert_entry(&timestamp_key, &fedimint_core::time::now())
                                 .await;
                             Ok::<(), anyhow::Error>(())
                         }
@@ -440,6 +484,7 @@ impl FediFeeRemittanceService {
         let mutex = OwnedMutexGuard::mutex(&guard).clone();
         drop(guard);
         // If payment fails, un-zero the oustanding fee before returning the error.
+        // Also roll back remittance timestamp update.
         if let Err(e) = fed.subscribe_to_ln_pay(payment_type, extra_meta).await {
             let _guard = mutex.lock().await;
             fed.client
@@ -448,6 +493,10 @@ impl FediFeeRemittanceService {
                     |dbtx, _| {
                         Box::pin({
                             let outstanding_key = OutstandingFediFeesPerTXTypeKey(
+                                module.clone(),
+                                tx_direction.clone(),
+                            );
+                            let timestamp_key = FediFeesRemittanceTimestampPerTXTypeKey(
                                 module.clone(),
                                 tx_direction.clone(),
                             );
@@ -460,6 +509,11 @@ impl FediFeeRemittanceService {
                                     current_outstanding_fees + outstanding_fees;
                                 dbtx.insert_entry(&outstanding_key, &new_outstanding_fees)
                                     .await;
+                                if let Some(timestamp) = old_timestamp {
+                                    dbtx.insert_entry(&timestamp_key, &timestamp).await;
+                                } else {
+                                    dbtx.remove_entry(&timestamp_key).await;
+                                }
                                 Ok::<(), anyhow::Error>(())
                             }
                         })

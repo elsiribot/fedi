@@ -32,6 +32,9 @@ pub const DEVICE_REGISTRATION_FREQUENCY: Duration = Duration::from_secs(15 * 60)
 // front-end
 pub const DEVICE_REGISTRATION_OVERDUE: Duration = Duration::from_secs(12 * 60 * 60);
 
+// In addition to amount threshold, remit fedi fee every 7 days
+pub const FEDI_FEE_REMITTANCE_MAX_DELAY: Duration = Duration::from_secs(7 * 24 * 60 * 60);
+
 // Fedi file path
 pub const FEDI_FILE_V0_PATH: &str = "./fedi_file.json";
 
