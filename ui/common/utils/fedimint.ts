@@ -765,12 +765,6 @@ export class FedimintBridge {
         return this.rpcTyped('matrixSendMessage', args)
     }
 
-    async matrixSendMessageJson(
-        args: bindings.RpcPayload<'matrixSendMessageJson'>,
-    ) {
-        return this.rpcTyped('matrixSendMessageJson', args)
-    }
-
     async matrixRoomCreate(args: bindings.RpcPayload<'matrixRoomCreate'>) {
         return this.rpcTyped('matrixRoomCreate', args)
     }

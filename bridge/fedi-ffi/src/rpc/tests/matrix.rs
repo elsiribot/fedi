@@ -1,6 +1,6 @@
 use std::pin::pin;
 
-use ::matrix::RpcTimelineItemContent;
+use ::matrix::{RpcTimelineItemContent, SendMessageData};
 use eyeball_im::VectorDiff;
 use futures::future::try_join;
 use futures::{Stream, StreamExt};
@@ -74,7 +74,8 @@ pub async fn test_matrix_dms(_dev_fed: DevFed) -> anyhow::Result<()> {
         async {
             let items1 = pin!(m1.room_timeline_items(&room_id).await?);
             for i in 0..num_messages {
-                m1.send_message_text(&room_id, format!("#{i}")).await?;
+                m1.send_message(&room_id, SendMessageData::text(format!("#{i}")))
+                    .await?;
             }
 
             let mut timeline1 = imbl::Vector::new();

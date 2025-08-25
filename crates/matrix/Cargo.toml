@@ -25,6 +25,8 @@ matrix-sdk = { workspace = true, default-features = false, features = [
   "rustls-tls",
   "e2e-encryption",
 ] }
+serde = { workspace = true }
+ts-rs = { workspace = true }
 imbl = { version = "5", features = ["serde"] }
 
 [target.'cfg(target_family = "wasm")'.dependencies]

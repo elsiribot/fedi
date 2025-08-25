@@ -164,7 +164,10 @@ async fn send_dm() -> Result<()> {
         .await?;
     info!(?items1, ?items2, "### initial items");
     matrix1
-        .send_message_text(&room_id, "hello from bridge".into())
+        .send_message(
+            &room_id,
+            matrix::SendMessageData::text("hello from bridge".into()),
+        )
         .await?;
     info!("waiting for server to echo back the message");
     while let Some((ev, body)) = event_rx2.recv().await {
@@ -177,7 +180,10 @@ async fn send_dm() -> Result<()> {
         }
     }
     matrix2
-        .send_message_text(&room_id, "hello from 2 bridge".into())
+        .send_message(
+            &room_id,
+            matrix::SendMessageData::text("hello from 2 bridge".into()),
+        )
         .await?;
     info!("waiting for server to echo back the message");
     while let Some((ev, body)) = event_rx1.recv().await {
@@ -211,10 +217,16 @@ async fn test_recovery() -> Result<()> {
 
     info!("### sending message between two users");
     matrix1
-        .send_message_text(&room_id, "hello from user1".to_owned())
+        .send_message(
+            &room_id,
+            matrix::SendMessageData::text("hello from user1".to_owned()),
+        )
         .await?;
     matrix2
-        .send_message_text(&room_id, "hello from user2".to_owned())
+        .send_message(
+            &room_id,
+            matrix::SendMessageData::text("hello from user2".to_owned()),
+        )
         .await?;
 
     info!("### recover user 1");
