@@ -5,7 +5,10 @@ use eyeball_im::VectorDiff;
 use futures::future::try_join;
 use futures::{Stream, StreamExt};
 use imbl::Vector;
+use matrix_sdk::ruma::events::room::message::MessageType;
 use matrix_sdk::timeout::timeout;
+use rpc_types::RpcMediaUploadParams;
+use tracing::warn;
 
 use super::*;
 
@@ -139,5 +142,73 @@ pub async fn test_matrix_dms(_dev_fed: DevFed) -> anyhow::Result<()> {
 
     assert_eq!(timeline1_messages, timeline2_messages);
     assert_eq!(timeline1_messages.len(), num_messages);
+    Ok(())
+}
+
+pub async fn test_matrix_create_room(_dev_fed: DevFed) -> anyhow::Result<()> {
+    let td = TestDevice::new();
+    let matrix = td.matrix().await?;
+    let mut request = ::matrix::create_room::Request::default();
+    let room_name = "my name is one".to_string();
+    request.name = Some(room_name.clone());
+    let room_id = matrix.room_create(request).await?;
+    let room = matrix.room(&room_id).await?;
+    while room.name() != Some(room_name.clone()) {
+        warn!("## WAITING");
+        fedimint_core::runtime::sleep(Duration::from_millis(100)).await;
+    }
+    Ok(())
+}
+
+pub async fn test_send_and_download_attachment(_dev_fed: DevFed) -> anyhow::Result<()> {
+    let td1 = TestDevice::new();
+    let td2 = TestDevice::new();
+    let matrix = td1.matrix().await?;
+    let matrix2 = td2.matrix().await?;
+
+    // Create a room
+    let room_id = matrix
+        .create_or_get_dm(matrix2.client.user_id().unwrap())
+        .await?;
+
+    // Prepare attachment data
+    let filename = "test.txt".to_string();
+    let mime_type = "text/plain".to_string();
+    let data = b"Hello, World!".to_vec();
+
+    // Send attachment
+    matrix
+        .send_attachment(
+            &room_id,
+            filename.clone(),
+            RpcMediaUploadParams {
+                mime_type,
+                width: None,
+                height: None,
+            },
+            data.clone(),
+        )
+        .await?;
+    sleep_in_test("wait for attachment to be sent", Duration::from_millis(100)).await;
+
+    let timeline = matrix.timeline(&room_id).await?;
+    let event = timeline
+        .latest_event()
+        .await
+        .context("expected last event")?;
+    let source = match event.content().as_message().unwrap().msgtype() {
+        MessageType::File(f) => f.source.clone(),
+        _ => unreachable!(),
+    };
+
+    // Download the file
+    let downloaded_data = matrix.download_file(source).await?;
+
+    // Assert that the downloaded data matches the original data
+    assert_eq!(
+        downloaded_data, data,
+        "Downloaded data does not match original data"
+    );
+
     Ok(())
 }

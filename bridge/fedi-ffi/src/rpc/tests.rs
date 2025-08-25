@@ -39,6 +39,7 @@ use tokio::task::JoinSet;
 use tracing::info;
 
 mod matrix;
+mod multispend_tests;
 
 // nosemgrep: ban-wildcard-imports
 use crate::rpc::*;
@@ -186,6 +187,11 @@ async fn tests_wrapper_for_bridge() -> anyhow::Result<()> {
         test_join_concurrent,
         matrix::test_matrix_login,
         matrix::test_matrix_dms,
+        matrix::test_matrix_create_room,
+        matrix::test_send_and_download_attachment,
+        multispend_tests::test_multispend_minimal,
+        multispend_tests::test_multispend_group_acceptance,
+        multispend_tests::test_multispend_group_rejection,
         // TODO: re-enable
         // test_lightning_send_and_receive,
         test_ecash,
