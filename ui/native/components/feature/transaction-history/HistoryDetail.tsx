@@ -1,5 +1,4 @@
 import { Text, Theme, useTheme, Button, Input } from '@rneui/themed'
-import { ResultAsync } from 'neverthrow'
 import React, { useCallback, useEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import {
@@ -15,9 +14,7 @@ import { useToast } from '@fedi/common/hooks/toast'
 import { useTransactionHistory } from '@fedi/common/hooks/transactions'
 import { selectActiveFederationId } from '@fedi/common/redux'
 import { hexToRgba } from '@fedi/common/utils/color'
-import { tryTag } from '@fedi/common/utils/errors'
 import { makeLog } from '@fedi/common/utils/log'
-import { ensureNonNullish } from '@fedi/common/utils/neverthrow'
 
 import { fedimint } from '../../../bridge'
 import { useAppSelector } from '../../../state/hooks'
@@ -90,51 +87,39 @@ export const HistoryDetail: React.FC<HistoryDetailProps> = ({
         onClose()
     }, [handleSaveNotes, onClose])
 
-    const handleCheckIncomingFunds = useCallback(() => {
+    const handleCheckIncomingFunds = useCallback(async () => {
         if (!activeFederationId) return
 
         setCheckLoading(true)
-        fedimint
-            .rpcResult('recheckPeginAddress', {
+        try {
+            await fedimint.recheckPeginAddress({
                 federationId: activeFederationId,
                 operationId: id,
             })
-            .andThen(() =>
-                ResultAsync.fromPromise(
-                    fetchTransactions(),
-                    tryTag('GenericError'),
-                ),
+            const transactions = await fetchTransactions()
+            const foundTransaction = transactions.find(
+                tx =>
+                    tx.kind === 'onchainDeposit' &&
+                    tx.id === id &&
+                    tx.state?.type === 'claimed',
             )
-            .map(transactions =>
-                transactions.find(
-                    tx =>
-                        tx.kind === 'onchainDeposit' &&
-                        tx.id === id &&
-                        tx.state?.type === 'claimed',
-                ),
-            )
-            .andThen(ensureNonNullish)
-            .match(
-                () =>
-                    toast.show({
-                        status: 'success',
-                        content: t('feature.receive.onchain-funds-received'),
-                    }),
-                e => {
-                    if (e._tag === 'MissingDataError') {
-                        toast.show({
-                            status: 'info',
-                            content: t(
-                                'feature.receive.no-incoming-funds-detected',
-                            ),
-                        })
-                    } else {
-                        log.error('Failed to check incoming funds', e)
-                        toast.error(t, e)
-                    }
-                },
-            )
-            .finally(() => setCheckLoading(false))
+
+            if (foundTransaction)
+                toast.show({
+                    status: 'success',
+                    content: t('feature.receive.onchain-funds-received'),
+                })
+            else
+                toast.show({
+                    status: 'info',
+                    content: t('feature.receive.no-incoming-funds-detected'),
+                })
+        } catch (e) {
+            log.error('Failed to check incoming funds', e)
+            toast.error(t, e)
+        } finally {
+            setCheckLoading(false)
+        }
     }, [activeFederationId, id, fetchTransactions, t, toast])
 
     const style = styles(theme)
