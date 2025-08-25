@@ -429,12 +429,15 @@ export class MatrixChatClient {
 
     async sendMessage(roomId: string, content: MatrixEventContent) {
         const { msgtype, body, ...data } = content
-        await this.fedimint.matrixSendMessageJson({
+        await this.fedimint.matrixSendMessage({
             roomId,
-            msgtype,
-            body,
-            // TODO: Update zod schemas to remove .passthrough() & remove this cast
-            data: data as JSONObject,
+            data: {
+                msgtype,
+                body,
+                // TODO: Update zod schemas to remove .passthrough() & remove this cast
+                data: data as JSONObject,
+                mentions: null,
+            },
         })
     }
 
