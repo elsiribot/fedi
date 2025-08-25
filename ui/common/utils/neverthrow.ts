@@ -1,7 +1,13 @@
 import { ok, Result, ResultAsync } from 'neverthrow'
-import { ZodError, ZodSchema, z } from 'zod'
+import { ZodSchema, z } from 'zod'
 
-import { TaggedError, UnexpectedError } from './errors'
+import {
+    FetchError,
+    MalformedDataError,
+    MissingDataError,
+    UrlConstructError,
+} from '../types/errors'
+import { TaggedError } from './errors'
 
 /**
  * Attempts to pass unknown data through a zod schema
@@ -21,7 +27,7 @@ export const throughZodSchema = <T extends ZodSchema>(schema: T) => {
     const parse = (data: unknown): z.infer<T> => schema.parse(data)
     return Result.fromThrowable(
         parse,
-        new TaggedError('SchemaValidationError').tryInto(ZodError),
+        e => new TaggedError('SchemaValidationError', e),
     )
 }
 
@@ -33,18 +39,13 @@ export const throughZodSchema = <T extends ZodSchema>(schema: T) => {
  */
 export const fetchResult = (
     ...args: Parameters<typeof fetch>
-): ResultAsync<
-    Response,
-    | TaggedError<'UrlConstructError'>
-    | TaggedError<'FetchError'>
-    | UnexpectedError
-> =>
+): ResultAsync<Response, UrlConstructError | FetchError> =>
     ResultAsync.fromPromise(fetch(...args), e => {
         if (e instanceof Error && e.message.includes('URL')) {
-            return new TaggedError('UrlConstructError').tryInto(Error)(e)
+            return new TaggedError('UrlConstructError')
         }
 
-        return new TaggedError('FetchError').tryInto(Error)(e)
+        return new TaggedError('FetchError')
     })
 
 /**
@@ -59,10 +60,10 @@ export const fetchResult = (
  */
 export const thenJson = (
     res: Response,
-): ResultAsync<unknown, TaggedError<'MalformedDataError'> | UnexpectedError> =>
+): ResultAsync<unknown, MalformedDataError> =>
     ResultAsync.fromPromise(
         res.json(),
-        new TaggedError('MalformedDataError').tryInto(Error),
+        e => new TaggedError('MalformedDataError', e),
     )
 
 /**
@@ -71,7 +72,7 @@ export const thenJson = (
  */
 export const constructUrl = Result.fromThrowable(
     (...args: ConstructorParameters<typeof URL>) => new URL(...args),
-    new TaggedError('UrlConstructError').tryInto(Error),
+    e => new TaggedError('UrlConstructError', e),
 )
 
 /**
@@ -89,7 +90,7 @@ export const constructUrl = Result.fromThrowable(
  */
 export const ensureNonNullish = <T>(
     value: T,
-): Result<NonNullable<T>, TaggedError<'MissingDataError'>> => {
+): Result<NonNullable<T>, MissingDataError> => {
     if (value === null || value === undefined)
         return new TaggedError('MissingDataError')
             .withMessage(`Expected non-nullish value, got ${value}`)

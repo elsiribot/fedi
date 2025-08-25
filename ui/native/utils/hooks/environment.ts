@@ -26,7 +26,8 @@ export const useRecheckInternet = () => {
 
         isOffline = await ResultAsync.fromPromise(
             NetInfo.fetch(),
-            new TaggedError('NetworkError').tryInto(Error),
+            // TODO: use a more specific error type
+            e => new TaggedError('GenericError', e),
         )
             .map(checkIsInternetUnreachable)
             .unwrapOr(false)

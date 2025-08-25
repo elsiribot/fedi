@@ -8,7 +8,13 @@ import {
     ParsedLnurlWithdraw,
 } from '../types'
 import { RpcPayInvoiceResponse } from '../types/bindings'
-import { BridgeError, TaggedError, UnexpectedError } from './errors'
+import {
+    FetchError,
+    MalformedDataError,
+    SchemaValidationError,
+    UrlConstructError,
+} from '../types/errors'
+import { BridgeError, TaggedError } from './errors'
 import { FedimintBridge } from './fedimint'
 import {
     constructUrl,
@@ -58,11 +64,7 @@ export function lnurlCallback(
     callbackUrl: URL,
 ): ResultAsync<
     z.infer<typeof lnurlOkResponseSchema>,
-    | TaggedError<'UrlConstructError'>
-    | TaggedError<'FetchError'>
-    | TaggedError<'MalformedDataError'>
-    | TaggedError<'SchemaValidationError'>
-    | UnexpectedError
+    UrlConstructError | FetchError | MalformedDataError | SchemaValidationError
 > {
     return fetchResult(callbackUrl.toString())
         .andThen(thenJson)
@@ -78,12 +80,11 @@ export function lnurlAuth(
     lnurlData: ParsedLnurlAuth['data'],
 ): ResultAsync<
     z.infer<typeof lnurlOkResponseSchema>,
-    | UnexpectedError
     | BridgeError
-    | TaggedError<'UrlConstructError'>
-    | TaggedError<'MalformedDataError'>
-    | TaggedError<'SchemaValidationError'>
-    | TaggedError<'FetchError'>
+    | UrlConstructError
+    | MalformedDataError
+    | SchemaValidationError
+    | FetchError
 > {
     return fedimint
         .rpcResult('signLnurlMessage', {
@@ -113,11 +114,10 @@ export function lnurlPay(
     notes?: string,
 ): ResultAsync<
     RpcPayInvoiceResponse,
-    | TaggedError<'UrlConstructError'>
-    | TaggedError<'MalformedDataError'>
-    | TaggedError<'SchemaValidationError'>
-    | TaggedError<'FetchError'>
-    | UnexpectedError
+    | UrlConstructError
+    | MalformedDataError
+    | SchemaValidationError
+    | FetchError
     | BridgeError
 > {
     return constructUrl(lnurlData.callback)
@@ -157,11 +157,10 @@ export function lnurlWithdraw(
     note?: string,
 ): ResultAsync<
     string,
-    | TaggedError<'UrlConstructError'>
-    | TaggedError<'FetchError'>
-    | TaggedError<'MalformedDataError'>
-    | TaggedError<'SchemaValidationError'>
-    | UnexpectedError
+    | UrlConstructError
+    | FetchError
+    | MalformedDataError
+    | SchemaValidationError
     | BridgeError
 > {
     return constructUrl(lnurlData.callback)

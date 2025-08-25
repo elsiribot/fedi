@@ -15,7 +15,12 @@ import {
 
 import { MAX_FILE_SIZE, MAX_IMAGE_SIZE } from '@fedi/common/constants/matrix'
 import { InputAttachment, InputMedia } from '@fedi/common/types'
-import { TaggedError, UnexpectedError } from '@fedi/common/utils/errors'
+import {
+    GenericError,
+    MissingDataError,
+    UserError,
+} from '@fedi/common/types/errors'
+import { TaggedError } from '@fedi/common/utils/errors'
 import { makeLog } from '@fedi/common/utils/log'
 import {
     formatFileSize,
@@ -44,9 +49,7 @@ export function deriveCopyableFileUri({
     ...document
 }: DocumentPickerResponse): ResultAsync<
     string,
-    | TaggedError<'MissingDataError'>
-    | TaggedError<'GenericError'>
-    | UnexpectedError
+    MissingDataError | GenericError
 > {
     if (!name)
         return new TaggedError('MissingDataError')
@@ -64,7 +67,7 @@ export function deriveCopyableFileUri({
                 ],
                 destination: 'cachesDirectory',
             }),
-            new TaggedError('GenericError').tryInto(Error),
+            e => new TaggedError('GenericError', e),
         )
             .andThen(([result]) => {
                 if (result.status === 'success') return ok(result.localUri)
@@ -86,16 +89,10 @@ export function deriveCopyableFileUri({
 export function tryPickAssets(
     imageOptions: ImageLibraryOptions,
     t: TFunction,
-): ResultAsync<
-    Array<Asset>,
-    | TaggedError<'MissingDataError'>
-    | TaggedError<'GenericError'>
-    | TaggedError<'UserError'>
-    | UnexpectedError
-> {
+): ResultAsync<Array<Asset>, MissingDataError | GenericError | UserError> {
     return ResultAsync.fromPromise(
         launchImageLibrary(imageOptions),
-        new TaggedError('GenericError').tryInto(Error),
+        e => new TaggedError('GenericError', e),
     )
         .andThen(library => {
             if (library.didCancel)
@@ -145,13 +142,10 @@ export function tryPickAssets(
 export function tryPickDocuments(
     options: DocumentPickerOptions,
     t: TFunction,
-): ResultAsync<
-    Array<DocumentPickerResponse>,
-    TaggedError<'GenericError'> | TaggedError<'UserError'> | UnexpectedError
-> {
+): ResultAsync<Array<DocumentPickerResponse>, GenericError | UserError> {
     return ResultAsync.fromPromise(
         pick(options),
-        new TaggedError('GenericError').tryInto(Error),
+        e => new TaggedError('GenericError', e),
     ).andThrough(documents => {
         if (documents.some(doc => doesDocumentExceedSize(doc, MAX_FILE_SIZE))) {
             return new TaggedError('UserError')

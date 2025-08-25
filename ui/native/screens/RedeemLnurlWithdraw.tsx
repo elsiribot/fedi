@@ -74,7 +74,7 @@ const RedeemLnurlWithdraw: React.FC<Props> = ({ navigation, route }: Props) => {
                     reject(new Error('feature.receive.lnurl-withdraw-failed'))
                 }, 5000)
             }),
-            new TaggedError('TimeoutError').tryInto(Error),
+            e => new TaggedError('TimeoutError', e),
         )
     }
 

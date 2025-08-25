@@ -438,7 +438,7 @@ export const dispatchNotification = async (
 
             log.info(`badge count ${currentBadgeCount}`)
         })(),
-        new TaggedError('GenericError').tryInto(Error),
+        e => new TaggedError('GenericError', e),
     )
 
     if (result.isErr()) {
