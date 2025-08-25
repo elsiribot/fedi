@@ -90,6 +90,15 @@ export class TaggedError<T extends ErrString> extends CustomError {
     }
 
     /**
+     * Chainable method that adds a `cause` to the `TaggedError` instance
+     */
+    public withCause(cause: unknown) {
+        this.cause = cause;
+
+        return this;
+    }
+
+    /**
      * Chainable method that adds a message to the `TaggedError` instance
      */
     public withMessage(message: string) {
