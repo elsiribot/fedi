@@ -1,20 +1,15 @@
 import type { NativeStackScreenProps } from '@react-navigation/native-stack'
 import { Button, Input, Switch, Text, Theme, useTheme } from '@rneui/themed'
-import React, { useCallback, useEffect, useMemo, useState } from 'react'
+import React, { useEffect, useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
 import { StyleSheet, View } from 'react-native'
 
-import { useToast } from '@fedi/common/hooks/toast'
-import { createMatrixRoom, selectMatrixRoom } from '@fedi/common/redux'
-import { ChatType } from '@fedi/common/types'
-import { makeLog } from '@fedi/common/utils/log'
+import { useCreateMatrixRoom } from '@fedi/common/hooks/matrix'
+import { ChatType, MatrixRoom } from '@fedi/common/types'
 
 import Avatar, { AvatarSize } from '../components/ui/Avatar'
 import Flex from '../components/ui/Flex'
-import { useAppDispatch, useAppSelector } from '../state/hooks'
 import type { RootStackParamList } from '../types/navigation'
-
-const log = makeLog('CreateGroup')
 
 export type Props = NativeStackScreenProps<RootStackParamList, 'CreateGroup'>
 
@@ -22,19 +17,22 @@ const CreateGroup: React.FC<Props> = ({ navigation, route }: Props) => {
     const { theme } = useTheme()
     const { t } = useTranslation()
     const defaultGroup = route.params?.defaultGroup || undefined
-    const dispatch = useAppDispatch()
-    const [groupName, setGroupName] = useState<string>(
-        t('feature.chat.new-group'),
-    )
-    const [creatingGroup, setCreatingGroup] = useState<boolean>(false)
-    const [pendingRoomId, setPendingRoomId] = useState<string | null>(null)
-    const [broadcastOnly, setBroadcastOnly] = useState<boolean>(false)
-    const [isPublic, setIsPublic] = useState<boolean>(false)
-    const toast = useToast()
-
-    const loadedRoom = useAppSelector(
-        s => pendingRoomId && selectMatrixRoom(s, pendingRoomId),
-    )
+    const {
+        handleCreateGroup,
+        isCreatingGroup,
+        groupName,
+        setGroupName,
+        broadcastOnly,
+        setBroadcastOnly,
+        isPublic,
+        setIsPublic,
+        errorMessage,
+    } = useCreateMatrixRoom(t, (roomId: MatrixRoom['id']) => {
+        navigation.replace('ChatRoomConversation', {
+            roomId,
+            chatType: ChatType.group,
+        })
+    })
 
     // Forces default groups to be broadcast-only & public
     // TODO: support nonbroadcast/nonpublic default groups
@@ -43,49 +41,11 @@ const CreateGroup: React.FC<Props> = ({ navigation, route }: Props) => {
             setBroadcastOnly(true)
             setIsPublic(true)
         }
-    }, [defaultGroup])
-
-    // Upon creating a room, we wait for the new room
-    // to show up in the room list before trying to navigate
-    useEffect(() => {
-        const handleRoomLoaded = async () => {
-            if (!loadedRoom) return
-            log.info('Group created', loadedRoom)
-            navigation.replace('ChatRoomConversation', {
-                roomId: loadedRoom.id,
-                chatType: ChatType.group,
-            })
-            setCreatingGroup(false)
-        }
-        if (loadedRoom) handleRoomLoaded()
-    }, [loadedRoom, navigation])
-
-    const handleCreateGroup = useCallback(async () => {
-        setCreatingGroup(true)
-        try {
-            const { roomId } = await dispatch(
-                createMatrixRoom({
-                    name: groupName,
-                    broadcastOnly,
-                    isPublic,
-                }),
-            ).unwrap()
-            setPendingRoomId(roomId)
-        } catch (error) {
-            log.error('group create failed', error)
-            toast.error(t, error)
-        }
-    }, [broadcastOnly, dispatch, groupName, isPublic, toast, t])
+    }, [defaultGroup, setBroadcastOnly, setIsPublic])
 
     const icon = useMemo(() => {
         return broadcastOnly ? 'SpeakerPhone' : 'SocialPeople'
     }, [broadcastOnly])
-
-    const handleSubmit = async () => {
-        if (groupName) {
-            handleCreateGroup()
-        }
-    }
 
     const style = styles(theme)
 
@@ -105,11 +65,11 @@ const CreateGroup: React.FC<Props> = ({ navigation, route }: Props) => {
                     autoCorrect={false}
                     selectTextOnFocus
                 />
-                {groupName.length === 30 && (
+                {errorMessage && (
                     <Text
                         caption
                         style={[style.errorLabel, style.maxLengthError]}>
-                        {t('errors.group-name-too-long')}
+                        {errorMessage}
                     </Text>
                 )}
             </View>
@@ -155,9 +115,9 @@ const CreateGroup: React.FC<Props> = ({ navigation, route }: Props) => {
             <Button
                 fullWidth
                 title={t('phrases.save-changes')}
-                onPress={handleSubmit}
-                loading={creatingGroup}
-                disabled={!groupName || creatingGroup}
+                onPress={handleCreateGroup}
+                loading={isCreatingGroup}
+                disabled={!groupName || isCreatingGroup || !!errorMessage}
                 containerStyle={style.button}
             />
         </Flex>
