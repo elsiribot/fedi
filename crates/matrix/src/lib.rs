@@ -39,16 +39,12 @@ use matrix_sdk::ruma::events::poll::unstable_start::{
 };
 use matrix_sdk::ruma::events::room::MediaSource;
 use matrix_sdk::ruma::events::room::encryption::RoomEncryptionEventContent;
-use matrix_sdk::ruma::events::room::message::{
-    MessageType, RoomMessageEventContent, RoomMessageEventContentWithoutRelation,
-};
+use matrix_sdk::ruma::events::room::message::RoomMessageEventContentWithoutRelation;
 use matrix_sdk::ruma::events::room::power_levels::RoomPowerLevelsEventContent;
 use matrix_sdk::ruma::events::{
     AnyMessageLikeEventContent, AnySyncTimelineEvent, InitialStateEvent,
 };
-use matrix_sdk::ruma::{
-    EventId, OwnedEventId, OwnedMxcUri, OwnedRoomId, RoomId, UInt, UserId, assign,
-};
+use matrix_sdk::ruma::{EventId, OwnedMxcUri, OwnedRoomId, RoomId, UInt, UserId, assign};
 use matrix_sdk::{Client, RoomInfo, RoomMemberships, SessionChange};
 use matrix_sdk_ui::eyeball_im::VectorDiff;
 use matrix_sdk_ui::sync_service::{self, SyncService};
@@ -62,6 +58,9 @@ use runtime::bridge_runtime::Runtime;
 use runtime::storage::AppState;
 use tokio::sync::{Mutex, broadcast, watch};
 use tracing::{error, info, warn};
+pub use types::{RpcMentions, SendMessageData};
+
+mod types;
 
 pub struct Matrix {
     /// matrix client
@@ -507,28 +506,17 @@ impl Matrix {
         ))
     }
 
-    pub async fn send_message_text(&self, room_id: &RoomId, message: String) -> anyhow::Result<()> {
-        let timeline = self.timeline(room_id).await?;
-        timeline
-            .send(RoomMessageEventContent::text_plain(message).into())
-            .await?;
-        Ok(())
-    }
-
-    pub async fn send_message_json(
+    pub async fn send_message(
         &self,
         room_id: &RoomId,
-        msgtype: &str,
-        body: String,
-        data: serde_json::Map<String, serde_json::Value>,
+        data: SendMessageData,
     ) -> anyhow::Result<()> {
         let timeline = self.timeline(room_id).await?;
         timeline
             .send(
-                RoomMessageEventContent::new(
-                    MessageType::new(msgtype, body, data).context(ErrorCode::BadRequest)?,
-                )
-                .into(),
+                RoomMessageEventContentWithoutRelation::try_from(data)?
+                    .with_relation(None)
+                    .into(),
             )
             .await?;
         Ok(())
@@ -539,12 +527,12 @@ impl Matrix {
         &self,
         room_id: &RoomId,
         reply_to_event_id: &EventId,
-        message: String,
+        data: SendMessageData,
     ) -> anyhow::Result<()> {
         let timeline = self.timeline(room_id).await?;
         timeline
             .send_reply(
-                RoomMessageEventContentWithoutRelation::text_plain(message),
+                data.try_into()?,
                 Reply {
                     event_id: reply_to_event_id.to_owned(),
                     enforce_thread: EnforceThread::MaybeThreaded,
@@ -552,24 +540,6 @@ impl Matrix {
             )
             .await?;
         Ok(())
-    }
-
-    /// Sends a message immediately without using the sendqueue for automatic
-    /// retries.
-    pub async fn send_message_json_no_queue(
-        &self,
-        room_id: &RoomId,
-        msgtype: &str,
-        body: String,
-        data: serde_json::Map<String, serde_json::Value>,
-    ) -> anyhow::Result<OwnedEventId> {
-        let room = self.room(room_id).await?;
-        Ok(room
-            .send(RoomMessageEventContent::new(
-                MessageType::new(msgtype, body, data).context(ErrorCode::BadRequest)?,
-            ))
-            .await?
-            .event_id)
     }
 
     /// After creating a room, it takes some time to show up in the list.
@@ -917,13 +887,12 @@ impl Matrix {
         &self,
         room_id: &RoomId,
         item_id: &TimelineEventItemId,
-        new_content: String,
+        new_data: SendMessageData,
     ) -> Result<()> {
         let timeline = self.timeline(room_id).await?;
-        let new_content = RoomMessageEventContentWithoutRelation::text_plain(new_content);
 
         timeline
-            .edit(item_id, EditedContent::RoomMessage(new_content))
+            .edit(item_id, EditedContent::RoomMessage(new_data.try_into()?))
             .await?;
 
         Ok(())

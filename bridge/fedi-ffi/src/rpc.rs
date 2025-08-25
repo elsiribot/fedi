@@ -25,7 +25,7 @@ use fedimint_core::timing::TimeReporter;
 use futures::Future;
 use lightning_invoice::Bolt11Invoice;
 use macro_rules_attribute::macro_rules_derive;
-use matrix;
+use matrix::SendMessageData;
 use matrix_sdk::ruma::api::client::authenticated_media::get_media_preview;
 use matrix_sdk::ruma::api::client::profile::get_profile;
 use matrix_sdk::ruma::api::client::push::Pusher;
@@ -1363,27 +1363,10 @@ async fn streamCancel(bridge: &Bridge, stream_id: u32) -> anyhow::Result<()> {
 async fn matrixSendMessage(
     bg_matrix: &BgMatrix,
     room_id: RpcRoomId,
-    message: String,
+    data: SendMessageData,
 ) -> anyhow::Result<()> {
     let matrix = bg_matrix.wait().await;
-    matrix
-        .send_message_text(&room_id.into_typed()?, message)
-        .await
-}
-
-ts_type_de!(CustomMessageData: serde_json::Map<String, serde_json::Value> = "Record<string, JSONValue>");
-#[macro_rules_derive(rpc_method!)]
-async fn matrixSendMessageJson(
-    bg_matrix: &BgMatrix,
-    room_id: RpcRoomId,
-    msgtype: String,
-    body: String,
-    data: CustomMessageData,
-) -> anyhow::Result<()> {
-    let matrix = bg_matrix.wait().await;
-    matrix
-        .send_message_json(&room_id.into_typed()?, &msgtype, body, data.0)
-        .await
+    matrix.send_message(&room_id.into_typed()?, data).await
 }
 
 #[macro_rules_derive(rpc_method!)]
@@ -1391,14 +1374,14 @@ async fn matrixSendReply(
     bg_matrix: &BgMatrix,
     room_id: RpcRoomId,
     reply_to_event_id: RpcEventId,
-    message: String,
+    data: SendMessageData,
 ) -> anyhow::Result<()> {
     let matrix = bg_matrix.wait().await;
     matrix
         .send_reply(
             &room_id.into_typed()?,
             &OwnedEventId::try_from(&*reply_to_event_id.0)?,
-            message,
+            data,
         )
         .await
 }
@@ -1737,7 +1720,7 @@ async fn matrixEditMessage(
     bg_matrix: &BgMatrix,
     room_id: RpcRoomId,
     event_id: RpcTimelineEventItemId,
-    new_content: String,
+    new_content: SendMessageData,
 ) -> anyhow::Result<()> {
     let matrix = bg_matrix.wait().await;
     matrix
@@ -2314,7 +2297,6 @@ rpc_methods!(RpcMethods {
     matrixRoomTimelineItemsPaginateBackwards,
     matrixRoomSubscribeTimelineItemsPaginateBackwardsStatus,
     matrixSendMessage,
-    matrixSendMessageJson,
     matrixSendAttachment,
     matrixRoomCreate,
     matrixRoomCreateOrGetDm,

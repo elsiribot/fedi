@@ -6734,10 +6734,12 @@ dependencies = [
  "rpc-types",
  "runtime",
  "rusqlite",
+ "serde",
  "serde_json",
  "tokio",
  "tokio-stream",
  "tracing",
+ "ts-rs",
 ]
 
 [[package]]

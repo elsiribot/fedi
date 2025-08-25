@@ -42,8 +42,6 @@ export type CommunityMetadataUpdatedEvent = { newCommunity: RpcCommunity };
 
 export type CreateRoomRequest = JSONObject;
 
-export type CustomMessageData = Record<string, JSONValue>;
-
 /**
  * Status of device registration with Fedi's server
  */
@@ -551,6 +549,8 @@ export type RpcMediaUploadParams = {
   mimeType: string;
 };
 
+export type RpcMentions = { users: Array<RpcUserId>; room: boolean };
+
 export type RpcMethods = {
   bridgeStatus: [bridgeStatus, RpcBridgeStatus];
   onAppForeground: [onAppForeground, null];
@@ -680,7 +680,6 @@ export type RpcMethods = {
     null,
   ];
   matrixSendMessage: [matrixSendMessage, null];
-  matrixSendMessageJson: [matrixSendMessageJson, null];
   matrixSendAttachment: [matrixSendAttachment, null];
   matrixRoomCreate: [matrixRoomCreate, RpcRoomId];
   matrixRoomCreateOrGetDm: [matrixRoomCreateOrGetDm, RpcRoomId];
@@ -1261,6 +1260,13 @@ export type SPv2WithdrawalState =
   | { primaryOutputError: string }
   | { success: RpcAmount };
 
+export type SendMessageData = {
+  msgtype: string;
+  body: string;
+  data: JSONObject;
+  mentions: RpcMentions | null;
+};
+
 export type SocialRecoveryApproval = {
   guardianName: string;
   approved: boolean;
@@ -1570,7 +1576,7 @@ export type matrixDownloadFile = { path: string; mediaSource: RpcMediaSource };
 export type matrixEditMessage = {
   roomId: RpcRoomId;
   eventId: RpcTimelineEventItemId;
-  newContent: string;
+  newContent: SendMessageData;
 };
 
 export type matrixEndPoll = { roomId: RpcRoomId; pollStartId: string };
@@ -1703,14 +1709,7 @@ export type matrixSendAttachment = {
   params: RpcMediaUploadParams;
 };
 
-export type matrixSendMessage = { roomId: RpcRoomId; message: string };
-
-export type matrixSendMessageJson = {
-  roomId: RpcRoomId;
-  msgtype: string;
-  body: string;
-  data: CustomMessageData;
-};
+export type matrixSendMessage = { roomId: RpcRoomId; data: SendMessageData };
 
 export type matrixSendMultispendGroupInvitation = {
   roomId: RpcRoomId;
@@ -1739,7 +1738,7 @@ export type matrixSendMultispendWithdrawalRequest = {
 export type matrixSendReply = {
   roomId: RpcRoomId;
   replyToEventId: RpcEventId;
-  message: string;
+  data: SendMessageData;
 };
 
 export type matrixSetAvatarUrl = { avatarUrl: string };

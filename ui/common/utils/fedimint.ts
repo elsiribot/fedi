@@ -25,6 +25,7 @@ import {
 import { BridgeError, UnexpectedError } from '../utils/errors'
 import { isDev } from './environment'
 import { makeLog } from './log'
+import { toSendMessageData } from './matrix'
 
 const log = makeLog('common/utils/fedimint')
 
@@ -650,7 +651,7 @@ export class FedimintBridge {
         return this.rpcTyped('matrixEditMessage', {
             roomId,
             eventId,
-            newContent,
+            newContent: toSendMessageData(newContent),
         })
     }
 
@@ -690,7 +691,7 @@ export class FedimintBridge {
         return this.rpcTyped('matrixSendReply', {
             roomId,
             replyToEventId,
-            message,
+            data: toSendMessageData(message),
         })
     }
 
@@ -763,12 +764,6 @@ export class FedimintBridge {
 
     async matrixSendMessage(args: bindings.RpcPayload<'matrixSendMessage'>) {
         return this.rpcTyped('matrixSendMessage', args)
-    }
-
-    async matrixSendMessageJson(
-        args: bindings.RpcPayload<'matrixSendMessageJson'>,
-    ) {
-        return this.rpcTyped('matrixSendMessageJson', args)
     }
 
     async matrixRoomCreate(args: bindings.RpcPayload<'matrixRoomCreate'>) {

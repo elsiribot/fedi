@@ -42,6 +42,9 @@ import {
     RpcUserId,
     MultispendListedEvent,
     RpcTransaction,
+    SendMessageData,
+    RpcMentions,
+    JSONObject,
 } from '../types/bindings'
 import { makeLog } from './log'
 import { constructUrl } from './neverthrow'
@@ -1429,3 +1432,17 @@ export const stripReplyFromPreview = (text: string): string => {
     }
     return text
 }
+
+/** Normalize a plain string or a full SendMessageData into SendMessageData */
+export const toSendMessageData = (
+    x: string | SendMessageData,
+    opts?: { mentions?: RpcMentions | null; extra?: JSONObject },
+): SendMessageData =>
+    typeof x === 'string'
+        ? {
+              msgtype: 'm.text',
+              body: x,
+              data: opts?.extra ?? {},
+              mentions: opts?.mentions ?? null,
+          }
+        : x
