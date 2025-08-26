@@ -13,11 +13,7 @@ import {
 import { ChatType, MatrixEvent } from '@fedi/common/types'
 import { makeMatrixEventGroups } from '@fedi/common/utils/matrix'
 
-import {
-    useAppSelector,
-    useAutosizeTextArea,
-    useIsTouchScreen,
-} from '../../hooks'
+import { useAppSelector, useAutosizeTextArea } from '../../hooks'
 import { styled, theme } from '../../styles'
 import { Avatar } from '../Avatar'
 import { CircularLoader } from '../CircularLoader'
@@ -53,7 +49,6 @@ export const ChatConversation: React.FC<Props> = ({
 }) => {
     const { t } = useTranslation()
     const toast = useToast()
-    const isTouchScreen = useIsTouchScreen()
 
     const room = useAppSelector(s => selectMatrixRoom(s, id))
     const user = useAppSelector(s => selectMatrixUser(s, id))
@@ -113,15 +108,16 @@ export const ChatConversation: React.FC<Props> = ({
                 ev.preventDefault()
             }
 
-            setIsSending(true)
             try {
+                setIsSending(true)
                 await onSendMessage(value, files)
                 setValue('')
                 setFiles([])
             } catch (err) {
                 toast.error(t, err, 'errors.chat-connection-unhealthy')
+            } finally {
+                setIsSending(false)
             }
-            setIsSending(false)
         },
         [onSendMessage, files, t, toast, value],
     )
@@ -158,14 +154,6 @@ export const ChatConversation: React.FC<Props> = ({
         },
         [handleSend],
     )
-
-    // Re-focus input after it had been disabled
-    const inputDisabled = isSending || isReadOnly
-    useEffect(() => {
-        if (!inputDisabled) {
-            inputRef.current?.focus()
-        }
-    }, [inputDisabled])
 
     let avatar: React.ReactNode
     if (room) {
@@ -236,10 +224,9 @@ export const ChatConversation: React.FC<Props> = ({
                                 ? 'feature.chat.broadcast-only-notice'
                                 : 'phrases.type-message',
                         )}
-                        autoFocus={!isTouchScreen}
                         rows={1}
                         onKeyDown={handleInputKeyDown}
-                        disabled={isSending || isReadOnly}
+                        disabled={isReadOnly}
                     />
                     <input
                         data-testid="file-upload"
@@ -276,7 +263,8 @@ export const ChatConversation: React.FC<Props> = ({
                             (value.trim().length === 0 && !files.length) ||
                             isSending
                         }
-                        type="submit">
+                        type="submit"
+                        onMouseDown={e => e.preventDefault()}>
                         <Icon icon={SendArrowUpCircleIcon} />
                     </SendButton>
                 </ActionsRow>
