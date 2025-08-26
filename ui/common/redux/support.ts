@@ -4,8 +4,10 @@ import {
     Dispatch,
     createAsyncThunk,
 } from '@reduxjs/toolkit'
+import { z } from 'zod'
 
 import { CommonState } from '.'
+import { API_ORIGIN } from '../constants/api'
 import { loadFromStorage } from './storage'
 
 /*** Initial State ***/
@@ -72,7 +74,7 @@ export const {
 /*** Asynchronous thonkers ***/
 
 export const checkSurveyCondition = createAsyncThunk<
-    { shouldShow: boolean },
+    { enabled: true; url: string } | { enabled: false; url: null },
     undefined,
     { state: CommonState }
 >('support/checkSurveyCondition', async (_, { getState }) => {
@@ -82,17 +84,30 @@ export const checkSurveyCondition = createAsyncThunk<
     const lastShownTimestamp = state.support.lastShownSurveyTimestamp
     const hasBeenSevenDays =
         lastShownTimestamp && Date.now() - lastShownTimestamp >= oneWeekMs
+    const fallback = { enabled: false as const, url: null }
 
     // If it has been 7 days since the last survey
     // OR if the user has already accepted the survey
     // don't show the survey again
-    if (!hasBeenSevenDays || state.nux.steps.hasAcceptedSurvey)
-        return { shouldShow: false }
+    if (!hasBeenSevenDays || state.nux.steps.hasAcceptedSurvey) return fallback
 
     // TODO: make a fetch to the server endpoint once implemented
-    const shouldShow = await Promise.resolve(false)
+    const surveyResponse = await fetch(`${API_ORIGIN}/api/active-survey`).then(
+        res => res.json(),
+    )
+    const surveySchema = z.object({
+        enabled: z.boolean(),
+        url: z.string(),
+    })
 
-    return { shouldShow }
+    const surveyResult = await surveySchema
+        .parseAsync(surveyResponse)
+        .catch(() => fallback)
+
+    if (surveyResult.enabled && surveyResult.url)
+        return surveyResult as { enabled: true; url: string }
+
+    return fallback
 })
 
 /*** Selectors ***/

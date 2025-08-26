@@ -6,7 +6,13 @@ import { renderWithProviders } from '../../src/utils/test-utils/render'
 
 describe('SurveyModal', () => {
     it('should render with the correct title, description, and button', async () => {
-        renderWithProviders(<SurveyModal open onOpenChange={() => {}} />)
+        renderWithProviders(
+            <SurveyModal
+                open
+                onOpenChange={() => {}}
+                url="https://survey-test.fedi.xyz"
+            />,
+        )
 
         const titles = screen.getAllByText(
             i18n.t('feature.support.survey-title'),

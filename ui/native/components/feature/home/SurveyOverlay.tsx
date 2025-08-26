@@ -3,7 +3,6 @@ import { Text, Button, useTheme } from '@rneui/themed'
 import { useCallback } from 'react'
 import { useTranslation } from 'react-i18next'
 
-import { SURVEY_URL } from '@fedi/common/constants/support'
 import { useNuxStep } from '@fedi/common/hooks/nux'
 import { selectLanguage } from '@fedi/common/redux'
 import { resetSurveyTimestamp } from '@fedi/common/redux/support'
@@ -18,9 +17,10 @@ import SvgImage from '../../ui/SvgImage'
 interface Props {
     open: boolean
     onOpenChange(open: boolean): void
+    url: string | null
 }
 
-const SurveyOverlay: React.FC<Props> = ({ open, onOpenChange }) => {
+const SurveyOverlay: React.FC<Props> = ({ open, onOpenChange, url }) => {
     const [, completeAcceptSurvey] = useNuxStep('hasAcceptedSurvey')
 
     const language = useAppSelector(selectLanguage)
@@ -36,7 +36,9 @@ const SurveyOverlay: React.FC<Props> = ({ open, onOpenChange }) => {
     }, [dispatch, onOpenChange])
 
     const handleOpenSurveyLink = useCallback(() => {
-        const surveyUrl = new URL(SURVEY_URL)
+        if (!url) return
+
+        const surveyUrl = new URL(url)
 
         if (language) {
             surveyUrl.searchParams.set('lang', getSurveyLanguage(language))
@@ -52,11 +54,11 @@ const SurveyOverlay: React.FC<Props> = ({ open, onOpenChange }) => {
                 url: surveyUrl.toString(),
             })
         }, 500)
-    }, [language, navigation, handleDismiss, completeAcceptSurvey])
+    }, [language, navigation, handleDismiss, completeAcceptSurvey, url])
 
     return (
         <CenterOverlay
-            show={open}
+            show={open && !!url}
             onBackdropPress={handleDismiss}
             showCloseButton>
             <Flex gap="lg" align="center" fullWidth>

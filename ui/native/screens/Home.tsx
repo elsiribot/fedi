@@ -71,6 +71,7 @@ const Home: React.FC<Props> = ({ offline }) => {
         useNuxStep('communityModal')
 
     const [showSurvey, setShowSurvey] = useState(false)
+    const [surveyUrl, setSurveyUrl] = useState<string | null>(null)
 
     /**
      * Guards against showing more than one overlay during the current focus.
@@ -113,10 +114,13 @@ const Home: React.FC<Props> = ({ offline }) => {
     useEffect(() => {
         dispatch(checkSurveyCondition())
             .unwrap()
-            .then(({ shouldShow }) => {
-                if (shouldShow) setShowSurvey(true)
+            .then(res => {
+                if (res.enabled) {
+                    setShowSurvey(true)
+                    setSurveyUrl(res.url)
+                }
             })
-    }, [showSurvey, dispatch])
+    }, [dispatch])
 
     const style = styles(theme)
 
@@ -175,7 +179,11 @@ const Home: React.FC<Props> = ({ offline }) => {
                 show={showCommunityOverlay}
                 onDismiss={handleCommunityDismiss}
             />
-            <SurveyOverlay open={showSurvey} onOpenChange={setShowSurvey} />
+            <SurveyOverlay
+                open={showSurvey}
+                onOpenChange={setShowSurvey}
+                url={surveyUrl}
+            />
         </View>
     )
 }

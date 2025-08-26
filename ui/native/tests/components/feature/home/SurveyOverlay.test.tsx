@@ -7,7 +7,13 @@ import { renderWithProviders } from '../../../utils/render'
 
 describe('SurveyModal', () => {
     it('should render with the correct title, description, and button', async () => {
-        renderWithProviders(<SurveyOverlay open onOpenChange={() => {}} />)
+        renderWithProviders(
+            <SurveyOverlay
+                open
+                onOpenChange={() => {}}
+                url="https://survey-test.fedi.xyz"
+            />,
+        )
 
         const title = screen.getByText(i18n.t('feature.support.survey-title'))
         const description = screen.getByText(

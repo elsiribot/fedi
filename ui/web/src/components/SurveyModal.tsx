@@ -2,7 +2,6 @@ import { useCallback } from 'react'
 import { useTranslation } from 'react-i18next'
 
 import tooltipIcon from '@fedi/common/assets/svgs/tooltip.svg'
-import { SURVEY_URL } from '@fedi/common/constants/support'
 import { theme } from '@fedi/common/constants/theme'
 import { useNuxStep } from '@fedi/common/hooks/nux'
 import { selectLanguage } from '@fedi/common/redux'
@@ -17,9 +16,10 @@ import { Modal } from './Modal'
 interface Props {
     open: boolean
     onOpenChange: (open: boolean) => void
+    url: string | null
 }
 
-const SurveyModal: React.FC<Props> = ({ open, onOpenChange }) => {
+const SurveyModal: React.FC<Props> = ({ open, onOpenChange, url }) => {
     const [, completeAcceptSurvey] = useNuxStep('hasAcceptedSurvey')
 
     const language = useAppSelector(selectLanguage)
@@ -33,7 +33,9 @@ const SurveyModal: React.FC<Props> = ({ open, onOpenChange }) => {
     }, [dispatch, onOpenChange])
 
     const handleOpenSurveyLink = useCallback(() => {
-        const surveyUrl = new URL(SURVEY_URL)
+        if (!url) return
+
+        const surveyUrl = new URL(url)
 
         if (language) {
             surveyUrl.searchParams.set('lang', getSurveyLanguage(language))
@@ -43,11 +45,11 @@ const SurveyModal: React.FC<Props> = ({ open, onOpenChange }) => {
         completeAcceptSurvey()
 
         window.open(surveyUrl.toString(), '_blank')
-    }, [language, handleDismiss, completeAcceptSurvey])
+    }, [language, handleDismiss, completeAcceptSurvey, url])
 
     return (
         <Modal
-            open={open}
+            open={open && !!url}
             onClick={handleOpenSurveyLink}
             onOpenChange={handleDismiss}
             buttonText={t('feature.support.give-feedback')}

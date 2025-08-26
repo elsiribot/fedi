@@ -66,6 +66,7 @@ function HomePage() {
     )
 
     const [showSurvey, setShowSurvey] = useState(false)
+    const [surveyUrl, setSurveyUrl] = useState<string | null>(null)
 
     const handleOnInstall = async () => {
         await deferredPrompt?.prompt()
@@ -99,10 +100,13 @@ function HomePage() {
     useEffect(() => {
         dispatch(checkSurveyCondition())
             .unwrap()
-            .then(({ shouldShow }) => {
-                if (shouldShow) setShowSurvey(true)
+            .then(res => {
+                if (res.enabled) {
+                    setShowSurvey(true)
+                    setSurveyUrl(res.url)
+                }
             })
-    }, [showSurvey, dispatch])
+    }, [dispatch])
 
     return (
         <ContentBlock>
@@ -310,7 +314,11 @@ function HomePage() {
                     </Text>
                 </ModalContent>
             </Modal>
-            <SurveyModal open={showSurvey} onOpenChange={setShowSurvey} />
+            <SurveyModal
+                open={showSurvey}
+                onOpenChange={setShowSurvey}
+                url={surveyUrl}
+            />
         </ContentBlock>
     )
 }
