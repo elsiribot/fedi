@@ -1,7 +1,9 @@
 use std::pin::pin;
 
 use ::matrix::{RpcTimelineItemContent, SendMessageData};
+use bitcoin::hashes::sha256;
 use eyeball_im::VectorDiff;
+use fedimint_core::BitcoinHash;
 use futures::future::try_join;
 use futures::{Stream, StreamExt};
 use imbl::Vector;
@@ -191,6 +193,7 @@ pub async fn test_send_and_download_attachment(_dev_fed: DevFed) -> anyhow::Resu
     let mut rng = SmallRng::from_entropy();
     let mut data = vec![0u8; file_size];
     rng.fill_bytes(&mut data);
+    let data_hash = sha256::Hash::hash(&data);
 
     // Send attachment
     matrix
@@ -202,7 +205,7 @@ pub async fn test_send_and_download_attachment(_dev_fed: DevFed) -> anyhow::Resu
                 width: None,
                 height: None,
             },
-            data.clone(),
+            data,
         )
         .await?;
     sleep_in_test("wait for attachment to be sent", Duration::from_millis(100)).await;
@@ -222,7 +225,8 @@ pub async fn test_send_and_download_attachment(_dev_fed: DevFed) -> anyhow::Resu
 
     // Assert that the downloaded data matches the original data
     assert_eq!(
-        downloaded_data, data,
+        sha256::Hash::hash(&downloaded_data),
+        data_hash,
         "Downloaded data does not match original data"
     );
 
