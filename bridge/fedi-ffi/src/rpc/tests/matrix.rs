@@ -7,6 +7,8 @@ use futures::{Stream, StreamExt};
 use imbl::Vector;
 use matrix_sdk::ruma::events::room::message::MessageType;
 use matrix_sdk::timeout::timeout;
+use rand::rngs::SmallRng;
+use rand::{RngCore as _, SeedableRng as _};
 use rpc_types::RpcMediaUploadParams;
 use tracing::warn;
 
@@ -162,6 +164,15 @@ pub async fn test_matrix_create_room(_dev_fed: DevFed) -> anyhow::Result<()> {
 }
 
 pub async fn test_send_and_download_attachment(_dev_fed: DevFed) -> anyhow::Result<()> {
+    let file_size = std::env::var("MATRIX_TEST_FILE_SIZE_MB")
+        .ok()
+        .and_then(|s| s.parse::<usize>().ok())
+        .unwrap_or(1) // 1MB default
+        * 1024
+        * 1024;
+
+    info!("Testing matrix file upload with file size: {}B", file_size);
+
     let td1 = TestDevice::new();
     let td2 = TestDevice::new();
     let matrix = td1.matrix().await?;
@@ -175,7 +186,11 @@ pub async fn test_send_and_download_attachment(_dev_fed: DevFed) -> anyhow::Resu
     // Prepare attachment data
     let filename = "test.txt".to_string();
     let mime_type = "text/plain".to_string();
-    let data = b"Hello, World!".to_vec();
+
+    // Generate random file content using SmallRng
+    let mut rng = SmallRng::from_entropy();
+    let mut data = vec![0u8; file_size];
+    rng.fill_bytes(&mut data);
 
     // Send attachment
     matrix
