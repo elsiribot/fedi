@@ -517,13 +517,6 @@ export function useMatrixPaymentEvent({
                     loading: isCanceling,
                     disabled: isOffline,
                 })
-            } else {
-                buttons.push({
-                    label: t('words.reject'),
-                    handler: handleRejectRequest,
-                    loading: isRejecting,
-                    disabled: isAccepting,
-                })
             }
         } else {
             if (isRecipient) {
