@@ -47,7 +47,7 @@ import {
     setReadyToSave,
     storageSlice,
 } from './storage'
-import { supportSlice } from './support'
+import { checkSurveyCondition, supportSlice } from './support'
 import { toastSlice } from './toast'
 import { transactionsSlice, updateTransaction } from './transactions'
 import { walletSlice } from './wallet'
@@ -265,6 +265,7 @@ export function initializeCommonStore({
                 dispatch(saveToStorage({ storage }))
             },
         })
+        dispatch(checkSurveyCondition())
         dispatch(setReadyToSave(true))
     })
 

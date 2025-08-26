@@ -5,7 +5,12 @@ import { useTranslation } from 'react-i18next'
 
 import { useNuxStep } from '@fedi/common/hooks/nux'
 import { selectLanguage } from '@fedi/common/redux'
-import { resetSurveyTimestamp } from '@fedi/common/redux/support'
+import {
+    resetSurveyTimestamp,
+    selectShouldShowSurvey,
+    selectSurveyUrl,
+    setShouldShowSurvey,
+} from '@fedi/common/redux/support'
 import { getSurveyLanguage } from '@fedi/common/utils/survey'
 
 import { useAppDispatch, useAppSelector } from '../../../state/hooks'
@@ -14,15 +19,11 @@ import Flex from '../../ui/Flex'
 import HoloCircle from '../../ui/HoloCircle'
 import SvgImage from '../../ui/SvgImage'
 
-interface Props {
-    open: boolean
-    onOpenChange(open: boolean): void
-    url: string | null
-}
-
-const SurveyOverlay: React.FC<Props> = ({ open, onOpenChange, url }) => {
+const SurveyOverlay = () => {
     const [, completeAcceptSurvey] = useNuxStep('hasAcceptedSurvey')
 
+    const open = useAppSelector(selectShouldShowSurvey)
+    const url = useAppSelector(selectSurveyUrl)
     const language = useAppSelector(selectLanguage)
     const dispatch = useAppDispatch()
     const navigation = useNavigation()
@@ -32,8 +33,8 @@ const SurveyOverlay: React.FC<Props> = ({ open, onOpenChange, url }) => {
 
     const handleDismiss = useCallback(() => {
         dispatch(resetSurveyTimestamp())
-        onOpenChange(false)
-    }, [dispatch, onOpenChange])
+        dispatch(setShouldShowSurvey(false))
+    }, [dispatch])
 
     const handleOpenSurveyLink = useCallback(() => {
         if (!url) return

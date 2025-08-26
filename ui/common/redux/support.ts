@@ -18,6 +18,8 @@ const initialState = {
     zendeskInitialized: false,
     zendeskUnreadMessageCount: 0,
     lastShownSurveyTimestamp: null as number | null,
+    surveyUrl: null as string | null,
+    shouldShowSurvey: false,
 }
 
 export type SupportState = typeof initialState
@@ -43,8 +45,20 @@ export const supportSlice = createSlice({
         resetSurveyTimestamp(state) {
             state.lastShownSurveyTimestamp = Date.now()
         },
+        setShouldShowSurvey(state, action: PayloadAction<boolean>) {
+            state.shouldShowSurvey = action.payload
+        },
     },
     extraReducers: builder => {
+        builder.addCase(checkSurveyCondition.fulfilled, (state, action) => {
+            if (action.payload.url) {
+                state.surveyUrl = action.payload.url
+
+                if (action.payload.enabled) {
+                    state.shouldShowSurvey = true
+                }
+            }
+        })
         builder.addCase(loadFromStorage.fulfilled, (state, action) => {
             if (!action.payload?.support) return
             const { supportPermissionGranted, zendeskPushNotificationToken } =
@@ -69,12 +83,13 @@ export const {
     setZendeskInitialized,
     setZendeskUnreadMessageCount,
     resetSurveyTimestamp,
+    setShouldShowSurvey,
 } = supportSlice.actions
 
 /*** Asynchronous thonkers ***/
 
 export const checkSurveyCondition = createAsyncThunk<
-    { enabled: true; url: string } | { enabled: false; url: null },
+    { enabled: boolean; url: string | null },
     undefined,
     { state: CommonState }
 >('support/checkSurveyCondition', async (_, { getState }) => {
@@ -84,7 +99,7 @@ export const checkSurveyCondition = createAsyncThunk<
     const lastShownTimestamp = state.support.lastShownSurveyTimestamp
     const hasBeenSevenDays =
         lastShownTimestamp && Date.now() - lastShownTimestamp >= oneWeekMs
-    const fallback = { enabled: false as const, url: null }
+    const fallback = { enabled: false, url: null }
 
     // If it has been 7 days since the last survey
     // OR if the user has already accepted the survey
@@ -100,14 +115,7 @@ export const checkSurveyCondition = createAsyncThunk<
         url: z.string(),
     })
 
-    const surveyResult = await surveySchema
-        .parseAsync(surveyResponse)
-        .catch(() => fallback)
-
-    if (surveyResult.enabled && surveyResult.url)
-        return surveyResult as { enabled: true; url: string }
-
-    return fallback
+    return await surveySchema.parseAsync(surveyResponse).catch(() => fallback)
 })
 
 /*** Selectors ***/
@@ -123,6 +131,11 @@ export const selectZendeskInitialized = (s: CommonState) =>
 
 export const selectZendeskUnreadMessageCount = (s: CommonState) =>
     s.support.zendeskUnreadMessageCount
+
+export const selectSurveyUrl = (s: CommonState) => s.support.surveyUrl
+
+export const selectShouldShowSurvey = (s: CommonState) =>
+    s.support.shouldShowSurvey
 
 /*** Synchronous wrapper actions ***/
 

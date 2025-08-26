@@ -1,6 +1,6 @@
 import Link from 'next/link'
 import { useRouter } from 'next/router'
-import { useEffect, useState } from 'react'
+import { useEffect } from 'react'
 import { Trans, useTranslation } from 'react-i18next'
 
 import ChatIcon from '@fedi/common/assets/svgs/chat.svg'
@@ -22,7 +22,6 @@ import {
     selectCoreMods,
     selectVisibleCommunityMods,
 } from '@fedi/common/redux/mod'
-import { checkSurveyCondition } from '@fedi/common/redux/support'
 import stringUtils from '@fedi/common/utils/StringUtils'
 
 import { Avatar } from '../components/Avatar'
@@ -38,7 +37,6 @@ import { RecoveryInProgress } from '../components/RecoveryInProgress'
 import SurveyModal from '../components/SurveyModal'
 import { Text } from '../components/Text'
 import {
-    useAppDispatch,
     useAppSelector,
     useDeviceQuery,
     useInstallPromptContext,
@@ -55,7 +53,6 @@ function HomePage() {
     const { isIOS } = useDeviceQuery()
     const { showInstallBanner, handleOnDismiss } = useShowInstallPromptBanner()
     const router = useRouter()
-    const dispatch = useAppDispatch()
 
     const syncCurrencyRatesAndCache = useSyncCurrencyRatesAndCache(fedimint)
 
@@ -64,9 +61,6 @@ function HomePage() {
     const [hasPerformedPersonalBackup] = useNuxStep(
         'hasPerformedPersonalBackup',
     )
-
-    const [showSurvey, setShowSurvey] = useState(false)
-    const [surveyUrl, setSurveyUrl] = useState<string | null>(null)
 
     const handleOnInstall = async () => {
         await deferredPrompt?.prompt()
@@ -96,17 +90,6 @@ function HomePage() {
     useEffect(() => {
         syncCurrencyRatesAndCache()
     }, [syncCurrencyRatesAndCache])
-
-    useEffect(() => {
-        dispatch(checkSurveyCondition())
-            .unwrap()
-            .then(res => {
-                if (res.enabled) {
-                    setShowSurvey(true)
-                    setSurveyUrl(res.url)
-                }
-            })
-    }, [dispatch])
 
     return (
         <ContentBlock>
@@ -314,11 +297,7 @@ function HomePage() {
                     </Text>
                 </ModalContent>
             </Modal>
-            <SurveyModal
-                open={showSurvey}
-                onOpenChange={setShowSurvey}
-                url={surveyUrl}
-            />
+            <SurveyModal />
         </ContentBlock>
     )
 }
