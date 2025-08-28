@@ -243,8 +243,8 @@ async function parseLnurl(
     | undefined
 > {
     const lowerCaseRaw = raw.toLowerCase()
-    // Ignore Fedi URIs, they can sometimes look like URLs.
-    if (lowerCaseRaw.startsWith('fedi:')) return
+    // Ignore Fedi deep links AND universal links — they’re parsed elsewhere.
+    if (lowerCaseRaw.startsWith('fedi:') || isUniversalLink(raw)) return
 
     // Strip lightning/lnurl protocol for uniformity, keep track of if we were passed a full URL.
     const lnRaw = stripProtocol(lowerCaseRaw, 'lnurl', 'lightning')
@@ -691,6 +691,8 @@ function stripProtocol(raw: string, ...protocol: string[]) {
 
 function validateWebsiteUrl(url: string) {
     // Only fully-qualified HTTP(S) URLs, partial ones are too ambiguous.
+    // Universal links are not generic websites.
+    if (isUniversalLink(url)) return false
     if (
         !url.toLowerCase().startsWith('http://') &&
         !url.toLowerCase().startsWith('https://')
