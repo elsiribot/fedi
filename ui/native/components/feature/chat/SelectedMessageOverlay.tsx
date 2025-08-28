@@ -135,6 +135,15 @@ const SelectedMessageOverlay: React.FC<{ isPublic?: boolean }> = ({
 
     const style = styles(theme)
 
+    const canReply =
+        !!selectedMessage &&
+        (['m.text', 'm.notice', 'm.emote'].includes(
+            selectedMessage.content.msgtype,
+        ) ||
+            isImageEvent(selectedMessage) ||
+            isVideoEvent(selectedMessage) ||
+            isFileEvent(selectedMessage))
+
     return (
         <CustomOverlay
             onBackdropPress={closeOverlay}
@@ -175,11 +184,7 @@ const SelectedMessageOverlay: React.FC<{ isPublic?: boolean }> = ({
                         </Flex>
                     ) : (
                         <Flex fullWidth>
-                            {(selectedMessage?.content.msgtype === 'm.text' ||
-                                selectedMessage?.content.msgtype ===
-                                    'm.notice' ||
-                                selectedMessage?.content.msgtype ===
-                                    'm.emote') && (
+                            {canReply && (
                                 <Pressable
                                     onPress={handleReply}
                                     containerStyle={style.action}>
