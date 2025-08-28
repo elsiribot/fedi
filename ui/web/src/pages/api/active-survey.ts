@@ -1,6 +1,6 @@
 import type { NextApiRequest, NextApiResponse } from 'next'
 
-const IS_SURVEY_ENABLED = true
+const IS_SURVEY_ENABLED = false
 const SURVEY_URL = 'https://survey-test.fedi.xyz/interrogation'
 
 export default function handler(_: NextApiRequest, res: NextApiResponse) {

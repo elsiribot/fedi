@@ -48,17 +48,11 @@ export const supportSlice = createSlice({
         setShouldShowSurvey(state, action: PayloadAction<boolean>) {
             state.shouldShowSurvey = action.payload
         },
+        setSurveyUrl(state, action: PayloadAction<string | null>) {
+            state.surveyUrl = action.payload
+        },
     },
     extraReducers: builder => {
-        builder.addCase(checkSurveyCondition.fulfilled, (state, action) => {
-            if (action.payload.url) {
-                state.surveyUrl = action.payload.url
-
-                if (action.payload.enabled) {
-                    state.shouldShowSurvey = true
-                }
-            }
-        })
         builder.addCase(loadFromStorage.fulfilled, (state, action) => {
             if (!action.payload?.support) return
             const { supportPermissionGranted, zendeskPushNotificationToken } =
@@ -84,38 +78,50 @@ export const {
     setZendeskUnreadMessageCount,
     resetSurveyTimestamp,
     setShouldShowSurvey,
+    setSurveyUrl,
 } = supportSlice.actions
 
 /*** Asynchronous thonkers ***/
 
 export const checkSurveyCondition = createAsyncThunk<
-    { enabled: boolean; url: string | null },
+    void,
     undefined,
     { state: CommonState }
->('support/checkSurveyCondition', async (_, { getState }) => {
+>('support/checkSurveyCondition', async (_, { getState, dispatch }) => {
     const state = getState()
 
     const oneWeekMs = 7 * 24 * 60 * 60 * 1000
     const lastShownTimestamp = state.support.lastShownSurveyTimestamp
     const hasBeenSevenDays =
         lastShownTimestamp && Date.now() - lastShownTimestamp >= oneWeekMs
-    const fallback = { enabled: false, url: null }
+
+    let enabled = false
+    let url: string | null = null
 
     // If it has been 7 days since the last survey
     // OR if the user has already accepted the survey
     // don't show the survey again
-    if (!hasBeenSevenDays || state.nux.steps.hasAcceptedSurvey) return fallback
+    if (hasBeenSevenDays && !state.nux.steps.hasAcceptedSurvey) {
+        // TODO: make a fetch to the server endpoint once implemented
+        const surveyResponse = await fetch(
+            `${API_ORIGIN}/api/active-survey`,
+        ).then(res => res.json())
 
-    // TODO: make a fetch to the server endpoint once implemented
-    const surveyResponse = await fetch(`${API_ORIGIN}/api/active-survey`).then(
-        res => res.json(),
-    )
-    const surveySchema = z.object({
-        enabled: z.boolean(),
-        url: z.string(),
-    })
+        const surveySchema = z.object({
+            enabled: z.boolean(),
+            url: z.string(),
+        })
 
-    return await surveySchema.parseAsync(surveyResponse).catch(() => fallback)
+        const surveyData = surveySchema.safeParse(surveyResponse)
+
+        if (surveyData.success) {
+            url = surveyData.data.url
+            enabled = surveyData.data.enabled
+        }
+    }
+
+    dispatch(setSurveyUrl(url))
+    dispatch(setShouldShowSurvey(enabled))
 })
 
 /*** Selectors ***/
