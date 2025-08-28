@@ -1,5 +1,5 @@
 import { Theme, useTheme } from '@rneui/themed'
-import { useCallback, useMemo, useRef } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Animated, Pressable, StyleSheet } from 'react-native'
 import { exists } from 'react-native-fs'
@@ -27,6 +27,9 @@ const QRCode: React.FC<Props> = ({
     logoOverrideUrl,
     disableSave,
 }) => {
+    const [isPressed, setIsPressed] = useState(false)
+    const [isDownloading, setIsDownloading] = useState(false)
+
     const animatedPadding = useRef(new Animated.Value(0)).current
     const viewShotRef = useRef<ViewShot>(null)
     const toast = useToast()
@@ -41,17 +44,7 @@ const QRCode: React.FC<Props> = ({
     const handleLongPress = useCallback(async () => {
         if (disableSave) return
 
-        Animated.timing(animatedPadding, {
-            toValue: 16,
-            duration: 150,
-            delay: 0,
-            useNativeDriver: false,
-            easing: Easing.out(Easing.ease),
-        }).start()
-
-        // wait for the animation to complete before attempting to screenshot
-        await new Promise(resolve => setTimeout(() => resolve(true), 150))
-
+        setIsDownloading(true)
         try {
             let permissionStatus: PermissionStatus | undefined =
                 downloadPermission
@@ -77,6 +70,20 @@ const QRCode: React.FC<Props> = ({
         } catch (e) {
             toast.error(t, e)
         } finally {
+            setIsDownloading(false)
+        }
+    }, [downloadPermission, requestDownloadPermission, t, toast, disableSave])
+
+    useEffect(() => {
+        if (isPressed || isDownloading) {
+            Animated.timing(animatedPadding, {
+                toValue: 16,
+                duration: 150,
+                delay: 0,
+                useNativeDriver: false,
+                easing: Easing.out(Easing.ease),
+            }).start()
+        } else {
             Animated.timing(animatedPadding, {
                 toValue: 0,
                 duration: 150,
@@ -85,14 +92,7 @@ const QRCode: React.FC<Props> = ({
                 easing: Easing.out(Easing.ease),
             }).start()
         }
-    }, [
-        animatedPadding,
-        downloadPermission,
-        requestDownloadPermission,
-        t,
-        toast,
-        disableSave,
-    ])
+    }, [isPressed, animatedPadding, isDownloading])
 
     const xml = useMemo(
         () =>
@@ -105,7 +105,11 @@ const QRCode: React.FC<Props> = ({
     )
 
     return (
-        <Pressable onLongPress={handleLongPress} delayLongPress={300}>
+        <Pressable
+            onLongPress={handleLongPress}
+            delayLongPress={300}
+            onPressIn={() => setIsPressed(true)}
+            onPressOut={() => setIsPressed(false)}>
             <ViewShot
                 ref={viewShotRef}
                 options={{ format: 'png', fileName: 'fedi-qr-code.png' }}>
