@@ -140,6 +140,10 @@ export class FedimintBridge {
         return this.rpcTyped('spv2AccountInfo', { federationId })
     }
 
+    spv2SubscribeAccountInfo(args: StreamRpcArgs<'spv2SubscribeAccountInfo'>) {
+        return this.rpcStream('spv2SubscribeAccountInfo', args)
+    }
+
     async spv2NextCycleStartTime(federationId: string) {
         return this.rpcTyped('spv2NextCycleStartTime', { federationId })
     }
