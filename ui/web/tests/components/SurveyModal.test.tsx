@@ -43,4 +43,19 @@ describe('SurveyModal', () => {
         expect(descriptions.length).toBe(2)
         expect(button).toBeInTheDocument()
     })
+
+    it('should not render if `shouldShowSurvey` is false', async () => {
+        renderWithProviders(<SurveyModal />, {
+            preloadedState: {
+                support: {
+                    ...state.support,
+                    shouldShowSurvey: false,
+                },
+            },
+        })
+
+        expect(
+            screen.queryByText(i18n.t('feature.support.survey-title')),
+        ).toBeNull()
+    })
 })
