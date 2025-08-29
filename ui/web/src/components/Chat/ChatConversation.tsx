@@ -30,8 +30,8 @@ interface Props {
     name: string
     events: MatrixEvent[]
     onSendMessage(message: string, files: File[]): Promise<void>
+    isPublic?: boolean
     headerActions?: React.ReactNode
-    inputActions?: boolean
     onWalletClick?(): void
     onPaginate?: () => Promise<void>
 }
@@ -42,8 +42,8 @@ export const ChatConversation: React.FC<Props> = ({
     name,
     events,
     headerActions,
-    inputActions,
     onSendMessage,
+    isPublic,
     onWalletClick,
     onPaginate,
 }) => {
@@ -228,46 +228,52 @@ export const ChatConversation: React.FC<Props> = ({
                         onKeyDown={handleInputKeyDown}
                         disabled={isReadOnly}
                     />
-                    <input
-                        data-testid="file-upload"
-                        type="file"
-                        ref={fileRef}
-                        hidden
-                        accept="image/*, video/*, .csv, .doc, .docx, .pdf, .ppt, .pptx, .xls, .xlsx, .txt, .zip"
-                        onChange={handleOnUploadMedia}
-                        multiple
-                    />
+                    {!isReadOnly && (
+                        <input
+                            data-testid="file-upload"
+                            type="file"
+                            ref={fileRef}
+                            hidden
+                            accept="image/*, video/*, .csv, .doc, .docx, .pdf, .ppt, .pptx, .xls, .xlsx, .txt, .zip"
+                            onChange={handleOnUploadMedia}
+                            multiple
+                        />
+                    )}
                 </InputRow>
 
-                <ActionsRow>
-                    <InputActions>
-                        {inputActions && (
-                            <>
+                {!isReadOnly && (
+                    <ActionsRow>
+                        <InputActions>
+                            {/* In-chat payments only available for DirectChat after a room has already been created with the user */}
+                            {type === ChatType.direct && (
                                 <Icon
                                     aria-label="wallet-icon"
                                     icon={WalletIcon}
                                     size={32}
                                     onClick={onWalletClick}
                                 />
+                            )}
+                            {/* To prevent users from uploading unencrypted media, media uploads are not available in public chats */}
+                            {!isPublic && (
                                 <Icon
                                     aria-label="plus-icon"
                                     icon={PlusIcon}
                                     size={26}
                                     onClick={handleOnMediaClick}
                                 />
-                            </>
-                        )}
-                    </InputActions>
-                    <SendButton
-                        disabled={
-                            (value.trim().length === 0 && !files.length) ||
-                            isSending
-                        }
-                        type="submit"
-                        onMouseDown={e => e.preventDefault()}>
-                        <Icon icon={SendArrowUpCircleIcon} />
-                    </SendButton>
-                </ActionsRow>
+                            )}
+                        </InputActions>
+                        <SendButton
+                            disabled={
+                                (value.trim().length === 0 && !files.length) ||
+                                isSending
+                            }
+                            type="submit"
+                            onMouseDown={e => e.preventDefault()}>
+                            <Icon icon={SendArrowUpCircleIcon} />
+                        </SendButton>
+                    </ActionsRow>
+                )}
             </Actions>
         </Layout.Root>
     )

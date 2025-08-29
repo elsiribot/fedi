@@ -17,13 +17,21 @@ jest.mock('../../../hooks/store')
 
 const onSendMessageSpy = jest.fn()
 
-const commonProps = {
-    type: ChatType.group,
+const userChatProps = {
+    type: ChatType.direct,
     id: '1',
     name: 'name',
     events: [],
     onSendMessage: onSendMessageSpy,
-    inputActions: false,
+    onWalletClick: () => null,
+    onPaginate: () => Promise.resolve(),
+}
+const groupChatProps = {
+    type: ChatType.group,
+    id: '2',
+    name: 'name',
+    events: [],
+    onSendMessage: onSendMessageSpy,
     onWalletClick: () => null,
     onPaginate: () => Promise.resolve(),
 }
@@ -33,43 +41,68 @@ describe('/components/Chat/ChatConversation', () => {
         jest.restoreAllMocks()
     })
 
-    describe('when the component is rendered', () => {
-        it('should render the send button', async () => {
-            render(<ChatConversation {...commonProps} inputActions />)
+    describe('direct chats', () => {
+        describe('when the component is rendered', () => {
+            it('should show the textbox, both icons and send button', async () => {
+                render(<ChatConversation {...userChatProps} />)
 
-            await waitFor(() => {
-                expect(screen.getByRole('button')).toBeInTheDocument()
-            })
-        })
-
-        it('should render the input', async () => {
-            render(<ChatConversation {...commonProps} />)
-
-            await waitFor(() => {
-                expect(screen.getByRole('textbox')).toBeInTheDocument()
+                await waitFor(() => {
+                    expect(screen.getByRole('textbox')).toBeInTheDocument()
+                    expect(
+                        screen.getByLabelText('wallet-icon'),
+                    ).toBeInTheDocument()
+                    expect(
+                        screen.getByLabelText('plus-icon'),
+                    ).toBeInTheDocument()
+                    expect(screen.getByRole('button')).toBeInTheDocument()
+                })
             })
         })
     })
 
-    describe('when the component is rendered without inputActions', () => {
-        it('should not render the wallet or image buttons', async () => {
-            render(<ChatConversation {...commonProps} />)
+    /* public group chats do not allow attachment uploads */
+    describe('public group chats', () => {
+        describe('when the component is rendered', () => {
+            it('should show the textbox and send button only', async () => {
+                render(<ChatConversation {...groupChatProps} isPublic />)
 
-            await waitFor(() => {
-                expect(
-                    screen.queryByLabelText('wallet-icon'),
-                ).not.toBeInTheDocument()
+                await waitFor(() => {
+                    expect(screen.getByRole('textbox')).toBeInTheDocument()
+                    expect(
+                        screen.queryByLabelText('wallet-icon'),
+                    ).not.toBeInTheDocument()
+                    expect(
+                        screen.queryByLabelText('plus-icon'),
+                    ).not.toBeInTheDocument()
+                    expect(screen.queryByRole('button')).toBeInTheDocument()
+                })
+            })
+        })
+    })
 
-                expect(
-                    screen.queryByLabelText('image-icon'),
-                ).not.toBeInTheDocument()
+    /* non public group chats allow attachment uploads */
+    describe('private group chats', () => {
+        describe('when the component is rendered', () => {
+            it('should show the textbox, plus icon and send button', async () => {
+                render(<ChatConversation {...groupChatProps} />)
+
+                await waitFor(() => {
+                    expect(screen.getByRole('textbox')).toBeInTheDocument()
+                    expect(
+                        screen.queryByLabelText('wallet-icon'),
+                    ).not.toBeInTheDocument()
+                    expect(
+                        screen.queryByLabelText('plus-icon'),
+                    ).toBeInTheDocument()
+                    expect(screen.queryByRole('button')).toBeInTheDocument()
+                })
             })
         })
     })
 
     describe('when the send button is clicked without typing into the input', () => {
         it('should not call the onSendMessage function', async () => {
-            render(<ChatConversation {...commonProps} inputActions />)
+            render(<ChatConversation {...userChatProps} />)
 
             const button = screen.getByRole('button')
             userEvent.click(button)
@@ -82,7 +115,7 @@ describe('/components/Chat/ChatConversation', () => {
 
     describe('when a message is typed into the input and the send button is clicked', () => {
         it('should call the onSendMessage function', async () => {
-            render(<ChatConversation {...commonProps} inputActions />)
+            render(<ChatConversation {...userChatProps} />)
 
             const input = screen.getByRole('textbox')
             await userEvent.type(input, 'test')
@@ -98,7 +131,7 @@ describe('/components/Chat/ChatConversation', () => {
 
     describe('when an image is uploaded and the send button is clicked', () => {
         it('should call the onSendMessage function', async () => {
-            render(<ChatConversation {...commonProps} inputActions />)
+            render(<ChatConversation {...userChatProps} />)
 
             const fileUpload = screen.getByTestId(
                 'file-upload',

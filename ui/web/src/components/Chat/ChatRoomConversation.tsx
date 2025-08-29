@@ -151,10 +151,10 @@ export const ChatRoomConversation: React.FC<Props> = ({ roomId }) => {
             <ChatConversation
                 type={directUserId ? ChatType.direct : ChatType.group}
                 id={room?.id || ''}
+                isPublic={room?.isPublic}
                 name={room?.name || ''}
                 events={events}
                 onSendMessage={handleSend}
-                inputActions={!!directUserId}
                 onWalletClick={() => setIsPaymentOpen(true)}
                 headerActions={
                     directUserId ? undefined : (
