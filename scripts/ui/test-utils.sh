@@ -17,22 +17,18 @@ while true; do
         a)
             echo "Running tests for all UI workspaces"
             $REPO_ROOT/scripts/ui/run-ui-tests.sh || true
-            exit 0
             ;;
         c)
             echo "Running tests for common workspace only"
-            pushd "$REPO_ROOT/ui/common" && yarn test && popd || true
-            exit 0
+            pushd "$REPO_ROOT/ui" && yarn test:common && popd || true
             ;;
         n)
             echo "Running tests for native workspace only"
-            pushd "$REPO_ROOT/ui/native" && yarn test && popd || true
-            exit 0
+            pushd "$REPO_ROOT/ui" && yarn test:native && popd || true
             ;;
         w)
             echo "Running tests for web workspace only"
-            pushd "$REPO_ROOT/ui/web" && yarn test && popd || true
-            exit 0
+            pushd "$REPO_ROOT/ui" && yarn test:web && popd || true
             ;;
         e)
             bash "$REPO_ROOT/scripts/ui/run-e2e.sh" || true
