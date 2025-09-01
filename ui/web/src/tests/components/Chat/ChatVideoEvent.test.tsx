@@ -45,9 +45,10 @@ describe('/components/Chat/ChatVideoEvent', () => {
             render(<ChatVideoEvent event={mockMatrixEventVideo} />)
 
             const video = screen.getByLabelText('video')
-            video.click()
 
             await waitFor(() => {
+                video.click()
+
                 expect(screen.getByRole('dialog')).toBeInTheDocument()
             })
         })
@@ -57,9 +58,10 @@ describe('/components/Chat/ChatVideoEvent', () => {
                 render(<ChatVideoEvent event={mockMatrixEventVideo} />)
 
                 const video = screen.getByLabelText('video')
-                video.click()
 
                 await waitFor(() => {
+                    video.click()
+
                     const downloadButton =
                         screen.getByLabelText('download-button')
                     downloadButton.click()

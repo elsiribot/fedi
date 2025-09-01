@@ -45,9 +45,10 @@ describe('/components/Chat/ChatImageEvent', () => {
             render(<ChatImageEvent event={mockMatrixEventImage} />)
 
             const image = screen.getByAltText('image')
-            image.click()
 
             await waitFor(() => {
+                image.click()
+
                 expect(screen.getByRole('dialog')).toBeInTheDocument()
             })
         })
@@ -57,9 +58,10 @@ describe('/components/Chat/ChatImageEvent', () => {
                 render(<ChatImageEvent event={mockMatrixEventImage} />)
 
                 const image = screen.getByAltText('image')
-                image.click()
 
                 await waitFor(() => {
+                    image.click()
+
                     const downloadButton =
                         screen.getByLabelText('download-button')
                     downloadButton.click()

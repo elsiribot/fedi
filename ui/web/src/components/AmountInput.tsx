@@ -133,7 +133,6 @@ export const AmountInput: React.FC<Props> = ({
         active: true,
         readOnly,
         autoFocus,
-        hasError: !!error,
         onClick: useCallback(
             (ev: React.MouseEvent) => {
                 if (!isSmall) {
@@ -150,7 +149,6 @@ export const AmountInput: React.FC<Props> = ({
     const inactiveWrapProps = {
         active: false,
         readOnly,
-        hasError: !!error,
         role: readOnly ? undefined : 'button',
         tabIndex: readOnly ? undefined : 0,
         onClick: useCallback(
