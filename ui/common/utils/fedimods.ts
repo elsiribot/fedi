@@ -44,7 +44,7 @@ const tryGetHtmlTitle = (html: string): Result<string, MissingDataError> => {
 const tryGetManifestUrl = (
     html: string,
     urlOrigin: string,
-): Result<URL, MissingDataError | UrlConstructError | MissingDataError> => {
+): Result<URL, MissingDataError | UrlConstructError> => {
     const manifestLink = html
         .match(/<link[^>]*rel="manifest"[^>]*>/gi)?.[0]
         ?.match(/href="([^"]*)"/i)?.[1]

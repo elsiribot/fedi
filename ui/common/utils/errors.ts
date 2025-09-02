@@ -42,8 +42,8 @@ export class BridgeError extends TaggedError<'BridgeError'> {
     public error: string
     public errorCode: ErrorCode | null
 
-    constructor(json: RpcError) {
-        super('BridgeError')
+    constructor(json: RpcError, cause?: unknown) {
+        super('BridgeError', cause)
         this.error = json.error
         this.errorCode = json.errorCode
         this.detail = json.detail

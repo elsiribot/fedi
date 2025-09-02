@@ -64,10 +64,18 @@ export class FedimintBridge {
         M extends bindings.RpcMethodNames,
         R extends bindings.RpcResponse<M>,
     >(method: M, payload: bindings.RpcPayload<M>): ResultAsync<R, BridgeError> {
-        return ResultAsync.fromPromise(
-            this.rpc(method, payload),
-            e => e as BridgeError,
-        )
+        return ResultAsync.fromPromise(this.rpc(method, payload), e => {
+            if (e instanceof BridgeError) return e
+
+            return new BridgeError(
+                {
+                    errorCode: null,
+                    error: 'Failed to construct BridgeError from unknown value',
+                    detail: 'Failed to construct BridgeError from unknown value',
+                },
+                e,
+            )
+        })
     }
 
     /*** RPC METHODS ***/

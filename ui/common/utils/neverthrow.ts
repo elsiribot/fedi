@@ -42,10 +42,10 @@ export const fetchResult = (
 ): ResultAsync<Response, UrlConstructError | FetchError> =>
     ResultAsync.fromPromise(fetch(...args), e => {
         if (e instanceof Error && e.message.includes('URL')) {
-            return new TaggedError('UrlConstructError')
+            return new TaggedError('UrlConstructError', e)
         }
 
-        return new TaggedError('FetchError')
+        return new TaggedError('FetchError', e)
     })
 
 /**
