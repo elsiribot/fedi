@@ -61,5 +61,20 @@ pub const COMMUNITY_INVITE_CODE_HRP: Hrp = Hrp::parse_unchecked("fedi:community"
 
 pub const RECURRINGD_API_META: &str = "recurringd_api";
 
-// TODO shaurya add this in!
-pub const FEDI_DEFAULT_COMMUNITY_INVITE_CODE: &str = "FEDI_DEFAULT_COMMUNITY_INVITE_CODE";
+// List of communities to be excluded from consideration as either the "first"
+// or "other" communities within the scope of the Fedi Gift project.
+pub const FEDI_GIFT_EXCLUDED_COMMUNITIES: &[&str] = &[
+    // 10 placeholder communities for future
+    "fedi:community10v3xxmmdd46ku6t5090k6et5v90h2unvygazy6r5w3c8xw309a4x76tw943k7mtdw4hxjare9eenxtnpd4sh5mmwv9mhxtnrdakj7vpsxyhk6et5vyhx5um0dc386g8m6tx",
+    "fedi:community10v3xxmmdd46ku6t5090k6et5v90h2unvygazy6r5w3c8xw309a4x76tw943k7mtdw4hxjare9eenxtnpd4sh5mmwv9mhxtnrdakj7vpsxghk6et5vyhx5um0dc386kjjczw",
+    "fedi:community10v3xxmmdd46ku6t5090k6et5v90h2unvygazy6r5w3c8xw309a4x76tw943k7mtdw4hxjare9eenxtnpd4sh5mmwv9mhxtnrdakj7vpsxvhk6et5vyhx5um0dc386ux4p93",
+    "fedi:community10v3xxmmdd46ku6t5090k6et5v90h2unvygazy6r5w3c8xw309a4x76tw943k7mtdw4hxjare9eenxtnpd4sh5mmwv9mhxtnrdakj7vpsxshk6et5vyhx5um0dc386r3qus7",
+    "fedi:community10v3xxmmdd46ku6t5090k6et5v90h2unvygazy6r5w3c8xw309a4x76tw943k7mtdw4hxjare9eenxtnpd4sh5mmwv9mhxtnrdakj7vpsx5hk6et5vyhx5um0dc386f989hp",
+    "fedi:community10v3xxmmdd46ku6t5090k6et5v90h2unvygazy6r5w3c8xw309a4x76tw943k7mtdw4hxjare9eenxtnpd4sh5mmwv9mhxtnrdakj7vpsxchk6et5vyhx5um0dc386hsw87f",
+    "fedi:community10v3xxmmdd46ku6t5090k6et5v90h2unvygazy6r5w3c8xw309a4x76tw943k7mtdw4hxjare9eenxtnpd4sh5mmwv9mhxtnrdakj7vpsxuhk6et5vyhx5um0dc386ayf7ek",
+    "fedi:community10v3xxmmdd46ku6t5090k6et5v90h2unvygazy6r5w3c8xw309a4x76tw943k7mtdw4hxjare9eenxtnpd4sh5mmwv9mhxtnrdakj7vps8qhk6et5vyhx5um0dc386wzmpua",
+    "fedi:community10v3xxmmdd46ku6t5090k6et5v90h2unvygazy6r5w3c8xw309a4x76tw943k7mtdw4hxjare9eenxtnpd4sh5mmwv9mhxtnrdakj7vps8yhk6et5vyhx5um0dc386ykucmz",
+    "fedi:community10v3xxmmdd46ku6t5090k6et5v90h2unvygazy6r5w3c8xw309a4x76tw943k7mtdw4hxjare9eenxtnpd4sh5mmwv9mhxtnrdakj7vp3xqhk6et5vyhx5um0dc386z2cee7",
+    // 1 placeholder for QA testing
+    "fedi:community10v3xxmmdd46ku6t5090k6et5v90h2unvygazy6r5w3c8xw309ankjum59enkjargw4382um9wf3k7mn5v4h8gtnrdakj7cnswf5kxefk9ucxgv3evyekgd3h8qcrve35vser2dmz89jx2drzxfjkgd34vvergtmjv9mjylglx5n2j",
+];

@@ -1,5 +1,6 @@
 use std::collections::BTreeMap;
 use std::convert::Infallible;
+use std::ops::Not;
 use std::str::FromStr;
 use std::sync::Arc;
 use std::time::Duration;
@@ -12,7 +13,7 @@ use rpc_types::RpcCommunity;
 use rpc_types::error::ErrorCode;
 use rpc_types::event::{Event, EventSink, TypedEventExt};
 use runtime::bridge_runtime::Runtime;
-use runtime::constants::{COMMUNITY_INVITE_CODE_HRP, FEDI_DEFAULT_COMMUNITY_INVITE_CODE};
+use runtime::constants::{COMMUNITY_INVITE_CODE_HRP, FEDI_GIFT_EXCLUDED_COMMUNITIES};
 use runtime::storage::AppState;
 use runtime::storage::state::{CommunityInfo, CommunityJson};
 use serde::{Deserialize, Serialize};
@@ -118,7 +119,7 @@ impl Communities {
                     .insert(invite_code.to_owned(), CommunityInfo { meta: meta.clone() });
 
                 // If this is not the default Fedi community
-                if invite_code != FEDI_DEFAULT_COMMUNITY_INVITE_CODE {
+                if FEDI_GIFT_EXCLUDED_COMMUNITIES.contains(&invite_code).not() {
                     // And if "first community" has never been set
                     if state.first_comm_invite_code.is_none() {
                         // Then record this as the "first community"

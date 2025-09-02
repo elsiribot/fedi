@@ -20,7 +20,7 @@ use state::{
 };
 use tokio::sync::RwLock;
 
-use crate::constants::{FEDI_DEFAULT_COMMUNITY_INVITE_CODE, FEDI_FILE_V0_PATH};
+use crate::constants::{FEDI_FILE_V0_PATH, FEDI_GIFT_EXCLUDED_COMMUNITIES};
 use crate::db::BridgeDbPrefix;
 
 pub mod state;
@@ -162,7 +162,9 @@ impl AppState {
                         state.joined_communities.keys().cloned().collect();
 
                     // First remove default community invite code from consideration
-                    invite_codes.remove(FEDI_DEFAULT_COMMUNITY_INVITE_CODE);
+                    for &excluded in FEDI_GIFT_EXCLUDED_COMMUNITIES {
+                        invite_codes.remove(excluded);
+                    }
 
                     // Backfilling is necessary iff:
                     // - "first community" is None (never set)

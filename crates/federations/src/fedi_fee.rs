@@ -17,7 +17,7 @@ use rpc_types::{LightningSendMetadata, RpcTransactionDirection};
 use runtime::api::TransactionDirection;
 use runtime::bridge_runtime::Runtime;
 use runtime::constants::{
-    FEDI_DEFAULT_COMMUNITY_INVITE_CODE, FEDI_FEE_REMITTANCE_MAX_DELAY, FEDI_GIFT_CHILD_ID, MILLION,
+    FEDI_FEE_REMITTANCE_MAX_DELAY, FEDI_GIFT_CHILD_ID, FEDI_GIFT_EXCLUDED_COMMUNITIES, MILLION,
 };
 use runtime::storage::state::{FediFeeSchedule, ModuleFediFeeSchedule};
 use stability_pool_client::common::AccountId;
@@ -229,7 +229,7 @@ impl FediFeeHelper {
                     return false;
                 }
 
-                if code == FEDI_DEFAULT_COMMUNITY_INVITE_CODE {
+                if FEDI_GIFT_EXCLUDED_COMMUNITIES.contains(&code.as_str()) {
                     return false;
                 }
 
