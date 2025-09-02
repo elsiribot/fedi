@@ -570,6 +570,8 @@ export function useMatrixPaymentEvent({
         paymentSender,
         handleRejectRequest,
         isLoadingTransaction,
+        transaction,
+        isSentByMe,
     }
 }
 
