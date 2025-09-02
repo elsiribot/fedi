@@ -13,6 +13,7 @@ import {
     selectIsActiveFederationRecovering,
     selectOnboardingMethod,
 } from '@fedi/common/redux'
+import { selectCanShowSurvey } from '@fedi/common/redux/support'
 
 import FirstTimeCommunityEntryOverlay, {
     FirstTimeCommunityEntryItem,
@@ -50,6 +51,7 @@ const Home: React.FC<Props> = ({ offline }) => {
     )
     const pinnedMessage = useAppSelector(selectFederationPinnedMessage)
     const onboardingMethod = useAppSelector(selectOnboardingMethod)
+    const canShowSurvey = useAppSelector(selectCanShowSurvey)
 
     const homeFirstTimeOverlayItems: FirstTimeCommunityEntryItem[] = [
         {
@@ -163,7 +165,7 @@ const Home: React.FC<Props> = ({ offline }) => {
                 show={showCommunityOverlay}
                 onDismiss={handleCommunityDismiss}
             />
-            <SurveyOverlay />
+            {canShowSurvey && <SurveyOverlay />}
         </View>
     )
 }

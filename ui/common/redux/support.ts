@@ -22,7 +22,7 @@ const initialState = {
     zendeskUnreadMessageCount: 0,
     lastShownSurveyTimestamp: null as number | null,
     surveyUrl: null as string | null,
-    shouldShowSurvey: false,
+    canShowSurvey: false,
 }
 
 export type SupportState = typeof initialState
@@ -48,8 +48,8 @@ export const supportSlice = createSlice({
         resetSurveyTimestamp(state) {
             state.lastShownSurveyTimestamp = Date.now()
         },
-        setShouldShowSurvey(state, action: PayloadAction<boolean>) {
-            state.shouldShowSurvey = action.payload
+        setCanShowSurvey(state, action: PayloadAction<boolean>) {
+            state.canShowSurvey = action.payload
         },
         setSurveyUrl(state, action: PayloadAction<string | null>) {
             state.surveyUrl = action.payload
@@ -80,7 +80,7 @@ export const {
     setZendeskInitialized,
     setZendeskUnreadMessageCount,
     resetSurveyTimestamp,
-    setShouldShowSurvey,
+    setCanShowSurvey,
     setSurveyUrl,
 } = supportSlice.actions
 
@@ -131,13 +131,16 @@ export const checkSurveyCondition = createAsyncThunk<
         }
     }
 
+    const hasBeenSurveyed = state.nux.steps.hasAcceptedSurvey
+    const canShowSurvey = enabled && !hasBeenSurveyed && !!url
+
     log.debug('Finalizing survey condition', {
-        enabled,
         url,
+        enabled: canShowSurvey,
     })
 
     dispatch(setSurveyUrl(url))
-    dispatch(setShouldShowSurvey(enabled))
+    if (url) dispatch(setCanShowSurvey(canShowSurvey))
 })
 
 /*** Selectors ***/
@@ -156,8 +159,7 @@ export const selectZendeskUnreadMessageCount = (s: CommonState) =>
 
 export const selectSurveyUrl = (s: CommonState) => s.support.surveyUrl
 
-export const selectShouldShowSurvey = (s: CommonState) =>
-    s.support.shouldShowSurvey
+export const selectCanShowSurvey = (s: CommonState) => s.support.canShowSurvey
 
 /*** Synchronous wrapper actions ***/
 

@@ -24,7 +24,6 @@ describe('SurveyModal', () => {
                 support: {
                     ...state.support,
                     surveyUrl: 'https://test.fedi.xyz/survey',
-                    shouldShowSurvey: true,
                     lastShownSurveyTimestamp: -1,
                 },
             },

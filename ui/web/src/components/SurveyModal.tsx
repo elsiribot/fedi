@@ -7,9 +7,7 @@ import { useNuxStep } from '@fedi/common/hooks/nux'
 import { selectLanguage } from '@fedi/common/redux'
 import {
     resetSurveyTimestamp,
-    selectShouldShowSurvey,
     selectSurveyUrl,
-    setShouldShowSurvey,
 } from '@fedi/common/redux/support'
 import { getSurveyLanguage } from '@fedi/common/utils/survey'
 
@@ -19,9 +17,9 @@ import { Icon } from './Icon'
 import { Modal } from './Modal'
 
 const SurveyModal = () => {
-    const [, completeAcceptSurvey] = useNuxStep('hasAcceptedSurvey')
+    const [hasAcceptedSurvey, completeAcceptSurvey] =
+        useNuxStep('hasAcceptedSurvey')
 
-    const open = useAppSelector(selectShouldShowSurvey)
     const url = useAppSelector(selectSurveyUrl)
     const language = useAppSelector(selectLanguage)
     const dispatch = useAppDispatch()
@@ -30,7 +28,6 @@ const SurveyModal = () => {
 
     const handleDismiss = useCallback(() => {
         dispatch(resetSurveyTimestamp())
-        dispatch(setShouldShowSurvey(false))
     }, [dispatch])
 
     const handleOpenSurveyLink = useCallback(() => {
@@ -50,7 +47,7 @@ const SurveyModal = () => {
 
     return (
         <Modal
-            open={open && !!url}
+            open={!hasAcceptedSurvey && !!url}
             onClick={handleOpenSurveyLink}
             onOpenChange={handleDismiss}
             buttonText={t('feature.support.give-feedback')}

@@ -7,9 +7,8 @@ import { useNuxStep } from '@fedi/common/hooks/nux'
 import { selectLanguage } from '@fedi/common/redux'
 import {
     resetSurveyTimestamp,
-    selectShouldShowSurvey,
     selectSurveyUrl,
-    setShouldShowSurvey,
+    setCanShowSurvey,
 } from '@fedi/common/redux/support'
 import { getSurveyLanguage } from '@fedi/common/utils/survey'
 
@@ -20,9 +19,9 @@ import HoloCircle from '../../ui/HoloCircle'
 import SvgImage from '../../ui/SvgImage'
 
 const SurveyOverlay = () => {
-    const [, completeAcceptSurvey] = useNuxStep('hasAcceptedSurvey')
+    const [hasAcceptedSurvey, completeAcceptSurvey] =
+        useNuxStep('hasAcceptedSurvey')
 
-    const open = useAppSelector(selectShouldShowSurvey)
     const url = useAppSelector(selectSurveyUrl)
     const language = useAppSelector(selectLanguage)
     const dispatch = useAppDispatch()
@@ -33,7 +32,7 @@ const SurveyOverlay = () => {
 
     const handleDismiss = useCallback(() => {
         dispatch(resetSurveyTimestamp())
-        dispatch(setShouldShowSurvey(false))
+        dispatch(setCanShowSurvey(false))
     }, [dispatch])
 
     const handleOpenSurveyLink = useCallback(() => {
@@ -59,7 +58,7 @@ const SurveyOverlay = () => {
 
     return (
         <CenterOverlay
-            show={open && !!url}
+            show={!hasAcceptedSurvey && !!url}
             onBackdropPress={handleDismiss}
             showCloseButton>
             <Flex gap="lg" align="center" fullWidth>

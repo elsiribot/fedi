@@ -22,6 +22,7 @@ import {
     selectCoreMods,
     selectVisibleCommunityMods,
 } from '@fedi/common/redux/mod'
+import { selectCanShowSurvey } from '@fedi/common/redux/support'
 import stringUtils from '@fedi/common/utils/StringUtils'
 
 import { Avatar } from '../components/Avatar'
@@ -75,6 +76,7 @@ function HomePage() {
     const activeFederation = useAppSelector(selectActiveFederation)
     const newsItems = useAppSelector(s => selectActiveFederationChats(s))
     const onboardingMethod = useAppSelector(selectOnboardingMethod)
+    const canShowSurvey = useAppSelector(selectCanShowSurvey)
     const isNewSeedUser = onboardingMethod !== 'restored'
 
     // Federations have wallets, communities do not
@@ -297,7 +299,7 @@ function HomePage() {
                     </Text>
                 </ModalContent>
             </Modal>
-            <SurveyModal />
+            {canShowSurvey && <SurveyModal />}
         </ContentBlock>
     )
 }
