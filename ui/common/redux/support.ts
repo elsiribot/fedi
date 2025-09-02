@@ -4,9 +4,14 @@ import {
     Dispatch,
     createAsyncThunk,
 } from '@reduxjs/toolkit'
+import { z } from 'zod'
 
 import { CommonState } from '.'
+import { API_ORIGIN } from '../constants/api'
+import { makeLog } from '../utils/log'
 import { loadFromStorage } from './storage'
+
+const log = makeLog('common/redux/support')
 
 /*** Initial State ***/
 
@@ -16,6 +21,8 @@ const initialState = {
     zendeskInitialized: false,
     zendeskUnreadMessageCount: 0,
     lastShownSurveyTimestamp: null as number | null,
+    surveyUrl: null as string | null,
+    canShowSurvey: false,
 }
 
 export type SupportState = typeof initialState
@@ -40,6 +47,12 @@ export const supportSlice = createSlice({
         },
         resetSurveyTimestamp(state) {
             state.lastShownSurveyTimestamp = Date.now()
+        },
+        setCanShowSurvey(state, action: PayloadAction<boolean>) {
+            state.canShowSurvey = action.payload
+        },
+        setSurveyUrl(state, action: PayloadAction<string | null>) {
+            state.surveyUrl = action.payload
         },
     },
     extraReducers: builder => {
@@ -67,15 +80,17 @@ export const {
     setZendeskInitialized,
     setZendeskUnreadMessageCount,
     resetSurveyTimestamp,
+    setCanShowSurvey,
+    setSurveyUrl,
 } = supportSlice.actions
 
 /*** Asynchronous thonkers ***/
 
 export const checkSurveyCondition = createAsyncThunk<
-    { shouldShow: boolean },
+    void,
     undefined,
     { state: CommonState }
->('support/checkSurveyCondition', async (_, { getState }) => {
+>('support/checkSurveyCondition', async (_, { getState, dispatch }) => {
     const state = getState()
 
     const oneWeekMs = 7 * 24 * 60 * 60 * 1000
@@ -83,16 +98,49 @@ export const checkSurveyCondition = createAsyncThunk<
     const hasBeenSevenDays =
         lastShownTimestamp && Date.now() - lastShownTimestamp >= oneWeekMs
 
+    log.debug('Checking survey condition', {
+        hasBeenSevenDays,
+        lastShownTimestamp,
+    })
+
+    let enabled = false
+    let url: string | null = null
+
     // If it has been 7 days since the last survey
     // OR if the user has already accepted the survey
     // don't show the survey again
-    if (!hasBeenSevenDays || state.nux.steps.hasAcceptedSurvey)
-        return { shouldShow: false }
+    if (hasBeenSevenDays && !state.nux.steps.hasAcceptedSurvey) {
+        try {
+            const surveyResponse = await fetch(
+                `${API_ORIGIN}/api/active-survey`,
+            ).then(res => res.json())
 
-    // TODO: make a fetch to the server endpoint once implemented
-    const shouldShow = await Promise.resolve(false)
+            const surveySchema = z.object({
+                enabled: z.boolean(),
+                url: z.string(),
+            })
 
-    return { shouldShow }
+            const surveyData = surveySchema.safeParse(surveyResponse)
+
+            if (surveyData.success) {
+                url = surveyData.data.url
+                enabled = surveyData.data.enabled
+            }
+        } catch (e) {
+            log.error('Failed to fetch survey condition', e)
+        }
+    }
+
+    const hasBeenSurveyed = state.nux.steps.hasAcceptedSurvey
+    const canShowSurvey = enabled && !hasBeenSurveyed && !!url
+
+    log.debug('Finalizing survey condition', {
+        url,
+        enabled: canShowSurvey,
+    })
+
+    dispatch(setSurveyUrl(url))
+    if (url) dispatch(setCanShowSurvey(canShowSurvey))
 })
 
 /*** Selectors ***/
@@ -108,6 +156,10 @@ export const selectZendeskInitialized = (s: CommonState) =>
 
 export const selectZendeskUnreadMessageCount = (s: CommonState) =>
     s.support.zendeskUnreadMessageCount
+
+export const selectSurveyUrl = (s: CommonState) => s.support.surveyUrl
+
+export const selectCanShowSurvey = (s: CommonState) => s.support.canShowSurvey
 
 /*** Synchronous wrapper actions ***/
 

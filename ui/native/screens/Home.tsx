@@ -1,7 +1,7 @@
 import type { BottomTabScreenProps } from '@react-navigation/bottom-tabs'
 import { useIsFocused } from '@react-navigation/native'
 import { useTheme, type Theme } from '@rneui/themed'
-import React, { useEffect, useRef, useState } from 'react'
+import React, { useRef } from 'react'
 import { useTranslation } from 'react-i18next'
 import { ScrollView, StyleSheet, View } from 'react-native'
 
@@ -13,7 +13,7 @@ import {
     selectIsActiveFederationRecovering,
     selectOnboardingMethod,
 } from '@fedi/common/redux'
-import { checkSurveyCondition } from '@fedi/common/redux/support'
+import { selectCanShowSurvey } from '@fedi/common/redux/support'
 
 import FirstTimeCommunityEntryOverlay, {
     FirstTimeCommunityEntryItem,
@@ -27,7 +27,7 @@ import SurveyOverlay from '../components/feature/home/SurveyOverlay'
 import WelcomeMessage from '../components/feature/home/WelcomeMessage'
 import RecoveryInProgress from '../components/feature/recovery/RecoveryInProgress'
 import Flex from '../components/ui/Flex'
-import { useAppDispatch, useAppSelector } from '../state/hooks'
+import { useAppSelector } from '../state/hooks'
 import type {
     RootStackParamList,
     TabsNavigatorParamList,
@@ -51,7 +51,7 @@ const Home: React.FC<Props> = ({ offline }) => {
     )
     const pinnedMessage = useAppSelector(selectFederationPinnedMessage)
     const onboardingMethod = useAppSelector(selectOnboardingMethod)
-    const dispatch = useAppDispatch()
+    const canShowSurvey = useAppSelector(selectCanShowSurvey)
 
     const homeFirstTimeOverlayItems: FirstTimeCommunityEntryItem[] = [
         {
@@ -69,8 +69,6 @@ const Home: React.FC<Props> = ({ offline }) => {
         useNuxStep('displayNameModal')
     const [hasSeenCommunity, completeSeenCommunity] =
         useNuxStep('communityModal')
-
-    const [showSurvey, setShowSurvey] = useState(false)
 
     /**
      * Guards against showing more than one overlay during the current focus.
@@ -109,14 +107,6 @@ const Home: React.FC<Props> = ({ offline }) => {
         overlayShownThisFocus.current = true
         completeSeenDisplayName()
     }
-
-    useEffect(() => {
-        dispatch(checkSurveyCondition())
-            .unwrap()
-            .then(({ shouldShow }) => {
-                if (shouldShow) setShowSurvey(true)
-            })
-    }, [showSurvey, dispatch])
 
     const style = styles(theme)
 
@@ -175,7 +165,7 @@ const Home: React.FC<Props> = ({ offline }) => {
                 show={showCommunityOverlay}
                 onDismiss={handleCommunityDismiss}
             />
-            <SurveyOverlay open={showSurvey} onOpenChange={setShowSurvey} />
+            {canShowSurvey && <SurveyOverlay />}
         </View>
     )
 }

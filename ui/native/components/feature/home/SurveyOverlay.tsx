@@ -3,10 +3,13 @@ import { Text, Button, useTheme } from '@rneui/themed'
 import { useCallback } from 'react'
 import { useTranslation } from 'react-i18next'
 
-import { SURVEY_URL } from '@fedi/common/constants/support'
 import { useNuxStep } from '@fedi/common/hooks/nux'
 import { selectLanguage } from '@fedi/common/redux'
-import { resetSurveyTimestamp } from '@fedi/common/redux/support'
+import {
+    resetSurveyTimestamp,
+    selectSurveyUrl,
+    setCanShowSurvey,
+} from '@fedi/common/redux/support'
 import { getSurveyLanguage } from '@fedi/common/utils/survey'
 
 import { useAppDispatch, useAppSelector } from '../../../state/hooks'
@@ -15,14 +18,11 @@ import Flex from '../../ui/Flex'
 import HoloCircle from '../../ui/HoloCircle'
 import SvgImage from '../../ui/SvgImage'
 
-interface Props {
-    open: boolean
-    onOpenChange(open: boolean): void
-}
+const SurveyOverlay = () => {
+    const [hasAcceptedSurvey, completeAcceptSurvey] =
+        useNuxStep('hasAcceptedSurvey')
 
-const SurveyOverlay: React.FC<Props> = ({ open, onOpenChange }) => {
-    const [, completeAcceptSurvey] = useNuxStep('hasAcceptedSurvey')
-
+    const url = useAppSelector(selectSurveyUrl)
     const language = useAppSelector(selectLanguage)
     const dispatch = useAppDispatch()
     const navigation = useNavigation()
@@ -32,11 +32,13 @@ const SurveyOverlay: React.FC<Props> = ({ open, onOpenChange }) => {
 
     const handleDismiss = useCallback(() => {
         dispatch(resetSurveyTimestamp())
-        onOpenChange(false)
-    }, [dispatch, onOpenChange])
+        dispatch(setCanShowSurvey(false))
+    }, [dispatch])
 
     const handleOpenSurveyLink = useCallback(() => {
-        const surveyUrl = new URL(SURVEY_URL)
+        if (!url) return
+
+        const surveyUrl = new URL(url)
 
         if (language) {
             surveyUrl.searchParams.set('lang', getSurveyLanguage(language))
@@ -52,11 +54,11 @@ const SurveyOverlay: React.FC<Props> = ({ open, onOpenChange }) => {
                 url: surveyUrl.toString(),
             })
         }, 500)
-    }, [language, navigation, handleDismiss, completeAcceptSurvey])
+    }, [language, navigation, handleDismiss, completeAcceptSurvey, url])
 
     return (
         <CenterOverlay
-            show={open}
+            show={!hasAcceptedSurvey && !!url}
             onBackdropPress={handleDismiss}
             showCloseButton>
             <Flex gap="lg" align="center" fullWidth>
