@@ -8,7 +8,10 @@ import { z } from 'zod'
 
 import { CommonState } from '.'
 import { API_ORIGIN } from '../constants/api'
+import { makeLog } from '../utils/log'
 import { loadFromStorage } from './storage'
+
+const log = makeLog('common/redux/support')
 
 /*** Initial State ***/
 
@@ -95,6 +98,11 @@ export const checkSurveyCondition = createAsyncThunk<
     const hasBeenSevenDays =
         lastShownTimestamp && Date.now() - lastShownTimestamp >= oneWeekMs
 
+    log.debug('Checking survey condition', {
+        hasBeenSevenDays,
+        lastShownTimestamp,
+    })
+
     let enabled = false
     let url: string | null = null
 
@@ -102,23 +110,31 @@ export const checkSurveyCondition = createAsyncThunk<
     // OR if the user has already accepted the survey
     // don't show the survey again
     if (hasBeenSevenDays && !state.nux.steps.hasAcceptedSurvey) {
-        // TODO: make a fetch to the server endpoint once implemented
-        const surveyResponse = await fetch(
-            `${API_ORIGIN}/api/active-survey`,
-        ).then(res => res.json())
+        try {
+            const surveyResponse = await fetch(
+                `${API_ORIGIN}/api/active-survey`,
+            ).then(res => res.json())
 
-        const surveySchema = z.object({
-            enabled: z.boolean(),
-            url: z.string(),
-        })
+            const surveySchema = z.object({
+                enabled: z.boolean(),
+                url: z.string(),
+            })
 
-        const surveyData = surveySchema.safeParse(surveyResponse)
+            const surveyData = surveySchema.safeParse(surveyResponse)
 
-        if (surveyData.success) {
-            url = surveyData.data.url
-            enabled = surveyData.data.enabled
+            if (surveyData.success) {
+                url = surveyData.data.url
+                enabled = surveyData.data.enabled
+            }
+        } catch (e) {
+            log.error('Failed to fetch survey condition', e)
         }
     }
+
+    log.debug('Finalizing survey condition', {
+        enabled,
+        url,
+    })
 
     dispatch(setSurveyUrl(url))
     dispatch(setShouldShowSurvey(enabled))
