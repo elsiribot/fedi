@@ -8,21 +8,26 @@ import {
     selectMatrixDirectMessageRoom,
     sendMatrixDirectMessage,
 } from '@fedi/common/redux'
+import { makeLog } from '@fedi/common/utils/log'
 
 import { fedimint } from '../bridge'
 import MessageInput from '../components/feature/chat/MessageInput'
 import NoMessagesNotice from '../components/feature/chat/NoMessagesNotice'
 import SelectedMessageOverlay from '../components/feature/chat/SelectedMessageOverlay'
 import Flex from '../components/ui/Flex'
+import KeyboardStickyView from '../components/ui/KeyboardStickyView'
 import { useAppDispatch, useAppSelector } from '../state/hooks'
 import { resetToDirectChat } from '../state/navigation'
 import { InputAttachment, InputMedia } from '../types'
 import type { NavigationHook, RootStackParamList } from '../types/navigation'
+import { isAndroidAPI30Plus } from '../utils/layout'
 
 export type Props = NativeStackScreenProps<
     RootStackParamList,
     'ChatUserConversation'
 >
+
+const log = makeLog('ChatUserConversation')
 
 const ChatUserConversation: React.FC<Props> = ({ route }: Props) => {
     const navigation = useNavigation<NavigationHook>()
@@ -33,6 +38,7 @@ const ChatUserConversation: React.FC<Props> = ({ route }: Props) => {
         selectMatrixDirectMessageRoom(s, userId),
     )
     const [isSending, setIsSending] = useState(false)
+    const shouldUseStickyView = isAndroidAPI30Plus()
 
     const dispatch = useAppDispatch()
 
@@ -58,21 +64,51 @@ const ChatUserConversation: React.FC<Props> = ({ route }: Props) => {
             repliedEventId?: string | null,
         ) => {
             setIsSending(true)
-            dispatch(
-                sendMatrixDirectMessage({
-                    fedimint,
-                    userId,
-                    body,
-                    repliedEventId,
-                }),
-            )
+            try {
+                await dispatch(
+                    sendMatrixDirectMessage({
+                        fedimint,
+                        userId,
+                        body,
+                        repliedEventId,
+                    }),
+                ).unwrap()
+            } catch (err) {
+                log.error('error sending direct message', err)
+            } finally {
+                setIsSending(false)
+            }
         },
         [dispatch, userId],
     )
 
+    const renderMessageInput = useCallback((): JSX.Element => {
+        const messageInput = (
+            <MessageInput
+                isSending={isSending}
+                onMessageSubmitted={handleSend}
+                id={userId}
+                isPublic={false}
+            />
+        )
+
+        return shouldUseStickyView ? (
+            <KeyboardStickyView
+                enabledOnIOS={false}
+                enabledOnSmallScreens={true}
+                enabledOnMediumScreens={true}
+                enabledOnLargeScreens={true}
+                offsetOpened={0}>
+                {messageInput}
+            </KeyboardStickyView>
+        ) : (
+            messageInput
+        )
+    }, [handleSend, isSending, shouldUseStickyView, userId])
+
     return (
-        <Flex grow basis={false} center>
-            <>
+        <>
+            <Flex grow basis={false} center>
                 {isSending ? (
                     <Flex grow justify="center">
                         <ActivityIndicator size="large" />
@@ -80,15 +116,10 @@ const ChatUserConversation: React.FC<Props> = ({ route }: Props) => {
                 ) : (
                     <NoMessagesNotice />
                 )}
-                <MessageInput
-                    isSending={isSending}
-                    onMessageSubmitted={handleSend}
-                    id={userId}
-                    isPublic={false}
-                />
-            </>
+                {renderMessageInput()}
+            </Flex>
             <SelectedMessageOverlay isPublic={false} />
-        </Flex>
+        </>
     )
 }
 

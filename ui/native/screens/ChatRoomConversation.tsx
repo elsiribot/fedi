@@ -22,12 +22,13 @@ import SelectedMessageOverlay from '../components/feature/chat/SelectedMessageOv
 import MultispendChatBanner from '../components/feature/multispend/MultispendChatBanner'
 import Flex from '../components/ui/Flex'
 import HoloLoader from '../components/ui/HoloLoader'
+import KeyboardStickyView from '../components/ui/KeyboardStickyView'
 import { useAppDispatch, useAppSelector } from '../state/hooks'
 import type { RootStackParamList } from '../types/navigation'
+import { useChatKeyboardBehavior } from '../utils/hooks/keyboard'
+import { isAndroidAPI30Plus } from '../utils/layout'
 
 const log = makeLog('ChatRoomConversation')
-
-const DEFAULT_NEW_MESSAGE_BOTTOM_OFFSET = 20
 
 export type Props = NativeStackScreenProps<
     RootStackParamList,
@@ -39,9 +40,6 @@ const ChatRoomConversation: React.FC<Props> = ({ route }: Props) => {
     const dispatch = useAppDispatch()
     const { roomId, chatType = ChatType.group } = route.params
     const [isSending, setIsSending] = useState(false)
-    const [newMessageBottomOffset, setNewMessageBottomOffset] = useState(
-        DEFAULT_NEW_MESSAGE_BOTTOM_OFFSET,
-    )
     const room = useAppSelector(s => selectMatrixRoom(s, roomId))
     const groupPreview = useAppSelector(s => selectGroupPreview(s, roomId))
     const toast = useToast()
@@ -49,6 +47,8 @@ const ChatRoomConversation: React.FC<Props> = ({ route }: Props) => {
     const [replyBarHeight, setReplyBarHeight] = useState(0)
 
     const directUserId = useMemo(() => room?.directUserId, [room])
+
+    const { bottomOffset, setMessageInputHeight } = useChatKeyboardBehavior()
 
     const handleSend = useCallback(
         async (
@@ -103,6 +103,39 @@ const ChatRoomConversation: React.FC<Props> = ({ route }: Props) => {
         },
         [chatType, dispatch, isSending, roomId, t, toast],
     )
+    const shouldUseStickyView = isAndroidAPI30Plus()
+
+    const renderMessageInput = useCallback((): JSX.Element => {
+        const input = (
+            <MessageInput
+                onMessageSubmitted={handleSend}
+                id={roomId || directUserId || ''}
+                isPublic={room?.isPublic}
+                onHeightChanged={setMessageInputHeight}
+                onReplyBarHeightChanged={setReplyBarHeight}
+            />
+        )
+        return shouldUseStickyView ? (
+            <KeyboardStickyView
+                enabledOnIOS={false}
+                enabledOnSmallScreens={true}
+                enabledOnMediumScreens={true}
+                enabledOnLargeScreens={true}
+                offsetOpened={0}>
+                {input}
+            </KeyboardStickyView>
+        ) : (
+            input
+        )
+    }, [
+        handleSend,
+        roomId,
+        directUserId,
+        room?.isPublic,
+        setMessageInputHeight,
+        setReplyBarHeight,
+        shouldUseStickyView,
+    ])
 
     const content = useMemo(() => {
         return (
@@ -112,31 +145,20 @@ const ChatRoomConversation: React.FC<Props> = ({ route }: Props) => {
                     type={chatType}
                     id={roomId || ''}
                     isPublic={room?.isPublic}
-                    newMessageBottomOffset={newMessageBottomOffset}
+                    newMessageBottomOffset={bottomOffset}
                     replyBarOffset={replyBarHeight}
                 />
-                <MessageInput
-                    onMessageSubmitted={handleSend}
-                    id={roomId || directUserId || ''}
-                    isPublic={room?.isPublic}
-                    onHeightChanged={height =>
-                        setNewMessageBottomOffset(
-                            DEFAULT_NEW_MESSAGE_BOTTOM_OFFSET + height,
-                        )
-                    }
-                    onReplyBarHeightChanged={setReplyBarHeight}
-                />
+                {renderMessageInput()}
             </>
         )
     }, [
         roomId,
-        directUserId,
         chatType,
-        handleSend,
         room,
-        newMessageBottomOffset,
+        bottomOffset,
         replyBarHeight,
         shouldShowHeader,
+        renderMessageInput,
     ])
 
     if (!room) {

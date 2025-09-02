@@ -10,6 +10,7 @@ import amountUtils from '@fedi/common/utils/AmountUtils'
 import { fedimint } from '../bridge'
 import FederationWalletSelector from '../components/feature/send/FederationWalletSelector'
 import { AmountScreen } from '../components/ui/AmountScreen'
+import { SafeScrollArea } from '../components/ui/SafeArea'
 import { useAppSelector } from '../state/hooks'
 import { Sats } from '../types'
 import type { RootStackParamList } from '../types/navigation'
@@ -53,23 +54,27 @@ const SendOfflineAmount: React.FC<Props> = () => {
     }, [amount, maximumAmount, paymentFederation])
 
     return (
-        <AmountScreen
-            subHeader={<FederationWalletSelector />}
-            amount={amount}
-            onChangeAmount={onChangeAmount}
-            minimumAmount={minimumAmount}
-            maximumAmount={Math.min(maxSendEcashAmount, maximumAmount) as Sats}
-            submitAttempts={submitAttempts}
-            verb={t('words.send')}
-            buttons={[
-                {
-                    title: t('words.next'),
-                    onPress: onNext,
-                },
-            ]}
-            notes={notes}
-            setNotes={setNotes}
-        />
+        <SafeScrollArea edges="none">
+            <AmountScreen
+                subHeader={<FederationWalletSelector />}
+                amount={amount}
+                onChangeAmount={onChangeAmount}
+                minimumAmount={minimumAmount}
+                maximumAmount={
+                    Math.min(maxSendEcashAmount, maximumAmount) as Sats
+                }
+                submitAttempts={submitAttempts}
+                verb={t('words.send')}
+                buttons={[
+                    {
+                        title: t('words.next'),
+                        onPress: onNext,
+                    },
+                ]}
+                notes={notes}
+                setNotes={setNotes}
+            />
+        </SafeScrollArea>
     )
 }
 
