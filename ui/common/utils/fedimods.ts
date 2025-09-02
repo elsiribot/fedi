@@ -1,17 +1,19 @@
 import orderBy from 'lodash/orderBy'
-import { ok, Result, ResultAsync } from 'neverthrow'
+import { Result, ResultAsync } from 'neverthrow'
 import { z } from 'zod'
 
 import {
     FetchError,
     MalformedDataError,
     MissingDataError,
+    NotOkHttpResponseError,
     SchemaValidationError,
     UrlConstructError,
 } from '../types/errors'
 import { TaggedError } from './errors'
 import {
     constructUrl,
+    ensureHttpResponseOk,
     ensureNonNullish,
     fetchResult,
     thenJson,
@@ -80,20 +82,17 @@ const getHtmlIconUrls = (html: string, urlOrigin: string): URL[] => {
 const tryFetchFirstHtmlIcon = (
     html: string,
     urlOrigin: string,
-): ResultAsync<URL, FetchError | UrlConstructError | MissingDataError> => {
+): ResultAsync<
+    URL,
+    FetchError | UrlConstructError | MissingDataError | NotOkHttpResponseError
+> => {
     const iconUrls = getHtmlIconUrls(html, urlOrigin)
 
     // Ensures that the http response of an icon, given its URL, is ok
     const isUrlOk = (url: URL) =>
-        fetchResult(url.toString()).andThen(res => {
-            if (!res.ok) {
-                return new TaggedError('FetchError')
-                    .withMessage('failed to fetch icon')
-                    .intoErr()
-            }
-
-            return ok(url)
-        })
+        fetchResult(url.toString())
+            .andThrough(ensureHttpResponseOk)
+            .map(() => url)
 
     // Attempts to fetch icon URLs until one is valid
     return iconUrls.reduce(
@@ -171,18 +170,10 @@ export function tryFetchUrlMetadata(
     url: URL,
 ): ResultAsync<
     { icon: string; title: string },
-    FetchError | MalformedDataError | UrlConstructError
+    FetchError | MalformedDataError | UrlConstructError | NotOkHttpResponseError
 > {
     return fetchResult(url.toString())
-        .andThrough(res =>
-            res.status === 200
-                ? ok()
-                : new TaggedError('FetchError')
-                      .withMessage(
-                          `failed to fetch ${url.toString()}, got status code ${res.status}`,
-                      )
-                      .intoErr(),
-        )
+        .andThen(ensureHttpResponseOk)
         .andThen(res =>
             ResultAsync.fromPromise(
                 res.text(),

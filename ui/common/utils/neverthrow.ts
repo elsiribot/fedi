@@ -5,6 +5,7 @@ import {
     FetchError,
     MalformedDataError,
     MissingDataError,
+    NotOkHttpResponseError,
     UrlConstructError,
 } from '../types/errors'
 import { TaggedError } from './errors'
@@ -47,6 +48,20 @@ export const fetchResult = (
 
         return new TaggedError('FetchError', e)
     })
+
+/**
+ * Returns a Result based on whether the passed-in Response status is OK or not
+ * If OK, allows the original `Response` to pass through
+ * Otherwise returns a `NotOkHttpStatusError`
+ */
+export const ensureHttpResponseOk = (
+    res: Response,
+): Result<Response, NotOkHttpResponseError> =>
+    res.ok
+        ? ok(res)
+        : new TaggedError('NotOkHttpResponseError')
+              .withMessage(`HTTP Response Status not OK, got ${res.status}`)
+              .intoErr()
 
 /**
  * Attempts to parse a `Response` as JSON
