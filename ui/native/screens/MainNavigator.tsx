@@ -268,7 +268,11 @@ export const MainNavigator = () => {
                     <Stack.Screen
                         name="PublicFederations"
                         component={PublicFederations}
-                        options={() => ({
+                        options={({ route }) => ({
+                            gestureEnabled: !(route?.params?.from === 'Splash'),
+                            fullScreenSwipeEnabled: !(
+                                route?.params?.from === 'Splash'
+                            ),
                             header: () => (
                                 <CenteredHeader
                                     title={t('phrases.join-a-federation')}
