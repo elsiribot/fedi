@@ -108,7 +108,7 @@ const ChatUserConversation: React.FC<Props> = ({ route }: Props) => {
 
     return (
         <>
-            <Flex grow basis={false} center>
+            <Flex grow basis={false} align="stretch">
                 {isSending ? (
                     <Flex grow justify="center">
                         <ActivityIndicator size="large" />
