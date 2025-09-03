@@ -16,7 +16,8 @@ use fedimint_derive_secret::DerivableSecret;
 use rand::rngs::OsRng;
 use state::{
     AppStateJson, AppStateJsonBase, AppStateJsonOnboarded, AppStateJsonOnboarding,
-    DeviceIdentifier, OnboardingMethod, OnboardingStage, default_next_federation_prefix,
+    DeviceIdentifier, FirstCommunityInviteCodeState, OnboardingMethod, OnboardingStage,
+    default_next_federation_prefix,
 };
 use tokio::sync::RwLock;
 
@@ -167,16 +168,18 @@ impl AppState {
                     }
 
                     // Backfilling is necessary iff:
-                    // - "first community" is None (never set)
+                    // - "first community" is never set
                     // - There are pre-existing joined communities
-                    if state.first_comm_invite_code.is_none() && invite_codes.is_empty().not() {
+                    if state.first_comm_invite_code == FirstCommunityInviteCodeState::NeverSet
+                        && invite_codes.is_empty().not()
+                    {
                         // Then evaluate the remaining communities
                         if invite_codes.len() == 1 {
-                            state.first_comm_invite_code = Some(Some(
-                                invite_codes.first().expect("checked above").to_string(),
-                            ));
+                            state.first_comm_invite_code = FirstCommunityInviteCodeState::Set(
+                                invite_codes.first().expect("checked").to_string(),
+                            );
                         } else {
-                            state.first_comm_invite_code = Some(None); // can never be set now
+                            state.first_comm_invite_code = FirstCommunityInviteCodeState::Unset; // can never be set now
                         }
                     }
                 })
@@ -455,7 +458,7 @@ impl AppStateOnboarding {
                     matrix_session: None,
                     internal_bridge_export: false,
                     onboarding_method: Some(onboarding_method),
-                    first_comm_invite_code: None,
+                    first_comm_invite_code: FirstCommunityInviteCodeState::NeverSet,
                     base: AppStateJsonBase {
                         root_mnemonic,
                         joined_federations: BTreeMap::new(),

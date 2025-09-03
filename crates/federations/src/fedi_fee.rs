@@ -19,7 +19,9 @@ use runtime::bridge_runtime::Runtime;
 use runtime::constants::{
     FEDI_FEE_REMITTANCE_MAX_DELAY, FEDI_GIFT_CHILD_ID, FEDI_GIFT_EXCLUDED_COMMUNITIES, MILLION,
 };
-use runtime::storage::state::{FediFeeSchedule, ModuleFediFeeSchedule};
+use runtime::storage::state::{
+    FediFeeSchedule, FirstCommunityInviteCodeState, ModuleFediFeeSchedule,
+};
 use stability_pool_client::common::AccountId;
 use tokio::sync::{Mutex, OwnedMutexGuard};
 use tracing::{error, info, instrument, warn};
@@ -213,7 +215,13 @@ impl FediFeeHelper {
             .app_state
             .with_read_lock(|state| {
                 (
-                    state.first_comm_invite_code.clone().flatten(),
+                    match &state.first_comm_invite_code {
+                        FirstCommunityInviteCodeState::Set(invite_code) => {
+                            Some(invite_code.clone())
+                        }
+                        FirstCommunityInviteCodeState::NeverSet
+                        | FirstCommunityInviteCodeState::Unset => None,
+                    },
                     state.joined_communities.keys().cloned().collect::<Vec<_>>(),
                 )
             })
