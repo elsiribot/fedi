@@ -18,7 +18,6 @@ import {
     selectMatrixAuth,
     uploadAndSetMatrixAvatarUrl,
 } from '@fedi/common/redux'
-import { hasErrorTag } from '@fedi/common/utils/errors'
 import { makeLog } from '@fedi/common/utils/log'
 import { stripFileUriPrefix } from '@fedi/common/utils/media'
 import { ensureNonNullish } from '@fedi/common/utils/neverthrow'
@@ -83,7 +82,7 @@ const EditProfileSettings: React.FC = () => {
                 .andThen(ensureNonNullish)
                 .match(setProfileImageUri, e => {
                     log.error('Failed to launch image library', e)
-                    if (hasErrorTag(e, 'UserError')) {
+                    if (e._tag === 'UserError') {
                         toast.error(t, e)
                     }
                 })
