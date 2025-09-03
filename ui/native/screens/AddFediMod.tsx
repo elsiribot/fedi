@@ -1,8 +1,15 @@
+import { useHeaderHeight } from '@react-navigation/elements'
 import { useNavigation } from '@react-navigation/native'
 import { Button, Image, Input, Text, Theme, useTheme } from '@rneui/themed'
 import React, { useMemo, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { Platform, ScrollView, StyleSheet, View } from 'react-native'
+import {
+    KeyboardAvoidingView,
+    Platform,
+    ScrollView,
+    StyleSheet,
+    View,
+} from 'react-native'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { SvgUri } from 'react-native-svg'
 import { useDispatch } from 'react-redux'
@@ -19,19 +26,14 @@ import {
     OmniInputAction,
 } from '../components/feature/omni/OmniInput'
 import Flex from '../components/ui/Flex'
-import KeyboardAwareWrapper from '../components/ui/KeyboardAwareWrapper'
-import KeyboardStickyView from '../components/ui/KeyboardStickyView'
 import { SafeScrollArea } from '../components/ui/SafeArea'
 import { ParserDataType } from '../types'
-import { useAndroidInputFocus } from '../utils/hooks/keyboard'
-import { isAndroidAPI30Plus } from '../utils/layout'
 
 const log = makeLog('AddFediMod')
 
 const AddFediMod: React.FC = () => {
     const { theme } = useTheme()
     const { t } = useTranslation()
-
     const dispatch = useDispatch()
     const navigation = useNavigation()
 
@@ -42,18 +44,19 @@ const AddFediMod: React.FC = () => {
     const [isValidUrl, setIsValidUrl] = useState(false)
     const [action, setAction] = useState<'scan' | 'enter'>('scan')
 
-    const insets = useSafeAreaInsets()
     const style = styles(theme)
-
-    const { focusOffset, handleInputFocus } = useAndroidInputFocus()
     const scrollRef = useRef<ScrollView>(null)
+
+    const insets = useSafeAreaInsets()
+    const headerHeight = useHeaderHeight()
+
+    const iosOffset = Math.max(0, headerHeight - insets.top + theme.spacing.xl)
 
     const handleSubmit = async () => {
         try {
             const validUrl = new URL(
                 /^https?:\/\//.test(url) ? url : `https://${url}`,
             ).toString()
-
             dispatch(
                 addCustomMod({
                     fediMod: {
@@ -64,7 +67,6 @@ const AddFediMod: React.FC = () => {
                     },
                 }),
             )
-
             navigation.goBack() // multiple ways we could have been sent here
         } catch (e) {
             log.error('handleSubmit', e)
@@ -134,31 +136,25 @@ const AddFediMod: React.FC = () => {
         )
     }
 
-    return (
-        <KeyboardAwareWrapper
-            containerStyle={style.container}
-            additionalVerticalOffset={insets.top}
-            behavior="padding">
+    const content = (
+        <>
             <SafeScrollArea
                 ref={scrollRef}
                 keyboardShouldPersistTaps="handled"
+                keyboardDismissMode="on-drag"
                 contentInsetAdjustmentBehavior="never"
                 contentContainerStyle={{
                     flexGrow: 1,
                     paddingHorizontal: theme.spacing.xl,
-                    paddingBottom: Platform.OS === 'ios' ? 30 : 0,
+                    paddingBottom: theme.spacing.xl,
                 }}
                 showsVerticalScrollIndicator={false}
-                style={style.container}
-                edges={'none'}>
-                <View
-                    style={[
-                        style.inputWrapper,
-                        { transform: [{ translateY: -focusOffset }] },
-                    ]}>
+                edges="top"
+                safeAreaContainerStyle={{ paddingTop: 0 }}
+                style={style.container}>
+                <View style={style.inputWrapper}>
                     <Flex grow gap="xs">
                         <Input
-                            onFocus={handleInputFocus}
                             value={url}
                             onChangeText={setUrl}
                             placeholder={t('words.url')}
@@ -170,7 +166,6 @@ const AddFediMod: React.FC = () => {
                             returnKeyType="done"
                         />
                         <Input
-                            onFocus={handleInputFocus}
                             value={title}
                             onChangeText={setTitle}
                             placeholder={t('feature.fedimods.mod-title')}
@@ -204,7 +199,6 @@ const AddFediMod: React.FC = () => {
                             returnKeyType="done"
                         />
                         <Input
-                            onFocus={handleInputFocus}
                             value={imageUrl}
                             onChangeText={setImageUrl}
                             label={<Text small>{t('words.icon')}</Text>}
@@ -242,44 +236,44 @@ const AddFediMod: React.FC = () => {
                     </Flex>
                 </View>
             </SafeScrollArea>
-            <KeyboardStickyView
-                mode="absolute"
-                enabledOnIOS={false}
-                enabledOnSmallScreens={false}
-                enabledOnMediumScreens={true}
-                enabledOnLargeScreens={true}
-                offsetOpened={10}>
-                <View style={style.buttonContainer}>
-                    <Button
-                        fullWidth
-                        disabled={!canSave}
-                        loading={isFetching}
-                        onPress={handleSubmit}>
-                        {t('words.save')}
-                    </Button>
-                </View>
-            </KeyboardStickyView>
-        </KeyboardAwareWrapper>
+            <View
+                style={[
+                    style.buttonContainer,
+                    { paddingBottom: insets.bottom + theme.spacing.lg },
+                ]}>
+                <Button
+                    fullWidth
+                    disabled={!canSave}
+                    loading={isFetching}
+                    onPress={handleSubmit}>
+                    {t('words.save')}
+                </Button>
+            </View>
+        </>
+    )
+
+    return (
+        <>
+            {Platform.OS === 'ios' ? (
+                <KeyboardAvoidingView
+                    behavior="padding"
+                    style={style.container}
+                    keyboardVerticalOffset={iosOffset}>
+                    {content}
+                </KeyboardAvoidingView>
+            ) : (
+                <View style={style.container}>{content}</View>
+            )}
+        </>
     )
 }
 
 const styles = (theme: Theme) =>
     StyleSheet.create({
-        buttonContainer: {
-            paddingTop: theme.spacing.lg,
-            paddingHorizontal: theme.spacing.lg,
-            paddingBottom:
-                Platform.OS === 'ios'
-                    ? theme.spacing.lg
-                    : isAndroidAPI30Plus()
-                      ? theme.spacing.xl
-                      : theme.spacing.md,
-        },
         container: {
             flex: 1,
-            position: 'relative',
-            gap: theme.spacing.xs,
             width: '100%',
+            gap: theme.spacing.xs,
         },
         innerInputContainer: {
             marginTop: theme.spacing.xs,
@@ -299,6 +293,12 @@ const styles = (theme: Theme) =>
         },
         inputWrapper: {
             flex: 1,
+        },
+        buttonContainer: {
+            paddingTop: theme.spacing.lg,
+            paddingHorizontal: theme.spacing.lg,
+            backgroundColor: theme.colors?.background,
+            width: '100%',
         },
     })
 
