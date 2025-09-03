@@ -65,6 +65,14 @@ function hasTag(e: unknown): e is TaggedError<ErrorTag> {
     return '_tag' in e
 }
 
+export function hasErrorTag<T extends ErrorTag>(
+    e: unknown,
+    tag: T,
+): e is TaggedError<T> {
+    if (typeof e !== 'object' || e === null) return false
+    return (e as { _tag?: unknown })._tag === tag
+}
+
 export function makeError<T extends ErrorTag>(e: unknown, tag: T) {
     if (isErrorInstance(e, tag) && !hasTag(e)) {
         return Object.assign(e, {

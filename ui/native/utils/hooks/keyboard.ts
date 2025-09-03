@@ -1,11 +1,5 @@
 import { useEffect, useMemo, useState, useCallback } from 'react'
-import {
-    Keyboard,
-    KeyboardEvent,
-    Platform,
-    Dimensions,
-    InteractionManager,
-} from 'react-native'
+import { Keyboard, KeyboardEvent, Platform, Dimensions } from 'react-native'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 
 import { makeLog } from '@fedi/common/utils/log'
@@ -19,12 +13,7 @@ import {
     KEYBOARD_PADDING,
     SCREEN_SIZE_THRESHOLDS,
 } from '../../constants'
-import {
-    KeyboardContextValue,
-    KeyboardScrollableProps,
-    KeyboardScrollableRef,
-    KeyboardState,
-} from '../../types/keyboard'
+import { KeyboardContextValue, KeyboardState } from '../../types/keyboard'
 import { getAndroidScreenSize, isAndroidAPI30Plus } from '../layout'
 
 const log = makeLog('native/utils/keyboard')
@@ -385,47 +374,6 @@ export const useChatKeyboardBehavior = (): {
         setMessageInputHeight,
         keyboardPadding,
     }
-}
-
-// automatically scrolls down to the button, then back up, when keybaord is activated / dismissed
-export function useKeyboardAutoScroll(
-    ref: KeyboardScrollableRef,
-    {
-        enabled = true,
-        direction = 'end',
-        settleDelayMs,
-    }: KeyboardScrollableProps = {},
-): void {
-    const { isVisible, animationDuration } = useKeyboard()
-
-    useEffect(() => {
-        if (!enabled || !isVisible || !ref.current) return
-
-        const baseDelay =
-            typeof settleDelayMs === 'number'
-                ? settleDelayMs
-                : Math.max(50, Math.floor(animationDuration * 0.7))
-
-        let cancelled = false
-        const timer = setTimeout(() => {
-            InteractionManager.runAfterInteractions(() => {
-                if (cancelled) return
-
-                requestAnimationFrame(() => {
-                    if (direction === 'end') {
-                        ref.current?.scrollToEnd?.({ animated: true })
-                    } else if (direction === 'top') {
-                        ref.current?.scrollTo?.({ y: 0, animated: true })
-                    }
-                })
-            })
-        }, baseDelay)
-
-        return () => {
-            cancelled = true
-            clearTimeout(timer)
-        }
-    }, [enabled, isVisible, animationDuration, direction, settleDelayMs, ref])
 }
 
 export { keyboardManager }

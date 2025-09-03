@@ -1,10 +1,11 @@
+import { useHeaderHeight } from '@react-navigation/elements'
 import { Button, Input, Text, Theme, useTheme } from '@rneui/themed'
-import React, { useCallback, useRef, useState } from 'react'
+import React, { useCallback, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import {
     GestureResponderEvent,
+    KeyboardAvoidingView,
     Platform,
-    ScrollView,
     StyleSheet,
     View,
 } from 'react-native'
@@ -17,6 +18,7 @@ import {
     selectMatrixAuth,
     uploadAndSetMatrixAvatarUrl,
 } from '@fedi/common/redux'
+import { hasErrorTag } from '@fedi/common/utils/errors'
 import { makeLog } from '@fedi/common/utils/log'
 import { stripFileUriPrefix } from '@fedi/common/utils/media'
 import { ensureNonNullish } from '@fedi/common/utils/neverthrow'
@@ -24,13 +26,10 @@ import { ensureNonNullish } from '@fedi/common/utils/neverthrow'
 import { fedimint } from '../bridge'
 import Avatar, { AvatarSize } from '../components/ui/Avatar'
 import Flex from '../components/ui/Flex'
-import KeyboardStickyView from '../components/ui/KeyboardStickyView'
 import { Pressable } from '../components/ui/Pressable'
-import { SafeAreaContainer } from '../components/ui/SafeArea'
-import EditProfileKeyboardContainer from '../components/ui/keyboard/EditProfileKeyboardContainer'
+import { SafeScrollArea } from '../components/ui/SafeArea'
 import { useAppDispatch, useAppSelector } from '../state/hooks'
 import { useStoragePermission } from '../utils/hooks'
-import { useKeyboardAutoScroll } from '../utils/hooks/keyboard'
 import { tryPickAssets } from '../utils/media'
 
 const log = makeLog('EditProfile')
@@ -54,9 +53,12 @@ const EditProfileSettings: React.FC = () => {
     const toast = useToast()
     const dispatch = useAppDispatch()
     const matrixAuth = useAppSelector(selectMatrixAuth)
+
     const insets = useSafeAreaInsets()
-    const scrollRef = useRef<ScrollView>(null)
-    useKeyboardAutoScroll(scrollRef, { direction: 'end' })
+    const headerHeight = useHeaderHeight()
+    const iosOffset = Math.max(0, headerHeight - insets.top + theme.spacing.xl)
+
+    const style = styles(theme)
 
     const handleAvatarPress = useCallback(
         async (_: GestureResponderEvent) => {
@@ -81,8 +83,9 @@ const EditProfileSettings: React.FC = () => {
                 .andThen(ensureNonNullish)
                 .match(setProfileImageUri, e => {
                     log.error('Failed to launch image library', e)
-
-                    if (e._tag === 'UserError') toast.error(t, e)
+                    if (hasErrorTag(e, 'UserError')) {
+                        toast.error(t, e)
+                    }
                 })
         },
         [storagePermission, requestStoragePermission, t, toast],
@@ -118,85 +121,88 @@ const EditProfileSettings: React.FC = () => {
         profileImageMimeType,
     ])
 
-    const style = styles(theme)
-
     const hasChanged =
         username.trim() !== matrixAuth?.displayName || profileImageUri !== null
 
     const saveButtonDisabled = !hasChanged || isLoading || errorMessage !== null
 
-    return (
-        <EditProfileKeyboardContainer iosOffset={insets.top} useStickyBottom>
-            <SafeAreaContainer style={style.container} edges={'top'}>
-                <ScrollView
-                    ref={scrollRef}
-                    keyboardShouldPersistTaps="handled"
-                    contentInsetAdjustmentBehavior="never"
-                    contentContainerStyle={{
-                        flexGrow: 1,
-                        paddingHorizontal: theme.spacing.xl,
-                        paddingBottom:
-                            Platform.OS === 'ios' ? 30 : insets.bottom,
-                    }}
-                    showsVerticalScrollIndicator={false}>
-                    <Pressable
-                        onPress={handleAvatarPress}
-                        containerStyle={style.avatar}>
-                        <Avatar
-                            id={matrixAuth?.userId || ''}
-                            url={profileImageUri ?? matrixAuth?.avatarUrl}
-                            size={AvatarSize.lg}
-                            name={matrixAuth?.displayName}
-                        />
-                        <Text caption>{t('feature.chat.change-avatar')}</Text>
-                    </Pressable>
-                    <Flex grow style={style.content}>
-                        <Text
-                            testID="DisplayNameLabel"
-                            caption
-                            style={style.inputLabel}>
-                            {t('feature.chat.display-name')}
-                        </Text>
-                        <Input
-                            testID="DisplayNameInput"
-                            onChangeText={input => {
-                                handleChangeUsername(input)
-                            }}
-                            value={username}
-                            returnKeyType="done"
-                            keyboardType="visible-password"
-                            containerStyle={style.textInputOuter}
-                            inputContainerStyle={style.textInputInner}
-                            autoCapitalize={'none'}
-                            autoCorrect={false}
-                            disabled={isLoading}
-                        />
-                        {errorMessage && (
-                            <Text caption style={style.errorLabel}>
-                                {errorMessage}
-                            </Text>
-                        )}
-                    </Flex>
+    const content = (
+        <>
+            <SafeScrollArea
+                edges="top"
+                safeAreaContainerStyle={{ paddingTop: 0 }}
+                keyboardShouldPersistTaps="handled"
+                contentInsetAdjustmentBehavior="never"
+                contentContainerStyle={{
+                    flexGrow: 1,
+                    paddingHorizontal: theme.spacing.xl,
+                    paddingBottom: theme.spacing.xl, // space above footer
+                }}
+                style={style.container}>
+                <Pressable
+                    onPress={handleAvatarPress}
+                    containerStyle={style.avatar}>
+                    <Avatar
+                        id={matrixAuth?.userId || ''}
+                        url={profileImageUri ?? matrixAuth?.avatarUrl}
+                        size={AvatarSize.lg}
+                        name={matrixAuth?.displayName}
+                    />
+                    <Text caption>{t('feature.chat.change-avatar')}</Text>
+                </Pressable>
 
-                    <KeyboardStickyView
-                        enabledOnIOS={false}
-                        enabledOnSmallScreens={false}
-                        enabledOnMediumScreens
-                        enabledOnLargeScreens
-                        offsetOpened={10}>
-                        <View style={style.buttonContainer}>
-                            <Button
-                                fullWidth
-                                title={t('words.save')}
-                                onPress={handleNameSubmit}
-                                disabled={saveButtonDisabled}
-                                loading={isLoading}
-                            />
-                        </View>
-                    </KeyboardStickyView>
-                </ScrollView>
-            </SafeAreaContainer>
-        </EditProfileKeyboardContainer>
+                <Flex grow style={style.content}>
+                    <Text
+                        testID="DisplayNameLabel"
+                        caption
+                        style={style.inputLabel}>
+                        {t('feature.chat.display-name')}
+                    </Text>
+                    <Input
+                        testID="DisplayNameInput"
+                        onChangeText={handleChangeUsername}
+                        value={username}
+                        returnKeyType="done"
+                        keyboardType="visible-password"
+                        containerStyle={style.textInputOuter}
+                        inputContainerStyle={style.textInputInner}
+                        autoCapitalize="none"
+                        autoCorrect={false}
+                        disabled={isLoading}
+                    />
+                    {errorMessage && (
+                        <Text caption style={style.errorLabel}>
+                            {errorMessage}
+                        </Text>
+                    )}
+                </Flex>
+            </SafeScrollArea>
+
+            <View
+                style={[
+                    style.buttonContainer,
+                    { paddingBottom: insets.bottom + theme.spacing.lg },
+                ]}>
+                <Button
+                    fullWidth
+                    title={t('words.save')}
+                    onPress={handleNameSubmit}
+                    disabled={saveButtonDisabled}
+                    loading={isLoading}
+                />
+            </View>
+        </>
+    )
+
+    return Platform.OS === 'ios' ? (
+        <KeyboardAvoidingView
+            behavior="padding"
+            style={style.container}
+            keyboardVerticalOffset={iosOffset}>
+            {content}
+        </KeyboardAvoidingView>
+    ) : (
+        <View style={style.container}>{content}</View>
     )
 }
 
@@ -209,7 +215,8 @@ const styles = (theme: Theme) =>
         },
         buttonContainer: {
             paddingTop: theme.spacing.lg,
-            paddingBottom: theme.spacing.lg,
+            paddingHorizontal: theme.spacing.lg,
+            backgroundColor: theme.colors?.background,
             width: '100%',
         },
         container: {
