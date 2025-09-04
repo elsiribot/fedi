@@ -22,7 +22,7 @@ import {
     RpcTransaction,
     RpcTransactionListEntry,
 } from '../types/bindings'
-import { BridgeError, UnexpectedError } from '../utils/errors'
+import { BridgeError } from '../utils/errors'
 import { isDev } from './environment'
 import { makeLog } from './log'
 import { toSendMessageData } from './matrix'
@@ -63,14 +63,19 @@ export class FedimintBridge {
     rpcResult<
         M extends bindings.RpcMethodNames,
         R extends bindings.RpcResponse<M>,
-    >(
-        method: M,
-        payload: bindings.RpcPayload<M>,
-    ): ResultAsync<R, BridgeError | UnexpectedError> {
-        return ResultAsync.fromPromise(
-            this.rpc(method, payload),
-            BridgeError.tryFrom,
-        )
+    >(method: M, payload: bindings.RpcPayload<M>): ResultAsync<R, BridgeError> {
+        return ResultAsync.fromPromise(this.rpc(method, payload), e => {
+            if (e instanceof BridgeError) return e
+
+            return new BridgeError(
+                {
+                    errorCode: null,
+                    error: 'Failed to construct BridgeError from unknown value',
+                    detail: 'Failed to construct BridgeError from unknown value',
+                },
+                e,
+            )
+        })
     }
 
     /*** RPC METHODS ***/
