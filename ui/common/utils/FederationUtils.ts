@@ -475,13 +475,6 @@ export const getFederationIconUrl = (metadata: FederationMetadata) => {
     return getMetaField(SupportedMetaFields.federation_icon_url, metadata)
 }
 
-export const getIsFederationSupported = (federation: RpcFederationPreview) => {
-    if (federation.version === 0 || federation.version === 1) {
-        return false
-    }
-    return true
-}
-
 export const getFederationPreview = async (
     inviteCode: string,
     fedimint: FedimintBridge,

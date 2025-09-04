@@ -522,7 +522,6 @@ impl FederationV2 {
                 .unwrap_or(config.global.calculate_federation_id().to_string()[0..8].to_string()),
             meta,
             invite_code: invite_code.to_string(),
-            version: 2,
             returning_member_status: match backup {
                 Ok(Some(_)) => RpcReturningMemberStatus::ReturningMember,
                 Ok(None) => RpcReturningMemberStatus::NewMember,
