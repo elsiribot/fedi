@@ -1224,7 +1224,7 @@ export const sendMatrixPaymentPush = createAsyncThunk<
             recipientId,
             amount: msats,
             ecash,
-            federationId: includeInvite ? federation.id : undefined,
+            federationId: federation.id,
         })
 
         return senderOperationId
