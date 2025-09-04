@@ -1213,6 +1213,12 @@ export const sendMatrixPaymentPush = createAsyncThunk<
         const senderOperationId = operationId
         const paymentId = uuidv4()
 
+        await fedimint.updateTransactionNotes(
+            operationId,
+            notes || '',
+            federationId,
+        )
+
         await client.sendMessage(roomId, {
             msgtype: 'xyz.fedi.payment',
             body: `Sent payment of ${amountUtils.formatSats(amount)} SATS. Use the Fedi app to accept this payment.`, // TODO: i18n? this only shows to matrix clients, not Fedi users
