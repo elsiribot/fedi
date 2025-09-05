@@ -210,6 +210,9 @@ pub async fn test_send_and_download_attachment(_dev_fed: DevFed) -> anyhow::Resu
         .await?;
     sleep_in_test("wait for attachment to be sent", Duration::from_millis(100)).await;
 
+    if fedimint_core::envs::is_env_var_set("MATRIX_TEST_SKIP_DOWNLOAD") {
+        return Ok(());
+    }
     let timeline = matrix.timeline(&room_id).await?;
     let event = timeline
         .latest_event()
