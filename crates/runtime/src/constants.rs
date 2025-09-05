@@ -61,12 +61,19 @@ pub const COMMUNITY_INVITE_CODE_HRP: Hrp = Hrp::parse_unchecked("fedi:community"
 
 pub const RECURRINGD_API_META: &str = "recurringd_api";
 
+// Global community invite codes used across environments
+// s3://join-community/001/meta.json
+pub const FEDI_GLOBAL_COMMUNITY_PROD: &str = "fedi:community10v3xxmmdd46ku6t5090k6et5v90h2unvygazy6r5w3c8xw309a4x76tw943k7mtdw4hxjare9eenxtnpd4sh5mmwv9mhxtnrdakj7vpsxyhk6et5vyhx5um0dc386g8m6tx";
+// s3://join-community/002/meta.json
+pub const FEDI_GLOBAL_COMMUNITY_STAGING: &str = "fedi:community10v3xxmmdd46ku6t5090k6et5v90h2unvygazy6r5w3c8xw309a4x76tw943k7mtdw4hxjare9eenxtnpd4sh5mmwv9mhxtnrdakj7vpsxghk6et5vyhx5um0dc386kjjczw";
+
 // List of communities to be excluded from consideration as either the "first"
 // or "other" communities within the scope of the Fedi Gift project.
 pub const FEDI_GIFT_EXCLUDED_COMMUNITIES: &[&str] = &[
-    // 10 placeholder communities for future
-    "fedi:community10v3xxmmdd46ku6t5090k6et5v90h2unvygazy6r5w3c8xw309a4x76tw943k7mtdw4hxjare9eenxtnpd4sh5mmwv9mhxtnrdakj7vpsxyhk6et5vyhx5um0dc386g8m6tx",
-    "fedi:community10v3xxmmdd46ku6t5090k6et5v90h2unvygazy6r5w3c8xw309a4x76tw943k7mtdw4hxjare9eenxtnpd4sh5mmwv9mhxtnrdakj7vpsxghk6et5vyhx5um0dc386kjjczw",
+    // Global community codes
+    FEDI_GLOBAL_COMMUNITY_PROD,
+    FEDI_GLOBAL_COMMUNITY_STAGING,
+    // Additional placeholder communities for future
     "fedi:community10v3xxmmdd46ku6t5090k6et5v90h2unvygazy6r5w3c8xw309a4x76tw943k7mtdw4hxjare9eenxtnpd4sh5mmwv9mhxtnrdakj7vpsxvhk6et5vyhx5um0dc386ux4p93",
     "fedi:community10v3xxmmdd46ku6t5090k6et5v90h2unvygazy6r5w3c8xw309a4x76tw943k7mtdw4hxjare9eenxtnpd4sh5mmwv9mhxtnrdakj7vpsxshk6et5vyhx5um0dc386r3qus7",
     "fedi:community10v3xxmmdd46ku6t5090k6et5v90h2unvygazy6r5w3c8xw309a4x76tw943k7mtdw4hxjare9eenxtnpd4sh5mmwv9mhxtnrdakj7vpsx5hk6et5vyhx5um0dc386f989hp",
