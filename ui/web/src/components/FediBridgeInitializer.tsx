@@ -130,7 +130,8 @@ export const FediBridgeInitializer: React.FC<Props> = ({ children }) => {
     useEffect(() => {
         if ((isNightly() || isDev()) && matrixAuth && matrixAuth.userId) {
             const [, homeserver] = matrixAuth.userId.split(':')
-            if (homeserver !== 'staging.m1.8fa.in') {
+            // eslint-disable-next-line
+            if (false && homeserver !== 'staging.m1.8fa.in') {
                 setError(
                     'This is an expected nightly only error intentionally forced to ensure clean metrics. Please uninstall & recover from seed.\n',
                 )
