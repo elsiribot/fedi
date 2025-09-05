@@ -2,8 +2,8 @@ import fetchMock from 'jest-fetch-mock'
 import { rest } from 'msw'
 import { setupServer } from 'msw/node'
 
-import { tryFetchUrlMetadata } from '../../utils/fedimods'
-import { constructUrl } from '../../utils/neverthrow'
+import { tryFetchUrlMetadata } from '../../../utils/fedimods'
+import { constructUrl } from '../../../utils/neverthrow'
 
 fetchMock.enableMocks()
 

@@ -1,9 +1,9 @@
-import { MatrixPaymentStatus, MatrixPaymentEvent } from '../../types'
-import { consolidatePaymentEvents } from '../../utils/matrix'
+import { MatrixPaymentStatus, MatrixPaymentEvent } from '../../../types'
+import { consolidatePaymentEvents } from '../../../utils/matrix'
 import {
     createMockPaymentEvent,
     createMockNonPaymentEvent,
-} from '../mock-data/matrix-event'
+} from '../../mock-data/matrix-event'
 
 /*
 // Payment Event Consolidation Tests

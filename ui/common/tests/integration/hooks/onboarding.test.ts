@@ -12,8 +12,8 @@ import {
     selectActiveFederation,
 } from '@fedi/common/redux'
 
-import { createIntegrationTestBuilder } from '../../utils/test-utils/remote-bridge-setup'
-import { renderHookWithState } from '../test-utils/render'
+import { createIntegrationTestBuilder } from '../../../utils/test-utils/remote-bridge-setup'
+import { renderHookWithState } from '../../test-utils/render'
 
 describe('onboarding with remote bridge', () => {
     const builder = createIntegrationTestBuilder()

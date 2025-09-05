@@ -1,12 +1,12 @@
-import { MSats } from '../../types'
+import { MSats } from '../../../types'
 import {
     Community,
     Federation,
     FederationListItem,
     LoadedFederation,
     SupportedCurrency,
-} from '../../types/fedimint'
-import { upsertListItem } from '../../utils/redux'
+} from '../../../types/fedimint'
+import { upsertListItem } from '../../../utils/redux'
 
 const baseFed: LoadedFederation = {
     id: 'fedid',

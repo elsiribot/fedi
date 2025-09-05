@@ -4,12 +4,12 @@ import {
     LoadedFederation,
     MSats,
     SupportedCurrency,
-} from '../../types'
+} from '../../../types'
 import {
     getFederationDefaultCurrency,
     getFederationFediMods,
     shouldShowInviteCode,
-} from '../../utils/FederationUtils'
+} from '../../../utils/FederationUtils'
 
 const SAMPLE_CHAT_SERVER_DOMAIN = 'chat.dev.fedibtc.com'
 

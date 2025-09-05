@@ -1,6 +1,6 @@
 import assert from 'assert'
 
-import { MatrixEvent, MatrixEventStatus } from '../../types'
+import { MatrixEvent, MatrixEventStatus } from '../../../types'
 import {
     decodeFediMatrixUserUri,
     encodeFediMatrixUserUri,
@@ -17,8 +17,8 @@ import {
     getReplyMessageData,
     getReplyEventId,
     stripReplyFromBody,
-} from '../../utils/matrix'
-import { createTestMatrixReply } from '../test-utils/matrix'
+} from '../../../utils/matrix'
+import { createTestMatrixReply } from '../../test-utils/matrix'
 
 describe('encodeFediMatrixUserUri', () => {
     it('encodes a user URI', () => {

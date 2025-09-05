@@ -1,4 +1,4 @@
-import * as device from '../../utils/device'
+import * as device from '../../../utils/device'
 
 describe('/utils/device', () => {
     describe('getFormattedDeviceInfo', () => {

@@ -1,11 +1,11 @@
-import { VectorDiff } from '../../types/bindings'
+import { VectorDiff } from '../../../types/bindings'
 import {
     applyStreamUpdate,
     applyStreamUpdates,
     mapStreamUpdate,
     mapStreamUpdates,
     getNewStreamIds,
-} from '../../utils/stream'
+} from '../../../utils/stream'
 
 describe('stream utils', () => {
     describe('applyStreamUpdate', () => {

@@ -1,4 +1,4 @@
-import dateUtils from '../../utils/DateUtils'
+import dateUtils from '../../../utils/DateUtils'
 
 describe('DateUtils', () => {
     describe('formatTimestamp', () => {

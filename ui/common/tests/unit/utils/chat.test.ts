@@ -1,4 +1,4 @@
-import * as chat from '../../utils/chat'
+import * as chat from '../../../utils/chat'
 
 describe('chat', () => {
     describe('generateRandomDisplayName', () => {

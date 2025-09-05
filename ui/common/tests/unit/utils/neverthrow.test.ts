@@ -11,7 +11,7 @@ import {
     fetchResult,
     thenJson,
     throughZodSchema,
-} from '../../utils/neverthrow'
+} from '../../../utils/neverthrow'
 
 fetchMock.enableMocks()
 

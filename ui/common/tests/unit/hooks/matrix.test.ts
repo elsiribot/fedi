@@ -10,14 +10,14 @@ import { MatrixAuth } from '@fedi/common/types'
 import {
     createMockPaymentEvent,
     createMockFormEvent,
-} from '../mock-data/matrix-event'
-import { createMockTransaction } from '../mock-data/transactions'
+} from '../../mock-data/matrix-event'
+import { createMockTransaction } from '../../mock-data/transactions'
 import {
     MockFedimintBridge,
     createMockFedimintBridge,
-} from '../test-utils/fedimint'
-import { renderHookWithState } from '../test-utils/render'
-import { createMockT } from '../test-utils/setup'
+} from '../../test-utils/fedimint'
+import { renderHookWithState } from '../../test-utils/render'
+import { createMockT } from '../../test-utils/setup'
 
 /*
 // Payment Transaction Hook Tests

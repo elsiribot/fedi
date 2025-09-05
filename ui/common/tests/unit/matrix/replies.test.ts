@@ -6,7 +6,7 @@ import {
     stripReplyFromBody,
 } from '@fedi/common/utils/matrix'
 
-import { createTestMatrixReply } from '../test-utils/matrix'
+import { createTestMatrixReply } from '../../test-utils/matrix'
 
 const createMatrixEvent = (overrides: any) => ({
     id: 'test-event',

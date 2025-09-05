@@ -4,8 +4,8 @@ import {
     Sats,
     SelectableCurrency,
     SupportedCurrency,
-} from '../../types'
-import amountUtils from '../../utils/AmountUtils'
+} from '../../../types'
+import amountUtils from '../../../utils/AmountUtils'
 
 describe('AmountUtils', () => {
     describe('msatToSat', () => {

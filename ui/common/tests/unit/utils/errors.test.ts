@@ -1,4 +1,4 @@
-import { TaggedError } from '../../utils/errors'
+import { TaggedError } from '../../../utils/errors'
 
 describe('errors', () => {
     beforeEach(() => {

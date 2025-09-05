@@ -4,7 +4,7 @@ import {
     prefixFileUri,
     stripFileUriPrefix,
     pathJoin,
-} from '../../utils/media'
+} from '../../../utils/media'
 
 describe('media', () => {
     describe('formatFileSize', () => {

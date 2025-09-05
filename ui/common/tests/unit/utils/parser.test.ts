@@ -3,11 +3,11 @@ import { t } from 'i18next'
 import { rest } from 'msw'
 import { setupServer } from 'msw/node'
 
-import { Invoice, MSats } from '../../types'
-import { RpcAmount } from '../../types/bindings'
-import { ParserDataType } from '../../types/parser'
-import { FedimintBridge } from '../../utils/fedimint'
-import { parseUserInput } from '../../utils/parser'
+import { Invoice, MSats } from '../../../types'
+import { RpcAmount } from '../../../types/bindings'
+import { ParserDataType } from '../../../types/parser'
+import { FedimintBridge } from '../../../utils/fedimint'
+import { parseUserInput } from '../../../utils/parser'
 
 // Constants
 const mockFedId = 'fed1'

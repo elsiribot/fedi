@@ -14,10 +14,10 @@ import {
 } from '@fedi/common/redux'
 import { Sats, SupportedCurrency } from '@fedi/common/types'
 
-import { setupRemoteBridgeTests } from '../../utils/test-utils/remote-bridge-setup'
-import { createMockTransaction } from '../mock-data/transactions'
-import { renderHookWithState } from '../test-utils/render'
-import { mockSystemLocale } from '../test-utils/setup'
+import { setupRemoteBridgeTests } from '../../../utils/test-utils/remote-bridge-setup'
+import { createMockTransaction } from '../../mock-data/transactions'
+import { renderHookWithState } from '../../test-utils/render'
+import { mockSystemLocale } from '../../test-utils/setup'
 
 describe('useAmountInput hook', () => {
     const mockOnChangeAmount = jest.fn()

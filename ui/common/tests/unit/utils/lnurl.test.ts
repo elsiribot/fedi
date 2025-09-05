@@ -2,17 +2,17 @@ import { rest } from 'msw'
 import { setupServer } from 'msw/node'
 import { errAsync, okAsync, ResultAsync } from 'neverthrow'
 
-import { MSats } from '../../types'
-import { RpcMethods } from '../../types/bindings'
-import { BridgeError } from '../../utils/errors'
+import { MSats } from '../../../types'
+import { RpcMethods } from '../../../types/bindings'
+import { BridgeError } from '../../../utils/errors'
 import {
     lnurlAuth,
     lnurlCallback,
     lnurlPay,
     lnurlWithdraw,
-} from '../../utils/lnurl'
-import { constructUrl } from '../../utils/neverthrow'
-import { fedimint } from '../../utils/remote-bridge'
+} from '../../../utils/lnurl'
+import { constructUrl } from '../../../utils/neverthrow'
+import { fedimint } from '../../../utils/remote-bridge'
 
 const lnurlOkCallbackUrl = 'https://lnurl-ok-callback-url.com'
 const lnurlErrorCallbackUrl = 'https://lnurl-error-callback.com'
@@ -29,7 +29,7 @@ const lnurlWithdrawInvoice = 'lnbc123456'
 
 const testFederationId = 'fed123456'
 
-jest.mock('../../utils/remote-bridge', () => ({
+jest.mock('../../../utils/remote-bridge', () => ({
     fedimint: {
         rpcResult: function <T extends keyof RpcMethods>(
             method: T,

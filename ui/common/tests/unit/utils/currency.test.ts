@@ -10,9 +10,9 @@ import {
     selectFederationDefaultCurrency,
 } from '@fedi/common/redux/currency'
 
-import { SelectableCurrency, SupportedCurrency } from '../../types'
-import { getFederationDefaultCurrency } from '../../utils/FederationUtils'
-import { getCurrencyCode } from '../../utils/currency'
+import { SelectableCurrency, SupportedCurrency } from '../../../types'
+import { getFederationDefaultCurrency } from '../../../utils/FederationUtils'
+import { getCurrencyCode } from '../../../utils/currency'
 
 // Mock the dependencies first
 jest.mock('@fedi/common/redux', () => ({
@@ -20,7 +20,7 @@ jest.mock('@fedi/common/redux', () => ({
     selectLoadedFederations: jest.fn(),
 }))
 
-jest.mock('../../utils/FederationUtils', () => ({
+jest.mock('../../../utils/FederationUtils', () => ({
     getFederationDefaultCurrency: jest.fn(),
 }))
 

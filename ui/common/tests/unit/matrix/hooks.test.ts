@@ -3,7 +3,7 @@ import { Subject } from 'rxjs'
 
 import { MatrixPaymentStatus, MatrixPaymentEvent } from '@fedi/common/types'
 
-import { createMockPaymentEvent } from '../mock-data/matrix-event'
+import { createMockPaymentEvent } from '../../mock-data/matrix-event'
 
 // CONSIDER: should we have test suites for test-only "factory" functions?
 /*

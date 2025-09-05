@@ -1,4 +1,4 @@
-import { toSha256EncHex } from '../../utils/EncryptionUtils'
+import { toSha256EncHex } from '../../../utils/EncryptionUtils'
 
 describe('EncryptionUtils', () => {
     describe('toSha256EncHex', () => {

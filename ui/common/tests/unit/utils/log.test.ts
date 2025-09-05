@@ -1,8 +1,8 @@
-import type { LogFileApi } from '../../utils/log'
+import type { LogFileApi } from '../../../utils/log'
 
 // Import actual implementation for testing log functionality
 // since it is mocked in jest.setup.ts
-const actualLogUtils = jest.requireActual('../../utils/log')
+const actualLogUtils = jest.requireActual('../../../utils/log')
 const {
     configureLogging,
     makeLog,
@@ -14,7 +14,7 @@ const {
 } = actualLogUtils
 
 // Mock isDev to control console logging behavior
-jest.mock('../../utils/environment', () => ({
+jest.mock('../../../utils/environment', () => ({
     isDev: jest.fn(() => false), // Default to production mode
 }))
 
