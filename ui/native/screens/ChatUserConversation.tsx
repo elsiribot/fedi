@@ -2,6 +2,7 @@ import { useNavigation } from '@react-navigation/native'
 import type { NativeStackScreenProps } from '@react-navigation/native-stack'
 import React, { useCallback, useEffect, useState } from 'react'
 import { ActivityIndicator } from 'react-native'
+import { useSafeAreaInsets } from 'react-native-safe-area-context'
 
 import {
     selectMatrixAuth,
@@ -15,12 +16,11 @@ import MessageInput from '../components/feature/chat/MessageInput'
 import NoMessagesNotice from '../components/feature/chat/NoMessagesNotice'
 import SelectedMessageOverlay from '../components/feature/chat/SelectedMessageOverlay'
 import Flex from '../components/ui/Flex'
-import KeyboardStickyView from '../components/ui/KeyboardStickyView'
 import { useAppDispatch, useAppSelector } from '../state/hooks'
 import { resetToDirectChat } from '../state/navigation'
 import { InputAttachment, InputMedia } from '../types'
 import type { NavigationHook, RootStackParamList } from '../types/navigation'
-import { isAndroidAPI30Plus } from '../utils/layout'
+import { useImeFooterLift } from '../utils/hooks/keyboard'
 
 export type Props = NativeStackScreenProps<
     RootStackParamList,
@@ -38,7 +38,11 @@ const ChatUserConversation: React.FC<Props> = ({ route }: Props) => {
         selectMatrixDirectMessageRoom(s, userId),
     )
     const [isSending, setIsSending] = useState(false)
-    const shouldUseStickyView = isAndroidAPI30Plus()
+    const insets = useSafeAreaInsets()
+    const extraPadAndroid35 = useImeFooterLift({
+        insetsBottom: insets.bottom,
+        buffer: 20,
+    })
 
     const dispatch = useAppDispatch()
 
@@ -92,23 +96,16 @@ const ChatUserConversation: React.FC<Props> = ({ route }: Props) => {
             />
         )
 
-        return shouldUseStickyView ? (
-            <KeyboardStickyView
-                enabledOnIOS={false}
-                enabledOnSmallScreens={true}
-                enabledOnMediumScreens={true}
-                enabledOnLargeScreens={true}
-                offsetOpened={0}>
-                {messageInput}
-            </KeyboardStickyView>
-        ) : (
-            messageInput
-        )
-    }, [handleSend, isSending, shouldUseStickyView, userId])
+        return messageInput
+    }, [handleSend, isSending, userId])
 
     return (
         <>
-            <Flex grow basis={false} align="stretch">
+            <Flex
+                grow
+                basis={false}
+                align="stretch"
+                style={{ paddingBottom: extraPadAndroid35 }}>
                 {isSending ? (
                     <Flex grow justify="center">
                         <ActivityIndicator size="large" />

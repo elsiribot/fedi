@@ -29,6 +29,6 @@ export const getOverlayBottomPadding = (
     return Math.max(reducedBase, insetBottom)
 }
 
-export const isAndroidAPI30Plus = () => {
-    return Platform.OS === 'android' && Platform.Version >= 30
+export const isAndroidAPI35Plus = () => {
+    return Platform.OS === 'android' && Platform.Version >= 35
 }

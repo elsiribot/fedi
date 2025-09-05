@@ -9,6 +9,7 @@ import {
     StyleSheet,
     View,
 } from 'react-native'
+import { ScrollView } from 'react-native-gesture-handler'
 import { RESULTS } from 'react-native-permissions'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 
@@ -26,9 +27,10 @@ import { fedimint } from '../bridge'
 import Avatar, { AvatarSize } from '../components/ui/Avatar'
 import Flex from '../components/ui/Flex'
 import { Pressable } from '../components/ui/Pressable'
-import { SafeScrollArea } from '../components/ui/SafeArea'
+import { SafeAreaContainer } from '../components/ui/SafeArea'
 import { useAppDispatch, useAppSelector } from '../state/hooks'
 import { useStoragePermission } from '../utils/hooks'
+import { useImeFooterLift } from '../utils/hooks/keyboard'
 import { tryPickAssets } from '../utils/media'
 
 const log = makeLog('EditProfile')
@@ -58,6 +60,11 @@ const EditProfileSettings: React.FC = () => {
     const iosOffset = Math.max(0, headerHeight - insets.top + theme.spacing.xl)
 
     const style = styles(theme)
+
+    const extraPadAndroid35 = useImeFooterLift({
+        insetsBottom: insets.bottom,
+        buffer: theme.spacing.xxl,
+    })
 
     const handleAvatarPress = useCallback(
         async (_: GestureResponderEvent) => {
@@ -127,60 +134,63 @@ const EditProfileSettings: React.FC = () => {
 
     const content = (
         <>
-            <SafeScrollArea
-                edges="top"
-                safeAreaContainerStyle={{ paddingTop: 0 }}
-                keyboardShouldPersistTaps="handled"
-                contentInsetAdjustmentBehavior="never"
-                contentContainerStyle={{
-                    flexGrow: 1,
-                    paddingHorizontal: theme.spacing.xl,
-                    paddingBottom: theme.spacing.xl, // space above footer
-                }}
-                style={style.container}>
-                <Pressable
-                    onPress={handleAvatarPress}
-                    containerStyle={style.avatar}>
-                    <Avatar
-                        id={matrixAuth?.userId || ''}
-                        url={profileImageUri ?? matrixAuth?.avatarUrl}
-                        size={AvatarSize.lg}
-                        name={matrixAuth?.displayName}
-                    />
-                    <Text caption>{t('feature.chat.change-avatar')}</Text>
-                </Pressable>
+            <SafeAreaContainer edges="top">
+                <ScrollView
+                    keyboardShouldPersistTaps="handled"
+                    contentInsetAdjustmentBehavior="never"
+                    contentContainerStyle={{
+                        flexGrow: 1,
+                        paddingHorizontal: theme.spacing.xl,
+                        paddingBottom: theme.spacing.xl,
+                    }}
+                    style={style.container}>
+                    <Pressable
+                        onPress={handleAvatarPress}
+                        containerStyle={style.avatar}>
+                        <Avatar
+                            id={matrixAuth?.userId || ''}
+                            url={profileImageUri ?? matrixAuth?.avatarUrl}
+                            size={AvatarSize.lg}
+                            name={matrixAuth?.displayName}
+                        />
+                        <Text caption>{t('feature.chat.change-avatar')}</Text>
+                    </Pressable>
 
-                <Flex grow style={style.content}>
-                    <Text
-                        testID="DisplayNameLabel"
-                        caption
-                        style={style.inputLabel}>
-                        {t('feature.chat.display-name')}
-                    </Text>
-                    <Input
-                        testID="DisplayNameInput"
-                        onChangeText={handleChangeUsername}
-                        value={username}
-                        returnKeyType="done"
-                        keyboardType="visible-password"
-                        containerStyle={style.textInputOuter}
-                        inputContainerStyle={style.textInputInner}
-                        autoCapitalize="none"
-                        autoCorrect={false}
-                        disabled={isLoading}
-                    />
-                    {errorMessage && (
-                        <Text caption style={style.errorLabel}>
-                            {errorMessage}
+                    <Flex grow style={style.content}>
+                        <Text
+                            testID="DisplayNameLabel"
+                            caption
+                            style={style.inputLabel}>
+                            {t('feature.chat.display-name')}
                         </Text>
-                    )}
-                </Flex>
-            </SafeScrollArea>
+                        <Input
+                            testID="DisplayNameInput"
+                            onChangeText={handleChangeUsername}
+                            value={username}
+                            returnKeyType="done"
+                            keyboardType="visible-password"
+                            containerStyle={style.textInputOuter}
+                            inputContainerStyle={style.textInputInner}
+                            autoCapitalize="none"
+                            autoCorrect={false}
+                            disabled={isLoading}
+                        />
+                        {errorMessage && (
+                            <Text caption style={style.errorLabel}>
+                                {errorMessage}
+                            </Text>
+                        )}
+                    </Flex>
+                </ScrollView>
+            </SafeAreaContainer>
 
             <View
                 style={[
                     style.buttonContainer,
-                    { paddingBottom: insets.bottom + theme.spacing.lg },
+                    {
+                        paddingBottom: insets.bottom + theme.spacing.lg,
+                        marginBottom: extraPadAndroid35, // lifts footer ONLY on Android API 35+
+                    },
                 ]}>
                 <Button
                     fullWidth

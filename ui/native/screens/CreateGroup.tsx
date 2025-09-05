@@ -2,7 +2,8 @@ import type { NativeStackScreenProps } from '@react-navigation/native-stack'
 import { Button, Input, Switch, Text, Theme, useTheme } from '@rneui/themed'
 import React, { useEffect, useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
-import { Platform, StyleSheet, View } from 'react-native'
+import { StyleSheet, View } from 'react-native'
+import { useSafeAreaInsets } from 'react-native-safe-area-context'
 
 import { useCreateMatrixRoom } from '@fedi/common/hooks/matrix'
 import { ChatType, MatrixRoom } from '@fedi/common/types'
@@ -10,15 +11,16 @@ import { ChatType, MatrixRoom } from '@fedi/common/types'
 import Avatar, { AvatarSize } from '../components/ui/Avatar'
 import Flex from '../components/ui/Flex'
 import KeyboardAwareWrapper from '../components/ui/KeyboardAwareWrapper'
-import KeyboardStickyView from '../components/ui/KeyboardStickyView'
-import { SafeAreaContainer } from '../components/ui/SafeArea'
+import { SafeAreaContainer, SafeScrollArea } from '../components/ui/SafeArea'
 import type { RootStackParamList } from '../types/navigation'
+import { useImeFooterLift, useIosKeyboardOpen } from '../utils/hooks/keyboard'
 
 export type Props = NativeStackScreenProps<RootStackParamList, 'CreateGroup'>
 
 const CreateGroup: React.FC<Props> = ({ navigation, route }: Props) => {
     const { theme } = useTheme()
     const { t } = useTranslation()
+    const insets = useSafeAreaInsets()
     const defaultGroup = route.params?.defaultGroup || undefined
     const {
         handleCreateGroup,
@@ -51,91 +53,110 @@ const CreateGroup: React.FC<Props> = ({ navigation, route }: Props) => {
     }, [broadcastOnly])
 
     const style = styles(theme)
+    const openIOS = useIosKeyboardOpen(80)
+    const extraPadAndroid35 = useImeFooterLift({
+        insetsBottom: insets.bottom,
+        buffer: theme.spacing.xxl,
+    })
 
     return (
-        <KeyboardAwareWrapper behavior="padding">
-            <SafeAreaContainer edges="bottom">
+        <KeyboardAwareWrapper>
+            <SafeAreaContainer edges="none">
                 <View style={style.outerContainer}>
-                    <Flex
-                        grow
-                        align="center"
-                        justify="start"
+                    <SafeScrollArea
+                        keyboardShouldPersistTaps="handled"
+                        keyboardDismissMode="on-drag"
+                        contentInsetAdjustmentBehavior="never"
+                        contentContainerStyle={style.scrollContent}
+                        showsVerticalScrollIndicator={false}
+                        edges="none"
+                        safeAreaContainerStyle={style.safeAreaContainer}
                         style={style.container}>
-                        <Avatar id={''} icon={icon} size={AvatarSize.md} />
-                        <View style={style.inputWrapper}>
-                            <Input
-                                onChangeText={setGroupName}
-                                value={groupName}
-                                maxLength={30}
-                                placeholder={`${t('feature.chat.group-name')}`}
-                                returnKeyType="done"
-                                containerStyle={style.textInputOuter}
-                                inputContainerStyle={style.textInputInner}
-                                autoCapitalize={'none'}
-                                autoCorrect={false}
-                                selectTextOnFocus
-                            />
-                            {errorMessage && (
-                                <Text
-                                    caption
-                                    style={[
-                                        style.errorLabel,
-                                        style.maxLengthError,
-                                    ]}>
-                                    {errorMessage}
+                        <Flex align="center" justify="start" fullWidth>
+                            <Avatar id={''} icon={icon} size={AvatarSize.md} />
+
+                            <View style={style.inputWrapper}>
+                                <Input
+                                    onChangeText={setGroupName}
+                                    value={groupName}
+                                    maxLength={30}
+                                    placeholder={`${t('feature.chat.group-name')}`}
+                                    returnKeyType="done"
+                                    containerStyle={style.textInputOuter}
+                                    inputContainerStyle={style.textInputInner}
+                                    autoCapitalize={'none'}
+                                    autoCorrect={false}
+                                    selectTextOnFocus
+                                />
+                                {errorMessage && (
+                                    <Text
+                                        caption
+                                        style={[
+                                            style.errorLabel,
+                                            style.maxLengthError,
+                                        ]}>
+                                        {errorMessage}
+                                    </Text>
+                                )}
+                            </View>
+
+                            <Flex
+                                row
+                                align="center"
+                                justify="between"
+                                fullWidth
+                                style={style.switchWrapper}>
+                                <Text style={style.inputLabel}>
+                                    {t('feature.chat.broadcast-only')}
+                                </Text>
+                                <Switch
+                                    value={broadcastOnly}
+                                    onValueChange={value => {
+                                        // for now default groups must be public
+                                        if (defaultGroup === true) return
+                                        setBroadcastOnly(value)
+                                    }}
+                                />
+                            </Flex>
+
+                            <Flex
+                                row
+                                align="center"
+                                justify="between"
+                                fullWidth
+                                style={style.switchWrapper}>
+                                <Text style={style.inputLabel}>
+                                    {t('words.public')}
+                                </Text>
+                                <Switch
+                                    value={isPublic}
+                                    onValueChange={value => {
+                                        // for now default groups must be public
+                                        if (defaultGroup === true) return
+                                        setIsPublic(value)
+                                    }}
+                                />
+                            </Flex>
+
+                            {isPublic && (
+                                <Text caption style={style.errorLabel}>
+                                    {t('feature.chat.public-group-warning')}
                                 </Text>
                             )}
-                        </View>
-                        <Flex
-                            row
-                            align="center"
-                            justify="between"
-                            fullWidth
-                            style={style.switchWrapper}>
-                            <Text style={style.inputLabel}>
-                                {t('feature.chat.broadcast-only')}
-                            </Text>
-                            <Switch
-                                value={broadcastOnly}
-                                onValueChange={value => {
-                                    // for now default groups must be public
-                                    if (defaultGroup === true) return
-                                    setBroadcastOnly(value)
-                                }}
-                            />
                         </Flex>
-                        <Flex
-                            row
-                            align="center"
-                            justify="between"
-                            fullWidth
-                            style={style.switchWrapper}>
-                            <Text style={style.inputLabel}>
-                                {t('words.public')}
-                            </Text>
-                            <Switch
-                                value={isPublic}
-                                onValueChange={value => {
-                                    // for now default groups must be public
-                                    if (defaultGroup === true) return
-                                    setIsPublic(value)
-                                }}
-                            />
-                        </Flex>
-                        {isPublic && (
-                            <Text caption style={style.errorLabel}>
-                                {t('feature.chat.public-group-warning')}
-                            </Text>
-                        )}
-                    </Flex>
+                    </SafeScrollArea>
 
-                    <KeyboardStickyView
-                        enabledOnIOS={true}
-                        enabledOnSmallScreens={false}
-                        enabledOnMediumScreens={true}
-                        enabledOnLargeScreens={true}
-                        offsetOpened={Platform.OS === 'android' ? 10 : 40}
-                        style={style.button}>
+                    <View
+                        style={[
+                            style.footer,
+                            {
+                                paddingBottom:
+                                    insets.bottom +
+                                    theme.spacing.lg +
+                                    (openIOS ? 40 : 0) +
+                                    extraPadAndroid35,
+                            },
+                        ]}>
                         <Button
                             fullWidth
                             title={t('phrases.save-changes')}
@@ -145,7 +166,7 @@ const CreateGroup: React.FC<Props> = ({ navigation, route }: Props) => {
                                 !groupName || isCreatingGroup || !!errorMessage
                             }
                         />
-                    </KeyboardStickyView>
+                    </View>
                 </View>
             </SafeAreaContainer>
         </KeyboardAwareWrapper>
@@ -158,12 +179,22 @@ const styles = (theme: Theme) =>
             flex: 1,
         },
         container: {
-            padding: theme.spacing.lg,
+            flex: 1,
+            width: '100%',
         },
-        button: {
-            marginTop: 'auto',
+        scrollContent: {
+            flexGrow: 1,
             paddingHorizontal: theme.spacing.lg,
-            paddingBottom: theme.spacing.lg,
+            paddingTop: theme.spacing.lg,
+            paddingBottom: theme.spacing.xl + 120,
+        },
+        footer: {
+            position: 'absolute',
+            left: 0,
+            right: 0,
+            bottom: 0,
+            paddingHorizontal: theme.spacing.lg,
+            backgroundColor: theme.colors?.background,
         },
         errorLabel: {
             textAlign: 'left',
@@ -196,6 +227,9 @@ const styles = (theme: Theme) =>
         },
         maxLengthError: {
             paddingHorizontal: theme.spacing.lg,
+        },
+        safeAreaContainer: {
+            paddingTop: 0,
         },
     })
 

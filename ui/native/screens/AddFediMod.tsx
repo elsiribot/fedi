@@ -28,6 +28,7 @@ import {
 import Flex from '../components/ui/Flex'
 import { SafeScrollArea } from '../components/ui/SafeArea'
 import { ParserDataType } from '../types'
+import { useImeFooterLift } from '../utils/hooks/keyboard'
 
 const log = makeLog('AddFediMod')
 
@@ -51,6 +52,10 @@ const AddFediMod: React.FC = () => {
     const headerHeight = useHeaderHeight()
 
     const iosOffset = Math.max(0, headerHeight - insets.top + theme.spacing.xl)
+    const extraPadAndroid35 = useImeFooterLift({
+        insetsBottom: insets.bottom,
+        buffer: theme.spacing.xxl,
+    })
 
     const handleSubmit = async () => {
         try {
@@ -239,7 +244,10 @@ const AddFediMod: React.FC = () => {
             <View
                 style={[
                     style.buttonContainer,
-                    { paddingBottom: insets.bottom + theme.spacing.lg },
+                    {
+                        paddingBottom: insets.bottom + theme.spacing.lg,
+                        marginBottom: extraPadAndroid35,
+                    },
                 ]}>
                 <Button
                     fullWidth

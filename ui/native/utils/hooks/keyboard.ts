@@ -1,5 +1,11 @@
 import { useEffect, useMemo, useState, useCallback } from 'react'
-import { Keyboard, KeyboardEvent, Platform, Dimensions } from 'react-native'
+import {
+    Keyboard,
+    KeyboardEvent,
+    Platform,
+    Dimensions,
+    TextInput,
+} from 'react-native'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 
 import { makeLog } from '@fedi/common/utils/log'
@@ -14,7 +20,7 @@ import {
     SCREEN_SIZE_THRESHOLDS,
 } from '../../constants'
 import { KeyboardContextValue, KeyboardState } from '../../types/keyboard'
-import { getAndroidScreenSize, isAndroidAPI30Plus } from '../layout'
+import { getAndroidScreenSize, isAndroidAPI35Plus } from '../layout'
 
 const log = makeLog('native/utils/keyboard')
 
@@ -288,7 +294,7 @@ export const useKeyboardStickyPosition = ({
         if (!isVisible) return offsetClosed
 
         if (Platform.OS === 'android' && keyboardHeight > 0) {
-            const isEdgeToEdge = isAndroidAPI30Plus()
+            const isEdgeToEdge = isAndroidAPI35Plus()
             const keyboardOffset = isEdgeToEdge
                 ? keyboardHeight
                 : Math.max(0, keyboardHeight - insets.bottom)
@@ -374,6 +380,47 @@ export const useChatKeyboardBehavior = (): {
         setMessageInputHeight,
         keyboardPadding,
     }
+}
+
+export type ImeFooterLiftOptions = {
+    insetsBottom: number
+    buffer?: number
+    threshold?: number
+    subtractSafeAreaBottom?: boolean
+    // gate override (defaults to Android API 35+)
+    gate?: boolean
+}
+
+export const useImeFooterLift = ({
+    insetsBottom,
+    buffer = 0,
+    threshold = 0,
+    subtractSafeAreaBottom = true,
+    gate,
+}: ImeFooterLiftOptions): number => {
+    const { isVisible, height } = useKeyboard()
+    const inputFocused = !!TextInput.State.currentlyFocusedInput?.()
+    const enabled = gate ?? isAndroidAPI35Plus()
+
+    if (!(Platform.OS === 'android' && enabled && isVisible && inputFocused))
+        return 0
+
+    const base = (height ?? 0) - (subtractSafeAreaBottom ? insetsBottom : 0)
+    const delta = Math.max(0, base)
+    if (delta <= threshold) return 0
+    return delta + buffer
+}
+
+// iOS: detect "keyboard open" with a stale-value guard (default 80px)
+export const useIosKeyboardOpen = (threshold: number = 80): boolean => {
+    const { isVisible, height, insets } = useKeyboard()
+    const inputFocused = !!TextInput.State.currentlyFocusedInput?.()
+    return (
+        Platform.OS === 'ios' &&
+        isVisible &&
+        inputFocused &&
+        (height ?? 0) - insets.bottom > threshold
+    )
 }
 
 export { keyboardManager }

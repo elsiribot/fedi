@@ -1,6 +1,7 @@
 import type { NativeStackScreenProps } from '@react-navigation/native-stack'
 import React, { useCallback, useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
+import { useSafeAreaInsets } from 'react-native-safe-area-context'
 
 import { useMultispendDisplayUtils } from '@fedi/common/hooks/multispend'
 import { useToast } from '@fedi/common/hooks/toast'
@@ -22,11 +23,12 @@ import SelectedMessageOverlay from '../components/feature/chat/SelectedMessageOv
 import MultispendChatBanner from '../components/feature/multispend/MultispendChatBanner'
 import Flex from '../components/ui/Flex'
 import HoloLoader from '../components/ui/HoloLoader'
-import KeyboardStickyView from '../components/ui/KeyboardStickyView'
 import { useAppDispatch, useAppSelector } from '../state/hooks'
 import type { RootStackParamList } from '../types/navigation'
-import { useChatKeyboardBehavior } from '../utils/hooks/keyboard'
-import { isAndroidAPI30Plus } from '../utils/layout'
+import {
+    useChatKeyboardBehavior,
+    useImeFooterLift,
+} from '../utils/hooks/keyboard'
 
 const log = makeLog('ChatRoomConversation')
 
@@ -45,6 +47,12 @@ const ChatRoomConversation: React.FC<Props> = ({ route }: Props) => {
     const toast = useToast()
     const { shouldShowHeader } = useMultispendDisplayUtils(t, roomId)
     const [replyBarHeight, setReplyBarHeight] = useState(0)
+
+    const insets = useSafeAreaInsets()
+    const extraPadAndroid35 = useImeFooterLift({
+        insetsBottom: insets.bottom,
+        buffer: 20,
+    })
 
     const directUserId = useMemo(() => room?.directUserId, [room])
 
@@ -103,7 +111,6 @@ const ChatRoomConversation: React.FC<Props> = ({ route }: Props) => {
         },
         [chatType, dispatch, isSending, roomId, t, toast],
     )
-    const shouldUseStickyView = isAndroidAPI30Plus()
 
     const renderMessageInput = useCallback((): JSX.Element => {
         const input = (
@@ -115,18 +122,7 @@ const ChatRoomConversation: React.FC<Props> = ({ route }: Props) => {
                 onReplyBarHeightChanged={setReplyBarHeight}
             />
         )
-        return shouldUseStickyView ? (
-            <KeyboardStickyView
-                enabledOnIOS={false}
-                enabledOnSmallScreens={true}
-                enabledOnMediumScreens={true}
-                enabledOnLargeScreens={true}
-                offsetOpened={0}>
-                {input}
-            </KeyboardStickyView>
-        ) : (
-            input
-        )
+        return input
     }, [
         handleSend,
         roomId,
@@ -134,7 +130,6 @@ const ChatRoomConversation: React.FC<Props> = ({ route }: Props) => {
         room?.isPublic,
         setMessageInputHeight,
         setReplyBarHeight,
-        shouldUseStickyView,
     ])
 
     const content = useMemo(() => {
@@ -177,7 +172,10 @@ const ChatRoomConversation: React.FC<Props> = ({ route }: Props) => {
 
     return (
         <>
-            <Flex grow basis={false}>
+            <Flex
+                grow
+                basis={false}
+                style={{ paddingBottom: extraPadAndroid35 }}>
                 {content}
             </Flex>
             <SelectedMessageOverlay isPublic={!!room.isPublic} />
