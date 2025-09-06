@@ -6,8 +6,6 @@ import { useTranslation } from 'react-i18next'
 import {
     ActivityIndicator,
     Insets,
-    Keyboard,
-    KeyboardEvent,
     LayoutChangeEvent,
     NativeSyntheticEvent,
     Platform,
@@ -50,6 +48,7 @@ import { upsertListItem } from '@fedi/common/utils/redux'
 
 import { fedimint } from '../../../bridge'
 import { useAppDispatch, useAppSelector } from '../../../state/hooks'
+import { useKeyboard } from '../../../utils/hooks/keyboard'
 import {
     deriveCopyableFileUri,
     tryPickAssets,
@@ -113,7 +112,7 @@ const MessageInput: React.FC<MessageInputProps> = ({
     const [inputHeight, setInputHeight] = useState<number>(
         theme.sizes.minMessageInputHeight,
     )
-    const [keyboardHeight, setKeyboardHeight] = useState<number>(0)
+    const { height: keyboardHeight } = useKeyboard()
     const [messageText, setMessageText] = useState<string>(drafts[id] ?? '')
     const [isSendingMessage, setIsSendingMessage] = useState(false)
     const [replyAnimation] = useState(new Animated.Value(0))
@@ -311,26 +310,6 @@ const MessageInput: React.FC<MessageInputProps> = ({
         .trim()
         // Matches three or more whitespace characters, including newlines, tabs, etc
         .replace(/\s{3,}/g, match => match.slice(0, 2))
-
-    useEffect(() => {
-        const keyboardShownListener = Keyboard.addListener(
-            'keyboardWillShow',
-            (e: KeyboardEvent) => {
-                setKeyboardHeight(e.endCoordinates.height)
-            },
-        )
-        const keyboardHiddenListener = Keyboard.addListener(
-            'keyboardWillHide',
-            () => {
-                setKeyboardHeight(0)
-            },
-        )
-
-        return () => {
-            keyboardShownListener.remove()
-            keyboardHiddenListener.remove()
-        }
-    }, [])
 
     // handle edit message: set text if editing current room's message, clear edit state if from different room
     useEffect(() => {

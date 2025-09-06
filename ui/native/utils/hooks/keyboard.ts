@@ -37,6 +37,22 @@ class KeyboardManager {
     private isInitialized = false
     private cleanupScheduled = false
 
+    private forceBlurTokens = new Set<symbol>()
+
+    private forceBlurIfFocused = () => {
+        const node = TextInput.State.currentlyFocusedInput?.()
+        if (node) TextInput.State.blurTextInput?.(node)
+    }
+
+    private isForceBlurEnabled = () => this.forceBlurTokens.size > 0
+
+    enableForceBlurOnHide = (token: symbol) => {
+        this.forceBlurTokens.add(token)
+    }
+    disableForceBlurOnHide = (token: symbol) => {
+        this.forceBlurTokens.delete(token)
+    }
+
     private isValidHeight(height: unknown): height is number {
         return (
             typeof height === 'number' && height >= 0 && Number.isFinite(height)
@@ -105,6 +121,35 @@ class KeyboardManager {
         }
     }
 
+    private handleKeyboardWillShow = (e?: KeyboardEvent) => {
+        const duration = e?.duration
+        const height = e?.endCoordinates?.height
+        const hasDuration = typeof duration === 'number' && duration > 0
+        //needed for messageInput / stale height SIM issues on Android
+        if (this.isValidHeight(height)) {
+            this.updateState({
+                isVisible: true,
+                height,
+                animationDuration: hasDuration
+                    ? duration
+                    : this.currentState.animationDuration,
+            })
+        } else if (hasDuration) {
+            this.updateState({ animationDuration: duration })
+        }
+    }
+
+    private handleKeyboardWillHide = (e?: KeyboardEvent) => {
+        const duration = e?.duration
+        if (typeof duration === 'number' && duration > 0) {
+            this.updateState({ animationDuration: duration })
+        }
+        // Opt-in workaround: clear stale focus after dismiss on Android
+        if (Platform.OS === 'android' && this.isForceBlurEnabled()) {
+            this.forceBlurIfFocused()
+        }
+    }
+
     private handleKeyboardHide = (e?: KeyboardEvent) => {
         const duration = e?.duration
         this.updateState({
@@ -115,19 +160,8 @@ class KeyboardManager {
                     ? duration
                     : DEFAULT_ANIMATION_DURATION,
         })
-    }
-
-    private handleKeyboardWillShow = (e?: KeyboardEvent) => {
-        const duration = e?.duration
-        if (typeof duration === 'number' && duration > 0) {
-            this.updateState({ animationDuration: duration })
-        }
-    }
-
-    private handleKeyboardWillHide = (e?: KeyboardEvent) => {
-        const duration = e?.duration
-        if (typeof duration === 'number' && duration > 0) {
-            this.updateState({ animationDuration: duration })
+        if (Platform.OS === 'android' && this.isForceBlurEnabled()) {
+            this.forceBlurIfFocused()
         }
     }
 
@@ -421,6 +455,15 @@ export const useIosKeyboardOpen = (threshold: number = 80): boolean => {
         inputFocused &&
         (height ?? 0) - insets.bottom > threshold
     )
+}
+
+export const useForceBlurOnKeyboardHide = (enabled = true) => {
+    useEffect(() => {
+        if (!(Platform.OS === 'android') || !enabled) return
+        const token = Symbol('force-blur')
+        keyboardManager.enableForceBlurOnHide(token)
+        return () => keyboardManager.disableForceBlurOnHide(token)
+    }, [enabled])
 }
 
 export { keyboardManager }
