@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState, useCallback } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import {
     Keyboard,
     KeyboardEvent,
@@ -11,13 +11,11 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { makeLog } from '@fedi/common/utils/log'
 
 import {
-    ANDROID_INPUT_FOCUS_OFFSET,
     AndroidScreenSize,
     CHAT_KEYBOARD_BEHAVIOR,
     DEFAULT_ANIMATION_DURATION,
     DEFAULT_KEYBOARD_HEIGHT_FALLBACK,
     KEYBOARD_PADDING,
-    SCREEN_SIZE_THRESHOLDS,
 } from '../../constants'
 import { KeyboardContextValue, KeyboardState } from '../../types/keyboard'
 import { getAndroidScreenSize, isAndroidAPI35Plus } from '../layout'
@@ -252,104 +250,6 @@ export const useKeyboard = (): KeyboardContextValue => {
         () => ({ ...keyboardState, insets }),
         [keyboardState, insets],
     )
-}
-
-export const useAndroidInputFocus = (): {
-    focusOffset: number
-    handleInputFocus: () => void
-} => {
-    const [focusOffset, setFocusOffset] = useState(0)
-    const { isVisible } = useKeyboard()
-
-    const handleInputFocus = useCallback(() => {
-        if (Platform.OS === 'android')
-            setFocusOffset(ANDROID_INPUT_FOCUS_OFFSET)
-    }, [])
-
-    useEffect(() => {
-        if (!isVisible) setFocusOffset(0)
-    }, [isVisible])
-
-    return { focusOffset, handleInputFocus }
-}
-
-export const useKeyboardStickyPosition = ({
-    enabledOnIOS = false,
-    enabledOnSmallScreens = false,
-    enabledOnMediumScreens = true,
-    enabledOnLargeScreens = true,
-    smallScreenThreshold = SCREEN_SIZE_THRESHOLDS.SMALL_TO_MEDIUM,
-    largeScreenThreshold = SCREEN_SIZE_THRESHOLDS.MEDIUM_TO_LARGE,
-    offsetClosed = 0,
-    offsetOpened = 20,
-}: {
-    enabledOnIOS?: boolean
-    enabledOnSmallScreens?: boolean
-    enabledOnMediumScreens?: boolean
-    enabledOnLargeScreens?: boolean
-    smallScreenThreshold?: number
-    largeScreenThreshold?: number
-    offsetClosed?: number
-    offsetOpened?: number
-} = {}): {
-    isActive: boolean
-    marginBottom: number
-    isKeyboardVisible: boolean
-} => {
-    const {
-        isVisible,
-        screenHeight,
-        height: keyboardHeight,
-        insets,
-    } = useKeyboard()
-
-    const isActive = useMemo(() => {
-        if (Platform.OS === 'ios') return enabledOnIOS
-        if (Platform.OS === 'android') {
-            if (screenHeight < smallScreenThreshold)
-                return enabledOnSmallScreens
-            if (screenHeight < largeScreenThreshold)
-                return enabledOnMediumScreens
-            return enabledOnLargeScreens
-        }
-        return false
-    }, [
-        enabledOnIOS,
-        enabledOnSmallScreens,
-        enabledOnMediumScreens,
-        enabledOnLargeScreens,
-        screenHeight,
-        smallScreenThreshold,
-        largeScreenThreshold,
-    ])
-
-    const marginBottom = useMemo(() => {
-        if (!isActive) return 0
-        if (!isVisible) return offsetClosed
-
-        if (Platform.OS === 'android' && keyboardHeight > 0) {
-            const isEdgeToEdge = isAndroidAPI35Plus()
-            const keyboardOffset = isEdgeToEdge
-                ? keyboardHeight
-                : Math.max(0, keyboardHeight - insets.bottom)
-            return keyboardOffset + offsetOpened
-        }
-
-        return offsetOpened
-    }, [
-        isActive,
-        isVisible,
-        keyboardHeight,
-        insets.bottom,
-        offsetClosed,
-        offsetOpened,
-    ])
-
-    return {
-        isActive,
-        marginBottom,
-        isKeyboardVisible: isVisible,
-    }
 }
 
 export const useChatKeyboardBehavior = (): {
