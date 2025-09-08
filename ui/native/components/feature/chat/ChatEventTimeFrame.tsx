@@ -4,7 +4,11 @@ import React, { memo, useCallback } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Pressable, StyleSheet, View } from 'react-native'
 
-import { selectMatrixAuth, selectMatrixRoomMembers } from '@fedi/common/redux'
+import {
+    selectCanReply,
+    selectMatrixAuth,
+    selectMatrixRoomMembers,
+} from '@fedi/common/redux'
 import {
     MatrixEvent,
     MatrixRoomMember,
@@ -40,6 +44,8 @@ const ChatEventTimeFrame = memo(
         highlightedMessageId,
     }: Props) => {
         const matrixAuth = useAppSelector(selectMatrixAuth)
+        const canSwipe = useAppSelector(s => selectCanReply(s, roomId))
+
         const { t } = useTranslation()
         const { theme } = useTheme()
         const style = styles(theme)
@@ -114,27 +120,36 @@ const ChatEventTimeFrame = memo(
                                 (highlightedMessageId === event.eventId ||
                                     highlightedMessageId === event.id)
 
-                            return (
+                            const content = (
+                                <View
+                                    style={[
+                                        isHighlighted &&
+                                            style.highlightedMessage,
+                                    ]}>
+                                    <ChatEvent
+                                        event={event}
+                                        last={eindex === 0}
+                                        isPublic={isPublic}
+                                        onReplyTap={onReplyTap}
+                                        highlightedMessageId={
+                                            highlightedMessageId
+                                        }
+                                    />
+                                </View>
+                            )
+
+                            const key =
+                                event.eventId || event.id || `idx-${eindex}`
+
+                            return canSwipe ? (
                                 <ChatSwipeableEventContainer
-                                    key={`ceci-eb-${event.eventId}`}
+                                    key={`ceci-eb-${key}`}
                                     roomId={roomId}
                                     event={event}>
-                                    <View
-                                        style={[
-                                            isHighlighted &&
-                                                style.highlightedMessage,
-                                        ]}>
-                                        <ChatEvent
-                                            event={event}
-                                            last={eindex === 0}
-                                            isPublic={isPublic}
-                                            onReplyTap={onReplyTap}
-                                            highlightedMessageId={
-                                                highlightedMessageId
-                                            }
-                                        />
-                                    </View>
+                                    {content}
                                 </ChatSwipeableEventContainer>
+                            ) : (
+                                <View key={`ceci-eb-${key}`}>{content}</View>
                             )
                         })}
                     </View>

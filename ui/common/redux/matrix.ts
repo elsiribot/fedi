@@ -2175,6 +2175,16 @@ export const selectMatrixDirectMessageRoom = createSelector(
     (userId, rooms) => rooms.find(room => room.directUserId === userId),
 )
 
+export const selectCanReply = createSelector(
+    selectMatrixAuth,
+    selectMatrixRoom,
+    selectMatrixRoomIsReadOnly,
+    (auth, room, isReadOnly) => {
+        if (!auth) return false
+        return room?.roomState === 'Joined' && !isReadOnly
+    },
+)
+
 const selectMatrixIgnoredUsers = (s: CommonState) => s.matrix.ignoredUsers
 
 export const selectMatrixUserIsIgnored = createSelector(
