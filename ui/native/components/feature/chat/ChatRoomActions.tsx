@@ -101,14 +101,13 @@ const ChatRoomActions: React.FC<Props> = ({ room, dismiss }: Props) => {
             icon: 'Bell',
             onPress: () => handleUpdateNotificationMode(2, 'allMessages'),
         },
-        // TODO: implement mentions notification mode
         // {
-        //     id: 2,
+        //     id: 4,
         //     label: t('feature.chat.notification-mentions'),
         //     dataId: 'mentionsAndKeywordsOnly',
         //     icon: 'User',
         //     onPress: () =>
-        //         handleUpdateNotificationMode(2, 'mentionsAndKeywordsOnly'),
+        //         handleUpdateNotificationMode(4, 'mentionsAndKeywordsOnly'),
         // },
         {
             id: 3,

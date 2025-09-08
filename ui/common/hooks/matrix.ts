@@ -1,6 +1,7 @@
 import type { TFunction } from 'i18next'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 
+import { ROOM_MENTION } from '../constants/matrix'
 import {
     acceptMatrixPaymentRequest,
     cancelMatrixPayment,
@@ -41,7 +42,9 @@ import {
     MatrixPaymentEvent,
     MatrixPaymentStatus,
     MatrixRoom,
+    MatrixRoomMember,
     MatrixUser,
+    MentionSelect,
 } from '../types'
 import {
     RpcFederationId,
@@ -1129,5 +1132,123 @@ export function useCreateMatrixRoom(
         setIsPublic,
         errorMessage,
         createdRoomId,
+    }
+}
+
+/**
+ * Hook for managing mention input with autocomplete suggestions
+ */
+export function useMentionInput(
+    roomMembers: MatrixRoomMember[],
+    cursorPosition: number,
+    excludeUserId?: string,
+): {
+    mentionSuggestions: MatrixRoomMember[]
+    activeMentionQuery: string | null
+    shouldShowSuggestions: boolean
+    detectMentionTrigger: (text: string, position: number) => void
+    insertMention: (
+        member: MentionSelect,
+        currentText: string,
+    ) => { newText: string; newCursorPosition: number }
+    clearMentions: () => void
+} {
+    const [mentionSuggestions, setMentionSuggestions] = useState<
+        MatrixRoomMember[]
+    >([])
+    const [activeMentionQuery, setActiveMentionQuery] = useState<string | null>(
+        null,
+    )
+    const [mentionStartIndex, setMentionStartIndex] = useState<number>(-1)
+
+    const detectMentionTrigger = useCallback(
+        (text: string, position: number) => {
+            // find @ symbol before cursor
+            const before = text.slice(0, position)
+            const match = before.match(/@([a-z0-9._-]*)$/i)
+
+            if (!match) {
+                setActiveMentionQuery(null)
+                setMentionStartIndex(-1)
+                setMentionSuggestions([])
+                return
+            }
+
+            const q = (match[1] || '').toLowerCase()
+            const start = before.length - match[0].length
+
+            setActiveMentionQuery(q)
+            setMentionStartIndex(start)
+
+            // filter room members by query (display name or handle)
+            const filtered = (roomMembers || [])
+                .filter(m => {
+                    if (excludeUserId && m.id === excludeUserId) return false // <-- hide self
+                    const name = (m.displayName || '').toLowerCase()
+                    const handle = matrixIdToUsername(m.id).toLowerCase()
+                    return name.includes(q) || handle.includes(q)
+                })
+                .slice(0, 7)
+            setMentionSuggestions(filtered)
+        },
+        [roomMembers, excludeUserId],
+    )
+
+    const insertMention = useCallback(
+        (member: MentionSelect, currentText: string) => {
+            if (mentionStartIndex === -1) {
+                return {
+                    newText: currentText,
+                    newCursorPosition: cursorPosition,
+                }
+            }
+
+            const beforeMention = currentText.substring(0, mentionStartIndex)
+            const afterCursor = currentText.substring(cursorPosition)
+
+            // use display name when available; special case for @room
+            const displayName =
+                member.id === '@room'
+                    ? ROOM_MENTION
+                    : (member as MatrixRoomMember).displayName ||
+                      (member as MatrixRoomMember).id
+
+            const newText = `${beforeMention}@${displayName} ${afterCursor}`
+            const newCursorPosition =
+                beforeMention.length + displayName.length + 2 // +2 for "@ "
+
+            setActiveMentionQuery(null)
+            setMentionStartIndex(-1)
+            setMentionSuggestions([])
+
+            return { newText, newCursorPosition }
+        },
+        [mentionStartIndex, cursorPosition],
+    )
+
+    const clearMentions = useCallback(() => {
+        setActiveMentionQuery(null)
+        setMentionStartIndex(-1)
+        setMentionSuggestions([])
+    }, [])
+
+    // show if a mention is active and there are suggestions
+    // or if the query could yield @room in the component
+    const shouldShowSuggestions = useMemo(() => {
+        return (
+            activeMentionQuery !== null &&
+            (mentionSuggestions.length > 0 ||
+                (!!activeMentionQuery &&
+                    ROOM_MENTION.startsWith(activeMentionQuery.toLowerCase())))
+        )
+    }, [activeMentionQuery, mentionSuggestions])
+
+    return {
+        mentionSuggestions,
+        activeMentionQuery,
+        shouldShowSuggestions,
+        detectMentionTrigger,
+        insertMention,
+        clearMentions,
     }
 }

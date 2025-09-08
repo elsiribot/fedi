@@ -10,6 +10,8 @@ import {
     HTML_TAG_REGEX,
     MX_REPLY_REGEX,
     QUOTE_USER_REGEX,
+    MATRIX_URL_BASE,
+    ROOM_MENTION,
 } from '../constants/matrix'
 import { FormattedAmounts } from '../hooks/amount'
 import {
@@ -19,6 +21,7 @@ import {
     MatrixEvent,
     MatrixFormEvent,
     MatrixGroupPreview,
+    MatrixMentions,
     MatrixPaymentEvent,
     MatrixPaymentStatus,
     MatrixRoom,
@@ -26,6 +29,8 @@ import {
     MatrixRoomPowerLevels,
     MatrixTimelineItem,
     MatrixUser,
+    MentionExtractionResult,
+    MentionParsingResult,
     MultispendDepositEvent,
     MultispendListedInvitationEvent,
     MultispendRole,
@@ -260,12 +265,25 @@ const multispendEventSchemas = {
         Extract<MultispendEvent, { kind: 'withdrawalResponse' }>
     >,
 }
-const baseTextMessageContent = z.object({
-    msgtype: z.string(),
-    body: z.string(),
-    format: z.literal('org.matrix.custom.html').optional(),
-    formatted_body: z.string().optional(),
+
+export const matrixMentionsSchema = z.object({
+    user_ids: z.array(z.string()).optional(),
+    room: z.boolean().optional(),
 })
+
+/** Optional mentions on any “rich text” message content */
+export const mentionRelation = z.object({
+    'm.mentions': matrixMentionsSchema.optional(),
+})
+
+const baseTextMessageContent = z
+    .object({
+        msgtype: z.string(),
+        body: z.string(),
+        format: z.literal('org.matrix.custom.html').optional(),
+        formatted_body: z.string().optional(),
+    })
+    .merge(mentionRelation)
 
 const formTypeSchema = z.enum(['text', 'radio', 'button'])
 const formOptionSchema = z.object({
@@ -1468,4 +1486,364 @@ export const getUserLabel = (u: MatrixUser): string => {
         if (v) return v
     }
     return ''
+}
+
+// Minimal HTML escaping for formatted_body
+const escapeHtml = (s: string) =>
+    s
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;')
+        .replace(/&apos;/g, "'")
+
+// minimal HTML un-escaping for formatted_body
+export const unescapeHtml = (s: string) =>
+    s
+        .replace(/&lt;/g, '<')
+        .replace(/&gt;/g, '>')
+        .replace(/&quot;/g, '"')
+        .replace(/&#39;/g, "'")
+        .replace(/&amp;/g, '&')
+        .replace(/&apos;/g, "'")
+
+const anchorForUser = (userId: string, display: string) =>
+    `<a href="${MATRIX_URL_BASE}${userId}">${escapeHtml(display)}</a>`
+
+/**
+ * Detect @mentions in plain text, match against room members,
+ * build m.mentions + formatted_body (with matrix.to links).
+ */
+export function parseMentionsFromText(
+    body: string,
+    roomMembers: MatrixRoomMember[],
+): MentionParsingResult {
+    const byHandle = new Map<string, MatrixRoomMember>() // localpart (no spaces)
+    const byDisplay = new Map<string, MatrixRoomMember>() // display name (may have spaces)
+
+    for (const m of roomMembers) {
+        const local = m.id.replace(/^@/, '').split(':', 1)[0]
+        byHandle.set(local.toLowerCase(), m)
+        const dn = (m.displayName || '').trim()
+        if (dn) byDisplay.set(dn.toLowerCase(), m)
+    }
+
+    const userIds = new Set<string>()
+    let hasRoom = false
+
+    // check delimiter
+    const isDelim = (ch?: string) => !ch || /\s|[.,;:()"'`<>]/.test(ch)
+
+    // longest-first list of display names for matching
+    const displayNames = Array.from(byDisplay.keys()).sort(
+        (a, b) => b.length - a.length,
+    )
+
+    let i = 0
+    let out = ''
+    let plainBuf = ''
+
+    const flushPlain = () => {
+        if (plainBuf) {
+            out += escapeHtml(plainBuf)
+            plainBuf = ''
+        }
+    }
+
+    while (i < body.length) {
+        const ch = body[i]
+
+        if (ch === '@' && (i === 0 || isDelim(body[i - 1]))) {
+            const after = body.slice(i + 1)
+            const afterLower = after.toLowerCase()
+
+            // Try multi-word display name mention first (greedy, longest-first)
+            let matchedName: string | null = null
+            let matchedMember: MatrixRoomMember | undefined
+
+            for (const name of displayNames) {
+                if (
+                    afterLower.startsWith(name) &&
+                    isDelim(body[i + 1 + name.length])
+                ) {
+                    matchedName = after.substr(0, name.length) // preserve original casing for display
+                    matchedMember = byDisplay.get(name)
+                    break
+                }
+            }
+
+            if (matchedName && matchedMember) {
+                userIds.add(matchedMember.id)
+                const display =
+                    (matchedMember.displayName || '').trim() || matchedName
+                flushPlain()
+                out += anchorForUser(matchedMember.id, `@${display}`)
+                i += 1 + matchedName.length
+                continue
+            }
+
+            // fallback to handle
+            const handleMatch = after.match(/^[a-z0-9._-]{1,64}/i)
+            if (handleMatch) {
+                const raw = handleMatch[0]
+                const handle = raw.toLowerCase()
+
+                if (handle === ROOM_MENTION || handle === 'everyone') {
+                    hasRoom = true
+                    flushPlain()
+                    out += `@${raw}` // keep as plain text (Matrix convention)
+                    i += 1 + raw.length
+                    continue
+                }
+
+                const m = byHandle.get(handle)
+                if (m) {
+                    userIds.add(m.id)
+                    const display = (m.displayName || '').trim() || m.id
+                    flushPlain()
+                    out += anchorForUser(m.id, `@${display}`)
+                    i += 1 + raw.length
+                    continue
+                }
+
+                // not a known handle — leave as typed
+                flushPlain()
+                out += `@${raw}`
+                i += 1 + raw.length
+                continue
+            }
+
+            // lone '@' or not a valid token; emit as-is
+            flushPlain()
+            out += '@'
+            i += 1
+            continue
+        }
+
+        // Regular character — buffer until we need to insert an anchor or finish
+        plainBuf += ch
+        i += 1
+    }
+
+    // flush any trailing plain text
+    flushPlain()
+
+    const mentions: MatrixMentions = {}
+    if (userIds.size) mentions.user_ids = Array.from(userIds)
+    if (hasRoom) mentions.room = true
+
+    return { mentions, formattedBody: out }
+}
+
+/**
+ * Read mentions from a Matrix event (m.mentions + anchors in formatted_body).
+ */
+export function extractMentionsFromEvent(
+    event: MatrixEvent,
+): MentionExtractionResult {
+    const content = (event.content ?? {}) as Partial<{
+        'm.mentions': MatrixMentions
+        formatted_body: string
+    }>
+    const mentionsField = content['m.mentions']
+    const mentionedUserIds = mentionsField?.user_ids
+        ? [...mentionsField.user_ids]
+        : []
+    const hasRoomMention = !!mentionsField?.room
+    const formattedMentions: {
+        userId: string
+        displayName: string
+        startIndex: number
+        endIndex: number
+    }[] = []
+
+    if (typeof content.formatted_body === 'string') {
+        // Accept encoded user IDs after "#/" and decode them.
+        // Example: <a href="https://matrix.to/#/%40alice%3Aserver">...</a>
+        const re = /<a\s+href="[^"]*#\/([^"]+)"[^>]*>(.*?)<\/a>/gi
+        let matchExec: RegExpExecArray | null
+        while ((matchExec = re.exec(content.formatted_body))) {
+            const decoded = safeDecode(matchExec[1])
+            if (!decoded?.startsWith('@') || !decoded.includes(':')) continue
+
+            formattedMentions.push({
+                userId: decoded,
+                displayName: matchExec[2]?.replace(/<[^>]*>/g, '') || decoded,
+                startIndex: matchExec.index,
+                endIndex: matchExec.index + matchExec[0].length,
+            })
+        }
+    }
+
+    return { mentionedUserIds, hasRoomMention, formattedMentions }
+}
+
+export function isUserMentioned(event: MatrixEvent, userId: string): boolean {
+    const res = extractMentionsFromEvent(event)
+    return res.hasRoomMention || res.mentionedUserIds.includes(userId)
+}
+
+// strip only the <mx-reply> wrapper, keep the rest of the HTML intact
+export function stripReplyFromFormattedBody(
+    formattedBody?: string,
+): string | undefined {
+    if (!formattedBody) return undefined
+    return formattedBody
+        .replace(MX_REPLY_REGEX, '')
+        .replace(/^\s*(?:<br\s*\/?>)+/i, '')
+        .trim()
+}
+
+// builds the 'data' payload for fedimint JSON message/edit/reply calls when mentions are present
+export const prepareMentionsDataPayload = (
+    body: string,
+    members: MatrixRoomMember[],
+    opts?: { excludeUserId?: string },
+): { mentions: RpcMentions | null; extra: JSONObject } => {
+    const { mentions, formattedBody } = parseMentionsFromText(body, members)
+    const hadAnchors = /<a\s/i.test(formattedBody)
+
+    let rpcMentions = toRpcMentions(mentions)
+
+    // remove self from m.mentions (but keep the anchor in HTML)
+    if (rpcMentions && opts?.excludeUserId) {
+        const users = (rpcMentions.users ?? []).filter(
+            u => u !== opts.excludeUserId,
+        )
+        const filtered: RpcMentions = { ...rpcMentions, users }
+        rpcMentions = users.length > 0 || !!filtered.room ? filtered : null
+    }
+
+    // If no mentions remain after filtering:
+    // - If the original had anchors, still include formatted_body to keep styled links.
+    // - Otherwise, no extra payload.
+    if (!rpcMentions) {
+        return hadAnchors
+            ? {
+                  mentions: null,
+                  extra: {
+                      format: 'org.matrix.custom.html',
+                      formatted_body: formattedBody,
+                  },
+              }
+            : { mentions: null, extra: {} }
+    }
+
+    // Mentions remain -> include both m.mentions and formatted_body
+    return {
+        mentions: rpcMentions,
+        extra: {
+            format: 'org.matrix.custom.html',
+            formatted_body: formattedBody,
+        },
+    }
+}
+
+export const hasMentions = (m: RpcMentions | null) =>
+    !!m && (m.users.length > 0 || m.room)
+
+// Convert MatrixMentions (snake_case) to RpcMentions (camelCase)
+const toRpcMentions = (
+    m: { user_ids?: string[]; room?: boolean } | null,
+): RpcMentions | null => {
+    if (!m) return null
+    const users = Array.isArray(m.user_ids) ? m.user_ids.filter(Boolean) : []
+    const room = !!m.room
+    if (users.length === 0 && !room) return null
+    return { users, room }
+}
+
+const safeDecode = (s: string): string | null => {
+    try {
+        return decodeURIComponent(s)
+    } catch {
+        return null
+    }
+}
+
+export type LinkRun = { type: 'link'; text: string; href: string }
+export type TextRun = { type: 'text'; text: string }
+export type HtmlRun = LinkRun | TextRun
+
+/**
+ * Type guard for m.text content that includes Matrix HTML formatting.
+ */
+export function isHtmlFormattedContent(
+    c: MatrixEventContentType<'m.text'> | RepliableMatrixEventContent,
+): c is RepliableMatrixEventContent & {
+    format: 'org.matrix.custom.html'
+    formatted_body?: string
+} {
+    if (typeof c !== 'object' || c === null) return false
+
+    if (!('format' in c)) return false
+    const format = (c as { format?: unknown }).format
+    if (format !== 'org.matrix.custom.html') return false
+
+    // formatted_body may be absent or a string
+    if ('formatted_body' in c) {
+        const fb = (c as { formatted_body?: unknown }).formatted_body
+        if (typeof fb !== 'undefined' && typeof fb !== 'string') return false
+    }
+
+    return true
+}
+
+/**
+ * Split HTML into link/text runs, converting <br/> to "\n" and unescaping entities.
+ * Strips any nested tags from anchor text.
+ */
+export const splitHtmlRuns = (html: string): HtmlRun[] => {
+    const anchorRe = /<a\s+href="([^"]+)"[^>]*>(.*?)<\/a>/gi
+    const brRe = /<br\s*\/?>/gi
+    const runs: HtmlRun[] = []
+    let last = 0
+    let m: RegExpExecArray | null
+    while ((m = anchorRe.exec(html))) {
+        if (m.index > last) {
+            const chunk = html.slice(last, m.index)
+            const pieces = chunk.split(brRe)
+            pieces.forEach((p, idx) => {
+                if (p) runs.push({ type: 'text', text: unescapeHtml(p) })
+                if (idx < pieces.length - 1)
+                    runs.push({ type: 'text', text: '\n' })
+            })
+        }
+        runs.push({
+            type: 'link',
+            href: m[1],
+            text: unescapeHtml(m[2].replace(/<[^>]*>/g, '')),
+        })
+        last = m.index + m[0].length
+    }
+    if (last < html.length) {
+        const tail = html.slice(last)
+        const pieces = tail.split(brRe)
+        pieces.forEach((p, idx) => {
+            if (p) runs.push({ type: 'text', text: unescapeHtml(p) })
+            if (idx < pieces.length - 1) runs.push({ type: 'text', text: '\n' })
+        })
+    }
+    return runs
+}
+
+/**
+ * Split plain text into runs, marking @room/@everyone tokens as 'everyone' runs.
+ */
+export const splitEveryoneRuns = (
+    text: string,
+): Array<{ type: 'text' | 'everyone'; text: string }> => {
+    const re = new RegExp(`@(?:everyone|${ROOM_MENTION})\\b`, 'gi')
+    const out: Array<{ type: 'text' | 'everyone'; text: string }> = []
+    let last = 0
+    let m: RegExpExecArray | null
+    while ((m = re.exec(text))) {
+        if (m.index > last)
+            out.push({ type: 'text', text: text.slice(last, m.index) })
+        out.push({ type: 'everyone', text: m[0] })
+        last = m.index + m[0].length
+    }
+    if (last < text.length) out.push({ type: 'text', text: text.slice(last) })
+    return out
 }

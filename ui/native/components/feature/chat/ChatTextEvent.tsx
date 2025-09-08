@@ -1,5 +1,5 @@
 import { Theme, useTheme } from '@rneui/themed'
-import React from 'react'
+import React, { useMemo } from 'react'
 import { Pressable, StyleSheet, View } from 'react-native'
 
 import { useMatrixRepliedMessage } from '@fedi/common/hooks/matrix'
@@ -9,7 +9,11 @@ import {
     setSelectedChatMessage,
 } from '@fedi/common/redux'
 import { MatrixEvent } from '@fedi/common/types'
-import { MatrixEventContentType } from '@fedi/common/utils/matrix'
+import {
+    MatrixEventContentType,
+    stripReplyFromFormattedBody,
+    isHtmlFormattedContent,
+} from '@fedi/common/utils/matrix'
 
 import { useAppDispatch, useAppSelector } from '../../../state/hooks'
 import { OptionalGradient } from '../../ui/OptionalGradient'
@@ -21,10 +25,17 @@ type Props = {
     event: MatrixEvent<MatrixEventContentType<'m.text'>>
     isWide?: boolean
     onReplyTap?: (eventId: string) => void
+    onMentionPress?: (userId: string) => void
 }
 
-const ChatTextEvent: React.FC<Props> = ({ event, isWide, onReplyTap }) => {
+const ChatTextEvent: React.FC<Props> = ({
+    event,
+    isWide,
+    onReplyTap,
+    onMentionPress,
+}) => {
     const { repliedData, strippedBody } = useMatrixRepliedMessage(event)
+    const isReplied = !!repliedData
 
     const matrixAuth = useAppSelector(selectMatrixAuth)
     const { theme } = useTheme()
@@ -42,6 +53,31 @@ const ChatTextEvent: React.FC<Props> = ({ event, isWide, onReplyTap }) => {
         dispatch(setSelectedChatMessage(event))
     }
 
+    // remove Matrix "edited" fallback markers at the very start: "* ", "** ", etc.
+    const stripLeadingEditStars = (s: string) =>
+        s.replace(/^(?:\s*(?:\*|&#42;)\s+)+/, '')
+
+    // prefer formatted_body so <a href="…">@name</a> stays underlined.
+    // if this is a reply, strip the <mx-reply> wrapper.
+    const contentForDisplay = useMemo(() => {
+        const c = event.content
+        if (isHtmlFormattedContent(c)) {
+            const html = isReplied
+                ? stripReplyFromFormattedBody(c.formatted_body)
+                : c.formatted_body
+            if (html && html.trim()) return html
+        }
+        return strippedBody
+    }, [event.content, isReplied, strippedBody])
+
+    const cleanedContentForDisplay = useMemo(
+        () =>
+            contentForDisplay
+                ? stripLeadingEditStars(contentForDisplay)
+                : contentForDisplay,
+        [contentForDisplay],
+    )
+
     return (
         <Pressable
             onLongPress={handleLongPress}
@@ -57,9 +93,7 @@ const ChatTextEvent: React.FC<Props> = ({ event, isWide, onReplyTap }) => {
                         alignSelf: isMe ? 'flex-end' : 'flex-start',
                         // Prevent any layout animations
                         transform: [{ translateX: 0 }],
-                        ...(isWide && {
-                            width: theme.sizes.maxMessageWidth,
-                        }),
+                        ...(isWide && { width: theme.sizes.maxMessageWidth }),
                     },
                 ]}>
                 {repliedData && onReplyTap && (
@@ -74,13 +108,13 @@ const ChatTextEvent: React.FC<Props> = ({ event, isWide, onReplyTap }) => {
                 )}
 
                 <MessageContents
-                    content={strippedBody}
+                    content={cleanedContentForDisplay}
                     sentByMe={isMe}
                     textStyles={[
-                        isMe
-                            ? styles(theme).outgoingText
-                            : styles(theme).incomingText,
+                        isMe ? style.outgoingText : style.incomingText,
                     ]}
+                    onMentionPress={onMentionPress}
+                    currentUserId={matrixAuth?.userId}
                 />
             </OptionalGradient>
         </Pressable>

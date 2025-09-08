@@ -10,10 +10,12 @@ import type {
 import {
     FrontendMetadata,
     GuardianStatus,
+    JSONObject,
     RpcAmount,
     RpcFederationId,
     RpcFeeDetails,
     RpcMediaSource,
+    RpcMentions,
     RpcOperationId,
     RpcPayAddressResponse,
     RpcRoomId,
@@ -656,11 +658,15 @@ export class FedimintBridge {
         roomId: RpcRoomId,
         eventId: RpcTimelineEventItemId,
         newContent: string,
+        options?: { mentions?: RpcMentions | null; extra?: JSONObject },
     ) {
         return this.rpcTyped('matrixEditMessage', {
             roomId,
             eventId,
-            newContent: toSendMessageData(newContent),
+            newContent: toSendMessageData(newContent, {
+                mentions: options?.mentions ?? null,
+                extra: options?.extra,
+            }),
         })
     }
 
@@ -696,11 +702,15 @@ export class FedimintBridge {
         roomId: RpcRoomId,
         replyToEventId: string,
         message: string,
+        options?: { mentions?: RpcMentions | null; extra?: JSONObject },
     ) {
         return this.rpcTyped('matrixSendReply', {
             roomId,
             replyToEventId,
-            data: toSendMessageData(message),
+            data: toSendMessageData(message, {
+                mentions: options?.mentions ?? null,
+                extra: options?.extra,
+            }),
         })
     }
 

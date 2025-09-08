@@ -14,6 +14,7 @@ import {
     Text,
     TextInput,
     TextInputContentSizeChangeEventData,
+    TextInputSelectionChangeEventData,
     View,
     Animated,
 } from 'react-native'
@@ -21,6 +22,7 @@ import { Asset, ImageLibraryOptions } from 'react-native-image-picker'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 
 import { theme as fediTheme } from '@fedi/common/constants/theme'
+import { useMentionInput } from '@fedi/common/hooks/matrix'
 import { useToast } from '@fedi/common/hooks/toast'
 import { useDebouncedEffect } from '@fedi/common/hooks/util'
 import {
@@ -35,11 +37,18 @@ import {
     clearChatReplyingToMessage,
     selectMatrixRoomMembers,
     selectIsInternetUnreachable,
+    editMatrixMessage,
+    selectMatrixAuth,
 } from '@fedi/common/redux'
-import { InputAttachment, InputMedia } from '@fedi/common/types'
+import {
+    InputAttachment,
+    InputMedia,
+    MatrixRoomMember,
+    MentionSelect,
+} from '@fedi/common/types'
+import { RpcMatrixMembership } from '@fedi/common/types/bindings'
 import { makeLog } from '@fedi/common/utils/log'
 import {
-    getEventId,
     matrixIdToUsername,
     stripReplyFromBody,
 } from '@fedi/common/utils/matrix'
@@ -57,6 +66,7 @@ import {
 } from '../../../utils/media'
 import SvgImage, { SvgImageSize } from '../../ui/SvgImage'
 import { AssetsList } from './AssetsList'
+import ChatMentionSuggestions from './ChatMentionSuggestions'
 import ChatWalletButton from './ChatWalletButton'
 
 type MessageInputProps = {
@@ -107,20 +117,58 @@ const MessageInput: React.FC<MessageInputProps> = ({
     )
     const roomMembers = useAppSelector(s => selectMatrixRoomMembers(s, id))
     const isOffline = useAppSelector(selectIsInternetUnreachable)
+    const auth = useAppSelector(selectMatrixAuth)
+    const selfUserId = auth?.userId || undefined
 
     const drafts = useAppSelector(s => selectChatDrafts(s))
-    const [inputHeight, setInputHeight] = useState<number>(
-        theme.sizes.minMessageInputHeight,
-    )
+
     const { height: keyboardHeight } = useKeyboard()
     const [messageText, setMessageText] = useState<string>(drafts[id] ?? '')
     const [isSendingMessage, setIsSendingMessage] = useState(false)
     const [replyAnimation] = useState(new Animated.Value(0))
 
+    const [selectionStart, setSelectionStart] = useState(0)
     const directUserId = useMemo(
         () => existingRoom?.directUserId ?? null,
         [existingRoom],
     )
+    const mentionEnabled = useMemo(
+        () => !(!!directUserId || (!existingRoom && !isPublic)),
+        [directUserId, existingRoom, isPublic],
+    )
+
+    // Build candidates for the mention hook, injecting "self" if missing so we can self-mention by display name.
+    const membersForMentions: MatrixRoomMember[] = useMemo(() => {
+        if (!mentionEnabled) return []
+        const list: MatrixRoomMember[] = (roomMembers ||
+            []) as MatrixRoomMember[]
+        const hasSelf = !!(selfUserId && list.some(m => m.id === selfUserId))
+        if (hasSelf || !selfUserId) return list
+        const displayName =
+            (auth?.displayName || '').trim() || matrixIdToUsername(selfUserId)
+        const selfAsMember: MatrixRoomMember = {
+            id: selfUserId,
+            displayName,
+            avatarUrl: undefined,
+            powerLevel: 0,
+            roomId: id,
+            membership: 'join' as RpcMatrixMembership,
+            ignored: false,
+        }
+        return [...list, selfAsMember]
+    }, [mentionEnabled, roomMembers, selfUserId, auth?.displayName, id])
+
+    const {
+        mentionSuggestions,
+        activeMentionQuery,
+        shouldShowSuggestions,
+        detectMentionTrigger,
+        insertMention: insertMentionFromHook,
+    } = useMentionInput(membersForMentions, selectionStart)
+
+    const MIN_INPUT_H = Math.max(48, theme.sizes.minMessageInputHeight)
+    const [inputHeight, setInputHeight] = useState<number>(MIN_INPUT_H)
+
     const inputRef = useRef<TextInput | null>(null)
     const editingMessage = useAppSelector(selectMessageToEdit)
 
@@ -218,7 +266,6 @@ const MessageInput: React.FC<MessageInputProps> = ({
                                         ...a,
                                         uri: prefixFileUri(a.originalPath),
                                     }
-
                                 return a
                             }),
                         ])
@@ -226,7 +273,6 @@ const MessageInput: React.FC<MessageInputProps> = ({
                 },
                 e => {
                     log.error('launchImageLibrary Error: ', e)
-
                     // Only show a toast if the error is the user's fault
                     if (e._tag === 'UserError') toast.error(t, e)
                 },
@@ -278,7 +324,6 @@ const MessageInput: React.FC<MessageInputProps> = ({
                 },
                 e => {
                     log.error('DocumentPicker Error: ', e)
-
                     // Only show a toast if the error is the user's fault
                     if (e._tag === 'UserError') toast.error(t, e)
                 },
@@ -290,21 +335,35 @@ const MessageInput: React.FC<MessageInputProps> = ({
     }, [t, toast])
 
     const handleEdit = useCallback(async () => {
-        if (!isEditingMessage || !messageText || !editingMessage.eventId) return
+        if (!isEditingMessage || !messageText || !editingMessage) return
+
+        // build RpcTimelineEventItemId: { eventId } | { transactionId }
+        const eventId =
+            'eventId' in editingMessage && editingMessage.eventId
+                ? { eventId: editingMessage.eventId }
+                : 'transactionId' in editingMessage &&
+                    typeof editingMessage.transactionId === 'string'
+                  ? { transactionId: editingMessage.transactionId }
+                  : undefined
+
+        if (!eventId) return
 
         try {
-            const event = getEventId(editingMessage)
-            await fedimint.matrixEditMessage(
-                editingMessage.roomId,
-                event,
-                messageText,
-            )
+            await dispatch(
+                editMatrixMessage({
+                    fedimint,
+                    roomId: editingMessage.roomId,
+                    eventId,
+                    body: messageText,
+                }),
+            ).unwrap()
+
             setMessageText('')
             dispatch(setMessageToEdit(null))
         } catch (e) {
             toast.error(t, e, 'errors.chat-unavailable')
         }
-    }, [editingMessage, isEditingMessage, messageText, t, toast, dispatch])
+    }, [dispatch, editingMessage, isEditingMessage, messageText, t, toast])
 
     const trimmedMessageText = messageText
         .trim()
@@ -400,22 +459,16 @@ const MessageInput: React.FC<MessageInputProps> = ({
     )
 
     const handleContentSizeChange = useCallback(
-        ({
-            nativeEvent: {
-                contentSize: { height },
-            },
-        }: NativeSyntheticEvent<TextInputContentSizeChangeEventData>) => {
-            if (height > inputHeight) {
-                setInputHeight(
-                    Math.min(theme.sizes.maxMessageInputHeight, height),
-                )
-            } else if (height < inputHeight) {
-                setInputHeight(
-                    Math.max(theme.sizes.minMessageInputHeight, height),
-                )
-            }
+        (e: NativeSyntheticEvent<TextInputContentSizeChangeEventData>) => {
+            const { height } = e.nativeEvent.contentSize
+            const EXTRA = 8
+            const next = Math.min(
+                theme.sizes.maxMessageInputHeight,
+                Math.max(MIN_INPUT_H, Math.ceil(height) + EXTRA),
+            )
+            if (next !== inputHeight) setInputHeight(next)
         },
-        [inputHeight, theme],
+        [inputHeight, theme, MIN_INPUT_H],
     )
 
     const onLayout = (event: LayoutChangeEvent) => {
@@ -488,6 +541,50 @@ const MessageInput: React.FC<MessageInputProps> = ({
             </Animated.View>
         )
     }
+
+    const handleSelectionChange = useCallback(
+        (e: NativeSyntheticEvent<TextInputSelectionChangeEventData>) => {
+            const s = e.nativeEvent.selection.start
+            setSelectionStart(s)
+            if (mentionEnabled) {
+                detectMentionTrigger(messageText, s)
+            }
+        },
+        [detectMentionTrigger, messageText, mentionEnabled],
+    )
+
+    const onChangeText = useCallback(
+        (value: string) => {
+            setMessageText(value)
+            const cursorGuess =
+                selectionStart > value.length ? value.length : selectionStart
+            if (mentionEnabled) {
+                detectMentionTrigger(
+                    value,
+                    cursorGuess === 0 ? value.length : cursorGuess,
+                )
+            }
+        },
+        [selectionStart, detectMentionTrigger, mentionEnabled],
+    )
+
+    const insertMention = useCallback(
+        (item: MentionSelect) => {
+            const { newText, newCursorPosition } = insertMentionFromHook(
+                item,
+                messageText,
+            )
+            setMessageText(newText)
+            setSelectionStart(newCursorPosition)
+        },
+        [insertMentionFromHook, messageText],
+    )
+
+    const showMentionSuggestions =
+        !isReadOnly &&
+        !isEditingMessage &&
+        mentionEnabled &&
+        shouldShowSuggestions
 
     const documentListItems = useMemo(() => {
         let items: Array<{
@@ -574,26 +671,39 @@ const MessageInput: React.FC<MessageInputProps> = ({
             {media.length > 0 && (
                 <AssetsList assets={media} setAttachments={setMedia} />
             )}
+
+            {/* input row */}
             <View style={style.inputContainer}>
-                <Input
-                    onChangeText={setMessageText}
-                    value={messageText}
-                    ref={(ref: unknown) => {
-                        inputRef.current = ref as TextInput
-                    }}
-                    placeholder={`${placeholder}`}
-                    onContentSizeChange={handleContentSizeChange}
-                    containerStyle={[
-                        style.textInputOuter,
-                        { height: inputHeight },
-                    ]}
-                    inputContainerStyle={style.textInputInner}
-                    inputStyle={inputStyle}
-                    multiline
-                    numberOfLines={3}
-                    blurOnSubmit={false}
-                    disabled={inputDisabled}
-                />
+                <View
+                    style={[
+                        style.inputFieldWrapper,
+                        { minHeight: inputHeight },
+                    ]}>
+                    <Input
+                        onChangeText={onChangeText}
+                        onSelectionChange={handleSelectionChange}
+                        value={messageText}
+                        ref={(ref: TextInput | null) => {
+                            inputRef.current = ref
+                        }}
+                        placeholder={`${placeholder}`}
+                        onContentSizeChange={handleContentSizeChange}
+                        containerStyle={[
+                            style.textInputOuter,
+                            { minHeight: inputHeight },
+                        ]}
+                        inputContainerStyle={[
+                            style.textInputInner,
+                            { minHeight: inputHeight },
+                        ]}
+                        inputStyle={inputStyle}
+                        multiline
+                        numberOfLines={3}
+                        blurOnSubmit={false}
+                        disabled={inputDisabled}
+                    />
+                </View>
+
                 {!isReadOnly && !existingRoom && (
                     <Pressable
                         style={style.sendButton}
@@ -611,7 +721,25 @@ const MessageInput: React.FC<MessageInputProps> = ({
                         />
                     </Pressable>
                 )}
+                <View
+                    pointerEvents="box-none"
+                    style={[
+                        style.mentionOverlay,
+                        repliedEvent && !isEditingMessage && !isReadOnly
+                            ? style.mentionOverlayWithReply
+                            : null,
+                    ]}>
+                    {showMentionSuggestions && (
+                        <ChatMentionSuggestions
+                            visible
+                            query={activeMentionQuery ?? ''}
+                            suggestions={mentionSuggestions}
+                            onSelect={insertMention}
+                        />
+                    )}
+                </View>
             </View>
+
             {existingRoom && (
                 <View style={style.buttonContainer}>
                     <View style={style.chatControls}>
@@ -746,19 +874,31 @@ const styles = (theme: Theme, insets: Insets) =>
         sendButton: {
             flexShrink: 0,
         },
-        textInputInner: {
-            borderBottomWidth: 0,
+        inputFieldWrapper: {
+            position: 'relative',
+            flexGrow: 1,
+            flexShrink: 1,
+            flexBasis: 0,
+            overflow: 'visible',
         },
         textInputOuter: {
             borderWidth: 0,
             paddingHorizontal: 0,
+            paddingVertical: 0,
             backgroundColor: theme.colors.white,
             flexGrow: 1,
             flexShrink: 1,
             flexBasis: 0,
         },
+        textInputInner: {
+            borderBottomWidth: 0,
+            paddingTop: 0,
+            paddingBottom: 0,
+            alignItems: 'flex-start',
+        },
         textInputStyle: {
             fontSize: fediTheme.fontSizes.body,
+            textAlignVertical: 'top',
         },
         textInputReadonly: {
             color: theme.colors.grey,
@@ -805,11 +945,15 @@ const styles = (theme: Theme, insets: Insets) =>
             backgroundColor: theme.colors.night,
         },
         inputContainer: {
+            position: 'relative',
             flexDirection: 'row',
             alignItems: 'center',
             justifyContent: 'space-between',
             gap: theme.spacing.lg,
+            zIndex: 2,
+            elevation: 2,
         },
+
         saveButton: {
             flexShrink: 0,
             width: 24,
@@ -889,6 +1033,19 @@ const styles = (theme: Theme, insets: Insets) =>
             height: 24,
             alignItems: 'center',
             justifyContent: 'center',
+        },
+
+        mentionOverlay: {
+            position: 'absolute',
+            left: -(theme.spacing.md + (insets.left || 0)),
+            right: -(theme.spacing.md + (insets.right || 0)),
+            bottom: '100%',
+            marginBottom: 9, //so we can still see the top border of MessageInput
+            zIndex: 20,
+            elevation: 20,
+        },
+        mentionOverlayWithReply: {
+            transform: [{ translateY: -(59 + 1) }], // moves overlay up by reply bar height + border
         },
     })
 

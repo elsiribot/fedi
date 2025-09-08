@@ -36,6 +36,7 @@ import ChatPaymentEvent from './ChatPaymentEvent'
 import ChatPollEvent from './ChatPollEvent'
 import ChatPreviewMediaEvent from './ChatPreviewMediaEvent'
 import ChatTextEvent from './ChatTextEvent'
+import { ChatUserActionsOverlay } from './ChatUserActionsOverlay'
 import ChatVideoEvent from './ChatVideoEvent'
 import { MessageItemError } from './MessageItemError'
 
@@ -59,6 +60,7 @@ const ChatEvent: React.FC<Props> = ({
     const { theme } = useTheme()
     const [hasWidePreview, setHasWidePreview] = useState(false)
     const matrixAuth = useAppSelector(selectMatrixAuth)
+    const [selectedUserId, setSelectedUserId] = useState<string | null>(null)
 
     const isMe =
         event.senderId === matrixAuth?.userId && !isMultispendEvent(event)
@@ -113,6 +115,11 @@ const ChatEvent: React.FC<Props> = ({
                                     event={event}
                                     isWide={hasWidePreview}
                                     onReplyTap={onReplyTap}
+                                    onMentionPress={userId =>
+                                        requestAnimationFrame(() =>
+                                            setSelectedUserId(userId),
+                                        )
+                                    }
                                 />
                             ) : isEncryptedEvent(event) ? (
                                 <ChatEncryptedEvent event={event} />
@@ -161,6 +168,11 @@ const ChatEvent: React.FC<Props> = ({
                     </Flex>
                 </Flex>
             </View>
+            <ChatUserActionsOverlay
+                onDismiss={() => setSelectedUserId(null)}
+                selectedUserId={selectedUserId}
+                roomId={event.roomId}
+            />
         </ErrorBoundary>
     )
 }

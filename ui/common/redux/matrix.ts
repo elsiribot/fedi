@@ -59,10 +59,12 @@ import {
     MultispendListedEvent,
     NetworkError,
     RpcBackPaginationStatus,
+    RpcMentions,
     RpcMultispendGroupStatus,
     RpcRoomId,
     RpcRoomNotificationMode,
     RpcSPv2SyncResponse,
+    RpcTimelineEventItemId,
 } from '../types/bindings'
 import amountUtils from '../utils/AmountUtils'
 import {
@@ -92,6 +94,8 @@ import {
     shouldShowUnreadIndicator,
     isMultispendFinancialTransaction,
     MatrixFormResponse,
+    prepareMentionsDataPayload,
+    hasMentions,
 } from '../utils/matrix'
 import { isBolt11 } from '../utils/parser'
 import { upsertListItem, upsertRecordEntity } from '../utils/redux'
@@ -618,6 +622,9 @@ export const matrixSlice = createSlice({
                 ...action.payload,
             }
         })
+        builder.addCase(editMatrixMessage.fulfilled, state => {
+            state.messageToEdit = null
+        })
         builder.addMatcher(
             isAnyOf(ignoreUser.fulfilled, unignoreUser.fulfilled),
             (state, action) => {
@@ -1034,6 +1041,102 @@ export const setMatrixRoomMemberPowerLevel = createAsyncThunk<
     },
 )
 
+export const sendMatrixMessageWithMentions = createAsyncThunk<
+    void,
+    {
+        fedimint: FedimintBridge
+        roomId: string
+        body: string
+        mentions: RpcMentions | null
+        extra?: JSONObject
+    }
+>(
+    'matrix/sendMatrixMessageWithMentions',
+    async ({ fedimint, roomId, body, mentions, extra }) => {
+        await fedimint.matrixSendMessage({
+            roomId,
+            data: {
+                msgtype: 'm.text',
+                body,
+                data: extra ?? {},
+                mentions: hasMentions(mentions) ? mentions : null,
+            },
+        })
+    },
+)
+
+export const sendMatrixReplyWithMentions = createAsyncThunk<
+    void,
+    {
+        fedimint: FedimintBridge
+        roomId: string
+        replyToEventId: string
+        body: string
+        mentions: RpcMentions | null
+        extra?: JSONObject
+    }
+>(
+    'matrix/sendMatrixReplyWithMentions',
+    async ({ fedimint, roomId, replyToEventId, body, mentions, extra }) => {
+        await fedimint.matrixSendReply(roomId, replyToEventId, body, {
+            mentions,
+            extra,
+        })
+    },
+)
+
+export const editMatrixMessageWithMentions = createAsyncThunk<
+    void,
+    {
+        fedimint: FedimintBridge
+        roomId: string
+        eventId: RpcTimelineEventItemId
+        body: string
+        mentions: RpcMentions | null
+        extra?: JSONObject
+    }
+>(
+    'matrix/editMatrixMessageWithMentions',
+    async ({ fedimint, roomId, eventId, body, mentions, extra }) => {
+        await fedimint.matrixEditMessage(roomId, eventId, body, {
+            mentions,
+            extra,
+        })
+    },
+)
+
+export const editMatrixMessage = createAsyncThunk<
+    void,
+    {
+        fedimint: FedimintBridge
+        roomId: MatrixRoom['id']
+        eventId: RpcTimelineEventItemId
+        body: string
+    },
+    { state: CommonState }
+>(
+    'matrix/editMatrixMessage',
+    async ({ fedimint, roomId, eventId, body }, { getState, dispatch }) => {
+        const state = getState()
+        const selfUserId = selectMatrixAuth(state)?.userId
+        const members = selectMatrixRoomMembers(state, roomId)
+        const { mentions, extra } = prepareMentionsDataPayload(body, members, {
+            excludeUserId: selfUserId,
+        })
+
+        await dispatch(
+            editMatrixMessageWithMentions({
+                fedimint,
+                roomId,
+                eventId,
+                body,
+                mentions,
+                extra,
+            }),
+        ).unwrap()
+    },
+)
+
 export const sendMatrixMessage = createAsyncThunk<
     void,
     {
@@ -1045,17 +1148,23 @@ export const sendMatrixMessage = createAsyncThunk<
         // into a custom message for smoother payments UX
         // TODO: add support for copy-pasting bolt11 invoices in a groupchat
         options?: { interceptBolt11: boolean }
-    }
+    },
+    { state: CommonState }
 >(
     'matrix/sendMatrixMessage',
-    async ({
-        fedimint,
-        roomId,
-        body,
-        repliedEventId,
-        options = { interceptBolt11: false },
-    }) => {
+    async (
+        {
+            fedimint,
+            roomId,
+            body,
+            repliedEventId,
+            options = { interceptBolt11: false },
+        },
+        { getState, dispatch },
+    ) => {
         const client = getMatrixClient()
+        const state = getState()
+        const selfUserId = selectMatrixAuth(state)?.userId
 
         if (options.interceptBolt11) {
             try {
@@ -1093,15 +1202,37 @@ export const sendMatrixMessage = createAsyncThunk<
             }
         }
 
+        const members = selectMatrixRoomMembers(state, roomId)
+        const { mentions, extra } = prepareMentionsDataPayload(body, members, {
+            excludeUserId: selfUserId,
+        })
+
         // Handle regular text messages (with or without reply)
         if (repliedEventId) {
-            await fedimint.matrixSendReply(roomId, repliedEventId, body)
-        } else {
-            await client.sendMessage(roomId, {
-                msgtype: 'm.text',
-                body,
-            })
+            const replyToEventId: string = repliedEventId
+            await dispatch(
+                sendMatrixReplyWithMentions({
+                    fedimint,
+                    roomId,
+                    replyToEventId,
+                    body,
+                    mentions,
+                    extra,
+                }),
+            ).unwrap()
+            return
         }
+
+        // Non-reply: send via bridge; add m.mentions/formatted_body when present, else plain m.text.
+        await dispatch(
+            sendMatrixMessageWithMentions({
+                fedimint,
+                roomId,
+                body,
+                mentions,
+                extra,
+            }),
+        ).unwrap()
     },
 )
 

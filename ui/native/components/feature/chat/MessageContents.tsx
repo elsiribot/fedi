@@ -14,7 +14,11 @@ import Hyperlink from 'react-native-hyperlink'
 
 import { useToast } from '@fedi/common/hooks/toast'
 import { makeLog } from '@fedi/common/utils/log'
-import { decodeFediMatrixRoomUri } from '@fedi/common/utils/matrix'
+import {
+    decodeFediMatrixRoomUri,
+    splitEveryoneRuns,
+    splitHtmlRuns,
+} from '@fedi/common/utils/matrix'
 
 import EmbeddedJoinGroupButton from './EmbeddedJoinGroupButton'
 
@@ -24,21 +28,60 @@ type MessageContentsProps = {
     content: string
     sentByMe: boolean
     textStyles: StyleProp<ViewStyle | TextStyle>[]
+    onMentionPress?: (userId: string) => void
+    currentUserId?: string
 }
 
 const MessageContents: React.FC<MessageContentsProps> = ({
     content,
     sentByMe,
     textStyles,
+    onMentionPress,
+    currentUserId,
 }: MessageContentsProps) => {
     const { theme } = useTheme()
     const toast = useToast()
     const { t } = useTranslation()
 
-    const handleLinkPress = useCallback((url: string) => {
-        log.debug('url', url)
-        Linking.openURL(url)
-    }, [])
+    const handleLinkPress = useCallback(
+        (url: string) => {
+            // support tapping matrix.to user links as mentions
+            if (onMentionPress) {
+                try {
+                    const hashIndex = url.indexOf('#/')
+                    if (url.includes('matrix.to') && hashIndex !== -1) {
+                        const after = url.slice(hashIndex + 2)
+                        const decoded = decodeURIComponent(after)
+
+                        // User mention: "@localpart:server"
+                        const userMatch = decoded.match(/^@[^:/?#]+:[^/?#]+/)
+                        if (userMatch) {
+                            const mentionedId = userMatch[0]
+                            // swallow taps on self-mentions (don’t open action modal)
+                            if (currentUserId && mentionedId === currentUserId)
+                                return
+                            onMentionPress(mentionedId)
+                            return
+                        }
+
+                        // Rooms: !roomId:server or #alias:server
+                        const roomIdMatch = decoded.match(/^![^:/?#]+:[^/?#]+/)
+                        const roomAliasMatch =
+                            decoded.match(/^#[^:/?#]+:[^/?#]+/)
+                        if (roomIdMatch || roomAliasMatch) {
+                            Linking.openURL(url)
+                            return
+                        }
+                    }
+                } catch (err) {
+                    log.error("Couldn't tap link", { url, err })
+                }
+            }
+            log.debug('url', url)
+            Linking.openURL(url)
+        },
+        [onMentionPress, currentUserId],
+    )
 
     const handleLinkLongPress = useCallback(
         (url: string) => {
@@ -49,6 +92,142 @@ const MessageContents: React.FC<MessageContentsProps> = ({
             })
         },
         [toast, t],
+    )
+
+    const linkStyle = sentByMe
+        ? styles(theme).outgoingLinkedText
+        : styles(theme).incomingLinkedText
+
+    // shared renderer used in both branches
+    const renderRichBlock = useCallback(
+        (block: string, key?: string | number, mediumWeight?: boolean) => {
+            const hasHtml =
+                /<a\s+href="/i.test(block) || /<br\s*\/?>/i.test(block)
+            if (!hasHtml) {
+                const parts = splitEveryoneRuns(block.trim())
+                return (
+                    <Text
+                        key={key ?? 'plain'}
+                        caption
+                        {...(mediumWeight ? { medium: true } : {})}
+                        style={[...textStyles, styles(theme).consistentText]}>
+                        {parts.map((p, idx) =>
+                            p.type === 'everyone' ? (
+                                <Text
+                                    key={`ev-${idx}`}
+                                    caption
+                                    {...(mediumWeight ? { medium: true } : {})}
+                                    style={[
+                                        linkStyle,
+                                        styles(theme).consistentText,
+                                    ]}>
+                                    {p.text}
+                                </Text>
+                            ) : (
+                                <React.Fragment key={`tx-${idx}`}>
+                                    {p.text}
+                                </React.Fragment>
+                            ),
+                        )}
+                    </Text>
+                )
+            }
+
+            const runs = splitHtmlRuns(block)
+            return (
+                <Text
+                    key={key ?? 'rich'}
+                    caption
+                    {...(mediumWeight ? { medium: true } : {})}
+                    style={[...textStyles, styles(theme).consistentText]}>
+                    {runs.flatMap((r, idx) => {
+                        if (r.type === 'link' && r.href) {
+                            // detect Matrix user mention for styling/behavior
+                            let isSelf = false
+                            try {
+                                const hashIndex = r.href.indexOf('#/')
+                                if (
+                                    r.href.includes('matrix.to') &&
+                                    hashIndex !== -1
+                                ) {
+                                    const after = r.href.slice(hashIndex + 2)
+                                    const decoded = decodeURIComponent(after)
+                                    const userMatch =
+                                        // Match a Matrix user ID at start of string: "@localpart:server" (stops before '/', '?', '#')
+                                        decoded.match(/^@[^:/?#]+:[^/?#]+/)
+                                    if (userMatch) {
+                                        isSelf =
+                                            !!currentUserId &&
+                                            userMatch[0] === currentUserId
+                                    }
+                                }
+                            } catch (err) {
+                                log.warn(
+                                    'mention-highlight: failed to parse matrix.to user link; skipping self-highlight',
+                                    {
+                                        href: r.href,
+                                        err,
+                                    },
+                                )
+                            }
+
+                            return (
+                                <Text
+                                    key={`lnk-${idx}`}
+                                    caption
+                                    {...(mediumWeight ? { medium: true } : {})}
+                                    style={[
+                                        linkStyle,
+                                        styles(theme).consistentText,
+                                        isSelf
+                                            ? styles(theme).selfMention
+                                            : null,
+                                    ]}
+                                    suppressHighlighting
+                                    onPress={
+                                        isSelf
+                                            ? undefined
+                                            : () => handleLinkPress(r.href)
+                                    }
+                                    onLongPress={() =>
+                                        handleLinkLongPress(r.href)
+                                    }>
+                                    {r.text}
+                                </Text>
+                            )
+                        }
+
+                        const parts = splitEveryoneRuns(r.text)
+                        return parts.map((p, j) =>
+                            p.type === 'everyone' ? (
+                                <Text
+                                    key={`ev-${idx}-${j}`}
+                                    caption
+                                    {...(mediumWeight ? { medium: true } : {})}
+                                    style={[
+                                        linkStyle,
+                                        styles(theme).consistentText,
+                                    ]}>
+                                    {p.text}
+                                </Text>
+                            ) : (
+                                <React.Fragment key={`tx-${idx}-${j}`}>
+                                    {p.text}
+                                </React.Fragment>
+                            ),
+                        )
+                    })}
+                </Text>
+            )
+        },
+        [
+            handleLinkLongPress,
+            handleLinkPress,
+            linkStyle,
+            textStyles,
+            theme,
+            currentUserId,
+        ],
     )
 
     let text: ReactNode = null
@@ -104,21 +283,10 @@ const MessageContents: React.FC<MessageContentsProps> = ({
                     return (
                         <Hyperlink
                             key={`mi-t-${i}`}
-                            linkStyle={
-                                sentByMe
-                                    ? styles(theme).outgoingLinkedText
-                                    : styles(theme).incomingLinkedText
-                            }
+                            linkStyle={linkStyle}
                             onPress={handleLinkPress}
                             onLongPress={handleLinkLongPress}>
-                            <Text
-                                caption
-                                style={[
-                                    ...textStyles,
-                                    styles(theme).consistentText,
-                                ]}>
-                                {m.trim()}
-                            </Text>
+                            {renderRichBlock(m, `blk-${i}`)}
                         </Hyperlink>
                     )
                 })}
@@ -128,9 +296,7 @@ const MessageContents: React.FC<MessageContentsProps> = ({
         // otherwise just render text normally with consistent container
         text = (
             <View style={{ minHeight: 20 }}>
-                <Text caption medium style={textStyles}>
-                    {content}
-                </Text>
+                {renderRichBlock(content, 'only', true)}
             </View>
         )
     }
@@ -167,6 +333,9 @@ const styles = (theme: Theme) =>
         outgoingLinkedText: {
             textDecorationLine: 'underline',
             color: theme.colors.secondary,
+        },
+        selfMention: {
+            fontWeight: '700',
         },
     })
 

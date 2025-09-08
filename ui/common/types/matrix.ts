@@ -1,3 +1,4 @@
+import { ROOM_MENTION } from '../constants/matrix'
 import type {
     MatrixEventContent,
     MultispendEventContentType,
@@ -255,3 +256,38 @@ export type MultispendInvitationEvent = MatrixEvent<
 export type MultispendInvitationVoteEvent = MatrixEvent<
     MultispendEventContentType<'groupInvitationVote'>
 >
+
+export type MatrixMentions = {
+    user_ids?: string[] // users explicitly mentioned
+    room?: boolean // @room / @everyone
+}
+
+export interface MentionData {
+    userId: string
+    displayName: string
+    startIndex: number
+    endIndex: number
+}
+
+export interface MentionExtractionResult {
+    mentionedUserIds: string[]
+    hasRoomMention: boolean
+    formattedMentions: MentionData[]
+}
+
+export interface MentionParsingResult {
+    mentions: MatrixMentions
+    formattedBody: string
+}
+
+export type MentionSelect =
+    | MatrixRoomMember
+    | { id: '@room'; displayName: typeof ROOM_MENTION }
+
+export type RoomItem = {
+    id: '@room'
+    displayName: typeof ROOM_MENTION
+    kind: 'room'
+}
+export type MemberItem = MatrixRoomMember & { kind: 'member' }
+export type MentionItem = RoomItem | MemberItem
