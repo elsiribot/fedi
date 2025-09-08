@@ -1,21 +1,21 @@
 import Link from 'next/link'
 import { useRouter } from 'next/router'
 import React from 'react'
-import { useTranslation } from 'react-i18next'
 
 import ModsIcon from '@fedi/common/assets/svgs/apps.svg'
 import ChatFilledIcon from '@fedi/common/assets/svgs/chat-filled.svg'
 import ChatIcon from '@fedi/common/assets/svgs/chat.svg'
-import HomeIcon from '@fedi/common/assets/svgs/community.svg'
 import FediLogo from '@fedi/common/assets/svgs/fedi-logo.svg'
-import ScanIcon from '@fedi/common/assets/svgs/scan.svg'
+import HomeFilledIcon from '@fedi/common/assets/svgs/home-filled.svg'
+import HomeIcon from '@fedi/common/assets/svgs/home.svg'
+import WalletIcon from '@fedi/common/assets/svgs/wallet.svg'
 import { selectMatrixHasNotifications } from '@fedi/common/redux'
 
 import {
     chatRoute,
     homeRoute,
     modsRoute,
-    scanRoute,
+    federationsRoute,
 } from '../../constants/routes'
 import { useAppSelector } from '../../hooks'
 import { keyframes, styled, theme } from '../../styles'
@@ -24,7 +24,6 @@ import { NotificationDot } from '../NotificationDot'
 
 export const Navigation: React.FC = () => {
     const router = useRouter()
-    const { t } = useTranslation()
     const hasChatNotifications = useAppSelector(selectMatrixHasNotifications)
 
     const getIsActive = (navPath: string) => {
@@ -35,15 +34,13 @@ export const Navigation: React.FC = () => {
 
     const navLinks = [
         {
-            name: 'words.home' as const,
             path: homeRoute,
             icon: HomeIcon,
-            activeIcon: HomeIcon,
+            activeIcon: HomeFilledIcon,
             available: true,
             hasNotification: false,
         },
         {
-            name: 'words.chat' as const,
             path: chatRoute,
             icon: ChatIcon,
             activeIcon: ChatFilledIcon,
@@ -51,7 +48,6 @@ export const Navigation: React.FC = () => {
             hasNotification: hasChatNotifications,
         },
         {
-            name: 'words.mods' as const,
             path: modsRoute,
             icon: ModsIcon,
             activeIcon: ModsIcon,
@@ -59,10 +55,9 @@ export const Navigation: React.FC = () => {
             hasNotification: false,
         },
         {
-            name: 'words.scan' as const,
-            path: scanRoute,
-            icon: ScanIcon,
-            activeIcon: ScanIcon,
+            path: federationsRoute,
+            icon: WalletIcon,
+            activeIcon: WalletIcon,
             available: true,
             hasNotification: false,
         },
@@ -92,7 +87,6 @@ export const Navigation: React.FC = () => {
                                             }
                                         />
                                     </NotificationDot>
-                                    <NavLabel>{t(nav.name)}</NavLabel>
                                 </Link>
                             </NavItem>
                         )
@@ -159,7 +153,7 @@ const Logo = styled('div', {
 const Nav = styled('ul', {
     display: 'flex',
     flexDirection: 'column',
-    padding: 0,
+    padding: '8px 0',
     margin: '0 -8px',
 
     '@md': {
@@ -236,14 +230,5 @@ const NavItem = styled('li', {
                 color: theme.colors.primary,
             },
         },
-    },
-})
-
-const NavLabel = styled('div', {
-    fontSize: theme.fontSizes.body,
-    fontWeight: theme.fontWeights.medium,
-
-    '@sm': {
-        fontSize: theme.fontSizes.caption,
     },
 })

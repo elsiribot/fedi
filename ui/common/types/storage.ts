@@ -8,6 +8,7 @@ import {
     Federation,
     FediMod,
     Guardian,
+    Community,
     SelectableCurrency,
     SupportedCurrency,
 } from './fedimint'
@@ -237,6 +238,12 @@ export interface StoredStateV27 extends Omit<StoredStateV26, 'version'> {
     version: 27
     lastShownSurveyTimestamp: number | null
 }
+export interface StoredStateV28
+    extends Omit<StoredStateV27, 'version' | 'activeFederationId'> {
+    version: 28
+    lastUsedFederationId: Federation['id'] | null
+    lastSelectedCommunityId: Community['id'] | null
+}
 
 /*** Union of all past shapes of stored state ***/
 export type AnyStoredState =
@@ -268,9 +275,16 @@ export type AnyStoredState =
     | StoredStateV25
     | StoredStateV26
     | StoredStateV27
+    | StoredStateV28
+    | StoredStateV29
+
+export interface StoredStateV29
+    extends Omit<StoredStateV28, 'version' | 'externalMeta'> {
+    version: 29
+}
 
 /*** Alias for the latest version of stored state ***/
-export type LatestStoredState = StoredStateV27
+export type LatestStoredState = StoredStateV29
 
 export interface StorageApi {
     getItem(key: string): Promise<string | null>

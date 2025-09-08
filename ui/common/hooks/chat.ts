@@ -7,7 +7,6 @@ import { INVALID_NAME_PLACEHOLDER } from '../constants/matrix'
 import {
     CommonDispatch,
     configureMatrixPushNotifications,
-    selectActiveFederationId,
     selectMatrixAuth,
     selectPaymentFederation,
     sendMatrixPaymentPush,
@@ -168,10 +167,13 @@ export const useChatPaymentUtils = (
 ) => {
     const toast = useToast()
     const dispatch = useCommonDispatch()
-    const activeFederationId = useCommonSelector(selectActiveFederationId)
-    const [federationId] = useState(activeFederationId)
-    const sendMinMax = useMinMaxSendAmount({ selectedPaymentFederation: true })
-    const requestMinMax = useMinMaxRequestAmount({ ecashRequest: {} })
+    const paymentFederation = useCommonSelector(selectPaymentFederation)
+    const federationId = paymentFederation?.id
+    const sendMinMax = useMinMaxSendAmount({ fedimint, federationId })
+    const requestMinMax = useMinMaxRequestAmount({
+        ecashRequest: {},
+        federationId,
+    })
     const [amount, setAmount] = useState(0 as Sats)
     const [submitAction, setSubmitAction] = useState<null | 'send' | 'request'>(
         null,

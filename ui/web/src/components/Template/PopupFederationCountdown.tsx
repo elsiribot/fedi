@@ -2,19 +2,21 @@ import React, { useEffect, useState } from 'react'
 import { Trans, useTranslation } from 'react-i18next'
 
 import { usePopupFederationInfo } from '@fedi/common/hooks/federation'
-import { selectActiveFederation } from '@fedi/common/redux'
+import { LoadedFederation } from '@fedi/common/types'
 
-import { useAppSelector } from '../../hooks'
 import { styled, theme } from '../../styles'
 import { Button } from '../Button'
 import { Dialog } from '../Dialog'
 import { FederationAvatar } from '../FederationAvatar'
 import { Text } from '../Text'
 
-export const PopupFederationCountdown: React.FC = () => {
+type Props = {
+    federation: LoadedFederation
+}
+
+export const PopupFederationCountdown: React.FC<Props> = ({ federation }) => {
     const { t } = useTranslation()
-    const activeFederation = useAppSelector(selectActiveFederation)
-    const popupInfo = usePopupFederationInfo()
+    const popupInfo = usePopupFederationInfo(federation.meta || {})
     const [isOpen, setIsOpen] = useState(false)
 
     // When the federation ends soon, force the dialog to open once per session.
@@ -27,7 +29,7 @@ export const PopupFederationCountdown: React.FC = () => {
         }, 1000)
     }, [popupInfo?.endsSoon])
 
-    if (!popupInfo || !activeFederation) {
+    if (!popupInfo || !federation) {
         return null
     }
 
@@ -57,8 +59,8 @@ export const PopupFederationCountdown: React.FC = () => {
             </CountdownPill>
             <Dialog size="md" open={isOpen} onOpenChange={setIsOpen}>
                 <DialogContent>
-                    <FederationAvatar federation={activeFederation} size="lg" />
-                    <Text variant="h2">{activeFederation.name}</Text>
+                    <FederationAvatar federation={federation} size="lg" />
+                    <Text variant="h2">{federation.name}</Text>
                     <CountdownPill {...countdownPillProps}>
                         {countdownI18nText}
                     </CountdownPill>

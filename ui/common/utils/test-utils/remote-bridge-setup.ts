@@ -8,7 +8,7 @@ import {
     selectOnboardingCompleted,
     setupStore,
     joinFederation as joinFederationAction,
-    selectActiveFederation,
+    selectLastUsedFederation,
     selectMatrixAuth,
 } from '@fedi/common/redux'
 import { RemoteBridge } from '@fedi/common/utils/remote-bridge'
@@ -97,7 +97,7 @@ export class IntegrationTestBuilder {
         const federations = selectFederations(currentState)
 
         // Skip if federation already joined
-        if (federations.length > 0 && federations[0].hasWallet) {
+        if (federations.length > 0) {
             return this
         }
 
@@ -117,7 +117,6 @@ export class IntegrationTestBuilder {
                 const state = store.getState()
                 const updatedFederations = selectFederations(state)
                 expect(updatedFederations).toHaveLength(1)
-                expect(updatedFederations[0].hasWallet).toBe(true)
             },
             { timeout: 15000 },
         )
@@ -149,7 +148,7 @@ export class IntegrationTestBuilder {
         await waitFor(
             () => {
                 const state = store.getState()
-                const federation = selectActiveFederation(state)
+                const federation = selectLastUsedFederation(state)
                 expect(federation).toBeDefined()
                 expect(federation?.balance).toBeGreaterThan(amountMsats - 1)
             },

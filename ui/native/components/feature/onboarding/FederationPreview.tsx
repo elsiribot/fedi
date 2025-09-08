@@ -14,7 +14,7 @@ import Hyperlink from 'react-native-hyperlink'
 import LinearGradient from 'react-native-linear-gradient'
 
 import { usePopupFederationInfo } from '@fedi/common/hooks/federation'
-import { JoinPreview } from '@fedi/common/types'
+import { RpcFederationPreview } from '@fedi/common/types/bindings'
 import {
     getFederationTosUrl,
     getFederationWelcomeMessage,
@@ -30,17 +30,22 @@ import EndedFederationPreview from '../federations/EndedPreview'
 import { FederationLogo } from '../federations/FederationLogo'
 
 type Props = {
-    federation: JoinPreview
+    federation: RpcFederationPreview
     onJoin: (recoverFromScratch?: boolean) => void | Promise<void>
     onBack: () => void
+    isJoining: boolean
 }
 
-const FederationPreview: React.FC<Props> = ({ federation, onJoin, onBack }) => {
+const FederationPreview: React.FC<Props> = ({
+    federation,
+    onJoin,
+    onBack,
+    isJoining,
+}) => {
     const { theme } = useTheme()
     const { t } = useTranslation()
 
     const showJoinFederation = shouldShowJoinFederation(federation.meta)
-    const [isJoining, setIsJoining] = useState(false)
     const [selectedRecoverFromScratch, setSelectedRecoverFromScratch] =
         useState(false)
     const [showTopShadow, setShowTopShadow] = useState(false)
@@ -51,7 +56,6 @@ const FederationPreview: React.FC<Props> = ({ federation, onJoin, onBack }) => {
     const popupInfo = usePopupFederationInfo(federation.meta)
     const navigation = useNavigation()
     const isReturningMember =
-        federation.hasWallet &&
         federation.returningMemberStatus.type === 'returningMember'
 
     const handleScroll = ({
@@ -132,13 +136,8 @@ const FederationPreview: React.FC<Props> = ({ federation, onJoin, onBack }) => {
         )
     }
 
-    const handleJoin = async () => {
-        setIsJoining(true)
-        try {
-            await onJoin(selectedRecoverFromScratch)
-        } catch {
-            setIsJoining(false)
-        }
+    const handleJoin = () => {
+        onJoin(selectedRecoverFromScratch)
     }
 
     const joinButtons = tosUrl ? (
@@ -147,14 +146,7 @@ const FederationPreview: React.FC<Props> = ({ federation, onJoin, onBack }) => {
                 fullWidth
                 type="clear"
                 title={t('feature.onboarding.i-do-not-accept')}
-                onPress={() =>
-                    (navigation.getState()?.routes?.length || 0) > 1
-                        ? navigation.goBack()
-                        : navigation.reset({
-                              index: 0,
-                              routes: [{ name: 'TabsNavigator' }],
-                          })
-                }
+                onPress={onBack}
                 containerStyle={s.button}
             />
             <Button
@@ -171,11 +163,7 @@ const FederationPreview: React.FC<Props> = ({ federation, onJoin, onBack }) => {
             <Button
                 testID="JoinFederationButton"
                 fullWidth
-                title={
-                    federation.hasWallet
-                        ? t('phrases.join-federation')
-                        : t('phrases.join-community')
-                }
+                title={t('phrases.join-federation')}
                 onPress={handleJoin}
                 containerStyle={s.button}
                 disabled={isJoining}
@@ -186,7 +174,6 @@ const FederationPreview: React.FC<Props> = ({ federation, onJoin, onBack }) => {
 
     const welcomeTitle = federation?.name
     const welcomeInstructions =
-        federation.hasWallet &&
         federation.returningMemberStatus.type === 'newMember'
             ? t('feature.onboarding.welcome-instructions-new')
             : isReturningMember
@@ -270,7 +257,7 @@ const FederationPreview: React.FC<Props> = ({ federation, onJoin, onBack }) => {
                     </Flex>
                 )}
 
-                {joinButtons}
+                {showJoinFederation && joinButtons}
 
                 {showJoinFederation && tosUrl && (
                     <View style={s.guidance}>

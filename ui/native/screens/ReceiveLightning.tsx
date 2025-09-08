@@ -12,7 +12,6 @@ import { useTransactionHistory } from '@fedi/common/hooks/transactions'
 import {
     generateAddress,
     generateInvoice,
-    selectActiveFederation,
     selectIsInternetUnreachable,
 } from '@fedi/common/redux'
 import amountUtils from '@fedi/common/utils/AmountUtils'
@@ -36,10 +35,10 @@ export type Props = NativeStackScreenProps<
     'ReceiveLightning'
 >
 
-const ReceiveLightning: React.FC<Props> = ({ navigation }: Props) => {
+const ReceiveLightning: React.FC<Props> = ({ navigation, route }: Props) => {
+    const { federationId } = route.params
     const { t } = useTranslation()
     const dispatch = useAppDispatch()
-    const activeFederationId = useAppSelector(selectActiveFederation)?.id
     const {
         inputAmount: amount,
         setInputAmount: setAmount,
@@ -47,12 +46,15 @@ const ReceiveLightning: React.FC<Props> = ({ navigation }: Props) => {
         memo,
         minimumAmount,
         maximumAmount,
-    } = useRequestForm({})
+    } = useRequestForm({ federationId })
     const toast = useToast()
     const [invoice, setInvoice] = useState<string>('')
     const [generatingInvoice, setGeneratingInvoice] = useState<boolean>(false)
     const [submitAttempts, setSubmitAttempts] = useState(0)
-    const isOnchainSupported = useIsOnchainDepositSupported(fedimint)
+    const isOnchainSupported = useIsOnchainDepositSupported(
+        fedimint,
+        federationId,
+    )
     const [onchainAddress, setOnchainAddress] = useState<string>('')
     const [isLoading, setIsLoading] = useState<boolean>(false)
     const [notes, setNotes] = useState<string>('')
@@ -71,7 +73,10 @@ const ReceiveLightning: React.FC<Props> = ({ navigation }: Props) => {
         }, [syncCurrencyRatesAndCache]),
     )
 
-    const { transactions, fetchTransactions } = useTransactionHistory(fedimint)
+    const { transactions, fetchTransactions } = useTransactionHistory(
+        fedimint,
+        federationId,
+    )
 
     const transactionId = useMemo(() => {
         const id = transactions.find(
@@ -85,12 +90,12 @@ const ReceiveLightning: React.FC<Props> = ({ navigation }: Props) => {
 
     useEffect(() => {
         const createNewInvoice = async () => {
-            if (!activeFederationId) return
+            if (!federationId) return
             try {
                 const newInvoice = await dispatch(
                     generateInvoice({
                         fedimint,
-                        federationId: activeFederationId,
+                        federationId: federationId,
                         amount: amountUtils.satToMsat(amount),
                         description: memo,
                         frontendMetadata: {
@@ -117,7 +122,7 @@ const ReceiveLightning: React.FC<Props> = ({ navigation }: Props) => {
         amount,
         generatingInvoice,
         memo,
-        activeFederationId,
+        federationId,
         dispatch,
         notes,
     ])
@@ -127,21 +132,22 @@ const ReceiveLightning: React.FC<Props> = ({ navigation }: Props) => {
             setGeneratingInvoice(false)
             navigation.navigate('BitcoinRequest', {
                 invoice,
+                federationId,
             })
         }
-    }, [invoice, navigation])
+    }, [invoice, navigation, federationId])
 
     // Generate onchain address if needed
     useEffect(() => {
         if (requestType === BitcoinOrLightning.bitcoin && !onchainAddress) {
             const generateOnchainAddress = async () => {
-                if (!activeFederationId) return
+                if (!federationId) return
                 try {
                     setIsLoading(true)
                     const newAddress = await dispatch(
                         generateAddress({
                             fedimint,
-                            federationId: activeFederationId,
+                            federationId,
                             frontendMetadata: {
                                 initialNotes: notes || null,
                                 recipientMatrixId: null,
@@ -165,7 +171,7 @@ const ReceiveLightning: React.FC<Props> = ({ navigation }: Props) => {
     }, [
         onchainAddress,
         requestType,
-        activeFederationId,
+        federationId,
         dispatch,
         notes,
         fetchTransactions,
@@ -222,11 +228,14 @@ const ReceiveLightning: React.FC<Props> = ({ navigation }: Props) => {
                                 }
                                 type={requestType}
                                 transactionId={transactionId}
+                                federationId={federationId}
                             />
                         )}
                     </View>
                 ) : (
                     <AmountScreen
+                        showBalance={true}
+                        federationId={federationId}
                         amount={amount}
                         onChangeAmount={onChangeAmount}
                         minimumAmount={minimumAmount}

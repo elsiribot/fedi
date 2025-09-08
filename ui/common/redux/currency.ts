@@ -2,7 +2,6 @@ import { createAsyncThunk, createSlice, PayloadAction } from '@reduxjs/toolkit'
 
 import {
     CommonState,
-    selectActiveFederationId,
     selectFederationMetadata,
     selectLoadedFederations,
     selectStabilityPoolCycleStartPrice,
@@ -255,10 +254,11 @@ export const selectCurrencyLocale = (s: CommonState) =>
 export const selectOverrideCurrency = (s: CommonState) =>
     s.currency.overrideCurrency
 
-export const selectCurrency = (s: CommonState) => {
-    const federationId = selectActiveFederationId(s)
-
-    // If no active federation, check for global override first
+export const selectCurrency = (
+    s: CommonState,
+    federationId?: Federation['id'],
+) => {
+    // If no federationId, check for global override first
     if (!federationId) {
         const overrideCurrency = selectOverrideCurrency(s)
         return overrideCurrency || SupportedCurrency.USD
@@ -322,9 +322,10 @@ export const selectBtcUsdExchangeRate = (
 ) => {
     const stabilityPoolPriceCents = selectStabilityPoolCycleStartPrice(
         s,
-        federationId,
+        federationId || '',
     )
-    return stabilityPoolPriceCents
+    // use stability pool price if available, otherwise use fallback rate
+    return federationId && stabilityPoolPriceCents
         ? stabilityPoolPriceCents / 100
         : s.currency.btcUsdRate || 0
 }
@@ -332,10 +333,11 @@ export const selectBtcUsdExchangeRate = (
 export const selectBtcExchangeRate = (
     s: CommonState,
     customCurrency?: SelectableCurrency,
+    federationId?: Federation['id'],
 ) => {
-    const currency = customCurrency ?? selectCurrency(s)
-    const metadata = selectFederationMetadata(s)
-    const btcUsdRate = selectBtcUsdExchangeRate(s)
+    const currency = customCurrency ?? selectCurrency(s, federationId || '')
+    const metadata = selectFederationMetadata(s, federationId || '')
+    const btcUsdRate = selectBtcUsdExchangeRate(s, federationId)
 
     let fiatUsdRate = s.currency.fiatUsdRates[currency] || 0
 

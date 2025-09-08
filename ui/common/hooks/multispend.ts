@@ -7,7 +7,7 @@ import {
     selectMatrixRoomMultispendStatus,
     selectMatrixAuth,
     selectMyMultispendRole,
-    selectWalletFederations,
+    selectLoadedFederations,
     selectRoomMultispendFinancialTransactions,
     fetchMultispendTransactions,
     selectCurrency,
@@ -59,7 +59,7 @@ export function useMultispendVoting({
     const [isConfirmingAbort, setIsConfirmingAbort] = useState(false)
     const [needsToJoin, setNeedsToJoin] = useState(false)
     const [isLoading, setIsLoading] = useState(false)
-    const walletFederations = useCommonSelector(selectWalletFederations)
+    const walletFederations = useCommonSelector(selectLoadedFederations)
     const myId = useCommonSelector(selectMatrixAuth)?.userId
     const multispendStatus = useCommonSelector(s =>
         selectMatrixRoomMultispendStatus(s, roomId),

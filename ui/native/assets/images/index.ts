@@ -19,6 +19,7 @@ export const Images: ImagesMap = {
     FallbackInset: require('@fedi/common/assets/images/fallback-inset.png'),
     AwesomeFedimint: require('@fedi/common/assets/images/awesome-fedimint.png'),
     CommunityCreate: require('@fedi/common/assets/images/community-create-graphic.png'),
+    FederationCreate: require('@fedi/common/assets/images/federation-create-graphic.png'),
     WelcomeBackground: require('@fedi/common/assets/images/welcome-bg.png'),
     Red: require('@fedi/common/assets/images/red.png'),
     RateFederationBackground: require('@fedi/common/assets/images/rate-federation-bg.png'),

@@ -47,6 +47,7 @@ describe('SendOffline', () => {
             <SendOffline
                 onEcashGenerated={mockOnEcashGenerated}
                 onPaymentSent={mockOnPaymentSent}
+                federationId="test-federation-id"
             />,
         )
 
@@ -61,6 +62,7 @@ describe('SendOffline', () => {
             <SendOffline
                 onEcashGenerated={mockOnEcashGenerated}
                 onPaymentSent={mockOnPaymentSent}
+                federationId="test-federation-id"
             />,
             {
                 preloadedState: {
@@ -96,6 +98,7 @@ describe('SendOffline', () => {
             <SendOffline
                 onEcashGenerated={mockOnEcashGenerated}
                 onPaymentSent={mockOnPaymentSent}
+                federationId="test-federation-id"
             />,
             {
                 preloadedState: {
@@ -135,6 +138,7 @@ describe('SendOffline', () => {
             <SendOffline
                 onEcashGenerated={mockOnEcashGenerated}
                 onPaymentSent={mockOnPaymentSent}
+                federationId="1"
             />,
             {
                 preloadedState: {
@@ -152,7 +156,7 @@ describe('SendOffline', () => {
                     federation: {
                         ...state.federation,
                         federations: [mockFederation1],
-                        activeFederationId: mockFederation1.id,
+                        lastUsedFederationId: mockFederation1.id,
                         payFromFederationId: mockFederation1.id,
                     },
                 },
@@ -185,6 +189,7 @@ describe('SendOffline', () => {
             <SendOffline
                 onEcashGenerated={mockOnEcashGenerated}
                 onPaymentSent={mockOnPaymentSent}
+                federationId="1"
             />,
             {
                 preloadedState: {
@@ -202,7 +207,7 @@ describe('SendOffline', () => {
                     federation: {
                         ...state.federation,
                         federations: [mockFederation1],
-                        activeFederationId: mockFederation1.id,
+                        lastUsedFederationId: mockFederation1.id,
                         payFromFederationId: mockFederation1.id,
                     },
                 },

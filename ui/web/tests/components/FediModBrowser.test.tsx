@@ -47,7 +47,7 @@ describe('/components/FediModBrowser', () => {
                         federation: {
                             ...state.federation,
                             federations: [mockFederation1],
-                            activeFederationId: '1',
+                            lastUsedFederationId: '1',
                         },
                     },
                 },
@@ -72,7 +72,7 @@ describe('/components/FediModBrowser', () => {
                         federation: {
                             ...state.federation,
                             federations: [mockFederation1],
-                            activeFederationId: '1',
+                            lastUsedFederationId: '1',
                         },
                     },
                 },
@@ -94,7 +94,7 @@ describe('/components/FediModBrowser', () => {
                         federation: {
                             ...state.federation,
                             federations: [mockFederation1],
-                            activeFederationId: '1',
+                            lastUsedFederationId: '1',
                         },
                         browser: {
                             ...state.browser,

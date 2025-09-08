@@ -17,7 +17,12 @@ describe('/components/RecoveryInProgress', () => {
 
     describe('when a label is provided as a prop', () => {
         it('should display the label', () => {
-            render(<RecoveryInProgress label="test label" />)
+            render(
+                <RecoveryInProgress
+                    label="test label"
+                    federationId="test-federation-id"
+                />,
+            )
 
             const label = screen.getByText('test label')
             expect(label).toBeInTheDocument()
@@ -26,7 +31,7 @@ describe('/components/RecoveryInProgress', () => {
 
     describe('when the progress is 0.5', () => {
         it('should display progress as 50%', () => {
-            render(<RecoveryInProgress />)
+            render(<RecoveryInProgress federationId="test-federation-id" />)
 
             const percent = screen.getByText('50%')
             expect(percent).toBeInTheDocument()

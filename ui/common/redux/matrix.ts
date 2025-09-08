@@ -11,16 +11,18 @@ import { v4 as uuidv4 } from 'uuid'
 
 import {
     CommonState,
-    selectActiveFederation,
+    selectLastUsedFederation,
     selectBtcUsdExchangeRate,
-    selectGlobalCommunityMeta,
     selectLoadedFederation,
     selectLoadedFederations,
-    selectWalletFederations,
+    selectCommunity,
+    selectCommunities,
+    selectCommunityMetadata,
 } from '.'
+import { FEDI_GLOBAL_COMMUNITY_INVITE } from '../constants/community'
 import {
     ChatReplyState,
-    FederationListItem,
+    Federation,
     InputMedia,
     MSats,
     MatrixAuth,
@@ -64,7 +66,7 @@ import {
 } from '../types/bindings'
 import amountUtils from '../utils/AmountUtils'
 import {
-    getFederationGroupChats,
+    getDefaultGroupChats,
     shouldShowInviteCode,
 } from '../utils/FederationUtils'
 import { MatrixChatClient } from '../utils/MatrixChatClient'
@@ -632,8 +634,8 @@ export const matrixSlice = createSlice({
         )
         builder.addMatcher(
             isAnyOf(
-                previewGlobalDefaultChats.fulfilled,
                 previewCommunityDefaultChats.fulfilled,
+                previewFederationDefaultChats.fulfilled,
                 previewAllDefaultChats.fulfilled,
             ),
             (state, action) => {
@@ -1344,7 +1346,7 @@ export const checkForReceivablePayments = createAsyncThunk<
 
         if (!timeline) return
 
-        const walletFederations = selectWalletFederations(state)
+        const walletFederations = selectLoadedFederations(state)
         log.info('Looking for receivable payment events...')
 
         const receivablePayments = getReceivablePaymentEvents(
@@ -1494,11 +1496,11 @@ export const checkBolt11PaymentResult = createAsyncThunk<
             // Only the sender will get a completed result from the RPC
             if (event.senderId !== matrixAuth?.userId) return
 
-            const activeFederation = selectActiveFederation(getState())
-            if (!activeFederation || !activeFederation.hasWallet) return
+            const lastUsedFederation = selectLastUsedFederation(getState())
+            if (!lastUsedFederation) return
             const result = await fedimint.getPrevPayInvoiceResult(
                 event.content.bolt11,
-                activeFederation.id,
+                lastUsedFederation.id,
             )
             log.info(
                 `bolt11 payment result for ${event.content.bolt11}: `,
@@ -1729,47 +1731,20 @@ export const unbanUser = createAsyncThunk<
     await client.roomUnbanUser(roomId, userId, reason)
 })
 
-export const previewGlobalDefaultChats = createAsyncThunk<
-    MatrixGroupPreview[],
-    void,
-    { state: CommonState }
->('matrix/previewGlobalDefaultChats', async (_, { getState }) => {
-    log.debug('previewGlobalDefaultChats')
-    const client = getMatrixClient()
-    // can't fetch preview until after matrix init + registration
-    if (!selectMatrixAuth(getState())) return []
-    // Check the Fedi Global community for default groups
-    const globalCommunityMeta = selectGlobalCommunityMeta(getState())
-
-    const globalDefaultChatIds = globalCommunityMeta
-        ? getFederationGroupChats(globalCommunityMeta)
-        : []
-    log.info(
-        `Found ${globalDefaultChatIds.length} default groups for global community...`,
-    )
-
-    const globalChatResults = await Promise.allSettled(
-        globalDefaultChatIds.map(client.getRoomPreview),
-    )
-    return globalChatResults.flatMap(preview =>
-        preview.status === 'fulfilled' ? [preview.value] : [],
-    )
-})
-
 export const previewCommunityDefaultChats = createAsyncThunk<
     MatrixGroupPreview[],
     string,
     { state: CommonState }
->('matrix/previewCommunityDefaultChats', async (federationId, { getState }) => {
+>('matrix/previewCommunityDefaultChats', async (communityId, { getState }) => {
     const client = getMatrixClient()
     // can't fetch preview until after matrix init + registration
     if (!selectMatrixAuth(getState())) return []
-    const federation = selectLoadedFederation(getState(), federationId)
-    // can't fetch preview if the federation is not loaded yet
-    if (!federation) return []
-    const defaultChats = getFederationGroupChats(federation.meta)
+    const community = selectCommunity(getState(), communityId)
+    // can't fetch preview if the community is not loaded yet
+    if (!community) return []
+    const defaultChats = getDefaultGroupChats(community.meta)
     log.info(
-        `Found ${defaultChats.length} default groups for federation ${federation.name}...`,
+        `Found ${defaultChats.length} default groups for community ${community.name}...`,
     )
     const roomPreviews = await Promise.allSettled(
         defaultChats.map(client.getRoomPreview),
@@ -1784,35 +1759,76 @@ export const previewCommunityDefaultChats = createAsyncThunk<
     })
 })
 
+export const previewFederationDefaultChats = createAsyncThunk<
+    MatrixGroupPreview[],
+    string,
+    { state: CommonState }
+>(
+    'matrix/previewFederationDefaultChats',
+    async (federationId, { getState }) => {
+        const client = getMatrixClient()
+        // can't fetch preview until after matrix init + registration
+        if (!selectMatrixAuth(getState())) return []
+        const federation = selectLoadedFederation(getState(), federationId)
+        // can't fetch preview if the federation is not loaded yet
+        if (!federation) return []
+        const defaultChats = getDefaultGroupChats(federation.meta)
+        log.info(
+            `Found ${defaultChats.length} default groups for federation ${federation.name}...`,
+        )
+        const roomPreviews = await Promise.allSettled(
+            defaultChats.map(client.getRoomPreview),
+        )
+        return roomPreviews.flatMap(preview => {
+            if (preview.status === 'fulfilled') {
+                return [preview.value]
+            } else {
+                log.error('getRoomPreview', preview.reason)
+                return []
+            }
+        })
+    },
+)
+
 /**
  * Fetches the room previews for any default chats configured in the meta
- * of any federations that have been loaded AND the global default chats
+ * of any commmunities andfederations that have been loaded
  */
 export const previewAllDefaultChats = createAsyncThunk<
     MatrixGroupPreview[],
     void,
     { state: CommonState }
 >('matrix/previewAllDefaultChats', async (_, { getState, dispatch }) => {
-    dispatch(previewGlobalDefaultChats())
+    log.debug('previewAllDefaultChats')
     const federations = selectLoadedFederations(getState())
+    const communities = selectCommunities(getState())
     // Previews default chats for each federation
     const federationDefaultChatResults = await Promise.allSettled(
         // For each federation, return a promise that that resolves to
         // the result of the dispatched previewCommunityDefaultChats action
         federations.map(f => {
-            const federation = selectLoadedFederation(getState(), f.id)
-            if (!federation) return Promise.reject()
-            return dispatch(
-                previewCommunityDefaultChats(federation.id),
-            ).unwrap()
+            log.debug('calling previewFederationDefaultChats for', f.id)
+            return dispatch(previewFederationDefaultChats(f.id)).unwrap()
         }),
     )
-    // Collect each federation's default chats list and flatten
+    // Previews default chats for each community
+    const communityDefaultChatResults = await Promise.allSettled(
+        // For each community, return a promise that that resolves to
+        // the result of the dispatched previewCommunityDefaultChats action
+        communities.map(c => {
+            log.debug('calling previewCommunityDefaultChats for', c.id)
+            return dispatch(previewCommunityDefaultChats(c.id)).unwrap()
+        }),
+    )
+    // Collect each federation & community's default chats list and flatten
     // them into a single array of roomPreviews
     const federationChats = federationDefaultChatResults.flatMap(preview =>
         preview.status === 'fulfilled' ? preview.value : [],
     )
-    return [...federationChats]
+    const communityChats = communityDefaultChatResults.flatMap(preview =>
+        preview.status === 'fulfilled' ? preview.value : [],
+    )
+    return [...federationChats, ...communityChats]
 })
 
 export const observeMatrixSyncStatus = createAsyncThunk<void>(
@@ -2271,10 +2287,7 @@ export const selectCanPayFromOtherFeds = createSelector(
     (s: CommonState, chatPayment: MatrixPaymentEvent) => chatPayment,
     (federations, chatPayment): boolean => {
         return !!federations.find(
-            f =>
-                f.hasWallet &&
-                f.balance &&
-                f.balance > chatPayment.content.amount,
+            f => f.balance && f.balance > chatPayment.content.amount,
         )
     },
 )
@@ -2286,7 +2299,6 @@ export const selectCanSendPayment = createSelector(
         return !!federations.find(
             f =>
                 f.id === chatPayment.content.federationId &&
-                f.hasWallet &&
                 f.balance &&
                 f.balance > chatPayment.content.amount,
         )
@@ -2308,17 +2320,18 @@ export const selectCommunityDefaultRoomIds = createSelector(
         selectLoadedFederation(s, federationId),
     federation => {
         if (!federation) return []
-        return getFederationGroupChats(federation.meta)
+        return getDefaultGroupChats(federation.meta)
     },
 )
 
 export const selectDefaultMatrixRoomIds = createSelector(
     (s: CommonState) => selectLoadedFederations(s),
-    (s: CommonState) => selectGlobalCommunityMeta(s),
+    (s: CommonState) =>
+        selectCommunityMetadata(s, FEDI_GLOBAL_COMMUNITY_INVITE),
     (federations, globalCommunityMeta) => {
         let defaultMatrixRoomIds: MatrixRoom['id'][] = federations.reduce(
-            (result: MatrixRoom['id'][], f: FederationListItem) => {
-                const defaultRoomIds = getFederationGroupChats(f.meta || {})
+            (result: MatrixRoom['id'][], f: Federation) => {
+                const defaultRoomIds = getDefaultGroupChats(f.meta || {})
                 return [...result, ...defaultRoomIds]
             },
             [],
@@ -2326,7 +2339,7 @@ export const selectDefaultMatrixRoomIds = createSelector(
         // Also check the Fedi Global community for default groups
         if (globalCommunityMeta) {
             const defaultGlobalRoomIds =
-                getFederationGroupChats(globalCommunityMeta)
+                getDefaultGroupChats(globalCommunityMeta)
             defaultMatrixRoomIds = [
                 ...defaultMatrixRoomIds,
                 ...defaultGlobalRoomIds,

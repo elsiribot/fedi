@@ -5,11 +5,10 @@ import { useTranslation } from 'react-i18next'
 import PlusIcon from '@fedi/common/assets/svgs/plus.svg'
 import { useAmountFormatter } from '@fedi/common/hooks/amount'
 import {
-    selectActiveFederation,
     selectLoadedFederations,
-    setActiveFederationId,
+    selectPaymentFederation,
+    setPayFromFederationId,
 } from '@fedi/common/redux'
-import { MSats } from '@fedi/common/types'
 
 import { onboardingRoute } from '../../constants/routes'
 import { useAppSelector, useAppDispatch } from '../../hooks'
@@ -28,7 +27,7 @@ export const ConnectedFederationsDrawer: React.FC<Props> = ({ onClose }) => {
     const { push } = useRouter()
 
     const federations = useAppSelector(selectLoadedFederations)
-    const activeFederation = useAppSelector(selectActiveFederation)
+    const paymentFederation = useAppSelector(selectPaymentFederation)
     const { makeFormattedAmountsFromMSats } = useAmountFormatter()
 
     useEffect(() => {
@@ -37,12 +36,12 @@ export const ConnectedFederationsDrawer: React.FC<Props> = ({ onClose }) => {
 
     const handleSelectFederation = (id: string) => {
         // Ensures that drawer will close when selecting selected federation
-        if (id === activeFederation?.id) {
+        if (id === paymentFederation?.id) {
             onClose()
             return
         }
 
-        dispatch(setActiveFederationId(id))
+        dispatch(setPayFromFederationId(id))
     }
 
     const handleOnAdd = () => {
@@ -71,14 +70,12 @@ export const ConnectedFederationsDrawer: React.FC<Props> = ({ onClose }) => {
                             const {
                                 formattedPrimaryAmount,
                                 formattedSecondaryAmount,
-                            } = makeFormattedAmountsFromMSats(
-                                fed.hasWallet ? fed.balance : (0 as MSats),
-                            )
+                            } = makeFormattedAmountsFromMSats(fed.balance)
                             return (
                                 <Federation
                                     key={fed.id}
                                     aria-label="federation"
-                                    selected={fed.id === activeFederation?.id}
+                                    selected={fed.id === paymentFederation?.id}
                                     onClick={() =>
                                         handleSelectFederation(fed.id)
                                     }>
@@ -90,16 +87,13 @@ export const ConnectedFederationsDrawer: React.FC<Props> = ({ onClose }) => {
                                         <Text variant="caption" weight="bold">
                                             {fed.name}
                                         </Text>
-                                        {fed.hasWallet && (
-                                            <Text
-                                                variant="tiny"
-                                                css={{
-                                                    color: theme.colors
-                                                        .darkGrey,
-                                                }}>
-                                                {`${formattedPrimaryAmount} (${formattedSecondaryAmount})`}
-                                            </Text>
-                                        )}
+                                        <Text
+                                            variant="tiny"
+                                            css={{
+                                                color: theme.colors.darkGrey,
+                                            }}>
+                                            {`${formattedPrimaryAmount} (${formattedSecondaryAmount})`}
+                                        </Text>
                                     </FederationText>
                                 </Federation>
                             )

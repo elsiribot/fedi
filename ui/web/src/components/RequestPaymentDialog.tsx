@@ -1,3 +1,4 @@
+import { useRouter } from 'next/router'
 import React, { useCallback, useEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 
@@ -7,15 +8,16 @@ import { useRequestForm } from '@fedi/common/hooks/amount'
 import { useIsOnchainDepositSupported } from '@fedi/common/hooks/federation'
 import { useToast } from '@fedi/common/hooks/toast'
 import { useUpdatingRef } from '@fedi/common/hooks/util'
-import { generateInvoice, selectActiveFederationId } from '@fedi/common/redux'
+import { generateInvoice } from '@fedi/common/redux'
 import { Sats, Transaction } from '@fedi/common/types'
 import amountUtils from '@fedi/common/utils/AmountUtils'
 import { lnurlWithdraw } from '@fedi/common/utils/lnurl'
 
 import { useRouteState } from '../context/RouteStateContext'
-import { useAppDispatch, useAppSelector } from '../hooks'
+import { useAppDispatch } from '../hooks'
 import { fedimint } from '../lib/bridge'
 import { config, styled, theme } from '../styles'
+import { getHashParams } from '../utils/linking'
 import { AmountInput } from './AmountInput'
 import { Button } from './Button'
 import { CopyInput } from './CopyInput'
@@ -37,8 +39,10 @@ export const RequestPaymentDialog: React.FC<Props> = ({
 }) => {
     const { t } = useTranslation()
     const toast = useToast()
-    const activeFederationId = useAppSelector(selectActiveFederationId)
     const lnurlw = useRouteState('/request')
+    const router = useRouter()
+    const params = getHashParams(router.asPath)
+    const federationId = params.id
     const {
         inputAmount: amount,
         setInputAmount: setAmount,
@@ -49,6 +53,7 @@ export const RequestPaymentDialog: React.FC<Props> = ({
         reset: resetRequestForm,
     } = useRequestForm({
         lnurlWithdrawal: lnurlw?.data,
+        federationId,
     })
     const [submitAttempts, setSubmitAttempts] = useState(0)
     const [wantsInvoice, setWantsInvoice] = useState(false)
@@ -61,7 +66,11 @@ export const RequestPaymentDialog: React.FC<Props> = ({
         useState<Transaction>()
     const containerRef = useRef<HTMLDivElement | null>(null)
     const onOpenChangeRef = useUpdatingRef(onOpenChange)
-    const isOnchainSupported = useIsOnchainDepositSupported(fedimint)
+
+    const isOnchainSupported = useIsOnchainDepositSupported(
+        fedimint,
+        federationId,
+    )
     const dispatch = useAppDispatch()
 
     // Reset on close, focus input on desktop open
@@ -89,11 +98,11 @@ export const RequestPaymentDialog: React.FC<Props> = ({
     useEffect(() => {
         setLightningInvoice(undefined)
         setBitcoinUrl(undefined)
-    }, [activeFederationId, amount])
+    }, [federationId, amount])
 
     // Generate fresh invoice / address on any change to it
     useEffect(() => {
-        if (!wantsInvoice || !activeFederationId) return
+        if (!wantsInvoice || !federationId) return
 
         let canceled = false
         let promise: Promise<unknown> | undefined
@@ -102,7 +111,7 @@ export const RequestPaymentDialog: React.FC<Props> = ({
             promise = dispatch(
                 generateInvoice({
                     fedimint,
-                    federationId: activeFederationId,
+                    federationId: federationId,
                     amount: amountUtils.satToMsat(amount),
                     description: memo,
                     frontendMetadata: {
@@ -118,16 +127,14 @@ export const RequestPaymentDialog: React.FC<Props> = ({
                     setLightningInvoice(invoice)
                 })
         } else if (!isLightning && !bitcoinUrl) {
-            promise = fedimint
-                .generateAddress(activeFederationId)
-                .then(addr => {
-                    if (canceled) return
-                    setBitcoinUrl(
-                        `bitcoin:${addr}?amount=${amountUtils.satToBtc(
-                            amount,
-                        )}&message=${memo}`,
-                    )
-                })
+            promise = fedimint.generateAddress(federationId).then(addr => {
+                if (canceled) return
+                setBitcoinUrl(
+                    `bitcoin:${addr}?amount=${amountUtils.satToBtc(
+                        amount,
+                    )}&message=${memo}`,
+                )
+            })
         }
 
         if (promise) {
@@ -145,7 +152,7 @@ export const RequestPaymentDialog: React.FC<Props> = ({
         isLightning,
         lightningInvoice,
         bitcoinUrl,
-        activeFederationId,
+        federationId,
         toast,
         t,
         dispatch,
@@ -184,12 +191,12 @@ export const RequestPaymentDialog: React.FC<Props> = ({
     }, [lightningInvoice, bitcoinUrl, onOpenChangeRef])
 
     const handleLnurlWithdraw = async () => {
-        if (!activeFederationId || !lnurlw) return
+        if (!federationId || !lnurlw) return
 
         setIsWithdrawing(true)
         lnurlWithdraw(
             fedimint,
-            activeFederationId,
+            federationId,
             lnurlw['data'],
             amountUtils.satToMsat(amount),
             memo,
@@ -227,7 +234,12 @@ export const RequestPaymentDialog: React.FC<Props> = ({
 
     let content: React.ReactNode
     if (isReceivingOffline) {
-        content = <ReceiveOffline onReceive={() => onOpenChange(false)} />
+        content = (
+            <ReceiveOffline
+                onReceive={() => onOpenChange(false)}
+                federationId={federationId}
+            />
+        )
     } else {
         content = (
             <>

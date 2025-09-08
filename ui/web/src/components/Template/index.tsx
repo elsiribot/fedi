@@ -1,89 +1,74 @@
-import Link from 'next/link'
 import { useRouter } from 'next/router'
-import React, { useState } from 'react'
+import React from 'react'
 
-import MenuIcon from '@fedi/common/assets/svgs/hamburger-icon.svg'
 import { ErrorBoundary } from '@fedi/common/components/ErrorBoundary'
-import { usePopupFederationInfo } from '@fedi/common/hooks/federation'
-import { selectMatrixStatus, selectMatrixAuth } from '@fedi/common/redux'
+import {
+    selectMatrixStatus,
+    selectLastSelectedCommunity,
+} from '@fedi/common/redux'
 import { MatrixSyncStatus } from '@fedi/common/types'
 
-import { settingsRoute } from '../../constants/routes'
 import { useAppSelector, useMediaQuery } from '../../hooks'
 import { config, styled, theme } from '../../styles'
 import { shouldHideNavigation } from '../../utils/nav'
 import { ChatOfflineIndicator } from '../Chat/ChatOfflineIndicator'
-import { ConnectedFederationsDrawer } from '../ConnectedFederationsDrawer'
-import { FederationSelector } from '../FederationSelector'
-import { Icon } from '../Icon'
+import { CommunitySelector } from '../CommunitySelector'
+import MainHeaderButtons from '../MainHeaderButtons'
 import { PageError } from '../PageError'
-import { PopupFederationOver } from '../PopupFederationOver'
-import { ProfileIcon } from '../ProfileIcon'
+import SelectedCommunity from '../SelectedCommunity'
 import { Navigation } from './Navigation'
-import { PopupFederationCountdown } from './PopupFederationCountdown'
 
 interface Props {
     children: React.ReactNode
 }
 
 export const Template: React.FC<Props> = ({ children }) => {
-    const popupInfo = usePopupFederationInfo()
-    const isPopupOver = !!popupInfo && popupInfo.secondsLeft <= 0
-    const { asPath } = useRouter()
+    const router = useRouter()
+    const { asPath } = router
     const syncStatus = useAppSelector(selectMatrixStatus)
-    const matrixAuth = useAppSelector(selectMatrixAuth)
+    const selectedCommunity = useAppSelector(selectLastSelectedCommunity)
 
     const isSm = useMediaQuery(config.media.sm)
-    const hideNavigation = shouldHideNavigation(asPath, isSm) || isPopupOver
-
-    const [showDrawer, setShowDrawer] = useState(false)
+    const hideNavigation = shouldHideNavigation(asPath, isSm)
 
     const shouldShowChatOffline =
         syncStatus === MatrixSyncStatus.syncing && asPath.startsWith('/chat')
 
     const isHome = asPath === '/home'
 
+    const goToJoinCommunity = () => {
+        router.push('/onboarding/communities')
+    }
+
     return (
         <Container className={hideNavigation ? 'hide-navigation' : ''}>
             {!hideNavigation && <Navigation />}
             <Content>
-                {isHome && showDrawer && (
-                    <ConnectedFederationsDrawer
-                        onClose={() => setShowDrawer(false)}
-                    />
-                )}
-                <FederationHeader isSmall={isSm}>
+                <HomeHeader isSmall={isSm}>
                     {isHome && (
                         <>
-                            {isSm ? (
-                                <Icon
-                                    icon={MenuIcon}
-                                    size={24}
-                                    onClick={() => setShowDrawer(true)}
+                            <HeaderRow>
+                                <CommunitySelectorWrapper>
+                                    <CommunitySelector />
+                                </CommunitySelectorWrapper>
+                                <MainHeaderButtons
+                                    onAddPress={goToJoinCommunity}
                                 />
-                            ) : (
-                                <div />
+                            </HeaderRow>
+                            {selectedCommunity && (
+                                <SelectedCommunity
+                                    community={selectedCommunity}
+                                />
                             )}
-                            <FederationSelectorWrapper>
-                                <FederationSelector
-                                    onClick={() => setShowDrawer(true)}
-                                />
-                            </FederationSelectorWrapper>
-                            <Link href={settingsRoute}>
-                                <ProfileIcon url={matrixAuth?.avatarUrl} />
-                            </Link>
                         </>
                     )}
-                </FederationHeader>
+                </HomeHeader>
 
-                <FederationControls>
-                    <PopupFederationCountdown />
-                </FederationControls>
                 {shouldShowChatOffline && <ChatOfflineIndicator />}
 
                 <Main centered={hideNavigation}>
                     <ErrorBoundary fallback={() => <PageError />}>
-                        {isPopupOver ? <PopupFederationOver /> : children}
+                        {children}
                     </ErrorBoundary>
                 </Main>
             </Content>
@@ -157,12 +142,16 @@ const Content = styled('div', {
     },
 })
 
-const FederationHeader = styled('div', {
+const HomeHeader = styled('div', {
     alignItems: 'center',
     display: 'flex',
-    justifyContent: 'space-between',
-    gap: theme.space.lg,
+    flexDirection: 'column',
+    gap: theme.space.sm,
     padding: 'var(--template-padding) 8px',
+
+    holoGradient: 'm500',
+    borderBottomLeftRadius: 16,
+    borderBottomRightRadius: 16,
 
     variants: {
         isSmall: {
@@ -178,15 +167,14 @@ const FederationHeader = styled('div', {
     },
 })
 
-const FederationControls = styled('div', {
+const HeaderRow = styled('div', {
     display: 'flex',
+    justifyContent: 'space-between',
     alignItems: 'center',
-    justifyContent: 'center',
     width: '100%',
-    gap: 4,
 })
 
-const FederationSelectorWrapper = styled('div', {
+const CommunitySelectorWrapper = styled('div', {
     padding: '16px 0',
 })
 

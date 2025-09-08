@@ -1,10 +1,10 @@
 import React from 'react'
 
 import Header from '../../ui/Header'
-import FederationSelector from './FederationSelector'
+import CommunitySelector from './CommunitySelector'
 
-const JoinFederationHeader: React.FC = () => {
-    return <Header headerCenter={<FederationSelector />} />
+const PopupFederationEndedHeader: React.FC = () => {
+    return <Header headerCenter={<CommunitySelector />} />
 }
 
-export default JoinFederationHeader
+export default PopupFederationEndedHeader

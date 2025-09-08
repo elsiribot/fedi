@@ -71,6 +71,8 @@ export const themeDefaults = {
         unreadIndicatorSize: 10,
         historyIcon: 38,
         addFederationButtonHeight: 56,
+        bubbleButtonSize: 32,
+        circleButtonSize: 40,
     },
     spacing: {
         ...fediTheme.spacing,
@@ -132,6 +134,12 @@ const theme = createTheme({
             containerStyle: {
                 ...(props.fullWidth ? { width: '100%' } : {}),
                 borderRadius: 60,
+                ...(props.outline
+                    ? {
+                          borderColor: theme.colors?.lightGrey,
+                          borderWidth: 1.5,
+                      }
+                    : {}),
             },
             titleStyle: {
                 paddingLeft: 10,
@@ -147,7 +155,7 @@ const theme = createTheme({
                 adjustsFontSizeToFit: true,
             },
             disabledStyle: {
-                opacity: 0.7,
+                opacity: 0.4,
             },
             /*
                 For button loading states, since we cannot determine the width
@@ -164,12 +172,6 @@ const theme = createTheme({
                     ? {
                           backgroundColor: 'transparent',
                           color: theme.colors?.primary,
-                      }
-                    : {}),
-                ...(props.outline
-                    ? {
-                          borderColor: theme.colors?.primary,
-                          borderWidth: 1.5,
                       }
                     : {}),
             },

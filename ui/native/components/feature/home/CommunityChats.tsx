@@ -5,12 +5,11 @@ import { useTranslation } from 'react-i18next'
 import { StyleSheet } from 'react-native'
 
 import {
-    selectActiveFederation,
-    selectActiveFederationChats,
-    selectActiveFederationHasWallet,
+    selectLastSelectedCommunityChats,
+    selectLastSelectedCommunity,
 } from '@fedi/common/redux'
 import { ChatType, MatrixRoom } from '@fedi/common/types'
-import { getFederationGroupChats } from '@fedi/common/utils/FederationUtils'
+import { getDefaultGroupChats } from '@fedi/common/utils/FederationUtils'
 
 import { useAppSelector } from '../../../state/hooks'
 import Flex from '../../ui/Flex'
@@ -21,13 +20,14 @@ const CommunityChats = () => {
     const { t } = useTranslation()
     const navigation = useNavigation()
     const style = styles(theme)
-    const activeFederation = useAppSelector(selectActiveFederation)
-    const defaultChats = useAppSelector(s => selectActiveFederationChats(s))
-    const expectedNumberOfDefaultChats = activeFederation
-        ? getFederationGroupChats(activeFederation.meta).length
+    const selectedCommunity = useAppSelector(selectLastSelectedCommunity)
+    const defaultChats = useAppSelector(s =>
+        selectLastSelectedCommunityChats(s),
+    )
+    const expectedNumberOfDefaultChats = selectedCommunity
+        ? getDefaultGroupChats(selectedCommunity.meta).length
         : 0
     const [hasTimedOut, setHasTimedOut] = useState(false)
-    const isFederation = useAppSelector(selectActiveFederationHasWallet)
 
     useEffect(() => {
         // After 3s, we assume the loading chats have timed out
@@ -63,7 +63,7 @@ const CommunityChats = () => {
         [defaultChats, expectedNumberOfDefaultChats, hasTimedOut],
     )
 
-    if (!activeFederation) return null
+    if (!selectedCommunity) return null
 
     if (
         expectedNumberOfDefaultChats === 0 ||
@@ -73,10 +73,8 @@ const CommunityChats = () => {
 
     return (
         <Flex gap="sm" fullWidth>
-            <Text style={style.sectionTitle}>
-                {!isFederation
-                    ? t('feature.chat.community-news')
-                    : t('feature.chat.federation-news')}
+            <Text bold style={style.sectionTitle}>
+                {t('feature.chat.community-news')}
             </Text>
             {chats.map((chat: MatrixRoom | undefined, idx) => (
                 <CommunityChatTile
@@ -92,18 +90,12 @@ const CommunityChats = () => {
 const styles = (theme: Theme) =>
     StyleSheet.create({
         sectionTitle: {
-            color: theme.colors.night,
-            letterSpacing: -0.16,
+            color: theme.colors.primary,
             fontSize: 20,
             marginBottom: 4,
         },
         servicesSelected: {
-            fontFamily: 'Albert Sans',
-            fontWeight: '400',
-            fontSize: 14,
-            lineHeight: 18,
-            color: theme.colors.darkGrey,
-            letterSpacing: -0.14,
+            color: theme.colors.primaryLight,
             marginBottom: 12,
         },
     })

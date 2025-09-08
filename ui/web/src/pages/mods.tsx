@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next'
 import { ContentBlock } from '../components/ContentBlock'
 import { FediModTiles } from '../components/FediModTiles'
 import * as Layout from '../components/Layout'
+import MainHeaderButtons from '../components/MainHeaderButtons'
 import { styled } from '../styles'
 
 export default function ModsPage() {
@@ -11,9 +12,11 @@ export default function ModsPage() {
     return (
         <ContentBlock>
             <Layout.Root>
-                <Layout.Header>
-                    <Layout.Title>{t('words.mods')}</Layout.Title>
-                </Layout.Header>
+                <ModsHeader>
+                    <Layout.Title>{t('phrases.mini-apps')}</Layout.Title>
+                    {/* TODO: link to add mods page with onAddPress prop when adding mods is implemented */}
+                    <MainHeaderButtons />
+                </ModsHeader>
                 <Layout.Content>
                     <Content>
                         <FediModTiles />
@@ -30,6 +33,14 @@ const Content = styled('div', {
     flexDirection: 'column',
     gap: 10,
     justifyContent: 'flex-start',
-    padding: 20,
+    padding: '20px 16px 16px',
     textAlign: 'center',
+})
+
+const ModsHeader = styled(Layout.Header, {
+    padding: '8px 16px',
+
+    '@sm': {
+        padding: '22px 16px 16px',
+    },
 })

@@ -92,7 +92,6 @@ interface OmniPaymentState {
 export function useOmniPaymentState(
     fedimint: FedimintBridge,
     federationId: string | undefined,
-    selectedPaymentFederation = false,
     t: TFunction,
 ): OmniPaymentState {
     const dispatch = useCommonDispatch()
@@ -118,7 +117,6 @@ export function useOmniPaymentState(
         bip21Payment,
         invoice,
         lnurlPayment,
-        selectedPaymentFederation,
         cashuMeltSummary,
         t,
         fedimint,
@@ -335,8 +333,12 @@ export function useLnurlReceiveCode(
     fedimint: FedimintBridge,
     federationId: string,
 ) {
-    const supportsLnurl = useCommonSelector(selectSupportsRecurringdLnurl)
-    const lnurlReceiveCode = useCommonSelector(selectLnurlReceiveCode)
+    const supportsLnurl = useCommonSelector(s =>
+        selectSupportsRecurringdLnurl(s, federationId),
+    )
+    const lnurlReceiveCode = useCommonSelector(s =>
+        selectLnurlReceiveCode(s, federationId),
+    )
     const dispatch = useCommonDispatch()
     const [isFetching, setIsFetching] = useState(false)
 

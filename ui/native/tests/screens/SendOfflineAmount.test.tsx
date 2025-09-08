@@ -8,7 +8,6 @@ import {
 import {
     changeOverrideCurrency,
     fetchCurrencyPrices,
-    setActiveFederationId,
     setAmountInputType,
     setCurrencyLocale,
     setFederations,
@@ -128,7 +127,6 @@ describe('SendOfflineAmount screen', () => {
 
     it('should prevent the user from sending more than the max ecash send balance', async () => {
         store.dispatch(setFederations([mockFederation1]))
-        store.dispatch(setActiveFederationId(mockFederation1.id))
         store.dispatch(setPayFromFederationId(mockFederation1.id))
         store.dispatch(setShowFiatTxnAmounts(true))
         store.dispatch(setAmountInputType('sats'))
@@ -161,7 +159,6 @@ describe('SendOfflineAmount screen', () => {
 
     it('should fall back to the wallet balance if the calculateMaxGenerateEcash rpc fails', async () => {
         store.dispatch(setFederations([mockFederation1]))
-        store.dispatch(setActiveFederationId(mockFederation1.id))
         store.dispatch(setPayFromFederationId(mockFederation1.id))
         store.dispatch(setShowFiatTxnAmounts(true))
         store.dispatch(setAmountInputType('sats'))

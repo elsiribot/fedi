@@ -21,7 +21,6 @@ import {
 
 import {
     fetchMultispendTransactions,
-    selectActiveFederationId,
     selectCurrency,
     selectEcashFeeSchedule,
     selectFederationStabilityPoolConfig,
@@ -37,6 +36,7 @@ import {
     selectTransactions,
 } from '../redux/transactions'
 import {
+    Federation,
     LoadedFederation,
     MatrixRoom,
     MatrixRoomMember,
@@ -65,12 +65,16 @@ import {
 import { useAmountFormatter, useBtcFiatPrice } from './amount'
 import { useCommonDispatch, useCommonSelector } from './redux'
 
-export function useTransactionHistory(fedimint: FedimintBridge) {
+export function useTransactionHistory(
+    fedimint: FedimintBridge,
+    federationId: Federation['id'],
+) {
     const dispatch = useCommonDispatch()
-    const activeFederationId = useCommonSelector(selectActiveFederationId)
-    const transactions = useCommonSelector(selectTransactions)
-    const stabilityPoolTxns = useCommonSelector(
-        selectStabilityTransactionHistory,
+    const transactions = useCommonSelector(s =>
+        selectTransactions(s, federationId),
+    )
+    const stabilityPoolTxns = useCommonSelector(s =>
+        selectStabilityTransactionHistory(s, federationId),
     )
 
     const fetchTransactions = useCallback(
@@ -78,9 +82,8 @@ export function useTransactionHistory(fedimint: FedimintBridge) {
             args?: Pick<
                 Parameters<typeof reduxFetchTransactions>[0],
                 'limit' | 'more' | 'refresh'
-            > & { federationId?: string },
+            >,
         ) => {
-            const federationId = args?.federationId ?? activeFederationId
             if (!federationId) return []
             return dispatch(
                 reduxFetchTransactions({
@@ -90,7 +93,7 @@ export function useTransactionHistory(fedimint: FedimintBridge) {
                 }),
             ).unwrap()
         },
-        [activeFederationId, dispatch, fedimint],
+        [dispatch, fedimint, federationId],
     )
 
     return {
@@ -100,10 +103,16 @@ export function useTransactionHistory(fedimint: FedimintBridge) {
     }
 }
 
-export function useTxnDisplayUtils(t: TFunction, isStabilityPool = false) {
+export function useTxnDisplayUtils(
+    t: TFunction,
+    federationId?: Federation['id'],
+    isStabilityPool = false,
+) {
+    const selectedCurrency = useCommonSelector(s =>
+        selectCurrency(s, federationId),
+    )
     const { convertCentsToFormattedFiat, convertSatsToFormattedFiat } =
-        useBtcFiatPrice()
-    const selectedCurrency = useCommonSelector(selectCurrency)
+        useBtcFiatPrice(selectedCurrency, federationId)
     const showFiatTxnAmounts = useCommonSelector(selectShowFiatTxnAmounts)
     const { makeFormattedAmountsFromMSats } = useAmountFormatter()
     const preferredCurrency = showFiatTxnAmounts
@@ -387,8 +396,12 @@ export type ExportResult =
           message: string
       }
 
-export function useExportTransactions(fedimint: FedimintBridge, t: TFunction) {
-    const { fetchTransactions } = useTransactionHistory(fedimint)
+export function useExportTransactions(
+    fedimint: FedimintBridge,
+    t: TFunction,
+    federationId: Federation['id'],
+) {
+    const { fetchTransactions } = useTransactionHistory(fedimint, federationId)
     const { makeFormattedAmountsFromMSats } = useAmountFormatter()
 
     const exportTransactions = useCallback(
@@ -397,7 +410,6 @@ export function useExportTransactions(fedimint: FedimintBridge, t: TFunction) {
                 const transactions = await fetchTransactions({
                     // TODO: find a better way than a hardcoded value
                     limit: 10000,
-                    federationId: federation.id,
                 })
 
                 const fileName = makeCSVFilename(
@@ -508,17 +520,19 @@ export type FeeItem = {
 
 // Ecash fees are ppm values specified in the federations feeSchedule so we calculate
 // the fee from the amount and provide all formatted UI display content
-export function useFeeDisplayUtils(t: TFunction) {
-    const ecashFeeSchedule = useCommonSelector(selectEcashFeeSchedule)
-    const stabilityPoolFeeSchedule = useCommonSelector(
-        selectStabilityPoolFeeSchedule,
+export function useFeeDisplayUtils(t: TFunction, federationId: string) {
+    const ecashFeeSchedule = useCommonSelector(s =>
+        selectEcashFeeSchedule(s, federationId),
     )
-    const stabilityPoolAverageFeeRate = useCommonSelector(
-        selectStabilityPoolAverageFeeRate,
+    const stabilityPoolFeeSchedule = useCommonSelector(s =>
+        selectStabilityPoolFeeSchedule(s, federationId),
+    )
+    const stabilityPoolAverageFeeRate = useCommonSelector(s =>
+        selectStabilityPoolAverageFeeRate(s, federationId),
     )
     const { makeFormattedAmountsFromMSats } = useAmountFormatter()
-    const stabilityConfig = useCommonSelector(
-        selectFederationStabilityPoolConfig,
+    const stabilityConfig = useCommonSelector(s =>
+        selectFederationStabilityPoolConfig(s, federationId),
     )
 
     const makeEcashFeeContent = (amount: MSats) => {

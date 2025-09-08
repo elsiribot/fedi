@@ -5,6 +5,7 @@ import { StyleSheet, Text } from 'react-native'
 
 import { ErrorBoundary } from '@fedi/common/components/ErrorBoundary'
 import { FeeItem } from '@fedi/common/hooks/transactions'
+import { Federation } from '@fedi/common/types'
 
 import { useLaunchZendesk } from '../../../utils/hooks/support'
 import CenterOverlay from '../../ui/CenterOverlay'
@@ -18,6 +19,7 @@ type HistoryDetailOverlayProps = {
     itemDetails?: HistoryDetailProps
     feeItems: FeeItem[]
     showAskFedi: boolean
+    federationId: Federation['id']
 }
 
 const HistoryDetailOverlay: React.FC<HistoryDetailOverlayProps> = ({
@@ -25,6 +27,7 @@ const HistoryDetailOverlay: React.FC<HistoryDetailOverlayProps> = ({
     itemDetails,
     feeItems,
     showAskFedi,
+    federationId,
 }) => {
     const { theme } = useTheme()
     const { t } = useTranslation()
@@ -43,6 +46,7 @@ const HistoryDetailOverlay: React.FC<HistoryDetailOverlayProps> = ({
                 {...itemDetails}
                 fees={totalFeeItem?.formattedAmount}
                 onPressFees={() => setShowFeeBreakdown(true)}
+                federationId={federationId}
             />
         ) : (
             <FeeBreakdown
@@ -61,7 +65,7 @@ const HistoryDetailOverlay: React.FC<HistoryDetailOverlayProps> = ({
                 onClose={() => setShowFeeBreakdown(false)}
             />
         )
-    }, [t, theme, itemDetails, showFeeBreakdown, feeItems])
+    }, [t, theme, itemDetails, showFeeBreakdown, feeItems, federationId])
 
     if (!itemDetails) return <></>
 

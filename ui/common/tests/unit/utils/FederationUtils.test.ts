@@ -7,7 +7,7 @@ import {
 } from '../../../types'
 import {
     getFederationDefaultCurrency,
-    getFederationFediMods,
+    getCommunityFediMods,
     shouldShowInviteCode,
 } from '../../../utils/FederationUtils'
 
@@ -27,7 +27,6 @@ const baseFed: LoadedFederation = {
         remittanceThresholdMsat: 100_000,
         modules: {},
     },
-    hasWallet: true,
     hadReusedEcash: false,
     status: 'online',
     init_state: 'ready',
@@ -150,27 +149,27 @@ describe('FederationUtils', () => {
     })
     describe('getFederationFediMods', () => {
         it('returns fedimods from metadata', () => {
-            const fediMods = getFederationFediMods(fedWithMods.meta)
+            const fediMods = getCommunityFediMods(fedWithMods.meta)
             expect(fediMods[0]).toEqual(testMod)
         })
         it('returns fedimods from metadata when using legacy sites key', () => {
-            const fediMods = getFederationFediMods({
+            const fediMods = getCommunityFediMods({
                 sites: JSON.stringify([testMod]),
             })
             expect(fediMods[0]).toEqual(testMod)
         })
         it('returns an empty array if not provided', () => {
-            const fediMods = getFederationFediMods(fedWithNoMetadata.meta)
+            const fediMods = getCommunityFediMods(fedWithNoMetadata.meta)
             expect(fediMods).toHaveLength(0)
         })
         it('returns an empty array if type is invalid', () => {
-            const fediMods = getFederationFediMods({
+            const fediMods = getCommunityFediMods({
                 fedimods: 'invalid type here',
             })
             expect(fediMods).toHaveLength(0)
         })
         it('omits imageUrl from mods if null', () => {
-            const fediMods = getFederationFediMods(fedWithModsNullImageUrl.meta)
+            const fediMods = getCommunityFediMods(fedWithModsNullImageUrl.meta)
 
             expect(fediMods[0]).toHaveProperty('imageUrl')
             expect(fediMods[1]).not.toHaveProperty('imageUrl')

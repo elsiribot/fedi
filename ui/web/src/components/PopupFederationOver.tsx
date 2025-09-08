@@ -3,10 +3,11 @@ import { useTranslation } from 'react-i18next'
 
 import { usePopupFederationInfo } from '@fedi/common/hooks/federation'
 import { useToast } from '@fedi/common/hooks/toast'
-import { leaveFederation, selectActiveFederation } from '@fedi/common/redux'
+import { leaveFederation } from '@fedi/common/redux'
+import { LoadedFederation } from '@fedi/common/types'
 import { getFederationTosUrl } from '@fedi/common/utils/FederationUtils'
 
-import { useAppDispatch, useAppSelector } from '../hooks'
+import { useAppDispatch } from '../hooks'
 import { fedimint } from '../lib/bridge'
 import { Button } from './Button'
 import { ConfirmDialog } from './ConfirmDialog'
@@ -14,27 +15,30 @@ import { ContentBlock } from './ContentBlock'
 import FederationEndedPreview from './FederationEndedPreview'
 import * as Layout from './Layout'
 
-export const PopupFederationOver: React.FC = () => {
+type Props = {
+    federation: LoadedFederation
+}
+
+export const PopupFederationOver: React.FC<Props> = ({ federation }) => {
     const dispatch = useAppDispatch()
     const { t } = useTranslation()
     const toast = useToast()
-    const activeFederation = useAppSelector(selectActiveFederation)
-    const popupInfo = usePopupFederationInfo()
+    const popupInfo = usePopupFederationInfo(federation.meta || {})
     const [isLeavingFederation, setIsLeavingFederation] = useState(false)
 
-    if (!activeFederation || !popupInfo) return null
+    if (!federation || !popupInfo) return null
 
     const handleLeaveFederation = () => {
         setIsLeavingFederation(true)
     }
 
     const handleConfirmLeaveFederation = async () => {
-        if (!activeFederation) return
+        if (!federation) return
         try {
             await dispatch(
                 leaveFederation({
                     fedimint,
-                    federationId: activeFederation.id,
+                    federationId: federation.id,
                 }),
             )
         } catch (err) {
@@ -44,7 +48,7 @@ export const PopupFederationOver: React.FC = () => {
         setIsLeavingFederation(false)
     }
 
-    const tosUrl = getFederationTosUrl(activeFederation?.meta)
+    const tosUrl = getFederationTosUrl(federation.meta)
 
     return (
         <ContentBlock>
@@ -52,7 +56,7 @@ export const PopupFederationOver: React.FC = () => {
                 <Layout.Content centered>
                     <FederationEndedPreview
                         popupInfo={popupInfo}
-                        federation={activeFederation}
+                        federation={federation}
                     />
                 </Layout.Content>
                 <Layout.Actions>

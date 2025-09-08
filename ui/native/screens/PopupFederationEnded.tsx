@@ -9,7 +9,7 @@ import { useToast } from '@fedi/common/hooks/toast'
 import {
     changeAuthenticatedGuardian,
     leaveFederation,
-    selectActiveFederation,
+    selectLoadedFederation,
 } from '@fedi/common/redux'
 import { getFederationTosUrl } from '@fedi/common/utils/FederationUtils'
 
@@ -24,19 +24,21 @@ export type Props = NativeStackScreenProps<
     'PopupFederationEnded'
 >
 
-const PopupFederationEnded: React.FC<Props> = ({ navigation }) => {
+const PopupFederationEnded: React.FC<Props> = ({ navigation, route }) => {
     const { theme } = useTheme()
     const { t } = useTranslation()
+    const { federationId = '' } = route.params
     const toast = useToast()
-    const activeFederation = useAppSelector(selectActiveFederation)
-    const popupInfo = usePopupFederationInfo()
+    const federation = useAppSelector(s =>
+        selectLoadedFederation(s, federationId),
+    )
+    const popupInfo = usePopupFederationInfo(federation?.meta || {})
     const [isLeavingFederation, setIsLeavingFederation] = useState(false)
-    const tosUrl = activeFederation?.meta
-        ? getFederationTosUrl(activeFederation.meta)
+    const tosUrl = federation?.meta
+        ? getFederationTosUrl(federation.meta)
         : null
 
     const dispatch = useAppDispatch()
-    const activeFederationId = activeFederation?.id
 
     const resetGuardiansState = useCallback(() => {
         dispatch(changeAuthenticatedGuardian(null))
@@ -46,7 +48,7 @@ const PopupFederationEnded: React.FC<Props> = ({ navigation }) => {
     const handleLeaveFederation = useCallback(async () => {
         setIsLeavingFederation(true)
         try {
-            if (activeFederationId) {
+            if (federationId) {
                 // FIXME: currently this specific order of operations fixes a
                 // bug where the username would get stuck in storage and when
                 // rejoining the federation, the user cannot create an new
@@ -60,7 +62,7 @@ const PopupFederationEnded: React.FC<Props> = ({ navigation }) => {
                 await dispatch(
                     leaveFederation({
                         fedimint,
-                        federationId: activeFederationId,
+                        federationId: federationId,
                     }),
                 ).unwrap()
                 navigation.navigate('Initializing')
@@ -72,14 +74,7 @@ const PopupFederationEnded: React.FC<Props> = ({ navigation }) => {
             })
         }
         setIsLeavingFederation(false)
-    }, [
-        activeFederationId,
-        dispatch,
-        navigation,
-        resetGuardiansState,
-        toast,
-        t,
-    ])
+    }, [federationId, dispatch, navigation, resetGuardiansState, toast, t])
 
     const confirmLeaveFederation = () => {
         Alert.alert(
@@ -101,10 +96,10 @@ const PopupFederationEnded: React.FC<Props> = ({ navigation }) => {
 
     return (
         <Flex grow center style={style.container}>
-            {activeFederation && (
+            {federation && (
                 <FederationEndedPreview
                     popupInfo={popupInfo}
-                    federation={activeFederation}
+                    federation={federation}
                 />
             )}
             <Flex align="center" fullWidth style={style.buttonsContainer}>

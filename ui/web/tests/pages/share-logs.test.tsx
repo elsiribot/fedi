@@ -2,9 +2,10 @@ import { screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 
 import {
-    setActiveFederationId,
     setFederations,
+    setCommunities,
     setupStore,
+    setPayFromFederationId,
 } from '@fedi/common/redux'
 import {
     mockCommunity,
@@ -65,8 +66,9 @@ describe('ShareLogs screen', () => {
     })
 
     it('should show the federation selector overlay if the active federation is a community AND the user has joined at least one federation', async () => {
-        store.dispatch(setFederations([mockFederation2, mockCommunity]))
-        store.dispatch(setActiveFederationId('1'))
+        store.dispatch(setFederations([mockFederation2]))
+        store.dispatch(setCommunities([mockCommunity]))
+        store.dispatch(setPayFromFederationId('2'))
         renderWithProviders(<ShareLogs />, {
             store,
         })

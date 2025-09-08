@@ -1,19 +1,12 @@
 import type { NativeStackScreenProps } from '@react-navigation/native-stack'
-import { Text, Theme, useTheme } from '@rneui/themed'
+import { Button, Text, Theme, useTheme } from '@rneui/themed'
 import React from 'react'
 import { Trans, useTranslation } from 'react-i18next'
-import {
-    Linking,
-    Pressable,
-    StyleProp,
-    StyleSheet,
-    View,
-    ViewStyle,
-} from 'react-native'
+import { Linking, StyleProp, StyleSheet, View, ViewStyle } from 'react-native'
 
 import { usePopupFederationInfo } from '@fedi/common/hooks/federation'
-import { selectAlphabeticallySortedFederations } from '@fedi/common/redux'
-import { FederationListItem, Sats } from '@fedi/common/types'
+import { selectLoadedFederation } from '@fedi/common/redux'
+import { Federation, Sats } from '@fedi/common/types'
 import amountUtils from '@fedi/common/utils/AmountUtils'
 import {
     getFederationMaxBalanceMsats,
@@ -36,15 +29,13 @@ export type Props = NativeStackScreenProps<
 const FederationDetails: React.FC<Props> = ({ route }: Props) => {
     const { t } = useTranslation()
     const { theme } = useTheme()
-    const sortedFederations = useAppSelector(
-        selectAlphabeticallySortedFederations,
+    const { federationId } = route.params
+
+    const federation = useAppSelector(s =>
+        selectLoadedFederation(s, federationId),
     )
 
-    const federation = sortedFederations.find(
-        f => f.id === route.params.federationId,
-    )
-
-    const popupInfo = usePopupFederationInfo(federation?.meta)
+    const popupInfo = usePopupFederationInfo(federation?.meta || {})
 
     if (!federation) return null
 
@@ -111,31 +102,30 @@ const FederationDetails: React.FC<Props> = ({ route }: Props) => {
                 />
             </View>
             {tosUrl && (
-                <Pressable
-                    onPress={() => Linking.openURL(tosUrl)}
-                    style={style.tosLink}>
+                <Button
+                    bubble
+                    fullWidth
+                    outline
+                    onPress={() => Linking.openURL(tosUrl)}>
                     <Text
                         adjustsFontSizeToFit
+                        medium
                         style={style.textStyle}
                         numberOfLines={1}>
                         {t(
                             'feature.federations.federation-terms-and-conditions',
                         )}
                     </Text>
-                </Pressable>
+                </Button>
             )}
         </SafeAreaContainer>
     )
 }
 
-const PopupFederationPill = ({
-    federation,
-}: {
-    federation: FederationListItem
-}) => {
+const PopupFederationPill = ({ federation }: { federation: Federation }) => {
     const { t } = useTranslation()
     const { theme } = useTheme()
-    const popupInfo = usePopupFederationInfo(federation?.meta)
+    const popupInfo = usePopupFederationInfo(federation?.meta || {})
 
     const style = styles(theme)
 
@@ -197,7 +187,6 @@ const styles = (theme: Theme) =>
             textAlign: 'center',
         },
         textStyle: {
-            lineHeight: 20,
             textAlign: 'center',
         },
         pillEndsSoon: {
@@ -217,9 +206,6 @@ const styles = (theme: Theme) =>
         },
         lightText: {
             color: theme.colors.secondary,
-        },
-        tosLink: {
-            padding: theme.spacing.xl,
         },
     })
 

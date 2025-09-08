@@ -38,7 +38,7 @@ describe('/components/PaymentFederationSelector', () => {
                     federation: {
                         ...state.federation,
                         federations: [mockFederation1],
-                        activeFederationId: '1',
+                        lastUsedFederationId: '1',
                     },
                 },
             })
@@ -58,7 +58,7 @@ describe('/components/PaymentFederationSelector', () => {
                     federation: {
                         ...state.federation,
                         federations: [mockFederation1, mockFederation2],
-                        activeFederationId: '1',
+                        lastUsedFederationId: '1',
                     },
                 },
             })

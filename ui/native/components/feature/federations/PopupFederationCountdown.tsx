@@ -12,9 +12,10 @@ import {
 
 import { usePopupFederationInfo } from '@fedi/common/hooks/federation'
 import {
-    selectActiveFederation,
     selectFederationMetadata,
+    selectLoadedFederation,
 } from '@fedi/common/redux'
+import { Federation } from '@fedi/common/types'
 import { getFederationTosUrl } from '@fedi/common/utils/FederationUtils'
 
 import { FALLBACK_TERMS_URL } from '../../../constants'
@@ -22,17 +23,23 @@ import { useAppSelector } from '../../../state/hooks'
 import Flex from '../../ui/Flex'
 import { FederationLogo } from './FederationLogo'
 
-export const PopupFederationCountdown: React.FC = () => {
+export const PopupFederationCountdown: React.FC<{
+    federationId: Federation['id']
+}> = ({ federationId }) => {
     const { t } = useTranslation()
     const { theme } = useTheme()
     const style = styles(theme)
-    const activeFederation = useAppSelector(selectActiveFederation)
-    const activeFederationMetadata = useAppSelector(selectFederationMetadata)
-    const tosUrl = getFederationTosUrl(activeFederationMetadata)
-    const popupInfo = usePopupFederationInfo()
+    const federation = useAppSelector(s =>
+        selectLoadedFederation(s, federationId),
+    )
+    const federationMetadata = useAppSelector(s =>
+        selectFederationMetadata(s, federationId),
+    )
+    const tosUrl = getFederationTosUrl(federationMetadata)
+    const popupInfo = usePopupFederationInfo(federationMetadata)
     const [isOverlayVisible, setIsOverlayVisible] = useState(false)
 
-    if (!activeFederation || !popupInfo) return null
+    if (!federation || !popupInfo) return null
 
     const pillStyles: StyleProp<ViewStyle>[] = [style.pill]
     if (popupInfo.ended) {
@@ -74,13 +81,10 @@ export const PopupFederationCountdown: React.FC = () => {
                 onBackdropPress={() => setIsOverlayVisible(false)}>
                 <Flex align="center" style={style.overlayContent}>
                     <View style={style.overlaySpacing}>
-                        <FederationLogo
-                            federation={activeFederation}
-                            size={72}
-                        />
+                        <FederationLogo federation={federation} size={72} />
                     </View>
                     <Text h2 style={style.overlaySpacing}>
-                        {activeFederation.name}
+                        {federation.name}
                     </Text>
                     <View style={[pillStyles, style.overlaySpacing]}>
                         {countdownI18nText}

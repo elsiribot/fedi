@@ -222,12 +222,8 @@ export const updateTransactionNotes = createAsyncThunk<
 
 export const selectTransactions = (
     s: CommonState,
-    federationId?: Federation['id'],
-) =>
-    getFederationTxsState(
-        s.transactions,
-        federationId || s.federation.activeFederationId || '',
-    ).transactions
+    federationId: Federation['id'],
+) => getFederationTxsState(s.transactions, federationId).transactions
 
 export const selectStabilityTransactionHistory = createSelector(
     selectTransactions,

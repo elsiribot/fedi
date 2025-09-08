@@ -27,7 +27,7 @@ export const STATE_STORAGE_KEY = 'fedi:state'
  */
 export function transformStateToStorage(state: CommonState): LatestStoredState {
     const transformedState: LatestStoredState = {
-        version: 27,
+        version: 29,
         onchainDepositsEnabled: state.environment.onchainDepositsEnabled,
         developerMode: state.environment.developerMode,
         stableBalanceEnabled: state.environment.stableBalanceEnabled,
@@ -39,9 +39,7 @@ export function transformStateToStorage(state: CommonState): LatestStoredState {
         btcUsdRate: state.currency.btcUsdRate,
         fiatUsdRates: state.currency.fiatUsdRates,
         customFederationCurrencies: state.currency.customFederationCurrencies,
-        activeFederationId: state.federation.activeFederationId,
         authenticatedGuardian: state.federation.authenticatedGuardian,
-        externalMeta: state.federation.externalMeta,
         customFediMods: state.federation.customFediMods,
         nuxSteps: state.nux.steps,
         matrixAuth: state.matrix.auth,
@@ -56,6 +54,8 @@ export function transformStateToStorage(state: CommonState): LatestStoredState {
         },
         seenFederationRatings: state.federation.seenFederationRatings,
         lastShownSurveyTimestamp: state.support.lastShownSurveyTimestamp,
+        lastUsedFederationId: state.federation.lastUsedFederationId,
+        lastSelectedCommunityId: state.federation.lastSelectedCommunityId,
     }
 
     return transformedState
@@ -97,9 +97,9 @@ export function hasStorageStateChanged(
         ['currency', 'overrideCurrency'],
         ['currency', 'customFederationCurrencies'],
         ['currency', 'prices'],
-        ['federation', 'activeFederationId'],
+        ['federation', 'lastUsedFederationId'],
+        ['federation', 'lastSelectedCommunityId'],
         ['federation', 'authenticatedGuardian'],
-        ['federation', 'externalMeta'],
         ['federation', 'seenFederationRatings'],
         ['matrix', 'drafts'],
         // TODO: migrate legacy mods to customGlobalMods
@@ -640,6 +640,26 @@ async function migrateStoredState(
             version: 27,
             // The timestamp is initially set to -1 so it doesn't take a whole week to show up in prod
             lastShownSurveyTimestamp: -1,
+        }
+    }
+
+    if (migrationState.version === 27) {
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
+        const { activeFederationId, ...rest } = migrationState
+        migrationState = {
+            ...rest,
+            version: 28,
+            lastUsedFederationId: null,
+            lastSelectedCommunityId: null,
+        }
+    }
+
+    if (migrationState.version === 28) {
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
+        const { externalMeta, ...rest } = migrationState
+        migrationState = {
+            ...rest,
+            version: 29,
         }
     }
 

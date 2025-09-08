@@ -9,7 +9,8 @@ import { useMonitorStabilityPool } from '@fedi/common/hooks/stabilitypool'
 import {
     selectFederations,
     selectMatrixAuth,
-    selectActiveFederation,
+    selectLastUsedFederation,
+    selectLastUsedFederationId,
 } from '@fedi/common/redux'
 
 import { createIntegrationTestBuilder } from '../../../utils/test-utils/remote-bridge-setup'
@@ -45,7 +46,6 @@ describe('onboarding with remote bridge', () => {
                 const state = store.getState()
                 const federations = selectFederations(state)
                 expect(federations).toHaveLength(1)
-                expect(federations[0].hasWallet).toBe(true)
             },
             { timeout: 15000 },
         )
@@ -56,16 +56,24 @@ describe('onboarding with remote bridge', () => {
 
         const { remoteBridge, store } = context
 
+        const lastUsedFederationId = selectLastUsedFederationId(
+            store.getState(),
+        )
+
         // Check if stability pool is supported
         const { result: stabilityPoolSupported } = renderHookWithState(
-            () => useIsStabilityPoolSupported(),
+            () => useIsStabilityPoolSupported(lastUsedFederationId || ''),
             store,
             remoteBridge.fedimint,
         )
 
         // Start monitoring stability pool
         renderHookWithState(
-            () => useMonitorStabilityPool(remoteBridge.fedimint),
+            () =>
+                useMonitorStabilityPool(
+                    remoteBridge.fedimint,
+                    lastUsedFederationId || '',
+                ),
             store,
             remoteBridge.fedimint,
         )
@@ -77,7 +85,7 @@ describe('onboarding with remote bridge', () => {
                 expect(federations).toHaveLength(1)
 
                 const federation = federations[0]
-                expect(federation.hasWallet).toBe(true)
+                expect(federation).toBeDefined()
 
                 // Check that stability pool is supported
                 expect(stabilityPoolSupported.current).toBe(true)
@@ -95,7 +103,7 @@ describe('onboarding with remote bridge', () => {
         await waitFor(
             () => {
                 const state = store.getState()
-                const federation = selectActiveFederation(state)
+                const federation = selectLastUsedFederation(state)
                 expect(federation?.balance).toBeGreaterThan(amountMsats - 1)
             },
             { timeout: 20000 },

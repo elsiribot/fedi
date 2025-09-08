@@ -2,7 +2,7 @@ import { Theme, useTheme } from '@rneui/themed'
 import React from 'react'
 import { ActivityIndicator, Image, StyleSheet, View } from 'react-native'
 
-import { LoadedFederationListItem } from '@fedi/common/types'
+import { LoadedFederation } from '@fedi/common/types'
 import { getFederationIconUrl } from '@fedi/common/utils/FederationUtils'
 
 import { Images } from '../../../assets/images'
@@ -11,7 +11,7 @@ import HexImage from '../../ui/HexImage'
 import SvgImage, { SvgImageSize } from '../../ui/SvgImage'
 
 type Props = {
-    federation?: Pick<LoadedFederationListItem, 'id' | 'name' | 'meta'>
+    federation?: Pick<LoadedFederation, 'id' | 'name' | 'meta'>
     size: SvgImageSize | number
     hex?: boolean
 }

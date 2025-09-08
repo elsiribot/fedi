@@ -6,26 +6,37 @@ import { makeLog } from '@fedi/common/utils/log'
 import {
     joinFederation,
     rateFederation,
-    selectActiveFederation,
     selectFederationIds,
-    selectFederationMetadata,
     selectFederations,
     selectOnchainDepositsEnabled,
     selectPaymentFederation,
     selectStableBalance,
     selectStableBalanceEnabled,
-    setActiveFederationId,
     setPublicFederations,
     setSeenFederationRating,
     supportsSafeOnchainDeposit,
+    selectCommunityIds,
+    setLastSelectedCommunityId,
+    joinCommunity,
+    selectFederationClientConfig,
+    selectLoadedFederation,
 } from '../redux'
-import { FederationMetadata, JoinPreview, SupportedMetaFields } from '../types'
+import {
+    CommunityPreview,
+    SupportedMetaFields,
+    FederationMetadata,
+    InviteCodeType,
+    Federation,
+} from '../types'
+import { RpcFederationPreview } from '../types/bindings'
 import dateUtils from '../utils/DateUtils'
 import {
+    detectInviteCodeType,
     fetchPublicFederations,
+    getCommunityPreview,
     getFederationPopupInfo,
+    getFederationPreview,
     getMetaField,
-    previewInvite,
     shouldEnableOnchainDeposits,
     shouldEnableStabilityPool,
     shouldShowInviteCode,
@@ -38,24 +49,29 @@ import { useToast } from './toast'
 
 const log = makeLog('common/hooks/federation')
 
-export function useIsInviteSupported() {
-    const activeFederation = useCommonSelector(selectActiveFederation)
-    if (!activeFederation) return false
-    return shouldShowInviteCode(activeFederation.meta)
+export function useIsInviteSupported(federationId: Federation['id']) {
+    const federation = useCommonSelector(s =>
+        selectLoadedFederation(s, federationId),
+    )
+    if (!federation) return false
+    return shouldShowInviteCode(federation.meta)
 }
 
-export function useIsSocialRecoverySupported() {
-    const activeFederation = useCommonSelector(selectActiveFederation)
-    if (!activeFederation) return false
-    return shouldShowSocialRecovery(activeFederation)
+export function useIsSocialRecoverySupported(federationId: Federation['id']) {
+    const federation = useCommonSelector(s =>
+        selectLoadedFederation(s, federationId),
+    )
+    if (!federation) return false
+    return shouldShowSocialRecovery(federation)
 }
 
-export function useIsStabilityPoolSupported() {
-    const activeFederation = useCommonSelector(selectActiveFederation)
-    if (!activeFederation || !activeFederation.hasWallet) return false
-    if (!activeFederation.clientConfig) return false
+export function useIsStabilityPoolSupported(federationId: Federation['id']) {
+    const federationConfig = useCommonSelector(s =>
+        selectFederationClientConfig(s, federationId),
+    )
+    if (!federationConfig) return false
 
-    const { modules } = activeFederation.clientConfig
+    const { modules } = federationConfig
     for (const key in modules) {
         // TODO: add better typing for this
         const fmModule = modules[key] as Partial<{ kind: string }>
@@ -69,20 +85,26 @@ export function useIsStabilityPoolSupported() {
     return false
 }
 
-export function useIsStabilityPoolEnabledByFederation() {
-    const activeFederation = useCommonSelector(selectActiveFederation)
-    if (!activeFederation) return false
-    return shouldEnableStabilityPool(activeFederation.meta)
+export function useIsStabilityPoolEnabledByFederation(
+    federationId: Federation['id'],
+) {
+    const federation = useCommonSelector(s =>
+        selectLoadedFederation(s, federationId),
+    )
+    if (!federation) return false
+    return shouldEnableStabilityPool(federation.meta)
 }
 
-export function useShouldShowStabilityPool() {
-    const stabilityPoolSupported = useIsStabilityPoolSupported()
+export function useShouldShowStabilityPool(federationId: Federation['id']) {
+    const stabilityPoolSupported = useIsStabilityPoolSupported(federationId)
     const stabilityPoolEnabledByUser = useCommonSelector(
         selectStableBalanceEnabled,
     )
     const stabilityPoolEnabledByFederation =
-        useIsStabilityPoolEnabledByFederation()
-    const stableBalance = useCommonSelector(selectStableBalance)
+        useIsStabilityPoolEnabledByFederation(federationId)
+    const stableBalance = useCommonSelector(s =>
+        selectStableBalance(s, federationId),
+    )
     return (
         stabilityPoolSupported &&
         // Always show if there's a balance
@@ -93,10 +115,12 @@ export function useShouldShowStabilityPool() {
     )
 }
 
-export function useIsOfflineWalletSupported() {
-    const activeFederation = useCommonSelector(selectActiveFederation)
-    if (!activeFederation) return false
-    return shouldShowOfflineWallet(activeFederation.meta)
+export function useIsOfflineWalletSupported(federationId: Federation['id']) {
+    const federation = useCommonSelector(s =>
+        selectLoadedFederation(s, federationId),
+    )
+    if (!federation) return false
+    return shouldShowOfflineWallet(federation.meta)
 }
 
 // Onchain deposits can be enabled/disabled via federation metadata
@@ -104,8 +128,13 @@ export function useIsOfflineWalletSupported() {
 // safe onchain deposits, it will be disabled
 // Onchain deposits can also be enabled via Developer Settings which will
 // override all of the above
-export function useIsOnchainDepositSupported(fedimint: FedimintBridge) {
-    const activeFederation = useCommonSelector(selectActiveFederation)
+export function useIsOnchainDepositSupported(
+    fedimint: FedimintBridge,
+    federationId: Federation['id'],
+) {
+    const federation = useCommonSelector(s =>
+        selectLoadedFederation(s, federationId),
+    )
     const userEnabledOnchainDeposits = useCommonSelector(
         selectOnchainDepositsEnabled,
     )
@@ -114,17 +143,17 @@ export function useIsOnchainDepositSupported(fedimint: FedimintBridge) {
 
     useEffect(() => {
         const checkOnchainSupport = async () => {
-            if (!activeFederation) return
+            if (!federation) return
 
             try {
                 const result = await dispatch(
-                    supportsSafeOnchainDeposit({ fedimint }),
+                    supportsSafeOnchainDeposit({ fedimint, federationId }),
                 ).unwrap()
                 log.debug('supportsSafeOnchainDeposits result', result)
                 setHasSafeOnchainDeposits(result)
             } catch (error) {
                 log.error(
-                    `supportsSafeOnchainDeposit failed for ${activeFederation.name}`,
+                    `supportsSafeOnchainDeposit failed for ${federation.name}`,
                     error,
                 )
                 setHasSafeOnchainDeposits(false)
@@ -134,36 +163,34 @@ export function useIsOnchainDepositSupported(fedimint: FedimintBridge) {
         // Reset to false since federation could have changed
         setHasSafeOnchainDeposits(false)
         checkOnchainSupport()
-    }, [activeFederation, dispatch, fedimint])
+    }, [federation, dispatch, fedimint, federationId])
 
-    if (!activeFederation) return false
+    if (!federation) return false
 
     // Check if onchain deposits are explicitly enabled in metadata
     const onchainDepositsDisabled = getMetaField(
         SupportedMetaFields.onchain_deposits_disabled,
-        activeFederation.meta,
+        federation.meta,
     )
     const isExplicitlyEnabledInMeta = onchainDepositsDisabled === 'false'
 
     log.debug(
-        `checking onchain deposit support for ${activeFederation.name}\n`,
+        `checking onchain deposit support for ${federation.name}\n`,
         `dev setting enabled: ${userEnabledOnchainDeposits}\n`,
         `metadata explicitly enabled: ${isExplicitlyEnabledInMeta}\n`,
-        `metadata enabled: ${shouldEnableOnchainDeposits(activeFederation.meta)}\n`,
+        `metadata enabled: ${shouldEnableOnchainDeposits(federation.meta)}\n`,
         `supports safe onchain deposits: ${hasSafeOnchainDeposits}`,
     )
 
     return (
         userEnabledOnchainDeposits ||
         isExplicitlyEnabledInMeta ||
-        (shouldEnableOnchainDeposits(activeFederation.meta) &&
-            hasSafeOnchainDeposits)
+        (shouldEnableOnchainDeposits(federation.meta) && hasSafeOnchainDeposits)
     )
 }
 
-export function usePopupFederationInfo(metadata?: FederationMetadata) {
-    const activeFederationMetadata = useCommonSelector(selectFederationMetadata)
-    const meta = metadata || activeFederationMetadata
+export function usePopupFederationInfo(metadata: FederationMetadata) {
+    const meta = metadata
 
     const [secondsLeft, setTimeLeft] = useState(0)
     const [endsInText, setShutdownTime] = useState('')
@@ -276,24 +303,54 @@ export function useFederationPreview(
     const toast = useToast()
     const dispatch = useCommonDispatch()
     const federationIds = useCommonSelector(selectFederationIds)
+    const communityIds = useCommonSelector(selectCommunityIds)
     const [isJoining, setIsJoining] = useState<boolean>(false)
     const [isFetchingPreview, setIsFetchingPreview] = useState(!!invite)
-    const [federationPreview, setFederationPreview] = useState<JoinPreview>()
+    const [previewCodeType, setPreviewCodeType] =
+        useState<InviteCodeType | null>(null)
+    const [federationPreview, setFederationPreview] =
+        useState<RpcFederationPreview>()
+    const [communityPreview, setCommunityPreview] = useState<CommunityPreview>()
 
     const handleCode = useCallback(
         async (code: string, onSuccess?: () => void) => {
+            const codeType = detectInviteCodeType(code)
+            setPreviewCodeType(codeType)
             setIsFetchingPreview(true)
             try {
-                const preview = await previewInvite(fedimint, code)
-                if (federationIds.includes(preview.id)) {
-                    dispatch(setActiveFederationId(preview.id))
-                    toast.show({
-                        content: t('errors.you-have-already-joined'),
-                        status: 'error',
-                    })
-                    onSuccess && onSuccess()
+                if (codeType === 'federation') {
+                    const federationPreviewResult = await getFederationPreview(
+                        code,
+                        fedimint,
+                    )
+                    if (federationIds.includes(federationPreviewResult.id)) {
+                        toast.show({
+                            content: t('errors.you-have-already-joined'),
+                            status: 'error',
+                        })
+                        onSuccess && onSuccess()
+                    } else {
+                        setFederationPreview(federationPreviewResult)
+                    }
                 } else {
-                    setFederationPreview(preview)
+                    const communityPreviewResult = await getCommunityPreview(
+                        code,
+                        fedimint,
+                    )
+                    if (communityIds.includes(communityPreviewResult.id)) {
+                        dispatch(
+                            setLastSelectedCommunityId(
+                                communityPreviewResult.id,
+                            ),
+                        )
+                        toast.show({
+                            content: t('errors.you-have-already-joined'),
+                            status: 'error',
+                        })
+                        onSuccess && onSuccess()
+                    } else {
+                        setCommunityPreview(communityPreviewResult)
+                    }
                 }
             } catch (err) {
                 log.error('handleCode', err)
@@ -301,21 +358,32 @@ export function useFederationPreview(
             }
             setIsFetchingPreview(false)
         },
-        [fedimint, federationIds, dispatch, toast, t],
+        [fedimint, federationIds, communityIds, dispatch, toast, t],
     )
 
     const handleJoin = useCallback(
         async (onSuccess?: () => void, recoverFromScratch = false) => {
             setIsJoining(true)
             try {
-                if (!federationPreview) throw new Error()
-                await dispatch(
-                    joinFederation({
-                        fedimint,
-                        code: federationPreview.inviteCode,
-                        recoverFromScratch,
-                    }),
-                ).unwrap()
+                if (previewCodeType === 'federation') {
+                    if (!federationPreview) throw new Error()
+                    await dispatch(
+                        joinFederation({
+                            fedimint,
+                            code: federationPreview.inviteCode,
+                            recoverFromScratch,
+                        }),
+                    ).unwrap()
+                } else {
+                    if (!communityPreview) throw new Error()
+                    await dispatch(
+                        joinCommunity({
+                            fedimint,
+                            code: communityPreview.inviteCode,
+                        }),
+                    ).unwrap()
+                }
+
                 onSuccess && onSuccess()
             } catch (err) {
                 // TODO: Expect an error code from bridge that maps to
@@ -341,19 +409,32 @@ export function useFederationPreview(
                         'errors.failed-to-join-federation',
                     )
                 }
+            } finally {
                 setIsJoining(false)
             }
         },
-        [dispatch, federationPreview, fedimint, t, toast],
+        [
+            communityPreview,
+            dispatch,
+            federationPreview,
+            fedimint,
+            previewCodeType,
+            t,
+            toast,
+        ],
     )
 
     return {
         isJoining,
+        setIsJoining,
         isFetchingPreview,
         federationPreview,
         setFederationPreview,
+        communityPreview,
+        setCommunityPreview,
         handleCode,
         handleJoin,
+        previewCodeType,
     }
 }
 

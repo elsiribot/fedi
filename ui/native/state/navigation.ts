@@ -64,6 +64,15 @@ export function resetToChatSettings(roomId: string) {
     }
 }
 
+export function resetToJoinFederation() {
+    return {
+        ...CommonActions.reset({
+            index: 0,
+            routes: [{ name: 'PublicFederations' }],
+        }),
+    }
+}
+
 export function resetToLockedDevice() {
     return {
         ...CommonActions.reset({

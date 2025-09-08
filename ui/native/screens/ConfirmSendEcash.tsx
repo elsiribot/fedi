@@ -42,9 +42,9 @@ const ConfirmSendEcash: React.FC<Props> = ({ route, navigation }) => {
     const [showFeeBreakdown, setShowFeeBreakdown] = useState<boolean>(false)
     const [isLoading, setIsLoading] = useState<boolean>(false)
     const paymentFederation = useAppSelector(selectPaymentFederation)
-    const balanceDisplay = useBalanceDisplay(t)
+    const balanceDisplay = useBalanceDisplay(t, paymentFederation?.id || '')
     const { feeBreakdownTitle, ecashFeesGuidanceText, makeEcashFeeContent } =
-        useFeeDisplayUtils(t)
+        useFeeDisplayUtils(t, paymentFederation?.id || '')
     const { formattedTotalFee, feeItemsBreakdown } = makeEcashFeeContent(
         amountUtils.satToMsat(amount),
     )

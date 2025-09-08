@@ -14,6 +14,7 @@ import ChatConversationHeader from '../components/feature/chat/ChatConversationH
 import ConfirmJoinPublicGroupHeader from '../components/feature/chat/ConfirmJoinPublicGroupHeader'
 import CreatePollHeader from '../components/feature/chat/CreatePollHeader'
 import DefaultChatHeader from '../components/feature/chat/DefaultChatHeader'
+import CommunityDetailsHeader from '../components/feature/federations/CommunityDetailsHeader'
 import FederationDetailsHeader from '../components/feature/federations/FederationDetailsHeader'
 import FederationInviteHeader from '../components/feature/federations/FederationInviteHeader'
 import JoinFederationHeader from '../components/feature/federations/JoinFederationHeader'
@@ -83,6 +84,7 @@ import ChatVideoViewer from './ChatVideoViewer'
 import ChatWallet from './ChatWallet'
 import ChooseBackupMethod from './ChooseBackupMethod'
 import ChooseRecoveryMethod from './ChooseRecoveryMethod'
+import CommunityDetails from './CommunityDetails'
 import CompleteRecoveryAssist from './CompleteRecoveryAssist'
 import CompleteSocialBackup from './CompleteSocialBackup'
 import CompleteSocialRecovery from './CompleteSocialRecovery'
@@ -130,10 +132,12 @@ import MultispendTransactions from './MultispendTransactions'
 import MultispendWithdraw from './MultispendWithdraw'
 import NewMessage from './NewMessage'
 import NostrSettings from './NostrSettings'
+import OmniScanner from './OmniScanner'
 import PersonalRecovery from './PersonalRecovery'
 import PersonalRecoverySuccess from './PersonalRecoverySuccess'
 import PinAccess from './PinAccess'
 import PopupFederationEnded from './PopupFederationEnded'
+import PublicCommunities from './PublicCommunities'
 import PublicFederations from './PublicFederations'
 import Receive from './Receive'
 import ReceiveLightning from './ReceiveLightning'
@@ -230,8 +234,6 @@ export const MainNavigator = () => {
             initialRouteName={'Initializing'}
             id={MAIN_NAVIGATOR_ID}>
             <>
-                {/* This group of screens may render regardless of the value of
-                 activeFederation */}
                 <Stack.Group
                     screenOptions={{
                         animation: 'fade',
@@ -276,6 +278,18 @@ export const MainNavigator = () => {
                             header: () => (
                                 <CenteredHeader
                                     title={t('phrases.join-a-federation')}
+                                />
+                            ),
+                        })}
+                    />
+                    <Stack.Screen
+                        name="PublicCommunities"
+                        component={PublicCommunities}
+                        options={() => ({
+                            header: () => (
+                                <CenteredHeader
+                                    backButton
+                                    title={t('phrases.join-a-community')}
                                 />
                             ),
                         })}
@@ -350,13 +364,6 @@ export const MainNavigator = () => {
                         })}
                     />
                 </Stack.Group>
-                {/*
-                    This group of screens relies on a non-null activeFederation
-                    in the federation reducer because they contain API calls to
-                    the FFI NativeModule. Since it is possible to store multiple
-                    federation connections in-app, each call requires a
-                    Federation to be specified
-                */}
                 {isAppUnlocked ? (
                     <Stack.Group>
                         <Stack.Group
@@ -368,6 +375,18 @@ export const MainNavigator = () => {
                                 name="TabsNavigator"
                                 component={TabsNavigator}
                                 options={{ headerShown: false }}
+                            />
+                            <Stack.Screen
+                                name="OmniScanner"
+                                component={OmniScanner}
+                                options={{
+                                    header: () => (
+                                        <CenteredHeader
+                                            backButton
+                                            title={t('words.scan')}
+                                        />
+                                    ),
+                                }}
                             />
                             {/* FediMods */}
                             <Stack.Screen
@@ -1116,6 +1135,13 @@ export const MainNavigator = () => {
                                 component={FederationDetails}
                                 options={() => ({
                                     header: () => <FederationDetailsHeader />,
+                                })}
+                            />
+                            <Stack.Screen
+                                name="CommunityDetails"
+                                component={CommunityDetails}
+                                options={() => ({
+                                    header: () => <CommunityDetailsHeader />,
                                 })}
                             />
                             <Stack.Screen

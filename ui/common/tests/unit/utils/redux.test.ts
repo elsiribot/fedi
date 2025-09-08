@@ -1,8 +1,6 @@
 import { MSats } from '../../../types'
 import {
-    Community,
     Federation,
-    FederationListItem,
     LoadedFederation,
     SupportedCurrency,
 } from '../../../types/fedimint'
@@ -22,10 +20,14 @@ const baseFed: LoadedFederation = {
         remittanceThresholdMsat: 100_000,
         modules: {},
     },
-    hasWallet: true,
     hadReusedEcash: false,
     status: 'online',
     init_state: 'ready',
+}
+const testFederation0: Federation = {
+    ...baseFed,
+    id: 'id0',
+    name: 'Federation 0',
 }
 const testFederation1: Federation = {
     ...baseFed,
@@ -42,17 +44,7 @@ const testFederation3: Federation = {
     id: 'id3',
     name: 'Federation 3',
 }
-const testCommunity: Community = {
-    id: 'id3',
-    name: 'Community 1',
-    inviteCode: 'testcommunityinvitecode',
-    init_state: 'ready',
-    hasWallet: false,
-    status: 'online',
-    meta: {},
-    network: undefined,
-}
-const testFederations: FederationListItem[] = [
+const testFederations: Federation[] = [
     { ...testFederation1 },
     { ...testFederation2 },
 ]
@@ -60,7 +52,7 @@ const testFederations: FederationListItem[] = [
 describe('Redux Utils', () => {
     describe('upsertListItem', () => {
         it('should add a new item to the list if it does not exist', () => {
-            const result = upsertListItem<FederationListItem>(
+            const result = upsertListItem<Federation>(
                 [...testFederations],
                 testFederation3,
             )
@@ -75,7 +67,7 @@ describe('Redux Utils', () => {
                 ...testFederation1,
                 name: 'Updated Federation 1',
             }
-            const result = upsertListItem<FederationListItem>(
+            const result = upsertListItem<Federation>(
                 [...testFederations],
                 updatedFederation1,
             )
@@ -86,7 +78,7 @@ describe('Redux Utils', () => {
 
         it('should return the same list reference if the item is identical', () => {
             const list = [testFederation1]
-            const result = upsertListItem<FederationListItem>(list, {
+            const result = upsertListItem<Federation>(list, {
                 ...testFederation1,
                 name: 'Federation 1',
             })
@@ -102,7 +94,7 @@ describe('Redux Utils', () => {
             meta: { 'fedi:default_currency': SupportedCurrency.USD },
         }
         it('should replace meta when not provided in nestedFields', () => {
-            const result = upsertListItem<FederationListItem>(
+            const result = upsertListItem<Federation>(
                 [testFederationWithMeta],
                 testFederationWithUpdatedMeta,
             )
@@ -110,7 +102,7 @@ describe('Redux Utils', () => {
             expect(result[0].meta).toEqual(testFederationWithUpdatedMeta.meta)
         })
         it('should merge meta when provided in nestedFields', () => {
-            const result = upsertListItem<FederationListItem>(
+            const result = upsertListItem<Federation>(
                 [testFederationWithMeta],
                 testFederationWithUpdatedMeta,
                 ['meta'],
@@ -122,20 +114,20 @@ describe('Redux Utils', () => {
         })
 
         it('should sort the list when a sort function is provided', () => {
-            const sortFn = (entities: FederationListItem[]) =>
+            const sortFn = (entities: Federation[]) =>
                 entities.sort((a, b) =>
                     (a as LoadedFederation).name.localeCompare(
                         (b as LoadedFederation).name,
                     ),
                 )
-            const result = upsertListItem<FederationListItem>(
+            const result = upsertListItem<Federation>(
                 testFederations,
-                { ...testCommunity },
+                { ...testFederation0 },
                 undefined,
                 sortFn,
             )
             expect(result).toEqual([
-                { ...testCommunity },
+                { ...testFederation0 },
                 testFederations[0],
                 testFederations[1],
             ])

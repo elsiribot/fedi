@@ -2,7 +2,7 @@ import { Text, Theme, useTheme } from '@rneui/themed'
 import { t } from 'i18next'
 import { ActivityIndicator, Pressable, StyleSheet, View } from 'react-native'
 
-import { selectActiveFederation } from '@fedi/common/redux'
+import { selectLastSelectedCommunity } from '@fedi/common/redux'
 
 import { DEFAULT_GROUP_NAME } from '../../../constants'
 import { useAppSelector } from '../../../state/hooks'
@@ -27,7 +27,7 @@ const CommunityChatTile = ({
     onLongPress = () => null,
 }: CommunityChatTileProps) => {
     const { theme } = useTheme()
-    const activeFederation = useAppSelector(selectActiveFederation)
+    const selectedCommunity = useAppSelector(selectLastSelectedCommunity)
     const style = styles(theme)
 
     if (!room)
@@ -56,9 +56,9 @@ const CommunityChatTile = ({
                 onLongPress={() => onLongPress(room)}
                 delayLongPress={300}
                 onPress={() => onSelect(room)}>
-                {activeFederation ? (
+                {selectedCommunity ? (
                     <FederationLogo
-                        federation={activeFederation}
+                        federation={selectedCommunity}
                         size={theme.sizes.mediumAvatar}
                         hex
                     />

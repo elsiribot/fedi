@@ -8,8 +8,8 @@ import { useIsInviteSupported } from '@fedi/common/hooks/federation'
 import { useUpdatingRef } from '@fedi/common/hooks/util'
 import {
     generateEcash,
-    selectActiveFederation,
     selectEcashRequest,
+    selectPaymentFederation,
 } from '@fedi/common/redux'
 import amountUtils from '@fedi/common/utils/AmountUtils'
 import { formatErrorMessage } from '@fedi/common/utils/format'
@@ -21,6 +21,7 @@ import AmountInput from '../../ui/AmountInput'
 import AmountInputDisplay from '../../ui/AmountInputDisplay'
 import CustomOverlay from '../../ui/CustomOverlay'
 import Flex from '../../ui/Flex'
+import FederationWalletSelector from '../send/FederationWalletSelector'
 
 const log = makeLog('MakeInvoiceOverlay')
 
@@ -36,8 +37,8 @@ export const GenerateEcashOverlay: React.FC<Props> = ({
     const { t } = useTranslation()
     const { theme } = useTheme()
     const ecashRequest = useAppSelector(selectEcashRequest)
-    const activeFederation = useAppSelector(selectActiveFederation)
-    const includeInvite = useIsInviteSupported()
+    const paymentFederation = useAppSelector(selectPaymentFederation)
+    const includeInvite = useIsInviteSupported(paymentFederation?.id || '')
     const onRejectRef = useUpdatingRef(onReject)
     const onAcceptRef = useUpdatingRef(onAccept)
     const [submitAttempts, setSubmitAttempts] = useState(0)
@@ -49,7 +50,7 @@ export const GenerateEcashOverlay: React.FC<Props> = ({
     // Ecash notes are generated from your current balance
     // Instead of an almost-unbound balance from useRequestForm, set the upper bound to the active user's balance
     const { maximumAmount } = useMinMaxSendAmount({
-        selectedPaymentFederation: true,
+        federationId: paymentFederation?.id,
     })
     const dispatch = useAppDispatch()
 
@@ -72,13 +73,13 @@ export const GenerateEcashOverlay: React.FC<Props> = ({
 
         try {
             setIsLoading(true)
-            if (!activeFederation) throw new Error()
+            if (!paymentFederation) throw new Error()
             const msats = amountUtils.satToMsat(inputAmount)
 
             const res = await dispatch(
                 generateEcash({
                     fedimint,
-                    federationId: activeFederation.id,
+                    federationId: paymentFederation.id,
                     amount: msats,
                     includeInvite,
                     frontendMetadata: {
@@ -120,6 +121,7 @@ export const GenerateEcashOverlay: React.FC<Props> = ({
                         style={{
                             paddingTop: theme.spacing.xl,
                         }}>
+                        <FederationWalletSelector />
                         {exactAmount ? (
                             <AmountInputDisplay amount={inputAmount} />
                         ) : (

@@ -52,7 +52,7 @@ const deepLinksConfig: NavigationLinkingConfig['config'] = {
                     screens: {
                         Home: 'home',
                         Chat: 'chat',
-                        OmniScanner: 'scan',
+                        Federations: 'federations',
                     },
                 },
                 Send: 'send',
@@ -164,8 +164,17 @@ export function createNavigationAction(
                 type: 'navigate',
                 screen: 'MainNavigator',
                 nested: {
+                    screen: 'OmniScanner',
+                },
+            }
+
+        case 'federations':
+            return {
+                type: 'navigate',
+                screen: 'MainNavigator',
+                nested: {
                     screen: 'TabsNavigator',
-                    params: { screen: 'OmniScanner' },
+                    params: { screen: 'Federations' },
                 },
             }
 

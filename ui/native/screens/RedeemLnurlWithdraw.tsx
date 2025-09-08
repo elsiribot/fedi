@@ -40,6 +40,7 @@ const RedeemLnurlWithdraw: React.FC<Props> = ({ navigation, route }: Props) => {
         maximumAmount,
     } = useRequestForm({
         lnurlWithdrawal,
+        federationId: paymentFederation?.id,
     })
     const toast = useToast()
     const [isLoading, setIsLoading] = useState<boolean>(false)

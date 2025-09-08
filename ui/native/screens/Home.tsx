@@ -8,24 +8,20 @@ import { ScrollView, StyleSheet, View } from 'react-native'
 import { ErrorBoundary } from '@fedi/common/components/ErrorBoundary'
 import { useNuxStep } from '@fedi/common/hooks/nux'
 import {
-    selectFederationPinnedMessage,
-    selectFederations,
-    selectIsActiveFederationRecovering,
+    selectLastSelectedCommunity,
     selectOnboardingMethod,
 } from '@fedi/common/redux'
 import { selectCanShowSurvey } from '@fedi/common/redux/support'
+import { getFederationPinnedMessage } from '@fedi/common/utils/FederationUtils'
 
 import FirstTimeCommunityEntryOverlay, {
     FirstTimeCommunityEntryItem,
 } from '../components/feature/federations/FirstTimeCommunityEntryOverlay'
 import CommunityChats from '../components/feature/home/CommunityChats'
 import DisplayNameOverlay from '../components/feature/home/DisplayNameOverlay'
-import HomeWallets from '../components/feature/home/HomeWallets'
-import HomeWalletsPlaceholder from '../components/feature/home/HomeWalletsPlaceholder'
 import ShortcutsList from '../components/feature/home/ShortcutsList'
 import SurveyOverlay from '../components/feature/home/SurveyOverlay'
 import WelcomeMessage from '../components/feature/home/WelcomeMessage'
-import RecoveryInProgress from '../components/feature/recovery/RecoveryInProgress'
 import Flex from '../components/ui/Flex'
 import { useAppSelector } from '../state/hooks'
 import type {
@@ -36,20 +32,17 @@ import type {
 export type Props = BottomTabScreenProps<
     TabsNavigatorParamList & RootStackParamList,
     'Home'
-> & {
-    offline: boolean
-}
+>
 
-const Home: React.FC<Props> = ({ offline }) => {
+const Home: React.FC<Props> = () => {
     const { t } = useTranslation()
     const { theme } = useTheme()
     const isFocused = useIsFocused()
 
-    const federations = useAppSelector(selectFederations)
-    const recoveryInProgress = useAppSelector(
-        selectIsActiveFederationRecovering,
+    const selectedCommunity = useAppSelector(selectLastSelectedCommunity)
+    const pinnedMessage = getFederationPinnedMessage(
+        selectedCommunity?.meta || {},
     )
-    const pinnedMessage = useAppSelector(selectFederationPinnedMessage)
     const onboardingMethod = useAppSelector(selectOnboardingMethod)
     const canShowSurvey = useAppSelector(selectCanShowSurvey)
 
@@ -64,7 +57,6 @@ const Home: React.FC<Props> = ({ offline }) => {
         },
     ]
 
-    // NUX steps
     const [hasSeenDisplayName, completeSeenDisplayName] =
         useNuxStep('displayNameModal')
     const [hasSeenCommunity, completeSeenCommunity] =
@@ -110,10 +102,8 @@ const Home: React.FC<Props> = ({ offline }) => {
 
     const style = styles(theme)
 
-    // Show placeholder wallet if no federations
-    if (federations.length === 0) {
-        return <HomeWalletsPlaceholder />
-    }
+    // TODO: handle if we can't join fedi global community?
+    if (!selectedCommunity) return null
 
     return (
         <View>
@@ -128,26 +118,12 @@ const Home: React.FC<Props> = ({ offline }) => {
                     )}
 
                     <View style={style.section}>
-                        {recoveryInProgress ? (
-                            <View style={style.recovery}>
-                                <RecoveryInProgress
-                                    label={t(
-                                        'feature.recovery.recovery-in-progress-balance',
-                                    )}
-                                />
-                            </View>
-                        ) : (
-                            <HomeWallets offline={offline} />
-                        )}
-                    </View>
-
-                    <View style={style.section}>
                         <CommunityChats />
                     </View>
 
                     <View style={style.section}>
                         <ErrorBoundary fallback={null}>
-                            <ShortcutsList />
+                            <ShortcutsList communityId={selectedCommunity.id} />
                         </ErrorBoundary>
                     </View>
                 </Flex>
@@ -179,11 +155,6 @@ const styles = (theme: Theme) =>
             paddingHorizontal: theme.spacing.lg,
             paddingBottom: theme.spacing.xl,
             width: '100%',
-        },
-        recovery: {
-            minHeight: theme.sizes.walletCardHeight,
-            borderRadius: 20,
-            borderColor: theme.colors.extraLightGrey,
         },
         section: {
             // borderWidth: 1,

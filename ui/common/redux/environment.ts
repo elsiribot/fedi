@@ -5,6 +5,7 @@ import {
     CommonState,
     fetchSocialRecovery,
     initializeDeviceRegistration,
+    refreshCommunities,
     refreshFederations,
     setShouldMigrateSeed,
     startMatrixClient,
@@ -197,10 +198,13 @@ export const refreshOnboardingStatus = createAsyncThunk<
         await dispatch(startMatrixClient({ fedimint }))
         dispatch(getBridgeInfo(fedimint))
 
-        // wait until after the matrix client is started to refresh federations because
-        // the latest metadata may include new default chats that require
+        // wait until after the matrix client is started to refresh federations & communities
+        // because the latest metadata may include new default chats that require
         // matrix to fetch the room previews
-        await dispatch(refreshFederations(fedimint)).unwrap()
+        await Promise.all([
+            dispatch(refreshFederations(fedimint)).unwrap(),
+            dispatch(refreshCommunities(fedimint)).unwrap(),
+        ])
 
         // extract and store the onboarding method if user is onboarded
         dispatch(setOnboardingMethod(status.onboarding_method))

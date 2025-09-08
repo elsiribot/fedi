@@ -16,6 +16,7 @@ import {
     OmniInput,
     OmniInputAction,
 } from '../components/feature/omni/OmniInput'
+import CommunityPreview from '../components/feature/onboarding/CommunityPreview'
 import FederationPreview from '../components/feature/onboarding/FederationPreview'
 import { CameraPermissionGate } from '../components/feature/permissions/CameraPermissionGate'
 import { useAppSelector } from '../state/hooks'
@@ -33,9 +34,12 @@ const JoinFederation: React.FC<Props> = ({ navigation, route }: Props) => {
     const { publicFederations } = useLatestPublicFederations()
     const {
         isJoining,
+        setIsJoining,
         isFetchingPreview,
         federationPreview,
         setFederationPreview,
+        communityPreview,
+        setCommunityPreview,
         handleCode,
         handleJoin,
     } = useFederationPreview(t, fedimint, invite || '')
@@ -48,17 +52,24 @@ const JoinFederation: React.FC<Props> = ({ navigation, route }: Props) => {
     // }, [setFederationPreview])
 
     const goToNextScreen = useCallback(() => {
-        if (!federationPreview) return
+        if (!federationPreview && !communityPreview) return
         navigation.replace(hasMatrixAuth ? 'TabsNavigator' : 'EnterDisplayName')
-    }, [federationPreview, hasMatrixAuth, navigation])
+    }, [federationPreview, communityPreview, hasMatrixAuth, navigation])
 
     // If they came here with route state, paste the code for them
     useEffect(() => {
         if (!invite || !isFocused) return
         // skip handling the code if we already have a preview
-        if (federationPreview) return
+        if (federationPreview || communityPreview) return
         handleCode(invite, goToNextScreen)
-    }, [federationPreview, invite, handleCode, isFocused, goToNextScreen])
+    }, [
+        federationPreview,
+        communityPreview,
+        invite,
+        handleCode,
+        isFocused,
+        goToNextScreen,
+    ])
 
     const renderQrCodeScanner = () => {
         if (isJoining || isFetchingPreview) {
@@ -96,6 +107,7 @@ const JoinFederation: React.FC<Props> = ({ navigation, route }: Props) => {
     if (federationPreview) {
         return (
             <FederationPreview
+                isJoining={isJoining}
                 onJoin={recoverFromScratch => {
                     if (recoverFromScratch)
                         log.info(
@@ -103,8 +115,39 @@ const JoinFederation: React.FC<Props> = ({ navigation, route }: Props) => {
                         )
                     handleJoin(goToNextScreen, recoverFromScratch)
                 }}
-                onBack={() => setFederationPreview(undefined)}
+                onBack={() => {
+                    setIsJoining(false)
+                    setFederationPreview(undefined)
+                    // navigation.getState()?.routes?.length || 0) > 1
+                    //     ? navigation.goBack()
+                    //     : navigation.reset({
+                    //           index: 0,
+                    //           routes: [{ name: 'TabsNavigator' }],
+                    //       }
+                }}
                 federation={federationPreview}
+            />
+        )
+    }
+
+    if (communityPreview) {
+        return (
+            <CommunityPreview
+                isJoining={isJoining}
+                onJoin={() => {
+                    handleJoin(goToNextScreen)
+                }}
+                onBack={() => {
+                    setIsJoining(false)
+                    setCommunityPreview(undefined)
+                    // navigation.getState()?.routes?.length || 0) > 1
+                    //     ? navigation.goBack()
+                    //     : navigation.reset({
+                    //           index: 0,
+                    //           routes: [{ name: 'TabsNavigator' }],
+                    //       }
+                }}
+                community={communityPreview}
             />
         )
     }

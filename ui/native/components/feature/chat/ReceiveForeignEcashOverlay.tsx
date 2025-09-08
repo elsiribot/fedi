@@ -52,8 +52,13 @@ const ReceiveForeignEcashOverlay: React.FC<Props> = ({
         t,
         onError: _ => toast.error(t, 'errors.chat-payment-failed'),
     })
-    const { isFetchingPreview, federationPreview, handleCode, handleJoin } =
-        useFederationPreview(t, fedimint, federationInviteCode || '')
+    const {
+        isJoining,
+        isFetchingPreview,
+        federationPreview,
+        handleCode,
+        handleJoin,
+    } = useFederationPreview(t, fedimint, federationInviteCode || '')
 
     useEffect(() => {
         if (!paymentEvent.content.ecash) return
@@ -92,6 +97,7 @@ const ReceiveForeignEcashOverlay: React.FC<Props> = ({
                     onJoin={() => handleJoin(onDismiss)}
                     onBack={() => setShowFederationPreview(false)}
                     federation={federationPreview}
+                    isJoining={isJoining}
                 />
             )
         }

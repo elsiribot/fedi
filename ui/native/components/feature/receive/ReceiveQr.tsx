@@ -6,10 +6,7 @@ import { useTranslation } from 'react-i18next'
 import { Dimensions, Share, StyleSheet, View } from 'react-native'
 
 import { useToast } from '@fedi/common/hooks/toast'
-import {
-    selectActiveFederation,
-    selectActiveFederationId,
-} from '@fedi/common/redux'
+import { selectLoadedFederation } from '@fedi/common/redux'
 import { updateTransactionNotes } from '@fedi/common/redux/transactions'
 import stringUtils from '@fedi/common/utils/StringUtils'
 import { makeLog } from '@fedi/common/utils/log'
@@ -17,7 +14,12 @@ import { makeLog } from '@fedi/common/utils/log'
 import { fedimint } from '../../../bridge'
 import { useAppDispatch, useAppSelector } from '../../../state/hooks'
 import { reset } from '../../../state/navigation'
-import { BitcoinOrLightning, BtcLnUri, TransactionEvent } from '../../../types'
+import {
+    BitcoinOrLightning,
+    BtcLnUri,
+    Federation,
+    TransactionEvent,
+} from '../../../types'
 import Flex from '../../ui/Flex'
 import NotesInput from '../../ui/NotesInput'
 import QRCode from '../../ui/QRCode'
@@ -30,6 +32,7 @@ export type ReceiveQrProps = {
     uri: BtcLnUri
     type?: BitcoinOrLightning
     transactionId?: string
+    federationId?: Federation['id']
 }
 
 const QR_CODE_SIZE = Dimensions.get('window').width * 0.7
@@ -38,6 +41,7 @@ const ReceiveQr: React.FC<ReceiveQrProps> = ({
     uri,
     type,
     transactionId,
+    federationId = '',
 }: ReceiveQrProps) => {
     const { theme } = useTheme()
     const { t } = useTranslation()
@@ -45,24 +49,25 @@ const ReceiveQr: React.FC<ReceiveQrProps> = ({
     const toast = useToast()
     const [notes, setNotes] = useState('')
     const dispatch = useAppDispatch()
-    const activeFederationId = useAppSelector(selectActiveFederationId)
-    const activeFederation = useAppSelector(selectActiveFederation)
+    const federation = useAppSelector(s =>
+        selectLoadedFederation(s, federationId),
+    )
 
     const onSaveNotes = useCallback(async () => {
-        if (!transactionId || !activeFederationId) return
+        if (!transactionId || !federationId) return
         try {
             await dispatch(
                 updateTransactionNotes({
                     fedimint,
                     notes,
-                    federationId: activeFederationId,
+                    federationId: federationId,
                     transactionId,
                 }),
             ).unwrap()
         } catch (err) {
             toast.error(t, err)
         }
-    }, [activeFederationId, dispatch, notes, t, toast, transactionId])
+    }, [federationId, dispatch, notes, t, toast, transactionId])
 
     const copyToClipboard = () => {
         if (!uri.body) return
@@ -145,26 +150,25 @@ const ReceiveQr: React.FC<ReceiveQrProps> = ({
                         onSave={onSaveNotes}
                     />
                 )}
-                {type === BitcoinOrLightning.bitcoin && <OnchainDepositInfo />}
+                {type === BitcoinOrLightning.bitcoin && federationId && (
+                    <OnchainDepositInfo federationId={federationId} />
+                )}
             </Flex>
             <View>
-                {type === BitcoinOrLightning.lnurl && activeFederation && (
+                {type === BitcoinOrLightning.lnurl && federation && (
                     <View style={style.detailItem}>
                         <Text caption bold color={theme.colors.night}>{`${t(
                             'feature.receive.receive-to',
                         )}`}</Text>
                         <Flex row align="center" gap="xs">
-                            <FederationLogo
-                                federation={activeFederation}
-                                size={24}
-                            />
+                            <FederationLogo federation={federation} size={24} />
 
                             <Text
                                 caption
                                 medium
                                 numberOfLines={1}
                                 color={theme.colors.night}>
-                                {activeFederation?.name || ''}
+                                {federation?.name || ''}
                             </Text>
                         </Flex>
                     </View>

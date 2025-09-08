@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next'
 import { Linking, Pressable, StyleSheet } from 'react-native'
 
 import { supportsSafeOnchainDeposit } from '@fedi/common/redux'
+import { Federation } from '@fedi/common/types'
 
 import { fedimint } from '../../../bridge'
 import { useAppDispatch } from '../../../state/hooks'
@@ -45,7 +46,11 @@ const InfoRow = ({ icon, title, subtitle, right }: RowProps) => {
     )
 }
 
-const OnchainDepositInfo: React.FC = () => {
+type Props = {
+    federationId: Federation['id']
+}
+
+const OnchainDepositInfo: React.FC<Props> = ({ federationId }) => {
     const [supportsSafeDeposit, setSupportsSafeOnchainDeposit] = useState(false)
     const dispatch = useAppDispatch()
     const { t } = useTranslation()
@@ -86,10 +91,10 @@ const OnchainDepositInfo: React.FC = () => {
     }
 
     useEffect(() => {
-        dispatch(supportsSafeOnchainDeposit({ fedimint }))
+        dispatch(supportsSafeOnchainDeposit({ fedimint, federationId }))
             .unwrap()
             .then(setSupportsSafeOnchainDeposit)
-    }, [dispatch])
+    }, [dispatch, federationId])
 
     return (
         <HoloGradient

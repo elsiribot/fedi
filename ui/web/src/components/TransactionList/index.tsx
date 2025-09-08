@@ -3,16 +3,15 @@ import { useTranslation } from 'react-i18next'
 
 import { useToast } from '@fedi/common/hooks/toast'
 import { useTxnDisplayUtils } from '@fedi/common/hooks/transactions'
-import { selectActiveFederationId } from '@fedi/common/redux'
 import { updateTransactionNotes } from '@fedi/common/redux/transactions'
-import { TransactionListEntry } from '@fedi/common/types'
+import { Federation, TransactionListEntry } from '@fedi/common/types'
 import {
     getTxnDirection,
     makeTxnDetailTitleText,
     makeTxnStatusText,
 } from '@fedi/common/utils/wallet'
 
-import { useAppDispatch, useAppSelector } from '../../hooks'
+import { useAppDispatch } from '../../hooks'
 import { fedimint } from '../../lib/bridge'
 import { HistoryList } from '../HistoryList'
 import { TransactionIcon } from './TransactionIcon'
@@ -20,18 +19,22 @@ import { TransactionIcon } from './TransactionIcon'
 type TransactionsListProps = {
     transactions: TransactionListEntry[]
     loading?: boolean
+    federationId: Federation['id']
 }
 
 const TransactionsList: React.FC<TransactionsListProps> = ({
     transactions,
     loading,
+    federationId,
 }) => {
     const [isUpdating, setIsUpdating] = useState(false)
     const dispatch = useAppDispatch()
     const { t } = useTranslation()
     const toast = useToast()
-    const activeFederationId = useAppSelector(selectActiveFederationId)
-    const { makeTxnAmountText, makeTxnDetailItems } = useTxnDisplayUtils(t)
+    const { makeTxnAmountText, makeTxnDetailItems } = useTxnDisplayUtils(
+        t,
+        federationId,
+    )
 
     return (
         <HistoryList
@@ -62,14 +65,14 @@ const TransactionsList: React.FC<TransactionsListProps> = ({
                     try {
                         setIsUpdating(true)
 
-                        if (!activeFederationId)
+                        if (!federationId)
                             throw new Error('errors.unknown-error')
 
                         await dispatch(
                             updateTransactionNotes({
                                 fedimint,
                                 notes,
-                                federationId: activeFederationId,
+                                federationId,
                                 transactionId: txn.id,
                             }),
                         ).unwrap()

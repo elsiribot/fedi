@@ -22,6 +22,7 @@ interface HeaderBase {
     closeButton?: boolean
     onClose?: () => void
     inline?: boolean
+    transparent?: boolean
 }
 
 interface HeaderWithBackButton extends HeaderBase {
@@ -51,7 +52,7 @@ const Header: React.FC<HeaderProps> = memo(
         onBackButtonPress,
         closeButton,
         onClose,
-        inline,
+        transparent,
     }: HeaderProps) => {
         const { theme } = useTheme()
         const navigation = useNavigation<NavigationHook>()
@@ -104,12 +105,12 @@ const Header: React.FC<HeaderProps> = memo(
         } = theme.components.Header
         const mergedContainerStyle = {
             ...defaultContainerStyle,
-            borderBottomColor: inline
+            borderBottomColor: transparent
                 ? 'transparent'
                 : dark
                   ? theme.colors.primary
                   : defaultContainerStyle.borderBottomColor,
-            shadowColor: inline
+            shadowColor: transparent
                 ? 'transparent'
                 : defaultContainerStyle.shadowColor,
             paddingTop: theme.spacing.lg,
@@ -123,7 +124,11 @@ const Header: React.FC<HeaderProps> = memo(
         return (
             <HeaderRNE
                 backgroundColor={
-                    dark ? theme.colors.primary : theme.colors.secondary
+                    transparent
+                        ? 'transparent'
+                        : dark
+                          ? theme.colors.primary
+                          : theme.colors.secondary
                 }
                 barStyle={dark ? 'light-content' : 'dark-content'}
                 containerStyle={mergedContainerStyle}
@@ -142,7 +147,6 @@ const Header: React.FC<HeaderProps> = memo(
                     ...defaultRightContainerStyle,
                     ...rightContainerStyle,
                 }}
-                edges={inline ? ['left', 'right'] : undefined}
             />
         )
     },
