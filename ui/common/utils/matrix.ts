@@ -1446,3 +1446,26 @@ export const toSendMessageData = (
               mentions: opts?.mentions ?? null,
           }
         : x
+
+const labelKeys = ['displayName', 'username', 'name'] as const
+
+function getStringProp(
+    obj: unknown,
+    key: (typeof labelKeys)[number],
+): string | null {
+    if (obj == null || typeof obj !== 'object') return null
+    const val = (obj as Record<string, unknown>)[key]
+    return typeof val === 'string' && val.trim().length > 0 ? val : null
+}
+
+/**
+ * Returns the best-available, non-empty label for a Matrix user.
+ * Falls back in order: displayName → username → name → ''.
+ */
+export const getUserLabel = (u: MatrixUser): string => {
+    for (const key of labelKeys) {
+        const v = getStringProp(u, key)
+        if (v) return v
+    }
+    return ''
+}

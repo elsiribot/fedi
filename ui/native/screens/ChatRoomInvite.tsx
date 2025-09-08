@@ -5,6 +5,7 @@ import React, { useCallback, useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { FlatList, ListRenderItem, StyleSheet } from 'react-native'
 
+import { DEEPLINK_HOSTS, LINK_PATH } from '@fedi/common/constants/linking'
 import { useMatrixUserSearch } from '@fedi/common/hooks/matrix'
 import { useToast } from '@fedi/common/hooks/toast'
 import {
@@ -30,6 +31,9 @@ import type { NavigationHook, RootStackParamList } from '../types/navigation'
 
 export type Props = NativeStackScreenProps<RootStackParamList, 'ChatRoomInvite'>
 
+// Full-string match for an npub user ID: optional '@', 'npub1' + 58 [a-z0-9], and optional ':domain.tld' homeserver suffix (TLD ≥ 2).
+const USER_ID_RE = /^@?npub1[a-z0-9]{58}(:[a-zA-Z0-9.-]+\.[a-zA-Z]{2,})?$/
+
 const ChatRoomInvite: React.FC<Props> = ({ route }: Props) => {
     const { roomId } = route.params
     const navigation = useNavigation<NavigationHook>()
@@ -37,13 +41,14 @@ const ChatRoomInvite: React.FC<Props> = ({ route }: Props) => {
     const { t } = useTranslation()
     const { theme } = useTheme()
     const { error } = useToast()
-    const { query, setQuery, searchedUsers, isSearching, searchError } =
+    const { setQuery, searchedUsers, isSearching, searchError } =
         useMatrixUserSearch()
     const room = useAppSelector(s => selectMatrixRoom(s, roomId))
     const userMap = useAppSelector(s => selectMatrixRoomMemberMap(s, roomId))
     const [invitingUsers, setInvitingUsers] = useState<string[]>([])
     const roomName = useMemo(() => room?.name ?? '', [room])
     const matrixAuth = useAppSelector(selectMatrixAuth)
+    const [inputValue, setInputValue] = useState('')
 
     const inviteUser = useCallback(
         async (userId: string) => {
@@ -86,13 +91,15 @@ const ChatRoomInvite: React.FC<Props> = ({ route }: Props) => {
         ) : (
             <Flex grow center style={style.empty}>
                 <Text color={theme.colors.primaryLight}>
-                    {query === ''
+                    {inputValue === ''
                         ? t('feature.chat.enter-a-username')
-                        : t('feature.omni.search-no-results', { query })}
+                        : t('feature.omni.search-no-results', {
+                              query: inputValue,
+                          })}
                 </Text>
             </Flex>
         )
-    }, [query, isSearching, searchError, theme, t])
+    }, [isSearching, searchError, theme, t, inputValue])
 
     if (!matrixAuth || !room) return null
 
@@ -109,6 +116,49 @@ const ChatRoomInvite: React.FC<Props> = ({ route }: Props) => {
                 copyMessage={t('feature.chat.copied-group-invite-code')}
             />
         )
+    }
+
+    const normalizeNpub = (s: string): string => {
+        const trimmed = s.trim().toLowerCase()
+        const noAt = trimmed.replace(/^@/, '')
+        return noAt.split(':')[0] // strip :server suffix if present
+    }
+
+    const parseUserFromUniversalLink = (input: string): string | null => {
+        try {
+            const url = new URL(input.trim())
+            const hostOk = DEEPLINK_HOSTS.some(
+                h => url.hostname === h || url.hostname === `www.${h}`,
+            )
+            if (!hostOk || url.pathname !== LINK_PATH) return null
+
+            const id = url.searchParams.get('id')
+            if (!id) return null
+
+            const decoded = decodeURIComponent(id).trim()
+            return decoded.startsWith('@')
+                ? decoded
+                : `@${decoded.replace(/^@?/, '')}`
+        } catch {
+            return null
+        }
+    }
+
+    const handleQueryChange = (text: string) => {
+        setInputValue(text)
+        const parsed = extractUserIdFromInput(text)
+        setQuery(parsed ?? text)
+    }
+
+    const extractUserIdFromInput = (input: string): string | null => {
+        if (typeof input !== 'string' || input.trim().length === 0) return null
+        const trimmed = input.trim()
+
+        const fromLink = parseUserFromUniversalLink(trimmed)
+        if (fromLink) return fromLink
+
+        if (USER_ID_RE.test(trimmed)) return `@${normalizeNpub(trimmed)}`
+        return null
     }
 
     const getInviteText = (membership: RpcMatrixMembership | undefined) => {
@@ -171,8 +221,8 @@ const ChatRoomInvite: React.FC<Props> = ({ route }: Props) => {
                         {t('feature.chat.invite-to-group')}
                     </Text>
                     <Input
-                        onChangeText={setQuery}
-                        value={query}
+                        onChangeText={handleQueryChange}
+                        value={inputValue}
                         placeholder={`${t('feature.chat.enter-a-username')}`}
                         returnKeyType="done"
                         containerStyle={style.textInputOuter}
