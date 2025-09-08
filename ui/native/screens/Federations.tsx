@@ -4,7 +4,10 @@ import { useTheme, type Theme } from '@rneui/themed'
 import React from 'react'
 import { ScrollView, StyleSheet, View } from 'react-native'
 
-import { selectNonFeaturedFederations } from '@fedi/common/redux'
+import {
+    selectLoadedFederations,
+    selectNonFeaturedFederations,
+} from '@fedi/common/redux'
 
 import FeaturedFederation from '../components/feature/federations/FeaturedFederation'
 import FederationTile from '../components/feature/federations/FederationTile'
@@ -26,11 +29,13 @@ const Federations: React.FC<Props> = () => {
     const navigation = useNavigation()
 
     // the featured federation is displayed in the FederationsHeader instead to fit in the gradient background
+    const loadedFederations = useAppSelector(selectLoadedFederations)
     const federations = useAppSelector(selectNonFeaturedFederations)
 
     const style = styles(theme)
 
-    if (federations.length === 0) {
+    // make sure we have at least 1 federation, if not push to JoinFederation screen
+    if (loadedFederations.length === 0) {
         navigation.dispatch(resetToJoinFederation)
         return null
     }
