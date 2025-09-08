@@ -107,6 +107,11 @@ const getMatrixClient = () => {
     }
     return matrixClient
 }
+// used in tests to reset the in-memory matrixClient so a new one
+// can be created for the next test
+export const resetMatrixClient = () => {
+    matrixClient = null
+}
 
 /*** Initial State ***/
 
