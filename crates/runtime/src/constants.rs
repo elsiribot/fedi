@@ -5,7 +5,9 @@ use fedimint_derive_secret::ChildId;
 
 pub const REISSUE_ECASH_TIMEOUT: Duration = Duration::from_secs(60);
 /// 3 days
-pub const ECASH_AUTO_CANCEL_DURATION: Duration = Duration::from_secs(60 * 60 * 24 * 3);
+pub const ECASH_AUTO_CANCEL_DURATION_MAINNET: Duration = Duration::from_secs(60 * 60 * 24 * 3);
+/// 10 minutes
+pub const ECASH_AUTO_CANCEL_DURATION_MUTINYNET: Duration = Duration::from_secs(60 * 10);
 pub const SHUTDOWN_TIMEOUT: Duration = Duration::from_secs(10);
 pub const LNURL_CHILD_ID: u64 = 11;
 pub const XMPP_CHILD_ID: u64 = 10;

@@ -99,9 +99,10 @@ use rpc_types::{
 };
 use runtime::bridge_runtime::Runtime;
 use runtime::constants::{
-    ECASH_AUTO_CANCEL_DURATION, LIGHTNING_OPERATION_TYPE, MILLION, MINT_OPERATION_TYPE,
-    RECURRINGD_API_META, REISSUE_ECASH_TIMEOUT, STABILITY_POOL_OPERATION_TYPE,
-    STABILITY_POOL_V2_OPERATION_TYPE, WALLET_OPERATION_TYPE,
+    ECASH_AUTO_CANCEL_DURATION_MAINNET, ECASH_AUTO_CANCEL_DURATION_MUTINYNET,
+    LIGHTNING_OPERATION_TYPE, MILLION, MINT_OPERATION_TYPE, RECURRINGD_API_META,
+    REISSUE_ECASH_TIMEOUT, STABILITY_POOL_OPERATION_TYPE, STABILITY_POOL_V2_OPERATION_TYPE,
+    WALLET_OPERATION_TYPE,
 };
 use runtime::db::FederationPendingRejoinFromScratchKey;
 use runtime::storage::state::{DatabaseInfo, FederationInfo, FediFeeSchedule};
@@ -2088,7 +2089,11 @@ impl FederationV2 {
         // Immediately cancel, which will reissue the notes attempting to fill in lower
         // denominations. And then generate using AT LEAST strategy again, which
         // will now have a high chance to producing the exact amount.
-        let cancel_time = fedimint_core::time::now() + ECASH_AUTO_CANCEL_DURATION;
+        let ecash_auto_cancel_duration = match self.get_network() {
+            Some(Network::Bitcoin) | None => ECASH_AUTO_CANCEL_DURATION_MAINNET,
+            _ => ECASH_AUTO_CANCEL_DURATION_MUTINYNET,
+        };
+        let cancel_time = fedimint_core::time::now() + ecash_auto_cancel_duration;
         let (spend_guard, operation_id, notes) = loop {
             let spend_guard = self.spend_guard.lock().await;
             let virtual_balance = self.get_balance().await;
@@ -2102,7 +2107,7 @@ impl FederationV2 {
                 .spend_notes_with_selector(
                     &SelectNotesWithExactAmount,
                     amount,
-                    ECASH_AUTO_CANCEL_DURATION,
+                    ecash_auto_cancel_duration,
                     include_invite,
                     EcashSendMetadata {
                         internal: false,
@@ -2119,7 +2124,7 @@ impl FederationV2 {
                 .spend_notes_with_selector(
                     &SelectNotesWithAtleastAmount,
                     amount,
-                    ECASH_AUTO_CANCEL_DURATION,
+                    ecash_auto_cancel_duration,
                     include_invite,
                     EcashSendMetadata {
                         internal: true,
