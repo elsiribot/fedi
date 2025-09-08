@@ -35,6 +35,8 @@ export const CommunitiesOverlay: React.FC<Props> = ({ onOpenChange, open }) => {
     }
 
     const handleQrPress = (c: Community) => {
+        //close overlay first so it doesn't crash
+        handleDismiss()
         navigation.navigate('FederationInvite', {
             inviteLink: c.inviteCode,
         })
@@ -70,7 +72,7 @@ export const CommunitiesOverlay: React.FC<Props> = ({ onOpenChange, open }) => {
                             {communities.map((c, i) => {
                                 return (
                                     <CommunityTile
-                                        key={`di-${i}`}
+                                        key={`dis-${i}`}
                                         community={c}
                                         onSelect={() => handleTilePress(c)}
                                         onSelectQr={() => handleQrPress(c)}
