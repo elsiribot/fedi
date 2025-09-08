@@ -531,7 +531,7 @@ impl Default for FediFeeSchedule {
         modules.insert(
             fedimint_mint_client::KIND,
             ModuleFediFeeSchedule {
-                send_ppm: 0,
+                send_ppm: default_send_ppm,
                 receive_ppm: 0,
             },
         );
