@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 
 import { Sats, TransactionListEntry } from '../types'
 import amountUtils from '../utils/AmountUtils'
@@ -80,6 +80,120 @@ export const useMakeLightningRequest = ({
         makeLightningRequest,
         invoice,
         isInvoiceLoading,
+        reset,
+    }
+}
+
+type OnchainDepositTxn = Extract<
+    TransactionListEntry,
+    { kind: 'onchainDeposit' }
+>
+
+/**
+ * Handles the logic for creating an onchain address and subscribing to a mempool transaction for that address.
+ *
+ * Exposes the necessary state variables/options to handle error/loading states and add transaction notes.
+ */
+export const useMakeOnchainAddress = ({
+    federationId,
+    fedimint,
+    onMakeAddressError,
+    onSaveNotesError,
+    onMempoolTransaction,
+}: {
+    fedimint: FedimintBridge
+    federationId: string | undefined
+    onMakeAddressError?: (e: unknown) => void
+    onSaveNotesError?: (e: unknown) => void
+    onMempoolTransaction?: (txn: OnchainDepositTxn) => void
+}) => {
+    const [address, setAddress] = useState<string | null>(null)
+    const [isAddressLoading, setIsAddressLoading] = useState<boolean>(false)
+
+    const { transactions, fetchTransactions } = useTransactionHistory(
+        fedimint,
+        federationId || '',
+    )
+
+    const transaction = useMemo(
+        () =>
+            transactions.find(
+                tx =>
+                    tx.kind === 'onchainDeposit' &&
+                    tx.onchain_address === address,
+            ) as OnchainDepositTxn | undefined,
+        [transactions, address],
+    )
+
+    const reset = useCallback(() => {
+        setAddress(null)
+        setIsAddressLoading(false)
+    }, [])
+
+    const makeOnchainAddress = useCallback(async () => {
+        if (!federationId) return
+
+        setIsAddressLoading(true)
+        try {
+            const newAddress = await fedimint.generateAddress(federationId, {
+                initialNotes: null,
+                recipientMatrixId: null,
+                senderMatrixId: null,
+            })
+            setAddress(newAddress)
+
+            // Fetches transactionId of new address, in case the user updates notes
+            await fetchTransactions()
+        } catch (e) {
+            log.error('error generating address', e)
+            onMakeAddressError?.(e)
+        } finally {
+            setIsAddressLoading(false)
+        }
+    }, [federationId, fedimint, fetchTransactions, onMakeAddressError])
+
+    const onSaveNotes = useCallback(
+        async (notes: string) => {
+            if (!transaction || !federationId) return
+
+            try {
+                await fedimint.updateTransactionNotes(
+                    transaction.id,
+                    notes,
+                    federationId,
+                )
+            } catch (e) {
+                log.error(
+                    `Failed to update notes for transaction ${transaction.id}`,
+                    e,
+                )
+                onSaveNotesError?.(e)
+            }
+        },
+        [federationId, onSaveNotesError, transaction, fedimint],
+    )
+
+    useEffect(() => {
+        if (!address || !onMempoolTransaction) return
+
+        const unsubscribe = fedimint.addListener('transaction', event => {
+            if (
+                event.transaction.kind === 'onchainDeposit' &&
+                event.transaction.onchain_address === address
+            ) {
+                onMempoolTransaction?.(event.transaction as OnchainDepositTxn)
+            }
+        })
+
+        return unsubscribe
+    }, [fedimint, onMempoolTransaction, address])
+
+    return {
+        address,
+        isAddressLoading,
+        makeOnchainAddress,
+        transaction,
+        onSaveNotes,
         reset,
     }
 }
