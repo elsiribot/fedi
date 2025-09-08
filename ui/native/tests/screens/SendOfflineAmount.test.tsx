@@ -39,21 +39,6 @@ describe('SendOfflineAmount screen', () => {
     const user = userEvent.setup()
 
     beforeEach(() => {
-        // Mock the BTC/USD rate that gets fetched in the `fetchCurrencyPrices` thunk
-        global.fetch = jest.fn(() =>
-            Promise.resolve({
-                json: () =>
-                    Promise.resolve({
-                        prices: {
-                            'BTC/USD': {
-                                rate: 10000,
-                                timestamp: new Date().toString(),
-                            },
-                        },
-                    }),
-            }),
-        ) as unknown as jest.Mocked<typeof global.fetch>
-
         store = setupStore()
 
         store.dispatch(fetchCurrencyPrices()).unwrap()
@@ -102,7 +87,7 @@ describe('SendOfflineAmount screen', () => {
         await user.press(button4)
 
         const amountFiat = await screen.getByText('34')
-        const amountSats = await screen.getByText('340,000 SATS')
+        const amountSats = await screen.getByText('34,000 SATS')
         const currency = await screen.getByText('USD', { exact: false })
 
         await waitFor(() => expect(amountFiat).toBeOnTheScreen())
@@ -132,7 +117,7 @@ describe('SendOfflineAmount screen', () => {
         await user.press(button4)
         await user.press(button4)
 
-        const amountFiat = await screen.getByText('0.34 USD')
+        const amountFiat = await screen.getByText('3.44 USD')
         const amountSats = await screen.getByText('3,444')
         const currency = await screen.getByText('USD', { exact: false })
 
@@ -162,7 +147,7 @@ describe('SendOfflineAmount screen', () => {
             },
         )
 
-        const button3 = await screen.getByText('3')
+        const button3 = await screen.findByText('3')
 
         for (let i = 0; i < 4; i++) await user.press(button3)
 

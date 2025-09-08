@@ -4,6 +4,26 @@ import i18n from '@fedi/native/localization/i18n'
 
 import { themeDefaults } from '../../styles/theme'
 
+// Mock the fetch request in the `fetchCurrencyPrices` thunk only
+const realFetch = global.fetch
+global.fetch = jest.fn((url, options) => {
+    if (url.includes('price-feed.dev.fedibtc.com')) {
+        return Promise.resolve({
+            json: () =>
+                Promise.resolve({
+                    prices: {
+                        'BTC/USD': {
+                            rate: 100000, // 0.1M
+                            timestamp: new Date().toString(),
+                        },
+                    },
+                }),
+        })
+    }
+
+    return realFetch(url, options)
+}) as unknown as jest.Mocked<typeof global.fetch>
+
 jest.mock('buffer', () => {
     const actual = jest.requireActual('buffer')
     return {

@@ -1,7 +1,6 @@
 import '@testing-library/jest-dom'
 import { cleanup, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
-import fetchMock from 'jest-fetch-mock'
 
 import { setupStore } from '@fedi/common/redux'
 import { mockFederation1 } from '@fedi/common/tests/mock-data/federation'
@@ -22,8 +21,6 @@ jest.mock('@fedi/web/src/lib/bridge', () => ({
     },
 }))
 
-fetchMock.enableMocks()
-
 describe('SendOffline', () => {
     let state: AppState
     let store
@@ -35,16 +32,6 @@ describe('SendOffline', () => {
     beforeEach(() => {
         store = setupStore()
         state = store.getState()
-        fetchMock.mockResponse(
-            JSON.stringify({
-                prices: {
-                    'BTC/USD': {
-                        rate: 10000,
-                        timestamp: new Date().toString(),
-                    },
-                },
-            }),
-        )
 
         jest.clearAllTimers()
         jest.useFakeTimers()
@@ -81,7 +68,7 @@ describe('SendOffline', () => {
                         ...state.currency,
                         overrideCurrency: SupportedCurrency.USD,
                         currencyLocale: 'en-US',
-                        btcUsdRate: 10000,
+                        btcUsdRate: 100000,
                     },
                     environment: {
                         ...state.environment,
@@ -101,7 +88,7 @@ describe('SendOffline', () => {
         await user.type(fiatInput, '34')
 
         expect(fiatInput).toHaveValue('34')
-        expect(satsInput).toHaveValue('340,000')
+        expect(satsInput).toHaveValue('34,000')
     })
 
     it('should render the primary amount in fiat and the secondary amount in sats when amountInputType is fiat', async () => {
@@ -116,7 +103,7 @@ describe('SendOffline', () => {
                         ...state.currency,
                         overrideCurrency: SupportedCurrency.USD,
                         currencyLocale: 'en-US',
-                        btcUsdRate: 10000,
+                        btcUsdRate: 100000,
                     },
                     environment: {
                         ...state.environment,
@@ -135,7 +122,7 @@ describe('SendOffline', () => {
 
         await user.type(satsInput, '3444')
 
-        expect(fiatInput).toHaveValue('0.34')
+        expect(fiatInput).toHaveValue('3.44')
         expect(satsInput).toHaveValue('3,444')
     })
 
