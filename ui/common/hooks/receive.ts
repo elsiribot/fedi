@@ -1,8 +1,11 @@
+import { ResultAsync } from 'neverthrow'
 import { useCallback, useEffect, useMemo, useState } from 'react'
 
-import { Sats, TransactionListEntry } from '../types'
+import { ParsedLnurlWithdraw, Sats, TransactionListEntry } from '../types'
 import amountUtils from '../utils/AmountUtils'
+import { TaggedError } from '../utils/errors'
 import { FedimintBridge } from '../utils/fedimint'
+import { lnurlWithdraw } from '../utils/lnurl'
 import { makeLog } from '../utils/log'
 import { useTransactionHistory } from './transactions'
 
@@ -192,5 +195,111 @@ export const useMakeOnchainAddress = ({
         transaction,
         onSaveNotes,
         reset,
+    }
+}
+
+/**
+ * Handles withdrawing and subscribing to the completion of an LNURL Withdrawal.
+ *
+ * Exposes the necessary state variables and options for handling error and loading states.
+ */
+export function useLnurlWithdraw({
+    fedimint,
+    federationId,
+    lnurlw,
+    onWithdrawPaid,
+    onError,
+}: {
+    fedimint: FedimintBridge
+    federationId: string | undefined
+    lnurlw: ParsedLnurlWithdraw | undefined
+    onWithdrawPaid?: (txn: LnReceiveTxn) => void
+    onError?: (e: unknown) => void
+}) {
+    const [isWithdrawing, setIsWithdrawing] = useState(false)
+
+    const reset = useCallback(() => {
+        setIsWithdrawing(false)
+    }, [])
+
+    const waitForLnurlTransaction = useCallback(
+        (invoice: string) => {
+            return new Promise<LnReceiveTxn>((resolve, reject) => {
+                const unsubscribe = fedimint.addListener(
+                    'transaction',
+                    event => {
+                        if (
+                            event.transaction.kind === 'lnReceive' &&
+                            event.transaction.ln_invoice === invoice
+                        ) {
+                            unsubscribe()
+                            resolve(event.transaction as LnReceiveTxn)
+                        }
+                    },
+                )
+
+                setTimeout(() => {
+                    unsubscribe()
+                    reject(
+                        new Error(
+                            'LNURL withdrawal timed out after 5000ms, aborting',
+                        ),
+                    )
+                }, 5000)
+            })
+        },
+        [fedimint],
+    )
+
+    const handleWithdraw = useCallback(
+        async (amount: Sats, memo: string = '') => {
+            if (!federationId || !lnurlw) return
+
+            setIsWithdrawing(true)
+
+            lnurlWithdraw(
+                fedimint,
+                federationId,
+                lnurlw.data,
+                amountUtils.satToMsat(amount),
+            )
+                .andThen(invoice =>
+                    ResultAsync.fromPromise(
+                        waitForLnurlTransaction(invoice),
+                        e => new TaggedError('TimeoutError', e),
+                    ),
+                )
+                .andThrough(txn =>
+                    fedimint.rpcResult('updateTransactionNotes', {
+                        federationId,
+                        notes: memo,
+                        transactionId: txn.id,
+                    }),
+                )
+                .match(
+                    txn => {
+                        onWithdrawPaid?.(txn)
+                    },
+                    e => {
+                        log.error(`Failed to complete LNURL Withdrawal`, e)
+                        onError?.(e)
+                    },
+                )
+                .finally(() => setIsWithdrawing(false))
+        },
+        [
+            federationId,
+            fedimint,
+            lnurlw,
+            waitForLnurlTransaction,
+            onWithdrawPaid,
+            onError,
+        ],
+    )
+
+    return {
+        reset,
+        handleWithdraw,
+        isWithdrawing,
     }
 }
