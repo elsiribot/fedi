@@ -640,6 +640,9 @@ impl FederationV2 {
         // If the phone dies here, it's still ok because the federation wouldn't
         // exist in the app_state, and we'd reattempt to join it. And the name of the
         // DB file is random so there shouldn't be any collisions.
+        let fedi_fee_schedule = network
+            .and_then(|n| this.fedi_fee_helper.maybe_latest_schedule(n))
+            .unwrap_or_default();
         runtime
             .app_state
             .with_write_lock(|state| {
@@ -648,7 +651,7 @@ impl FederationV2 {
                     FederationInfo {
                         version: 2,
                         database: DatabaseInfo::DatabasePrefix(db_prefix),
-                        fedi_fee_schedule: FediFeeSchedule::default(),
+                        fedi_fee_schedule,
                         network,
                     },
                 );
