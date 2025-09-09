@@ -1,21 +1,19 @@
 import { useFocusEffect } from '@react-navigation/native'
 import type { NativeStackScreenProps } from '@react-navigation/native-stack'
-import React, { useCallback, useEffect, useMemo, useState } from 'react'
+import React, { useCallback, useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { ActivityIndicator, Keyboard, View } from 'react-native'
 
 import { useRequestForm } from '@fedi/common/hooks/amount'
 import { useSyncCurrencyRatesAndCache } from '@fedi/common/hooks/currency'
 import { useIsOnchainDepositSupported } from '@fedi/common/hooks/federation'
-import { useToast } from '@fedi/common/hooks/toast'
-import { useTransactionHistory } from '@fedi/common/hooks/transactions'
 import {
-    generateAddress,
-    generateInvoice,
-    selectIsInternetUnreachable,
-} from '@fedi/common/redux'
+    useMakeOnchainAddress,
+    useMakeLightningRequest,
+} from '@fedi/common/hooks/receive'
+import { useToast } from '@fedi/common/hooks/toast'
+import { selectIsInternetUnreachable } from '@fedi/common/redux'
 import amountUtils from '@fedi/common/utils/AmountUtils'
-import { makeLog } from '@fedi/common/utils/log'
 
 import { fedimint } from '../bridge'
 import InternetUnreachableBanner from '../components/feature/environment/InternetUnreachableBanner'
@@ -23,12 +21,16 @@ import ReceiveQr from '../components/feature/receive/ReceiveQr'
 import RequestTypeSwitcher from '../components/feature/receive/RequestTypeSwitcher'
 import { AmountScreen } from '../components/ui/AmountScreen'
 import { SafeAreaContainer, SafeScrollArea } from '../components/ui/SafeArea'
-import { useAppDispatch, useAppSelector } from '../state/hooks'
-import { BitcoinOrLightning, BtcLnUri, Sats } from '../types'
+import { useAppSelector } from '../state/hooks'
+import { reset } from '../state/navigation'
+import {
+    BitcoinOrLightning,
+    BtcLnUri,
+    Sats,
+    TransactionListEntry,
+} from '../types'
 import type { RootStackParamList } from '../types/navigation'
 import { useRecheckInternet } from '../utils/hooks/environment'
-
-const log = makeLog('ReceiveLightning')
 
 export type Props = NativeStackScreenProps<
     RootStackParamList,
@@ -38,7 +40,6 @@ export type Props = NativeStackScreenProps<
 const ReceiveLightning: React.FC<Props> = ({ navigation, route }: Props) => {
     const { federationId } = route.params
     const { t } = useTranslation()
-    const dispatch = useAppDispatch()
     const {
         inputAmount: amount,
         setInputAmount: setAmount,
@@ -47,25 +48,46 @@ const ReceiveLightning: React.FC<Props> = ({ navigation, route }: Props) => {
         minimumAmount,
         maximumAmount,
     } = useRequestForm({ federationId })
-    const toast = useToast()
-    const [invoice, setInvoice] = useState<string>('')
-    const [generatingInvoice, setGeneratingInvoice] = useState<boolean>(false)
     const [submitAttempts, setSubmitAttempts] = useState(0)
-    const isOnchainSupported = useIsOnchainDepositSupported(
-        fedimint,
-        federationId,
-    )
-    const [onchainAddress, setOnchainAddress] = useState<string>('')
-    const [isLoading, setIsLoading] = useState<boolean>(false)
     const [notes, setNotes] = useState<string>('')
     const [requestType, setRequestType] = useState<BitcoinOrLightning>(
         BitcoinOrLightning.lightning,
     )
-    const isOffline = useAppSelector(selectIsInternetUnreachable)
-    const recheckConnection = useRecheckInternet()
-    const showOnchainDeposits = isOnchainSupported
 
+    const isOnchainSupported = useIsOnchainDepositSupported(
+        fedimint,
+        federationId,
+    )
+    const isOffline = useAppSelector(selectIsInternetUnreachable)
+    const toast = useToast()
+
+    const recheckConnection = useRecheckInternet()
     const syncCurrencyRatesAndCache = useSyncCurrencyRatesAndCache(fedimint)
+
+    const handleTransactionPaid = useCallback(
+        (tx: TransactionListEntry) => {
+            navigation.dispatch(
+                reset('ReceiveSuccess', {
+                    tx,
+                }),
+            )
+        },
+        [navigation],
+    )
+
+    const { isInvoiceLoading, makeLightningRequest } = useMakeLightningRequest({
+        fedimint,
+        federationId,
+        onError: e => toast.error(t, e),
+        onInvoicePaid: handleTransactionPaid,
+    })
+    const { address, isAddressLoading, makeOnchainAddress, onSaveNotes } =
+        useMakeOnchainAddress({
+            fedimint,
+            federationId,
+            onSaveNotesError: e => toast.error(t, e),
+            onMempoolTransaction: handleTransactionPaid,
+        })
 
     useFocusEffect(
         useCallback(() => {
@@ -73,109 +95,12 @@ const ReceiveLightning: React.FC<Props> = ({ navigation, route }: Props) => {
         }, [syncCurrencyRatesAndCache]),
     )
 
-    const { transactions, fetchTransactions } = useTransactionHistory(
-        fedimint,
-        federationId,
-    )
-
-    const transactionId = useMemo(() => {
-        const id = transactions.find(
-            tx =>
-                tx.kind === 'onchainDeposit' &&
-                tx.onchain_address === onchainAddress,
-        )?.id
-
-        return id
-    }, [transactions, onchainAddress])
-
-    useEffect(() => {
-        const createNewInvoice = async () => {
-            if (!federationId) return
-            try {
-                const newInvoice = await dispatch(
-                    generateInvoice({
-                        fedimint,
-                        federationId: federationId,
-                        amount: amountUtils.satToMsat(amount),
-                        description: memo,
-                        frontendMetadata: {
-                            initialNotes: notes || null,
-                            recipientMatrixId: null,
-                            senderMatrixId: null,
-                        },
-                    }),
-                ).unwrap()
-                setInvoice(newInvoice)
-            } catch (error) {
-                toast.show({
-                    content: t('errors.failed-to-generate-invoice'),
-                    status: 'error',
-                })
-            }
-        }
-        if (generatingInvoice) {
-            createNewInvoice()
-        }
-    }, [
-        t,
-        toast,
-        amount,
-        generatingInvoice,
-        memo,
-        federationId,
-        dispatch,
-        notes,
-    ])
-
-    useEffect(() => {
-        if (invoice) {
-            setGeneratingInvoice(false)
-            navigation.navigate('BitcoinRequest', {
-                invoice,
-                federationId,
-            })
-        }
-    }, [invoice, navigation, federationId])
-
     // Generate onchain address if needed
     useEffect(() => {
-        if (requestType === BitcoinOrLightning.bitcoin && !onchainAddress) {
-            const generateOnchainAddress = async () => {
-                if (!federationId) return
-                try {
-                    setIsLoading(true)
-                    const newAddress = await dispatch(
-                        generateAddress({
-                            fedimint,
-                            federationId,
-                            frontendMetadata: {
-                                initialNotes: notes || null,
-                                recipientMatrixId: null,
-                                senderMatrixId: null,
-                            },
-                        }),
-                    ).unwrap()
-
-                    setOnchainAddress(newAddress)
-
-                    // Fetches transactionId of new address, in case the user updates notes
-                    fetchTransactions()
-                } catch (error) {
-                    log.error('error generating address', error)
-                }
-                setIsLoading(false)
-            }
-
-            generateOnchainAddress()
+        if (requestType === BitcoinOrLightning.bitcoin && !address) {
+            makeOnchainAddress()
         }
-    }, [
-        onchainAddress,
-        requestType,
-        federationId,
-        dispatch,
-        notes,
-        fetchTransactions,
-    ])
+    }, [makeOnchainAddress, requestType, address])
 
     const onChangeAmount = (updatedValue: Sats) => {
         setSubmitAttempts(0)
@@ -195,15 +120,22 @@ const ReceiveLightning: React.FC<Props> = ({ navigation, route }: Props) => {
             return
         }
 
-        setGeneratingInvoice(true)
         Keyboard.dismiss()
+
+        const invoice = await makeLightningRequest(amount, memo)
+
+        if (invoice) {
+            navigation.navigate('BitcoinRequest', {
+                invoice,
+            })
+        }
     }
 
     return (
         <SafeScrollArea edges="bottom">
             {isOffline && <InternetUnreachableBanner />}
             <SafeAreaContainer edges="horizontal">
-                {showOnchainDeposits && (
+                {isOnchainSupported && (
                     <RequestTypeSwitcher
                         requestType={requestType}
                         onSwitch={() => {
@@ -213,22 +145,21 @@ const ReceiveLightning: React.FC<Props> = ({ navigation, route }: Props) => {
                         }}
                     />
                 )}
-                {requestType === BitcoinOrLightning.bitcoin &&
-                onchainAddress ? (
+                {requestType === BitcoinOrLightning.bitcoin && address ? (
                     <View>
-                        {isLoading ? (
+                        {isAddressLoading ? (
                             <ActivityIndicator />
                         ) : (
                             <ReceiveQr
                                 uri={
                                     new BtcLnUri({
                                         type: BitcoinOrLightning.bitcoin,
-                                        body: onchainAddress,
+                                        body: address,
                                     })
                                 }
                                 type={requestType}
-                                transactionId={transactionId}
                                 federationId={federationId}
+                                onSaveNotes={onSaveNotes}
                             />
                         )}
                     </View>
@@ -241,7 +172,7 @@ const ReceiveLightning: React.FC<Props> = ({ navigation, route }: Props) => {
                         minimumAmount={minimumAmount}
                         maximumAmount={maximumAmount}
                         submitAttempts={submitAttempts}
-                        isSubmitting={generatingInvoice}
+                        isSubmitting={isInvoiceLoading}
                         readOnly={Boolean(exactAmount)}
                         verb={t('words.request')}
                         buttons={[
@@ -252,8 +183,8 @@ const ReceiveLightning: React.FC<Props> = ({ navigation, route }: Props) => {
                                         : ' '
                                 }${t('words.sats').toUpperCase()}`,
                                 onPress: handleSubmit,
-                                disabled: generatingInvoice,
-                                loading: generatingInvoice,
+                                disabled: isInvoiceLoading,
+                                loading: isInvoiceLoading,
                                 containerStyle: {
                                     width: '100%',
                                 },

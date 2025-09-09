@@ -54,7 +54,6 @@ const ReceiveLnurl: React.FC<Props> = ({ route }) => {
                         })
                     }
                     type={BitcoinOrLightning.lnurl}
-                    transactionId={lnurlReceiveCode}
                     federationId={federationId}
                 />
             )}
