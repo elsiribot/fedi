@@ -6,7 +6,6 @@ import { RpcFederationPreview } from '@fedi/common/types/bindings'
 import {
     getFederationTosUrl,
     getFederationWelcomeMessage,
-    getIsFederationSupported,
     shouldShowJoinFederation,
 } from '@fedi/common/utils/FederationUtils'
 
@@ -37,7 +36,6 @@ const FederationPreview: React.FC<Props> = ({
     const [recoverFromScratch, setRecoverFromScratch] = useState(false)
     const tosUrl = getFederationTosUrl(federation.meta)
     const welcomeMessage = getFederationWelcomeMessage(federation.meta)
-    const isSupported = getIsFederationSupported(federation)
     const popupInfo = usePopupFederationInfo(federation.meta)
     const isReturningMember =
         federation.returningMemberStatus.type === 'returningMember'
@@ -49,43 +47,7 @@ const FederationPreview: React.FC<Props> = ({
     let content: React.ReactNode
     let actions: React.ReactNode
 
-    if (!isSupported) {
-        content = (
-            <FederationPreviewOuter>
-                <FederationPreviewInner>
-                    <AvatarWrapper>
-                        <FederationAvatar
-                            federation={{
-                                id: federation.id,
-                                name: federation.name,
-                                meta: federation.meta,
-                            }}
-                            size="lg"
-                        />
-                    </AvatarWrapper>
-                    <Text variant="h2" weight="medium">
-                        {federation.name}
-                    </Text>
-                    <UnsupportedBadge>
-                        <Text variant="caption" weight="medium">
-                            {t('words.unsupported')}
-                        </Text>
-                    </UnsupportedBadge>
-                    <Text variant="caption">
-                        {t('feature.onboarding.unsupported-notice')}
-                    </Text>
-                </FederationPreviewInner>
-            </FederationPreviewOuter>
-        )
-
-        actions = (
-            <>
-                <Button width="full" onClick={onBack}>
-                    {t('words.okay')}
-                </Button>
-            </>
-        )
-    } else if (popupInfo?.ended) {
+    if (popupInfo?.ended) {
         content = (
             <FederationPreviewOuter>
                 <FederationPreviewInner>
@@ -244,13 +206,6 @@ const CustomWelcomeMessage = styled('div', {
 
 const AvatarWrapper = styled('div', {
     marginBottom: 16,
-})
-
-const UnsupportedBadge = styled('div', {
-    background: theme.colors.red,
-    color: theme.colors.white,
-    borderRadius: 16,
-    padding: `${theme.space.xs} ${theme.space.sm}`,
 })
 
 const Link = styled('a', {

@@ -173,7 +173,6 @@ pub struct RpcFederationPreview {
     pub name: String,
     pub meta: BTreeMap<String, String>,
     pub invite_code: String,
-    pub version: u32,
     pub returning_member_status: RpcReturningMemberStatus,
 }
 

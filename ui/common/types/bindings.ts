@@ -433,7 +433,6 @@ export type RpcFederationPreview = {
   name: string;
   meta: { [key in string]?: string };
   inviteCode: string;
-  version: number;
   returningMemberStatus: RpcReturningMemberStatus;
 };
 

@@ -18,7 +18,6 @@ import { RpcFederationPreview } from '@fedi/common/types/bindings'
 import {
     getFederationTosUrl,
     getFederationWelcomeMessage,
-    getIsFederationSupported,
     shouldShowJoinFederation,
 } from '@fedi/common/utils/FederationUtils'
 
@@ -52,7 +51,6 @@ const FederationPreview: React.FC<Props> = ({
     const [showBottomShadow, setShowBottomShadow] = useState(true)
     const tosUrl = getFederationTosUrl(federation.meta)
     const welcomeMessage = getFederationWelcomeMessage(federation.meta)
-    const isSupported = getIsFederationSupported(federation)
     const popupInfo = usePopupFederationInfo(federation.meta)
     const navigation = useNavigation()
     const isReturningMember =
@@ -100,35 +98,6 @@ const FederationPreview: React.FC<Props> = ({
                         fullWidth
                         title={t('phrases.go-back')}
                         onPress={navigation.goBack}
-                        containerStyle={s.button}
-                    />
-                </View>
-            </View>
-        )
-    }
-
-    if (!isSupported) {
-        return (
-            <View style={s.container}>
-                <Flex center gap="sm" style={s.unsupportedContainer}>
-                    <FederationLogo federation={federation} size={96} />
-                    <Text h2 medium style={s.welcome}>
-                        {federation?.name}
-                    </Text>
-                    <Flex center style={s.unsupportedBadge}>
-                        <Text caption bold style={s.unsupportedBadgeLabel}>
-                            {t('words.unsupported')}
-                        </Text>
-                    </Flex>
-                    <Text caption style={s.welcomeText}>
-                        {t('feature.onboarding.unsupported-notice')}
-                    </Text>
-                </Flex>
-                <View style={s.buttonsContainer}>
-                    <Button
-                        fullWidth
-                        title={t('words.okay')}
-                        onPress={onBack}
                         containerStyle={s.button}
                     />
                 </View>
