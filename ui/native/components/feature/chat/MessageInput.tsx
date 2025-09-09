@@ -122,7 +122,8 @@ const MessageInput: React.FC<MessageInputProps> = ({
 
     const drafts = useAppSelector(s => selectChatDrafts(s))
 
-    const { height: keyboardHeight } = useKeyboard()
+    const { isVisible: kbVisible, height: kbHeight } = useKeyboard()
+    const [isFocused, setIsFocused] = useState(false)
     const [messageText, setMessageText] = useState<string>(drafts[id] ?? '')
     const [isSendingMessage, setIsSendingMessage] = useState(false)
     const [replyAnimation] = useState(new Animated.Value(0))
@@ -616,8 +617,8 @@ const MessageInput: React.FC<MessageInputProps> = ({
             onLayout={onLayout}
             style={[
                 style.container,
-                keyboardHeight > 0 && Platform.OS === 'ios'
-                    ? { paddingBottom: keyboardHeight + theme.spacing.lg }
+                Platform.OS === 'ios' && kbVisible && isFocused
+                    ? { paddingBottom: kbHeight + theme.spacing.lg }
                     : { paddingBottom: theme.spacing.lg + insets.bottom },
                 isReadOnly ? { borderTopWidth: 0 } : {},
                 // push content up when reply bar is visible
@@ -700,6 +701,8 @@ const MessageInput: React.FC<MessageInputProps> = ({
                         multiline
                         numberOfLines={3}
                         blurOnSubmit={false}
+                        onFocus={() => setIsFocused(true)}
+                        onBlur={() => setIsFocused(false)}
                         disabled={inputDisabled}
                     />
                 </View>
