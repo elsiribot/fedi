@@ -51,6 +51,7 @@ use rpc_types::matrix::{
 };
 use rpc_types::nostril::{RpcNostrPubkey, RpcNostrSecret};
 use rpc_types::sp_transfer::{RpcAccountId, RpcSpTransferState};
+use rpc_types::sp_transfer::RpcSpTransferState;
 use rpc_types::{
     FrontendMetadata, GuardianStatus, NetworkError, RpcAmount, RpcAppFlavor, RpcEcashInfo,
     RpcEventId, RpcFederation, RpcFederationId, RpcFederationMaybeLoading, RpcFederationPreview,
@@ -296,14 +297,16 @@ async fn getGuardianStatus(federation: Arc<FederationV2>) -> anyhow::Result<Vec<
 
 #[macro_rules_derive(rpc_method!)]
 pub(crate) async fn joinFederation(
-    federations: &Federations,
+    bridge: &BridgeFull,
     invite_code: String,
     recover_from_scratch: bool,
 ) -> anyhow::Result<RpcFederation> {
     info!("joining federation {:?}", invite_code);
-    let fed_arc = federations
+    let fed_arc = bridge
+        .federations
         .join_federation(invite_code, recover_from_scratch)
         .await?;
+    bridge.sp_transfers_services.account_id_responder.trigger();
     Ok(fed_arc.to_rpc_federation().await)
 }
 
@@ -995,7 +998,11 @@ struct RpcSpv2ParsedPaymentAddress {
 }
 
 #[derive(TS, Serialize, Deserialize)]
-#[serde(tag = "type", rename_all = "camelCase", rename_all_fields = "camelCase")]
+#[serde(
+    tag = "type",
+    rename_all = "camelCase",
+    rename_all_fields = "camelCase"
+)]
 #[ts(export)]
 enum RpcSpv2PaymentAddressFederation {
     Joined { federation_id: RpcFederationId },
@@ -1013,7 +1020,8 @@ async fn spv2ParsePaymentAddress(
         "invalid account type"
     );
     let account_id = RpcAccountId(payment_address.account_id.to_string());
-    let federation_id = federations.find_federation_id_for_prefix(payment_address.federation_id_prefix);
+    let federation_id =
+        federations.find_federation_id_for_prefix(payment_address.federation_id_prefix);
 
     let federation = match federation_id {
         Some(id) => RpcSpv2PaymentAddressFederation::Joined {
@@ -1503,9 +1511,11 @@ async fn matrixRoomCreateOrGetDm(
 }
 
 #[macro_rules_derive(rpc_method!)]
-async fn matrixRoomJoin(bg_matrix: &BgMatrix, room_id: RpcRoomId) -> anyhow::Result<()> {
-    let matrix = bg_matrix.wait().await;
-    matrix.room_join(&room_id.into_typed()?).await
+async fn matrixRoomJoin(bridge: &BridgeFull, room_id: RpcRoomId) -> anyhow::Result<()> {
+    let matrix = bridge.matrix.wait().await;
+    matrix.room_join(&room_id.into_typed()?).await?;
+    bridge.sp_transfers_services.account_id_responder.trigger();
+    Ok(())
 }
 
 #[macro_rules_derive(rpc_method!)]
@@ -2191,6 +2201,43 @@ async fn matrixSendMultispendWithdrawalReject(
 }
 
 #[macro_rules_derive(rpc_method!)]
+async fn matrixSpTransferSend(
+    bridge: &BridgeFull,
+    room_id: RpcRoomId,
+    amount: RpcFiatAmount,
+    federation_id: RpcFederationId,
+    federation_invite: Option<String>,
+) -> anyhow::Result<RpcEventId> {
+    let event_id = bridge
+        .matrix
+        .wait_spt()
+        .await
+        .send_transfer(
+            &room_id.into_typed()?,
+            amount,
+            federation_id,
+            federation_invite,
+        )
+        .await?;
+    Ok(event_id)
+}
+
+#[macro_rules_derive(rpc_method!)]
+async fn matrixSpTransferObserveState(
+    bg_matrix: &BgMatrix,
+    stream_id: RpcStreamId<RpcSpTransferState>,
+    pending_payment_id: RpcEventId,
+) -> anyhow::Result<()> {
+    let spt_matrix = bg_matrix.wait_spt().await;
+    let stream = spt_matrix.subscribe_transfer_state(pending_payment_id);
+    spt_matrix
+        .runtime
+        .stream_pool
+        .register_stream(stream_id, stream)
+        .await
+}
+
+#[macro_rules_derive(rpc_method!)]
 async fn matrixMultispendEventData(
     bg_matrix: &BgMatrix,
     room_id: RpcRoomId,
@@ -2434,6 +2481,9 @@ rpc_methods!(RpcMethods {
     matrixSaveComposerDraft,
     matrixLoadComposerDraft,
     matrixClearComposerDraft,
+    // SP Transfer
+    matrixSpTransferSend,
+    matrixSpTransferObserveState,
     // multispend
     matrixSubscribeMultispendGroup,
     matrixSubscribeMultispendAccountInfo,

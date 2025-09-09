@@ -42,6 +42,8 @@ use tracing::info;
 mod matrix;
 mod multispend_tests;
 mod nostr_tests;
+mod sp_transfer_tests;
+mod utils;
 
 // nosemgrep: ban-wildcard-imports
 use crate::rpc::*;
@@ -157,8 +159,7 @@ async fn join_test_fed_recovery(
     recover_from_scratch: bool,
 ) -> Result<Arc<FederationV2>, anyhow::Error> {
     let invite_code = std::env::var("FM_INVITE_CODE").unwrap();
-    let fedimint_federation =
-        joinFederation(&bridge.federations, invite_code, recover_from_scratch).await?;
+    let fedimint_federation = joinFederation(bridge, invite_code, recover_from_scratch).await?;
     let federation = bridge
         .federations
         .get_federation_maybe_recovering(&fedimint_federation.id.0)?;
@@ -201,6 +202,7 @@ async fn tests_wrapper_for_bridge() -> anyhow::Result<()> {
         multispend_tests::test_multispend_minimal,
         multispend_tests::test_multispend_group_acceptance,
         multispend_tests::test_multispend_group_rejection,
+        sp_transfer_tests::test_end_to_end,
         // TODO: re-enable
         // test_lightning_send_and_receive,
         test_ecash,
@@ -305,14 +307,12 @@ async fn test_join_and_leave_and_join(_dev_fed: DevFed) -> anyhow::Result<()> {
     let td = TestDevice::new();
     let bridge = td.bridge_full().await?;
     let env_invite_code = std::env::var("FM_INVITE_CODE").unwrap();
-    joinFederation(&bridge.federations, env_invite_code.clone(), false).await?;
+    joinFederation(bridge, env_invite_code.clone(), false).await?;
 
     // Can't re-join a federation we're already a member of
-    assert!(
-        joinFederation(&bridge.federations, env_invite_code.clone(), false)
-            .await
-            .is_err()
-    );
+    assert!(joinFederation(bridge, env_invite_code.clone(), false)
+        .await
+        .is_err());
 
     // listTransactions works
     let federations = listFederations(&bridge.federations).await?;
@@ -327,7 +327,7 @@ async fn test_join_and_leave_and_join(_dev_fed: DevFed) -> anyhow::Result<()> {
     assert_eq!(listFederations(&bridge.federations).await?.len(), 0);
 
     // rejoin without any rocksdb locking problems
-    joinFederation(&bridge.federations, env_invite_code, false).await?;
+    joinFederation(bridge, env_invite_code, false).await?;
     assert_eq!(listFederations(&bridge.federations).await?.len(), 1);
 
     Ok(())
@@ -344,8 +344,8 @@ async fn test_join_concurrent(_dev_fed: DevFed) -> anyhow::Result<()> {
 
         // Can't re-join a federation we're already a member of
         let (res1, res2) = tokio::join!(
-            joinFederation(&bridge.federations, env_invite_code.clone(), false),
-            joinFederation(&bridge.federations, env_invite_code.clone(), false),
+            joinFederation(bridge, env_invite_code.clone(), false),
+            joinFederation(bridge, env_invite_code.clone(), false),
         );
         federation_id = match (res1, res2) {
             (Ok(f), Err(_)) | (Err(_), Ok(f)) => f.id.0,
@@ -1512,8 +1512,7 @@ async fn test_federation_preview(_dev_fed: DevFed) -> anyhow::Result<()> {
     ));
 
     // join
-    let fedimint_federation =
-        joinFederation(&bridge.federations, invite_code.clone(), false).await?;
+    let fedimint_federation = joinFederation(bridge, invite_code.clone(), false).await?;
     let federation = bridge
         .federations
         .get_federation(&fedimint_federation.id.0)?;
@@ -2356,8 +2355,7 @@ async fn test_bridge_handles_federation_offline() -> anyhow::Result<()> {
     // join federation while federation is running
     {
         let bridge = td.bridge_full().await?;
-        let rpc_federation =
-            joinFederation(&bridge.federations, invite_code.clone(), false).await?;
+        let rpc_federation = joinFederation(bridge, invite_code.clone(), false).await?;
         let federation = bridge
             .federations
             .get_federation_maybe_recovering(&rpc_federation.id.0)?;

@@ -1378,6 +1378,7 @@ dependencies = [
  "rpc-types",
  "runtime",
  "serde",
+ "sp-transfer",
  "stability-pool-client",
  "tokio",
  "tokio-stream",
@@ -3126,6 +3127,7 @@ dependencies = [
  "rusqlite",
  "serde",
  "serde_json",
+ "sp-transfer",
  "stability-pool-client",
  "stability-pool-client-old",
  "tempfile",
@@ -10128,6 +10130,26 @@ dependencies = [
  "log",
  "rand 0.8.5",
  "sha1",
+]
+
+[[package]]
+name = "sp-transfer"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "async-stream",
+ "async-trait",
+ "fedimint-core",
+ "futures",
+ "matrix-sdk",
+ "rand 0.8.5",
+ "rpc-types",
+ "runtime",
+ "serde",
+ "stability-pool-client",
+ "tokio",
+ "tracing",
+ "ts-rs",
 ]
 
 [[package]]

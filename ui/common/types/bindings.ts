@@ -372,6 +372,8 @@ export type RecoveryProgressEvent = {
   total: number;
 };
 
+export type RpcAccountId = string;
+
 export type RpcAmount = MSats;
 
 export type RpcAppFlavor =
@@ -880,6 +882,8 @@ export type RpcMethods = {
   matrixSaveComposerDraft: [matrixSaveComposerDraft, null];
   matrixLoadComposerDraft: [matrixLoadComposerDraft, RpcComposerDraft | null];
   matrixClearComposerDraft: [matrixClearComposerDraft, null];
+  matrixSpTransferSend: [matrixSpTransferSend, RpcEventId];
+  matrixSpTransferObserveState: [matrixSpTransferObserveState, null];
   matrixSubscribeMultispendGroup: [matrixSubscribeMultispendGroup, null];
   matrixSubscribeMultispendAccountInfo: [
     matrixSubscribeMultispendAccountInfo,
@@ -1193,13 +1197,44 @@ export type RpcSignature = string;
 
 export type RpcSignedLnurlMessage = { signature: string; pubkey: RpcPublicKey };
 
-export type RpcSpv2ParsedPaymentAddress =
-  | { type: "Joined"; federation_id: RpcFederationId; account_id: RpcAccountId }
+export type RpcSpTransferEvent =
   | {
-      type: "NotJoined";
-      federation_invite: string | null;
-      account_id: RpcAccountId;
+      kind: "pendingTransferStart";
+      amount: RpcFiatAmount;
+      federationId: RpcFederationId;
+      federationInvite: string | null;
+    }
+  | {
+      kind: "transferSentHint";
+      pendingTransferId: RpcEventId;
+      transactionId: RpcTransactionId;
+    }
+  | {
+      kind: "announceAccount";
+      accountId: RpcAccountId;
+      federationId: RpcFederationId;
     };
+
+export type RpcSpTransferState = {
+  federationId: RpcFederationId;
+  amount: RpcFiatAmount;
+  status: RpcSpTransferStatus;
+  inviteCode: string | null;
+};
+
+export type RpcSpTransferStatus =
+  | { status: "pending" }
+  | { status: "sentHint" }
+  | { status: "complete" };
+
+export type RpcSpv2ParsedPaymentAddress = {
+  accountId: RpcAccountId;
+  federation: RpcSpv2PaymentAddressFederation;
+};
+
+export type RpcSpv2PaymentAddressFederation =
+  | { type: "joined"; federationId: RpcFederationId }
+  | { type: "notJoined"; federationInvite: string | null };
 
 export type RpcStabilityPoolAccountInfo = {
   idleBalance: RpcAmount;
@@ -1555,6 +1590,14 @@ export type StabilityPoolWithdrawalState =
 export type TransactionEvent = {
   federationId: RpcFederationId;
   transaction: RpcTransaction;
+};
+
+export type TransferEventValue = {
+  amount: RpcFiatAmount;
+  federationId: RpcFederationId;
+  roomId: RpcRoomId;
+  sentBy: RpcUserId;
+  federationInvite: string | null;
 };
 
 export type UserProfile = JSONObject;
@@ -1981,6 +2024,18 @@ export type matrixSetAvatarUrl = { avatarUrl: string };
 export type matrixSetDisplayName = { displayName: string };
 
 export type matrixSetPusher = { pusher: RpcPusher };
+
+export type matrixSpTransferObserveState = {
+  streamId: RpcStreamId<RpcSpTransferState>;
+  pendingPaymentId: RpcEventId;
+};
+
+export type matrixSpTransferSend = {
+  roomId: RpcRoomId;
+  amount: RpcFiatAmount;
+  federationId: RpcFederationId;
+  federationInvite: string | null;
+};
 
 export type matrixStartPoll = {
   roomId: RpcRoomId;
