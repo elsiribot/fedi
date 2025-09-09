@@ -460,6 +460,9 @@ impl FederationV2 {
         };
         let auxiliary_secret =
             Self::auxiliary_secret_from_root_mnemonic(&root_mnemonic, &federation_id, device_index);
+
+        maybe_backfill_federation_network(&runtime, federation_id, &client).await;
+
         Ok(Self::new(
             runtime,
             client,
@@ -622,6 +625,7 @@ impl FederationV2 {
             // FIXME: api secret
             client_preview.join(client_secret).await?
         };
+        let network = client.wallet().ok().map(|wallet| wallet.get_network());
         let this = Self::new(
             runtime.clone(),
             client,
@@ -645,6 +649,7 @@ impl FederationV2 {
                         version: 2,
                         database: DatabaseInfo::DatabasePrefix(db_prefix),
                         fedi_fee_schedule: FediFeeSchedule::default(),
+                        network,
                     },
                 );
                 assert!(old_value.is_none(), "must not override a federation");
@@ -4415,6 +4420,31 @@ impl FederationV2 {
             .await?;
 
         Ok(payment_code.code)
+    }
+}
+
+// Backfill federation's network on disk if missing
+async fn maybe_backfill_federation_network(
+    runtime: &Arc<Runtime>,
+    federation_id: FederationId,
+    client: &ClientHandle,
+) {
+    if let Ok(network) = client.wallet().map(|wallet| wallet.get_network()) {
+        let network_backfill_res = runtime
+            .app_state
+            .with_write_lock(|state| {
+                if let Some(fed_info) = state.joined_federations.get_mut(&federation_id.to_string())
+                {
+                    if fed_info.network.is_none() {
+                        fed_info.network = Some(network);
+                    }
+                }
+            })
+            .await;
+
+        if let Err(e) = network_backfill_res {
+            info!(%e, "failed to backfill {} network on disk for fed {}", network, federation_id);
+        }
     }
 }
 

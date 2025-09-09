@@ -308,6 +308,10 @@ pub struct FederationInfo {
     /// within this federation.
     #[serde(default)]
     pub fedi_fee_schedule: FediFeeSchedule,
+
+    /// Kind of bitcoin network backing the federation--mainnet, signet, etc.
+    #[serde(default)]
+    pub network: Option<bitcoin::Network>,
 }
 
 /// { database_name: String } | { database_prefix: u64 }
