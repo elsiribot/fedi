@@ -63,11 +63,20 @@ export const ChatRoomConversation: React.FC<Props> = ({ roomId }) => {
     }, [room])
 
     const handleSend = useCallback(
-        async (body: string, files: File[] = []) => {
+        async (
+            body: string,
+            files: File[] = [],
+            repliedEventId?: string | null,
+        ) => {
             try {
                 if (body) {
                     await dispatch(
-                        sendMatrixMessage({ fedimint, roomId, body }),
+                        sendMatrixMessage({
+                            fedimint,
+                            roomId,
+                            body,
+                            repliedEventId: repliedEventId,
+                        }),
                     ).unwrap()
                 }
 

@@ -11,17 +11,20 @@ import { styled, theme } from '../../styles'
 import { ChatAvatar } from './ChatAvatar'
 import { ChatEvent } from './ChatEvent'
 import { ChatEventError } from './ChatEventError'
+import ChatSwipeableEventContainer from './ChatSwipeableEventContainer'
 
 interface Props {
     roomId: string
     collection: MatrixEvent[][]
     showUsernames?: boolean
+    onReplyTap?: (eventId: string) => void
 }
 
 export const ChatEventCollection: React.FC<Props> = ({
     roomId,
     collection,
     showUsernames,
+    onReplyTap,
 }) => {
     const { t } = useTranslation()
     const matrixAuth = useAppSelector(selectMatrixAuth)
@@ -65,7 +68,14 @@ export const ChatEventCollection: React.FC<Props> = ({
                                         <ErrorBoundary
                                             key={event.id}
                                             fallback={() => <ChatEventError />}>
-                                            <ChatEvent event={event} />
+                                            <ChatSwipeableEventContainer
+                                                roomId={roomId}
+                                                event={event}>
+                                                <ChatEvent
+                                                    event={event}
+                                                    onReplyTap={onReplyTap}
+                                                />
+                                            </ChatSwipeableEventContainer>
                                         </ErrorBoundary>
                                     ))}
                                 </Messages>
@@ -134,6 +144,12 @@ const Messages = styled('div', {
         isMe: {
             true: {
                 alignItems: 'flex-end',
+                maxWidth: '90%',
+                marginLeft: 'auto',
+            },
+            false: {
+                maxWidth: '90%',
+                marginRight: 'auto',
             },
         },
     },

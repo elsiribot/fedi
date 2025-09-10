@@ -9,11 +9,22 @@ import {
     selectMatrixRoom,
     selectMatrixRoomIsReadOnly,
     selectMatrixUser,
+    selectReplyingToMessageEventForRoom,
+    clearChatReplyingToMessage,
+    selectMatrixRoomMembers,
 } from '@fedi/common/redux'
 import { ChatType, MatrixEvent } from '@fedi/common/types'
-import { makeMatrixEventGroups } from '@fedi/common/utils/matrix'
+import { makeLog } from '@fedi/common/utils/log'
+import {
+    makeMatrixEventGroups,
+    stripReplyFromBody,
+} from '@fedi/common/utils/matrix'
 
-import { useAppSelector, useAutosizeTextArea } from '../../hooks'
+import {
+    useAppDispatch,
+    useAppSelector,
+    useAutosizeTextArea,
+} from '../../hooks'
 import { styled, theme } from '../../styles'
 import { Avatar } from '../Avatar'
 import { CircularLoader } from '../CircularLoader'
@@ -23,6 +34,9 @@ import { Text } from '../Text'
 import { ChatAttachmentThumbnail } from './ChatAttachmentThumbnail'
 import { ChatAvatar } from './ChatAvatar'
 import { ChatEventCollection } from './ChatEventCollection'
+
+const log = makeLog('ChatConversation')
+const HIGHLIGHT_DURATION = 3000
 
 interface Props {
     type: ChatType
@@ -34,6 +48,13 @@ interface Props {
     headerActions?: React.ReactNode
     onWalletClick?(): void
     onPaginate?: () => Promise<void>
+
+    inputActions?: React.ReactNode
+    onSendMessage(
+        message: string,
+        files: File[],
+        repliedEventId?: string | null,
+    ): Promise<void>
 }
 
 export const ChatConversation: React.FC<Props> = ({
@@ -42,6 +63,7 @@ export const ChatConversation: React.FC<Props> = ({
     name,
     events,
     headerActions,
+    inputActions,
     onSendMessage,
     isPublic,
     onWalletClick,
@@ -49,10 +71,12 @@ export const ChatConversation: React.FC<Props> = ({
 }) => {
     const { t } = useTranslation()
     const toast = useToast()
+    const dispatch = useAppDispatch()
 
     const room = useAppSelector(s => selectMatrixRoom(s, id))
     const user = useAppSelector(s => selectMatrixUser(s, id))
     const isReadOnly = useAppSelector(s => selectMatrixRoomIsReadOnly(s, id))
+    const roomMembers = useAppSelector(s => selectMatrixRoomMembers(s, id))
 
     const [value, setValue] = useState('')
     const [isSending, setIsSending] = useState(false)
@@ -60,8 +84,16 @@ export const ChatConversation: React.FC<Props> = ({
     const [isPaginating, setIsPaginating] = useState(false)
     const [files, setFiles] = useState<File[]>([])
 
+    const repliedEvent = useAppSelector(s =>
+        selectReplyingToMessageEventForRoom(s, id),
+    )
+    const [highlightedMessageId, setHighlightedMessageId] = useState<
+        string | null
+    >(null)
+
     const inputRef = useRef<HTMLTextAreaElement>(null)
     const fileRef = useRef<HTMLInputElement>(null)
+    const messagesRef = useRef<HTMLDivElement>(null)
 
     useAutosizeTextArea(inputRef.current, value)
 
@@ -85,6 +117,29 @@ export const ChatConversation: React.FC<Props> = ({
             .catch(() => null)
             .finally(() => setIsPaginating(false))
     }, [onPaginate])
+
+    const scrollToMessage = useCallback((eventId: string) => {
+        try {
+            const messageElement = messagesRef.current?.querySelector(
+                `[data-event-id="${eventId}"]`,
+            )
+
+            if (messageElement) {
+                messageElement.scrollIntoView({
+                    behavior: 'smooth',
+                    block: 'center',
+                })
+
+                setHighlightedMessageId(eventId)
+                setTimeout(
+                    () => setHighlightedMessageId(null),
+                    HIGHLIGHT_DURATION,
+                )
+            }
+        } catch (error) {
+            log.error('Error scrolling to message:', error)
+        }
+    }, [])
 
     const handleMessagesScroll = useCallback(
         (ev: React.WheelEvent<HTMLDivElement>) => {
@@ -110,16 +165,19 @@ export const ChatConversation: React.FC<Props> = ({
 
             try {
                 setIsSending(true)
-                await onSendMessage(value, files)
+                await onSendMessage(value, files, repliedEvent?.eventId ?? null)
                 setValue('')
                 setFiles([])
+                if (repliedEvent) {
+                    dispatch(clearChatReplyingToMessage())
+                }
             } catch (err) {
                 toast.error(t, err, 'errors.chat-connection-unhealthy')
             } finally {
                 setIsSending(false)
             }
         },
-        [onSendMessage, files, t, toast, value],
+        [onSendMessage, value, files, repliedEvent, dispatch, toast, t],
     )
 
     const handleOnMediaClick = () => {
@@ -155,6 +213,35 @@ export const ChatConversation: React.FC<Props> = ({
         [handleSend],
     )
 
+    const replySender = useMemo(() => {
+        if (!repliedEvent?.senderId) return undefined
+
+        const roomMember = roomMembers?.find(
+            member => member.id === repliedEvent.senderId,
+        )
+        if (roomMember) return roomMember
+
+        return {
+            id: repliedEvent.senderId,
+            displayName:
+                repliedEvent.senderId?.split(':')[0]?.replace('@', '') ||
+                'Unknown',
+        }
+    }, [repliedEvent, roomMembers])
+
+    const replyPreview = useMemo(() => {
+        if (!repliedEvent) return null
+
+        const body = repliedEvent.content.body || 'Message'
+        const formattedBody =
+            'formatted_body' in repliedEvent.content
+                ? repliedEvent.content.formatted_body
+                : undefined
+        const cleanBody = stripReplyFromBody(body, formattedBody)
+
+        return cleanBody.slice(0, 50) || 'Message'
+    }, [repliedEvent])
+
     let avatar: React.ReactNode
     if (room) {
         avatar = <ChatAvatar room={room} size="sm" />
@@ -182,18 +269,32 @@ export const ChatConversation: React.FC<Props> = ({
 
             <Layout.Content fullWidth>
                 <Messages
+                    ref={messagesRef}
                     onWheel={
                         onPaginate && !hasPaginated
                             ? handleMessagesScroll
                             : undefined
                     }>
                     {eventGroups.map(collection => (
-                        <ChatEventCollection
+                        <div
                             key={collection[0][0].id}
-                            roomId={id}
-                            collection={collection}
-                            showUsernames={type === ChatType.group}
-                        />
+                            data-event-id={
+                                collection[0][0].eventId || collection[0][0].id
+                            }
+                            className={
+                                highlightedMessageId ===
+                                (collection[0][0].eventId ||
+                                    collection[0][0].id)
+                                    ? 'highlighted'
+                                    : ''
+                            }>
+                            <ChatEventCollection
+                                roomId={id}
+                                collection={collection}
+                                showUsernames={type === ChatType.group}
+                                onReplyTap={scrollToMessage}
+                            />
+                        </div>
                     ))}
                     <PaginationPlaceholder>
                         {isPaginating && <CircularLoader />}
@@ -201,80 +302,106 @@ export const ChatConversation: React.FC<Props> = ({
                 </Messages>
             </Layout.Content>
 
-            <Actions onSubmit={handleSend}>
-                {files.length > 0 && (
-                    <ThumbnailsRow>
-                        {files.map((file, idx: number) => (
-                            <ChatAttachmentThumbnail
-                                key={`${file.name}-${idx}`}
-                                file={file}
-                                onRemove={() => handleOnRemoveThumbnail(idx)}
-                            />
-                        ))}
-                    </ThumbnailsRow>
+            <InputContainer hasReply={!!repliedEvent}>
+                {repliedEvent && (
+                    <ReplyBar>
+                        <ReplyIndicator />
+                        <ReplyContent>
+                            <ReplySender>
+                                Replying to{' '}
+                                {replySender?.displayName || 'Unknown'}
+                            </ReplySender>
+                            <ReplyBody>{replyPreview}</ReplyBody>
+                        </ReplyContent>
+                        <ReplyCloseButton
+                            type="button"
+                            onClick={() =>
+                                dispatch(clearChatReplyingToMessage())
+                            }>
+                            ×
+                        </ReplyCloseButton>
+                    </ReplyBar>
                 )}
 
-                <InputRow>
-                    <Input
-                        ref={inputRef}
-                        value={value}
-                        onChange={ev => setValue(ev.currentTarget.value)}
-                        placeholder={t(
-                            isReadOnly
-                                ? 'feature.chat.broadcast-only-notice'
-                                : 'phrases.type-message',
-                        )}
-                        rows={1}
-                        onKeyDown={handleInputKeyDown}
-                        disabled={isReadOnly}
-                    />
-                    {!isReadOnly && (
-                        <input
-                            data-testid="file-upload"
-                            type="file"
-                            ref={fileRef}
-                            hidden
-                            accept="image/*, video/*, .csv, .doc, .docx, .pdf, .ppt, .pptx, .xls, .xlsx, .txt, .zip"
-                            onChange={handleOnUploadMedia}
-                            multiple
-                        />
+                <Actions onSubmit={handleSend}>
+                    {files.length > 0 && (
+                        <ThumbnailsRow>
+                            {files.map((file, idx: number) => (
+                                <ChatAttachmentThumbnail
+                                    key={`${file.name}-${idx}`}
+                                    file={file}
+                                    onRemove={() =>
+                                        handleOnRemoveThumbnail(idx)
+                                    }
+                                />
+                            ))}
+                        </ThumbnailsRow>
                     )}
-                </InputRow>
 
-                {!isReadOnly && (
-                    <ActionsRow>
-                        <InputActions>
-                            {/* In-chat payments only available for DirectChat after a room has already been created with the user */}
-                            {type === ChatType.direct && (
-                                <Icon
-                                    aria-label="wallet-icon"
-                                    icon={WalletIcon}
-                                    size={32}
-                                    onClick={onWalletClick}
-                                />
+                    <InputRow>
+                        <Input
+                            ref={inputRef}
+                            value={value}
+                            onChange={ev => setValue(ev.currentTarget.value)}
+                            placeholder={t(
+                                isReadOnly
+                                    ? 'feature.chat.broadcast-only-notice'
+                                    : 'phrases.type-message',
                             )}
-                            {/* To prevent users from uploading unencrypted media, media uploads are not available in public chats */}
-                            {!isPublic && (
-                                <Icon
-                                    aria-label="plus-icon"
-                                    icon={PlusIcon}
-                                    size={26}
-                                    onClick={handleOnMediaClick}
-                                />
-                            )}
-                        </InputActions>
-                        <SendButton
-                            disabled={
-                                (value.trim().length === 0 && !files.length) ||
-                                isSending
-                            }
-                            type="submit"
-                            onMouseDown={e => e.preventDefault()}>
-                            <Icon icon={SendArrowUpCircleIcon} />
-                        </SendButton>
-                    </ActionsRow>
-                )}
-            </Actions>
+                            rows={1}
+                            onKeyDown={handleInputKeyDown}
+                            disabled={isReadOnly}
+                        />
+                        {!isReadOnly && (
+                            <input
+                                data-testid="file-upload"
+                                type="file"
+                                ref={fileRef}
+                                hidden
+                                accept="image/*, video/*, .csv, .doc, .docx, .pdf, .ppt, .pptx, .xls, .xlsx, .txt, .zip"
+                                onChange={handleOnUploadMedia}
+                                multiple
+                            />
+                        )}
+                    </InputRow>
+
+                    {!isReadOnly && (
+                        <ActionsRow>
+                            <InputActions>
+                                {/* In-chat payments only available for DirectChat after a room has already been created with the user */}
+                                {type === ChatType.direct && (
+                                    <Icon
+                                        aria-label="wallet-icon"
+                                        icon={WalletIcon}
+                                        size={32}
+                                        onClick={onWalletClick}
+                                    />
+                                )}
+                                {/* To prevent users from uploading unencrypted media, media uploads are not available in public chats */}
+                                {!isPublic && (
+                                    <Icon
+                                        aria-label="plus-icon"
+                                        icon={PlusIcon}
+                                        size={26}
+                                        onClick={handleOnMediaClick}
+                                    />
+                                )}
+                                {inputActions && inputActions}
+                            </InputActions>
+                            <SendButton
+                                disabled={
+                                    (value.trim().length === 0 &&
+                                        !files.length) ||
+                                    isSending
+                                }
+                                type="submit"
+                                onMouseDown={e => e.preventDefault()}>
+                                <Icon icon={SendArrowUpCircleIcon} />
+                            </SendButton>
+                        </ActionsRow>
+                    )}
+                </Actions>
+            </InputContainer>
         </Layout.Root>
     )
 }
@@ -301,6 +428,15 @@ const Messages = styled('div', {
     flexDirection: 'column-reverse',
     padding: 16,
     overflow: 'auto',
+    '& [data-event-id]': {
+        transition: 'all 0.3s ease',
+    },
+
+    '& [data-event-id].highlighted': {
+        backgroundColor: 'rgba(0, 123, 255, 0.1)',
+        borderRadius: 8,
+        boxShadow: '0 0 8px rgba(0, 123, 255, 0.3)',
+    },
 })
 
 const Actions = styled('form', {
@@ -388,4 +524,67 @@ const PaginationPlaceholder = styled('div', {
     height: 60,
     flexShrink: 0,
     color: theme.colors.grey,
+})
+
+const InputContainer = styled('div', {
+    display: 'flex',
+    flexDirection: 'column',
+    flexShrink: 0,
+    variants: {
+        hasReply: { true: {} },
+    },
+})
+
+const ReplyBar = styled('div', {
+    display: 'flex',
+    alignItems: 'center',
+    gap: 16,
+    padding: '12px 16px',
+    backgroundColor: theme.colors.extraLightGrey,
+    borderTop: `1px solid ${theme.colors.lightGrey}`,
+})
+
+const ReplyIndicator = styled('div', {
+    width: 4,
+    height: 35,
+    backgroundColor: theme.colors.primary,
+    borderRadius: 2,
+    flexShrink: 0,
+})
+
+const ReplyContent = styled('div', {
+    flex: 1,
+    minWidth: 0,
+})
+
+const ReplySender = styled('div', {
+    fontSize: 14,
+    fontWeight: 700,
+    color: theme.colors.darkGrey,
+    marginBottom: 2,
+})
+
+const ReplyBody = styled('div', {
+    fontSize: 13,
+    color: theme.colors.grey,
+    overflow: 'hidden',
+    textOverflow: 'ellipsis',
+    whiteSpace: 'nowrap',
+})
+
+const ReplyCloseButton = styled('button', {
+    width: 24,
+    height: 24,
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    fontSize: 18,
+    color: theme.colors.grey,
+    backgroundColor: 'transparent',
+    border: 'none',
+    cursor: 'pointer',
+    borderRadius: 4,
+    '&:hover': {
+        backgroundColor: theme.colors.primary10,
+    },
 })

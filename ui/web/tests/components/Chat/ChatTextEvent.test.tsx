@@ -1,9 +1,24 @@
+import { configureStore } from '@reduxjs/toolkit'
 import '@testing-library/jest-dom'
 import { render, screen } from '@testing-library/react'
+import { Provider } from 'react-redux'
 
 import { createMockNonPaymentEvent } from '@fedi/common/tests/mock-data/matrix-event'
 
 import { ChatTextEvent } from '../../../src/components/Chat/ChatTextEvent'
+
+const renderWithStore = (ui: React.ReactElement, preloadedState = {}) => {
+    const safeState = {
+        matrix: { auth: null, roomMembers: {} },
+        ...preloadedState,
+    }
+
+    const store = configureStore({
+        reducer: (state = safeState) => state,
+        preloadedState: safeState,
+    })
+    return render(<Provider store={store}>{ui}</Provider>)
+}
 
 // Mock text events for different scenarios
 const mockTextOnlyEvent = createMockNonPaymentEvent({
@@ -31,23 +46,20 @@ describe('/components/Chat/ChatTextEvent', () => {
 
     describe('when rendering text-only content', () => {
         it('should display the text content', () => {
-            render(<ChatTextEvent event={mockTextOnlyEvent} />)
-
+            renderWithStore(<ChatTextEvent event={mockTextOnlyEvent} />)
             expect(screen.getByText('Hello world')).toBeInTheDocument()
         })
     })
 
     describe('when rendering text with URL', () => {
         it('should display both text and clickable link', () => {
-            const { container } = render(
+            const { container } = renderWithStore(
                 <ChatTextEvent event={mockTextWithUrlEvent} />,
             )
-
             // Check that the full text content is present
             expect(container).toHaveTextContent(
                 'Check out https://example.com for more info',
             )
-
             // Check that the link is properly rendered
             const link = screen.getByRole('link')
             expect(link).toBeInTheDocument()
@@ -60,7 +72,7 @@ describe('/components/Chat/ChatTextEvent', () => {
 
     describe('when rendering URL-only content', () => {
         it('should display the URL as a clickable link', () => {
-            render(<ChatTextEvent event={mockUrlOnlyEvent} />)
+            renderWithStore(<ChatTextEvent event={mockUrlOnlyEvent} />)
 
             const link = screen.getByRole('link')
             expect(link).toBeInTheDocument()

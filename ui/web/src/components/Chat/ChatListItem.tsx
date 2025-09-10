@@ -4,7 +4,10 @@ import React, { useMemo } from 'react'
 
 import { MatrixRoom } from '@fedi/common/types'
 import dateUtils from '@fedi/common/utils/DateUtils'
-import { shouldShowUnreadIndicator } from '@fedi/common/utils/matrix'
+import {
+    shouldShowUnreadIndicator,
+    stripReplyFromBody,
+} from '@fedi/common/utils/matrix'
 
 import { styled, theme } from '../../styles'
 import { NotificationDot } from '../NotificationDot'
@@ -29,6 +32,11 @@ export const ChatListItem: React.FC<Props> = ({ room }) => {
             ),
         [isActive, room.notificationCount, room.isMarkedUnread],
     )
+
+    const cleanPreviewBody = useMemo(() => {
+        if (!room.preview?.body) return ''
+        return stripReplyFromBody(room.preview.body)
+    }, [room.preview?.body])
 
     return (
         <Container
@@ -63,7 +71,7 @@ export const ChatListItem: React.FC<Props> = ({ room }) => {
                             ? theme.colors.primary
                             : theme.colors.darkGrey,
                     }}>
-                    {room.preview?.body}
+                    {cleanPreviewBody}
                 </Text>
             </Content>
         </Container>

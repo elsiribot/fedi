@@ -22,9 +22,10 @@ import { ChatVideoEvent } from './ChatVideoEvent'
 
 interface Props {
     event: MatrixEvent
+    onReplyTap?: (eventId: string) => void
 }
 
-export const ChatEvent: React.FC<Props> = ({ event }) => {
+export const ChatEvent: React.FC<Props> = ({ event, onReplyTap }) => {
     const matrixAuth = useAppSelector(selectMatrixAuth)
 
     const isMe = event.senderId === matrixAuth?.userId
@@ -61,7 +62,7 @@ export const ChatEvent: React.FC<Props> = ({ event }) => {
     ) : isFormEvent(event) ? (
         <ChatFormEvent event={event} />
     ) : isTextEvent(event) ? (
-        <ChatTextEvent event={event} />
+        <ChatTextEvent event={event} onReplyTap={onReplyTap} />
     ) : (
         event.content.body
     )
@@ -97,7 +98,7 @@ const TextContent = styled('div', {
     fontSize: theme.fontSizes.caption,
     fontWeight: theme.fontWeights.medium,
     lineHeight: '20px',
-    maxWidth: '90%',
+    maxWidth: '100%',
     padding: 8,
     overflow: 'hidden',
     transition: 'opacity 100ms ease',
