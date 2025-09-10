@@ -167,7 +167,7 @@ const MessageInput: React.FC<MessageInputProps> = ({
         insertMention: insertMentionFromHook,
     } = useMentionInput(membersForMentions, selectionStart)
 
-    const MIN_INPUT_H = Math.max(48, theme.sizes.minMessageInputHeight)
+    const MIN_INPUT_H = theme.sizes.minMessageInputHeight
     const [inputHeight, setInputHeight] = useState<number>(MIN_INPUT_H)
 
     const inputRef = useRef<TextInput | null>(null)
@@ -618,8 +618,13 @@ const MessageInput: React.FC<MessageInputProps> = ({
             style={[
                 style.container,
                 Platform.OS === 'ios' && kbVisible && isFocused
-                    ? { paddingBottom: kbHeight + theme.spacing.lg }
-                    : { paddingBottom: theme.spacing.lg + insets.bottom },
+                    ? { paddingBottom: kbHeight + theme.spacing.sm }
+                    : {
+                          paddingBottom: Math.max(
+                              theme.spacing.sm,
+                              insets.bottom || 0,
+                          ),
+                      },
                 isReadOnly ? { borderTopWidth: 0 } : {},
                 // push content up when reply bar is visible
                 repliedEvent && !isEditingMessage && !isReadOnly
