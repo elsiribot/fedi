@@ -222,8 +222,8 @@ const styles = (theme: Theme, insets: EdgeInsets, fontScale: number) => {
         tabBarIconContainer: {},
         tabBarBadge: {
             backgroundColor: theme.colors.red,
-            top: 8,
-            left: 2,
+            top: 21,
+            left: 4,
             borderWidth: 2,
             borderColor: theme.colors.secondary,
             width: 12,
