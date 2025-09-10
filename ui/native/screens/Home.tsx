@@ -8,6 +8,8 @@ import { ScrollView, StyleSheet, View } from 'react-native'
 import { ErrorBoundary } from '@fedi/common/components/ErrorBoundary'
 import { useNuxStep } from '@fedi/common/hooks/nux'
 import {
+    selectCommunityIds,
+    selectFederationIds,
     selectLastSelectedCommunity,
     selectOnboardingMethod,
 } from '@fedi/common/redux'
@@ -45,6 +47,9 @@ const Home: React.FC<Props> = () => {
     )
     const onboardingMethod = useAppSelector(selectOnboardingMethod)
     const canShowSurvey = useAppSelector(selectCanShowSurvey)
+    const joinedCommunityCount = useAppSelector(selectCommunityIds).length
+    const federationCount = useAppSelector(selectFederationIds).length
+    const totalCount = joinedCommunityCount + federationCount
 
     const homeFirstTimeOverlayItems: FirstTimeCommunityEntryItem[] = [
         {
@@ -80,12 +85,14 @@ const Home: React.FC<Props> = () => {
     const isNewSeedUser = onboardingMethod !== 'restored'
 
     // Decide which overlay (if any) to show for this render.
-    const showCommunityOverlay =
-        isNewSeedUser && !hasSeenCommunity && !overlayShownThisFocus.current
     const showDisplayNameOverlay =
+        isNewSeedUser && !hasSeenDisplayName && !overlayShownThisFocus.current
+
+    const showCommunityOverlay =
         isNewSeedUser &&
-        hasSeenCommunity &&
-        !hasSeenDisplayName &&
+        !hasSeenCommunity &&
+        hasSeenDisplayName &&
+        totalCount >= 2 &&
         !overlayShownThisFocus.current
 
     // Wrapper handlers: mark overlay as handled once dismissed so nothing else
