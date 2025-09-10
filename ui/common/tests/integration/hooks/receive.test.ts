@@ -117,7 +117,7 @@ describe('receiving payments', () => {
     })
 
     describe('useMakeOnchainAddress', () => {
-        it('should create an onchain address with makeOnchainAddress()', async () => {
+        it('should create an onchain address and hide loader when ready', async () => {
             await builder.withFederationJoined()
 
             const {
@@ -143,7 +143,7 @@ describe('receiving payments', () => {
             })
         }, 30000)
 
-        it('should save notes with onSaveNotes', async () => {
+        it('should add transaction notes', async () => {
             await builder.withFederationJoined()
 
             const {
@@ -182,7 +182,7 @@ describe('receiving payments', () => {
             })
         }, 30000)
 
-        it('should call the `onMakeAddressError` callback if supplied, if `makeOnchainAddress` errors', async () => {
+        it('should throw if making an onchain address fails', async () => {
             await builder.withFederationJoined()
 
             const {
@@ -190,25 +190,20 @@ describe('receiving payments', () => {
                 renderHookWithBridge,
             } = context
 
-            const onMakeAddressError = jest.fn()
-
             const { result } = renderHookWithBridge(() =>
                 useMakeOnchainAddress({
                     fedimint,
                     federationId: 'invalid federation id',
-                    onMakeAddressError,
                 }),
             )
 
             // Make the onchain address
-            await act(() => result.current.makeOnchainAddress())
+            const onchainAddressResult = result.current.makeOnchainAddress()
 
-            await waitFor(() => {
-                expect(onMakeAddressError).toHaveBeenCalled()
-            })
+            expect(onchainAddressResult).rejects.toThrow('Federation not found')
         }, 30000)
 
-        it('should call the `onSaveNotesError` callback if supplied, if `onSaveNotes` errors', async () => {
+        it('should throw if saving notes fails', async () => {
             await builder.withFederationJoined()
 
             const {
@@ -217,14 +212,11 @@ describe('receiving payments', () => {
                 renderHookWithBridge,
             } = context
 
-            const onSaveNotesError = jest.fn()
-
             const federationId = selectLastUsedFederationId(store.getState())
             const { result } = renderHookWithBridge(() =>
                 useMakeOnchainAddress({
                     fedimint,
                     federationId,
-                    onSaveNotesError,
                 }),
             )
 
@@ -238,15 +230,11 @@ describe('receiving payments', () => {
             })
 
             // Save notes
-            await act(() =>
-                result.current.onSaveNotes({
-                    this: 'is a test',
-                } as unknown as string),
-            )
+            const saveNotesResult = result.current.onSaveNotes({
+                this: 'is a test',
+            } as unknown as string)
 
-            await waitFor(async () => {
-                expect(onSaveNotesError).toHaveBeenCalled()
-            })
+            expect(saveNotesResult).rejects.toThrow('Bad request')
         }, 30000)
     })
 })

@@ -4,6 +4,7 @@ import { Sats, TransactionListEntry } from '../types'
 import amountUtils from '../utils/AmountUtils'
 import { FedimintBridge } from '../utils/fedimint'
 import { makeLog } from '../utils/log'
+import { useTransactionHistory } from './transactions'
 
 const log = makeLog('common/hooks/lightning')
 
@@ -97,14 +98,10 @@ type OnchainDepositTxn = Extract<
 export const useMakeOnchainAddress = ({
     federationId,
     fedimint,
-    onMakeAddressError,
-    onSaveNotesError,
     onMempoolTransaction,
 }: {
     fedimint: FedimintBridge
     federationId: string | undefined
-    onMakeAddressError?: (e: unknown) => void
-    onSaveNotesError?: (e: unknown) => void
     onMempoolTransaction?: (txn: OnchainDepositTxn) => void
 }) => {
     const [address, setAddress] = useState<string | null>(null)
@@ -146,11 +143,11 @@ export const useMakeOnchainAddress = ({
             await fetchTransactions()
         } catch (e) {
             log.error('error generating address', e)
-            onMakeAddressError?.(e)
+            throw e
         } finally {
             setIsAddressLoading(false)
         }
-    }, [federationId, fedimint, fetchTransactions, onMakeAddressError])
+    }, [federationId, fedimint, fetchTransactions])
 
     const onSaveNotes = useCallback(
         async (notes: string) => {
@@ -167,10 +164,10 @@ export const useMakeOnchainAddress = ({
                     `Failed to update notes for transaction ${transaction.id}`,
                     e,
                 )
-                onSaveNotesError?.(e)
+                throw e
             }
         },
-        [federationId, onSaveNotesError, transaction, fedimint],
+        [federationId, transaction, fedimint],
     )
 
     useEffect(() => {
