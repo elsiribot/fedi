@@ -1,6 +1,7 @@
 use std::collections::{BTreeMap, HashMap};
 use std::str::FromStr;
 use std::sync::{Arc, Mutex};
+use std::time::Duration;
 
 use anyhow::{Context, bail};
 use bitcoin::Network;
@@ -15,7 +16,7 @@ use futures::StreamExt;
 use rpc_types::{RpcAmount, RpcEcashInfo, RpcFederationId, RpcFederationPreview};
 use runtime::bridge_runtime::Runtime;
 use runtime::storage::state::{FederationInfo, FediFeeSchedule};
-use runtime::utils::PoisonedLockExt as _;
+use runtime::utils::{PoisonedLockExt as _, timeout_log_only};
 use tracing::{error, warn};
 
 use crate::federation_v2::MultispendNotifications;
@@ -69,19 +70,26 @@ impl Federations {
             federations.insert(federation_id.clone(), fed_sm.clone());
 
             let this = self.clone();
-            futures.push(async move {
-                load_federation(
-                    this.runtime.clone(),
-                    this.fedi_fee_helper.clone(),
-                    &this.federations_locker,
-                    federation_id.clone(),
-                    federation_info,
-                    this.multispend_services.clone(),
-                    this.device_registration_service.clone(),
-                    fed_sm,
-                )
-                .await
-            });
+            let fed_id_clone = federation_id.clone();
+            futures.push(timeout_log_only(
+                async move {
+                    load_federation(
+                        this.runtime.clone(),
+                        this.fedi_fee_helper.clone(),
+                        &this.federations_locker,
+                        federation_id.clone(),
+                        federation_info,
+                        this.multispend_services.clone(),
+                        this.device_registration_service.clone(),
+                        fed_sm,
+                    )
+                    .await
+                },
+                Duration::from_secs(10),
+                move || {
+                    error!(fed_id_clone, "found federation slow-loading culprit");
+                },
+            ));
         }
         drop(federations);
 

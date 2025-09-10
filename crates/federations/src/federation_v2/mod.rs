@@ -106,7 +106,7 @@ use runtime::constants::{
 };
 use runtime::db::FederationPendingRejoinFromScratchKey;
 use runtime::storage::state::{DatabaseInfo, FederationInfo, FediFeeSchedule};
-use runtime::utils::{display_currency, to_unix_time};
+use runtime::utils::{display_currency, timeout_log_only, to_unix_time};
 use serde::de::DeserializeOwned;
 use spv2_sweeper_service::SPv2SweeperService;
 use stability_pool_client::api::StabilityPoolApiExt as _;
@@ -2518,14 +2518,10 @@ impl FederationV2 {
     ) -> Option<RpcTransaction> {
         let meta = entry.meta::<serde_json::Value>();
         let module = entry.operation_module_kind().to_owned();
-        let mut inner = pin!(self.get_transaction_really_inner(operation_id, entry));
-        let sleep = fedimint_core::task::sleep(Duration::from_secs(30));
-        tokio::select! {
-            biased;
-            value = &mut inner => {
-                value
-            },
-            () = sleep => {
+        timeout_log_only(
+            self.get_transaction_really_inner(operation_id, entry),
+            Duration::from_secs(30),
+            || {
                 let meta = serde_json::to_string_pretty(&meta).unwrap();
                 error!(
                     op = %operation_id.fmt_short(),
@@ -2533,9 +2529,9 @@ impl FederationV2 {
                     meta,
                     "found transaction slow culprit"
                 );
-                inner.await
             },
-        }
+        )
+        .await
     }
 
     async fn get_transaction_really_inner(
