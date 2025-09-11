@@ -23,17 +23,28 @@ export default function OnchainRequest({
     const { address, makeOnchainAddress, onSaveNotes } = useMakeOnchainAddress({
         fedimint,
         federationId,
-        onSaveNotesError: e => toast.error(t, e),
         onMempoolTransaction,
     })
 
     const [notes, setNotes] = useState('')
 
+    const handleSaveNotes = () => {
+        try {
+            onSaveNotes(notes)
+        } catch (e) {
+            toast.error(t, e)
+        }
+    }
+
     useEffect(() => {
         if (address) return
 
-        makeOnchainAddress()
-    }, [address, makeOnchainAddress])
+        try {
+            makeOnchainAddress()
+        } catch (e) {
+            toast.error(t, e)
+        }
+    }, [address, makeOnchainAddress, t, toast])
 
     return (
         <QRContainer>
@@ -42,7 +53,7 @@ export default function OnchainRequest({
                 value={notes}
                 placeholder={t('phrases.add-note')}
                 onChange={e => setNotes(e.currentTarget.value)}
-                onBlur={() => onSaveNotes(notes)}
+                onBlur={handleSaveNotes}
             />
             <CopyInput
                 value={address || ''}

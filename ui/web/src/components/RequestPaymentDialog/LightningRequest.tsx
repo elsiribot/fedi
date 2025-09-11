@@ -40,7 +40,6 @@ export default function LightningRequest({
         useMakeLightningRequest({
             fedimint,
             federationId,
-            onError: e => toast.error(t, e),
             onInvoicePaid,
         })
 
@@ -50,8 +49,12 @@ export default function LightningRequest({
             return
         }
 
-        await makeLightningRequest(amount, memo)
-        onSubmit()
+        try {
+            await makeLightningRequest(amount, memo)
+            onSubmit()
+        } catch (e) {
+            toast.error(t, e)
+        }
     }
 
     const onChangeAmount = (amt: Sats) => {

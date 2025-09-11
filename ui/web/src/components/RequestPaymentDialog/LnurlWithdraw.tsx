@@ -50,7 +50,6 @@ export default function LnurlWithdraw({
         fedimint,
         lnurlw,
         onWithdrawPaid,
-        onError: e => toast.error(t, e),
     })
 
     const handleSubmit = async () => {
@@ -59,8 +58,12 @@ export default function LnurlWithdraw({
             return
         }
 
-        await handleWithdraw(amount, memo)
-        onSubmit()
+        try {
+            await handleWithdraw(amount, memo)
+            onSubmit()
+        } catch (e) {
+            toast.error(t, e)
+        }
     }
 
     const onChangeAmount = (amt: Sats) => {
