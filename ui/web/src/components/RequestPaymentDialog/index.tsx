@@ -7,6 +7,7 @@ import SwitchLeftIcon from '@fedi/common/assets/svgs/switch-left.svg'
 import SwitchRightIcon from '@fedi/common/assets/svgs/switch-right.svg'
 import { useSyncCurrencyRatesAndCache } from '@fedi/common/hooks/currency'
 import { useIsOnchainDepositSupported } from '@fedi/common/hooks/federation'
+import { useMakeOnchainAddress } from '@fedi/common/hooks/receive'
 import { TransactionListEntry } from '@fedi/common/types'
 import amountUtils from '@fedi/common/utils/AmountUtils'
 
@@ -35,6 +36,7 @@ export const RequestPaymentDialog: React.FC<Props> = ({
     const params = getHashParams(router.asPath)
     const lnurlw = useRouteState('/request')
     const federationId = params.id
+
     const [isCompleted, setIsCompleted] = useState(false)
     const [requestType, setRequestType] = useState<
         'lightning' | 'bitcoin' | 'lnurl'
@@ -42,10 +44,28 @@ export const RequestPaymentDialog: React.FC<Props> = ({
     const [receivedTransaction, setReceivedTransaction] =
         useState<TransactionListEntry | null>(null)
 
+    const containerRef = useRef<HTMLDivElement | null>(null)
+
     const isOnchainSupported = useIsOnchainDepositSupported(
         fedimint,
         federationId,
     )
+
+    const handleSubmit = () => {
+        setIsCompleted(true)
+    }
+
+    const onTransactionReceived = (txn: TransactionListEntry) => {
+        setReceivedTransaction(txn)
+        setTimeout(() => onOpenChange(false), 3000)
+    }
+
+    const { address, makeOnchainAddress, onSaveNotes, reset } =
+        useMakeOnchainAddress({
+            fedimint,
+            federationId,
+            onMempoolTransaction: onTransactionReceived,
+        })
 
     const { t } = useTranslation()
 
@@ -57,6 +77,7 @@ export const RequestPaymentDialog: React.FC<Props> = ({
             setIsCompleted(false)
             setRequestType('lightning')
             setReceivedTransaction(null)
+            reset()
         } else {
             syncCurrencyRatesAndCache()
             if (!window.matchMedia(config.media.sm).matches) {
@@ -65,22 +86,17 @@ export const RequestPaymentDialog: React.FC<Props> = ({
                 )
             }
         }
-    }, [open, syncCurrencyRatesAndCache])
+    }, [open, syncCurrencyRatesAndCache, reset])
 
     useEffect(() => {
         if (open && lnurlw) setRequestType('lnurl')
     }, [open, lnurlw])
 
-    const containerRef = useRef<HTMLDivElement | null>(null)
-
-    const handleSubmit = () => {
-        setIsCompleted(true)
-    }
-
-    const onTransactionReceived = (txn: TransactionListEntry) => {
-        setReceivedTransaction(txn)
-        setTimeout(() => onOpenChange(false), 3000)
-    }
+    useEffect(() => {
+        if (isOnchainSupported && requestType === 'bitcoin' && !address) {
+            makeOnchainAddress()
+        }
+    }, [isOnchainSupported, requestType, makeOnchainAddress, address])
 
     return (
         <Dialog
@@ -118,8 +134,8 @@ export const RequestPaymentDialog: React.FC<Props> = ({
 
                 {requestType === 'bitcoin' ? (
                     <OnchainRequest
-                        onMempoolTransaction={onTransactionReceived}
-                        federationId={federationId}
+                        address={address}
+                        onSaveNotes={onSaveNotes}
                     />
                 ) : requestType === 'lightning' ? (
                     <LightningRequest
