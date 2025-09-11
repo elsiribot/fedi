@@ -7,7 +7,6 @@ import {
     makeTxnAmountText as makeTxnAmountTextUtil,
     makeTxnDetailItems as makeTxnDetailItemsUtil,
     makeTxnFeeDetails as makeTxnFeeDetailsUtil,
-    makeTxnNotesText as makeTxnNotesTextUtil,
     makeTxnStatusText as makeTxnStatusTextUtil,
     makeTxnTypeText as makeTxnTypeTextUtil,
     makeTxnDetailTitleText as makeTxnDetailTitleTextUtil,
@@ -183,7 +182,7 @@ export function useTxnDisplayUtils(
     )
 
     const makeTxnNotesText = useCallback((txn: TransactionListEntry) => {
-        return makeTxnNotesTextUtil(txn)
+        return txn.txnNotes ?? ''
     }, [])
 
     const makeStabilityTxnFeeDetailItems = useCallback(

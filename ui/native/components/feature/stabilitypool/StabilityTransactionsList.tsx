@@ -61,7 +61,7 @@ const StabilityTransactionsList = ({
                 title: makeStabilityTxnDetailTitleText(txn),
                 items: makeStabilityTxnDetailItems(txn),
                 amount: makeTxnAmountText(txn, true),
-                notes: txn.txnNotes,
+                notes: makeTxnNotesText(txn),
                 txn,
                 onSaveNotes: async (notes: string) => {
                     if (isUpdating) return // Prevent multiple simultaneous updates

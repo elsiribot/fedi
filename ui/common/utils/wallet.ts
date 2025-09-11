@@ -194,13 +194,6 @@ export const makeTxnDetailTitleText = (
     }
 }
 
-export const makeTxnNotesText = (txn: TransactionListEntry): string => {
-    // always render user-submitted notes first
-    if (txn.txnNotes) return txn.txnNotes
-
-    return ''
-}
-
 export const makeTxnAmountText = (
     txn: TransactionListEntry,
     showFiatTxnAmounts: boolean,

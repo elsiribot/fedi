@@ -31,10 +31,8 @@ const TransactionsList: React.FC<TransactionsListProps> = ({
     const dispatch = useAppDispatch()
     const { t } = useTranslation()
     const toast = useToast()
-    const { makeTxnAmountText, makeTxnDetailItems } = useTxnDisplayUtils(
-        t,
-        federationId,
-    )
+    const { makeTxnAmountText, makeTxnDetailItems, makeTxnNotesText } =
+        useTxnDisplayUtils(t, federationId)
 
     return (
         <HistoryList
@@ -52,13 +50,13 @@ const TransactionsList: React.FC<TransactionsListProps> = ({
                           ? 'incoming'
                           : 'outgoing',
                 timestamp: txn.createdAt,
-                notes: txn.txnNotes,
+                notes: makeTxnNotesText(txn),
             })}
             makeDetailProps={txn => ({
                 title: makeTxnDetailTitleText(t, txn),
                 items: makeTxnDetailItems(txn),
                 amount: makeTxnAmountText(txn),
-                notes: txn.txnNotes,
+                notes: makeTxnNotesText(txn),
                 onSaveNotes: async (notes: string) => {
                     if (isUpdating) return // Prevent multiple updates
 
