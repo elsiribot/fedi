@@ -218,9 +218,9 @@ export function useLnurlWithdraw({
 }) {
     const [isWithdrawing, setIsWithdrawing] = useState(false)
 
-    const reset = useCallback(() => {
+    const reset = () => {
         setIsWithdrawing(false)
-    }, [])
+    }
 
     const waitForLnurlTransaction = useCallback(
         (invoice: string) => {
@@ -262,19 +262,13 @@ export function useLnurlWithdraw({
                 federationId,
                 lnurlw.data,
                 amountUtils.satToMsat(amount),
+                memo,
             )
                 .andThen(invoice =>
                     ResultAsync.fromPromise(
                         waitForLnurlTransaction(invoice),
                         e => new TaggedError('TimeoutError', e),
                     ),
-                )
-                .andThrough(txn =>
-                    fedimint.rpcResult('updateTransactionNotes', {
-                        federationId,
-                        notes: memo,
-                        transactionId: txn.id,
-                    }),
                 )
                 .match(
                     txn => {
