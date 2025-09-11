@@ -208,13 +208,11 @@ export function useLnurlWithdraw({
     federationId,
     lnurlw,
     onWithdrawPaid,
-    onError,
 }: {
     fedimint: FedimintBridge
     federationId: string | undefined
     lnurlw: ParsedLnurlWithdraw | undefined
     onWithdrawPaid?: (txn: LnReceiveTxn) => void
-    onError?: (e: unknown) => void
 }) {
     const [isWithdrawing, setIsWithdrawing] = useState(false)
 
@@ -257,7 +255,7 @@ export function useLnurlWithdraw({
 
             setIsWithdrawing(true)
 
-            lnurlWithdraw(
+            await lnurlWithdraw(
                 fedimint,
                 federationId,
                 lnurlw.data,
@@ -276,10 +274,11 @@ export function useLnurlWithdraw({
                     },
                     e => {
                         log.error(`Failed to complete LNURL Withdrawal`, e)
-                        onError?.(e)
+                        // TODO: do not throw
+                        throw e
                     },
                 )
-                .finally(() => setIsWithdrawing(false))
+            setIsWithdrawing(false)
         },
         [
             federationId,
@@ -287,7 +286,6 @@ export function useLnurlWithdraw({
             lnurlw,
             waitForLnurlTransaction,
             onWithdrawPaid,
-            onError,
         ],
     )
 
