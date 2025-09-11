@@ -18,10 +18,11 @@ export interface ChatSwipeableEventContainerProps {
     children: React.ReactNode
     dragThreshold?: number
     iconName?: string
+    isMe?: boolean
 }
 
 const ChatSwipeableEventContainer: React.FC<ChatSwipeableEventContainerProps> =
-    memo(({ roomId, event, children, dragThreshold = 60 }) => {
+    memo(({ roomId, event, children, dragThreshold = 60, isMe }) => {
         const dispatch = useAppDispatch()
         const containerRef = useRef<HTMLDivElement>(null)
         const [isDragging, setIsDragging] = useState(false)
@@ -222,6 +223,7 @@ const ChatSwipeableEventContainer: React.FC<ChatSwipeableEventContainerProps> =
                 <SwipeableContent
                     swipeDirection={swipeDirection || 'null'}
                     isDragging={isDragging}
+                    isMe={isMe}
                     style={{
                         transform:
                             swipeDirection === 'right'
@@ -248,12 +250,15 @@ const Container = styled('div', {
     backgroundColor: 'transparent',
     touchAction: 'pan-y',
     userSelect: 'none',
+    width: '100%',
 })
 
 const SwipeableContent = styled('div', {
     transition: 'transform 0.1s ease-out',
     willChange: 'transform',
-
+    width: '100%',
+    display: 'flex',
+    alignItems: 'flex-start',
     variants: {
         swipeDirection: {
             left: {},
@@ -265,6 +270,10 @@ const SwipeableContent = styled('div', {
                 transition: 'none',
             },
             false: {},
+        },
+        isMe: {
+            true: { justifyContent: 'flex-end' },
+            false: { justifyContent: 'flex-start' },
         },
     },
 })

@@ -542,7 +542,7 @@ const ReplyBar = styled('div', {
     alignItems: 'center',
     gap: 16,
     padding: '12px 16px',
-    backgroundColor: theme.colors.extraLightGrey,
+    backgroundColor: theme.colors.offWhite100,
     borderTop: `1px solid ${theme.colors.lightGrey}`,
 })
 

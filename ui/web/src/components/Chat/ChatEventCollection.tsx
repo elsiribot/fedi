@@ -70,7 +70,8 @@ export const ChatEventCollection: React.FC<Props> = ({
                                             fallback={() => <ChatEventError />}>
                                             <ChatSwipeableEventContainer
                                                 roomId={roomId}
-                                                event={event}>
+                                                event={event}
+                                                isMe={isMe}>
                                                 <ChatEvent
                                                     event={event}
                                                     onReplyTap={onReplyTap}
@@ -139,6 +140,7 @@ const Messages = styled('div', {
     display: 'flex',
     flexDirection: 'column-reverse',
     gap: 6,
+    '& > *': { maxWidth: '90%' },
 
     variants: {
         isMe: {
