@@ -50,7 +50,6 @@ const RedeemLnurlWithdraw: React.FC<Props> = ({ navigation, route }: Props) => {
                     tx,
                 }),
             ),
-        onError: e => toast.error(t, e),
     })
     const toast = useToast()
     const [submitAttempts, setSubmitAttempts] = useState(0)
@@ -58,6 +57,19 @@ const RedeemLnurlWithdraw: React.FC<Props> = ({ navigation, route }: Props) => {
     const onChangeAmount = (updatedValue: Sats) => {
         setSubmitAttempts(0)
         setAmount(updatedValue)
+    }
+
+    const handleSubmit = async () => {
+        setSubmitAttempts(attempts => attempts + 1)
+        if (amount > maximumAmount || amount < minimumAmount) {
+            return
+        }
+
+        try {
+            await handleWithdraw(amount, memo)
+        } catch (e) {
+            toast.error(t, e)
+        }
     }
 
     return (
@@ -81,7 +93,7 @@ const RedeemLnurlWithdraw: React.FC<Props> = ({ navigation, route }: Props) => {
                     title={`${t('words.redeem')}${
                         amount ? ` ${amountUtils.formatSats(amount)} ` : ' '
                     }${t('words.sats').toUpperCase()}`}
-                    onPress={() => handleWithdraw(amount, memo)}
+                    onPress={handleSubmit}
                     disabled={isWithdrawing}
                     loading={isWithdrawing}
                 />

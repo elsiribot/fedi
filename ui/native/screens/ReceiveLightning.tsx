@@ -78,16 +78,25 @@ const ReceiveLightning: React.FC<Props> = ({ navigation, route }: Props) => {
     const { isInvoiceLoading, makeLightningRequest } = useMakeLightningRequest({
         fedimint,
         federationId,
-        onError: e => toast.error(t, e),
         onInvoicePaid: handleTransactionPaid,
     })
     const { address, isAddressLoading, makeOnchainAddress, onSaveNotes } =
         useMakeOnchainAddress({
             fedimint,
             federationId,
-            onSaveNotesError: e => toast.error(t, e),
             onMempoolTransaction: handleTransactionPaid,
         })
+
+    const handleSaveNotes = useCallback(
+        async (note: string) => {
+            try {
+                await onSaveNotes(note)
+            } catch (e) {
+                toast.error(t, e)
+            }
+        },
+        [onSaveNotes, t, toast],
+    )
 
     useFocusEffect(
         useCallback(() => {
@@ -98,9 +107,13 @@ const ReceiveLightning: React.FC<Props> = ({ navigation, route }: Props) => {
     // Generate onchain address if needed
     useEffect(() => {
         if (requestType === BitcoinOrLightning.bitcoin && !address) {
-            makeOnchainAddress()
+            try {
+                makeOnchainAddress()
+            } catch (e) {
+                toast.error(t, e)
+            }
         }
-    }, [makeOnchainAddress, requestType, address])
+    }, [makeOnchainAddress, requestType, address, t, toast])
 
     const onChangeAmount = (updatedValue: Sats) => {
         setSubmitAttempts(0)
@@ -122,12 +135,16 @@ const ReceiveLightning: React.FC<Props> = ({ navigation, route }: Props) => {
 
         Keyboard.dismiss()
 
-        const invoice = await makeLightningRequest(amount, memo)
+        try {
+            const invoice = await makeLightningRequest(amount, memo)
 
-        if (invoice) {
-            navigation.navigate('BitcoinRequest', {
-                invoice,
-            })
+            if (invoice) {
+                navigation.navigate('BitcoinRequest', {
+                    invoice,
+                })
+            }
+        } catch (e) {
+            toast.error(t, e)
         }
     }
 
@@ -159,7 +176,7 @@ const ReceiveLightning: React.FC<Props> = ({ navigation, route }: Props) => {
                                 }
                                 type={requestType}
                                 federationId={federationId}
-                                onSaveNotes={onSaveNotes}
+                                onSaveNotes={handleSaveNotes}
                             />
                         )}
                     </View>
