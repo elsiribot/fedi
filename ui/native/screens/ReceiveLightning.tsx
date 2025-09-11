@@ -64,16 +64,13 @@ const ReceiveLightning: React.FC<Props> = ({ navigation, route }: Props) => {
     const recheckConnection = useRecheckInternet()
     const syncCurrencyRatesAndCache = useSyncCurrencyRatesAndCache(fedimint)
 
-    const handleTransactionPaid = useCallback(
-        (tx: TransactionListEntry) => {
-            navigation.dispatch(
-                reset('ReceiveSuccess', {
-                    tx,
-                }),
-            )
-        },
-        [navigation],
-    )
+    const handleTransactionPaid = (tx: TransactionListEntry) => {
+        navigation.dispatch(
+            reset('ReceiveSuccess', {
+                tx,
+            }),
+        )
+    }
 
     const { isInvoiceLoading, makeLightningRequest } = useMakeLightningRequest({
         fedimint,
