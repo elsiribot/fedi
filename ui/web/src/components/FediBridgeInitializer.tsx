@@ -3,6 +3,7 @@ import React, { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 
 import FediLogo from '@fedi/common/assets/svgs/fedi-logo-icon.svg'
+import { FedimintProvider } from '@fedi/common/components/FedimintProvider'
 import {
     ANDROID_PLAY_STORE_URL,
     IOS_APP_STORE_URL,
@@ -229,7 +230,7 @@ export const FediBridgeInitializer: React.FC<Props> = ({ children }) => {
         return <Redirect path="/home" />
     }
 
-    return children
+    return <FedimintProvider fedimint={fedimint}>{children}</FedimintProvider>
 }
 
 const loaderFadeIn = keyframes({

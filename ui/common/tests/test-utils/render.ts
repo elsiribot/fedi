@@ -8,6 +8,7 @@ import { resources } from '@fedi/common/localization'
 import { initializeCommonStore, setupStore } from '@fedi/common/redux'
 import { StorageApi } from '@fedi/common/types'
 
+import { FedimintProvider } from '../../components/FedimintProvider'
 import { FedimintBridge } from '../../utils/fedimint'
 import { createMockFedimintBridge } from './fedimint'
 
@@ -45,7 +46,10 @@ export const mockReduxProvider = (
             return unsubscribe
         }, [])
 
-        return createElement(Provider, { store, children })
+        return createElement(Provider, {
+            store,
+            children: createElement(FedimintProvider, { fedimint, children }),
+        })
     }
 }
 

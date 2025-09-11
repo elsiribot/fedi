@@ -6,4 +6,15 @@ module.exports = {
     testMatch: ['**/tests/integration/**/*.test.ts'],
     setupFilesAfterEnv: ['<rootDir>/test-utils/setup.ts'],
     moduleFileExtensions: ['ts', 'tsx', 'js', 'jsx', 'json', 'node'],
+    transform: {
+        '^.+\\.(ts|tsx)$': [
+            'ts-jest',
+            {
+                tsconfig: {
+                    jsx: 'react-jsx',
+                },
+            },
+        ],
+    },
+    transformIgnorePatterns: ['node_modules/(?!(.*\\.(mjs|jsx?|tsx?)$))'],
 }

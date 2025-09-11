@@ -5,6 +5,7 @@ import { Platform } from 'react-native'
 import { SafeAreaProvider } from 'react-native-safe-area-context'
 import SplashScreen from 'react-native-splash-screen'
 
+import { FedimintProvider } from '@fedi/common/components/FedimintProvider'
 import { useUpdatingRef } from '@fedi/common/hooks/util'
 import {
     refreshOnboardingStatus,
@@ -160,7 +161,9 @@ export const FediBridgeInitializer: React.FC<Props> = ({ children }) => {
     }, [matrixAuth])
 
     if (bridgeIsReady && !bridgeError) {
-        return <>{children}</>
+        return (
+            <FedimintProvider fedimint={fedimint}>{children}</FedimintProvider>
+        )
     }
 
     if (bridgeError) {
