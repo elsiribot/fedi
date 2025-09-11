@@ -5,7 +5,10 @@ import { Pressable, StyleSheet, View } from 'react-native'
 
 import { selectChatDrafts } from '@fedi/common/redux'
 import dateUtils from '@fedi/common/utils/DateUtils'
-import { shouldShowUnreadIndicator } from '@fedi/common/utils/matrix'
+import {
+    getRoomPreviewText,
+    shouldShowUnreadIndicator,
+} from '@fedi/common/utils/matrix'
 
 import { DEFAULT_GROUP_NAME } from '../../../constants'
 import { useAppSelector } from '../../../state/hooks'
@@ -40,17 +43,11 @@ const ChatTile = ({ room, onSelect, onLongPress }: ChatTileProps) => {
     )
 
     const previewMessage = useMemo(() => {
-        if (room.isBlocked) return t('feature.chat.user-is-blocked')
         if (draftMessage)
             return t('feature.chat.draft-text', { text: draftMessage })
-
-        return room?.preview?.body
+        // TODO: Fix previews on chat payments
+        return getRoomPreviewText(room, t)
     }, [room, draftMessage, t])
-
-    const previewMessageIsDeleted = useMemo(
-        () => room?.preview?.isDeleted,
-        [room?.preview],
-    )
 
     const style = styles(theme)
 
@@ -113,13 +110,9 @@ const ChatTile = ({ room, onSelect, onLongPress }: ChatTileProps) => {
                                 HACK: public rooms don't show a preview message so you have to click into it to paginate backwards
                                 TODO: Replace with proper room previews
                             */}
-                            {previewMessageIsDeleted
-                                ? t('feature.chat.message-deleted')
-                                : room.isPublic && room.broadcastOnly
-                                  ? t(
-                                        'feature.chat.click-here-for-announcements',
-                                    )
-                                  : t('feature.chat.no-messages')}
+                            {room.isPublic && room.broadcastOnly
+                                ? t('feature.chat.click-here-for-announcements')
+                                : t('feature.chat.no-messages')}
                         </Text>
                     )}
                 </Flex>

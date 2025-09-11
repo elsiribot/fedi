@@ -25,10 +25,10 @@ import {
     selectMatrixRoomIsBlocked,
     selectIsDefaultGroup,
 } from '@fedi/common/redux'
-import { ChatType, MatrixEvent, MatrixEventStatus } from '@fedi/common/types'
+import { ChatType, MatrixEvent } from '@fedi/common/types'
+import { RpcTimelineEventItemId } from '@fedi/common/types/bindings'
 import { makeLog } from '@fedi/common/utils/log'
 import {
-    MatrixEventContent,
     isImageEvent,
     isMultispendEvent,
     isVideoEvent,
@@ -104,8 +104,9 @@ const ChatConversation: React.FC<MessagesListProps> = ({
         const timestamp = Date.now()
 
         visiblePreviewMedia.reverse().forEach(({ media }, index) => {
+            const eventId = `cached-media-${media.fileName}-${index}`
             evts.push({
-                id: `cached-media-${media.fileName}-${index}`,
+                id: eventId as RpcTimelineEventItemId,
                 content: {
                     msgtype: 'xyz.fedi.preview-media' as const,
                     body: media.fileName,
@@ -116,12 +117,12 @@ const ChatConversation: React.FC<MessagesListProps> = ({
                         uri: media.uri,
                     },
                 },
-                status: MatrixEventStatus.sent,
                 roomId: id,
                 timestamp,
-                senderId: myId,
-                eventId: `cached-media-${media.fileName}-${index}`,
-                error: null,
+                sender: myId,
+                localEcho: false,
+                sendState: { kind: 'sent', event_id: eventId },
+                inReply: null,
             })
         })
 
@@ -151,11 +152,7 @@ const ChatConversation: React.FC<MessagesListProps> = ({
                 ) {
                     const group = eventGroups[groupIndex]
                     const found = group.some(timeFrame =>
-                        timeFrame.some(
-                            event =>
-                                event.eventId === eventId ||
-                                event.id === eventId,
-                        ),
+                        timeFrame.some(event => event.id === eventId),
                     )
                     if (found) {
                         targetGroupIndex = groupIndex
@@ -215,7 +212,7 @@ const ChatConversation: React.FC<MessagesListProps> = ({
         // Update ref so we don't scroll again
         lastScrolledMessageIdRef.current = lastMessage.id
         // If we sent it, or we're already at the bottom, scroll without asking
-        if (lastMessage.senderId === myId || isScrolledToBottomRef.current) {
+        if (lastMessage.sender === myId || isScrolledToBottomRef.current) {
             return
         }
         // Otherwise, mark that we have new messages
@@ -236,13 +233,11 @@ const ChatConversation: React.FC<MessagesListProps> = ({
         [],
     )
 
-    const renderEventGroup: ListRenderItem<
-        MatrixEvent<MatrixEventContent>[][]
-    > = useCallback(
+    const renderEventGroup: ListRenderItem<MatrixEvent[][]> = useCallback(
         ({ item }) => {
             return (
                 <ChatEventCollection
-                    key={item[0].at(-1)?.eventId}
+                    key={item[0].at(-1)?.id}
                     roomId={id}
                     collection={item}
                     showUsernames={
@@ -277,7 +272,7 @@ const ChatConversation: React.FC<MessagesListProps> = ({
                     data={eventGroups}
                     ref={listRef}
                     renderItem={renderEventGroup}
-                    keyExtractor={item => item[0].at(-1)?.eventId as string}
+                    keyExtractor={item => item[0].at(-1)?.id as string}
                     style={[
                         style.listContainer,
                         {

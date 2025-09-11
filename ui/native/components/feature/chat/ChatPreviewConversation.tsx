@@ -15,10 +15,7 @@ import {
 
 import { getMatrixRoomPreview, selectIsDefaultGroup } from '@fedi/common/redux'
 import { MatrixEvent, MatrixGroupPreview } from '@fedi/common/types'
-import {
-    MatrixEventContent,
-    makeMatrixEventGroups,
-} from '@fedi/common/utils/matrix'
+import { makeMatrixEventGroups } from '@fedi/common/utils/matrix'
 
 import { useAppDispatch, useAppSelector } from '../../../state/hooks'
 import ChatEventCollection from './ChatEventCollection'
@@ -133,9 +130,7 @@ const ChatPreviewConversation: React.FC<Props> = ({ id, preview }: Props) => {
         [],
     )
 
-    const renderEventGroup: ListRenderItem<
-        MatrixEvent<MatrixEventContent>[][]
-    > = useCallback(
+    const renderEventGroup: ListRenderItem<MatrixEvent[][]> = useCallback(
         ({ item }) => {
             return (
                 <ChatEventCollection

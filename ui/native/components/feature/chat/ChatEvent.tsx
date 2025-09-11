@@ -63,7 +63,7 @@ const ChatEvent: React.FC<Props> = ({
     const [selectedUserId, setSelectedUserId] = useState<string | null>(null)
 
     const isMe =
-        event.senderId === matrixAuth?.userId && !isMultispendEvent(event)
+        event.sender === matrixAuth?.userId && !isMultispendEvent(event)
     const isQueued = false
     const isText = isTextEvent(event)
 
@@ -216,6 +216,7 @@ const areEqual = (
     if (prevHighlighted !== currHighlighted) {
         return false
     }
+    if (prevEvent.localEcho !== currEvent.localEcho) return false
 
     if (isPaymentEvent(currEvent) && isPaymentEvent(prevEvent)) {
         return (
@@ -226,7 +227,10 @@ const areEqual = (
         return arePollEventsEqual(prevEvent, currEvent)
     } else {
         return (
-            prevEvent.eventId === currEvent.eventId &&
+            prevEvent.content.msgtype === currEvent.content.msgtype &&
+            prevEvent.id === currEvent.id &&
+            'body' in prevEvent.content &&
+            'body' in currEvent.content &&
             prevEvent.content.body === currEvent.content.body
         )
     }

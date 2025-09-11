@@ -15,7 +15,6 @@ import {
     setSelectedChatMessage,
 } from '@fedi/common/redux'
 import { MatrixEvent } from '@fedi/common/types'
-import { MatrixEventContentType } from '@fedi/common/utils/matrix'
 import { scaleAttachment } from '@fedi/common/utils/media'
 
 import { useAppDispatch, useAppSelector } from '../../../state/hooks'
@@ -24,7 +23,7 @@ import Flex from '../../ui/Flex'
 import SvgImage from '../../ui/SvgImage'
 
 type ChatImageEventProps = {
-    event: MatrixEvent<MatrixEventContentType<'m.image'>>
+    event: MatrixEvent<'m.image'>
 }
 
 const ChatImageEvent: React.FC<ChatImageEventProps> = ({
@@ -49,8 +48,8 @@ const ChatImageEvent: React.FC<ChatImageEventProps> = ({
     const style = styles(theme)
 
     const dimensions = scaleAttachment(
-        event.content.info.w,
-        event.content.info.h,
+        event.content.info?.width || 1, // Should't be falsy, but fallback to 1 to avoid division by zero
+        event.content.info?.height || 1,
         theme.sizes.maxMessageWidth,
         400,
     )

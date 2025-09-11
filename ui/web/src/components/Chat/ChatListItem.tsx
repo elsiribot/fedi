@@ -34,9 +34,10 @@ export const ChatListItem: React.FC<Props> = ({ room }) => {
     )
 
     const cleanPreviewBody = useMemo(() => {
-        if (!room.preview?.body) return ''
-        return stripReplyFromBody(room.preview.body)
-    }, [room.preview?.body])
+        if (room.preview?.content && 'body' in room.preview.content)
+            return stripReplyFromBody(room.preview.content.body)
+        return ''
+    }, [room.preview?.content])
 
     return (
         <Container
@@ -72,6 +73,9 @@ export const ChatListItem: React.FC<Props> = ({ room }) => {
                             : theme.colors.darkGrey,
                     }}>
                     {cleanPreviewBody}
+                    {room.preview?.content &&
+                        'body' in room.preview.content &&
+                        room.preview.content.body}
                 </Text>
             </Content>
         </Container>

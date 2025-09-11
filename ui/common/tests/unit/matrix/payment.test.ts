@@ -1,4 +1,5 @@
-import { MatrixPaymentStatus, MatrixPaymentEvent } from '../../../types'
+import { MatrixPaymentEvent } from '../../../types'
+import { RpcTimelineEventItemId } from '../../../types/bindings'
 import { consolidatePaymentEvents } from '../../../utils/matrix'
 import {
     createMockPaymentEvent,
@@ -20,14 +21,14 @@ it('returns empty array when given empty input', () => {
 // BUSINESS: Regular text messages remain unchanged while payment events get special processing
 it('keeps non-payment events unchanged', () => {
     const textEvent = createMockNonPaymentEvent({
-        id: 'text1',
+        id: 'text1' as RpcTimelineEventItemId,
         timestamp: 1000,
     })
     const paymentEvent = createMockPaymentEvent({
-        id: 'payment1',
+        id: 'payment1' as RpcTimelineEventItemId,
         content: {
             paymentId: 'pay123',
-            status: MatrixPaymentStatus.pushed,
+            status: 'pushed',
             amount: 2000,
         },
     })
@@ -41,26 +42,26 @@ it('keeps non-payment events unchanged', () => {
 // BUSINESS: Users see only one message per payment (not 3 separate push/accept/receive messages)
 it('shows only initial payment events (pushed/requested) for each paymentId', () => {
     const pushedEvent = createMockPaymentEvent({
-        id: 'event1',
+        id: 'event1' as RpcTimelineEventItemId,
         content: {
             paymentId: 'pay123',
-            status: MatrixPaymentStatus.pushed,
+            status: 'pushed',
             amount: 1000,
         },
     })
     const acceptedEvent = createMockPaymentEvent({
-        id: 'event2',
+        id: 'event2' as RpcTimelineEventItemId,
         content: {
             paymentId: 'pay123',
-            status: MatrixPaymentStatus.accepted,
+            status: 'accepted',
             amount: 2000,
         },
     })
     const receivedEvent = createMockPaymentEvent({
-        id: 'event3',
+        id: 'event3' as RpcTimelineEventItemId,
         content: {
             paymentId: 'pay123',
-            status: MatrixPaymentStatus.received,
+            status: 'received',
             amount: 3000,
         },
     })
@@ -78,19 +79,19 @@ it('shows only initial payment events (pushed/requested) for each paymentId', ()
 // BUSINESS: Payment message shows current status (completed/pending) not the original status
 it('merges latest status into initial event content', () => {
     const pushedEvent = createMockPaymentEvent({
-        id: 'event1',
+        id: 'event1' as RpcTimelineEventItemId,
         content: {
             paymentId: 'pay123',
-            status: MatrixPaymentStatus.pushed,
+            status: 'pushed',
             amount: 1000,
             senderOperationId: 'sender-op-123',
         },
     })
     const receivedEvent = createMockPaymentEvent({
-        id: 'event2',
+        id: 'event2' as RpcTimelineEventItemId,
         content: {
             paymentId: 'pay123',
-            status: MatrixPaymentStatus.received,
+            status: 'received',
             amount: 3000,
             senderOperationId: 'sender-op-123',
             receiverOperationId: 'receiver-op-456',
@@ -103,27 +104,27 @@ it('merges latest status into initial event content', () => {
     expect(result[0].id).toBe('event1') // original event ID
 
     const paymentEvent = result[0] as MatrixPaymentEvent
-    expect(paymentEvent.content.status).toBe(MatrixPaymentStatus.received) // updated status
+    expect(paymentEvent.content.status).toBe('received') // updated status
     expect(paymentEvent.content.receiverOperationId).toBe('receiver-op-456') // merged data
 })
 
 // BUSINESS: App preserves transaction history links when older clients send incomplete updates
 it('preserves existing operation IDs', () => {
     const pushedEvent = createMockPaymentEvent({
-        id: 'event1',
+        id: 'event1' as RpcTimelineEventItemId,
         content: {
             paymentId: 'pay123',
-            status: MatrixPaymentStatus.pushed,
+            status: 'pushed',
             amount: 1000,
             senderOperationId: 'sender-op-123',
             receiverOperationId: undefined,
         },
     })
     const updateEvent = createMockPaymentEvent({
-        id: 'event2',
+        id: 'event2' as RpcTimelineEventItemId,
         content: {
             paymentId: 'pay123',
-            status: MatrixPaymentStatus.accepted,
+            status: 'accepted',
             amount: 2000,
             senderOperationId: 'sender-op-123',
             receiverOperationId: 'receiver-op-456',
@@ -140,26 +141,26 @@ it('preserves existing operation IDs', () => {
 // BUSINESS: Multiple payments in same chat are handled independently
 it('handles multiple different payment IDs correctly', () => {
     const payment1Event = createMockPaymentEvent({
-        id: 'event1',
+        id: 'event1' as RpcTimelineEventItemId,
         content: {
             paymentId: 'pay123',
-            status: MatrixPaymentStatus.pushed,
+            status: 'pushed',
             amount: 1000,
         },
     })
     const payment2Event = createMockPaymentEvent({
-        id: 'event2',
+        id: 'event2' as RpcTimelineEventItemId,
         content: {
             paymentId: 'pay456',
-            status: MatrixPaymentStatus.requested,
+            status: 'requested',
             amount: 2000,
         },
     })
     const payment1Update = createMockPaymentEvent({
-        id: 'event3',
+        id: 'event3' as RpcTimelineEventItemId,
         content: {
             paymentId: 'pay123',
-            status: MatrixPaymentStatus.received,
+            status: 'received',
             amount: 3000,
         },
     })
@@ -186,6 +187,6 @@ it('handles multiple different payment IDs correctly', () => {
         )
     }) as MatrixPaymentEvent
 
-    expect(payment1Result.content.status).toBe(MatrixPaymentStatus.received)
-    expect(payment2Result.content.status).toBe(MatrixPaymentStatus.requested)
+    expect(payment1Result.content.status).toBe('received')
+    expect(payment2Result.content.status).toBe('requested')
 })

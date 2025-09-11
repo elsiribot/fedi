@@ -1,4 +1,4 @@
-import { waitFor } from '@testing-library/react-native'
+import { act, waitFor } from '@testing-library/react-native'
 import crypto from 'crypto'
 import { TemporaryDirectoryPath } from 'react-native-fs'
 import { RESULTS } from 'react-native-permissions'
@@ -78,7 +78,10 @@ describe('useDownloadResource', () => {
 
     it('should initialize with correct default values', () => {
         const { result } = renderHookWithProviders(
-            () => useDownloadResource(null),
+            () =>
+                useDownloadResource(null, {
+                    loadResourceInitially: false,
+                }),
             { store },
         )
 
@@ -93,18 +96,24 @@ describe('useDownloadResource', () => {
     describe('copying resources to the temporary directory', () => {
         it('should copy a matrix image event to the temporary directory with fedimint.matrixDownloadFile', async () => {
             const { result } = renderHookWithProviders(
-                () => useDownloadResource(mockMatrixEventImage),
+                () =>
+                    useDownloadResource(mockMatrixEventImage, {
+                        loadResourceInitially: false,
+                    }),
                 { store },
             )
+            await act(async () => {
+                await result.current.handleDownload()
+            })
 
-            const identifier = `${mockMatrixEventImage.eventId}-${mockMatrixEventImage.timestamp}`
+            const identifier = `${mockMatrixEventImage.id}-${mockMatrixEventImage.timestamp}`
             const identifierHash = crypto
                 .createHash('md5')
                 .update(identifier)
                 .digest('hex')
-            const imageMime = mockMatrixEventImage.content.info.mimetype
-                .split('/')
-                .pop()
+            const imageMime =
+                mockMatrixEventImage.content.info?.mimetype?.split('/').pop() ||
+                'png'
 
             await waitFor(() => {
                 expect(mockMatrixDownloadFile).toHaveBeenCalledWith(
@@ -112,7 +121,7 @@ describe('useDownloadResource', () => {
                         TemporaryDirectoryPath,
                         `${identifierHash}.${imageMime}`,
                     ),
-                    mockMatrixEventImage.content,
+                    mockMatrixEventImage.content.source,
                 )
                 expect(result.current.uri).toBeTruthy()
             })
@@ -120,26 +129,33 @@ describe('useDownloadResource', () => {
 
         it('should copy a matrix video event to the temporary directory with fedimint.matrixDownloadFile', async () => {
             const { result } = renderHookWithProviders(
-                () => useDownloadResource(mockMatrixEventVideo),
+                () =>
+                    useDownloadResource(mockMatrixEventVideo, {
+                        loadResourceInitially: false,
+                    }),
                 { store },
             )
 
-            const identifier = `${mockMatrixEventVideo.eventId}-${mockMatrixEventVideo.timestamp}`
+            await act(async () => {
+                await result.current.handleDownload()
+            })
+
+            const identifier = `${mockMatrixEventVideo.id}-${mockMatrixEventVideo.timestamp}`
             const identifierHash = crypto
                 .createHash('md5')
                 .update(identifier)
                 .digest('hex')
-            const imageMime = mockMatrixEventVideo.content.info.mimetype
-                .split('/')
-                .pop()
+            const videoMime =
+                mockMatrixEventVideo.content.info?.mimetype?.split('/').pop() ||
+                'mp4'
 
             await waitFor(() => {
                 expect(mockMatrixDownloadFile).toHaveBeenCalledWith(
                     pathJoin(
                         TemporaryDirectoryPath,
-                        `${identifierHash}.${imageMime}`,
+                        `${identifierHash}.${videoMime}`,
                     ),
-                    mockMatrixEventVideo.content,
+                    mockMatrixEventVideo.content.source,
                 )
                 expect(result.current.uri).toBeTruthy()
             })
@@ -147,18 +163,25 @@ describe('useDownloadResource', () => {
 
         it('should copy a matrix file event to the temporary directory with fedimint.matrixDownloadFile', async () => {
             const { result } = renderHookWithProviders(
-                () => useDownloadResource(mockMatrixEventFile),
+                () =>
+                    useDownloadResource(mockMatrixEventFile, {
+                        loadResourceInitially: false,
+                    }),
                 { store },
             )
 
-            const identifier = `${mockMatrixEventFile.eventId}-${mockMatrixEventFile.timestamp}`
+            await act(async () => {
+                await result.current.handleDownload()
+            })
+
+            const identifier = `${mockMatrixEventFile.id}-${mockMatrixEventFile.timestamp}`
             const identifierHash = crypto
                 .createHash('md5')
                 .update(identifier)
                 .digest('hex')
-            const imageMime = mockMatrixEventFile.content.info.mimetype
-                .split('/')
-                .pop()
+            const imageMime =
+                mockMatrixEventFile.content.info?.mimetype?.split('/').pop() ||
+                'pdf'
 
             await waitFor(() => {
                 expect(mockMatrixDownloadFile).toHaveBeenCalledWith(
@@ -166,7 +189,7 @@ describe('useDownloadResource', () => {
                         TemporaryDirectoryPath,
                         `${identifierHash}.${imageMime}`,
                     ),
-                    mockMatrixEventFile.content,
+                    mockMatrixEventFile.content.source,
                 )
                 expect(result.current.uri).toBeTruthy()
             })
@@ -174,11 +197,18 @@ describe('useDownloadResource', () => {
 
         it('should copy an http URL to the temporary directory with `RNFetchBlob.fetch`', async () => {
             const { result } = renderHookWithProviders(
-                () => useDownloadResource(testHttpUrl),
+                () =>
+                    useDownloadResource(testHttpUrl, {
+                        loadResourceInitially: false,
+                    }),
                 {
                     store,
                 },
             )
+
+            await act(async () => {
+                await result.current.handleDownload()
+            })
 
             await waitFor(() => {
                 expect(mockRNFetchBlobFetch).toHaveBeenCalledWith(
@@ -190,8 +220,18 @@ describe('useDownloadResource', () => {
         })
 
         it('should convert an mxc:// URL to an http URL before copying it to the temporary directory with `RNFetchBlob.fetch`', async () => {
-            renderHookWithProviders(() => useDownloadResource(testMxcUrl), {
-                store,
+            const { result } = renderHookWithProviders(
+                () =>
+                    useDownloadResource(testMxcUrl, {
+                        loadResourceInitially: false,
+                    }),
+                {
+                    store,
+                },
+            )
+
+            await act(async () => {
+                await result.current.handleDownload()
             })
 
             await waitFor(() => {
@@ -210,7 +250,6 @@ describe('useDownloadResource', () => {
                     }),
                 { store },
             )
-
             await waitFor(() => {
                 expect(mockMatrixDownloadFile).not.toHaveBeenCalled()
             })
@@ -220,9 +259,16 @@ describe('useDownloadResource', () => {
     describe('downloading resources', () => {
         it('should download a matrix image event to the camera roll', async () => {
             const { result } = renderHookWithProviders(
-                () => useDownloadResource(mockMatrixEventImage),
+                () =>
+                    useDownloadResource(mockMatrixEventImage, {
+                        loadResourceInitially: false,
+                    }),
                 { store },
             )
+
+            await act(async () => {
+                await result.current.handleDownload()
+            })
 
             await waitFor(() => {
                 expect(mockMatrixDownloadFile).toHaveBeenCalled()
@@ -231,7 +277,9 @@ describe('useDownloadResource', () => {
 
             const { handleDownload } = result.current
 
-            await handleDownload()
+            await act(async () => {
+                await handleDownload()
+            })
 
             await waitFor(() => {
                 expect(mockSaveAsset).toHaveBeenCalledWith(result.current.uri, {
@@ -242,9 +290,16 @@ describe('useDownloadResource', () => {
 
         it('should download a matrix video event to the camera roll', async () => {
             const { result } = renderHookWithProviders(
-                () => useDownloadResource(mockMatrixEventVideo),
+                () =>
+                    useDownloadResource(mockMatrixEventVideo, {
+                        loadResourceInitially: false,
+                    }),
                 { store },
             )
+
+            await act(async () => {
+                await result.current.handleDownload()
+            })
 
             await waitFor(() => {
                 expect(mockMatrixDownloadFile).toHaveBeenCalled()
@@ -253,7 +308,9 @@ describe('useDownloadResource', () => {
 
             const { handleDownload } = result.current
 
-            await handleDownload()
+            await act(async () => {
+                await handleDownload()
+            })
 
             await waitFor(() => {
                 expect(mockSaveAsset).toHaveBeenCalledWith(result.current.uri, {
@@ -264,9 +321,16 @@ describe('useDownloadResource', () => {
 
         it('should open a matrix file event in Share.open', async () => {
             const { result } = renderHookWithProviders(
-                () => useDownloadResource(mockMatrixEventFile),
+                () =>
+                    useDownloadResource(mockMatrixEventFile, {
+                        loadResourceInitially: false,
+                    }),
                 { store },
             )
+
+            await act(async () => {
+                await result.current.handleDownload()
+            })
 
             await waitFor(() => {
                 expect(mockMatrixDownloadFile).toHaveBeenCalled()
@@ -275,7 +339,9 @@ describe('useDownloadResource', () => {
 
             const { handleDownload } = result.current
 
-            await handleDownload()
+            await act(async () => {
+                await handleDownload()
+            })
 
             await waitFor(() => {
                 expect(mockShareOpen).toHaveBeenCalled()
@@ -284,9 +350,16 @@ describe('useDownloadResource', () => {
 
         it('should download an http URL to the camera roll', async () => {
             const { result } = renderHookWithProviders(
-                () => useDownloadResource(testHttpUrl),
+                () =>
+                    useDownloadResource(testHttpUrl, {
+                        loadResourceInitially: false,
+                    }),
                 { store },
             )
+
+            await act(async () => {
+                await result.current.handleDownload()
+            })
 
             await waitFor(() => {
                 expect(mockRNFetchBlobFetch).toHaveBeenCalledWith(
@@ -298,7 +371,9 @@ describe('useDownloadResource', () => {
 
             const { handleDownload } = result.current
 
-            await handleDownload()
+            await act(async () => {
+                await handleDownload()
+            })
 
             await waitFor(() => {
                 expect(mockSaveAsset).toHaveBeenCalledWith(result.current.uri, {
@@ -311,9 +386,18 @@ describe('useDownloadResource', () => {
             const convertedMxcUrl = `https://m1.8fa.in/_matrix/media/r0/download/m1.8fa.in/id`
 
             const { result } = renderHookWithProviders(
-                () => useDownloadResource(testMxcUrl),
+                () =>
+                    useDownloadResource(testMxcUrl, {
+                        loadResourceInitially: false,
+                    }),
                 { store },
             )
+
+            const { handleDownload } = result.current
+
+            await act(async () => {
+                await handleDownload()
+            })
 
             await waitFor(() => {
                 expect(mockRNFetchBlobFetch).toHaveBeenCalledWith(
@@ -322,10 +406,6 @@ describe('useDownloadResource', () => {
                 )
                 expect(result.current.uri).toBeTruthy()
             })
-
-            const { handleDownload } = result.current
-
-            await handleDownload()
 
             await waitFor(() => {
                 expect(mockSaveAsset).toHaveBeenCalledWith(result.current.uri, {

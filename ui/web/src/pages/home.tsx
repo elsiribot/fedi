@@ -12,6 +12,7 @@ import {
     selectLastSelectedCommunity,
     selectMatrixAuth,
     selectOnboardingMethod,
+    selectMatrixRoom,
 } from '@fedi/common/redux'
 import { selectVisibleCommunityMods } from '@fedi/common/redux/mod'
 import { selectCanShowSurvey } from '@fedi/common/redux/support'
@@ -60,7 +61,10 @@ function HomePage() {
 
     // Get first chat message to use as Federation News for now
     // Improvement: Show carousel of announcements to show multiple news items
-    const newsItem = newsItems.length > 0 ? newsItems[0] : null
+    const newsItemId = newsItems.length > 0 ? newsItems[0] : null
+    const newsItem = useAppSelector(s =>
+        newsItemId ? selectMatrixRoom(s, newsItemId.id) : undefined,
+    )
 
     // Get rates from cache
     useEffect(() => {
@@ -101,8 +105,14 @@ function HomePage() {
                                                 <Text variant="small">
                                                     {stringUtils.truncateString(
                                                         stringUtils.stripNewLines(
-                                                            newsItem.preview
-                                                                .body,
+                                                            'body' in
+                                                                newsItem.preview
+                                                                    .content
+                                                                ? newsItem
+                                                                      .preview
+                                                                      .content
+                                                                      .body
+                                                                : '',
                                                         ),
                                                         25,
                                                     )}

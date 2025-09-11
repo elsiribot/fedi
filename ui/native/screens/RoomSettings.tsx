@@ -62,7 +62,7 @@ const RoomSettings: React.FC<Props> = ({ navigation, route }: Props) => {
     )
     const shouldShowMultispend = useAppSelector(selectShouldShowMultispend)
     const isDefaultGroup = useAppSelector(s => selectIsDefaultGroup(s, roomId))
-    const isGroupChat = room?.directUserId === undefined
+    const isGroupChat = !room?.directUserId
     const [isTogglingBroadcastOnly, setIsTogglingBroadcastOnly] =
         useState(false)
 
@@ -367,8 +367,8 @@ const RoomSettings: React.FC<Props> = ({ navigation, route }: Props) => {
                 onDismiss={() => setIsConfirmingBlock(false)}
                 user={{
                     id: room.directUserId ?? '',
-                    displayName: room?.preview?.displayName ?? '',
-                    avatarUrl: room?.preview?.avatarUrl ?? '',
+                    displayName: '', //  room?.preview?.displayName ?? '',
+                    avatarUrl: '', // room?.preview?.avatarUrl ?? '',
                 }}
             />
         </>

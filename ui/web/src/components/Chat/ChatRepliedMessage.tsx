@@ -1,6 +1,7 @@
 import React, { useMemo, useState, useCallback } from 'react'
 
-import { ReplyMessageData, matrixIdToUsername } from '@fedi/common/utils/matrix'
+import { ReplyMessageData } from '@fedi/common/types'
+import { matrixIdToUsername } from '@fedi/common/utils/matrix'
 
 import { styled, theme } from '../../styles'
 
@@ -21,13 +22,15 @@ export const ChatRepliedMessage: React.FC<Props> = ({
 
     const senderName = useMemo(() => {
         return (
-            roomMembers?.find(member => member.id === repliedData?.senderId)
-                ?.displayName || matrixIdToUsername(repliedData?.senderId)
+            roomMembers?.find(member => member.id === repliedData?.sender)
+                ?.displayName || matrixIdToUsername(repliedData?.sender)
         )
-    }, [repliedData?.senderId, roomMembers])
+    }, [repliedData?.sender, roomMembers])
 
     const truncatedBody = useMemo(() => {
-        const body = repliedData.body || 'Message'
+        const body =
+            ('body' in repliedData.content && repliedData.content.body) ||
+            'Message'
         // Dynamically adjust truncation length based on message size for better readability
         // Longer messages get more characters before truncation to preserve context
         const maxLength =
@@ -35,13 +38,13 @@ export const ChatRepliedMessage: React.FC<Props> = ({
         return body.length > maxLength
             ? `${body.substring(0, maxLength)}...`
             : body
-    }, [repliedData.body])
+    }, [repliedData.content])
 
     const handleClick = useCallback(() => {
-        if (onReplyTap && repliedData.eventId) {
-            onReplyTap(repliedData.eventId)
+        if (onReplyTap && repliedData.id) {
+            onReplyTap(repliedData.id)
         }
-    }, [onReplyTap, repliedData.eventId])
+    }, [onReplyTap, repliedData.id])
 
     const handleMouseDown = useCallback(() => setIsPressed(true), [])
     const handleMouseUp = useCallback(() => setIsPressed(false), [])

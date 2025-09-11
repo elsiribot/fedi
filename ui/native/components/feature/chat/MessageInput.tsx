@@ -36,7 +36,6 @@ import {
     selectReplyingToMessageEventForRoom,
     clearChatReplyingToMessage,
     selectMatrixRoomMembers,
-    selectIsInternetUnreachable,
     editMatrixMessage,
     selectMatrixAuth,
 } from '@fedi/common/redux'
@@ -73,7 +72,7 @@ type MessageInputProps = {
     onMessageSubmitted: (
         message: string,
         attachments?: Array<InputAttachment | InputMedia>,
-        repliedEventId?: string | null,
+        repliedEventId?: string,
     ) => Promise<void>
     id: string
     isSending?: boolean
@@ -116,7 +115,7 @@ const MessageInput: React.FC<MessageInputProps> = ({
         selectReplyingToMessageEventForRoom(s, id),
     )
     const roomMembers = useAppSelector(s => selectMatrixRoomMembers(s, id))
-    const isOffline = useAppSelector(selectIsInternetUnreachable)
+    // const isOffline = useAppSelector(selectIsInternetUnreachable)
     const auth = useAppSelector(selectMatrixAuth)
     const selfUserId = auth?.userId || undefined
 
@@ -336,29 +335,23 @@ const MessageInput: React.FC<MessageInputProps> = ({
     }, [t, toast])
 
     const handleEdit = useCallback(async () => {
-        if (!isEditingMessage || !messageText || !editingMessage) return
-
-        // build RpcTimelineEventItemId: { eventId } | { transactionId }
-        const eventId =
-            'eventId' in editingMessage && editingMessage.eventId
-                ? { eventId: editingMessage.eventId }
-                : 'transactionId' in editingMessage &&
-                    typeof editingMessage.transactionId === 'string'
-                  ? { transactionId: editingMessage.transactionId }
-                  : undefined
-
-        if (!eventId) return
+        if (!isEditingMessage || !messageText || !editingMessage.id) return
 
         try {
+            // const event = editingMessage.id
+            // await fedimint.matrixEditMessage(
+            //     editingMessage.roomId,
+            //     event,
+            //     messageText,
+            // )
             await dispatch(
                 editMatrixMessage({
                     fedimint,
                     roomId: editingMessage.roomId,
-                    eventId,
+                    eventId: editingMessage.id,
                     body: messageText,
                 }),
             ).unwrap()
-
             setMessageText('')
             dispatch(setMessageToEdit(null))
         } catch (e) {
@@ -390,25 +383,32 @@ const MessageInput: React.FC<MessageInputProps> = ({
         )
             return
 
-        // Validate replied event before sending
-        if (repliedEvent) {
-            if (!repliedEvent.eventId || isOffline) {
-                dispatch(clearChatReplyingToMessage())
+        // This logic is bugged due to the event being stale since it can't receive updates
+        // TODO: Only save the id of the replied event, then select the event when trying to send the message
 
-                const errorMessage = !repliedEvent.eventId
-                    ? t('feature.chat.offline-reply-error-1')
-                    : t('feature.chat.offline-reply-error-2')
+        // if (repliedEvent) {
+        //     if (repliedEvent.localEcho || isOffline) {
+        //         console.warn(
+        //             'clearChatReplyingToMessage',
+        //             repliedEvent,
+        //             isOffline,
+        //         )
+        //         dispatch(clearChatReplyingToMessage())
 
-                toast.error(t, new Error(errorMessage))
-                return
-            }
+        //         const errorMessage = repliedEvent.localEcho
+        //             ? t('feature.chat.offline-reply-error-1')
+        //             : t('feature.chat.offline-reply-error-2')
 
-            if (repliedEvent.status === 'failed') {
-                dispatch(clearChatReplyingToMessage())
-                toast.error(t, new Error('Cannot reply to failed message'))
-                return
-            }
-        }
+        //         toast.error(t, new Error(errorMessage))
+        //         return
+        //     }
+
+        //     if (repliedEvent.sendState?.kind === 'sendingFailed') {
+        //         dispatch(clearChatReplyingToMessage())
+        //         toast.error(t, new Error('Cannot reply to failed message'))
+        //         return
+        //     }
+        // }
 
         setIsSendingMessage(true)
 
@@ -416,7 +416,7 @@ const MessageInput: React.FC<MessageInputProps> = ({
             await onMessageSubmitted(
                 trimmedMessageText,
                 combinedUploads,
-                repliedEvent?.eventId ?? null,
+                repliedEvent?.id,
             )
             setMessageText('')
             setMedia([])
@@ -442,7 +442,6 @@ const MessageInput: React.FC<MessageInputProps> = ({
         toast,
         t,
         isSendingMessage,
-        isOffline,
     ])
 
     const style = useMemo(() => styles(theme, insets), [theme, insets])
@@ -479,10 +478,10 @@ const MessageInput: React.FC<MessageInputProps> = ({
 
     const repliedEventSenderName = useMemo(() => {
         return (
-            roomMembers.find(member => member.id === repliedEvent?.senderId)
-                ?.displayName || matrixIdToUsername(repliedEvent?.senderId)
+            roomMembers.find(member => member.id === repliedEvent?.sender)
+                ?.displayName || matrixIdToUsername(repliedEvent?.sender)
         )
-    }, [roomMembers, repliedEvent?.senderId])
+    }, [roomMembers, repliedEvent?.sender])
 
     const renderReplyBar = () => {
         if (!repliedEvent || isEditingMessage || isReadOnly) return null
@@ -490,11 +489,14 @@ const MessageInput: React.FC<MessageInputProps> = ({
         const sender = repliedEventSenderName
 
         const bodySnippet = (() => {
-            const body = repliedEvent.content.body || 'Message'
+            const body =
+                'body' in repliedEvent.content
+                    ? repliedEvent.content.body
+                    : 'Message'
 
             const formattedBody =
-                'formatted_body' in repliedEvent.content
-                    ? repliedEvent.content.formatted_body
+                'formatted' in repliedEvent.content
+                    ? repliedEvent.content.formatted?.formattedBody
                     : undefined
 
             const cleanBody = stripReplyFromBody(body, formattedBody)
@@ -521,6 +523,7 @@ const MessageInput: React.FC<MessageInputProps> = ({
                     <View style={style.replyIndicator} />
                     <View style={style.replyContent}>
                         <Text style={style.replySender} numberOfLines={1}>
+                            {/* TODO: make local for this */}
                             Replying to {sender}
                         </Text>
                         <Text style={style.replyBody} numberOfLines={1}>

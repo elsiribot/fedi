@@ -9,11 +9,7 @@ import {
     selectMatrixAuth,
     selectMatrixRoomMembers,
 } from '@fedi/common/redux'
-import {
-    MatrixEvent,
-    MatrixRoomMember,
-    MatrixEventStatus,
-} from '@fedi/common/types'
+import { MatrixRoomMember, MatrixEvent } from '@fedi/common/types'
 import { isMultispendEvent } from '@fedi/common/utils/matrix'
 
 import { useAppSelector } from '../../../state/hooks'
@@ -62,7 +58,7 @@ const ChatEventTimeFrame = memo(
 
         if (!events.length) return null
 
-        const sentBy = events[0].senderId || ''
+        const sentBy = events[0].sender || ''
 
         const roomMember = roomMembers.find(m => m.id === sentBy)
         const isMe =
@@ -103,8 +99,7 @@ const ChatEventTimeFrame = memo(
 
                     <View style={style.senderMessages}>
                         {events.map((event, eindex) => {
-                            const isPending =
-                                event.status === MatrixEventStatus.pending
+                            const isPending = event.localEcho
 
                             const isVeryRecent = (() => {
                                 if (!event.timestamp) return false
@@ -117,7 +112,7 @@ const ChatEventTimeFrame = memo(
                             const isHighlighted =
                                 !isPending &&
                                 !isVeryRecent &&
-                                (highlightedMessageId === event.eventId ||
+                                (highlightedMessageId === event.id ||
                                     highlightedMessageId === event.id)
 
                             const content = (
@@ -138,18 +133,17 @@ const ChatEventTimeFrame = memo(
                                 </View>
                             )
 
-                            const key =
-                                event.eventId || event.id || `idx-${eindex}`
-
                             return canSwipe ? (
                                 <ChatSwipeableEventContainer
-                                    key={`ceci-eb-${key}`}
+                                    key={`ceci-eb-${event.id}`}
                                     roomId={roomId}
                                     event={event}>
                                     {content}
                                 </ChatSwipeableEventContainer>
                             ) : (
-                                <View key={`ceci-eb-${key}`}>{content}</View>
+                                <View key={`ceci-eb-${event.id}`}>
+                                    {content}
+                                </View>
                             )
                         })}
                     </View>

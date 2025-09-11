@@ -29,11 +29,9 @@ use matrix::SendMessageData;
 use matrix_sdk::ruma::api::client::authenticated_media::get_media_preview;
 use matrix_sdk::ruma::api::client::profile::get_profile;
 use matrix_sdk::ruma::api::client::push::Pusher;
-use matrix_sdk::ruma::directory::PublicRoomsChunk;
 use matrix_sdk::ruma::events::room::power_levels::RoomPowerLevelsEventContent;
 use matrix_sdk::ruma::events::room::MediaSource;
 use matrix_sdk::ruma::OwnedEventId;
-use matrix_sdk::RoomInfo;
 use mime::Mime;
 use multispend::db::RpcMultispendGroupStatus;
 use multispend::{
@@ -45,8 +43,9 @@ use rpc_types::error::{ErrorCode, RpcError};
 use rpc_types::event::{Event, EventSink, PanicEvent, SocialRecoveryEvent, TypedEventExt};
 use rpc_types::matrix::{
     MatrixInitializeStatus, RpcBackPaginationStatus, RpcComposerDraft, RpcMatrixAccountSession,
-    RpcMatrixUploadResult, RpcMatrixUserDirectorySearchResponse, RpcRoomId, RpcRoomMember,
-    RpcRoomNotificationMode, RpcSyncIndicator, RpcTimelineEventItemId, RpcTimelineItem, RpcUserId,
+    RpcMatrixUploadResult, RpcMatrixUserDirectorySearchResponse, RpcPublicRoomInfo, RpcRoomId,
+    RpcRoomMember, RpcRoomNotificationMode, RpcSerializedRoomInfo, RpcSyncIndicator,
+    RpcTimelineEventItemId, RpcTimelineItem, RpcUserId,
 };
 use rpc_types::{
     FrontendMetadata, GuardianStatus, NetworkError, RpcAmount, RpcAppFlavor, RpcCommunity,
@@ -1427,12 +1426,10 @@ async fn matrixRoomLeave(bg_matrix: &BgMatrix, room_id: RpcRoomId) -> anyhow::Re
     matrix.room_leave(&room_id.into_typed()?).await
 }
 
-ts_type_de!(RoomInfoStreamId: RpcStreamId<RoomInfo> = "RpcStreamId<JSONObject>");
-
 #[macro_rules_derive(rpc_method!)]
 async fn matrixRoomSubscribeInfo(
     bg_matrix: &BgMatrix,
-    stream_id: RoomInfoStreamId,
+    stream_id: RpcStreamId<RpcSerializedRoomInfo>,
     room_id: RpcRoomId,
 ) -> anyhow::Result<()> {
     let matrix = bg_matrix.wait().await;
@@ -1440,7 +1437,7 @@ async fn matrixRoomSubscribeInfo(
     matrix
         .runtime
         .stream_pool
-        .register_stream(stream_id.0, stream)
+        .register_stream(stream_id, stream)
         .await
 }
 
@@ -1588,15 +1585,13 @@ async fn matrixUserDirectorySearch(
         .await
 }
 
-ts_type_ser!(RpcPublicRoomChunk: PublicRoomsChunk = "JSONObject");
-
 #[macro_rules_derive(rpc_method!)]
 async fn matrixPublicRoomInfo(
     bg_matrix: &BgMatrix,
     room_id: String,
-) -> anyhow::Result<RpcPublicRoomChunk> {
+) -> anyhow::Result<RpcPublicRoomInfo> {
     let matrix = bg_matrix.wait().await;
-    Ok(RpcPublicRoomChunk(matrix.public_room_info(&room_id).await?))
+    matrix.public_room_info(&room_id).await
 }
 
 #[macro_rules_derive(rpc_method!)]
@@ -1724,7 +1719,7 @@ async fn matrixEditMessage(
 ) -> anyhow::Result<()> {
     let matrix = bg_matrix.wait().await;
     matrix
-        .edit_message(&room_id.into_typed()?, &event_id.try_into()?, new_content)
+        .edit_message(&room_id.into_typed()?, &event_id.into(), new_content)
         .await
 }
 
@@ -1737,7 +1732,7 @@ async fn matrixDeleteMessage(
 ) -> anyhow::Result<()> {
     let matrix = bg_matrix.wait().await;
     matrix
-        .delete_message(&room_id.into_typed()?, &event_id.try_into()?, reason)
+        .delete_message(&room_id.into_typed()?, &event_id.into(), reason)
         .await
 }
 

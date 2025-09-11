@@ -165,7 +165,7 @@ export const ChatConversation: React.FC<Props> = ({
 
             try {
                 setIsSending(true)
-                await onSendMessage(value, files, repliedEvent?.eventId ?? null)
+                await onSendMessage(value, files, repliedEvent?.id ?? null)
                 setValue('')
                 setFiles([])
                 if (repliedEvent) {
@@ -214,17 +214,17 @@ export const ChatConversation: React.FC<Props> = ({
     )
 
     const replySender = useMemo(() => {
-        if (!repliedEvent?.senderId) return undefined
+        if (!repliedEvent?.sender) return undefined
 
         const roomMember = roomMembers?.find(
-            member => member.id === repliedEvent.senderId,
+            member => member.id === repliedEvent.sender,
         )
         if (roomMember) return roomMember
 
         return {
-            id: repliedEvent.senderId,
+            id: repliedEvent.sender,
             displayName:
-                repliedEvent.senderId?.split(':')[0]?.replace('@', '') ||
+                repliedEvent.sender?.split(':')[0]?.replace('@', '') ||
                 'Unknown',
         }
     }, [repliedEvent, roomMembers])
@@ -232,12 +232,18 @@ export const ChatConversation: React.FC<Props> = ({
     const replyPreview = useMemo(() => {
         if (!repliedEvent) return null
 
-        const body = repliedEvent.content.body || 'Message'
+        const body =
+            ('body' in repliedEvent.content && repliedEvent.content.body) ||
+            'Message'
+        // TOOD: resolve this tech debt
         const formattedBody =
             'formatted_body' in repliedEvent.content
                 ? repliedEvent.content.formatted_body
                 : undefined
-        const cleanBody = stripReplyFromBody(body, formattedBody)
+        const cleanBody = stripReplyFromBody(
+            body,
+            formattedBody as string | null,
+        )
 
         return cleanBody.slice(0, 50) || 'Message'
     }, [repliedEvent])
@@ -278,13 +284,9 @@ export const ChatConversation: React.FC<Props> = ({
                     {eventGroups.map(collection => (
                         <div
                             key={collection[0][0].id}
-                            data-event-id={
-                                collection[0][0].eventId || collection[0][0].id
-                            }
+                            data-event-id={collection[0][0].id}
                             className={
-                                highlightedMessageId ===
-                                (collection[0][0].eventId ||
-                                    collection[0][0].id)
+                                highlightedMessageId === collection[0][0].id
                                     ? 'highlighted'
                                     : ''
                             }>

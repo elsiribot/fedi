@@ -103,7 +103,9 @@ const ConfirmSendChatPayment: React.FC<Props> = ({ route, navigation }) => {
                             <ChatAvatar
                                 user={{
                                     ...existingRoom,
-                                    displayName: existingRoom.name,
+                                    displayName: existingRoom.name ?? '',
+                                    avatarUrl:
+                                        existingRoom.avatarUrl ?? undefined,
                                 }}
                             />
                             <Text caption style={style.darkGrey}>

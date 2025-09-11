@@ -52,7 +52,7 @@ import {
 } from '../utils/FederationUtils'
 import type { FedimintBridge } from '../utils/fedimint'
 import { makeLog } from '../utils/log'
-import { makeChatFromPreview } from '../utils/matrix'
+import { makeChatFromUnjoinedRoomPreview } from '../utils/matrix'
 import { upsertListItem } from '../utils/redux'
 import { loadFromStorage } from './storage'
 
@@ -349,7 +349,9 @@ export const federationSlice = createSlice({
         builder.addCase(
             previewCommunityDefaultChats.fulfilled,
             (state, action) => {
-                const chatPreviews = action.payload.map(makeChatFromPreview)
+                const chatPreviews = action.payload.map(
+                    makeChatFromUnjoinedRoomPreview,
+                )
                 const federationId = action.meta.arg
                 state.defaultCommunityChats = isEqual(
                     chatPreviews,
@@ -1200,12 +1202,8 @@ export const selectDoesFederationHaveMultispend = (
     )
 }
 
-export const selectShouldShowMultispend = createSelector(
-    (s: CommonState) => selectDoesAnyFederationHaveMultispend(s),
-    doesAnyFederationHaveMultispend => {
-        return doesAnyFederationHaveMultispend
-    },
-)
+export const selectShouldShowMultispend = (s: CommonState) =>
+    selectDoesAnyFederationHaveMultispend(s)
 
 export const selectHasSeenFederationRating = (
     state: CommonState,

@@ -55,7 +55,7 @@ const ChatEventCollection: React.FC<Props> = memo(
                 <Flex columnReverse>
                     {collection.map(events => (
                         <ChatEventTimeFrame
-                            key={events.at(-1)?.eventId}
+                            key={events.at(-1)?.id}
                             events={events}
                             roomId={roomId}
                             showUsernames={showUsernames}

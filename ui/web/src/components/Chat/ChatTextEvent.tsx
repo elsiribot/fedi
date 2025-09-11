@@ -8,14 +8,13 @@ import {
 } from '@fedi/common/redux'
 import { MatrixEvent } from '@fedi/common/types'
 import { parseMessageText } from '@fedi/common/utils/chat'
-import { MatrixEventContentType } from '@fedi/common/utils/matrix'
 
 import { useAppDispatch, useAppSelector } from '../../hooks'
 import { styled } from '../../styles'
 import { ChatRepliedMessage } from './ChatRepliedMessage'
 
 interface Props {
-    event: MatrixEvent<MatrixEventContentType<'m.text'>>
+    event: MatrixEvent<'m.text'>
     onReplyTap?: (eventId: string) => void
 }
 
@@ -40,7 +39,7 @@ export const ChatTextEvent: React.FC<Props> = ({ event, onReplyTap }) => {
         return members || []
     })
 
-    const isMe = event.senderId === matrixAuth?.userId
+    const isMe = event.sender === matrixAuth?.userId
 
     const handleContextMenu = (e: React.MouseEvent) => {
         e.preventDefault()

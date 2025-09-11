@@ -1,12 +1,12 @@
 import assert from 'assert'
 
-import { MatrixEvent, MatrixEventStatus } from '../../../types'
+import { MatrixEvent, MatrixMultispendEvent } from '../../../types'
+import { RpcTimelineEventItemId } from '../../../types/bindings'
 import {
     decodeFediMatrixUserUri,
     encodeFediMatrixUserUri,
     filterMultispendEvents,
     isValidMatrixUserId,
-    MatrixEventContentType,
     isMultispendReannounceEvent,
     findUserDisplayName,
     getUserSuffix,
@@ -14,11 +14,8 @@ import {
     mxcUrlToHttpUrl,
     mxcHttpUrlToDownloadUrl,
     isReply,
-    getReplyMessageData,
-    getReplyEventId,
     stripReplyFromBody,
 } from '../../../utils/matrix'
-import { createTestMatrixReply } from '../../test-utils/matrix'
 
 describe('encodeFediMatrixUserUri', () => {
     it('encodes a user URI', () => {
@@ -64,13 +61,15 @@ describe('isValidMatrixUserId', () => {
     })
 })
 
-const mockGroupAnnounceEvent: MatrixEvent<
-    MatrixEventContentType<'xyz.fedi.multispend'>
-> = {
-    id: '1',
+const mockGroupAnnounceEvent: MatrixMultispendEvent<'groupReannounce'> = {
+    id: '1' as RpcTimelineEventItemId,
+    localEcho: false,
+    timestamp: Date.now(),
+    sender: '@user1:m1.8fa.in',
+    sendState: { kind: 'sent', event_id: 'event123' },
+    inReply: null,
     content: {
         msgtype: 'xyz.fedi.multispend',
-        body: 'Test message',
         kind: 'groupReannounce',
         invitationId: 'iid1',
         invitation: {
@@ -86,24 +85,22 @@ const mockGroupAnnounceEvent: MatrixEvent<
         },
         rejections: [],
     },
-    status: MatrixEventStatus.sent,
     roomId: '@room1:m1.8fa.in',
-    senderId: '@user1:m1.8fa.in',
-    timestamp: Date.now(),
-    error: null,
 }
 
-const mockChatEvent: MatrixEvent<MatrixEventContentType<'m.text'>> = {
-    id: '2',
+const mockChatEvent: MatrixEvent<'m.text'> = {
+    id: '2' as RpcTimelineEventItemId,
     content: {
         msgtype: 'm.text',
         body: 'Test message 1',
+        formatted: null,
     },
-    status: MatrixEventStatus.sent,
     roomId: '@room1:m1.8fa.in',
-    senderId: '@user1:m1.8fa.in',
+    sender: '@user1:m1.8fa.in',
     timestamp: Date.now(),
-    error: null,
+    sendState: { kind: 'sent', event_id: 'event123' },
+    localEcho: false,
+    inReply: null,
 }
 
 const mockMatrixEvents: MatrixEvent[] = [mockGroupAnnounceEvent, mockChatEvent]
@@ -295,197 +292,31 @@ describe('mxcHttpUrlToDownloadUrl', () => {
     })
 })
 
-const mockRepliedEvent: MatrixEvent<MatrixEventContentType<'m.text'>> = {
-    id: 'replied-event-123',
-    eventId: '$replied-event-123:matrix.org',
+const mockRepliedEvent: MatrixEvent<'m.text'> = {
+    id: 'replied-event-123' as RpcTimelineEventItemId,
     content: {
         msgtype: 'm.text',
         body: '> <@alice:example.com> Hello, this is the original message\n\nThis is my reply to the original message',
-        format: 'org.matrix.custom.html',
-        formatted_body: 'This is my reply to the original message',
-        'm.relates_to': {
-            'm.in_reply_to': {
-                event_id: '$original-event-456:matrix.org',
-            },
+        formatted: {
+            format: 'org.matrix.custom.html',
+            formattedBody: 'This is my reply to the original message',
         },
     },
-    status: MatrixEventStatus.sent,
     roomId: '!room123:matrix.org',
-    senderId: '@bob:example.com',
+    sender: '@bob:example.com',
     timestamp: Date.now(),
-    error: null,
-}
-
-const mockNonRepliedEvent: MatrixEvent<MatrixEventContentType<'m.text'>> = {
-    id: 'regular-event-789',
-    eventId: '$regular-event-789:matrix.org',
-    content: {
-        msgtype: 'm.text',
-        body: 'This is a regular message without any replies',
+    localEcho: false,
+    sendState: { kind: 'sent', event_id: 'event123' },
+    inReply: {
+        kind: 'ready',
+        ...mockChatEvent,
     },
-    status: MatrixEventStatus.sent,
-    roomId: '!room123:matrix.org',
-    senderId: '@charlie:example.com',
-    timestamp: Date.now(),
-    error: null,
-}
-const mockEventWithMxReplyToStrip: MatrixEvent<
-    MatrixEventContentType<'m.text'>
-> = {
-    id: 'mx-reply-to-strip-456',
-    eventId: '$mx-reply-to-strip-456:matrix.org',
-    content: {
-        msgtype: 'm.text',
-        body: 'Regular body text',
-        format: 'org.matrix.custom.html',
-        formatted_body:
-            '<mx-reply><blockquote><a href="https://matrix.to/#/$target-event-789:matrix.org">In reply to</a> <a href="https://matrix.to/#/@diana:example.com">Diana Jones</a><br>Original replied message content</blockquote></mx-reply>Reply content here',
-    },
-    status: MatrixEventStatus.sent,
-    roomId: '!room123:matrix.org',
-    senderId: '@eve:example.com',
-    timestamp: Date.now(),
-    error: null,
 }
 
 describe('Reply utility functions', () => {
     describe('isReply', () => {
         it('returns true for events with m.relates_to reply structure', () => {
             expect(isReply(mockRepliedEvent)).toBe(true)
-        })
-
-        it('returns false for events with mx-reply content but no m.relates_to (v1.13 compliant)', () => {
-            expect(isReply(mockEventWithMxReplyToStrip)).toBe(false)
-        })
-
-        it('returns false for regular messages without quote structure', () => {
-            expect(isReply(mockNonRepliedEvent)).toBe(false)
-        })
-
-        it('returns false for events with incomplete quote structure', () => {
-            const incompleteEvent = {
-                ...mockNonRepliedEvent,
-                content: {
-                    ...mockNonRepliedEvent.content,
-                    'm.relates_to': {
-                        rel_type: 'something',
-                    },
-                },
-            }
-            expect(isReply(incompleteEvent)).toBe(false)
-        })
-    })
-
-    describe('getRepliedMessageData', () => {
-        it('extracts minimal reply data from m.relates_to (v1.13 compliant)', () => {
-            const result = getReplyMessageData(mockRepliedEvent)
-
-            expect(result).not.toBeNull()
-            if (result) {
-                expect(result.eventId).toBe('$original-event-456:matrix.org')
-
-                expect(result.senderId).toBe('')
-                expect(result.senderDisplayName).toBeUndefined()
-                expect(result.body).toBe('Reply message')
-                expect(result.timestamp).toBeUndefined()
-            }
-        })
-
-        it('returns null for mx-reply content without m.relates_to', () => {
-            const result = getReplyMessageData(mockEventWithMxReplyToStrip)
-
-            expect(result).toBeNull()
-        })
-
-        it('returns fallback data when m.relates_to exists but no formatted_body', () => {
-            const eventWithRelatesTo = {
-                ...mockNonRepliedEvent,
-                content: {
-                    ...mockNonRepliedEvent.content,
-                    'm.relates_to': {
-                        'm.in_reply_to': {
-                            event_id: '$fallback-event-123:matrix.org',
-                        },
-                    },
-                },
-            }
-
-            const result = getReplyMessageData(eventWithRelatesTo)
-
-            if (result) {
-                expect(result.eventId).toBe('$fallback-event-123:matrix.org')
-                expect(result.senderId).toBe('')
-                expect(result.senderDisplayName).toBeUndefined()
-                expect(result.body).toBe('Reply message')
-            }
-        })
-
-        it('returns null for non-replied events', () => {
-            const result = getReplyMessageData(mockNonRepliedEvent)
-            expect(result).toBeNull()
-        })
-    })
-
-    describe('getRepliedEventId', () => {
-        it('extracts event ID from m.relates_to structure', () => {
-            const result = getReplyEventId(mockRepliedEvent)
-            expect(result).toBe('$original-event-456:matrix.org')
-        })
-
-        it('extracts event ID from formatted_body when m.relates_to is missing', () => {
-            const result = getReplyEventId(mockEventWithMxReplyToStrip)
-            expect(result).toBe(null)
-        })
-
-        it('returns null for non-replied events', () => {
-            const result = getReplyEventId(mockNonRepliedEvent)
-            expect(result).toBeNull()
-        })
-
-        it('prefers m.relates_to over formatted_body when both are present', () => {
-            const result = getReplyEventId(mockRepliedEvent)
-            // Should return the relates_to event ID, not the one from formatted_body
-            expect(result).toBe('$original-event-456:matrix.org')
-        })
-    })
-
-    describe('createTestMatrixReply', () => {
-        it('creates a properly formatted Matrix v1.13 compliant reply event', () => {
-            const result = createTestMatrixReply(
-                '$original-123:matrix.org',
-                '@alice:example.com',
-                'Hello world',
-                'This is my reply',
-                'Alice Smith',
-            )
-
-            expect(result.msgtype).toBe('m.text')
-            expect(result.body).toBe(
-                '> <@alice:example.com> Hello world\n\nThis is my reply',
-            )
-            expect(result.format).toBe('org.matrix.custom.html')
-
-            expect(result.formatted_body).not.toContain('<mx-reply>')
-            expect(result.formatted_body).not.toContain('</mx-reply>')
-
-            expect(result.formatted_body).toContain('Alice Smith')
-            expect(result.formatted_body).toContain('This is my reply')
-
-            expect(result['m.relates_to']?.['m.in_reply_to']?.event_id).toBe(
-                '$original-123:matrix.org',
-            )
-        })
-
-        it('creates reply with sender ID as display name when not provided', () => {
-            const result = createTestMatrixReply(
-                '$original-456:matrix.org',
-                '@bob:example.com',
-                'Original message',
-                'My reply',
-            )
-
-            expect(result.body).toContain('@bob:example.com')
-            expect(result.formatted_body).not.toContain('undefined')
         })
     })
 
@@ -538,101 +369,6 @@ describe('Reply utility functions', () => {
             expect(result).toBe(
                 '> incomplete quote without user\n\nreply content',
             )
-        })
-    })
-
-    describe('Quote data validation', () => {
-        it('handles events with missing or malformed content gracefully', () => {
-            const malformedEvent = {
-                ...mockNonRepliedEvent,
-                content: {} as any,
-            }
-
-            expect(isReply(malformedEvent)).toBe(false)
-            expect(getReplyMessageData(malformedEvent)).toBeNull()
-            expect(getReplyEventId(malformedEvent)).toBeNull()
-        })
-
-        it('handles events with partial m.relates_to structure', () => {
-            const partialEvent = {
-                ...mockNonRepliedEvent,
-                content: {
-                    ...mockNonRepliedEvent.content,
-                    'm.relates_to': {
-                        rel_type: 'annotation',
-                        // Missing m.in_reply_to
-                    },
-                },
-            }
-
-            expect(isReply(partialEvent)).toBe(false)
-            expect(getReplyEventId(partialEvent)).toBeNull()
-        })
-
-        it('handles events with malformed mx-reply content (v1.13 compliant)', () => {
-            const malformedFormattedEvent = {
-                ...mockNonRepliedEvent,
-                content: {
-                    ...mockNonRepliedEvent.content,
-                    formatted_body: '<mx-reply>incomplete quote structure',
-                },
-            }
-
-            expect(isReply(malformedFormattedEvent)).toBe(false)
-            expect(getReplyMessageData(malformedFormattedEvent)).toBeNull()
-        })
-    })
-
-    describe('Integration tests', () => {
-        it('maintains consistency between detection and extraction functions', () => {
-            const repliedEvents = [mockRepliedEvent]
-
-            repliedEvents.forEach(event => {
-                const isReplied = isReply(event)
-                const repliedData = getReplyMessageData(event)
-                const repliedEventId = getReplyEventId(event)
-
-                expect(isReplied).toBe(true)
-                expect(repliedData).not.toBeNull()
-                expect(repliedEventId).not.toBeNull()
-
-                if (repliedData && repliedEventId) {
-                    expect(repliedData.eventId).toBe(repliedEventId)
-                }
-            })
-
-            const mxReplyOnlyEvents = [
-                mockEventWithMxReplyToStrip, // Has mx-reply but no m.relates_to
-            ]
-
-            mxReplyOnlyEvents.forEach(event => {
-                const isReplied = isReply(event)
-                const repliedData = getReplyMessageData(event)
-                const repliedEventId = getReplyEventId(event)
-
-                expect(isReplied).toBe(false)
-                expect(repliedData).toBeNull()
-                expect(repliedEventId).toBeNull()
-            })
-        })
-
-        it('ensures stripReplyFromBody works correctly with createTestMatrixReply output', () => {
-            const testReply = createTestMatrixReply(
-                '$original:matrix.org',
-                '@sender:matrix.org',
-                'Original message',
-                'My reply content',
-                'Sender Name',
-            )
-
-            const strippedFromFormatted = stripReplyFromBody(
-                testReply.body,
-                testReply.formatted_body,
-            )
-            const strippedFromPlain = stripReplyFromBody(testReply.body)
-
-            expect(strippedFromFormatted).toBe('My reply content')
-            expect(strippedFromPlain).toBe('My reply content')
         })
     })
 })

@@ -17,7 +17,6 @@ import {
     setSelectedChatMessage,
 } from '@fedi/common/redux'
 import { MatrixEvent } from '@fedi/common/types'
-import { MatrixEventContentType } from '@fedi/common/utils/matrix'
 import { scaleAttachment } from '@fedi/common/utils/media'
 
 import { useAppDispatch, useAppSelector } from '../../../state/hooks'
@@ -26,7 +25,7 @@ import Flex from '../../ui/Flex'
 import SvgImage from '../../ui/SvgImage'
 
 type ChatVideoEventProps = {
-    event: MatrixEvent<MatrixEventContentType<'m.video'>>
+    event: MatrixEvent<'m.video'>
 }
 
 const ChatVideoEvent: React.FC<ChatVideoEventProps> = ({
@@ -53,8 +52,8 @@ const ChatVideoEvent: React.FC<ChatVideoEventProps> = ({
     const style = styles(theme)
 
     const dimensions = scaleAttachment(
-        event.content.info.w,
-        event.content.info.h,
+        event.content.info?.width ?? 0,
+        event.content.info?.height ?? 0,
         theme.sizes.maxMessageWidth,
         400,
     )

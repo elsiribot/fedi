@@ -41,7 +41,7 @@ export const ChatEventCollection: React.FC<Props> = ({
             </MessageTimestamp>
             <MessageCollection>
                 {collection.map(events => {
-                    const sentBy = events[0].senderId || ''
+                    const sentBy = events[0].sender || ''
                     const roomMember = roomMembers.find(m => m.id === sentBy)
                     const isMe = sentBy === matrixAuth?.userId
                     const hasLeft = roomMember?.membership === 'leave'

@@ -654,6 +654,7 @@ export class FedimintBridge {
         return this.rpcTyped('matrixSendAttachment', args)
     }
 
+    // TODO: Make this match sendMessage
     async matrixEditMessage(
         roomId: RpcRoomId,
         eventId: RpcTimelineEventItemId,
@@ -698,6 +699,7 @@ export class FedimintBridge {
         })
     }
 
+    // TODO: Make this match sendMessage
     async matrixSendReply(
         roomId: RpcRoomId,
         replyToEventId: string,

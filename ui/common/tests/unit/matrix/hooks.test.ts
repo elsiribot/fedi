@@ -1,8 +1,9 @@
 import { act, waitFor } from '@testing-library/react'
 import { Subject } from 'rxjs'
 
-import { MatrixPaymentStatus, MatrixPaymentEvent } from '@fedi/common/types'
+import { MatrixPaymentEvent } from '@fedi/common/types'
 
+import { RpcTimelineEventItemId } from '../../../types/bindings'
 import { createMockPaymentEvent } from '../../mock-data/matrix-event'
 
 // CONSIDER: should we have test suites for test-only "factory" functions?
@@ -26,12 +27,12 @@ describe('createMockPaymentEvent - Button State and Status Tests', () => {
             content: {
                 paymentId: 'payment123',
                 amount: 1000,
-                status: MatrixPaymentStatus.received,
+                status: 'received',
                 bolt11: 'lnbc123...',
             },
         })
 
-        expect(event.content.status).toBe(MatrixPaymentStatus.received)
+        expect(event.content.status).toBe('received')
         expect(event.content.bolt11).toBe('lnbc123...')
         expect(event.content.amount).toBe(1000)
         expect(event.content.paymentId).toBe('payment123')
@@ -73,26 +74,26 @@ describe('Real-time Payment Event Updates', () => {
         const paymentId = 'realtime-payment-123'
         const events = [
             createMockPaymentEvent({
-                id: 'event1',
+                id: 'event1' as RpcTimelineEventItemId,
                 content: {
                     paymentId,
-                    status: MatrixPaymentStatus.pushed,
+                    status: 'pushed',
                 },
                 timestamp: 1000,
             }),
             createMockPaymentEvent({
-                id: 'event2',
+                id: 'event2' as RpcTimelineEventItemId,
                 content: {
                     paymentId,
-                    status: MatrixPaymentStatus.accepted,
+                    status: 'accepted',
                 },
                 timestamp: 2000,
             }),
             createMockPaymentEvent({
-                id: 'event3',
+                id: 'event3' as RpcTimelineEventItemId,
                 content: {
                     paymentId,
-                    status: MatrixPaymentStatus.received,
+                    status: 'received',
                 },
                 timestamp: 3000,
             }),
@@ -121,15 +122,9 @@ describe('Real-time Payment Event Updates', () => {
         )
 
         // Verify all events were received in order
-        expect(receivedEvents[0].content.status).toBe(
-            MatrixPaymentStatus.pushed,
-        )
-        expect(receivedEvents[1].content.status).toBe(
-            MatrixPaymentStatus.accepted,
-        )
-        expect(receivedEvents[2].content.status).toBe(
-            MatrixPaymentStatus.received,
-        )
+        expect(receivedEvents[0].content.status).toBe('pushed')
+        expect(receivedEvents[1].content.status).toBe('accepted')
+        expect(receivedEvents[2].content.status).toBe('received')
     })
 
     // BUSINESS: Users often have multiple payments happening simultaneously - they might
@@ -142,18 +137,18 @@ describe('Real-time Payment Event Updates', () => {
         // Create events for two different payments happening simultaneously
         const payment1Events = [
             createMockPaymentEvent({
-                id: 'p1-event1',
+                id: 'p1-event1' as RpcTimelineEventItemId,
                 content: {
                     paymentId: 'payment-1',
-                    status: MatrixPaymentStatus.pushed,
+                    status: 'pushed',
                 },
                 timestamp: 1000,
             }),
             createMockPaymentEvent({
-                id: 'p1-event2',
+                id: 'p1-event2' as RpcTimelineEventItemId,
                 content: {
                     paymentId: 'payment-1',
-                    status: MatrixPaymentStatus.received,
+                    status: 'received',
                 },
                 timestamp: 3000,
             }),
@@ -161,18 +156,18 @@ describe('Real-time Payment Event Updates', () => {
 
         const payment2Events = [
             createMockPaymentEvent({
-                id: 'p2-event1',
+                id: 'p2-event1' as RpcTimelineEventItemId,
                 content: {
                     paymentId: 'payment-2',
-                    status: MatrixPaymentStatus.requested,
+                    status: 'requested',
                 },
                 timestamp: 1500,
             }),
             createMockPaymentEvent({
-                id: 'p2-event2',
+                id: 'p2-event2' as RpcTimelineEventItemId,
                 content: {
                     paymentId: 'payment-2',
-                    status: MatrixPaymentStatus.accepted,
+                    status: 'accepted',
                 },
                 timestamp: 2500,
             }),
@@ -207,11 +202,7 @@ describe('Real-time Payment Event Updates', () => {
         expect(payment1Updates).toHaveLength(2)
         expect(payment2Updates).toHaveLength(2)
 
-        expect(payment1Updates[1].content.status).toBe(
-            MatrixPaymentStatus.received,
-        )
-        expect(payment2Updates[1].content.status).toBe(
-            MatrixPaymentStatus.accepted,
-        )
+        expect(payment1Updates[1].content.status).toBe('received')
+        expect(payment2Updates[1].content.status).toBe('accepted')
     })
 })

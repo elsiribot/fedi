@@ -1,18 +1,14 @@
 import { useEffect, useState } from 'react'
 
 import { MatrixEvent } from '@fedi/common/types'
-import { JSONObject } from '@fedi/common/types/bindings'
 import { makeLog } from '@fedi/common/utils/log'
-import { MatrixEventContentType } from '@fedi/common/utils/matrix'
 
 import { fedimint, readBridgeFile } from '../lib/bridge/'
 
 const log = makeLog('useLoadMedia')
 
 export function useLoadMedia(
-    event: MatrixEvent<
-        MatrixEventContentType<'m.video' | 'm.image' | 'm.file'>
-    >,
+    event: MatrixEvent<'m.video' | 'm.image' | 'm.file'>,
 ) {
     const [src, setSrc] = useState<string | null>(null)
     const [loading, setLoading] = useState<boolean>(false)
@@ -24,19 +20,17 @@ export function useLoadMedia(
         const loadMedia = async () => {
             setLoading(true)
             try {
-                if (event.content.file === null) return
-                const { body, file } = event.content
+                const { body, source } = event.content
 
                 const mediaPath = await fedimint.matrixDownloadFile(
                     body,
-                    typeof file === 'string'
-                        ? { url: file }
-                        : { file: file as JSONObject },
+                    source,
                 )
 
                 const result = await readBridgeFile(mediaPath)
+                const mimetype = event.content.info?.mimetype ?? undefined
                 url = URL.createObjectURL(
-                    new Blob([result], { type: event.content.info.mimetype }),
+                    new Blob([result], { type: mimetype }),
                 )
 
                 setSrc(url)

@@ -1,6 +1,6 @@
 use std::pin::pin;
 
-use ::matrix::{RpcTimelineItemContent, SendMessageData};
+use ::matrix::{RpcMsgLikeKind, SendMessageData};
 use bitcoin::hashes::sha256;
 use eyeball_im::VectorDiff;
 use fedimint_core::BitcoinHash;
@@ -44,14 +44,9 @@ async fn apply_diffs_continuously<T: Clone>(
 fn extract_text_from_item(item: &RpcTimelineItem) -> Option<String> {
     match item {
         RpcTimelineItem::Event(event) => match &event.content {
-            RpcTimelineItemContent::Message(message_type) => Some(message_type.body().to_string()),
-            RpcTimelineItemContent::Json(value) => {
-                Some(value.get("content")?.get("body")?.as_str()?.to_owned())
-            }
-            RpcTimelineItemContent::RedactedMessage | RpcTimelineItemContent::Poll(..) => {
-                unimplemented!()
-            }
-            RpcTimelineItemContent::Unknown => None,
+            RpcMsgLikeKind::Text(txt_like) => Some(txt_like.body.to_string()),
+            RpcMsgLikeKind::Unknown => None,
+            _ => unimplemented!(),
         },
         _ => None,
     }

@@ -6,6 +6,7 @@ import {
     mockFederation1,
     mockCommunity,
 } from '@fedi/common/tests/mock-data/federation'
+import { MatrixRoom } from '@fedi/common/types'
 
 import HomePage from '../../src/pages/home'
 import { AppState } from '../../src/state/store'
@@ -24,6 +25,21 @@ jest.mock('@fedi/common/hooks/currency.ts', () => ({
     ...jest.requireActual('@fedi/common/hooks/currency'),
     useSyncCurrencyRatesAndCache: () => ratesSpy,
 }))
+
+const mockCommunityChat = {
+    id: 'chat-id',
+    name: 'name',
+    notificationCount: 1,
+    inviteCode: 'invite-code',
+    roomState: 'joined',
+    avatarUrl: null,
+    directUserId: null,
+    isMarkedUnread: false,
+    joinedMemberCount: 0,
+    preview: null,
+    isPreview: false,
+    isPublic: false,
+} satisfies MatrixRoom
 
 // TOOD: unskip and refactor this to the federations.tsx / FederationsPage
 describe.skip('/pages/home', () => {
@@ -122,15 +138,7 @@ describe.skip('/pages/home', () => {
                                 federations: [recoveringFederation],
                                 lastUsedFederationId: '1',
                                 defaultCommunityChats: {
-                                    '1': [
-                                        {
-                                            id: 'chat-id',
-                                            name: 'name',
-                                            notificationCount: 1,
-                                            inviteCode: 'invite-code',
-                                            roomState: 'Joined',
-                                        },
-                                    ],
+                                    '1': [mockCommunityChat],
                                 },
                             },
                         },
@@ -155,15 +163,7 @@ describe.skip('/pages/home', () => {
                                 federations: [mockFederation1],
                                 lastUsedFederationId: '1',
                                 defaultCommunityChats: {
-                                    '1': [
-                                        {
-                                            id: 'chat-id',
-                                            name: 'name',
-                                            notificationCount: 1,
-                                            inviteCode: 'invite-code',
-                                            roomState: 'Joined',
-                                        },
-                                    ],
+                                    '1': [mockCommunityChat],
                                 },
                             },
                         },

@@ -4,7 +4,6 @@ import { useTranslation } from 'react-i18next'
 import PlayIcon from '@fedi/common/assets/svgs/play.svg'
 import VideoOff from '@fedi/common/assets/svgs/video-off.svg'
 import { MatrixEvent } from '@fedi/common/types'
-import { MatrixEventContentType } from '@fedi/common/utils/matrix'
 import { scaleAttachment } from '@fedi/common/utils/media'
 
 import { Icon } from '../../components/Icon'
@@ -14,7 +13,7 @@ import { styled, theme } from '../../styles'
 import { ChatMediaPreview } from './ChatMediaPreview'
 
 interface Props {
-    event: MatrixEvent<MatrixEventContentType<'m.video'>>
+    event: MatrixEvent<'m.video'>
 }
 
 const MAX_HEIGHT = 400
@@ -37,8 +36,8 @@ export const ChatVideoEvent: React.FC<Props> = ({ event }) => {
 
         const wrapper = widthRef.current
         const { width, height } = scaleAttachment(
-            event.content.info.w,
-            event.content.info.h,
+            event.content.info?.width ?? 0,
+            event.content.info?.height ?? 0,
             wrapper.clientWidth,
             MAX_HEIGHT,
         )

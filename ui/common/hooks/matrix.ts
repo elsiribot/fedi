@@ -30,24 +30,21 @@ import {
     observeMultispendAccountInfo,
     unobserveMultispendAccountInfo,
     checkBolt11PaymentResult,
-    clearChatReplyingToMessage,
-    setChatReplyingToMessage,
-    selectReplyingToMessageEventForRoom,
     sendMatrixFormResponse,
     createMatrixRoom,
 } from '../redux'
 import {
-    MatrixEvent,
     MatrixFormEvent,
     MatrixPaymentEvent,
-    MatrixPaymentStatus,
     MatrixRoom,
     MatrixRoomMember,
     MatrixUser,
     MentionSelect,
+    SendableMatrixEvent,
 } from '../types'
 import {
     RpcFederationId,
+    RpcFormOption,
     RpcOperationId,
     RpcTransaction,
 } from '../types/bindings'
@@ -56,11 +53,9 @@ import { formatErrorMessage } from '../utils/format'
 import { makeLog } from '../utils/log'
 import {
     decodeFediMatrixUserUri,
-    getReplyMessageData,
-    isReply,
+    getReplyData,
     isValidMatrixUserId,
     makeMatrixPaymentText,
-    MatrixFormOption,
     matrixIdToUsername,
     MatrixUrlMetadata,
     matrixUrlMetadataSchema,
@@ -193,7 +188,7 @@ export function useObserveMatrixRoom(roomId: MatrixRoom['id']) {
     }, [paginationStatus])
 
     // observeMatrixRoom establishes all of the relevant observables
-    // when unmounting we unobserve the room, but only for groupchats
+    // when unmounting we unobserve the room, but only for group chats
     useEffect(() => {
         if (!matrixStarted) return
         dispatch(observeMatrixRoom({ roomId }))
@@ -308,7 +303,7 @@ export function useMatrixPaymentEvent({
         selectCanPayFromOtherFeds(s, event),
     )
     const eventSender = useCommonSelector(s =>
-        selectMatrixRoomMember(s, event.roomId, event.senderId || ''),
+        selectMatrixRoomMember(s, event.roomId, event.sender || ''),
     )
     const paymentSender = useCommonSelector(s =>
         selectMatrixRoomMember(s, event.roomId, event.content.senderId || ''),
@@ -455,23 +450,20 @@ export function useMatrixPaymentEvent({
         }
     }
 
-    if (paymentStatus === MatrixPaymentStatus.received) {
+    if (paymentStatus === 'received') {
         statusIcon = 'check'
         statusText = isBolt11
             ? t('words.complete')
             : isRecipient
               ? t('words.received')
               : t('words.paid')
-    } else if (paymentStatus === MatrixPaymentStatus.rejected) {
+    } else if (paymentStatus === 'rejected') {
         statusIcon = 'reject'
         statusText = t('words.rejected')
-    } else if (paymentStatus === MatrixPaymentStatus.canceled) {
+    } else if (paymentStatus === 'canceled') {
         statusIcon = 'x'
         statusText = t('words.canceled')
-    } else if (
-        paymentStatus === MatrixPaymentStatus.pushed ||
-        paymentStatus === MatrixPaymentStatus.accepted
-    ) {
+    } else if (paymentStatus === 'pushed' || paymentStatus === 'accepted') {
         if (!canClaimPayment) {
             buttons = [
                 {
@@ -491,7 +483,7 @@ export function useMatrixPaymentEvent({
             statusIcon = 'loading'
             statusText = `${t('words.receiving')}...`
         } else if (isSentByMe) {
-            if (paymentStatus === MatrixPaymentStatus.accepted) {
+            if (paymentStatus === 'accepted') {
                 statusIcon = 'check'
                 statusText = t('words.sent')
             }
@@ -508,12 +500,12 @@ export function useMatrixPaymentEvent({
             statusText = t('feature.chat.paid-by-name', {
                 name:
                     paymentSender?.displayName ||
-                    matrixIdToUsername(event.senderId),
+                    matrixIdToUsername(event.sender),
             })
         }
-    } else if (paymentStatus === MatrixPaymentStatus.requested) {
+    } else if (paymentStatus === 'requested') {
         if (isBolt11) {
-            if (event.senderId === matrixAuth?.userId) {
+            if (event.sender === matrixAuth?.userId) {
                 buttons.push({
                     label: t('words.cancel'),
                     handler: handleCancel,
@@ -589,7 +581,7 @@ export function useMatrixFormEvent(
 } {
     const dispatch = useCommonDispatch()
     const matrixAuth = useCommonSelector(selectMatrixAuth)
-    const isSentByMe = event.senderId === matrixAuth?.userId
+    const isSentByMe = event.sender === matrixAuth?.userId
 
     let actionButton: ChatEventAction | undefined = undefined
     const options: ChatEventAction[] = []
@@ -605,7 +597,7 @@ export function useMatrixFormEvent(
     // if we have the string for the i18n key, use it, otherwise use the body
     let messageText = getLocalizedTextWithFallback(t, i18nKeyLabel, body)
 
-    const onSelectOption = async (option: MatrixFormOption) => {
+    const onSelectOption = async (option: RpcFormOption) => {
         try {
             await dispatch(
                 sendMatrixFormResponse({
@@ -615,7 +607,7 @@ export function useMatrixFormEvent(
                         responseValue: option.value,
                         responseBody: option.label || option.value || '',
                         responseI18nKey: option.i18nKeyLabel || '',
-                        respondingToEventId: event.eventId,
+                        respondingToEventId: event.id,
                     },
                 }),
             ).unwrap()
@@ -633,7 +625,7 @@ export function useMatrixFormEvent(
                         responseValue: value || '',
                         responseBody: body,
                         responseI18nKey: i18nKeyLabel,
-                        respondingToEventId: event.eventId,
+                        respondingToEventId: event.id,
                     },
                 }),
             ).unwrap()
@@ -893,160 +885,28 @@ export function useMatrixPaymentTransaction({
 }
 
 /**
- * Hook for managing replies in a specific room
- */
-export function useMatrixReply(roomId: MatrixRoom['id']) {
-    const dispatch = useCommonDispatch()
-
-    // Get the currently replied event for this room
-    const replyEvent = useCommonSelector(s =>
-        selectReplyingToMessageEventForRoom(s, roomId),
-    )
-
-    // Get the sender's display name for the replied event
-    const replyEventSender = useCommonSelector(s =>
-        replyEvent?.senderId
-            ? selectMatrixUser(s, replyEvent.senderId)
-            : undefined,
-    )
-
-    const startReply = useCallback(
-        (event: MatrixEvent) => {
-            dispatch(
-                setChatReplyingToMessage({
-                    roomId,
-                    event,
-                }),
-            )
-        },
-        [dispatch, roomId],
-    )
-
-    const clearReply = useCallback(() => {
-        dispatch(clearChatReplyingToMessage())
-    }, [dispatch])
-
-    const replyForInput = useMemo(() => {
-        if (!replyEvent) return null
-
-        const senderName =
-            replyEventSender?.displayName || replyEvent.senderId || 'Unknown'
-
-        return {
-            eventId: replyEvent?.eventId || replyEvent?.id,
-            senderName,
-            body: replyEvent.content.body || 'Message',
-            timestamp: replyEvent.timestamp,
-        }
-    }, [replyEvent, replyEventSender])
-
-    const isReplying = useMemo(() => !!replyEvent, [replyEvent])
-
-    return {
-        replyEvent,
-        replyEventSender,
-        replyForInput,
-        isReplying,
-        startReply,
-        clearReply,
-    }
-}
-
-/**
  * Hook for detecting and extracting reply data from timeline events
  * Also handles stripping reply formatting from the current message body
  */
-export function useMatrixRepliedMessage(event: MatrixEvent) {
-    const isReplied = useMemo(() => isReply(event), [event])
-
+export function useMatrixRepliedMessage(event: SendableMatrixEvent) {
     const replyData = useMemo(() => {
-        if (!isReplied) return null
-        return getReplyMessageData(event)
-    }, [event, isReplied])
-
-    // get the original replied-to event from the room timeline
-    const repliedToEvent = useCommonSelector(s => {
-        if (!replyData?.eventId || !event.roomId) return null
-
-        // get the timeline for this room
-        const timeline = s.matrix.roomTimelines[event.roomId]
-        if (!timeline) return null
-
-        // find the original event by ID
-        return (
-            timeline.find(
-                item =>
-                    item !== null &&
-                    (item.eventId === replyData.eventId ||
-                        item.id === replyData.eventId),
-            ) || null
-        )
-    })
-
-    // get the sender's display name for the original message
-    const replySender = useCommonSelector(s =>
-        repliedToEvent?.senderId
-            ? selectMatrixUser(s, repliedToEvent.senderId)
-            : undefined,
-    )
-
-    const repliedDisplayData = useMemo(() => {
-        if (!replyData) return null
-
-        // if we found the original event, use its data
-        if (repliedToEvent) {
-            const content = repliedToEvent.content
-            const body =
-                'body' in content && typeof content.body === 'string'
-                    ? content.body
-                    : 'Message'
-            const formattedBody =
-                'formatted_body' in content &&
-                typeof content.formatted_body === 'string'
-                    ? content.formatted_body
-                    : undefined
-
-            const strippedOriginalBody = stripReplyFromBody(body, formattedBody)
-
-            return {
-                eventId: replyData.eventId,
-                senderId: repliedToEvent.senderId || '',
-                senderDisplayName:
-                    replySender?.displayName ||
-                    repliedToEvent.senderId?.split(':')[0]?.replace('@', '') ||
-                    'Unknown',
-                body: strippedOriginalBody,
-                timestamp: repliedToEvent.timestamp,
-            }
-        }
-
-        return {
-            eventId: replyData.eventId,
-            senderId: '',
-            senderDisplayName: 'Unknown',
-            body: 'Message',
-            timestamp: undefined,
-        }
-    }, [replyData, repliedToEvent, replySender])
+        if (!event.inReply) return null
+        return getReplyData(event)
+    }, [event])
 
     // handle stripping reply formatting from the current event's body
     const strippedEventBody = useMemo(() => {
-        if (!isReplied) return event.content.body
-
-        // only strip if it's a text event with the required fields
-        const content = event.content
-        if (!('body' in content)) return event.content.body
-
-        const originalBody = content.body
         const formattedBody =
-            'formatted_body' in content ? content.formatted_body : undefined
+            'formatted' in event.content
+                ? event.content.formatted?.formattedBody
+                : null
 
-        return stripReplyFromBody(originalBody, formattedBody)
-    }, [event.content, isReplied])
+        return stripReplyFromBody(event.content.body, formattedBody)
+    }, [event.content])
 
     return {
-        isReplied: isReplied,
-        repliedData: repliedDisplayData,
+        isReplied: !!event.inReply,
+        repliedData: replyData,
         strippedBody: strippedEventBody,
     }
 }

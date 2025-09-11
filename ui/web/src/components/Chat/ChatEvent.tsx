@@ -28,7 +28,7 @@ interface Props {
 export const ChatEvent: React.FC<Props> = ({ event, onReplyTap }) => {
     const matrixAuth = useAppSelector(selectMatrixAuth)
 
-    const isMe = event.senderId === matrixAuth?.userId
+    const isMe = event.sender === matrixAuth?.userId
 
     // Images and videos require a different wrapper that has a percentage width
     // rather than a "fit-content" width. This allows the image to be scaled
@@ -63,9 +63,11 @@ export const ChatEvent: React.FC<Props> = ({ event, onReplyTap }) => {
         <ChatFormEvent event={event} />
     ) : isTextEvent(event) ? (
         <ChatTextEvent event={event} onReplyTap={onReplyTap} />
-    ) : (
-        event.content.body
-    )
+    ) : null
+
+    // Unsupported events are not displayed
+    // e.g. multispend, failedToParseCustom, unknown, unableToDecrypt, etc.
+    if (!content) return null
 
     return (
         <TextContent

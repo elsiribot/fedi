@@ -10,7 +10,6 @@ import {
 } from '@fedi/common/redux'
 import { MatrixEvent } from '@fedi/common/types'
 import {
-    MatrixEventContentType,
     stripReplyFromFormattedBody,
     isHtmlFormattedContent,
 } from '@fedi/common/utils/matrix'
@@ -22,7 +21,7 @@ import ChatRepliedMessage from './ChatRepliedMessage'
 import MessageContents from './MessageContents'
 
 type Props = {
-    event: MatrixEvent<MatrixEventContentType<'m.text'>>
+    event: MatrixEvent<'m.text'>
     isWide?: boolean
     onReplyTap?: (eventId: string) => void
     onMentionPress?: (userId: string) => void
@@ -46,8 +45,6 @@ const ChatTextEvent: React.FC<Props> = ({
     const roomMembers = useAppSelector(s =>
         selectMatrixRoomMembers(s, event.roomId),
     )
-
-    const isMe = event.senderId === matrixAuth?.userId
 
     const handleLongPress = () => {
         dispatch(setSelectedChatMessage(event))
@@ -77,6 +74,7 @@ const ChatTextEvent: React.FC<Props> = ({
                 : contentForDisplay,
         [contentForDisplay],
     )
+    const isMe = event.sender === matrixAuth?.userId
 
     return (
         <Pressable

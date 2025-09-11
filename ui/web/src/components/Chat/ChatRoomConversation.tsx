@@ -75,7 +75,7 @@ export const ChatRoomConversation: React.FC<Props> = ({ roomId }) => {
                             fedimint,
                             roomId,
                             body,
-                            repliedEventId: repliedEventId,
+                            repliedEventId: repliedEventId ?? undefined,
                         }),
                     ).unwrap()
                 }
@@ -160,7 +160,7 @@ export const ChatRoomConversation: React.FC<Props> = ({ roomId }) => {
             <ChatConversation
                 type={directUserId ? ChatType.direct : ChatType.group}
                 id={room?.id || ''}
-                isPublic={room?.isPublic}
+                isPublic={room?.isPublic ?? false}
                 name={room?.name || ''}
                 events={events}
                 onSendMessage={handleSend}

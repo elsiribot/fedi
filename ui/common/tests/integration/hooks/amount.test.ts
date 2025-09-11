@@ -803,7 +803,7 @@ describe('useAmountFormatter hook', () => {
 
         it('respects showFiatTxnAmounts setting with historical data', () => {
             const { store, renderHookWithBridge } = context
-            store.dispatch(setShowFiatTxnAmounts(true)) // with fiat display preference
+            act(() => store.dispatch(setShowFiatTxnAmounts(true))) // with fiat display preference
 
             const { result: fiatPrimaryResult } = renderHookWithBridge(() =>
                 useAmountFormatter(),
@@ -828,7 +828,9 @@ describe('useAmountFormatter hook', () => {
                 '1,000,000 SATS',
             )
 
-            store.dispatch(setShowFiatTxnAmounts(false)) // don't show fiat display preference
+            act(() => {
+                store.dispatch(setShowFiatTxnAmounts(false)) // don't show fiat display preference
+            })
 
             const { result: satsPrimaryResult } = renderHookWithState(
                 () => useAmountFormatter(),

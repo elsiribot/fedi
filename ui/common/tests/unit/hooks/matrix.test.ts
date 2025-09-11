@@ -126,7 +126,7 @@ describe('useMatrixFormEvent hook', () => {
                         },
                     ],
                 },
-                senderId: chatbotUserId,
+                sender: chatbotUserId,
             })
 
             const { result } = renderHookWithState(
@@ -159,7 +159,7 @@ describe('useMatrixFormEvent hook', () => {
                     type: 'button',
                     value: 'yes',
                 },
-                senderId: chatbotUserId,
+                sender: chatbotUserId,
             })
 
             const { result } = renderHookWithState(
@@ -182,6 +182,7 @@ describe('useMatrixFormEvent hook', () => {
 
             const mockFormEvent = createMockFormEvent({
                 content: {
+                    msgtype: 'xyz.fedi.form',
                     body: 'yes',
                     formResponse: {
                         respondingToEventId:
@@ -191,8 +192,12 @@ describe('useMatrixFormEvent hook', () => {
                         responseType: 'button',
                         responseValue: 'yes',
                     },
+                    i18nKeyLabel: 'phrases.accept-terms',
+                    type: 'button',
+                    value: 'yes',
+                    options: [],
                 },
-                senderId: userId, // This is our own message
+                sender: userId, // This is our own message
             })
 
             const { result } = renderHookWithState(
@@ -219,7 +224,7 @@ describe('useMatrixFormEvent hook', () => {
                     type: 'button',
                     value: 'yes',
                 },
-                senderId: userId, // This is our own message
+                sender: userId, // This is our own message
             })
 
             const { result } = renderHookWithState(
@@ -248,7 +253,7 @@ describe('useMatrixFormEvent hook', () => {
                     type: 'button',
                     value: 'yes',
                 },
-                senderId: chatbotUserId,
+                sender: chatbotUserId,
             })
 
             const { result } = renderHookWithState(
@@ -268,9 +273,9 @@ describe('useMatrixFormEvent hook', () => {
             const mockFormEvent = createMockFormEvent({
                 content: {
                     type: 'unknown' as any,
-                    body: null,
+                    body: '',
                 },
-                senderId: chatbotUserId,
+                sender: chatbotUserId,
             })
 
             const { result } = renderHookWithState(
@@ -293,7 +298,7 @@ describe('useMatrixFormEvent hook', () => {
                     type: 'radio',
                     options: [],
                 },
-                senderId: chatbotUserId,
+                sender: chatbotUserId,
             })
 
             const { result } = renderHookWithState(
@@ -313,13 +318,13 @@ describe('useMatrixFormEvent hook', () => {
             const mockFormEvent = createMockFormEvent({
                 content: {
                     type: 'radio',
-                    body: null,
+                    body: '',
                     i18nKeyLabel: null,
                     options: [
                         { value: 'test', label: null, i18nKeyLabel: null },
                     ],
                 },
-                senderId: chatbotUserId,
+                sender: chatbotUserId,
             })
 
             const { result } = renderHookWithState(

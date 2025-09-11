@@ -29,6 +29,7 @@ use crate::error::RpcError;
 pub mod error;
 pub mod event;
 pub mod matrix;
+pub mod multispend;
 
 #[derive(Debug, Serialize, Deserialize, TS)]
 #[serde(rename_all = "camelCase")]

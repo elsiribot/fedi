@@ -29,10 +29,10 @@ import {
     MatrixCreateRoomOptions,
     MatrixError,
     MatrixEvent,
+    MatrixEventContentType,
     MatrixGroupPreview,
     MatrixPaymentEvent,
     MatrixPaymentEventContent,
-    MatrixPaymentStatus,
     MatrixPowerLevel,
     MatrixRoom,
     MatrixRoomListItem,
@@ -41,7 +41,6 @@ import {
     MatrixRoomPowerLevels,
     MatrixSearchResults,
     MatrixSyncStatus,
-    MatrixTimelineItem,
     MatrixTimelineStreamUpdates,
     MatrixUser,
     MultispendActiveInvitation,
@@ -49,6 +48,7 @@ import {
     MultispendRole,
     MultispendTransactionListEntry,
     Sats,
+    SelectableMessageKind,
     UsdCents,
 } from '../types'
 import {
@@ -60,6 +60,7 @@ import {
     NetworkError,
     RpcBackPaginationStatus,
     RpcMentions,
+    RpcFormResponse,
     RpcMultispendGroupStatus,
     RpcRoomId,
     RpcRoomNotificationMode,
@@ -75,7 +76,6 @@ import { MatrixChatClient } from '../utils/MatrixChatClient'
 import { FedimintBridge } from '../utils/fedimint'
 import { makeLog } from '../utils/log'
 import {
-    MatrixEventContentType,
     coerceMultispendTxn,
     filterMultispendEvents,
     consolidatePaymentEvents,
@@ -88,12 +88,11 @@ import {
     isMultispendInvitation,
     isMultispendWithdrawalEvent,
     isPaymentEvent,
-    makeChatFromPreview,
+    makeChatFromUnjoinedRoomPreview,
     matrixIdToUsername,
     mxcUrlToHttpUrl,
     shouldShowUnreadIndicator,
     isMultispendFinancialTransaction,
-    MatrixFormResponse,
     prepareMentionsDataPayload,
     hasMentions,
 } from '../utils/matrix'
@@ -129,7 +128,7 @@ const initialState = {
     roomMembers: {} as Record<MatrixRoom['id'], MatrixRoomMember[] | undefined>,
     roomTimelines: {} as Record<
         MatrixRoom['id'],
-        MatrixTimelineItem[] | undefined
+        (MatrixEvent | null)[] | undefined
     >,
     roomPaginationStatus: {} as Record<
         MatrixRoom['id'],
@@ -167,19 +166,8 @@ const initialState = {
     pushNotificationToken: null as string | null,
     groupPreviews: {} as Record<MatrixRoom['id'], MatrixGroupPreview>,
     drafts: {} as Record<MatrixRoom['id'], string>,
-    selectedChatMessage: null as MatrixEvent<
-        MatrixEventContentType<
-            | 'm.text'
-            | 'm.image'
-            | 'm.video'
-            | 'm.file'
-            | 'm.poll'
-            | 'm.notice'
-            | 'm.emote'
-            | 'xyz.fedi.payment'
-        >
-    > | null,
-    messageToEdit: null as MatrixEvent<MatrixEventContentType<'m.text'>> | null,
+    selectedChatMessage: null as MatrixEvent<SelectableMessageKind> | null,
+    messageToEdit: null as MatrixEvent<'m.text'> | null,
     previewMedia: [] as Array<{
         // whether to show a placeholder ChatEvent for the sent `media`
         visible: boolean
@@ -241,6 +229,7 @@ export const matrixSlice = createSlice({
             state.auth = action.payload
         },
         addMatrixRoomInfo(state, action: PayloadAction<MatrixRoom>) {
+            // Caused by 'form' event in RpcMsgLikeKind in bindings.ts
             state.roomInfo = upsertRecordEntity(state.roomInfo, action.payload)
         },
         handleMatrixRoomListStreamUpdates(
@@ -434,19 +423,13 @@ export const matrixSlice = createSlice({
         },
         setSelectedChatMessage(
             state,
-            action: PayloadAction<MatrixEvent<
-                MatrixEventContentType<
-                    'm.text' | 'm.image' | 'm.video' | 'm.file' | 'm.poll'
-                >
-            > | null>,
+            action: PayloadAction<MatrixEvent<SelectableMessageKind> | null>,
         ) {
             state.selectedChatMessage = action.payload
         },
         setMessageToEdit(
             state,
-            action: PayloadAction<MatrixEvent<
-                MatrixEventContentType<'m.text'>
-            > | null>,
+            action: PayloadAction<MatrixEvent<'m.text'> | null>,
         ) {
             state.messageToEdit = action.payload
         },
@@ -472,11 +455,7 @@ export const matrixSlice = createSlice({
         },
         matchAndHidePreviewMedia(
             state,
-            action: PayloadAction<
-                Array<
-                    MatrixEvent<MatrixEventContentType<'m.image' | 'm.video'>>
-                >
-            >,
+            action: PayloadAction<Array<MatrixEvent<'m.image' | 'm.video'>>>,
         ) {
             let hasUpdates = false
             const updatedPreviewMedia = state.previewMedia.map(cached => {
@@ -807,7 +786,7 @@ export const startMatrixClient = createAsyncThunk<
     })
     client.on('roomInfo', room => {
         dispatch(addMatrixRoomInfo(room))
-        if (room.roomState === 'Invited') {
+        if (room.roomState === 'invited') {
             dispatch(joinMatrixRoom({ roomId: room.id }))
         }
     })
@@ -1143,7 +1122,7 @@ export const sendMatrixMessage = createAsyncThunk<
         fedimint: FedimintBridge
         roomId: MatrixRoom['id']
         body: string
-        repliedEventId?: string | null
+        repliedEventId?: string
         // this allows us to convert a copy-pasted bolt11 invoice
         // into a custom message for smoother payments UX
         // TODO: add support for copy-pasting bolt11 invoices in a groupchat
@@ -1180,17 +1159,14 @@ export const sendMatrixMessage = createAsyncThunk<
                         const paymentId = uuidv4()
                         // bolt11 there's no operation ID - cannot get historical value
                         // returned from external invoices - forces current rate fallback
-                        const senderOperationId = undefined
 
                         return client.sendMessage(roomId, {
                             msgtype: 'xyz.fedi.payment',
                             body: `Requested payment of ${amountUtils.formatSats(sats)} SATS. Use the Fedi app to complete this request.`, // TODO: i18n?
                             paymentId,
-                            status: MatrixPaymentStatus.requested,
+                            status: 'requested',
                             amount: decoded.amount,
                             bolt11: decoded.invoice,
-                            senderOperationId,
-                            receiverOperationId: undefined,
                         })
                     }
                 }
@@ -1242,7 +1218,7 @@ export const sendMatrixDirectMessage = createAsyncThunk<
         fedimint: FedimintBridge
         userId: MatrixUser['id']
         body: string
-        repliedEventId?: string | null
+        repliedEventId?: string
     },
     { state: CommonState }
 >(
@@ -1280,7 +1256,7 @@ export const sendMatrixFormResponse = createAsyncThunk<
     void,
     {
         roomId: MatrixRoom['id']
-        formResponse: MatrixFormResponse
+        formResponse: RpcFormResponse
     },
     { state: CommonState }
 >(
@@ -1292,7 +1268,7 @@ export const sendMatrixFormResponse = createAsyncThunk<
 
         // body MUST contain the exact string value guardianito expects or it will be ignored
         const { responseValue } = formResponse
-        const body = responseValue.toString()
+        const body = responseValue?.toString() ?? ''
         log.debug(
             `sendMatrixFormResponse to room ${roomId} with body ${body} and formResponse ${JSON.stringify(formResponse)}`,
         )
@@ -1302,6 +1278,11 @@ export const sendMatrixFormResponse = createAsyncThunk<
             msgtype: 'xyz.fedi.form',
             body,
             formResponse,
+            i18nKeyLabel: formResponse.responseI18nKey,
+            type: formResponse.responseType,
+            // TODO: fix these nulls on the type gen side.
+            options: null,
+            value: null,
         })
     },
 )
@@ -1360,10 +1341,9 @@ export const sendMatrixPaymentPush = createAsyncThunk<
         await client.sendMessage(roomId, {
             msgtype: 'xyz.fedi.payment',
             body: `Sent payment of ${amountUtils.formatSats(amount)} SATS. Use the Fedi app to accept this payment.`, // TODO: i18n? this only shows to matrix clients, not Fedi users
-            status: MatrixPaymentStatus.pushed,
+            status: 'pushed',
             paymentId,
             senderOperationId,
-            receiverOperationId: undefined,
             senderId: matrixAuth.userId,
             recipientId,
             amount: msats,
@@ -1396,18 +1376,15 @@ export const sendMatrixPaymentRequest = createAsyncThunk<
         const client = getMatrixClient()
 
         const paymentId = uuidv4()
-        const senderOperationId = undefined
 
         await client.sendMessage(roomId, {
             msgtype: 'xyz.fedi.payment',
             body: `Requested payment of ${amountUtils.formatSats(amount)} SATS. Use the Fedi app to complete this request.`, // TODO: i18n?
             paymentId,
-            status: MatrixPaymentStatus.requested,
+            status: 'requested',
             recipientId: matrixAuth.userId,
             amount: msats,
             federationId,
-            senderOperationId,
-            receiverOperationId: undefined,
         })
     },
 )
@@ -1444,7 +1421,7 @@ export const claimMatrixPayment = createAsyncThunk<
     await client.sendMessage(event.roomId, {
         ...event.content,
         body: 'Payment received.', // TODO: i18n?
-        status: MatrixPaymentStatus.received,
+        status: 'received',
         receiverOperationId, // will be undefined for old clients, which is fine
     })
 
@@ -1474,7 +1451,7 @@ export const checkForReceivablePayments = createAsyncThunk<
             ? state.matrix.roomTimelines[roomId]
             : // flattens all timelines into 1 array
               Object.values(state.matrix.roomTimelines).reduce<
-                  MatrixTimelineItem[]
+                  (MatrixEvent | null)[]
               >((result, t) => {
                   if (!t) return result
                   return [...result, ...t]
@@ -1540,7 +1517,7 @@ export const cancelMatrixPayment = createAsyncThunk<
     await client.sendMessage(event.roomId, {
         ...event.content,
         body: 'Payment canceled.', // TODO: i18n?
-        status: MatrixPaymentStatus.canceled,
+        status: 'canceled',
     })
 })
 
@@ -1554,7 +1531,7 @@ export const acceptMatrixPaymentRequest = createAsyncThunk<
         const matrixAuth = selectMatrixAuth(getState())
         if (!matrixAuth) throw new Error('Not authenticated')
 
-        if (event.content.status !== MatrixPaymentStatus.requested) {
+        if (event.content.status !== 'requested') {
             throw new Error('Can only accept payment requests')
         }
 
@@ -1590,7 +1567,7 @@ export const acceptMatrixPaymentRequest = createAsyncThunk<
             body: `Sent payment of ${amountUtils.formatSats(
                 amountUtils.msatToSat(msats),
             )} SATS.`, // TODO: i18n?
-            status: MatrixPaymentStatus.accepted,
+            status: 'accepted',
             senderId: matrixAuth.userId,
             senderOperationId,
             ecash,
@@ -1606,7 +1583,7 @@ export const rejectMatrixPaymentRequest = createAsyncThunk<
     await client.sendMessage(event.roomId, {
         ...event.content,
         body: 'Payment request rejected.', // TODO: i18n?
-        status: MatrixPaymentStatus.rejected,
+        status: 'rejected',
     })
 })
 
@@ -1628,9 +1605,9 @@ export const checkBolt11PaymentResult = createAsyncThunk<
             const client = getMatrixClient()
             if (!event.content.bolt11) return
             // if request is canceled, rejected, or received, we can skip this check
-            if (event.content.status !== MatrixPaymentStatus.requested) return
+            if (event.content.status !== 'requested') return
             // Only the sender will get a completed result from the RPC
-            if (event.senderId !== matrixAuth?.userId) return
+            if (event.sender !== matrixAuth?.userId) return
 
             const lastUsedFederation = selectLastUsedFederation(getState())
             if (!lastUsedFederation) return
@@ -1646,7 +1623,7 @@ export const checkBolt11PaymentResult = createAsyncThunk<
                 await client.sendMessage(event.roomId, {
                     ...event.content,
                     body: `Payment successful.`, // TODO: i18n?
-                    status: MatrixPaymentStatus.received,
+                    status: 'received',
                     senderId: matrixAuth.userId,
                 })
             }
@@ -2017,7 +1994,7 @@ export const selectMatrixRooms = createSelector(
                 broadcastOnly: powerLevels
                     ? getRoomEventPowerLevel(powerLevels, [
                           'm.room.message',
-                          'm.room.encrypted',
+                          'unableToDecrypt',
                       ]) >= MatrixPowerLevel.Moderator
                     : false,
                 isBlocked: room.directUserId
@@ -2029,10 +2006,7 @@ export const selectMatrixRooms = createSelector(
     },
 )
 
-export const selectGroupPreviews = createSelector(
-    (s: CommonState) => s.matrix.groupPreviews,
-    groupPreviews => groupPreviews,
-)
+export const selectGroupPreviews = (s: CommonState) => s.matrix.groupPreviews
 
 // Returns a processed & sorted list of default chats for
 // use in the chats list
@@ -2049,7 +2023,7 @@ const selectDefaultChatsForChatList = createSelector(
             MatrixRoom[]
         >((result, [_, preview]: [RpcRoomId, MatrixGroupPreview]) => {
             const { info, timeline } = preview
-            // don't include previews if we dont have info and timeline
+            // don't include previews if we don't have info and timeline
             if (!info || !timeline) return result
             // don't include previews unless they are default groups
             if (!preview.isDefaultGroup) return result
@@ -2057,7 +2031,7 @@ const selectDefaultChatsForChatList = createSelector(
             if (timeline.filter(t => t !== null).length === 0) return result
             // don't include previews for rooms we are already joined to
             if (roomsList.find(r => r.id === info.id)) return result
-            result.push(makeChatFromPreview(preview))
+            result.push(makeChatFromUnjoinedRoomPreview(preview))
             return result
         }, [])
         // Sorts so merging with the joined rooms list is more efficient
@@ -2114,7 +2088,7 @@ export const selectMatrixUser = (s: CommonState, userId: MatrixUser['id']) =>
 export const selectMatrixChatsWithoutDefaultGroupPreviewsList = createSelector(
     selectMatrixRooms,
     (roomsList): MatrixRoom[] => {
-        const joined = roomsList.filter(r => r.roomState === 'Joined')
+        const joined = roomsList.filter(r => r.roomState === 'joined')
         return orderBy(joined, room => room.preview?.timestamp ?? 0, 'desc')
     },
 )
@@ -2125,7 +2099,7 @@ export const selectMatrixChatsList = createSelector(
     (roomsList, defaultGroupsList): MatrixRoom[] => {
         // don't include rooms that we have not joined yet this should happen
         // automatically but we filter here anyway in case the join fails for some reason
-        const joinedRoomsList = roomsList.filter(r => r.roomState === 'Joined')
+        const joinedRoomsList = roomsList.filter(r => r.roomState === 'joined')
 
         const chatList: MatrixRoom[] = []
         let i = 0 // joinedRoomsList index
@@ -2154,12 +2128,10 @@ export const selectMatrixChatsList = createSelector(
         }
 
         // Add remaining items from either list
-        while (i < joinedRoomsList.length) {
-            chatList.push(joinedRoomsList[i++])
-        }
-        while (j < defaultGroupsList.length) {
-            chatList.push(defaultGroupsList[j++])
-        }
+        chatList.push(
+            ...joinedRoomsList.slice(i),
+            ...defaultGroupsList.slice(j),
+        )
 
         return chatList
     },
@@ -2193,10 +2165,11 @@ export const selectMatrixRoomMultispendStatus = (
     roomId: MatrixRoom['id'],
 ) => s.matrix.roomMultispendStatus[roomId]
 
-export const selectMatrixRoomMembers = (
-    s: CommonState,
-    roomId: MatrixRoom['id'],
-) => s.matrix.roomMembers[roomId] || ([] as MatrixRoomMember[])
+export const selectMatrixRoomMembers = createSelector(
+    (s: CommonState) => s.matrix.roomMembers,
+    (_: CommonState, roomId: MatrixRoom['id']) => roomId,
+    (roomMembers, roomId) => roomMembers[roomId] || ([] as MatrixRoomMember[]),
+)
 
 export const selectActiveMatrixRoomMembers = createSelector(
     selectMatrixRoomMembers,
@@ -2315,7 +2288,7 @@ export const selectMatrixRoomIsReadOnly = createSelector(
         return (
             getRoomEventPowerLevel(roomPowerLevels, [
                 'm.room.message',
-                'm.room.encrypted',
+                'unableToDecrypt',
             ]) > selfPowerLevel
         )
     },
@@ -2333,7 +2306,7 @@ export const selectCanReply = createSelector(
     selectMatrixRoomIsReadOnly,
     (auth, room, isReadOnly) => {
         if (!auth) return false
-        return room?.roomState === 'Joined' && !isReadOnly
+        return room?.roomState === 'joined' && !isReadOnly
     },
 )
 
@@ -2405,15 +2378,15 @@ export const selectRecentMatrixRoomMembers = createSelector(
 export const selectLatestMatrixRoomEventId = (
     s: CommonState,
     roomId: MatrixRoom['id'],
-): MatrixEvent['eventId'] | undefined => {
+): MatrixEvent['id'] | undefined => {
     const timeline = s.matrix.roomTimelines[roomId]
     if (timeline) {
         for (let i = timeline?.length - 1; i >= 0; i--) {
             const item = timeline[i]
             if (!item) continue
-            const { eventId } = item
-            if (!eventId) continue
-            return eventId
+            const { id } = item
+            if (!id) continue
+            return id
         }
     }
 }
