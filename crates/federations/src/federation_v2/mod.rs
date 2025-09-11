@@ -2543,8 +2543,7 @@ impl FederationV2 {
             .dbtx()
             .await
             .get_value(&TransactionNotesKey(operation_id))
-            .await
-            .unwrap_or_default();
+            .await;
         let tx_date_fiat_info = self
             .dbtx()
             .await
@@ -3102,21 +3101,17 @@ impl FederationV2 {
                 );
             }
         }
-        let mut transaction = RpcTransaction::new(
-            operation_id.fmt_full().to_string(),
-            transaction_amount,
+        let frontend_metadata = frontend_metadata.unwrap_or_default();
+        Some(RpcTransaction {
+            id: operation_id.fmt_full().to_string(),
+            amount: transaction_amount,
             fedi_fee_status,
+            txn_notes: notes.or_else(|| frontend_metadata.initial_notes.clone()),
             tx_date_fiat_info,
-            notes,
-            frontend_metadata.unwrap_or_default(),
-            transaction_kind,
-        );
-        if let Some(outcome_time) = outcome_time {
-            if let Ok(unix_time) = to_unix_time(outcome_time) {
-                transaction.outcome_time = Some(unix_time);
-            }
-        }
-        Some(transaction)
+            frontend_metadata,
+            kind: transaction_kind,
+            outcome_time: outcome_time.and_then(|x| to_unix_time(x).ok()),
+        })
     }
 
     pub async fn update_transaction_notes(

@@ -154,6 +154,10 @@ export type FeatureCatalog = {
    * environment.
    */
   matrix: MatrixFeatureConfig;
+  /**
+   * Config for which invite code to use for joining the global community
+   */
+  global_community: GlobalCommunityFeatureConfig;
 };
 
 export type FiatFXInfo = {
@@ -180,6 +184,8 @@ export type FrontendMetadata = {
   recipientMatrixId: string | null;
   senderMatrixId: string | null;
 };
+
+export type GlobalCommunityFeatureConfig = { invite_code: string };
 
 export type GroupInvitation = {
   signers: Array<RpcUserId>;
@@ -1248,7 +1254,7 @@ export type RpcTransaction = {
   id: string;
   amount: RpcAmount;
   fediFeeStatus: RpcOperationFediFeeStatus | null;
-  txnNotes: string;
+  txnNotes: string | null;
   txDateFiatInfo: FiatFXInfo | null;
   frontendMetadata: FrontendMetadata;
   /**
@@ -1327,7 +1333,7 @@ export type RpcTransactionListEntry = {
   id: string;
   amount: RpcAmount;
   fediFeeStatus: RpcOperationFediFeeStatus | null;
-  txnNotes: string;
+  txnNotes: string | null;
   txDateFiatInfo: FiatFXInfo | null;
   frontendMetadata: FrontendMetadata;
   /**
