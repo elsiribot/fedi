@@ -2,12 +2,18 @@ import { ResultAsync } from 'neverthrow'
 import { useCallback, useEffect, useMemo, useState } from 'react'
 
 import { ParsedLnurlWithdraw, Sats, TransactionListEntry } from '../types'
+import {
+    refreshLnurlReceive,
+    selectLnurlReceiveCode,
+    selectSupportsRecurringdLnurl,
+} from '../redux'
 import amountUtils from '../utils/AmountUtils'
 import { TaggedError } from '../utils/errors'
 import { FedimintBridge } from '../utils/fedimint'
 import { lnurlWithdraw } from '../utils/lnurl'
 import { makeLog } from '../utils/log'
 import { useTransactionHistory } from './transactions'
+import { useCommonDispatch, useCommonSelector } from './redux'
 
 const log = makeLog('common/hooks/lightning')
 
@@ -293,5 +299,37 @@ export function useLnurlWithdraw({
         reset,
         handleWithdraw,
         isWithdrawing,
+    }
+}
+
+export function useLnurlReceiveCode(
+    fedimint: FedimintBridge,
+    federationId: string,
+) {
+    const supportsLnurl = useCommonSelector(s =>
+        selectSupportsRecurringdLnurl(s, federationId),
+    )
+    const lnurlReceiveCode = useCommonSelector(s =>
+        selectLnurlReceiveCode(s, federationId),
+    )
+    const dispatch = useCommonDispatch()
+    const [isFetching, setIsFetching] = useState(false)
+
+    useEffect(() => {
+        const refreshCode = async () => {
+            setIsFetching(true)
+            await dispatch(refreshLnurlReceive({ fedimint, federationId }))
+            setIsFetching(false)
+        }
+        // Only runs once. supportsLnurl is null on first load.
+        if (!isFetching && supportsLnurl === null) {
+            refreshCode()
+        }
+    }, [fedimint, federationId, supportsLnurl, dispatch, isFetching])
+
+    return {
+        isLoading: isFetching || supportsLnurl === null,
+        lnurlReceiveCode,
+        supportsLnurl,
     }
 }
