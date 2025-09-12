@@ -7,6 +7,7 @@ import { act, waitFor } from '@testing-library/react'
 import {
     useMakeLightningRequest,
     useMakeOnchainAddress,
+    useLnurlReceiveCode,
 } from '../../../hooks/receive'
 import { selectLastUsedFederationId } from '../../../redux'
 import { Sats } from '../../../types'
@@ -251,5 +252,28 @@ describe('common/hooks/receive', () => {
 
             expect(saveNotesResult).rejects.toThrow('Bad request')
         }, 30000)
+    })
+
+    describe('useLnurlReceiveCode', () => {
+        it('should generate an LNURL receive code', async () => {
+            await builder.withFederationJoined()
+
+            const {
+                store,
+                remoteBridge: { fedimint },
+                renderHookWithBridge,
+            } = context
+
+            const federationId = selectLastUsedFederationId(store.getState())
+            const { result } = renderHookWithBridge(() =>
+                useLnurlReceiveCode(fedimint, federationId || ''),
+            )
+
+            await waitFor(() => {
+                expect(result.current.supportsLnurl).toBeTruthy()
+                expect(result.current.lnurlReceiveCode).toBeTruthy()
+                expect(result.current.isLoading).toBeFalsy()
+            })
+        })
     })
 })
