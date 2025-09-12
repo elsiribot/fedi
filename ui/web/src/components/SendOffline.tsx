@@ -3,7 +3,7 @@ import React, { useCallback, useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 
 import { useMinMaxSendAmount } from '@fedi/common/hooks/amount'
-import { useIsInviteSupported } from '@fedi/common/hooks/federation'
+import { useSendEcash } from '@fedi/common/hooks/pay'
 import { useToast } from '@fedi/common/hooks/toast'
 import { Federation, Sats } from '@fedi/common/types'
 import amountUtils from '@fedi/common/utils/AmountUtils'
@@ -31,19 +31,22 @@ export const SendOffline: React.FC<Props> = ({
 }) => {
     const { t } = useTranslation()
     const toast = useToast()
-    const includeInvite = useIsInviteSupported(federationId)
     const { minimumAmount, maximumAmount } = useMinMaxSendAmount({
         fedimint,
         federationId,
     })
     const [amount, setAmount] = useState(0 as Sats)
-    const [isGeneratingEcash, setIsGeneratingEcash] = useState(false)
     const [offlinePayment, setOfflinePayment] = useState<string | null>(null)
     const [qrFrames, setQrFrames] = useState<string[] | null>(null)
     const [hasConfirmedPayment, setHasConfirmedPayment] = useState(false)
     const [submitAttempts, setSubmitAttempts] = useState(0)
     const [maxSendEcashAmount, setMaxSendEcashAmount] =
         useState<Sats>(maximumAmount)
+
+    const { generateEcash, isGeneratingEcash } = useSendEcash(
+        fedimint,
+        federationId,
+    )
 
     useWarnBeforeUnload(
         Boolean((!hasConfirmedPayment && offlinePayment) || isGeneratingEcash),
@@ -59,20 +62,16 @@ export const SendOffline: React.FC<Props> = ({
         setSubmitAttempts(attempt => attempt + 1)
         if (amount > maximumAmount || amount < minimumAmount) return
 
-        setIsGeneratingEcash(true)
         try {
-            const { ecash } = await fedimint.generateEcash(
-                amountUtils.satToMsat(amount),
-                federationId,
-                includeInvite,
-            )
-            onEcashGenerated()
-            setOfflinePayment(ecash)
-            setQrFrames(dataToFrames(Buffer.from(ecash, 'base64')))
+            const res = await generateEcash(amount)
+            if (res) {
+                onEcashGenerated()
+                setOfflinePayment(res.ecash)
+                setQrFrames(dataToFrames(Buffer.from(res.ecash, 'base64')))
+            }
         } catch (err) {
             toast.error(t, err, 'errors.unknown-error')
         }
-        setIsGeneratingEcash(false)
     }, [
         federationId,
         amount,
@@ -81,7 +80,7 @@ export const SendOffline: React.FC<Props> = ({
         toast,
         onEcashGenerated,
         t,
-        includeInvite,
+        generateEcash,
     ])
 
     useEffect(() => {
