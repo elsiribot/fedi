@@ -1,7 +1,13 @@
 import { TFunction } from 'i18next'
 import { useCallback, useEffect, useState } from 'react'
 
-import { listGateways } from '../redux'
+import {
+    listGateways,
+    refreshLnurlReceive,
+    selectFederation,
+    selectLnurlReceiveCode,
+    selectSupportsRecurringdLnurl,
+} from '../redux'
 import {
     AnyParsedData,
     Invoice,
@@ -14,6 +20,7 @@ import {
 } from '../types'
 import { RpcFeeDetails } from '../types/bindings'
 import amountUtils from '../utils/AmountUtils'
+import { shouldShowInviteCode } from '../utils/FederationUtils'
 import {
     MeltSummary,
     decodeCashuTokens,
@@ -26,7 +33,7 @@ import { formatErrorMessage } from '../utils/format'
 import { lnurlPay } from '../utils/lnurl'
 import { makeLog } from '../utils/log'
 import { useSendForm } from './amount'
-import { useCommonDispatch } from './redux'
+import { useCommonDispatch, useCommonSelector } from './redux'
 
 const log = makeLog('common/hooks/pay')
 
@@ -321,5 +328,93 @@ export function useOmniPaymentState(
         resetOmniPaymentState,
         isLoading,
         error,
+    }
+}
+
+export function useLnurlReceiveCode(
+    fedimint: FedimintBridge,
+    federationId: string,
+) {
+    const supportsLnurl = useCommonSelector(s =>
+        selectSupportsRecurringdLnurl(s, federationId),
+    )
+    const lnurlReceiveCode = useCommonSelector(s =>
+        selectLnurlReceiveCode(s, federationId),
+    )
+    const dispatch = useCommonDispatch()
+    const [isFetching, setIsFetching] = useState(false)
+
+    useEffect(() => {
+        const refreshCode = async () => {
+            setIsFetching(true)
+            await dispatch(refreshLnurlReceive({ fedimint, federationId }))
+            setIsFetching(false)
+        }
+        // Only runs once. supportsLnurl is null on first load.
+        if (!isFetching && supportsLnurl === null) {
+            refreshCode()
+        }
+    }, [fedimint, federationId, supportsLnurl, dispatch, isFetching])
+
+    return {
+        isLoading: isFetching || supportsLnurl === null,
+        lnurlReceiveCode,
+        supportsLnurl,
+    }
+}
+
+export function useSendEcash(fedimint: FedimintBridge, federationId: string) {
+    const federation = useCommonSelector(s => selectFederation(s, federationId))
+
+    const [notes, setNotes] = useState<string | null>(null)
+    const [operationId, setOperationId] = useState<string | null>(null)
+    const [isGeneratingEcash, setIsGeneratingEcash] = useState(false)
+
+    const reset = () => {
+        setNotes(null)
+        setOperationId(null)
+        setIsGeneratingEcash(false)
+    }
+
+    const generateEcash = useCallback(
+        async (amount: Sats, memo: string = '') => {
+            if (!federation?.meta) return
+
+            setIsGeneratingEcash(true)
+
+            try {
+                const msats = amountUtils.satToMsat(amount)
+                const includeInvite = shouldShowInviteCode(federation.meta)
+                const res = await fedimint.generateEcash(
+                    msats,
+                    federation.id,
+                    includeInvite,
+                    {
+                        initialNotes: memo ?? null,
+                        recipientMatrixId: null,
+                        senderMatrixId: null,
+                    },
+                )
+
+                setOperationId(res.operationId)
+                setNotes(res.ecash)
+
+                return res
+            } catch (e) {
+                log.error('Failed to generate ecash notes', e)
+                throw e
+            } finally {
+                setIsGeneratingEcash(false)
+            }
+        },
+        [federation, fedimint],
+    )
+
+    return {
+        operationId,
+        notes,
+        isGeneratingEcash,
+        generateEcash,
+        reset,
     }
 }

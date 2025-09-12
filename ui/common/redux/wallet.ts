@@ -201,34 +201,6 @@ export const generateAddress = createAsyncThunk<
     },
 )
 
-export const generateEcash = createAsyncThunk<
-    { ecash: string; cancelAt: number; operationId: string },
-    {
-        fedimint: FedimintBridge
-        federationId: string
-        amount: MSats
-        includeInvite: boolean
-        frontendMetadata: FrontendMetadata
-    },
-    { state: CommonState }
->(
-    'wallet/generateEcash',
-    async ({
-        fedimint,
-        federationId,
-        amount,
-        includeInvite,
-        frontendMetadata,
-    }) => {
-        return fedimint.generateEcash(
-            amount,
-            federationId,
-            includeInvite,
-            frontendMetadata,
-        )
-    },
-)
-
 export const generateInvoice = createAsyncThunk<
     string,
     {
