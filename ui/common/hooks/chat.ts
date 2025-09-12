@@ -17,6 +17,7 @@ import { getDisplayNameValidator, parseData } from '../utils/chat'
 import { FedimintBridge } from '../utils/fedimint'
 import { makeLog } from '../utils/log'
 import { useMinMaxRequestAmount, useMinMaxSendAmount } from './amount'
+import { useFedimint } from './fedimint'
 import { useCommonDispatch, useCommonSelector } from './redux'
 import { useToast } from './toast'
 
@@ -36,6 +37,7 @@ export function usePublishNotificationToken(
     secondaryPermissionGranted: boolean,
     currentToken: string | null,
 ) {
+    const fedimint = useFedimint()
     const dispatch = useCommonDispatch()
 
     useEffect(() => {
@@ -75,6 +77,7 @@ export function usePublishNotificationToken(
             log.debug('Publishing push notification token:', newToken)
             dispatch(
                 configureMatrixPushNotifications({
+                    fedimint,
                     token: newToken,
                     appId,
                     appName,
@@ -112,6 +115,7 @@ export function usePublishNotificationToken(
         currentToken,
         secondaryPublish,
         secondaryPermissionGranted,
+        fedimint,
     ])
 
     return null
@@ -297,6 +301,7 @@ export const useDisplayNameForm = (t: TFunction) => {
     const [isSubmitting, setIsSubmitting] = useState(false)
     const [errorMessage, setErrorMessage] = useState<string | null>(null)
     const toast = useToast()
+    const fedimint = useFedimint()
     const dispatch = useCommonDispatch()
     const matrixAuth = useCommonSelector(selectMatrixAuth)
     const validator = useMemo(() => getDisplayNameValidator(), [])
@@ -328,7 +333,10 @@ export const useDisplayNameForm = (t: TFunction) => {
         try {
             const trimmedUsername = username.trim()
             await dispatch(
-                setMatrixDisplayName({ displayName: trimmedUsername }),
+                setMatrixDisplayName({
+                    fedimint,
+                    displayName: trimmedUsername,
+                }),
             ).unwrap()
             onSuccess?.()
         } catch (err) {

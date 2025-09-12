@@ -20,6 +20,7 @@ import { matrixIdToUsername } from '@fedi/common/utils/matrix'
 import SvgImage, { SvgImageName } from '@fedi/native/components/ui/SvgImage'
 import { useAppDispatch, useAppSelector } from '@fedi/native/state/hooks'
 
+import { fedimint } from '../../../bridge'
 import Flex from '../../ui/Flex'
 import ChatAction from './ChatAction'
 import { ConfirmBlockOverlay } from './ConfirmBlockOverlay'
@@ -73,7 +74,7 @@ const ChatUserActions: React.FC<Props> = ({
             // unblock if already blocked
             if (member.ignored) {
                 await dispatch(
-                    unignoreUser({ userId: member.id, roomId }),
+                    unignoreUser({ fedimint, userId: member.id, roomId }),
                 ).unwrap()
                 show({
                     content: t('feature.chat.unblock-user-success'),
@@ -81,7 +82,7 @@ const ChatUserActions: React.FC<Props> = ({
                 })
             } else {
                 await dispatch(
-                    ignoreUser({ userId: member.id, roomId }),
+                    ignoreUser({ fedimint, userId: member.id, roomId }),
                 ).unwrap()
                 show({
                     content: t('feature.chat.block-user-success'),
@@ -104,7 +105,12 @@ const ChatUserActions: React.FC<Props> = ({
         setLoadingAction(actionId)
         try {
             await dispatch(
-                setMatrixRoomMemberPowerLevel({ roomId, userId, powerLevel }),
+                setMatrixRoomMemberPowerLevel({
+                    fedimint,
+                    roomId,
+                    userId,
+                    powerLevel,
+                }),
             ).unwrap()
             log.info(`Updated user's power level to ${powerLevel}`)
             show({
@@ -172,7 +178,9 @@ const ChatUserActions: React.FC<Props> = ({
         setLoadingAction(actionId)
         try {
             log.info(`removing user ${userId} from room ${roomId}`)
-            await dispatch(kickUser({ roomId, userId, reason })).unwrap()
+            await dispatch(
+                kickUser({ fedimint, roomId, userId, reason }),
+            ).unwrap()
             show({
                 content: t('feature.chat.user-remove-success'),
                 status: 'success',
@@ -193,7 +201,9 @@ const ChatUserActions: React.FC<Props> = ({
         setLoadingAction(actionId)
         try {
             log.info(`Banning user ${userId} from room ${roomId}`)
-            await dispatch(banUser({ roomId, userId, reason })).unwrap()
+            await dispatch(
+                banUser({ fedimint, roomId, userId, reason }),
+            ).unwrap()
             show({
                 content: t('feature.chat.user-ban-success'),
                 status: 'success',

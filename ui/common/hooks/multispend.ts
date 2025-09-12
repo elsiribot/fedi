@@ -35,6 +35,7 @@ import {
     makeMultispendWalletHeader,
 } from '../utils/matrix'
 import { useBtcFiatPrice } from './amount'
+import { useFedimint } from './fedimint'
 import { useObserveMultispendEvent } from './matrix'
 import { useCommonDispatch, useCommonSelector } from './redux'
 import { useToast } from './toast'
@@ -263,6 +264,7 @@ export function useMultispendDisplayUtils(t: TFunction, roomId: RpcRoomId) {
 
 export function useMultispendTransactions(t: TFunction, roomId: RpcRoomId) {
     const toast = useToast()
+    const fedimint = useFedimint()
     const dispatch = useCommonDispatch()
     const transactions = useCommonSelector(s =>
         selectRoomMultispendFinancialTransactions(s, roomId),
@@ -276,13 +278,13 @@ export function useMultispendTransactions(t: TFunction, roomId: RpcRoomId) {
         ) => {
             try {
                 await dispatch(
-                    fetchMultispendTransactions({ roomId, ...args }),
+                    fetchMultispendTransactions({ fedimint, roomId, ...args }),
                 ).unwrap()
             } catch (e) {
                 toast.error(t, e)
             }
         },
-        [dispatch, roomId, t, toast],
+        [dispatch, roomId, t, toast, fedimint],
     )
 
     return {

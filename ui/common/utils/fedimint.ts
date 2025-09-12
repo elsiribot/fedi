@@ -25,6 +25,7 @@ import {
     RpcTransactionListEntry,
 } from '../types/bindings'
 import { BridgeError } from '../utils/errors'
+import { MatrixChatClient } from './MatrixChatClient'
 import { isDev } from './environment'
 import { makeLog } from './log'
 import { toSendMessageData } from './matrix'
@@ -54,6 +55,14 @@ export class FedimintBridge {
             payload: object,
         ) => Promise<T>,
     ) {}
+
+    matrixClient: MatrixChatClient | null = null
+    getMatrixClient() {
+        if (!this.matrixClient) {
+            this.matrixClient = new MatrixChatClient()
+        }
+        return this.matrixClient
+    }
 
     async rpcTyped<
         M extends bindings.RpcMethodNames,

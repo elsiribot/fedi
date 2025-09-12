@@ -18,6 +18,7 @@ import {
 } from '@fedi/common/redux'
 import { ChatType, MatrixRoom, MatrixSyncStatus } from '@fedi/common/types'
 
+import { fedimint } from '../../../bridge'
 import { useAppDispatch, useAppSelector } from '../../../state/hooks'
 import { NavigationHook } from '../../../types/navigation'
 import HoloLoader from '../../ui/HoloLoader'
@@ -39,8 +40,8 @@ const ChatsList: React.FC = () => {
     const handleRefresh = useCallback(() => {
         setIsRefetching(true)
         Promise.all([
-            dispatch(refetchMatrixRoomList()),
-            dispatch(previewAllDefaultChats()),
+            dispatch(refetchMatrixRoomList({ fedimint })),
+            dispatch(previewAllDefaultChats({ fedimint })),
         ])
             .catch(() => null) // no-op
             .finally(() => setIsRefetching(false))

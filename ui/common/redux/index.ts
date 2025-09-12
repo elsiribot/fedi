@@ -167,6 +167,7 @@ export function initializeCommonStore({
 
                         dispatch(
                             processFederationMeta({
+                                fedimint,
                                 federation: loadedFederation,
                             }),
                         )
@@ -191,7 +192,7 @@ export function initializeCommonStore({
         event => {
             const community: Community = coerceCommunity(event.newCommunity)
             dispatch(upsertCommunity(community))
-            dispatch(processCommunityMeta({ community }))
+            dispatch(processCommunityMeta({ fedimint, community }))
         },
     )
 

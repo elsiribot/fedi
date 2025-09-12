@@ -17,6 +17,7 @@ import {
 import { RpcMatrixMembership } from '@fedi/common/types/bindings'
 import { formatErrorMessage } from '@fedi/common/utils/format'
 
+import { fedimint } from '../bridge'
 import { ChatSettingsAvatar } from '../components/feature/chat/ChatSettingsAvatar'
 import ChatUserTile from '../components/feature/chat/ChatUserTile'
 import Flex from '../components/ui/Flex'
@@ -55,7 +56,7 @@ const ChatRoomInvite: React.FC<Props> = ({ route }: Props) => {
             setInvitingUsers(users => [...users, userId])
             try {
                 await dispatch(
-                    inviteUserToMatrixRoom({ roomId, userId }),
+                    inviteUserToMatrixRoom({ fedimint, roomId, userId }),
                 ).unwrap()
             } catch (err) {
                 error(t, 'errors.unknown-error')

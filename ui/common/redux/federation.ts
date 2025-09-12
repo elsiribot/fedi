@@ -352,15 +352,15 @@ export const federationSlice = createSlice({
                 const chatPreviews = action.payload.map(
                     makeChatFromUnjoinedRoomPreview,
                 )
-                const federationId = action.meta.arg
+                const communityId = action.meta.arg.communityId
                 state.defaultCommunityChats = isEqual(
                     chatPreviews,
-                    state.defaultCommunityChats[federationId],
+                    state.defaultCommunityChats[communityId],
                 )
                     ? state.defaultCommunityChats
                     : {
                           ...state.defaultCommunityChats,
-                          [federationId]: chatPreviews,
+                          [communityId]: chatPreviews,
                       }
             },
         )
@@ -453,6 +453,7 @@ export const refreshCommunities = createAsyncThunk<
         ) {
             dispatch(
                 processCommunityMeta({
+                    fedimint,
                     community,
                 }),
             )
@@ -520,6 +521,7 @@ export const refreshFederations = createAsyncThunk<
         ) {
             dispatch(
                 processFederationMeta({
+                    fedimint,
                     federation,
                 }),
             )
@@ -574,30 +576,46 @@ export const refreshGuardianStatuses = createAsyncThunk<
 
 export const processCommunityMeta = createAsyncThunk<
     void,
-    { community: Pick<Community, 'id' | 'meta'> },
+    { fedimint: FedimintBridge; community: Pick<Community, 'id' | 'meta'> },
     { state: CommonState }
->('federation/processCommunityMeta', async ({ community }, { dispatch }) => {
-    if (!community.meta) return
+>(
+    'federation/processCommunityMeta',
+    async ({ fedimint, community }, { dispatch }) => {
+        if (!community.meta) return
 
-    // fedimods & default chats are derived from the federation meta
-    dispatch(
-        setCommunityCustomFediMods({
-            federationId: community.id,
-            mods: getCommunityFediMods(community.meta),
-        }),
-    )
-    dispatch(previewCommunityDefaultChats(community.id))
-})
+        // fedimods & default chats are derived from the federation meta
+        dispatch(
+            setCommunityCustomFediMods({
+                federationId: community.id,
+                mods: getCommunityFediMods(community.meta),
+            }),
+        )
+        dispatch(
+            previewCommunityDefaultChats({
+                fedimint,
+                communityId: community.id,
+            }),
+        )
+    },
+)
 
 export const processFederationMeta = createAsyncThunk<
     void,
-    { federation: Pick<Federation, 'id' | 'meta'> },
+    { fedimint: FedimintBridge; federation: Pick<Federation, 'id' | 'meta'> },
     { state: CommonState }
->('federation/processFederationMeta', async ({ federation }, { dispatch }) => {
-    if (!federation.meta) return
+>(
+    'federation/processFederationMeta',
+    async ({ fedimint, federation }, { dispatch }) => {
+        if (!federation.meta) return
 
-    dispatch(previewFederationDefaultChats(federation.id))
-})
+        dispatch(
+            previewFederationDefaultChats({
+                fedimint,
+                federationId: federation.id,
+            }),
+        )
+    },
+)
 
 export const joinFederation = createAsyncThunk<
     Federation,
@@ -643,7 +661,12 @@ export const joinCommunity = createAsyncThunk<
         const community = coerceCommunity(joinResult)
 
         await dispatch(refreshCommunities(fedimint))
-        dispatch(previewCommunityDefaultChats(community.id))
+        dispatch(
+            previewCommunityDefaultChats({
+                fedimint,
+                communityId: community.id,
+            }),
+        )
         dispatch(setLastSelectedCommunityId(community.id))
 
         const joinedCommunity = selectCommunity(getState(), community.id)

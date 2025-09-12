@@ -10,7 +10,6 @@ import {
     joinFederation as joinFederationAction,
     selectLastUsedFederation,
     selectMatrixAuth,
-    resetMatrixClient,
 } from '@fedi/common/redux'
 import { RemoteBridge } from '@fedi/common/utils/remote-bridge'
 
@@ -202,7 +201,6 @@ export function setupRemoteBridgeTests(): RemoteBridgeTestContext {
     }, 10000)
 
     afterEach(async () => {
-        resetMatrixClient()
         if (cleanupStore) {
             cleanupStore()
         }

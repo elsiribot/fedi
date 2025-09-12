@@ -8,6 +8,7 @@ import { useMatrixChatInvites } from '@fedi/common/hooks/matrix'
 import { getMatrixRoomPreview, selectGroupPreviews } from '@fedi/common/redux'
 import { MatrixGroupPreview } from '@fedi/common/types'
 
+import { fedimint } from '../bridge'
 import Flex from '../components/ui/Flex'
 import HoloGradient from '../components/ui/HoloGradient'
 import { SafeAreaContainer } from '../components/ui/SafeArea'
@@ -55,7 +56,7 @@ const ConfirmJoinPublicGroup: React.FC<Props> = ({ route, navigation }) => {
             setPreviewGroup(defaultGroup)
             return
         }
-        dispatch(getMatrixRoomPreview(groupId))
+        dispatch(getMatrixRoomPreview({ fedimint, roomId: groupId }))
             .unwrap()
             .then(preview => {
                 setPreviewGroup(preview)

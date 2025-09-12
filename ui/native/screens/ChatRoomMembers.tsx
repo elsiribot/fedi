@@ -12,6 +12,7 @@ import {
 } from '@fedi/common/redux'
 import { MatrixPowerLevel, MatrixRoomMember } from '@fedi/common/types'
 
+import { fedimint } from '../bridge'
 import { ChatUserActionsOverlay } from '../components/feature/chat/ChatUserActionsOverlay'
 import ChatUserTile from '../components/feature/chat/ChatUserTile'
 import Flex from '../components/ui/Flex'
@@ -44,9 +45,11 @@ const ChatRoomMembers: React.FC<ChatRoomMembersProps> = ({
 
     const backgroundRefresh = useCallback(() => {
         roomId &&
-            dispatch(refetchMatrixRoomMembers(roomId)).catch(() => {
-                // no-op
-            })
+            dispatch(refetchMatrixRoomMembers({ fedimint, roomId })).catch(
+                () => {
+                    // no-op
+                },
+            )
     }, [dispatch, roomId])
 
     const handleRefresh = useCallback(() => {

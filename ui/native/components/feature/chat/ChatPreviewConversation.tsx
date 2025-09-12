@@ -17,6 +17,7 @@ import { getMatrixRoomPreview, selectIsDefaultGroup } from '@fedi/common/redux'
 import { MatrixEvent, MatrixGroupPreview } from '@fedi/common/types'
 import { makeMatrixEventGroups } from '@fedi/common/utils/matrix'
 
+import { fedimint } from '../../../bridge'
 import { useAppDispatch, useAppSelector } from '../../../state/hooks'
 import ChatEventCollection from './ChatEventCollection'
 import { ChatUserActionsOverlay } from './ChatUserActionsOverlay'
@@ -66,7 +67,7 @@ const ChatPreviewConversation: React.FC<Props> = ({ id, preview }: Props) => {
     const handleRefresh = useCallback(async () => {
         if (isRefreshing) return
         setIsRefreshing(true)
-        dispatch(getMatrixRoomPreview(id))
+        dispatch(getMatrixRoomPreview({ fedimint, roomId: id }))
             .unwrap()
             .finally(() => setIsRefreshing(false))
     }, [id, dispatch, isRefreshing])

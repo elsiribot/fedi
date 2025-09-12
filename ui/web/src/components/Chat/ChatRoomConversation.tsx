@@ -124,7 +124,9 @@ export const ChatRoomConversation: React.FC<Props> = ({ roomId }) => {
 
     const handlePaginate = useCallback(async () => {
         try {
-            await dispatch(paginateMatrixRoomTimeline({ roomId })).unwrap()
+            await dispatch(
+                paginateMatrixRoomTimeline({ fedimint, roomId }),
+            ).unwrap()
         } catch (err) {
             error(t, 'errors.unknown-error')
         }

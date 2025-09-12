@@ -16,6 +16,7 @@ import SvgImage, { SvgImageName } from '@fedi/native/components/ui/SvgImage'
 import { useAppDispatch, useAppSelector } from '@fedi/native/state/hooks'
 import { resetToChatSettings } from '@fedi/native/state/navigation'
 
+import { fedimint } from '../../../bridge'
 import Flex from '../../ui/Flex'
 import ChatRoomAction from './ChatAction'
 
@@ -79,7 +80,11 @@ const ChatRoomActions: React.FC<Props> = ({ room, dismiss }: Props) => {
         try {
             log.info(`Updating notifications for room ${room.id} to ${mode}`)
             await dispatch(
-                updateMatrixRoomNotificationMode({ roomId: room.id, mode }),
+                updateMatrixRoomNotificationMode({
+                    fedimint,
+                    roomId: room.id,
+                    mode,
+                }),
             ).unwrap()
             show({
                 content: t('feature.chat.notification-update-success'),

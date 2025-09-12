@@ -48,7 +48,6 @@ import {
     RpcOperationId,
     RpcTransaction,
 } from '../types/bindings'
-import { FedimintBridge } from '../utils/fedimint'
 import { formatErrorMessage } from '../utils/format'
 import { makeLog } from '../utils/log'
 import {
@@ -63,6 +62,7 @@ import {
     stripReplyFromBody,
 } from '../utils/matrix'
 import { useAmountFormatter } from './amount'
+import { useFedimint } from './fedimint'
 import { useCommonDispatch, useCommonSelector } from './redux'
 import { useToast } from './toast'
 import { useUpdatingRef } from './util'
@@ -80,6 +80,7 @@ export function usePushNotificationToken() {
 }
 
 export function useMatrixUserSearch() {
+    const fedimint = useFedimint()
     const dispatch = useCommonDispatch()
     const [searchQuery, setSearchQuery] = useState('')
     const [searchedUsers, setSearchedUsers] = useState<MatrixUser[]>([])
@@ -127,7 +128,7 @@ export function useMatrixUserSearch() {
         }
         setIsSearching(true)
         timeoutRef.current = setTimeout(() => {
-            dispatch(searchMatrixUsers(query))
+            dispatch(searchMatrixUsers({ fedimint, query }))
                 .unwrap()
                 .then(res => {
                     // Filter by checking which users from DMs are in the search results
@@ -148,7 +149,7 @@ export function useMatrixUserSearch() {
                 .finally(() => setIsSearching(false))
         }, 500)
         return () => clearTimeout(timeoutRef.current)
-    }, [dispatch, query, contactsList])
+    }, [dispatch, query, contactsList, fedimint])
 
     return {
         query: searchQuery,
@@ -172,6 +173,7 @@ export function useMatrixUserSearch() {
  */
 export function useObserveMatrixRoom(roomId: MatrixRoom['id']) {
     const [hasPaginated, setHasPaginated] = useState(false)
+    const fedimint = useFedimint()
     const dispatch = useCommonDispatch()
     // latestEventId is used for sending read receipts
     const latestEventId = useCommonSelector(s =>
@@ -191,7 +193,7 @@ export function useObserveMatrixRoom(roomId: MatrixRoom['id']) {
     // when unmounting we unobserve the room, but only for group chats
     useEffect(() => {
         if (!matrixStarted) return
-        dispatch(observeMatrixRoom({ roomId }))
+        dispatch(observeMatrixRoom({ fedimint, roomId }))
         return () => {
             // Don't unobserve DMs so ecash gets claimed in the
             // background
@@ -199,14 +201,16 @@ export function useObserveMatrixRoom(roomId: MatrixRoom['id']) {
             // TODO: remove when background ecash redemption
             // is moved to the bridge
             if (room?.directUserId) return
-            dispatch(unobserveMatrixRoom({ roomId }))
+            dispatch(unobserveMatrixRoom({ fedimint, roomId }))
         }
-    }, [matrixStarted, roomId, dispatch, room?.directUserId])
+    }, [matrixStarted, roomId, dispatch, room?.directUserId, fedimint])
 
     useEffect(() => {
         if (!matrixStarted || !latestEventId) return
-        dispatch(sendMatrixReadReceipt({ roomId, eventId: latestEventId }))
-    }, [matrixStarted, roomId, latestEventId, dispatch])
+        dispatch(
+            sendMatrixReadReceipt({ fedimint, roomId, eventId: latestEventId }),
+        )
+    }, [matrixStarted, roomId, latestEventId, dispatch, fedimint])
 
     const handlePaginate = useCallback(async () => {
         // don't paginate if we don't know the pagination status yet
@@ -216,9 +220,9 @@ export function useObserveMatrixRoom(roomId: MatrixRoom['id']) {
         // don't paginate if there is nothing else to paginate
         if (paginationStatus === 'timelineStartReached') return
         await dispatch(
-            paginateMatrixRoomTimeline({ roomId, limit: 15 }),
+            paginateMatrixRoomTimeline({ fedimint, roomId, limit: 15 }),
         ).unwrap()
-    }, [paginationStatus, isPaginating, dispatch, roomId])
+    }, [paginationStatus, isPaginating, dispatch, roomId, fedimint])
 
     // this is the initial pagination fetch for most recent events which
     // waits until the pagination status is observed and defined
@@ -252,13 +256,14 @@ type PaymentThunkAction = ReturnType<
 
 // MUST be in the federation to use
 export function useObserveMultispendAccountInfo(roomId: MatrixRoom['id']) {
+    const fedimint = useFedimint()
     const dispatch = useCommonDispatch()
     useEffect(() => {
-        dispatch(observeMultispendAccountInfo({ roomId }))
+        dispatch(observeMultispendAccountInfo({ fedimint, roomId }))
         return () => {
-            dispatch(unobserveMultispendAccountInfo({ roomId }))
+            dispatch(unobserveMultispendAccountInfo({ fedimint, roomId }))
         }
-    }, [dispatch, roomId])
+    }, [dispatch, roomId, fedimint])
 }
 
 /**
@@ -267,7 +272,6 @@ export function useObserveMultispendAccountInfo(roomId: MatrixRoom['id']) {
  */
 export function useMatrixPaymentEvent({
     event,
-    fedimint,
     t,
     onError,
     onPayWithForeignEcash,
@@ -275,13 +279,13 @@ export function useMatrixPaymentEvent({
     onCopyBolt11,
 }: {
     event: MatrixPaymentEvent
-    fedimint: FedimintBridge
     t: TFunction
     onError: (err: unknown) => void
     onPayWithForeignEcash?: () => void
     onViewBolt11?: (bolt11: string) => void
     onCopyBolt11?: (bolt11: string) => void
 }) {
+    const fedimint = useFedimint()
     const dispatch = useCommonDispatch()
     const isOffline = useCommonSelector(selectIsInternetUnreachable)
     const toast = useToast()
@@ -363,7 +367,7 @@ export function useMatrixPaymentEvent({
         } else if (onPayWithForeignEcash && canPayFromOtherFeds) {
             onPayWithForeignEcash()
             handleDispatchPaymentUpdate(
-                rejectMatrixPaymentRequest({ event }),
+                rejectMatrixPaymentRequest({ fedimint, event }),
                 setIsRejecting,
             )
         } else {
@@ -393,10 +397,10 @@ export function useMatrixPaymentEvent({
 
     const handleRejectRequest = useCallback(async () => {
         handleDispatchPaymentUpdate(
-            rejectMatrixPaymentRequest({ event }),
+            rejectMatrixPaymentRequest({ fedimint, event }),
             setIsRejecting,
         )
-    }, [event, handleDispatchPaymentUpdate])
+    }, [event, fedimint, handleDispatchPaymentUpdate])
 
     const handleAcceptForeignEcash = useCallback(() => {
         if (isOffline) {
@@ -411,7 +415,6 @@ export function useMatrixPaymentEvent({
     const { transaction, isLoading: isLoadingTransaction } =
         useMatrixPaymentTransaction({
             event,
-            fedimint,
         })
 
     const messageText = makeMatrixPaymentText({
@@ -579,6 +582,7 @@ export function useMatrixFormEvent(
     actionButton: ChatEventAction | undefined
     options: ChatEventAction[]
 } {
+    const fedimint = useFedimint()
     const dispatch = useCommonDispatch()
     const matrixAuth = useCommonSelector(selectMatrixAuth)
     const isSentByMe = event.sender === matrixAuth?.userId
@@ -601,6 +605,7 @@ export function useMatrixFormEvent(
         try {
             await dispatch(
                 sendMatrixFormResponse({
+                    fedimint,
                     roomId: event.roomId,
                     formResponse: {
                         responseType: type,
@@ -619,6 +624,7 @@ export function useMatrixFormEvent(
         try {
             await dispatch(
                 sendMatrixFormResponse({
+                    fedimint,
                     roomId: event.roomId,
                     formResponse: {
                         responseType: type,
@@ -694,6 +700,7 @@ export function useMatrixFormEvent(
 }
 
 export function useMatrixChatInvites(t: TFunction) {
+    const fedimint = useFedimint()
     const dispatch = useCommonDispatch()
     const toast = useToast()
 
@@ -703,7 +710,9 @@ export function useMatrixChatInvites(t: TFunction) {
         try {
             // For now, only public rooms can be joined by scanning
             // TODO: Implement knocking to support non-public rooms
-            await dispatch(joinMatrixRoom({ roomId, isPublic: true })).unwrap()
+            await dispatch(
+                joinMatrixRoom({ fedimint, roomId, isPublic: true }),
+            ).unwrap()
             return true
         } catch (err) {
             const errorMessage = formatErrorMessage(
@@ -730,24 +739,20 @@ export function useObserveMultispendEvent(
     eventId: string,
 ) {
     const dispatch = useCommonDispatch()
+    const fedimint = useFedimint()
 
     useEffect(() => {
-        dispatch(observeMultispendEvent({ roomId, eventId }))
+        dispatch(observeMultispendEvent({ roomId, eventId, fedimint }))
 
         return () => {
-            dispatch(unobserveMultispendEvent({ roomId, eventId }))
+            dispatch(unobserveMultispendEvent({ roomId, eventId, fedimint }))
         }
-    }, [dispatch, roomId, eventId])
+    }, [dispatch, roomId, eventId, fedimint])
 }
 
-export function useMatrixUrlPreview({
-    url,
-    fedimint,
-}: {
-    url: string
-    fedimint: FedimintBridge
-}) {
+export function useMatrixUrlPreview({ url }: { url: string }) {
     const [urlPreview, setUrlPreview] = useState<MatrixUrlMetadata | null>(null)
+    const fedimint = useFedimint()
 
     useEffect(() => {
         fedimint.matrixGetMediaPreview({ url }).then(info => {
@@ -765,15 +770,12 @@ export function useMatrixUrlPreview({
 /**
  * Hook for managing Matrix payment transactions with historical exchange rates
  * @param event - The payment event to fetch transaction data for
- * @param fedimint - The Fedimint bridge instance
  * @returns Transaction state including loading, error, and transaction data
  */
 export function useMatrixPaymentTransaction({
     event,
-    fedimint,
 }: {
     event: MatrixPaymentEvent
-    fedimint: FedimintBridge
 }) {
     // undefined = not yet tried (or loading), null = tried & got nothing, object = got a transaction
     const [transaction, setTransaction] = useState<
@@ -785,6 +787,7 @@ export function useMatrixPaymentTransaction({
 
     const matrixAuth = useCommonSelector(selectMatrixAuth)
     const currentUserId = matrixAuth?.userId
+    const fedimint = useFedimint()
 
     useEffect(() => {
         // skip if we've already tried
@@ -919,6 +922,7 @@ export function useCreateMatrixRoom(
     t: TFunction,
     onGroupCreated?: (roomId: MatrixRoom['id']) => void,
 ) {
+    const fedimint = useFedimint()
     const [groupName, setGroupName] = useState(t('feature.chat.new-group'))
     const [broadcastOnly, setBroadcastOnly] = useState(false)
     const [isPublic, setIsPublic] = useState(false)
@@ -967,6 +971,7 @@ export function useCreateMatrixRoom(
         try {
             const { roomId } = await dispatch(
                 createMatrixRoom({
+                    fedimint,
                     name: newGroupName,
                     broadcastOnly,
                     isPublic,

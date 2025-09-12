@@ -48,7 +48,6 @@ const ReceiveForeignEcashOverlay: React.FC<Props> = ({
         // paymentSender
     } = useMatrixPaymentEvent({
         event: paymentEvent,
-        fedimint,
         t,
         onError: _ => toast.error(t, 'errors.chat-payment-failed'),
     })

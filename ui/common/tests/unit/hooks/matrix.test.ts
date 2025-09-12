@@ -49,9 +49,9 @@ describe('useMatrixPaymentTransaction', () => {
             () =>
                 useMatrixPaymentTransaction({
                     event,
-                    fedimint: mockFedimint,
                 }),
             store,
+            mockFedimint,
         )
 
         expect(result.current.hasTriedFetch).toBe(true)
@@ -78,9 +78,9 @@ describe('useMatrixPaymentTransaction', () => {
             () =>
                 useMatrixPaymentTransaction({
                     event,
-                    fedimint: fedimintWithGetTransaction,
                 }),
             store,
+            fedimintWithGetTransaction,
         )
 
         await waitFor(() => {

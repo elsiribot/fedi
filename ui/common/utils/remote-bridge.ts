@@ -149,6 +149,7 @@ export class RemoteBridge {
     }
 
     public shutdown() {
+        this.fedimint.matrixClient = null
         if (this.websocket) {
             this.websocket.close()
             this.websocket = null

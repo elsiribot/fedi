@@ -62,6 +62,7 @@ import {
     isWithdrawalRequestRejected,
 } from '../utils/matrix'
 import { useAmountFormatter, useBtcFiatPrice } from './amount'
+import { useFedimint } from './fedimint'
 import { useCommonDispatch, useCommonSelector } from './redux'
 
 export function useTransactionHistory(
@@ -446,6 +447,7 @@ export function useExportMultispendTransactions(t: TFunction) {
     const preferredCurrency = useCommonSelector(selectCurrency)
     const { convertCentsToFormattedFiat } = useBtcFiatPrice()
     const dispatch = useCommonDispatch()
+    const fedimint = useFedimint()
 
     const exportMultispendTransactions = useCallback(
         async (
@@ -461,6 +463,7 @@ export function useExportMultispendTransactions(t: TFunction) {
                 const transactions =
                     (await dispatch(
                         fetchMultispendTransactions({
+                            fedimint,
                             roomId: room.id,
                             limit: 10000,
                         }),
@@ -501,7 +504,7 @@ export function useExportMultispendTransactions(t: TFunction) {
                 }
             }
         },
-        [convertCentsToFormattedFiat, dispatch, t, preferredCurrency],
+        [dispatch, fedimint, convertCentsToFormattedFiat, t, preferredCurrency],
     )
 
     return exportMultispendTransactions
