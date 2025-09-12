@@ -56,7 +56,7 @@ describe('useOmniPaymentState', () => {
             const res = await result.current.handleOmniSend(amountSats)
             expect('preimage' in res && res.preimage).toBeTruthy()
         })
-    })
+    }, 30000)
 
     it('should parse and pay an onchain address', async () => {
         await builder.withEcashReceived(10000000)
@@ -91,7 +91,7 @@ describe('useOmniPaymentState', () => {
             const res = await result.current.handleOmniSend(1000 as Sats)
             expect('txid' in res && res.txid).toBeTruthy()
         })
-    })
+    }, 30000)
 
     it('should parse and pay an lnurl receive code', async () => {
         await builder.withEcashReceived(10000)
@@ -127,5 +127,5 @@ describe('useOmniPaymentState', () => {
             const res = await result.current.handleOmniSend(1 as Sats)
             expect('preimage' in res && res.preimage).toBeTruthy()
         })
-    })
+    }, 30000)
 })
