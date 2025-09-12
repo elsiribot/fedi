@@ -74,7 +74,7 @@ interface OmniPaymentState {
     /** For passing to the <OmniInput expectedInputTypes /> prop */
     expectedOmniInputTypes: typeof expectedOmniInputTypes
     /** For passing to the <OmniInput handleInput /> prop /> */
-    handleOmniInput: (input: ExpectedInputData) => void
+    handleOmniInput: (input: ExpectedInputData) => Promise<void>
     /** For resetting all state */
     resetOmniPaymentState: () => void
     /** Whether or not state is being processed */
