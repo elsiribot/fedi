@@ -57,7 +57,7 @@ use runtime::bridge_runtime::Runtime;
 use runtime::storage::AppState;
 use tokio::sync::{Mutex, broadcast, watch};
 use tracing::{error, info, warn};
-pub use types::{RpcMentions, SendMessageData};
+pub use types::SendMessageData;
 
 mod types;
 

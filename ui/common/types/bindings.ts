@@ -1287,6 +1287,7 @@ export type RpcTimelineItemEvent = {
   sender: string;
   sendState: RpcTimelineEventSendState | null;
   inReply: RpcTimelineDetails<RpcTimelineItemEvent> | null;
+  mentions: RpcMentions | null;
 };
 
 export type RpcTransaction = {

@@ -9,10 +9,10 @@ use matrix_sdk::event_cache::RoomPaginationStatus;
 use matrix_sdk::notification_settings::RoomNotificationMode;
 use matrix_sdk::room::RoomMember;
 use matrix_sdk::ruma::api::client::user_directory::search_users::v3 as search_user_directory;
-use matrix_sdk::ruma::events::AnyTimelineEvent;
 use matrix_sdk::ruma::events::poll::start::PollKind;
 use matrix_sdk::ruma::events::room::MediaSource;
 use matrix_sdk::ruma::events::room::member::MembershipState;
+use matrix_sdk::ruma::events::{AnyTimelineEvent, Mentions};
 use matrix_sdk::ruma::serde::Raw;
 use matrix_sdk::ruma::{MilliSecondsSinceUnixEpoch, events as ruma_events};
 use matrix_sdk::{ComposerDraft, ComposerDraftType, RoomDisplayName, RoomState};
@@ -171,6 +171,7 @@ pub struct RpcTimelineItemEvent {
     pub(crate) sender: matrix_sdk::ruma::OwnedUserId,
     pub(crate) send_state: Option<RpcTimelineEventSendState>,
     in_reply: Option<Box<RpcTimelineDetails<RpcTimelineItemEvent>>>,
+    mentions: Option<RpcMentions>,
 }
 
 impl From<&EventSendState> for RpcTimelineEventSendState {
@@ -193,7 +194,7 @@ impl From<&EventSendState> for RpcTimelineEventSendState {
 
 impl From<&EventTimelineItem> for RpcTimelineItemEvent {
     fn from(e: &EventTimelineItem) -> Self {
-        let (content, in_reply) = Self::from_item_content(e.content());
+        let (content, mentions, in_reply) = Self::from_item_content(e.content());
         RpcTimelineItemEvent {
             id: e.identifier().into(),
             content,
@@ -202,6 +203,7 @@ impl From<&EventTimelineItem> for RpcTimelineItemEvent {
             sender: e.sender().into(),
             send_state: e.send_state().map(RpcTimelineEventSendState::from),
             in_reply,
+            mentions,
         }
     }
 }
@@ -241,20 +243,25 @@ impl RpcTimelineItemEvent {
         item: &TimelineItemContent,
     ) -> (
         RpcMsgLikeKind,
+        Option<RpcMentions>,
         Option<Box<RpcTimelineDetails<RpcTimelineItemEvent>>>,
     ) {
         match item {
             TimelineItemContent::MsgLike(msg) => {
+                let mentions = match &msg.kind {
+                    MsgLikeKind::Message(message) => message.mentions().map(RpcMentions::from),
+                    _ => None,
+                };
                 let in_reply = msg.in_reply_to.as_ref().map(Self::for_reply);
-                (RpcMsgLikeKind::from(&msg.kind), in_reply)
+                (RpcMsgLikeKind::from(&msg.kind), mentions, in_reply)
             }
-            _ => (RpcMsgLikeKind::Unknown, None),
+            _ => (RpcMsgLikeKind::Unknown, None, None),
         }
     }
 
     fn for_reply(value: &InReplyToDetails) -> Box<RpcTimelineDetails<RpcTimelineItemEvent>> {
         Box::new(RpcTimelineDetails::mapped(&value.event, |value| {
-            let (content, in_reply) = Self::from_item_content(&value.content);
+            let (content, mentions, in_reply) = Self::from_item_content(&value.content);
             RpcTimelineItemEvent {
                 id: value.identifier.clone().into(),
                 content,
@@ -262,6 +269,7 @@ impl RpcTimelineItemEvent {
                 timestamp: value.timestamp,
                 sender: value.sender.clone(),
                 send_state: None,
+                mentions,
                 in_reply,
             }
         }))
@@ -438,6 +446,7 @@ impl RpcTimelineItem {
                     sender: message_event.sender().to_owned(),
                     send_state: None, // This is for local echos, not relevant here
                     in_reply: None,
+                    mentions: None,
                 };
 
                 Some(RpcTimelineItem::Event(event))
@@ -1230,6 +1239,27 @@ impl From<&MsgLikeKind> for RpcMsgLikeKind {
             MsgLikeKind::Redacted => RpcMsgLikeKind::Redacted,
             MsgLikeKind::Sticker(_) => RpcMsgLikeKind::Unknown,
             MsgLikeKind::UnableToDecrypt(_) => RpcMsgLikeKind::UnableToDecrypt,
+        }
+    }
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize, ts_rs::TS)]
+#[serde(rename_all = "snake_case")]
+#[ts(export)]
+pub struct RpcMentions {
+    pub users: Vec<RpcUserId>,
+    pub room: bool,
+}
+
+impl From<&'_ Mentions> for RpcMentions {
+    fn from(value: &'_ Mentions) -> Self {
+        Self {
+            room: value.room,
+            users: value
+                .user_ids
+                .iter()
+                .map(|x| RpcUserId(x.to_string()))
+                .collect(),
         }
     }
 }

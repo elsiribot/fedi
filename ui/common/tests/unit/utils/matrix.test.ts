@@ -68,6 +68,7 @@ const mockGroupAnnounceEvent: MatrixMultispendEvent<'groupReannounce'> = {
     sender: '@user1:m1.8fa.in',
     sendState: { kind: 'sent', event_id: 'event123' },
     inReply: null,
+    mentions: null,
     content: {
         msgtype: 'xyz.fedi.multispend',
         kind: 'groupReannounce',
@@ -101,6 +102,7 @@ const mockChatEvent: MatrixEvent<'m.text'> = {
     sendState: { kind: 'sent', event_id: 'event123' },
     localEcho: false,
     inReply: null,
+    mentions: null,
 }
 
 const mockMatrixEvents: MatrixEvent[] = [mockGroupAnnounceEvent, mockChatEvent]
@@ -307,6 +309,7 @@ const mockRepliedEvent: MatrixEvent<'m.text'> = {
     timestamp: Date.now(),
     localEcho: false,
     sendState: { kind: 'sent', event_id: 'event123' },
+    mentions: null,
     inReply: {
         kind: 'ready',
         ...mockChatEvent,
