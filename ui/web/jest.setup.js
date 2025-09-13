@@ -1,7 +1,8 @@
 import '@testing-library/jest-dom'
+import fetch from 'node-fetch'
 
 // Mock the fetch request in the `fetchCurrencyPrices` thunk only
-const realFetch = global.fetch
+const realFetch = fetch
 global.fetch = jest.fn((url, options) => {
     if (url.includes('price-feed.dev.fedibtc.com')) {
         return Promise.resolve({
