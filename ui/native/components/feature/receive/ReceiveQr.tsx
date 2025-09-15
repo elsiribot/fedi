@@ -1,25 +1,16 @@
 import Clipboard from '@react-native-clipboard/clipboard'
-import { useNavigation } from '@react-navigation/native'
 import { Button, Card, Text, Theme, useTheme } from '@rneui/themed'
-import React, { useCallback, useEffect, useState } from 'react'
+import React, { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Dimensions, Share, StyleSheet, View } from 'react-native'
 
 import { useToast } from '@fedi/common/hooks/toast'
 import { selectLoadedFederation } from '@fedi/common/redux'
-import { updateTransactionNotes } from '@fedi/common/redux/transactions'
 import stringUtils from '@fedi/common/utils/StringUtils'
 import { makeLog } from '@fedi/common/utils/log'
 
-import { fedimint } from '../../../bridge'
-import { useAppDispatch, useAppSelector } from '../../../state/hooks'
-import { reset } from '../../../state/navigation'
-import {
-    BitcoinOrLightning,
-    BtcLnUri,
-    Federation,
-    TransactionEvent,
-} from '../../../types'
+import { useAppSelector } from '../../../state/hooks'
+import { BitcoinOrLightning, BtcLnUri, Federation } from '../../../types'
 import Flex from '../../ui/Flex'
 import NotesInput from '../../ui/NotesInput'
 import QRCode from '../../ui/QRCode'
@@ -31,8 +22,8 @@ const log = makeLog('ReceiveQr')
 export type ReceiveQrProps = {
     uri: BtcLnUri
     type?: BitcoinOrLightning
-    transactionId?: string
     federationId?: Federation['id']
+    onSaveNotes?: (notes: string) => void
 }
 
 const QR_CODE_SIZE = Dimensions.get('window').width * 0.7
@@ -40,34 +31,16 @@ const QR_CODE_SIZE = Dimensions.get('window').width * 0.7
 const ReceiveQr: React.FC<ReceiveQrProps> = ({
     uri,
     type,
-    transactionId,
     federationId = '',
+    onSaveNotes,
 }: ReceiveQrProps) => {
     const { theme } = useTheme()
     const { t } = useTranslation()
-    const navigation = useNavigation()
     const toast = useToast()
     const [notes, setNotes] = useState('')
-    const dispatch = useAppDispatch()
     const federation = useAppSelector(s =>
         selectLoadedFederation(s, federationId),
     )
-
-    const onSaveNotes = useCallback(async () => {
-        if (!transactionId || !federationId) return
-        try {
-            await dispatch(
-                updateTransactionNotes({
-                    fedimint,
-                    notes,
-                    federationId: federationId,
-                    transactionId,
-                }),
-            ).unwrap()
-        } catch (err) {
-            toast.error(t, err)
-        }
-    }, [federationId, dispatch, notes, t, toast, transactionId])
 
     const copyToClipboard = () => {
         if (!uri.body) return
@@ -96,32 +69,6 @@ const ReceiveQr: React.FC<ReceiveQrProps> = ({
         }
     }
 
-    const transactionEventHandler = useCallback(
-        (event: TransactionEvent) => {
-            if (
-                (event.transaction.kind === 'lnReceive' &&
-                    event.transaction.ln_invoice === uri.body) ||
-                (event.transaction.kind === 'onchainDeposit' &&
-                    event.transaction.onchain_address === uri.body)
-            )
-                navigation.dispatch(
-                    reset('ReceiveSuccess', {
-                        tx: event.transaction,
-                    }),
-                )
-        },
-        [navigation, uri.body],
-    )
-
-    // Registers an event handler listening for the invoice to be paid
-    useEffect(() => {
-        const unsubscribe = fedimint.addListener(
-            'transaction',
-            transactionEventHandler,
-        )
-        return unsubscribe
-    }, [transactionEventHandler])
-
     const style = styles(theme)
 
     return (
@@ -147,7 +94,7 @@ const ReceiveQr: React.FC<ReceiveQrProps> = ({
                     <NotesInput
                         notes={notes}
                         setNotes={setNotes}
-                        onSave={onSaveNotes}
+                        onSave={() => onSaveNotes?.(notes)}
                     />
                 )}
                 {type === BitcoinOrLightning.bitcoin && federationId && (
