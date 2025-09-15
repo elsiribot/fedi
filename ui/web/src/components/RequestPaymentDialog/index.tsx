@@ -3,10 +3,12 @@ import { useRouter } from 'next/router'
 import { useEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 
+import BoltIcon from '@fedi/common/assets/svgs/bolt.svg'
 import SwitchLeftIcon from '@fedi/common/assets/svgs/switch-left.svg'
 import SwitchRightIcon from '@fedi/common/assets/svgs/switch-right.svg'
 import { useSyncCurrencyRatesAndCache } from '@fedi/common/hooks/currency'
 import { useIsOnchainDepositSupported } from '@fedi/common/hooks/federation'
+import { useLnurlReceiveCode } from '@fedi/common/hooks/pay'
 import { useMakeOnchainAddress } from '@fedi/common/hooks/receive'
 import { TransactionListEntry } from '@fedi/common/types'
 import amountUtils from '@fedi/common/utils/AmountUtils'
@@ -20,6 +22,7 @@ import { DialogStatus } from '.././DialogStatus'
 import { Icon } from '.././Icon'
 import { Text } from '.././Text'
 import LightningRequest from './LightningRequest'
+import LnurlReceive from './LnurlReceive'
 import LnurlWithdraw from './LnurlWithdraw'
 import OnchainRequest from './OnchainRequest'
 
@@ -39,7 +42,7 @@ export const RequestPaymentDialog: React.FC<Props> = ({
 
     const [isCompleted, setIsCompleted] = useState(false)
     const [requestType, setRequestType] = useState<
-        'lightning' | 'bitcoin' | 'lnurl'
+        'lightning' | 'bitcoin' | 'lnurlw' | 'lnurlReceive'
     >('lightning')
     const [receivedTransaction, setReceivedTransaction] =
         useState<TransactionListEntry | null>(null)
@@ -50,6 +53,7 @@ export const RequestPaymentDialog: React.FC<Props> = ({
         fedimint,
         federationId,
     )
+    const { supportsLnurl } = useLnurlReceiveCode(fedimint, federationId || '')
 
     const handleSubmit = () => {
         setIsCompleted(true)
@@ -89,7 +93,7 @@ export const RequestPaymentDialog: React.FC<Props> = ({
     }, [open, syncCurrencyRatesAndCache, reset])
 
     useEffect(() => {
-        if (open && lnurlw) setRequestType('lnurl')
+        if (open && lnurlw) setRequestType('lnurlw')
     }, [open, lnurlw])
 
     useEffect(() => {
@@ -101,36 +105,49 @@ export const RequestPaymentDialog: React.FC<Props> = ({
     return (
         <Dialog
             title={t('feature.receive.bitcoin-request')}
+            titleRight={
+                supportsLnurl ? (
+                    <LnurlButton
+                        onClick={() => {
+                            setRequestType('lnurlReceive')
+                        }}>
+                        <Icon icon={BoltIcon} size="sm" />
+                        <Text weight="bold">{t('words.lnurl')}</Text>
+                    </LnurlButton>
+                ) : null
+            }
             open={open}
             mobileDismiss="back"
             onOpenChange={onOpenChange}>
             <Container ref={containerRef}>
-                {isOnchainSupported && !isCompleted && (
-                    <RequestTypeToggle
-                        onClick={() =>
-                            setRequestType(
-                                requestType === 'lightning'
-                                    ? 'bitcoin'
-                                    : 'lightning',
-                            )
-                        }>
-                        <Text variant="caption" weight="medium">
-                            {t(
-                                requestType === 'lightning'
-                                    ? 'words.lightning'
-                                    : 'words.onchain',
-                            )}
-                        </Text>
-                        <Icon
-                            size={20}
-                            icon={
-                                requestType === 'lightning'
-                                    ? SwitchLeftIcon
-                                    : SwitchRightIcon
-                            }
-                        />
-                    </RequestTypeToggle>
-                )}
+                {isOnchainSupported &&
+                    !isCompleted &&
+                    requestType !== 'lnurlReceive' && (
+                        <RequestTypeToggle
+                            onClick={() =>
+                                setRequestType(
+                                    requestType === 'lightning'
+                                        ? 'bitcoin'
+                                        : 'lightning',
+                                )
+                            }>
+                            <Text variant="caption" weight="medium">
+                                {t(
+                                    requestType === 'lightning'
+                                        ? 'words.lightning'
+                                        : 'words.onchain',
+                                )}
+                            </Text>
+                            <Icon
+                                size={20}
+                                icon={
+                                    requestType === 'lightning'
+                                        ? SwitchLeftIcon
+                                        : SwitchRightIcon
+                                }
+                            />
+                        </RequestTypeToggle>
+                    )}
 
                 {requestType === 'bitcoin' ? (
                     <OnchainRequest
@@ -143,11 +160,17 @@ export const RequestPaymentDialog: React.FC<Props> = ({
                         onInvoicePaid={onTransactionReceived}
                         federationId={federationId}
                     />
-                ) : (
+                ) : requestType === 'lnurlw' ? (
                     <LnurlWithdraw
                         onSubmit={handleSubmit}
                         onWithdrawPaid={onTransactionReceived}
                         lnurlw={lnurlw}
+                    />
+                ) : (
+                    <LnurlReceive
+                        onSubmit={handleSubmit}
+                        onWithdrawPaid={onTransactionReceived}
+                        federationId={federationId}
                     />
                 )}
 
@@ -211,4 +234,12 @@ export const QRContainer = styled('div', {
     flexDirection: 'column',
     width: '100%',
     gap: 16,
+})
+
+const LnurlButton = styled('div', {
+    display: 'flex',
+    flexDirection: 'row',
+    alignItems: 'center',
+    color: theme.colors.orange,
+    cursor: 'pointer',
 })
