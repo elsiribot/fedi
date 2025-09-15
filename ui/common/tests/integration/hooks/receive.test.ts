@@ -3,6 +3,7 @@
  * Testing onboarding status updates and state management
  */
 import { act, waitFor } from '@testing-library/react'
+import i18next from 'i18next'
 
 import {
     useMakeLightningRequest,
@@ -10,7 +11,9 @@ import {
     useLnurlReceiveCode,
 } from '../../../hooks/receive'
 import { selectLastUsedFederationId } from '../../../redux'
-import { Sats } from '../../../types'
+import { MSats, ParsedLnurlPay, ParserDataType, Sats } from '../../../types'
+import { lnurlPay } from '../../../utils/lnurl'
+import { parseUserInput } from '../../../utils/parser'
 import { createIntegrationTestBuilder } from '../../utils/remote-bridge-setup'
 import { renderHookWithBridge } from '../../utils/render'
 
@@ -260,13 +263,14 @@ describe('common/hooks/receive', () => {
 
             const {
                 store,
-                remoteBridge: { fedimint },
-                renderHookWithBridge,
+                bridge: { fedimint },
             } = context
 
             const federationId = selectLastUsedFederationId(store.getState())
-            const { result } = renderHookWithBridge(() =>
-                useLnurlReceiveCode(fedimint, federationId || ''),
+            const { result } = renderHookWithBridge(
+                () => useLnurlReceiveCode(fedimint, federationId || ''),
+                store,
+                fedimint,
             )
 
             await waitFor(() => {
@@ -274,6 +278,68 @@ describe('common/hooks/receive', () => {
                 expect(result.current.lnurlReceiveCode).toBeTruthy()
                 expect(result.current.isLoading).toBeFalsy()
             })
+        })
+
+        it('should receive funds to an LNURL receive code', async () => {
+            await builder.withEcashReceived(100000)
+
+            const {
+                store,
+                bridge: { fedimint },
+            } = context
+
+            const federationId = selectLastUsedFederationId(store.getState())
+            const { result } = renderHookWithBridge(
+                () => useLnurlReceiveCode(fedimint, federationId || ''),
+                store,
+                fedimint,
+            )
+
+            await waitFor(() => {
+                expect(result.current.supportsLnurl).toBeTruthy()
+                expect(result.current.lnurlReceiveCode).toBeTruthy()
+                expect(result.current.isLoading).toBeFalsy()
+            })
+
+            // Parse the lnurl pay code
+            const parsedLnurl = (await parseUserInput(
+                result.current.lnurlReceiveCode ?? '',
+                fedimint,
+                i18next.t,
+                federationId,
+                false,
+            )) as ParsedLnurlPay
+
+            expect(parsedLnurl.type).toBe(ParserDataType.LnurlPay)
+
+            // Pay the parsed lnurl pay code
+            const payResult = await lnurlPay(
+                fedimint,
+                federationId ?? '',
+                parsedLnurl.data,
+                10000 as MSats,
+                'lnurl pay txn',
+            )
+
+            expect(payResult.isOk()).toBeTruthy()
+            expect(payResult._unsafeUnwrap().preimage).toBeTruthy()
+
+            // find the transaction
+            const transactions = await fedimint.listTransactions(
+                federationId ?? '',
+            )
+
+            // Transaction related to the lnurl receive code
+            const recurringdTxn = transactions.find(
+                tx => tx.kind === 'lnRecurringdReceive' && tx.amount === 10000,
+            )
+            // Lightning transaction used to pay the lnurl receive code
+            const lnPayTxn = transactions.find(
+                tx => tx.kind === 'lnPay' && tx.txnNotes === 'lnurl pay txn',
+            )
+
+            expect(recurringdTxn).toBeTruthy()
+            expect(lnPayTxn).toBeTruthy()
         })
     })
 })
