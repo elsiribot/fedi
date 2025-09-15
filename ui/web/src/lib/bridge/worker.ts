@@ -43,9 +43,8 @@ async function fedimintRpc<Type = void>(
     if (parsed.error) {
         log.error(method, parsed)
 
-        // Ignore matrixObservableCancel errors
-        // due to potential race condition
-        if (method === 'matrixObservableCancel') {
+        // Ignore streamCancel method
+        if (method === 'streamCancel') {
             return parsed
         }
 
