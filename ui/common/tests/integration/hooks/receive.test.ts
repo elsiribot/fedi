@@ -198,9 +198,13 @@ describe('receiving payments', () => {
             )
 
             // Make the onchain address
-            const onchainAddressResult = result.current.makeOnchainAddress()
+            act(() => {
+                const onchainAddressResult = result.current.makeOnchainAddress()
 
-            expect(onchainAddressResult).rejects.toThrow('Federation not found')
+                expect(onchainAddressResult).rejects.toThrow(
+                    'Federation not found',
+                )
+            })
         }, 30000)
 
         it('should throw if saving notes fails', async () => {
