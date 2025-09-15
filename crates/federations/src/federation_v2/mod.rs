@@ -4385,6 +4385,12 @@ impl FederationV2 {
     }
 
     pub async fn get_recurringd_api(&self) -> Option<SafeUrl> {
+        if let Ok(url) = std::env::var("TEST_BRIDGE_RECURRINGD_API") {
+            if let Ok(url) = SafeUrl::from_str(&url) {
+                return Some(url);
+            }
+        }
+
         self.client
             .meta_service()
             .get_field::<SafeUrl>(self.client.db(), RECURRINGD_API_META)
