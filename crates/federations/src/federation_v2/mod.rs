@@ -4,7 +4,7 @@ mod dev;
 mod meta;
 
 use std::any::Any;
-use std::collections::{BTreeMap, HashMap};
+use std::collections::{BTreeMap, HashMap, HashSet};
 use std::fmt::Debug;
 use std::future::Future;
 use std::ops::Not as _;
@@ -15,6 +15,7 @@ use std::time::Duration;
 
 use ::serde::{Deserialize, Serialize};
 use anyhow::{Context, Result, anyhow, bail, ensure};
+use async_recursion::async_recursion;
 use bitcoin::address::NetworkUnchecked;
 use bitcoin::hex::DisplayHex;
 use bitcoin::secp256k1::{self, PublicKey, schnorr};
@@ -234,6 +235,10 @@ pub struct FederationV2 {
     pub spv2_history_service: OnceCell<StabilityPoolHistoryService>,
     pub spv2_sweeper_service: OnceCell<SPv2SweeperService>,
     pub multispend_services: Arc<dyn MultispendNotifications>,
+    // In-memory set of LNURL recurring receives that have currently been actively subscribed to.
+    // Used to ensure that multiple calls to list_transactions doesn't trigger multiple
+    // subscriptions for the same operation.
+    pub lnurl_subbed_op_ids: Mutex<HashSet<OperationId>>,
 }
 
 impl FederationV2 {
@@ -283,6 +288,7 @@ impl FederationV2 {
             spv2_sync_service: Default::default(),
             spv2_history_service: Default::default(),
             spv2_sweeper_service: Default::default(),
+            lnurl_subbed_op_ids: Default::default(),
         });
         if !recovering {
             federation.start_background_tasks().await;
@@ -1052,6 +1058,8 @@ impl FederationV2 {
         Ok(())
     }
 
+    #[cfg_attr(target_family = "wasm", async_recursion(?Send))]
+    #[cfg_attr(not(target_family = "wasm"), async_recursion)]
     pub async fn subscribe_recurring_payment_receive(
         &self,
         operation_id: OperationId,
@@ -2663,25 +2671,45 @@ impl FederationV2 {
                         };
                     }
                     LightningOperationMetaVariant::RecurringPaymentReceive(payment) => {
+                        let state = self
+                            .get_client_operation_outcome(operation_id, entry, |op_id| async move {
+                                self.client
+                                    .ln()?
+                                    .subscribe_ln_recurring_receive(op_id)
+                                    .await
+                            })
+                            .await;
+                        // If the state is "Created" or "WaitingForPayment", we need to subscribe in
+                        // the background so that we can send an update to the front-end when the
+                        // state advances.
+                        let mut lnurl_subbed_op_ids = self.lnurl_subbed_op_ids.lock().await;
+                        if matches!(
+                            state,
+                            Some(
+                                LnReceiveState::Created | LnReceiveState::WaitingForPayment { .. }
+                            )
+                        ) && !lnurl_subbed_op_ids.contains(&operation_id)
+                        {
+                            lnurl_subbed_op_ids.insert(operation_id);
+                            self.spawn_cancellable(
+                                "subscribe_to_recurring_payment_receive",
+                                move |fed| async move {
+                                    if let Err(e) =
+                                        fed.subscribe_recurring_payment_receive(operation_id).await
+                                    {
+                                        warn!("subscribe_to_ln_receive error: {e:?}")
+                                    }
+                                    fed.lnurl_subbed_op_ids.lock().await.remove(&operation_id);
+                                },
+                            );
+                        }
                         transaction_amount = RpcAmount(Amount {
                             msats: payment.invoice.amount_milli_satoshis().unwrap(),
                         });
                         // no frontend meta for recurring payments
                         frontend_metadata = None;
                         transaction_kind = RpcTransactionKind::LnRecurringdReceive {
-                            state: self
-                                .get_client_operation_outcome(
-                                    operation_id,
-                                    entry,
-                                    |op_id| async move {
-                                        self.client
-                                            .ln()?
-                                            .subscribe_ln_recurring_receive(op_id)
-                                            .await
-                                    },
-                                )
-                                .await
-                                .map(Into::into),
+                            state: state.map(Into::into),
                         };
                     }
                     #[allow(deprecated)]
