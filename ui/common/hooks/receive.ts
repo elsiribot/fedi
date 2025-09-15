@@ -1,9 +1,13 @@
-import { useCallback, useEffect, useState } from 'react'
+import { ResultAsync } from 'neverthrow'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 
-import { Sats, TransactionListEntry } from '../types'
+import { ParsedLnurlWithdraw, Sats, TransactionListEntry } from '../types'
 import amountUtils from '../utils/AmountUtils'
+import { TaggedError } from '../utils/errors'
 import { FedimintBridge } from '../utils/fedimint'
+import { lnurlWithdraw } from '../utils/lnurl'
 import { makeLog } from '../utils/log'
+import { useTransactionHistory } from './transactions'
 
 const log = makeLog('common/hooks/lightning')
 
@@ -81,5 +85,213 @@ export const useMakeLightningRequest = ({
         invoice,
         isInvoiceLoading,
         reset,
+    }
+}
+
+type OnchainDepositTxn = Extract<
+    TransactionListEntry,
+    { kind: 'onchainDeposit' }
+>
+
+/**
+ * Handles the logic for creating an onchain address and subscribing to a mempool transaction for that address.
+ *
+ * Exposes the necessary state variables/options to handle error/loading states and add transaction notes.
+ */
+export const useMakeOnchainAddress = ({
+    federationId,
+    fedimint,
+    onMempoolTransaction,
+}: {
+    fedimint: FedimintBridge
+    federationId: string | undefined
+    onMempoolTransaction?: (txn: OnchainDepositTxn) => void
+}) => {
+    const [address, setAddress] = useState<string | null>(null)
+    const [isAddressLoading, setIsAddressLoading] = useState<boolean>(false)
+
+    const { transactions, fetchTransactions } = useTransactionHistory(
+        fedimint,
+        federationId || '',
+    )
+
+    const transaction = useMemo(
+        () =>
+            transactions.find(
+                tx =>
+                    tx.kind === 'onchainDeposit' &&
+                    tx.onchain_address === address,
+            ) as OnchainDepositTxn | undefined,
+        [transactions, address],
+    )
+
+    const reset = useCallback(() => {
+        setAddress(null)
+        setIsAddressLoading(false)
+    }, [])
+
+    const makeOnchainAddress = useCallback(async () => {
+        if (!federationId) return
+
+        setIsAddressLoading(true)
+        try {
+            const newAddress = await fedimint.generateAddress(federationId, {
+                initialNotes: null,
+                recipientMatrixId: null,
+                senderMatrixId: null,
+            })
+            setAddress(newAddress)
+
+            // Fetches transactionId of new address, in case the user updates notes
+            await fetchTransactions()
+        } catch (e) {
+            log.error('error generating address', e)
+            throw e
+        } finally {
+            setIsAddressLoading(false)
+        }
+    }, [federationId, fedimint, fetchTransactions])
+
+    const onSaveNotes = useCallback(
+        async (notes: string) => {
+            if (!transaction || !federationId) return
+
+            try {
+                await fedimint.updateTransactionNotes(
+                    transaction.id,
+                    notes,
+                    federationId,
+                )
+            } catch (e) {
+                log.error(
+                    `Failed to update notes for transaction ${transaction.id}`,
+                    e,
+                )
+                throw e
+            }
+        },
+        [federationId, transaction, fedimint],
+    )
+
+    useEffect(() => {
+        if (!address || !onMempoolTransaction) return
+
+        const unsubscribe = fedimint.addListener('transaction', event => {
+            if (
+                event.transaction.kind === 'onchainDeposit' &&
+                event.transaction.onchain_address === address
+            ) {
+                onMempoolTransaction?.(event.transaction as OnchainDepositTxn)
+            }
+        })
+
+        return unsubscribe
+    }, [fedimint, onMempoolTransaction, address])
+
+    return {
+        address,
+        isAddressLoading,
+        makeOnchainAddress,
+        transaction,
+        onSaveNotes,
+        reset,
+    }
+}
+
+/**
+ * Handles withdrawing and subscribing to the completion of an LNURL Withdrawal.
+ *
+ * Exposes the necessary state variables and options for handling error and loading states.
+ */
+export function useLnurlWithdraw({
+    fedimint,
+    federationId,
+    lnurlw,
+    onWithdrawPaid,
+}: {
+    fedimint: FedimintBridge
+    federationId: string | undefined
+    lnurlw: ParsedLnurlWithdraw | undefined
+    onWithdrawPaid?: (txn: LnReceiveTxn) => void
+}) {
+    const [isWithdrawing, setIsWithdrawing] = useState(false)
+
+    const reset = () => {
+        setIsWithdrawing(false)
+    }
+
+    const waitForLnurlTransaction = useCallback(
+        (invoice: string) => {
+            return new Promise<LnReceiveTxn>((resolve, reject) => {
+                const unsubscribe = fedimint.addListener(
+                    'transaction',
+                    event => {
+                        if (
+                            event.transaction.kind === 'lnReceive' &&
+                            event.transaction.ln_invoice === invoice
+                        ) {
+                            unsubscribe()
+                            resolve(event.transaction as LnReceiveTxn)
+                        }
+                    },
+                )
+
+                setTimeout(() => {
+                    unsubscribe()
+                    reject(
+                        new Error(
+                            'LNURL withdrawal timed out after 5000ms, aborting',
+                        ),
+                    )
+                }, 5000)
+            })
+        },
+        [fedimint],
+    )
+
+    const handleWithdraw = useCallback(
+        async (amount: Sats, memo: string = '') => {
+            if (!federationId || !lnurlw) return
+
+            setIsWithdrawing(true)
+
+            await lnurlWithdraw(
+                fedimint,
+                federationId,
+                lnurlw.data,
+                amountUtils.satToMsat(amount),
+                memo,
+            )
+                .andThen(invoice =>
+                    ResultAsync.fromPromise(
+                        waitForLnurlTransaction(invoice),
+                        e => new TaggedError('TimeoutError', e),
+                    ),
+                )
+                .match(
+                    txn => {
+                        onWithdrawPaid?.(txn)
+                    },
+                    e => {
+                        log.error(`Failed to complete LNURL Withdrawal`, e)
+                        // TODO: do not throw
+                        throw e
+                    },
+                )
+            setIsWithdrawing(false)
+        },
+        [
+            federationId,
+            fedimint,
+            lnurlw,
+            waitForLnurlTransaction,
+            onWithdrawPaid,
+        ],
+    )
+
+    return {
+        reset,
+        handleWithdraw,
+        isWithdrawing,
     }
 }
