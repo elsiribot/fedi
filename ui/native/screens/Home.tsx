@@ -21,9 +21,9 @@ import FirstTimeCommunityEntryOverlay, {
 } from '../components/feature/federations/FirstTimeCommunityEntryOverlay'
 import CommunityChats from '../components/feature/home/CommunityChats'
 import DisplayNameOverlay from '../components/feature/home/DisplayNameOverlay'
+import PinnedMessage from '../components/feature/home/PinnedMessage'
 import ShortcutsList from '../components/feature/home/ShortcutsList'
 import SurveyOverlay from '../components/feature/home/SurveyOverlay'
-import WelcomeMessage from '../components/feature/home/WelcomeMessage'
 import Flex from '../components/ui/Flex'
 import { useAppSelector } from '../state/hooks'
 import type {
@@ -118,21 +118,13 @@ const Home: React.FC<Props> = () => {
                 contentContainerStyle={style.container}
                 alwaysBounceVertical={false}>
                 <Flex gap="lg" fullWidth>
-                    {pinnedMessage && (
-                        <View style={style.section}>
-                            <WelcomeMessage message={pinnedMessage} />
-                        </View>
-                    )}
+                    {pinnedMessage && <PinnedMessage message={pinnedMessage} />}
 
-                    <View style={style.section}>
-                        <CommunityChats />
-                    </View>
+                    <CommunityChats />
 
-                    <View style={style.section}>
-                        <ErrorBoundary fallback={null}>
-                            <ShortcutsList communityId={selectedCommunity.id} />
-                        </ErrorBoundary>
-                    </View>
+                    <ErrorBoundary fallback={null}>
+                        <ShortcutsList communityId={selectedCommunity.id} />
+                    </ErrorBoundary>
                 </Flex>
             </ScrollView>
 
@@ -158,13 +150,9 @@ const styles = (theme: Theme) =>
         container: {
             alignItems: 'center',
             justifyContent: 'flex-start',
-            marginTop: theme.spacing.sm,
-            paddingHorizontal: theme.spacing.lg,
+            padding: theme.spacing.lg,
             paddingBottom: theme.spacing.xl,
             width: '100%',
-        },
-        section: {
-            // borderWidth: 1,
         },
     })
 
