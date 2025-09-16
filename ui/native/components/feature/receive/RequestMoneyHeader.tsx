@@ -4,7 +4,7 @@ import React from 'react'
 import { useTranslation } from 'react-i18next'
 import { StyleSheet } from 'react-native'
 
-import { useLnurlReceiveCode } from '@fedi/common/hooks/pay'
+import { useLnurlReceiveCode } from '@fedi/common/hooks/receive'
 
 import { fedimint } from '../../../bridge'
 import { NavigationHook, RootStackParamList } from '../../../types/navigation'

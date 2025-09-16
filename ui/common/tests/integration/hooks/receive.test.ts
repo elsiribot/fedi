@@ -3,13 +3,18 @@
  * Testing onboarding status updates and state management
  */
 import { act, waitFor } from '@testing-library/react'
+import i18next from 'i18next'
 
 import {
     useMakeLightningRequest,
     useMakeOnchainAddress,
+    useLnurlReceiveCode,
 } from '../../../hooks/receive'
 import { selectLastUsedFederationId } from '../../../redux'
-import { Sats } from '../../../types'
+import { MSats, ParsedLnurlPay, ParserDataType, Sats } from '../../../types'
+import { RpcTransaction } from '../../../types/bindings'
+import { lnurlPay } from '../../../utils/lnurl'
+import { parseUserInput } from '../../../utils/parser'
 import { createIntegrationTestBuilder } from '../../utils/remote-bridge-setup'
 import { renderHookWithBridge } from '../../utils/render'
 
@@ -254,6 +259,108 @@ describe('common/hooks/receive', () => {
             } as unknown as string)
 
             expect(saveNotesResult).rejects.toThrow('Bad request')
+        }, 30000)
+    })
+
+    describe('useLnurlReceiveCode', () => {
+        it('should generate an LNURL receive code', async () => {
+            await builder.withFederationJoined()
+
+            const {
+                store,
+                bridge: { fedimint },
+            } = context
+
+            const federationId = selectLastUsedFederationId(store.getState())
+            const { result } = renderHookWithBridge(
+                () => useLnurlReceiveCode(fedimint, federationId || ''),
+                store,
+                fedimint,
+            )
+
+            await waitFor(() => {
+                expect(result.current.supportsLnurl).toBeTruthy()
+                expect(result.current.lnurlReceiveCode).toBeTruthy()
+                expect(result.current.isLoading).toBeFalsy()
+            })
+        })
+
+        it('should receive funds to an LNURL receive code', async () => {
+            await builder.withEcashReceived(100000)
+
+            const {
+                store,
+                bridge: { fedimint },
+            } = context
+
+            const federationId = selectLastUsedFederationId(store.getState())
+            const { result } = renderHookWithBridge(
+                () => useLnurlReceiveCode(fedimint, federationId || ''),
+                store,
+                fedimint,
+            )
+
+            await waitFor(() => {
+                expect(result.current.supportsLnurl).toBeTruthy()
+                expect(result.current.lnurlReceiveCode).toBeTruthy()
+                expect(result.current.isLoading).toBeFalsy()
+            })
+
+            // Parse the lnurl pay code
+            const parsedLnurl = (await parseUserInput(
+                result.current.lnurlReceiveCode ?? '',
+                fedimint,
+                i18next.t,
+                federationId,
+                false,
+            )) as ParsedLnurlPay
+
+            expect(parsedLnurl.type).toBe(ParserDataType.LnurlPay)
+
+            // Pay the parsed lnurl pay code
+            const payResult = await lnurlPay(
+                fedimint,
+                federationId ?? '',
+                parsedLnurl.data,
+                10000 as MSats,
+                'lnurl pay txn',
+            )
+
+            expect(payResult.isOk()).toBeTruthy()
+            expect(payResult._unsafeUnwrap().preimage).toBeTruthy()
+
+            // find the transaction
+            const transactions = await fedimint.listTransactions(
+                federationId ?? '',
+            )
+
+            // Lightning transaction used to pay the lnurl receive code
+            const lnPayTxn = transactions.find(
+                tx => tx.kind === 'lnPay' && tx.txnNotes === 'lnurl pay txn',
+            )
+
+            const lnurlClaimedTxn = await new Promise<RpcTransaction>(
+                resolve => {
+                    const unsubscribe = fedimint.addListener(
+                        'transaction',
+                        event => {
+                            if (
+                                event.transaction.kind ===
+                                    'lnRecurringdReceive' &&
+                                event.transaction.amount === 10000 &&
+                                event.transaction.state?.type === 'claimed'
+                            ) {
+                                unsubscribe()
+                                resolve(event.transaction)
+                            }
+                        },
+                    )
+                },
+            )
+
+            expect(lnPayTxn).toBeTruthy()
+            expect(lnPayTxn?.state?.type).toBe('success')
+            expect(lnurlClaimedTxn).toBeTruthy()
         }, 30000)
     })
 })
