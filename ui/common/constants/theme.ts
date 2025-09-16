@@ -9,6 +9,7 @@ const HEX_COLORS = {
     green100: '#B4F1C7',
     orange: '#DF7B00',
     orange100: '#F8DFB3',
+    orange200: '#FFF9DE',
     lightOrange: '#ECA429',
     darkGrey: '#6D7071',
     grey: '#858789',
@@ -27,6 +28,7 @@ const HEX_COLORS = {
     fuschia: '#EF5DA8',
     // TODO: Move these into maps instead of properties, e.g. blue[100] instead of blue100
     blue100: '#BAE0FE',
+    blue200: '#B6EAFF',
     blueDropShadow: '#7099B0',
     mint: '#26A07B',
 }
@@ -109,6 +111,7 @@ export const theme = {
     // Figma has the gradient using gray on top of white, but we can simplify components
     // by using a flat gradient instead of an overlay on top of white.
     dayLinearGradient: ['rgba(255, 255, 255, 1)', 'rgba(228, 228, 228, 1)'],
+    skyLinearGradient: [HEX_COLORS.orange200, HEX_COLORS.blue200],
 } as const
 
 function makeHoloGradientRgbas(alphaMultiplier: number) {
