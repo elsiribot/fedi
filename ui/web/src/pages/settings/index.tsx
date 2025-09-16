@@ -22,17 +22,20 @@ import { CopyInput } from '../../components/CopyInput'
 import { FederationMenu } from '../../components/FederationMenu'
 import { InviteMemberDialog } from '../../components/InviteMemberDialog'
 import * as Layout from '../../components/Layout'
+import { MobileAppDownloadBanner } from '../../components/MobileAppDownloadBanner'
 import { QRCode } from '../../components/QRCode'
 import { SettingsMenu, SettingsMenuProps } from '../../components/SettingsMenu'
 import { Text } from '../../components/Text'
 import { VersionContainer } from '../../components/VersionContainer'
-import { useAppSelector } from '../../hooks'
+import { useAppSelector, useDeviceQuery } from '../../hooks'
 import { fedimint } from '../../lib/bridge'
 import { styled } from '../../styles'
 
 function AdminPage() {
     const { t } = useTranslation()
     const matrixAuth = useAppSelector(selectMatrixAuth)
+
+    const { isMobile } = useDeviceQuery()
 
     const [invitingFederationId, setInvitingFederationId] = useState<string>('')
     const [leavingFederation, setLeavingFederation] =
@@ -160,6 +163,7 @@ function AdminPage() {
                                 </QRContainer>
                             </Content>
                         )}
+                        {isMobile && <MobileAppDownloadBanner />}
                         <SettingsMenu menu={menu} />
 
                         {/* Federations Section */}
