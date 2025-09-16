@@ -1,4 +1,3 @@
-import { useNavigation } from '@react-navigation/native'
 import type { NativeStackScreenProps } from '@react-navigation/native-stack'
 import { Text, Theme, useTheme } from '@rneui/themed'
 import React, { useCallback, useState } from 'react'
@@ -9,16 +8,17 @@ import {
     refetchMatrixRoomMembers,
     selectMatrixAuth,
     selectMatrixRoomMembersByMe,
+    selectMatrixRoomMultispendStatus,
 } from '@fedi/common/redux'
 import { MatrixPowerLevel, MatrixRoomMember } from '@fedi/common/types'
+import { getMultispendRole } from '@fedi/common/utils/matrix'
 
 import { fedimint } from '../bridge'
 import { ChatUserActionsOverlay } from '../components/feature/chat/ChatUserActionsOverlay'
 import ChatUserTile from '../components/feature/chat/ChatUserTile'
 import Flex from '../components/ui/Flex'
-import { PressableIcon } from '../components/ui/PressableIcon'
 import { useAppDispatch, useAppSelector } from '../state/hooks'
-import { NavigationHook, type RootStackParamList } from '../types/navigation'
+import { type RootStackParamList } from '../types/navigation'
 
 export type ChatRoomMembersProps = NativeStackScreenProps<
     RootStackParamList,
@@ -29,16 +29,17 @@ const ChatRoomMembers: React.FC<ChatRoomMembersProps> = ({
     route,
 }: ChatRoomMembersProps) => {
     const { t } = useTranslation()
-    const { roomId } = route.params
+    const { roomId, displayMultispendRoles } = route.params
     const { theme } = useTheme()
-    const navigation = useNavigation<NavigationHook>()
 
     const dispatch = useAppDispatch()
     const [selectedUserId, setSelectedUserId] = useState<string | null>(null)
     const myUserId = useAppSelector(selectMatrixAuth)?.userId
     const members = useAppSelector(s => selectMatrixRoomMembersByMe(s, roomId))
-    const me = members.find(m => m.id === myUserId)
     const [isRefetching, setIsRefetching] = useState(false)
+    const multispendStatus = useAppSelector(s =>
+        selectMatrixRoomMultispendStatus(s, roomId),
+    )
     const handleSelectMember = useCallback((userId: string) => {
         requestAnimationFrame(() => setSelectedUserId(userId))
     }, [])
@@ -60,16 +61,25 @@ const ChatRoomMembers: React.FC<ChatRoomMembersProps> = ({
         setTimeout(() => setIsRefetching(false), 500)
     }, [backgroundRefresh])
 
-    const handleInviteMember = useCallback(() => {
-        if (me?.powerLevel === MatrixPowerLevel.Member) return
-
-        navigation.replace('ChatRoomInvite', { roomId })
-    }, [navigation, roomId, me])
-
     const renderMember: ListRenderItem<MatrixRoomMember> = ({ item }) => {
         const isMe = item.id === myUserId
         const displayName = isMe ? t('words.you') : item.displayName
         const member = { ...item, displayName }
+
+        const memberPowerLevelText =
+            member.powerLevel >= MatrixPowerLevel.Admin
+                ? t('words.admin')
+                : member.powerLevel >= MatrixPowerLevel.Moderator
+                  ? t('words.moderator')
+                  : t('words.member')
+
+        const multispendPowerLevel = multispendStatus
+            ? getMultispendRole(multispendStatus, member.id)
+            : 'member'
+        const multispendPowerLevelText =
+            multispendPowerLevel === 'member'
+                ? t('words.member')
+                : t('words.voter')
 
         return (
             <ChatUserTile
@@ -84,12 +94,9 @@ const ChatRoomMembers: React.FC<ChatRoomMembersProps> = ({
                 rightIcon={
                     <>
                         <Text small color={theme.colors.grey}>
-                            {member.powerLevel >= MatrixPowerLevel.Admin
-                                ? t('words.admin')
-                                : member.powerLevel >=
-                                    MatrixPowerLevel.Moderator
-                                  ? t('words.moderator')
-                                  : t('words.member')}
+                            {displayMultispendRoles
+                                ? multispendPowerLevelText
+                                : memberPowerLevelText}
                         </Text>
                         <Text small color={theme.colors.grey}>
                             {member.ignored ? `(${t('words.blocked')})` : ''}
@@ -103,23 +110,25 @@ const ChatRoomMembers: React.FC<ChatRoomMembersProps> = ({
 
     const style = styles(theme)
 
+    const groupMembersList = displayMultispendRoles
+        ? members.sort((a, b) => {
+              if (!multispendStatus) return 0
+
+              const roleA = getMultispendRole(multispendStatus, a.id)
+              const roleB = getMultispendRole(multispendStatus, b.id)
+              const roleAPower =
+                  roleA === 'proposer' ? 2 : roleA === 'voter' ? 1 : 0
+              const roleBPower =
+                  roleB === 'proposer' ? 2 : roleB === 'voter' ? 1 : 0
+
+              return roleBPower - roleAPower
+          })
+        : members
+
     return (
         <Flex grow fullWidth style={style.container}>
-            <Flex
-                row
-                align="center"
-                justify="between"
-                style={style.titleContainer}>
-                <Text h2>{t('words.members')}</Text>
-                <PressableIcon
-                    onPress={handleInviteMember}
-                    svgName="Plus"
-                    hitSlop={5}
-                    disabled={me?.powerLevel === MatrixPowerLevel.Member}
-                />
-            </Flex>
             <FlatList
-                data={members}
+                data={groupMembersList}
                 renderItem={renderMember}
                 keyExtractor={(item: MatrixRoomMember) => `${item.id}`}
                 contentContainerStyle={style.membersListContainer}

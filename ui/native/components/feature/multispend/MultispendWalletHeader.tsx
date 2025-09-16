@@ -18,6 +18,7 @@ import CustomOverlay from '../../ui/CustomOverlay'
 import Flex from '../../ui/Flex'
 import HoloCircle from '../../ui/HoloCircle'
 import HoloGradient from '../../ui/HoloGradient'
+import { PressableIcon } from '../../ui/PressableIcon'
 import SvgImage from '../../ui/SvgImage'
 
 type Props = {
@@ -71,26 +72,41 @@ const MultispendWalletHeader: React.FC<Props> = ({ roomId }) => {
         }
     }, [])
 
-    const actionButtons = (
-        <>
-            {isActive && (canVote || isProposer) ? (
-                <Pressable onPress={() => setIsConfirmingAbort(true)}>
-                    <Text color={theme.colors.red} medium>
-                        {t(isProposer ? 'words.abort' : 'words.reject')}
-                    </Text>
-                </Pressable>
-            ) : isFinalized && roomId ? (
-                <Pressable
+    let actionButtons: React.ReactNode = null
+
+    if (isActive && (canVote || isProposer)) {
+        actionButtons = (
+            <Pressable onPress={() => setIsConfirmingAbort(true)}>
+                <Text color={theme.colors.red} medium>
+                    {t(isProposer ? 'words.abort' : 'words.reject')}
+                </Text>
+            </Pressable>
+        )
+    }
+
+    if (isFinalized && roomId) {
+        actionButtons = (
+            <>
+                <PressableIcon
+                    svgName="SocialPeople"
+                    onPress={() =>
+                        navigation.navigate('ChatRoomMembers', {
+                            roomId,
+                            displayMultispendRoles: true,
+                        })
+                    }
+                />
+                <PressableIcon
+                    svgName="List"
                     onPress={() =>
                         navigation.navigate('MultispendTransactions', {
                             roomId,
                         })
-                    }>
-                    <SvgImage name="List" size={24} />
-                </Pressable>
-            ) : null}
-        </>
-    )
+                    }
+                />
+            </>
+        )
+    }
 
     return (
         <HoloGradient style={style.container} level="m500">
