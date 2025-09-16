@@ -13,11 +13,11 @@ import {
 } from '../../mock-data/matrix-event'
 import { createMockTransaction } from '../../mock-data/transactions'
 import {
-    MockFedimintBridge,
     createMockFedimintBridge,
-} from '../../test-utils/fedimint'
-import { renderHookWithState } from '../../test-utils/render'
-import { createMockT } from '../../test-utils/setup'
+    MockFedimintBridge,
+} from '../../utils/fedimint'
+import { renderHookWithState } from '../../utils/render'
+import { createMockT } from '../../utils/setup'
 
 /*
 // Payment Transaction Hook Tests

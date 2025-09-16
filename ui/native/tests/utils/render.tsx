@@ -10,7 +10,7 @@ import { Provider } from 'react-redux'
 
 import { FedimintProvider } from '@fedi/common/components/FedimintProvider'
 import { setupStore } from '@fedi/common/redux'
-import { createMockFedimintBridge } from '@fedi/common/tests/test-utils/fedimint'
+import { createMockFedimintBridge } from '@fedi/common/tests/utils/fedimint'
 import { FedimintBridge } from '@fedi/common/utils/fedimint'
 import { AppState } from '@fedi/native/state/store'
 
@@ -80,5 +80,25 @@ export function renderHookWithProviders<T>(
             wrapper: makeWrapperWithStore(store, fedimint),
             ...renderOptions,
         }),
+    }
+}
+
+export function renderWithBridge(
+    ui: React.ReactElement,
+    {
+        store,
+        fedimint,
+        ...renderOptions
+    }: {
+        store: ReturnType<typeof setupStore>
+        fedimint: FedimintBridge
+    },
+) {
+    return {
+        ...render(ui, {
+            wrapper: makeWrapperWithStore(store, fedimint),
+            ...renderOptions,
+        }),
+        store,
     }
 }

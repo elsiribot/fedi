@@ -62,3 +62,20 @@ export function renderHookWithState<T>(
         wrapper: mockReduxProvider(store, fedimint),
     })
 }
+
+export function renderHookWithBridge<T>(
+    hook: () => T,
+    store: ReturnType<typeof setupStore>,
+    fedimint: FedimintBridge,
+) {
+    return renderHook(hook, {
+        wrapper: ({ children }) =>
+            createElement(Provider, {
+                store,
+                children: createElement(FedimintProvider, {
+                    fedimint,
+                    children,
+                }),
+            }),
+    })
+}

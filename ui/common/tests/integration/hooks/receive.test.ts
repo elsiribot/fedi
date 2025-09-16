@@ -10,9 +10,10 @@ import {
 } from '../../../hooks/receive'
 import { selectLastUsedFederationId } from '../../../redux'
 import { Sats } from '../../../types'
-import { createIntegrationTestBuilder } from '../../../utils/test-utils/remote-bridge-setup'
+import { createIntegrationTestBuilder } from '../../utils/remote-bridge-setup'
+import { renderHookWithBridge } from '../../utils/render'
 
-describe('receiving payments', () => {
+describe('common/hooks/receive', () => {
     const builder = createIntegrationTestBuilder()
     const context = builder.getContext()
 
@@ -22,16 +23,18 @@ describe('receiving payments', () => {
 
             const {
                 store,
-                remoteBridge: { fedimint },
-                renderHookWithBridge,
+                bridge: { fedimint },
             } = context
 
             const federationId = selectLastUsedFederationId(store.getState())
-            const { result } = renderHookWithBridge(() =>
-                useMakeLightningRequest({
-                    fedimint,
-                    federationId,
-                }),
+            const { result } = renderHookWithBridge(
+                () =>
+                    useMakeLightningRequest({
+                        fedimint,
+                        federationId,
+                    }),
+                store,
+                fedimint,
             )
 
             // Make the lightning request
@@ -51,16 +54,18 @@ describe('receiving payments', () => {
 
             const {
                 store,
-                remoteBridge: { fedimint },
-                renderHookWithBridge,
+                bridge: { fedimint },
             } = context
 
             const federationId = selectLastUsedFederationId(store.getState())
-            const { result } = renderHookWithBridge(() =>
-                useMakeLightningRequest({
-                    fedimint,
-                    federationId,
-                }),
+            const { result } = renderHookWithBridge(
+                () =>
+                    useMakeLightningRequest({
+                        fedimint,
+                        federationId,
+                    }),
+                store,
+                fedimint,
             )
 
             act(() => {
@@ -79,19 +84,21 @@ describe('receiving payments', () => {
 
             const {
                 store,
-                remoteBridge: { fedimint },
-                renderHookWithBridge,
+                bridge: { fedimint },
             } = context
 
             const onInvoicePaid = jest.fn()
 
             const federationId = selectLastUsedFederationId(store.getState())
-            const { result } = renderHookWithBridge(() =>
-                useMakeLightningRequest({
-                    fedimint,
-                    federationId,
-                    onInvoicePaid,
-                }),
+            const { result } = renderHookWithBridge(
+                () =>
+                    useMakeLightningRequest({
+                        fedimint,
+                        federationId,
+                        onInvoicePaid,
+                    }),
+                store,
+                fedimint,
             )
 
             // Make the lightning request
@@ -122,16 +129,18 @@ describe('receiving payments', () => {
 
             const {
                 store,
-                remoteBridge: { fedimint },
-                renderHookWithBridge,
+                bridge: { fedimint },
             } = context
 
             const federationId = selectLastUsedFederationId(store.getState())
-            const { result } = renderHookWithBridge(() =>
-                useMakeOnchainAddress({
-                    fedimint,
-                    federationId,
-                }),
+            const { result } = renderHookWithBridge(
+                () =>
+                    useMakeOnchainAddress({
+                        fedimint,
+                        federationId,
+                    }),
+                store,
+                fedimint,
             )
 
             // Make the onchain address
@@ -148,13 +157,14 @@ describe('receiving payments', () => {
 
             const {
                 store,
-                remoteBridge: { fedimint },
-                renderHookWithBridge,
+                bridge: { fedimint },
             } = context
 
             const federationId = selectLastUsedFederationId(store.getState())
-            const { result } = renderHookWithBridge(() =>
-                useMakeOnchainAddress({ fedimint, federationId }),
+            const { result } = renderHookWithBridge(
+                () => useMakeOnchainAddress({ fedimint, federationId }),
+                store,
+                fedimint,
             )
 
             // Make an onchain address
@@ -186,15 +196,18 @@ describe('receiving payments', () => {
             await builder.withFederationJoined()
 
             const {
-                remoteBridge: { fedimint },
-                renderHookWithBridge,
+                store,
+                bridge: { fedimint },
             } = context
 
-            const { result } = renderHookWithBridge(() =>
-                useMakeOnchainAddress({
-                    fedimint,
-                    federationId: 'invalid federation id',
-                }),
+            const { result } = renderHookWithBridge(
+                () =>
+                    useMakeOnchainAddress({
+                        fedimint,
+                        federationId: 'invalid federation id',
+                    }),
+                store,
+                fedimint,
             )
 
             // Make the onchain address
@@ -208,16 +221,18 @@ describe('receiving payments', () => {
 
             const {
                 store,
-                remoteBridge: { fedimint },
-                renderHookWithBridge,
+                bridge: { fedimint },
             } = context
 
             const federationId = selectLastUsedFederationId(store.getState())
-            const { result } = renderHookWithBridge(() =>
-                useMakeOnchainAddress({
-                    fedimint,
-                    federationId,
-                }),
+            const { result } = renderHookWithBridge(
+                () =>
+                    useMakeOnchainAddress({
+                        fedimint,
+                        federationId,
+                    }),
+                store,
+                fedimint,
             )
 
             // Make an onchain address

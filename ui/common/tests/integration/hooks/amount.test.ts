@@ -14,10 +14,10 @@ import {
 } from '@fedi/common/redux'
 import { Sats, SupportedCurrency } from '@fedi/common/types'
 
-import { setupRemoteBridgeTests } from '../../../utils/test-utils/remote-bridge-setup'
 import { createMockTransaction } from '../../mock-data/transactions'
-import { renderHookWithState } from '../../test-utils/render'
-import { mockSystemLocale } from '../../test-utils/setup'
+import { setupRemoteBridgeTests } from '../../utils/remote-bridge-setup'
+import { renderHookWithBridge } from '../../utils/render'
+import { mockSystemLocale } from '../../utils/setup'
 
 describe('useAmountInput hook', () => {
     const mockOnChangeAmount = jest.fn()
@@ -28,7 +28,7 @@ describe('useAmountInput hook', () => {
         const initialAmount = 1000 as Sats
 
         it('should initialize with correct default values', () => {
-            const { store, renderHookWithBridge } = context
+            const { store, bridge } = context
             store.dispatch({
                 type: fetchCurrencyPrices.fulfilled.type,
                 payload: {
@@ -40,8 +40,10 @@ describe('useAmountInput hook', () => {
             store.dispatch(setCurrencyLocale('en-US'))
             store.dispatch(setAmountInputType('fiat'))
 
-            const { result } = renderHookWithBridge(() =>
-                useAmountInput(initialAmount, mockOnChangeAmount),
+            const { result } = renderHookWithBridge(
+                () => useAmountInput(initialAmount, mockOnChangeAmount),
+                store,
+                bridge.fedimint,
             )
 
             expect(result.current.isFiat).toBe(true)
@@ -53,11 +55,13 @@ describe('useAmountInput hook', () => {
         })
 
         it('should initialize correct fiat mode based on defaultAmountInputType', () => {
-            const { store, renderHookWithBridge } = context
+            const { store, bridge } = context
             store.dispatch(setAmountInputType('fiat'))
 
-            const { result: resultFiat, unmount } = renderHookWithBridge(() =>
-                useAmountInput(initialAmount, mockOnChangeAmount),
+            const { result: resultFiat, unmount } = renderHookWithBridge(
+                () => useAmountInput(initialAmount, mockOnChangeAmount),
+                store,
+                bridge.fedimint,
             )
 
             expect(resultFiat.current.isFiat).toBe(true)
@@ -65,9 +69,10 @@ describe('useAmountInput hook', () => {
 
             store.dispatch(setAmountInputType('sats'))
 
-            const { result: resultSats } = renderHookWithState(
+            const { result: resultSats } = renderHookWithBridge(
                 () => useAmountInput(initialAmount, mockOnChangeAmount),
                 store,
+                bridge.fedimint,
             )
 
             expect(resultSats.current.isFiat).toBe(false)
@@ -76,9 +81,12 @@ describe('useAmountInput hook', () => {
 
     describe('mode switching', () => {
         it('should switch between fiat and sats modes', () => {
-            const { renderHookWithBridge } = context
-            const { result } = renderHookWithBridge(() =>
-                useAmountInput(1000 as Sats, mockOnChangeAmount),
+            const { store, bridge } = context
+
+            const { result } = renderHookWithBridge(
+                () => useAmountInput(1000 as Sats, mockOnChangeAmount),
+                store,
+                bridge.fedimint,
             )
 
             expect(result.current.isFiat).toBe(true)
@@ -113,16 +121,20 @@ describe('useAmountInput hook', () => {
         })
 
         it('should validate minimum amount when initial amount is too low', () => {
-            const { renderHookWithBridge } = context
+            const { store, bridge } = context
+
             const minimumAmount = 500 as Sats
             const initialAmount = 100 as Sats // Below minimum
 
-            const { result } = renderHookWithBridge(() =>
-                useAmountInput(
-                    initialAmount,
-                    mockOnChangeAmount,
-                    minimumAmount,
-                ),
+            const { result } = renderHookWithBridge(
+                () =>
+                    useAmountInput(
+                        initialAmount,
+                        mockOnChangeAmount,
+                        minimumAmount,
+                    ),
+                store,
+                bridge.fedimint,
             )
 
             expect(result.current.validation).toEqual({
@@ -134,17 +146,21 @@ describe('useAmountInput hook', () => {
         })
 
         it('should validate maximum amount when initial amount is too high', () => {
-            const { renderHookWithBridge } = context
+            const { store, bridge } = context
+
             const maximumAmount = 1000 as Sats
             const initialAmount = 2000 as Sats // Above maximum
 
-            const { result } = renderHookWithBridge(() =>
-                useAmountInput(
-                    initialAmount,
-                    mockOnChangeAmount,
-                    null,
-                    maximumAmount,
-                ),
+            const { result } = renderHookWithBridge(
+                () =>
+                    useAmountInput(
+                        initialAmount,
+                        mockOnChangeAmount,
+                        null,
+                        maximumAmount,
+                    ),
+                store,
+                bridge.fedimint,
             )
 
             expect(result.current.validation).toEqual({
@@ -156,18 +172,22 @@ describe('useAmountInput hook', () => {
         })
 
         it('should not show validation when amount is within bounds', () => {
-            const { renderHookWithBridge } = context
+            const { store, bridge } = context
+
             const minimumAmount = 500 as Sats
             const maximumAmount = 2000 as Sats
             const initialAmount = 1000 as Sats // Within bounds
 
-            const { result } = renderHookWithBridge(() =>
-                useAmountInput(
-                    initialAmount,
-                    mockOnChangeAmount,
-                    minimumAmount,
-                    maximumAmount,
-                ),
+            const { result } = renderHookWithBridge(
+                () =>
+                    useAmountInput(
+                        initialAmount,
+                        mockOnChangeAmount,
+                        minimumAmount,
+                        maximumAmount,
+                    ),
+                store,
+                bridge.fedimint,
             )
 
             expect(result.current.validation).toBeUndefined()
@@ -176,9 +196,12 @@ describe('useAmountInput hook', () => {
 
     describe('input handlers', () => {
         it('should provide functions to handle input changes', () => {
-            const { renderHookWithBridge } = context
-            const { result } = renderHookWithBridge(() =>
-                useAmountInput(1000 as Sats, mockOnChangeAmount),
+            const { store, bridge } = context
+
+            const { result } = renderHookWithBridge(
+                () => useAmountInput(1000 as Sats, mockOnChangeAmount),
+                store,
+                bridge.fedimint,
             )
 
             expect(result.current.handleChangeFiat).toBeInstanceOf(Function)
@@ -187,7 +210,8 @@ describe('useAmountInput hook', () => {
         })
 
         it('handleChangeSats invokes expected state changes', () => {
-            const { store, renderHookWithBridge } = context
+            const { store, bridge } = context
+
             store.dispatch(setAmountInputType('sats'))
             store.dispatch({
                 type: fetchCurrencyPrices.fulfilled.type,
@@ -197,8 +221,10 @@ describe('useAmountInput hook', () => {
                 },
             })
 
-            const { result } = renderHookWithBridge(() =>
-                useAmountInput(0 as Sats, mockOnChangeAmount),
+            const { result } = renderHookWithBridge(
+                () => useAmountInput(0 as Sats, mockOnChangeAmount),
+                store,
+                bridge.fedimint,
             )
             expect(result.current.satsValue).toBe('0')
             expect(result.current.fiatValue).toBe('0')
@@ -214,7 +240,8 @@ describe('useAmountInput hook', () => {
         })
 
         it('handleChangeFiat invokes expected state changes', () => {
-            const { store, renderHookWithBridge } = context
+            const { store, bridge } = context
+
             store.dispatch(setAmountInputType('fiat'))
             store.dispatch({
                 type: fetchCurrencyPrices.fulfilled.type,
@@ -224,8 +251,10 @@ describe('useAmountInput hook', () => {
                 },
             })
 
-            const { result } = renderHookWithBridge(() =>
-                useAmountInput(0 as Sats, mockOnChangeAmount),
+            const { result } = renderHookWithBridge(
+                () => useAmountInput(0 as Sats, mockOnChangeAmount),
+                store,
+                bridge.fedimint,
             )
 
             act(() => {
@@ -256,11 +285,14 @@ describe('useAmountInput hook', () => {
 
         describe('typical numpad usage', () => {
             it('numpad sequence: 1 + 0 + 0 + 0 + 0 = 10K sats = 10 USD', () => {
-                const { renderHookWithBridge } = context
+                const { store, bridge } = context
+
                 const initialAmount = 0 as Sats
 
-                const { result } = renderHookWithBridge(() =>
-                    useAmountInput(initialAmount, mockOnChangeAmount),
+                const { result } = renderHookWithBridge(
+                    () => useAmountInput(initialAmount, mockOnChangeAmount),
+                    store,
+                    bridge.fedimint,
                 )
                 expect(result.current.satsValue).toBe('0')
                 expect(result.current.fiatValue).toBe('0')
@@ -294,11 +326,14 @@ describe('useAmountInput hook', () => {
 
         describe('unusual numpad usage', () => {
             it('ignores leading zeroes (numpad sequence: 0 + 0 + 1 + 0 + 0 + 0 + 0 = 10K sats = 10 USD)', () => {
-                const { renderHookWithBridge } = context
+                const { store, bridge } = context
+
                 const initialAmount = 0 as Sats
 
-                const { result } = renderHookWithBridge(() =>
-                    useAmountInput(initialAmount, mockOnChangeAmount),
+                const { result } = renderHookWithBridge(
+                    () => useAmountInput(initialAmount, mockOnChangeAmount),
+                    store,
+                    bridge.fedimint,
                 )
                 expect(result.current.satsValue).toBe('0')
                 expect(result.current.fiatValue).toBe('0')
@@ -355,11 +390,14 @@ describe('useAmountInput hook', () => {
             })
 
             it('ignores decimals for sats (numpad sequence: 1 + 0 + . + 0 + . + 0 + . + 0 = 10K sats = 10 USD)', () => {
-                const { renderHookWithBridge } = context
+                const { store, bridge } = context
+
                 const initialAmount = 0 as Sats
 
-                const { result } = renderHookWithBridge(() =>
-                    useAmountInput(initialAmount, mockOnChangeAmount),
+                const { result } = renderHookWithBridge(
+                    () => useAmountInput(initialAmount, mockOnChangeAmount),
+                    store,
+                    bridge.fedimint,
                 )
                 expect(result.current.satsValue).toBe('0')
                 expect(result.current.fiatValue).toBe('0')
@@ -408,13 +446,16 @@ describe('useAmountInput hook', () => {
 
         describe('numpad usage across different locales', () => {
             it('should handle decimal separator locales (ex: 1.000 sats)', () => {
-                const { store, renderHookWithBridge } = context
+                const { store, bridge } = context
+
                 store.dispatch(setCurrencyLocale('de-DE'))
                 // Mock system locale to use German formatting for number display
                 mockSystemLocale('de-DE')
 
-                const { result } = renderHookWithBridge(() =>
-                    useAmountInput(0 as Sats, mockOnChangeAmount),
+                const { result } = renderHookWithBridge(
+                    () => useAmountInput(0 as Sats, mockOnChangeAmount),
+                    store,
+                    bridge.fedimint,
                 )
 
                 act(() => {
@@ -425,13 +466,16 @@ describe('useAmountInput hook', () => {
             })
 
             it('should handle space separators (ex: 1 000 sats)', () => {
-                const { store, renderHookWithBridge } = context
+                const { store, bridge } = context
+
                 store.dispatch(setCurrencyLocale('fr-FR'))
                 // Mock system locale to use French formatting for number display
                 mockSystemLocale('fr-FR')
 
-                const { result } = renderHookWithBridge(() =>
-                    useAmountInput(0 as Sats, mockOnChangeAmount),
+                const { result } = renderHookWithBridge(
+                    () => useAmountInput(0 as Sats, mockOnChangeAmount),
+                    store,
+                    bridge.fedimint,
                 )
 
                 act(() => {
@@ -459,11 +503,14 @@ describe('useAmountInput hook', () => {
 
         describe('typical numpad usage', () => {
             it('numpad sequence: 1 + 0 + 0 + 0 + 0 = 1K USD = 1M sats', () => {
-                const { renderHookWithBridge } = context
+                const { store, bridge } = context
+
                 const initialAmount = 0 as Sats
 
-                const { result } = renderHookWithBridge(() =>
-                    useAmountInput(initialAmount, mockOnChangeAmount),
+                const { result } = renderHookWithBridge(
+                    () => useAmountInput(initialAmount, mockOnChangeAmount),
+                    store,
+                    bridge.fedimint,
                 )
                 expect(result.current.fiatValue).toBe('0')
                 expect(result.current.satsValue).toBe('0')
@@ -490,11 +537,14 @@ describe('useAmountInput hook', () => {
             })
 
             it('numpad sequence: 1 + 2 + . + 3 + 4 = 12.34 USD = 12,340 sats', () => {
-                const { renderHookWithBridge } = context
+                const { store, bridge } = context
+
                 const initialAmount = 0 as Sats
 
-                const { result } = renderHookWithBridge(() =>
-                    useAmountInput(initialAmount, mockOnChangeAmount),
+                const { result } = renderHookWithBridge(
+                    () => useAmountInput(initialAmount, mockOnChangeAmount),
+                    store,
+                    bridge.fedimint,
                 )
                 expect(result.current.fiatValue).toBe('0')
                 expect(result.current.satsValue).toBe('0')
@@ -528,11 +578,14 @@ describe('useAmountInput hook', () => {
 
         describe('unusual numpad usage', () => {
             it('ignores leading zeroes (numpad sequence: 0 + 0 + 1 + 0 + 0 + 0 + 0 = 1K USD = 1M sats)', () => {
-                const { renderHookWithBridge } = context
+                const { store, bridge } = context
+
                 const initialAmount = 0 as Sats
 
-                const { result } = renderHookWithBridge(() =>
-                    useAmountInput(initialAmount, mockOnChangeAmount),
+                const { result } = renderHookWithBridge(
+                    () => useAmountInput(initialAmount, mockOnChangeAmount),
+                    store,
+                    bridge.fedimint,
                 )
                 expect(result.current.fiatValue).toBe('0')
                 expect(result.current.satsValue).toBe('0')
@@ -571,7 +624,8 @@ describe('useAmountInput hook', () => {
 
         describe('numpad usage across different locales', () => {
             it('should handle locales with inverted thousands & decimal separators (ex: 1.000,00 EUR)', () => {
-                const { store } = context
+                const { store, bridge } = context
+
                 // Test German locale where dot is thousands separator, comma is decimal
                 store.dispatch(changeOverrideCurrency(SupportedCurrency.EUR))
                 store.dispatch(setCurrencyLocale('de-DE'))
@@ -584,9 +638,10 @@ describe('useAmountInput hook', () => {
                 })
                 mockSystemLocale('de-DE')
 
-                const { result } = renderHookWithState(
+                const { result } = renderHookWithBridge(
                     () => useAmountInput(0 as Sats, mockOnChangeAmount),
                     store,
+                    bridge.fedimint,
                 )
 
                 // numpad sequence: 1 + 2 + 3 + 4 + . + 5 + 6 = 1.234,56 EUR
@@ -627,7 +682,8 @@ describe('useAmountInput hook', () => {
             })
 
             it('should handle locales with non-breaking space thousands separator (ex: 1 000,00 EUR)', () => {
-                const { store, renderHookWithBridge } = context
+                const { store, bridge } = context
+
                 store.dispatch(changeOverrideCurrency(SupportedCurrency.EUR))
                 store.dispatch(setCurrencyLocale('fr-FR'))
                 store.dispatch({
@@ -639,8 +695,10 @@ describe('useAmountInput hook', () => {
                 })
                 mockSystemLocale('fr-FR')
 
-                const { result } = renderHookWithBridge(() =>
-                    useAmountInput(0 as Sats, mockOnChangeAmount),
+                const { result } = renderHookWithBridge(
+                    () => useAmountInput(0 as Sats, mockOnChangeAmount),
+                    store,
+                    bridge.fedimint,
                 )
 
                 // numpad sequence: 1 + 2 + 3 + 4 + 5 + . + 6 + 7 = 12 345,67 EUR
@@ -680,7 +738,8 @@ describe('useAmountInput hook', () => {
             })
 
             it('should reject decimal input for zero-decimal currencies (ex: KRW)', () => {
-                const { store, renderHookWithBridge } = context
+                const { store, bridge } = context
+
                 store.dispatch(changeOverrideCurrency(SupportedCurrency.KRW))
                 store.dispatch(setCurrencyLocale('ko-KR'))
                 store.dispatch({
@@ -692,8 +751,10 @@ describe('useAmountInput hook', () => {
                 })
                 mockSystemLocale('ko-KR')
 
-                const { result } = renderHookWithBridge(() =>
-                    useAmountInput(0 as Sats, mockOnChangeAmount),
+                const { result } = renderHookWithBridge(
+                    () => useAmountInput(0 as Sats, mockOnChangeAmount),
+                    store,
+                    bridge.fedimint,
                 )
 
                 act(() => {
@@ -729,8 +790,13 @@ describe('useAmountFormatter hook', () => {
 
     describe('makeFormattedAmountsFromTxn with historical exchange rates', () => {
         it('uses historical exchange rate when txDateFiatInfo is present', () => {
-            const { renderHookWithBridge } = context
-            const { result } = renderHookWithBridge(() => useAmountFormatter())
+            const { store, bridge } = context
+
+            const { result } = renderHookWithBridge(
+                () => useAmountFormatter(),
+                store,
+                bridge.fedimint,
+            )
 
             const txn = createMockTransaction({
                 amount: 100000000000, // 1 BTC in msats
@@ -751,7 +817,8 @@ describe('useAmountFormatter hook', () => {
         })
 
         it('falls back to current exchange rates when txDateFiatInfo is missing', () => {
-            const { store, renderHookWithBridge } = context
+            const { store, bridge } = context
+
             store.dispatch({
                 type: fetchCurrencyPrices.fulfilled.type,
                 payload: {
@@ -760,7 +827,11 @@ describe('useAmountFormatter hook', () => {
                 },
             })
 
-            const { result } = renderHookWithBridge(() => useAmountFormatter())
+            const { result } = renderHookWithBridge(
+                () => useAmountFormatter(),
+                store,
+                bridge.fedimint,
+            )
 
             const txn = createMockTransaction({
                 amount: 100000000000, // 1 BTC, no historical data
@@ -776,12 +847,16 @@ describe('useAmountFormatter hook', () => {
         })
 
         it('works with different fiat currencies in historical data', () => {
-            const { store, renderHookWithBridge } = context
+            const { store, bridge } = context
             store.dispatch(changeOverrideCurrency(SupportedCurrency.EUR))
             store.dispatch(setCurrencyLocale('de-DE'))
             mockSystemLocale('de-DE')
 
-            const { result } = renderHookWithBridge(() => useAmountFormatter())
+            const { result } = renderHookWithBridge(
+                () => useAmountFormatter(),
+                store,
+                bridge.fedimint,
+            )
 
             const txn = createMockTransaction({
                 amount: 10000000000, // 0.1 BTC
@@ -802,11 +877,14 @@ describe('useAmountFormatter hook', () => {
         })
 
         it('respects showFiatTxnAmounts setting with historical data', () => {
-            const { store, renderHookWithBridge } = context
+            const { store, bridge } = context
+
             act(() => store.dispatch(setShowFiatTxnAmounts(true))) // with fiat display preference
 
-            const { result: fiatPrimaryResult } = renderHookWithBridge(() =>
-                useAmountFormatter(),
+            const { result: fiatPrimaryResult } = renderHookWithBridge(
+                () => useAmountFormatter(),
+                store,
+                bridge.fedimint,
             )
 
             const txn = createMockTransaction({
@@ -832,9 +910,10 @@ describe('useAmountFormatter hook', () => {
                 store.dispatch(setShowFiatTxnAmounts(false)) // don't show fiat display preference
             })
 
-            const { result: satsPrimaryResult } = renderHookWithState(
+            const { result: satsPrimaryResult } = renderHookWithBridge(
                 () => useAmountFormatter(),
                 store,
+                bridge.fedimint,
             )
 
             const satsPrimaryFormatted =
@@ -850,8 +929,12 @@ describe('useAmountFormatter hook', () => {
         })
 
         it('handles small historical amounts with proper precision', () => {
-            const { renderHookWithBridge } = context
-            const { result } = renderHookWithBridge(() => useAmountFormatter())
+            const { store, bridge } = context
+            const { result } = renderHookWithBridge(
+                () => useAmountFormatter(),
+                store,
+                bridge.fedimint,
+            )
 
             const txn = createMockTransaction({
                 amount: 1000000, // 1000 sats (0.00001 BTC)

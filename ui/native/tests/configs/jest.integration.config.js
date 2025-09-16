@@ -7,10 +7,7 @@ module.exports = {
     rootDir: '../..',
 
     // Match any .test.ts(x) under ui/native/tests/**
-    testMatch: [
-        '<rootDir>/tests/integration/**/*.test.ts',
-        '<rootDir>/tests/integration/**/*.test.tsx',
-    ],
+    testMatch: ['<rootDir>/tests/integration/**/*.test.ts?(x)'],
 
     // Skip the Detox and Appium test trees
     testPathIgnorePatterns: [

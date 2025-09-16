@@ -5,7 +5,7 @@ import { Provider } from 'react-redux'
 
 import { FedimintProvider } from '@fedi/common/components/FedimintProvider'
 import { setupStore, type RootState } from '@fedi/common/redux'
-import { createMockFedimintBridge } from '@fedi/common/tests/test-utils/fedimint'
+import { createMockFedimintBridge } from '@fedi/common/tests/utils/fedimint'
 import { FedimintBridge } from '@fedi/common/utils/fedimint'
 
 import i18n from '../../src/localization/i18n'
@@ -67,4 +67,30 @@ export function renderHookWithProviders<Result, Props>(
         store,
         ...renderHook(hook, { wrapper: Wrapper, ...renderOptions }),
     }
+}
+
+export function renderWithBridge(
+    ui: React.ReactElement,
+    {
+        store,
+        fedimint,
+        ...renderOptions
+    }: {
+        store: ReturnType<typeof setupStore>
+        fedimint: FedimintBridge
+    },
+) {
+    function Wrapper({ children }: PropsWithChildren<unknown>): JSX.Element {
+        return (
+            <I18nextProvider i18n={i18n}>
+                <Provider store={store}>
+                    <FedimintProvider fedimint={fedimint}>
+                        {children}
+                    </FedimintProvider>
+                </Provider>
+            </I18nextProvider>
+        )
+    }
+
+    return { store, ...render(ui, { wrapper: Wrapper, ...renderOptions }) }
 }

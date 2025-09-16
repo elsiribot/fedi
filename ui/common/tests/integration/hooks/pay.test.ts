@@ -12,7 +12,8 @@ import {
 } from '../../../types'
 import amountUtils from '../../../utils/AmountUtils'
 import { parseUserInput } from '../../../utils/parser'
-import { createIntegrationTestBuilder } from '../../../utils/test-utils/remote-bridge-setup'
+import { createIntegrationTestBuilder } from '../../utils/remote-bridge-setup'
+import { renderHookWithBridge } from '../../utils/render'
 
 describe('useOmniPaymentState', () => {
     const builder = createIntegrationTestBuilder()
@@ -23,13 +24,14 @@ describe('useOmniPaymentState', () => {
 
         const {
             store,
-            remoteBridge: { fedimint },
-            renderHookWithBridge,
+            bridge: { fedimint },
         } = context
 
         const federationId = selectLastUsedFederationId(store.getState())
-        const { result } = renderHookWithBridge(() =>
-            useOmniPaymentState(fedimint, federationId, i18next.t),
+        const { result } = renderHookWithBridge(
+            () => useOmniPaymentState(fedimint, federationId, i18next.t),
+            store,
+            fedimint,
         )
 
         const invoice = await fedimint.generateInvoice(
@@ -63,13 +65,14 @@ describe('useOmniPaymentState', () => {
 
         const {
             store,
-            remoteBridge: { fedimint },
-            renderHookWithBridge,
+            bridge: { fedimint },
         } = context
 
         const federationId = selectLastUsedFederationId(store.getState())
-        const { result } = renderHookWithBridge(() =>
-            useOmniPaymentState(fedimint, federationId, i18next.t),
+        const { result } = renderHookWithBridge(
+            () => useOmniPaymentState(fedimint, federationId, i18next.t),
+            store,
+            fedimint,
         )
 
         const address = await fedimint.generateAddress(federationId ?? '')
@@ -98,13 +101,14 @@ describe('useOmniPaymentState', () => {
 
         const {
             store,
-            remoteBridge: { fedimint },
-            renderHookWithBridge,
+            bridge: { fedimint },
         } = context
 
         const federationId = selectLastUsedFederationId(store.getState())
-        const { result } = renderHookWithBridge(() =>
-            useOmniPaymentState(fedimint, federationId, i18next.t),
+        const { result } = renderHookWithBridge(
+            () => useOmniPaymentState(fedimint, federationId, i18next.t),
+            store,
+            fedimint,
         )
 
         const lnurlReceiveCode = await fedimint.getRecurringdLnurl(

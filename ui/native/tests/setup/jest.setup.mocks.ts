@@ -76,10 +76,6 @@ jest.mock('react-native-zendesk-messaging', () => ({
     closeMessaging: jest.fn(),
 }))
 
-jest.mock('uuid', () => ({
-    v4: () => 'mocked-uuid',
-}))
-
 jest.mock('@react-native-community/netinfo', () => ({
     addEventListener: jest.fn(() => () => undefined),
     fetch: jest.fn(() => Promise.resolve({ isConnected: true })),
@@ -177,6 +173,7 @@ jest.mock('react-native', () => ({
     TextInput: jest.requireActual('react-native').TextInput,
     Touchable: jest.requireActual('react-native').Touchable,
     TouchableOpacity: jest.requireActual('react-native').TouchableOpacity,
+    UIManager: jest.requireActual('react-native').UIManager,
     View: jest.requireActual('react-native').View,
     processColor: jest.requireActual('react-native').processColor,
     useWindowDimensions: jest.requireActual('react-native').useWindowDimensions,
@@ -345,3 +342,7 @@ jest.mock('react-native-gesture-handler', () => ({
 }))
 
 jest.mock('react-native-modal', () => jest.requireActual('react-native').Modal)
+
+jest.mock('@react-navigation/elements', () => ({
+    useHeaderHeight: jest.fn(() => 100),
+}))

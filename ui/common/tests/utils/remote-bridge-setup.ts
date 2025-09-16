@@ -1,4 +1,5 @@
-import { act, RenderHookResult, waitFor } from '@testing-library/react'
+import { act, waitFor as waitForWeb } from '@testing-library/react'
+import { waitFor as waitForNative } from '@testing-library/react-native'
 import { v4 as uuidv4 } from 'uuid'
 
 import {
@@ -13,15 +14,11 @@ import {
 } from '@fedi/common/redux'
 import { RemoteBridge } from '@fedi/common/utils/remote-bridge'
 
-import {
-    mockInitializeCommonStore,
-    renderHookWithState,
-} from '../../tests/test-utils/render'
+import { mockInitializeCommonStore } from '../../tests/utils/render'
 
 export interface RemoteBridgeTestContext {
-    remoteBridge: RemoteBridge
+    bridge: RemoteBridge
     store: ReturnType<typeof setupStore>
-    renderHookWithBridge: <T>(hookCall: () => T) => RenderHookResult<T, unknown>
 }
 
 /**
@@ -29,7 +26,10 @@ export interface RemoteBridgeTestContext {
  * Each function ensures a specific state is reached and can be composed together.
  */
 export class IntegrationTestBuilder {
-    constructor(private context: RemoteBridgeTestContext) {}
+    constructor(
+        private context: RemoteBridgeTestContext,
+        private waitFor: typeof waitForWeb | typeof waitForNative = waitForWeb,
+    ) {}
 
     /**
      * Returns the context for accessing fedimint, store, and renderHook to build integration tests
@@ -42,7 +42,7 @@ export class IntegrationTestBuilder {
      * Ensures onboarding is completed
      */
     async withOnboardingCompleted(): Promise<IntegrationTestBuilder> {
-        const { remoteBridge, store } = this.context
+        const { bridge, store } = this.context
         const currentState = store.getState()
 
         if (selectOnboardingCompleted(currentState)) {
@@ -50,11 +50,11 @@ export class IntegrationTestBuilder {
         }
 
         await act(async () => {
-            await remoteBridge.fedimint.completeOnboardingNewSeed()
-            await store.dispatch(refreshOnboardingStatus(remoteBridge.fedimint))
+            await bridge.fedimint.completeOnboardingNewSeed()
+            await store.dispatch(refreshOnboardingStatus(bridge.fedimint))
         })
 
-        await waitFor(() => {
+        await this.waitFor(() => {
             const state = store.getState()
             expect(selectOnboardingCompleted(state)).toBe(true)
         })
@@ -72,7 +72,7 @@ export class IntegrationTestBuilder {
         await this.withOnboardingCompleted()
 
         // Wait for matrix auth to be available and check userId starts with npub
-        await waitFor(
+        await this.waitFor(
             () => {
                 const matrixAuth = selectMatrixAuth(store.getState())
                 expect(matrixAuth?.userId).toBeTruthy()
@@ -88,7 +88,7 @@ export class IntegrationTestBuilder {
      * Ensures a federation is joined (requires onboarding to be completed first)
      */
     async withFederationJoined(): Promise<IntegrationTestBuilder> {
-        const { remoteBridge, store } = this.context
+        const { bridge, store } = this.context
 
         // Ensure onboarding is completed first
         await this.withOnboardingCompleted()
@@ -102,17 +102,17 @@ export class IntegrationTestBuilder {
         }
 
         // Get invite code and join federation
-        const inviteCode = await remoteBridge.getInviteCode()
+        const inviteCode = await bridge.getInviteCode()
         await act(async () => {
             await store.dispatch(
                 joinFederationAction({
-                    fedimint: remoteBridge.fedimint,
+                    fedimint: bridge.fedimint,
                     code: inviteCode,
                 }),
             )
         })
 
-        await waitFor(
+        await this.waitFor(
             () => {
                 const state = store.getState()
                 const updatedFederations = selectFederations(state)
@@ -130,22 +130,22 @@ export class IntegrationTestBuilder {
     async withEcashReceived(
         amountMsats: number = 100000,
     ): Promise<IntegrationTestBuilder> {
-        const { remoteBridge, store } = this.context
+        const { bridge, store } = this.context
 
         // Ensure federation is joined first
         await this.withFederationJoined()
 
         // Generate and receive ecash
-        const ecash = await remoteBridge.generateEcash(amountMsats)
+        const ecash = await bridge.generateEcash(amountMsats)
 
         await act(async () => {
             const state = store.getState()
             const federations = selectFederations(state)
             const federationId = federations[0].id
-            await remoteBridge.fedimint.receiveEcash(ecash, federationId)
+            await bridge.fedimint.receiveEcash(ecash, federationId)
         })
 
-        await waitFor(
+        await this.waitFor(
             () => {
                 const state = store.getState()
                 const federation = selectLastUsedFederation(state)
@@ -193,19 +193,16 @@ export function setupRemoteBridgeTests(): RemoteBridgeTestContext {
         cleanupStore = mockInitializeCommonStore(store, remoteBridge.fedimint)
 
         // Mutate the context object
-        context.remoteBridge = remoteBridge
+        context.bridge = remoteBridge
         context.store = store
-        context.renderHookWithBridge = <T>(hook: () => T) => {
-            return renderHookWithState(hook, store, remoteBridge.fedimint)
-        }
     }, 10000)
 
     afterEach(async () => {
         if (cleanupStore) {
             cleanupStore()
         }
-        if (context.remoteBridge) {
-            context.remoteBridge.shutdown()
+        if (context.bridge) {
+            context.bridge.shutdown()
         }
     })
 
@@ -215,7 +212,9 @@ export function setupRemoteBridgeTests(): RemoteBridgeTestContext {
 /**
  * Helper function to create a state builder for the given context
  */
-export function createIntegrationTestBuilder(): IntegrationTestBuilder {
+export function createIntegrationTestBuilder(
+    waitForOverride?: typeof waitForWeb | typeof waitForNative,
+): IntegrationTestBuilder {
     const context = setupRemoteBridgeTests()
-    return new IntegrationTestBuilder(context)
+    return new IntegrationTestBuilder(context, waitForOverride)
 }
