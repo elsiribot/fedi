@@ -8,8 +8,10 @@ import SwitchLeftIcon from '@fedi/common/assets/svgs/switch-left.svg'
 import SwitchRightIcon from '@fedi/common/assets/svgs/switch-right.svg'
 import { useSyncCurrencyRatesAndCache } from '@fedi/common/hooks/currency'
 import { useIsOnchainDepositSupported } from '@fedi/common/hooks/federation'
-import { useLnurlReceiveCode } from '@fedi/common/hooks/pay'
-import { useMakeOnchainAddress } from '@fedi/common/hooks/receive'
+import {
+    useLnurlReceiveCode,
+    useMakeOnchainAddress,
+} from '@fedi/common/hooks/receive'
 import { TransactionListEntry } from '@fedi/common/types'
 import amountUtils from '@fedi/common/utils/AmountUtils'
 

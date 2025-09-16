@@ -1,7 +1,7 @@
 import { styled } from '@stitches/react'
 import { useTranslation } from 'react-i18next'
 
-import { useLnurlReceiveCode } from '@fedi/common/hooks/pay'
+import { useLnurlReceiveCode } from '@fedi/common/hooks/receive'
 import { TransactionListEntry } from '@fedi/common/types'
 
 import { QRContainer } from '.'
