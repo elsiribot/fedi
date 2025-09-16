@@ -2,7 +2,7 @@ import type { NativeStackScreenProps } from '@react-navigation/native-stack'
 import { Button, Text, Theme, useTheme } from '@rneui/themed'
 import React from 'react'
 import { useTranslation } from 'react-i18next'
-import { Linking, StyleSheet, View } from 'react-native'
+import { Linking, StyleSheet } from 'react-native'
 
 import { selectCommunity } from '@fedi/common/redux'
 import {
@@ -11,6 +11,7 @@ import {
 } from '@fedi/common/utils/FederationUtils'
 
 import { FederationLogo } from '../components/feature/federations/FederationLogo'
+import Flex from '../components/ui/Flex'
 import { SafeAreaContainer } from '../components/ui/SafeArea'
 import { useAppSelector } from '../state/hooks'
 import type { RootStackParamList } from '../types/navigation'
@@ -34,9 +35,9 @@ const CommunityDetails: React.FC<Props> = ({ route }: Props) => {
 
     return (
         <SafeAreaContainer edges="notop">
-            <View style={style.content}>
-                <FederationLogo federation={community} size={72} />
-                <View style={style.textContainer}>
+            <Flex grow gap="lg" style={style.content}>
+                <Flex row align="center" gap="lg">
+                    <FederationLogo federation={community} size={72} />
                     <Text
                         h2
                         medium
@@ -44,27 +45,20 @@ const CommunityDetails: React.FC<Props> = ({ route }: Props) => {
                         style={style.title}>
                         {community.name}
                     </Text>
-                    {welcomeMessage && (
-                        <Text
-                            medium
-                            style={style.textStyle}
-                            maxFontSizeMultiplier={1.2}>
-                            {welcomeMessage}
-                        </Text>
-                    )}
-                </View>
-            </View>
+                </Flex>
+                {welcomeMessage && (
+                    <Text caption maxFontSizeMultiplier={1.2}>
+                        {welcomeMessage}
+                    </Text>
+                )}
+            </Flex>
             {tosUrl && (
                 <Button
                     bubble
                     fullWidth
                     outline
                     onPress={() => Linking.openURL(tosUrl)}>
-                    <Text
-                        adjustsFontSizeToFit
-                        medium
-                        style={style.textStyle}
-                        numberOfLines={1}>
+                    <Text adjustsFontSizeToFit medium center numberOfLines={1}>
                         {t(
                             'feature.communities.community-terms-and-conditions',
                         )}
@@ -84,10 +78,7 @@ const styles = (theme: Theme) =>
             padding: theme.spacing.lg,
         },
         content: {
-            flex: 1,
-            alignItems: 'center',
-            justifyContent: 'center',
-            gap: 16,
+            paddingVertical: theme.spacing.lg,
         },
         textContainer: {
             alignItems: 'center',
@@ -95,9 +86,6 @@ const styles = (theme: Theme) =>
             gap: theme.spacing.md,
         },
         title: {
-            textAlign: 'center',
-        },
-        textStyle: {
             textAlign: 'center',
         },
     })
