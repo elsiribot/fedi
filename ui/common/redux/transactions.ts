@@ -178,7 +178,16 @@ export const fetchTransactions = createAsyncThunk<
             limit,
         )
 
-        return transactions
+        return transactions.filter(
+            txn =>
+                !(
+                    (
+                        txn.kind === 'lnRecurringdReceive' &&
+                        txn.state?.type !== 'claimed'
+                    )
+                    // Only show claimed recurring receive transactions
+                ),
+        )
     },
 )
 
