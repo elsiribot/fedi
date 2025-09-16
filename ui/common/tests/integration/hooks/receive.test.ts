@@ -339,7 +339,9 @@ describe('common/hooks/receive', () => {
             )
 
             expect(recurringdTxn).toBeTruthy()
+            expect(recurringdTxn?.state?.type).toBe("created")
             expect(lnPayTxn).toBeTruthy()
+            expect(lnPayTxn?.state?.type).toBe("success")
         })
     })
 })
