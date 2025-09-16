@@ -12,6 +12,7 @@ import {
 } from '../../../hooks/receive'
 import { selectLastUsedFederationId } from '../../../redux'
 import { MSats, ParsedLnurlPay, ParserDataType, Sats } from '../../../types'
+import { RpcTransaction } from '../../../types/bindings'
 import { lnurlPay } from '../../../utils/lnurl'
 import { parseUserInput } from '../../../utils/parser'
 import { createIntegrationTestBuilder } from '../../utils/remote-bridge-setup'
@@ -329,19 +330,33 @@ describe('common/hooks/receive', () => {
                 federationId ?? '',
             )
 
-            // Transaction related to the lnurl receive code
-            const recurringdTxn = transactions.find(
-                tx => tx.kind === 'lnRecurringdReceive' && tx.amount === 10000,
-            )
             // Lightning transaction used to pay the lnurl receive code
             const lnPayTxn = transactions.find(
                 tx => tx.kind === 'lnPay' && tx.txnNotes === 'lnurl pay txn',
             )
 
-            expect(recurringdTxn).toBeTruthy()
-            expect(recurringdTxn?.state?.type).toBe('created')
+            const lnurlClaimedTxn = await new Promise<RpcTransaction>(
+                resolve => {
+                    const unsubscribe = fedimint.addListener(
+                        'transaction',
+                        event => {
+                            if (
+                                event.transaction.kind ===
+                                    'lnRecurringdReceive' &&
+                                event.transaction.amount === 10000 &&
+                                event.transaction.state?.type === 'claimed'
+                            ) {
+                                unsubscribe()
+                                resolve(event.transaction)
+                            }
+                        },
+                    )
+                },
+            )
+
             expect(lnPayTxn).toBeTruthy()
             expect(lnPayTxn?.state?.type).toBe('success')
-        })
+            expect(lnurlClaimedTxn).toBeTruthy()
+        }, 30000)
     })
 })
