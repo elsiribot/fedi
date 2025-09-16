@@ -73,9 +73,6 @@ export const ChatListItem: React.FC<Props> = ({ room }) => {
                             : theme.colors.darkGrey,
                     }}>
                     {cleanPreviewBody}
-                    {room.preview?.content &&
-                        'body' in room.preview.content &&
-                        room.preview.content.body}
                 </Text>
             </Content>
         </Container>
