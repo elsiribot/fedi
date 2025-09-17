@@ -877,6 +877,22 @@ export function isWithdrawalRequestApproved(
     return false
 }
 
+export function sortMultispendRoomMembers(
+    members: MatrixRoomMember[],
+    multispendStatus: RpcMultispendGroupStatus,
+) {
+    return members.sort((a, b) => {
+        if (!multispendStatus) return 0
+
+        const roleA = getMultispendRole(multispendStatus, a.id)
+        const roleB = getMultispendRole(multispendStatus, b.id)
+        const roleAPower = roleA === 'proposer' ? 2 : roleA === 'voter' ? 1 : 0
+        const roleBPower = roleB === 'proposer' ? 2 : roleB === 'voter' ? 1 : 0
+
+        return roleBPower - roleAPower
+    })
+}
+
 export function isRepliableContent(
     reply: MatrixEvent['inReply'] | undefined,
 ): reply is ReplyMessageData {

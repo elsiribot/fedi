@@ -11,7 +11,10 @@ import {
     selectMatrixRoomMultispendStatus,
 } from '@fedi/common/redux'
 import { MatrixPowerLevel, MatrixRoomMember } from '@fedi/common/types'
-import { getMultispendRole } from '@fedi/common/utils/matrix'
+import {
+    getMultispendRole,
+    sortMultispendRoomMembers,
+} from '@fedi/common/utils/matrix'
 
 import { fedimint } from '../bridge'
 import { ChatUserActionsOverlay } from '../components/feature/chat/ChatUserActionsOverlay'
@@ -110,20 +113,10 @@ const ChatRoomMembers: React.FC<ChatRoomMembersProps> = ({
 
     const style = styles(theme)
 
-    const groupMembersList = displayMultispendRoles
-        ? members.sort((a, b) => {
-              if (!multispendStatus) return 0
-
-              const roleA = getMultispendRole(multispendStatus, a.id)
-              const roleB = getMultispendRole(multispendStatus, b.id)
-              const roleAPower =
-                  roleA === 'proposer' ? 2 : roleA === 'voter' ? 1 : 0
-              const roleBPower =
-                  roleB === 'proposer' ? 2 : roleB === 'voter' ? 1 : 0
-
-              return roleBPower - roleAPower
-          })
-        : members
+    const groupMembersList =
+        displayMultispendRoles && multispendStatus
+            ? sortMultispendRoomMembers(members, multispendStatus)
+            : members
 
     return (
         <Flex grow fullWidth style={style.container}>
