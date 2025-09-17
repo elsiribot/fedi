@@ -31,7 +31,7 @@ const CommunityMenu = ({ community }: CommunityMenuProps) => {
     const style = styles(theme)
     const navigation = useNavigation()
 
-    const { canLeaveCommunity, handleLeaveCommunity } = useLeaveCommunity({
+    const { canLeaveCommunity, handleLeave } = useLeaveCommunity({
         t,
         fedimint,
         communityId: community.id,
@@ -47,7 +47,7 @@ const CommunityMenu = ({ community }: CommunityMenuProps) => {
                 },
                 {
                     text: t('words.yes'),
-                    onPress: () => handleLeaveCommunity(),
+                    onPress: handleLeave,
                 },
             ],
         )

@@ -51,7 +51,7 @@ function AdminPage() {
             federationId: leavingFederation?.id || '',
         })
 
-    const { canLeaveCommunity, handleLeaveCommunity } = useLeaveCommunity({
+    const { canLeaveCommunity, handleLeave } = useLeaveCommunity({
         t,
         fedimint,
         communityId: leavingCommunity?.id || '',
@@ -78,7 +78,7 @@ function AdminPage() {
 
     const handleConfirmLeaveCommunity = () => {
         if (leavingCommunity) {
-            handleLeaveCommunity()
+            handleLeave()
             setLeavingCommunity(null)
         }
     }

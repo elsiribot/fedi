@@ -5,6 +5,7 @@ import { useTranslation } from 'react-i18next'
 import { Linking, Pressable, StyleSheet } from 'react-native'
 
 import { useLeaveCommunity } from '@fedi/common/hooks/leave'
+import { useToast } from '@fedi/common/hooks/toast'
 import { selectCommunity } from '@fedi/common/redux'
 import {
     getFederationTosUrl,
@@ -32,21 +33,23 @@ const CommunityDetails: React.FC<Props> = ({ route, navigation }: Props) => {
     const { t } = useTranslation()
     const { theme } = useTheme()
     const { communityId } = route.params
-    const { canLeaveCommunity, handleLeaveCommunity } = useLeaveCommunity({
+    const { canLeaveCommunity, handleLeave, isLeaving } = useLeaveCommunity({
         t,
         communityId,
         fedimint,
     })
 
     const community = useAppSelector(s => selectCommunity(s, communityId))
+    const toast = useToast()
 
     const handleClose = () => {
         setWantsToLeaveCommunity(false)
     }
 
-    const handleLeave = async () => {
-        await handleLeaveCommunity()
-        navigation.dispatch(reset('TabsNavigator'))
+    const onLeave = () => {
+        handleLeave()
+            .then(() => navigation.dispatch(reset('TabsNavigator')))
+            .catch(e => toast.error(t, e))
     }
 
     if (!community) return null
@@ -129,7 +132,8 @@ const CommunityDetails: React.FC<Props> = ({ route, navigation }: Props) => {
                     buttons: [
                         {
                             text: t('feature.communities.confirm-exit'),
-                            onPress: handleLeave,
+                            onPress: onLeave,
+                            disabled: isLeaving,
                         },
                         {
                             text: t('words.cancel'),
