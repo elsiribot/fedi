@@ -1,13 +1,13 @@
 import { useRouter } from 'next/router'
 import React from 'react'
 
-// import ChevronRightIcon from '@fedi/common/assets/svgs/chevron-right.svg'
+import ChevronRightIcon from '@fedi/common/assets/svgs/chevron-right.svg'
 import { theme } from '@fedi/common/constants/theme'
 import { Community } from '@fedi/common/types'
 
 import { styled } from '../styles'
 import { FederationAvatar } from './FederationAvatar'
-// import { Icon } from './Icon'
+import { Icon } from './Icon'
 import { Text } from './Text'
 
 export type Props = {
@@ -18,8 +18,6 @@ const SelectedCommunity: React.FC<Props> = ({ community }) => {
     const router = useRouter()
 
     const goToCommunityDetails = () => {
-        // TODO: Navigate to community details page when implemented
-        return
         router.push(`/community-details/${community.id}`)
     }
 
@@ -31,14 +29,13 @@ const SelectedCommunity: React.FC<Props> = ({ community }) => {
                     {community?.name}
                 </Text>
             </CommunityName>
-            {/* TODO: implement community details page */}
-            {/* <ChevronContainer>
+            <ChevronContainer>
                 <Icon
                     icon={ChevronRightIcon}
                     size="sm"
                     color={theme.colors.primary}
                 />
-            </ChevronContainer> */}
+            </ChevronContainer>
         </Container>
     )
 }
@@ -60,8 +57,10 @@ const CommunityName = styled('div', {
     },
 })
 
-// const ChevronContainer = styled('div', {
-//     marginLeft: 'auto',
-// })
+const ChevronContainer = styled('div', {
+    marginLeft: 'auto',
+    display: 'flex',
+    alignItems: 'center',
+})
 
 export default SelectedCommunity
