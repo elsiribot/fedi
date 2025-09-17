@@ -14,7 +14,10 @@ import {
 } from '@fedi/common/redux'
 import { RemoteBridge } from '@fedi/common/utils/remote-bridge'
 
-import { mockInitializeCommonStore } from '../../tests/utils/render'
+import { useCreateMatrixRoom } from '../../hooks/matrix'
+import { MatrixRoom } from '../../types'
+import { renderHookWithState, mockInitializeCommonStore } from './render'
+import { createMockT } from './setup'
 
 export interface RemoteBridgeTestContext {
     bridge: RemoteBridge
@@ -82,6 +85,36 @@ export class IntegrationTestBuilder {
         )
 
         return this
+    }
+
+    /**
+     * Ensures a chat group created by this user is in the room list
+     */
+    async withChatGroupCreated(): Promise<MatrixRoom['id']> {
+        const { store, bridge } = this.context
+
+        await this.withChatReady()
+
+        const { result: createRoomResult } = renderHookWithState(
+            () => useCreateMatrixRoom(createMockT()),
+            store,
+            bridge.fedimint,
+        )
+
+        await act(() => {
+            createRoomResult.current.setGroupName('test group')
+        })
+
+        await act(() => {
+            createRoomResult.current.handleCreateGroup()
+        })
+
+        await this.waitFor(() => {
+            expect(createRoomResult.current.isCreatingGroup).toBe(false)
+            expect(createRoomResult.current.createdRoomId).toBeDefined()
+        })
+
+        return createRoomResult.current.createdRoomId as MatrixRoom['id']
     }
 
     /**
