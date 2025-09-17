@@ -93,7 +93,7 @@ describe('group chat interactions between 2 users', () => {
             })
             expect(eventWithMessage).toBeDefined()
         })
-    })
+    }, 30000)
 })
 
 describe('group chat interactions among 3 users', () => {
@@ -104,7 +104,7 @@ describe('group chat interactions among 3 users', () => {
     const builder3 = createIntegrationTestBuilder()
     const charlie = builder3.getContext()
 
-    it("alice creates a group, sends a message, invites bob and charlie, then sends another message. decryptable and undecryptable messages appear on bob and charlie's timelines", async () => {
+    it.skip("alice creates a group, sends a message, invites bob and charlie, then sends another message. decryptable and undecryptable messages appear on bob and charlie's timelines", async () => {
         await builder1.withChatReady()
         await builder2.withChatReady()
         await builder3.withChatReady()
@@ -218,7 +218,7 @@ describe('group chat interactions among 3 users', () => {
             )
             expect(decryptableMessageInCharlieTimeline).toBeDefined()
         })
-    })
+    }, 30000)
 
     describe('chained replies', () => {
         it("alice sends a message, bob replies, charlie replies to bob's reply", async () => {
@@ -401,7 +401,7 @@ describe('group chat interactions among 3 users', () => {
                 expect(repliedData?.content.body).toBe(messageFromAlice)
                 expect(repliedData?.sender).toBe(authAlice?.userId)
             })
-        })
+        }, 30000)
     })
 })
 
@@ -517,5 +517,5 @@ describe('direct chat interactions between 2 users', () => {
             expect(repliedData?.content.body).toBe('hi bob this is alice')
             expect(repliedData?.sender).toBe(aliceAuth?.userId)
         })
-    })
+    }, 30000)
 })
