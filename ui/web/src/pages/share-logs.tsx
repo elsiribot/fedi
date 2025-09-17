@@ -94,7 +94,7 @@ export default function ShareLogsPage() {
     return (
         <ContentBlock>
             <Layout.Root>
-                <Layout.Header back="/settings">
+                <Layout.Header showCloseButton>
                     <Layout.Title subheader>
                         {t('feature.developer.share-logs')}
                     </Layout.Title>

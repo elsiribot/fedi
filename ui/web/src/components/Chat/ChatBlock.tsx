@@ -117,7 +117,7 @@ const SidebarHeader = styled(Layout.Header, {
     padding: '8px 16px',
 
     '@sm': {
-        padding: '22px 16px 16px',
+        padding: 0,
     },
 })
 

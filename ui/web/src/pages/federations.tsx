@@ -66,12 +66,12 @@ function FederationsPage() {
     return (
         <ContentBlock>
             <Layout.Root>
-                <FederationsHeader>
+                <Layout.Header>
                     <Layout.Title>{t('words.federations')}</Layout.Title>
                     <MainHeaderButtons
                         onAddPress={() => router.push('/onboarding')}
                     />
-                </FederationsHeader>
+                </Layout.Header>
                 <Layout.Content>
                     <Content>
                         <FeaturedFederation />
@@ -172,14 +172,6 @@ const Content = styled('div', {
     display: 'flex',
     flexDirection: 'column',
     gap: 20,
-})
-
-const FederationsHeader = styled(Layout.Header, {
-    padding: '8px 16px',
-
-    '@sm': {
-        padding: '22px 16px 16px',
-    },
 })
 
 const FederationsListWrapper = styled('div', {

@@ -79,7 +79,7 @@ export function OnboardingHome() {
 
     return (
         <OnboardingContainer>
-            <Header back>
+            <Header>
                 <Title subheader>{t('phrases.join-a-federation')}</Title>
             </Header>
             <OnboardingContent justify="start">

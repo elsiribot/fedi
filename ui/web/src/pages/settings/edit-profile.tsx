@@ -81,7 +81,7 @@ const EditProfile = () => {
     return (
         <ContentBlock>
             <Layout.Root>
-                <Layout.Header back="/settings">
+                <Layout.Header back>
                     <Layout.Title subheader>
                         {t('phrases.edit-profile')}
                     </Layout.Title>

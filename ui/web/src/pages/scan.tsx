@@ -14,7 +14,7 @@ function ScanPage() {
 
     return (
         <ContentBlock>
-            <Layout.Header back>
+            <Layout.Header showCloseButton>
                 <Layout.Title subheader>
                     {t('feature.omni.action-scan')}
                 </Layout.Title>

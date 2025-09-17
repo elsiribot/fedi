@@ -12,11 +12,11 @@ export default function ModsPage() {
     return (
         <ContentBlock>
             <Layout.Root>
-                <ModsHeader>
+                <Layout.Header>
                     <Layout.Title>{t('phrases.mini-apps')}</Layout.Title>
                     {/* TODO: link to add mods page with onAddPress prop when adding mods is implemented */}
                     <MainHeaderButtons />
-                </ModsHeader>
+                </Layout.Header>
                 <Layout.Content>
                     <Content>
                         <FediModTiles />
@@ -35,12 +35,4 @@ const Content = styled('div', {
     justifyContent: 'flex-start',
     padding: '20px 16px 16px',
     textAlign: 'center',
-})
-
-const ModsHeader = styled(Layout.Header, {
-    padding: '8px 16px',
-
-    '@sm': {
-        padding: '22px 16px 16px',
-    },
 })

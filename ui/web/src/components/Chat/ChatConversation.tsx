@@ -259,10 +259,7 @@ export const ChatConversation: React.FC<Props> = ({
 
     return (
         <Layout.Root>
-            <Layout.Header
-                padded
-                displaceBackIcon={!headerActions}
-                back="/chat">
+            <Layout.Header back="/chat">
                 <HeaderContent>
                     {avatar}
                     <Text weight="medium">{name}</Text>
