@@ -2,11 +2,8 @@ import { Text, Theme, useTheme } from '@rneui/themed'
 import { t } from 'i18next'
 import { ActivityIndicator, Pressable, StyleSheet, View } from 'react-native'
 
-import { selectLastSelectedCommunity } from '@fedi/common/redux'
-
 import { DEFAULT_GROUP_NAME } from '../../../constants'
-import { useAppSelector } from '../../../state/hooks'
-import { MatrixRoom } from '../../../types'
+import { Community, LoadedFederation, MatrixRoom } from '../../../types'
 import { AvatarSize } from '../../ui/Avatar'
 import { BubbleView } from '../../ui/BubbleView'
 import Flex from '../../ui/Flex'
@@ -14,20 +11,21 @@ import SvgImage from '../../ui/SvgImage'
 import ChatAvatar from '../chat/ChatAvatar'
 import { FederationLogo } from '../federations/FederationLogo'
 
-type CommunityChatTileProps = {
+type DefaultChatTileProps = {
     room?: MatrixRoom
     imageUrl?: string
+    federationOrCommunity: LoadedFederation | Community
     onSelect?: (chat: MatrixRoom) => void
     onLongPress?: (chat: MatrixRoom) => void
 }
 
-const CommunityChatTile = ({
+const DefaultChatTile = ({
     room,
+    federationOrCommunity,
     onSelect = () => null,
     onLongPress = () => null,
-}: CommunityChatTileProps) => {
+}: DefaultChatTileProps) => {
     const { theme } = useTheme()
-    const selectedCommunity = useAppSelector(selectLastSelectedCommunity)
     const style = styles(theme)
 
     if (!room)
@@ -56,9 +54,9 @@ const CommunityChatTile = ({
                 onLongPress={() => onLongPress(room)}
                 delayLongPress={300}
                 onPress={() => onSelect(room)}>
-                {selectedCommunity ? (
+                {federationOrCommunity ? (
                     <FederationLogo
-                        federation={selectedCommunity}
+                        federation={federationOrCommunity}
                         size={theme.sizes.mediumAvatar}
                         hex
                     />
@@ -130,4 +128,4 @@ const styles = (theme: Theme) =>
         },
     })
 
-export default CommunityChatTile
+export default DefaultChatTile
