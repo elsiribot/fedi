@@ -15,7 +15,10 @@ import {
     selectIsInternetUnreachable,
     selectIsNostrClientEnabled,
 } from '.'
-import { FEDI_GLOBAL_COMMUNITY_INVITE } from '../constants/community'
+import {
+    FEDI_GLOBAL_COMMUNITY,
+    FEDI_GLOBAL_COMMUNITY_INVITE,
+} from '../constants/community'
 import {
     Community,
     Federation,
@@ -364,6 +367,14 @@ export const federationSlice = createSlice({
                       }
             },
         )
+
+        builder.addCase(leaveCommunity.fulfilled, (state, action) => {
+            state.communities = state.communities.filter(
+                c => c.id !== action.meta.arg.communityId,
+            )
+            state.lastSelectedCommunityId =
+                state.communities[0].id ?? FEDI_GLOBAL_COMMUNITY.id
+        })
     },
 })
 

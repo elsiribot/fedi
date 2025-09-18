@@ -1,5 +1,5 @@
 import { TFunction } from 'i18next'
-import { useCallback } from 'react'
+import { useCallback, useState } from 'react'
 
 import { useToast } from '@fedi/common/hooks/toast'
 import { selectCurrency } from '@fedi/common/redux'
@@ -17,7 +17,10 @@ import { Community, Federation, LoadedFederation } from '@fedi/common/types'
 import amountUtils from '@fedi/common/utils/AmountUtils'
 import { FedimintBridge } from '@fedi/common/utils/fedimint'
 
+import { makeLog } from '../utils/log'
 import { useCommonDispatch, useCommonSelector } from './redux'
+
+const log = makeLog('common/hooks/leave')
 
 export const useLeaveFederation = ({
     t,
@@ -123,7 +126,6 @@ export const useLeaveFederation = ({
 }
 
 export const useLeaveCommunity = ({
-    t,
     fedimint,
     communityId,
 }: {
@@ -131,15 +133,14 @@ export const useLeaveCommunity = ({
     fedimint: FedimintBridge
     communityId: Community['id']
 }) => {
-    const toast = useToast()
+    const [isLeaving, setIsLeaving] = useState(false)
     const dispatch = useCommonDispatch()
     const canLeaveCommunity = useCommonSelector(state =>
         selectCanLeaveCommunity(state, communityId),
     )
 
-    // FIXME: this needs some kind of loading state
-    // TODO: this should be an thunkified action creator
-    const handleLeaveCommunity = useCallback(async () => {
+    const handleLeave = useCallback(async () => {
+        setIsLeaving(true)
         try {
             await dispatch(
                 leaveCommunity({
@@ -148,12 +149,13 @@ export const useLeaveCommunity = ({
                 }),
             ).unwrap()
         } catch (e) {
-            toast.show({
-                content: t('errors.failed-to-leave-community'),
-                status: 'error',
-            })
+            log.error(`Failed to leave community with ID ${communityId}`, e)
+            // TODO: do not throw
+            throw e
+        } finally {
+            setIsLeaving(false)
         }
-    }, [dispatch, fedimint, communityId, toast, t])
+    }, [dispatch, fedimint, communityId])
 
-    return { canLeaveCommunity, handleLeaveCommunity }
+    return { canLeaveCommunity, handleLeave, isLeaving }
 }

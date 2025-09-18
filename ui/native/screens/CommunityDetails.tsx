@@ -1,18 +1,25 @@
 import type { NativeStackScreenProps } from '@react-navigation/native-stack'
 import { Button, Text, Theme, useTheme } from '@rneui/themed'
-import React from 'react'
+import React, { useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { Linking, StyleSheet, View } from 'react-native'
+import { Linking, Pressable, StyleSheet } from 'react-native'
 
+import { useLeaveCommunity } from '@fedi/common/hooks/leave'
+import { useToast } from '@fedi/common/hooks/toast'
 import { selectCommunity } from '@fedi/common/redux'
 import {
     getFederationTosUrl,
     getFederationWelcomeMessage,
 } from '@fedi/common/utils/FederationUtils'
 
+import { fedimint } from '../bridge'
 import { FederationLogo } from '../components/feature/federations/FederationLogo'
+import CustomOverlay from '../components/ui/CustomOverlay'
+import Flex from '../components/ui/Flex'
 import { SafeAreaContainer } from '../components/ui/SafeArea'
+import SvgImage from '../components/ui/SvgImage'
 import { useAppSelector } from '../state/hooks'
+import { reset } from '../state/navigation'
 import type { RootStackParamList } from '../types/navigation'
 
 export type Props = NativeStackScreenProps<
@@ -20,11 +27,30 @@ export type Props = NativeStackScreenProps<
     'CommunityDetails'
 >
 
-const CommunityDetails: React.FC<Props> = ({ route }: Props) => {
+const CommunityDetails: React.FC<Props> = ({ route, navigation }: Props) => {
+    const [wantsToLeaveCommunity, setWantsToLeaveCommunity] = useState(false)
+
     const { t } = useTranslation()
     const { theme } = useTheme()
     const { communityId } = route.params
+    const { canLeaveCommunity, handleLeave, isLeaving } = useLeaveCommunity({
+        t,
+        communityId,
+        fedimint,
+    })
+
     const community = useAppSelector(s => selectCommunity(s, communityId))
+    const toast = useToast()
+
+    const handleClose = () => {
+        setWantsToLeaveCommunity(false)
+    }
+
+    const onLeave = () => {
+        handleLeave()
+            .then(() => navigation.dispatch(reset('TabsNavigator')))
+            .catch(e => toast.error(t, e))
+    }
 
     if (!community) return null
 
@@ -34,9 +60,9 @@ const CommunityDetails: React.FC<Props> = ({ route }: Props) => {
 
     return (
         <SafeAreaContainer edges="notop">
-            <View style={style.content}>
-                <FederationLogo federation={community} size={72} />
-                <View style={style.textContainer}>
+            <Flex grow gap="lg" style={style.content}>
+                <Flex row align="center" gap="lg">
+                    <FederationLogo federation={community} size={72} />
                     <Text
                         h2
                         medium
@@ -44,33 +70,79 @@ const CommunityDetails: React.FC<Props> = ({ route }: Props) => {
                         style={style.title}>
                         {community.name}
                     </Text>
-                    {welcomeMessage && (
-                        <Text
-                            medium
-                            style={style.textStyle}
-                            maxFontSizeMultiplier={1.2}>
-                            {welcomeMessage}
-                        </Text>
-                    )}
-                </View>
-            </View>
-            {tosUrl && (
-                <Button
-                    bubble
-                    fullWidth
-                    outline
-                    onPress={() => Linking.openURL(tosUrl)}>
-                    <Text
-                        adjustsFontSizeToFit
-                        medium
-                        style={style.textStyle}
-                        numberOfLines={1}>
-                        {t(
-                            'feature.communities.community-terms-and-conditions',
-                        )}
+                </Flex>
+                {welcomeMessage && (
+                    <Text caption maxFontSizeMultiplier={1.2}>
+                        {welcomeMessage}
                     </Text>
-                </Button>
-            )}
+                )}
+            </Flex>
+            <Flex gap="md">
+                {tosUrl && (
+                    <Button
+                        bubble
+                        fullWidth
+                        outline
+                        onPress={() => Linking.openURL(tosUrl)}>
+                        <Text
+                            adjustsFontSizeToFit
+                            medium
+                            center
+                            numberOfLines={1}>
+                            {t(
+                                'feature.communities.community-terms-and-conditions',
+                            )}
+                        </Text>
+                    </Button>
+                )}
+                {canLeaveCommunity && (
+                    <Flex center fullWidth>
+                        <Pressable
+                            onPress={() => setWantsToLeaveCommunity(true)}>
+                            <Text style={style.leaveCommunityText}>
+                                {t('feature.communities.leave-community')}
+                            </Text>
+                        </Pressable>
+                    </Flex>
+                )}
+            </Flex>
+            <CustomOverlay
+                show={wantsToLeaveCommunity}
+                onBackdropPress={handleClose}
+                contents={{
+                    body: (
+                        <Flex gap="lg" align="center">
+                            <Flex center style={style.iconContainer}>
+                                <SvgImage
+                                    name="Room"
+                                    size={64}
+                                    color={theme.colors.red}
+                                />
+                            </Flex>
+                            <Text h2 medium>
+                                {t('feature.communities.leave-community-title')}
+                            </Text>
+                            <Text center>
+                                {t(
+                                    'feature.communities.leave-community-description',
+                                )}
+                            </Text>
+                        </Flex>
+                    ),
+                    buttons: [
+                        {
+                            text: t('feature.communities.confirm-exit'),
+                            onPress: onLeave,
+                            disabled: isLeaving,
+                        },
+                        {
+                            text: t('words.cancel'),
+                            onPress: handleClose,
+                            primary: true,
+                        },
+                    ],
+                }}
+            />
         </SafeAreaContainer>
     )
 }
@@ -84,10 +156,7 @@ const styles = (theme: Theme) =>
             padding: theme.spacing.lg,
         },
         content: {
-            flex: 1,
-            alignItems: 'center',
-            justifyContent: 'center',
-            gap: 16,
+            paddingVertical: theme.spacing.lg,
         },
         textContainer: {
             alignItems: 'center',
@@ -97,8 +166,15 @@ const styles = (theme: Theme) =>
         title: {
             textAlign: 'center',
         },
-        textStyle: {
-            textAlign: 'center',
+        leaveCommunityText: {
+            textDecorationLine: 'underline',
+        },
+        iconContainer: {
+            borderRadius: 1024,
+            backgroundColor: theme.colors.red100,
+            width: 120,
+            height: 120,
+            aspectRatio: 1,
         },
     })
 
