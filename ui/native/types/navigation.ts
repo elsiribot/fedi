@@ -137,7 +137,6 @@ export type RootStackParamList = {
         | undefined
     PersonalRecovery: undefined
     PersonalRecoverySuccess: undefined
-    PopupFederationEnded: { federationId: Federation['id'] }
     PublicFederations: { from?: string } | undefined
     PublicCommunities: undefined
     LocateSocialRecovery: undefined
