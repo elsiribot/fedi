@@ -160,7 +160,6 @@ const MessageInput: React.FC<MessageInputProps> = ({
 
     const {
         mentionSuggestions,
-        activeMentionQuery,
         shouldShowSuggestions,
         detectMentionTrigger,
         insertMention: insertMentionFromHook,
@@ -743,7 +742,6 @@ const MessageInput: React.FC<MessageInputProps> = ({
                     {showMentionSuggestions && (
                         <ChatMentionSuggestions
                             visible
-                            query={activeMentionQuery ?? ''}
                             suggestions={mentionSuggestions}
                             onSelect={insertMention}
                         />

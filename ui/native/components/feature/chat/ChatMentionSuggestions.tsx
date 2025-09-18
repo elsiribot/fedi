@@ -17,21 +17,19 @@ import ChatAvatar from '../chat/ChatAvatar'
 type Props = {
     suggestions: MatrixRoomMember[]
     visible: boolean
-    query?: string
     onSelect: (member: MentionSelect) => void
 }
 
 const ChatMentionSuggestions: React.FC<Props> = ({
     suggestions,
     visible,
-    query = '',
     onSelect,
 }) => {
     const { theme } = useTheme()
     const style = styles(theme)
 
-    const includeRoom = !!query && ROOM_MENTION.startsWith(query.toLowerCase())
-    // optional @room item
+    const includeRoom = true
+    // mandatory @room item (always included)
     const list = React.useMemo<MentionItem[]>(
         () => [
             ...(includeRoom
