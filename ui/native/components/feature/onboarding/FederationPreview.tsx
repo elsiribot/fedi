@@ -2,16 +2,8 @@ import { useNavigation } from '@react-navigation/native'
 import { Button, Switch, Text, Theme, useTheme } from '@rneui/themed'
 import React, { useLayoutEffect, useState } from 'react'
 import { Trans, useTranslation } from 'react-i18next'
-import {
-    Linking,
-    NativeScrollEvent,
-    NativeSyntheticEvent,
-    ScrollView,
-    StyleSheet,
-    View,
-} from 'react-native'
+import { Linking, StyleSheet, View } from 'react-native'
 import Hyperlink from 'react-native-hyperlink'
-import LinearGradient from 'react-native-linear-gradient'
 
 import { usePopupFederationInfo } from '@fedi/common/hooks/federation'
 import { RpcFederationPreview } from '@fedi/common/types/bindings'
@@ -24,6 +16,7 @@ import {
 import Flex from '../../ui/Flex'
 import RotatingSvg from '../../ui/RotatingSvg'
 import { SafeAreaContainer } from '../../ui/SafeArea'
+import ShadowScrollView from '../../ui/ShadowScrollView'
 import { SvgImageSize } from '../../ui/SvgImage'
 import EndedFederationPreview from '../federations/EndedPreview'
 import { FederationLogo } from '../federations/FederationLogo'
@@ -47,23 +40,12 @@ const FederationPreview: React.FC<Props> = ({
     const showJoinFederation = shouldShowJoinFederation(federation.meta)
     const [selectedRecoverFromScratch, setSelectedRecoverFromScratch] =
         useState(false)
-    const [showTopShadow, setShowTopShadow] = useState(false)
-    const [showBottomShadow, setShowBottomShadow] = useState(true)
     const tosUrl = getFederationTosUrl(federation.meta)
     const welcomeMessage = getFederationWelcomeMessage(federation.meta)
     const popupInfo = usePopupFederationInfo(federation.meta)
     const navigation = useNavigation()
     const isReturningMember =
         federation.returningMemberStatus.type === 'returningMember'
-
-    const handleScroll = ({
-        nativeEvent,
-    }: NativeSyntheticEvent<NativeScrollEvent>) => {
-        const { contentOffset } = nativeEvent
-
-        setShowTopShadow(contentOffset.y > 0)
-        setShowBottomShadow(contentOffset.y < 0)
-    }
 
     useLayoutEffect(() => {
         navigation.setOptions({ headerShown: !isJoining })
@@ -151,47 +133,27 @@ const FederationPreview: React.FC<Props> = ({
 
     return (
         <SafeAreaContainer edges="notop" style={s.joinPreviewContainer}>
-            <Flex grow shrink style={s.federationInfoContainer}>
-                {showTopShadow && (
-                    <LinearGradient
-                        style={[s.scrollInsetShadow, s.scrollTopShadow]}
-                        colors={['rgba(0,0,0,0.05)', 'rgba(0,0,0,0)']}
-                    />
-                )}
-                <ScrollView
-                    contentContainerStyle={s.federationInfoScrollView}
-                    onScroll={handleScroll}>
-                    <Flex center>
-                        <FederationLogo federation={federation} size={96} />
-                        <Text h2 medium style={s.welcome}>
-                            {welcomeTitle}
-                        </Text>
-                    </Flex>
+            <ShadowScrollView>
+                <Flex center>
+                    <FederationLogo federation={federation} size={96} />
+                    <Text h2 medium style={s.welcome}>
+                        {welcomeTitle}
+                    </Text>
+                </Flex>
 
-                    <View style={s.roundedCardContainer}>
-                        <Text caption style={s.welcomeText}>
-                            <Trans
-                                components={{
-                                    bold: (
-                                        <Text
-                                            caption
-                                            bold
-                                            style={s.welcomeText}
-                                        />
-                                    ),
-                                }}>
-                                {welcomeMessage ?? welcomeInstructions}
-                            </Trans>
-                        </Text>
-                    </View>
-                </ScrollView>
-                {showBottomShadow && (
-                    <LinearGradient
-                        style={[s.scrollInsetShadow, s.scrollBottomShadow]}
-                        colors={['rgba(0,0,0,0)', 'rgba(0,0,0,0.05)']}
-                    />
-                )}
-            </Flex>
+                <View style={s.roundedCardContainer}>
+                    <Text caption style={s.welcomeText}>
+                        <Trans
+                            components={{
+                                bold: (
+                                    <Text caption bold style={s.welcomeText} />
+                                ),
+                            }}>
+                            {welcomeMessage ?? welcomeInstructions}
+                        </Trans>
+                    </Text>
+                </View>
+            </ShadowScrollView>
 
             <Flex shrink={false}>
                 {showJoinFederation && isReturningMember && (
