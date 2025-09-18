@@ -28,7 +28,14 @@ const SelectedCommunity: React.FC<Props> = ({ community }) => {
             containerStyle={style.tileContainer}
             onPress={goToCommunityDetails}>
             <FederationLogo federation={community} size={56} />
-            <Text h2 bold h2Style={style.title}>
+            <Text
+                h2
+                bold
+                numberOfLines={1}
+                adjustsFontSizeToFit
+                minimumFontScale={0.5}
+                ellipsizeMode="tail"
+                h2Style={style.title}>
                 {community?.name}
             </Text>
             <SvgImage
@@ -50,12 +57,17 @@ const styles = (theme: Theme) =>
             gap: theme.spacing.lg,
             paddingVertical: 0,
             paddingHorizontal: 0,
+            minWidth: 0,
         },
         icon: {
             marginLeft: 'auto',
         },
         title: {
             color: theme.colors.primary,
+            flexGrow: 1,
+            flexShrink: 1,
+            flexBasis: 0,
+            minWidth: 0,
         },
     })
 
