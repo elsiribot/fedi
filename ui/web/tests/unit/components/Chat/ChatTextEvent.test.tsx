@@ -1,24 +1,9 @@
-import { configureStore } from '@reduxjs/toolkit'
 import '@testing-library/jest-dom'
 import { render, screen } from '@testing-library/react'
-import { Provider } from 'react-redux'
 
 import { createMockNonPaymentEvent } from '@fedi/common/tests/mock-data/matrix-event'
 
 import { ChatTextEvent } from '../../../../src/components/Chat/ChatTextEvent'
-
-const renderWithStore = (ui: React.ReactElement, preloadedState = {}) => {
-    const safeState = {
-        matrix: { auth: null, roomMembers: {} },
-        ...preloadedState,
-    }
-
-    const store = configureStore({
-        reducer: (state = safeState) => state,
-        preloadedState: safeState,
-    })
-    return render(<Provider store={store}>{ui}</Provider>)
-}
 
 // Mock text events for different scenarios
 const mockTextOnlyEvent = createMockNonPaymentEvent({
@@ -46,14 +31,14 @@ describe('/components/Chat/ChatTextEvent', () => {
 
     describe('when rendering text-only content', () => {
         it('should display the text content', () => {
-            renderWithStore(<ChatTextEvent event={mockTextOnlyEvent} />)
+            render(<ChatTextEvent event={mockTextOnlyEvent} />)
             expect(screen.getByText('Hello world')).toBeInTheDocument()
         })
     })
 
     describe('when rendering text with URL', () => {
         it('should display both text and clickable link', () => {
-            const { container } = renderWithStore(
+            const { container } = render(
                 <ChatTextEvent event={mockTextWithUrlEvent} />,
             )
             // Check that the full text content is present
@@ -72,7 +57,7 @@ describe('/components/Chat/ChatTextEvent', () => {
 
     describe('when rendering URL-only content', () => {
         it('should display the URL as a clickable link', () => {
-            renderWithStore(<ChatTextEvent event={mockUrlOnlyEvent} />)
+            render(<ChatTextEvent event={mockUrlOnlyEvent} />)
 
             const link = screen.getByRole('link')
             expect(link).toBeInTheDocument()

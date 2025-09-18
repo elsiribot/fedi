@@ -13,7 +13,6 @@ import { Icon } from '../Icon'
 const log = makeLog('ChatSwipeableEventContainer')
 
 export interface ChatSwipeableEventContainerProps {
-    roomId: string
     event: MatrixEvent
     children: React.ReactNode
     dragThreshold?: number
@@ -21,8 +20,8 @@ export interface ChatSwipeableEventContainerProps {
     isMe?: boolean
 }
 
-const ChatSwipeableEventContainer: React.FC<ChatSwipeableEventContainerProps> =
-    memo(({ roomId, event, children, dragThreshold = 60, isMe }) => {
+export const ChatSwipeableEventContainer: React.FC<ChatSwipeableEventContainerProps> =
+    memo(({ event, children, dragThreshold = 60, isMe }) => {
         const dispatch = useAppDispatch()
         const containerRef = useRef<HTMLDivElement>(null)
         const [isDragging, setIsDragging] = useState(false)
@@ -39,6 +38,8 @@ const ChatSwipeableEventContainer: React.FC<ChatSwipeableEventContainerProps> =
         const startX = useRef(0)
         const currentX = useRef(0)
         const animationId = useRef<number | null>(null)
+
+        const { roomId } = event
 
         const handleReply = useCallback(() => {
             log.info('Reply activated', {
@@ -302,8 +303,8 @@ const ActionContainer = styled('div', {
 })
 
 const ActionButton = styled('div', {
-    width: 44,
-    height: 44,
+    width: 34,
+    height: 34,
     borderRadius: 22,
     display: 'flex',
     alignItems: 'center',
@@ -335,4 +336,3 @@ const ActionButton = styled('div', {
 })
 
 ChatSwipeableEventContainer.displayName = 'ChatSwipeableEventContainer'
-export default ChatSwipeableEventContainer

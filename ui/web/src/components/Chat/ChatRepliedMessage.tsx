@@ -1,36 +1,26 @@
 import React, { useMemo, useState, useCallback } from 'react'
 
 import { ReplyMessageData } from '@fedi/common/types'
-import { matrixIdToUsername } from '@fedi/common/utils/matrix'
 
 import { styled, theme } from '../../styles'
 
 interface Props {
-    repliedData: ReplyMessageData
+    data: ReplyMessageData
+    senderName: string
     onReplyTap?: (eventId: string) => void
-    roomMembers: Array<{ id: string; displayName?: string }>
-    isFromCurrentUser?: boolean
+    isMe?: boolean
 }
 
 export const ChatRepliedMessage: React.FC<Props> = ({
-    repliedData,
+    data,
+    senderName,
     onReplyTap,
-    roomMembers,
-    isFromCurrentUser = false,
+    isMe = false,
 }) => {
     const [isPressed, setIsPressed] = useState(false)
 
-    const senderName = useMemo(() => {
-        return (
-            roomMembers?.find(member => member.id === repliedData?.sender)
-                ?.displayName || matrixIdToUsername(repliedData?.sender)
-        )
-    }, [repliedData?.sender, roomMembers])
-
     const truncatedBody = useMemo(() => {
-        const body =
-            ('body' in repliedData.content && repliedData.content.body) ||
-            'Message'
+        const body = ('body' in data.content && data.content.body) || 'Message'
         // Dynamically adjust truncation length based on message size for better readability
         // Longer messages get more characters before truncation to preserve context
         const maxLength =
@@ -38,13 +28,13 @@ export const ChatRepliedMessage: React.FC<Props> = ({
         return body.length > maxLength
             ? `${body.substring(0, maxLength)}...`
             : body
-    }, [repliedData.content])
+    }, [data.content])
 
     const handleClick = useCallback(() => {
-        if (onReplyTap && repliedData.id) {
-            onReplyTap(repliedData.id)
+        if (onReplyTap && data.id) {
+            onReplyTap(data.id)
         }
-    }, [onReplyTap, repliedData.id])
+    }, [onReplyTap, data.id])
 
     const handleMouseDown = useCallback(() => setIsPressed(true), [])
     const handleMouseUp = useCallback(() => setIsPressed(false), [])
@@ -62,7 +52,7 @@ export const ChatRepliedMessage: React.FC<Props> = ({
 
     return (
         <ReplyContainer
-            isFromCurrentUser={isFromCurrentUser}
+            isMe={isMe}
             isPressed={isPressed}
             onClick={handleClick}
             onMouseDown={handleMouseDown}
@@ -72,46 +62,37 @@ export const ChatRepliedMessage: React.FC<Props> = ({
             tabIndex={0}
             role="button"
             aria-label={`Reply to message from ${senderName}: ${truncatedBody}`}>
-            <ReplyIndicator isFromCurrentUser={isFromCurrentUser} />
+            <ReplyIndicator isMe={isMe} />
 
             <ReplyContent>
                 <SenderRow>
-                    <SenderAvatar isFromCurrentUser={isFromCurrentUser}>
+                    <SenderAvatar isMe={isMe}>
                         {senderName.charAt(0).toUpperCase()}
                     </SenderAvatar>
-                    <SenderName isFromCurrentUser={isFromCurrentUser}>
-                        {senderName}
-                    </SenderName>
-                    <ReplyIcon isFromCurrentUser={isFromCurrentUser}>
-                        ↗
-                    </ReplyIcon>
+                    <SenderName isMe={isMe}>{senderName}</SenderName>
+                    <ReplyIcon isMe={isMe}>↗</ReplyIcon>
                 </SenderRow>
 
-                <ReplyBody isFromCurrentUser={isFromCurrentUser}>
-                    {truncatedBody}
-                </ReplyBody>
+                <ReplyBody isMe={isMe}>{truncatedBody}</ReplyBody>
             </ReplyContent>
         </ReplyContainer>
     )
 }
 
 const ReplyContainer = styled('div', {
+    alignItems: 'center',
     borderRadius: 8,
-    borderLeftWidth: 3,
-    borderRightWidth: 1,
-    borderTopWidth: 1,
-    borderBottomWidth: 1,
-    borderStyle: 'solid',
+    border: `1px solid ${theme.colors.white20}`,
+    display: 'flex',
     minHeight: 60,
     maxHeight: 120,
     width: '100%',
     minWidth: 100,
     cursor: 'pointer',
     transition: 'all 0.2s ease',
-    boxShadow: '0 1px 2px rgba(0, 0, 0, 0.1)',
     position: 'relative',
-    transform: 'translateZ(0)',
-    paddingLeft: 8,
+    padding: 5,
+    gap: 10,
 
     '&:hover': {
         transform: 'translateY(-1px) translateZ(0)',
@@ -124,20 +105,13 @@ const ReplyContainer = styled('div', {
     },
 
     variants: {
-        isFromCurrentUser: {
+        isMe: {
             true: {
                 backgroundColor: theme.colors.white10,
-                borderLeftColor: theme.colors.white,
-                borderRightColor: theme.colors.white20,
-                borderTopColor: theme.colors.white20,
-                borderBottomColor: theme.colors.white20,
             },
             false: {
                 backgroundColor: theme.colors.primary05,
-                borderLeftColor: theme.colors.primary20,
-                borderRightColor: theme.colors.primary10,
-                borderTopColor: theme.colors.primary10,
-                borderBottomColor: theme.colors.primary10,
+                borderColor: theme.colors.primary10,
             },
         },
         isPressed: {
@@ -149,17 +123,14 @@ const ReplyContainer = styled('div', {
 })
 
 const ReplyIndicator = styled('div', {
-    position: 'absolute',
-    left: 2,
-    top: '50%',
-    transform: 'translateY(-50%)',
-    width: 4,
-    height: 34,
     borderRadius: 2,
+    left: 4,
     flexShrink: 0,
+    height: 34,
+    width: 4,
 
     variants: {
-        isFromCurrentUser: {
+        isMe: {
             true: {
                 backgroundColor: theme.colors.white,
             },
@@ -171,21 +142,17 @@ const ReplyIndicator = styled('div', {
 })
 
 const ReplyContent = styled('div', {
+    alignItems: 'space-between',
+    display: 'flex',
     flex: 1,
     minWidth: 0,
-    display: 'flex',
     flexDirection: 'column',
-    justifyContent: 'center',
-    padding: '8px 8px 8px 12px',
-    gap: 2,
 })
 
 const SenderRow = styled('div', {
-    display: 'flex',
     alignItems: 'center',
+    display: 'flex',
     gap: 6,
-    height: 16,
-    marginBottom: 2,
 })
 
 const SenderAvatar = styled('div', {
@@ -200,7 +167,7 @@ const SenderAvatar = styled('div', {
     fontWeight: 700,
 
     variants: {
-        isFromCurrentUser: {
+        isMe: {
             true: {
                 backgroundColor: theme.colors.white30,
                 color: theme.colors.white,
@@ -223,7 +190,7 @@ const SenderName = styled('div', {
     whiteSpace: 'nowrap',
 
     variants: {
-        isFromCurrentUser: {
+        isMe: {
             true: {
                 color: theme.colors.white,
             },
@@ -242,11 +209,10 @@ const ReplyIcon = styled('div', {
     justifyContent: 'center',
     opacity: 0.7,
     flexShrink: 0,
-    fontSize: 11,
-    fontWeight: 600,
+    fontSize: 10,
 
     variants: {
-        isFromCurrentUser: {
+        isMe: {
             true: {
                 color: theme.colors.white,
             },
@@ -268,7 +234,7 @@ const ReplyBody = styled('div', {
     whiteSpace: 'nowrap',
 
     variants: {
-        isFromCurrentUser: {
+        isMe: {
             true: {
                 color: theme.colors.white,
             },

@@ -11,7 +11,6 @@ import { styled, theme } from '../../styles'
 import { ChatAvatar } from './ChatAvatar'
 import { ChatEvent } from './ChatEvent'
 import { ChatEventError } from './ChatEventError'
-import ChatSwipeableEventContainer from './ChatSwipeableEventContainer'
 
 interface Props {
     roomId: string
@@ -68,15 +67,10 @@ export const ChatEventCollection: React.FC<Props> = ({
                                         <ErrorBoundary
                                             key={event.id}
                                             fallback={() => <ChatEventError />}>
-                                            <ChatSwipeableEventContainer
-                                                roomId={roomId}
+                                            <ChatEvent
                                                 event={event}
-                                                isMe={isMe}>
-                                                <ChatEvent
-                                                    event={event}
-                                                    onReplyTap={onReplyTap}
-                                                />
-                                            </ChatSwipeableEventContainer>
+                                                onReplyTap={onReplyTap}
+                                            />
                                         </ErrorBoundary>
                                     ))}
                                 </Messages>
@@ -124,6 +118,7 @@ const MessageCollection = styled('div', {
     display: 'flex',
     flexDirection: 'column-reverse',
     gap: 12,
+    overflowX: 'hidden',
 })
 
 const MessageTimestamp = styled('div', {
@@ -140,18 +135,11 @@ const Messages = styled('div', {
     display: 'flex',
     flexDirection: 'column-reverse',
     gap: 6,
-    '& > *': { maxWidth: '90%' },
 
     variants: {
         isMe: {
             true: {
                 alignItems: 'flex-end',
-                maxWidth: '90%',
-                marginLeft: 'auto',
-            },
-            false: {
-                maxWidth: '90%',
-                marginRight: 'auto',
             },
         },
     },

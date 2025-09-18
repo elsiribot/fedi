@@ -37,16 +37,6 @@ const groupChatProps = {
 }
 
 describe('/components/Chat/ChatConversation', () => {
-    beforeEach(() => {
-        onSendMessageSpy.mockClear()
-        try {
-            window.localStorage.clear()
-        } catch {}
-        try {
-            window.sessionStorage?.clear()
-        } catch {}
-    })
-
     afterEach(() => {
         jest.restoreAllMocks()
     })
@@ -134,13 +124,7 @@ describe('/components/Chat/ChatConversation', () => {
             await userEvent.click(button)
 
             await waitFor(() => expect(onSendMessageSpy).toHaveBeenCalled())
-
-            const [body, attachments, repliedEventId] =
-                onSendMessageSpy.mock.calls.at(-1)!
-            expect(body).toBe('test')
-            expect(Array.isArray(attachments)).toBe(true)
-            expect(attachments).toHaveLength(0)
-            expect(repliedEventId ?? null).toBeNull()
+            expect(onSendMessageSpy).toHaveBeenCalledWith('test', [], null)
         })
     })
 
@@ -154,23 +138,15 @@ describe('/components/Chat/ChatConversation', () => {
             const file = new File(['test'], 'test.png', { type: 'image/png' })
 
             await userEvent.upload(fileUpload, file)
-            userEvent.click(screen.getByRole('button'))
 
-            await waitFor(() => expect(onSendMessageSpy).toHaveBeenCalled())
+            expect(fileUpload.files?.length).toBe(1)
 
-            const [body, attachments, repliedEventId] =
-                onSendMessageSpy.mock.calls.at(-1)!
+            const button = screen.getByRole('button')
+            userEvent.click(button)
 
-            expect(body).toBe('')
-            expect(Array.isArray(attachments)).toBe(true)
-            expect(attachments).toHaveLength(1)
-
-            const first = attachments[0] as any
-            expect(first?.file?.name ?? first?.name ?? first?.fileName).toBe(
-                'test.png',
-            )
-
-            expect(repliedEventId ?? null).toBeNull()
+            await waitFor(() => {
+                expect(onSendMessageSpy).toHaveBeenCalledWith('', [file], null)
+            })
         })
     })
 })
