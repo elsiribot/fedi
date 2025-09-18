@@ -44,9 +44,9 @@ export const Template: React.FC<Props> = ({ children }) => {
         <Container className={hideNavigation ? 'hide-navigation' : ''}>
             {!hideNavigation && <Navigation />}
             <Content>
-                <HomeHeader isSmall={isSm}>
+                <HeaderArea>
                     {isHome && (
-                        <>
+                        <HomeHeader>
                             <HeaderRow>
                                 <CommunitySelectorWrapper>
                                     <CommunitySelector />
@@ -60,9 +60,9 @@ export const Template: React.FC<Props> = ({ children }) => {
                                     community={selectedCommunity}
                                 />
                             )}
-                        </>
+                        </HomeHeader>
                     )}
-                </HomeHeader>
+                </HeaderArea>
 
                 {shouldShowChatOffline && <ChatOfflineIndicator />}
 
@@ -118,6 +118,7 @@ const Content = styled('div', {
     flexDirection: 'column',
     alignItems: 'center',
     minHeight: 0,
+    gap: 16,
     overflow: 'auto',
     '--template-padding': '48px',
 
@@ -129,6 +130,7 @@ const Content = styled('div', {
         overflow: 'visible',
         background: theme.colors.white,
         '--template-padding': '24px',
+        gap: 0,
     },
 
     '@xs': {
@@ -142,26 +144,33 @@ const Content = styled('div', {
     },
 })
 
+const HeaderArea = styled('div', {
+    display: 'flex',
+    flexDirection: 'column',
+    alignItems: 'center',
+    width: '100%',
+    padding: '0 var(--template-padding)',
+
+    '@sm': {
+        padding: '0 0',
+    },
+})
+
 const HomeHeader = styled('div', {
+    width: '100%',
+    maxWidth: 600,
     alignItems: 'center',
     display: 'flex',
     flexDirection: 'column',
     gap: theme.space.sm,
-    padding: 'var(--template-padding) 8px',
+    padding: '8px var(--template-padding)',
 
     holoGradient: 'm500',
     borderBottomLeftRadius: 16,
     borderBottomRightRadius: 16,
 
-    variants: {
-        isSmall: {
-            true: {
-                width: '100%',
-            },
-        },
-    },
-
     '@sm': {
+        width: '100%',
         padding: '0 16px',
         gap: theme.space.sm,
     },
