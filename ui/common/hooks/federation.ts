@@ -197,11 +197,10 @@ export function usePopupFederationInfo(metadata: FederationMetadata) {
 
     const popupInfo = getFederationPopupInfo(meta)
 
-    const countdownMessage = popupInfo?.countdownMessage
     const endedMessage = popupInfo?.endedMessage
 
     // Uncomment me to test popup federations
-    // const [rawTimestamp] = useState((1686584896.205).toString())
+    // const [rawTimestamp] = useState((Date.now() / 1000 + 30).toString())
 
     const rawTimestamp = popupInfo?.endTimestamp
     const endTimestamp = rawTimestamp ? parseInt(rawTimestamp, 10) : null
@@ -216,31 +215,30 @@ export function usePopupFederationInfo(metadata: FederationMetadata) {
 
         const updateTimeLeft = () => {
             const secsLeft = endTimestamp - Date.now() / 1000
+            const oneHourSeconds = 60 * 60
+            const oneDaySeconds = 24 * oneHourSeconds
+
             let msUntilChange: number
 
-            // Over 100h - show days, update time at the next hour
-            if (secsLeft > 100 * 60 * 60) {
-                setShutdownTime(`${Math.floor(secsLeft / (24 * 60 * 60))}d`)
-                msUntilChange = 60 * 60 * 1000
-            }
-            // Over 48h - show hours, update time every minute
-            else if (secsLeft > 48 * 60 * 60) {
-                setShutdownTime(`${Math.floor(secsLeft / (60 * 60))}h`)
-                msUntilChange = 60 * 1000
-            }
-            // Over 12h - show hours & minutes, update time every minute
-            else if (secsLeft > 12 * 60 * 60) {
-                const hours = Math.floor(secsLeft / (60 * 60))
-                const minutes = Math.floor((secsLeft - hours * 60 * 60) / 60)
-                setShutdownTime(`${hours}h ${minutes}m`)
+            // Over 24h - show days & hours & minutes, update time every minute
+            if (secsLeft > 24 * 60 * 60) {
+                const days = Math.floor(secsLeft / oneDaySeconds)
+                const hours = Math.floor(
+                    (secsLeft % oneDaySeconds) / oneHourSeconds,
+                )
+                const minutes = Math.floor((secsLeft % oneHourSeconds) / 60)
+
+                setShutdownTime(`${days}d ${hours}h ${minutes}m`)
                 msUntilChange = 60 * 1000
             }
             // Show hours & minutes & seconds, update time every second
             else {
-                const hours = Math.floor(secsLeft / (60 * 60))
-                const minutes = Math.floor((secsLeft - hours * 60 * 60) / 60)
+                const hours = Math.floor(secsLeft / oneHourSeconds)
+                const minutes = Math.floor(
+                    (secsLeft - hours * oneHourSeconds) / 60,
+                )
                 const seconds = Math.floor(
-                    secsLeft - hours * 60 * 60 - minutes * 60,
+                    secsLeft - hours * oneHourSeconds - minutes * 60,
                 )
                 setShutdownTime(`${hours}h ${minutes}m ${seconds}s`)
                 msUntilChange = 1 * 1000
@@ -257,14 +255,10 @@ export function usePopupFederationInfo(metadata: FederationMetadata) {
     if (!endTimestamp) return null
 
     return {
-        countdownMessage,
         endedMessage,
-        endTimestamp,
-        secondsLeft,
         endsInText,
         endsAtText:
             dateUtils.formatPopupFederationEndsAtTimestamp(endTimestamp),
-        endsSoon: secondsLeft > 0 && secondsLeft <= 12 * 60 * 60,
         ended: secondsLeft < 0,
     }
 }
