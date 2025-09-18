@@ -59,7 +59,7 @@ export type RootStackParamList = {
     ChatImageViewer: { uri: string }
     ChatRoomConversation: { roomId: string; chatType?: ChatType }
     ChatSettings: { title?: string }
-    ChatRoomMembers: { roomId: string }
+    ChatRoomMembers: { roomId: string; displayMultispendRoles?: boolean }
     ChatRoomInvite: { roomId: string }
     ChatUserConversation: { userId: string; displayName: string }
     ChatVideoViewer: { uri: string }

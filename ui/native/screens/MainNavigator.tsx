@@ -11,6 +11,7 @@ import PersonalBackupHeader from '../components/feature/backup/PersonalBackupHea
 import RecoveryWordsHeader from '../components/feature/backup/RecoveryWordsHeader'
 import SocialBackupHeader from '../components/feature/backup/SocialBackupHeader'
 import ChatConversationHeader from '../components/feature/chat/ChatConversationHeader'
+import ChatRoomMembersHeader from '../components/feature/chat/ChatRoomMembersHeader'
 import ConfirmJoinPublicGroupHeader from '../components/feature/chat/ConfirmJoinPublicGroupHeader'
 import CreatePollHeader from '../components/feature/chat/CreatePollHeader'
 import DefaultChatHeader from '../components/feature/chat/DefaultChatHeader'
@@ -465,6 +466,9 @@ export const MainNavigator = () => {
                                 <Stack.Screen
                                     name="ChatRoomMembers"
                                     component={ChatRoomMembers}
+                                    options={() => ({
+                                        header: () => <ChatRoomMembersHeader />,
+                                    })}
                                 />
                                 <Stack.Screen
                                     name="ChatRoomInvite"
