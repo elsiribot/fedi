@@ -23,13 +23,12 @@ import { fedimint } from '../../lib/bridge'
 import { styled, theme } from '../../styles'
 
 function CommunityDetails() {
-    const { query, isReady } = useRouter()
+    const { query, isReady, push } = useRouter()
 
     const [wantsToLeaveCommunity, setWantsToLeaveCommunity] = useState(false)
 
     const id = (query.id as string | undefined) ?? ''
     const community = useAppSelector(s => selectCommunity(s, id))
-    const router = useRouter()
     const toast = useToast()
 
     const { t } = useTranslation()
@@ -45,7 +44,7 @@ function CommunityDetails() {
 
     const onLeave = () => {
         handleLeave()
-            .then(() => router.push('/home'))
+            .then(() => push('/home'))
             .catch(e => toast.error(t, e))
     }
 
