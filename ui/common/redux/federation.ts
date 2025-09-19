@@ -52,6 +52,7 @@ import {
     hasMultispendEnabled,
     coerceCommunity,
     shouldShowSocialRecovery,
+    getAutojoinCommunities,
 } from '../utils/FederationUtils'
 import type { FedimintBridge } from '../utils/fedimint'
 import { makeLog } from '../utils/log'
@@ -76,6 +77,8 @@ const initialState = {
     gatewaysByFederation: {} as Record<Federation['id'], RpcLightningGateway[]>,
     // A list of federation IDs that we should not show the Federation Rating Overlay in again
     seenFederationRatings: [] as Array<Federation['id']>,
+    // A map of community IDs to the timestamp of when we autojoined them
+    previouslyAutojoinedCommunities: {} as Record<Community['id'], number>,
 }
 
 export type FederationState = typeof initialState
@@ -314,6 +317,22 @@ export const federationSlice = createSlice({
                 ]
             }
         },
+        setPreviouslyAutojoinedCommunity(
+            state,
+            action: PayloadAction<{
+                communityId: Community['id']
+            }>,
+        ) {
+            const { communityId } = action.payload
+
+            state.previouslyAutojoinedCommunities = {
+                ...state.previouslyAutojoinedCommunities,
+                [communityId]: Date.now(),
+            }
+        },
+        clearPreviouslyAutojoinedCommunities(state) {
+            state.previouslyAutojoinedCommunities = {}
+        },
     },
     extraReducers: builder => {
         builder.addCase(leaveFederation.fulfilled, (state, action) => {
@@ -338,6 +357,27 @@ export const federationSlice = createSlice({
                 state.customFediMods = omit(state.customFediMods, federationId)
             }
         })
+        builder.addCase(leaveCommunity.fulfilled, (state, action) => {
+            const { communityId } = action.meta.arg
+            // Remove from communities
+            state.communities = state.communities.filter(
+                fed => fed.id !== communityId,
+            )
+            // users cannot leave fedi global community
+            // so if there is only one community left, set it as selected
+            if (state.communities.length === 1) {
+                state.lastSelectedCommunityId = FEDI_GLOBAL_COMMUNITY.id
+            } else {
+                // reset lastSelectedCommunityId if it was the one that was left
+                if (state.lastSelectedCommunityId === communityId) {
+                    state.lastSelectedCommunityId = state.communities[0]?.id
+                }
+            }
+            // clear out any miniapps for this community
+            if (state.customFediMods[communityId]) {
+                state.customFediMods = omit(state.customFediMods, communityId)
+            }
+        })
 
         builder.addCase(loadFromStorage.fulfilled, (state, action) => {
             if (!action.payload) return
@@ -347,6 +387,8 @@ export const federationSlice = createSlice({
             state.authenticatedGuardian = action.payload.authenticatedGuardian
             state.customFediMods = action.payload.customFediMods || {}
             state.seenFederationRatings = action.payload.seenFederationRatings
+            state.previouslyAutojoinedCommunities =
+                action.payload.previouslyAutojoinedCommunities || {}
         })
 
         builder.addCase(
@@ -367,14 +409,6 @@ export const federationSlice = createSlice({
                       }
             },
         )
-
-        builder.addCase(leaveCommunity.fulfilled, (state, action) => {
-            state.communities = state.communities.filter(
-                c => c.id !== action.meta.arg.communityId,
-            )
-            state.lastSelectedCommunityId =
-                state.communities[0].id ?? FEDI_GLOBAL_COMMUNITY.id
-        })
     },
 })
 
@@ -395,6 +429,8 @@ export const {
     removeCustomFediMod,
     addFederationGateways,
     setSeenFederationRating,
+    setPreviouslyAutojoinedCommunity,
+    clearPreviouslyAutojoinedCommunities,
 } = federationSlice.actions
 
 /*** Async thunk actions */
@@ -483,11 +519,13 @@ export const refreshCommunities = createAsyncThunk<
         dispatch(setLastSelectedCommunityId(joinedCommunities[0].id))
     }
     // auto-join the default fedi global community if not already joined
+    // and set it as selected
     if (!joinedCommunities.find(c => c.id === FEDI_GLOBAL_COMMUNITY_INVITE)) {
         log.debug('fedi global community not joined, joining...')
         await dispatch(
             joinCommunity({ fedimint, code: FEDI_GLOBAL_COMMUNITY_INVITE }),
         )
+        dispatch(setLastSelectedCommunityId(FEDI_GLOBAL_COMMUNITY_INVITE))
     }
 
     return joinedCommunities
@@ -628,16 +666,114 @@ export const processFederationMeta = createAsyncThunk<
     },
 )
 
+// this checks all meta in joined federations for communities that should be autojoined
+// and then sets the community as last selected to bring more attention
+// to the user that autojoin happened in the background
+export const checkJoinedFederationsForAutojoinCommunities = createAsyncThunk<
+    void,
+    {
+        fedimint: FedimintBridge
+    },
+    { state: CommonState }
+>(
+    'federation/checkJoinedFederationsForAutojoinCommunities',
+    async ({ fedimint }, { getState, dispatch }) => {
+        const federations = selectLoadedFederations(getState())
+
+        await Promise.all(
+            federations.map(f => {
+                return dispatch(
+                    checkFederationForAutojoinCommunities({
+                        fedimint,
+                        federation: f,
+                        setAsSelected: false,
+                    }),
+                )
+            }),
+        )
+    },
+)
+export const checkFederationForAutojoinCommunities = createAsyncThunk<
+    void,
+    {
+        fedimint: FedimintBridge
+        federation: Federation
+        setAsSelected?: boolean
+    },
+    { state: CommonState }
+>(
+    'federation/checkFederationForAutojoinCommunities',
+    async ({ fedimint, federation, setAsSelected = false }, { dispatch }) => {
+        if (!federation.meta) return
+        const autojoinCommunities = getAutojoinCommunities(federation.meta)
+
+        await Promise.all(
+            autojoinCommunities.map(code => {
+                return dispatch(
+                    autojoinCommunity({ fedimint, code, setAsSelected }),
+                )
+            }),
+        )
+    },
+)
+
+export const autojoinCommunity = createAsyncThunk<
+    void,
+    { fedimint: FedimintBridge; code: string; setAsSelected?: boolean },
+    { state: CommonState }
+>(
+    'federation/autojoinCommunity',
+    async (
+        { fedimint, code, setAsSelected = false },
+        { dispatch, getState },
+    ) => {
+        log.info(
+            `autojoinCommunity: checking if weve joined community '${code}'`,
+        )
+        const previouslyAutojoinedCommunities =
+            getState().federation.previouslyAutojoinedCommunities
+        if (previouslyAutojoinedCommunities[code]) {
+            log.info(
+                `autojoinCommunity: weve already autojoined community '${code}'`,
+            )
+            return
+        }
+        try {
+            const joinedCommunity = await dispatch(
+                joinCommunity({ fedimint, code }),
+            ).unwrap()
+            // for new members joining, use setAsSelected: true to bring more attention that the autojoin happened
+            // for existing members, don't select so the autojoin is more silent
+            if (setAsSelected) {
+                dispatch(setLastSelectedCommunityId(joinedCommunity.id))
+            }
+            log.info(
+                `autojoin succeeded, setting community as previously autojoined`,
+                joinedCommunity.name,
+            )
+            // this makes sure we only autojoin once
+            // but we only set this if the join succeeds since we may be offline...
+            await dispatch(
+                setPreviouslyAutojoinedCommunity({ communityId: code }),
+            )
+            // finally refresh communities to update the list and keep meta fresh
+            dispatch(refreshCommunities(fedimint))
+        } catch (error) {
+            log.error(
+                `autojoinCommunity: error joining community '${code}':`,
+                error,
+            )
+        }
+    },
+)
+
 export const joinFederation = createAsyncThunk<
     Federation,
     { fedimint: FedimintBridge; code: string; recoverFromScratch?: boolean },
     { state: CommonState }
 >(
     'federation/joinFederation',
-    async (
-        { fedimint, code, recoverFromScratch = false },
-        { dispatch, getState },
-    ) => {
+    async ({ fedimint, code, recoverFromScratch = false }, { getState }) => {
         log.info(
             `joinFederation: joining federation with code '${code}' / recoverFromScratch: ${recoverFromScratch}`,
         )
@@ -652,8 +788,6 @@ export const joinFederation = createAsyncThunk<
             init_state: 'ready',
         }
 
-        await dispatch(refreshFederations(fedimint))
-
         const joinedFederation = selectFederation(getState(), federation.id)
         if (!joinedFederation) throw new Error('errors.unknown-error')
         return joinedFederation
@@ -662,30 +796,13 @@ export const joinFederation = createAsyncThunk<
 
 export const joinCommunity = createAsyncThunk<
     Community,
-    { fedimint: FedimintBridge; code: string },
-    { state: CommonState }
->(
-    'federation/joinCommunity',
-    async ({ fedimint, code }, { dispatch, getState }) => {
-        log.info(`joinCommunity: joining community with code '${code}'`)
-        const joinResult = await fedimint.joinCommunity({ inviteCode: code })
-        const community = coerceCommunity(joinResult)
-
-        await dispatch(refreshCommunities(fedimint))
-        dispatch(
-            previewCommunityDefaultChats({
-                fedimint,
-                communityId: community.id,
-            }),
-        )
-        dispatch(setLastSelectedCommunityId(community.id))
-
-        const joinedCommunity = selectCommunity(getState(), community.id)
-        if (!joinedCommunity) throw new Error('errors.unknown-error')
-        dispatch(setLastSelectedCommunityId(joinedCommunity.id))
-        return joinedCommunity
-    },
-)
+    { fedimint: FedimintBridge; code: string }
+>('federation/joinCommunity', async ({ fedimint, code }) => {
+    log.info(`joinCommunity: joining community with code '${code}'`)
+    const joinResult = await fedimint.joinCommunity({ inviteCode: code })
+    const community = coerceCommunity(joinResult)
+    return community
+})
 
 export const tryRejoinFederationsPendingScratchRejoin = createAsyncThunk<
     void,
@@ -735,7 +852,7 @@ export const leaveCommunity = createAsyncThunk<
         const community = selectCommunity(getState(), communityId)
         if (!community) throw new Error('failed-to-leave-community')
 
-        fedimint.leaveCommunity({ inviteCode: communityId })
+        await fedimint.leaveCommunity({ inviteCode: communityId })
     },
 )
 

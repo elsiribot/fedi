@@ -245,6 +245,15 @@ export interface StoredStateV28
     lastSelectedCommunityId: Community['id'] | null
 }
 
+export interface StoredStateV29
+    extends Omit<StoredStateV28, 'version' | 'externalMeta'> {
+    version: 29
+}
+export interface StoredStateV30 extends Omit<StoredStateV29, 'version'> {
+    version: 30
+    previouslyAutojoinedCommunities: Record<string, number>
+}
+
 /*** Union of all past shapes of stored state ***/
 export type AnyStoredState =
     | StoredStateV0
@@ -277,14 +286,10 @@ export type AnyStoredState =
     | StoredStateV27
     | StoredStateV28
     | StoredStateV29
-
-export interface StoredStateV29
-    extends Omit<StoredStateV28, 'version' | 'externalMeta'> {
-    version: 29
-}
+    | StoredStateV30
 
 /*** Alias for the latest version of stored state ***/
-export type LatestStoredState = StoredStateV29
+export type LatestStoredState = StoredStateV30
 
 export interface StorageApi {
     getItem(key: string): Promise<string | null>

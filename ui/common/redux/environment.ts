@@ -2,6 +2,7 @@ import { createAsyncThunk, createSlice, PayloadAction } from '@reduxjs/toolkit'
 import type { i18n } from 'i18next'
 
 import {
+    checkJoinedFederationsForAutojoinCommunities,
     CommonState,
     fetchSocialRecovery,
     initializeDeviceRegistration,
@@ -205,6 +206,10 @@ export const refreshOnboardingStatus = createAsyncThunk<
             dispatch(refreshFederations(fedimint)).unwrap(),
             dispatch(refreshCommunities(fedimint)).unwrap(),
         ])
+
+        // checks already joined federations for any communities to be autojoined
+        // autojoined communities will NOT be set as selected if processed from here
+        dispatch(checkJoinedFederationsForAutojoinCommunities({ fedimint }))
 
         // extract and store the onboarding method if user is onboarded
         dispatch(setOnboardingMethod(status.onboarding_method))

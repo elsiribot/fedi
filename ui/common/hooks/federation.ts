@@ -20,6 +20,9 @@ import {
     joinCommunity,
     selectFederationClientConfig,
     selectLoadedFederation,
+    refreshCommunities,
+    checkFederationForAutojoinCommunities,
+    refreshFederations,
 } from '../redux'
 import {
     CommunityPreview,
@@ -361,21 +364,37 @@ export function useFederationPreview(
             try {
                 if (previewCodeType === 'federation') {
                     if (!federationPreview) throw new Error()
-                    await dispatch(
+                    const joinedFederation = await dispatch(
                         joinFederation({
                             fedimint,
                             code: federationPreview.inviteCode,
                             recoverFromScratch,
                         }),
                     ).unwrap()
+                    // check if there are any communities to autojoin
+                    // this function will check, autojoin, AND select the community
+                    // to bring more attention to the autojoin
+                    await dispatch(
+                        checkFederationForAutojoinCommunities({
+                            fedimint,
+                            federation: joinedFederation,
+                            setAsSelected: true,
+                        }),
+                    )
+                    // refresh all federations after joining a new one to keep all metadata fresh
+                    dispatch(refreshFederations(fedimint))
                 } else {
                     if (!communityPreview) throw new Error()
-                    await dispatch(
+                    const joinedCommunity = await dispatch(
                         joinCommunity({
                             fedimint,
                             code: communityPreview.inviteCode,
                         }),
                     ).unwrap()
+                    // when joining a new community, always set it to selected
+                    dispatch(setLastSelectedCommunityId(joinedCommunity.id))
+                    // refresh all communities after joining a new one to keep all metadata fresh
+                    dispatch(refreshCommunities(fedimint))
                 }
 
                 onSuccess && onSuccess()

@@ -276,6 +276,7 @@ export enum SupportedMetaFields {
     federation_name = 'federation_name',
     default_matrix_rooms = 'default_matrix_rooms',
     default_group_chats = 'default_group_chats',
+    autojoin_communities = 'autojoin_communities',
 }
 
 export type FederationMetadata = RpcFederation['meta']

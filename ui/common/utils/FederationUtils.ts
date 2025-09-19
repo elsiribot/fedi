@@ -350,6 +350,27 @@ export const getDefaultGroupChats = (
     return []
 }
 
+export const getAutojoinCommunities = (
+    metadata: FederationMetadata,
+): string[] => {
+    const autojoinCommunities = getMetaField(
+        SupportedMetaFields.autojoin_communities,
+        metadata,
+    )
+
+    if (autojoinCommunities) {
+        try {
+            return JSON.parse(autojoinCommunities)
+        } catch (err) {
+            log.warn(
+                'Failed to parse autojoin communities',
+                autojoinCommunities,
+            )
+        }
+    }
+    return []
+}
+
 export const getCommunityFediMods = (
     metadata: FederationMetadata,
 ): FediMod[] => {
