@@ -4,6 +4,7 @@ import React from 'react'
 import { useTranslation } from 'react-i18next'
 
 import { selectCommunity } from '@fedi/common/redux'
+import { shouldShowInviteCode } from '@fedi/common/utils/FederationUtils'
 
 import { useAppSelector } from '../../../state/hooks'
 import { NavigationHook, RootStackParamList } from '../../../types/navigation'
@@ -21,6 +22,7 @@ const CommunityDetailsHeader: React.FC = () => {
     const route = useRoute<CommunityDetailsRouteProp>()
     const { communityId } = route.params
     const community = useAppSelector(s => selectCommunity(s, communityId))
+    const showInviteCode = shouldShowInviteCode(community?.meta || {})
 
     return (
         <Header
@@ -31,7 +33,7 @@ const CommunityDetailsHeader: React.FC = () => {
                 </Text>
             }
             headerRight={
-                community && (
+                showInviteCode && community ? (
                     <PressableIcon
                         svgName="Qr"
                         onPress={() =>
@@ -40,7 +42,7 @@ const CommunityDetailsHeader: React.FC = () => {
                             })
                         }
                     />
-                )
+                ) : undefined
             }
         />
     )
