@@ -17,6 +17,7 @@ import {
     TextInputSelectionChangeEventData,
     View,
     Animated,
+    Dimensions,
 } from 'react-native'
 import { Asset, ImageLibraryOptions } from 'react-native-image-picker'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
@@ -82,6 +83,8 @@ type MessageInputProps = {
 }
 
 const log = makeLog('MessageInput')
+const SUGGESTIONS_MAX_HEIGHT = 280
+const SUGGESTIONS_MIN_HEIGHT = 120
 
 const imageOptions: ImageLibraryOptions = {
     mediaType: 'mixed',
@@ -237,6 +240,27 @@ const MessageInput: React.FC<MessageInputProps> = ({
         () => mapMixedMediaToMatrixInput({ documents, assets: media }),
         [documents, media],
     )
+
+    const suggestionsMaxHeight = useMemo(() => {
+        const winH = Dimensions.get('window').height
+        const headerApprox = 56
+        const gapAboveInput = 9
+        const keyboard = kbVisible ? kbHeight : 0
+        // space between header+safe top and the top of the input row
+        const available =
+            winH -
+            keyboard -
+            inputHeight -
+            (insets.top || 0) -
+            headerApprox -
+            gapAboveInput
+        return Math.max(SUGGESTIONS_MIN_HEIGHT, Math.floor(available))
+    }, [kbVisible, kbHeight, inputHeight, insets.top])
+
+    const suggestionsTopSpacer = useMemo(() => {
+        const headerApprox = 56
+        return (insets.top || 0) + headerApprox
+    }, [insets.top])
 
     const handleUploadMedia = useCallback(async () => {
         setIsUploadingMedia(true)
@@ -682,6 +706,24 @@ const MessageInput: React.FC<MessageInputProps> = ({
 
             {/* input row */}
             <View style={style.inputContainer}>
+                {showMentionSuggestions && (
+                    <View
+                        pointerEvents="box-none"
+                        style={[
+                            style.mentionOverlay,
+                            repliedEvent && !isEditingMessage && !isReadOnly
+                                ? style.mentionOverlayWithReply
+                                : null,
+                        ]}>
+                        <ChatMentionSuggestions
+                            visible
+                            suggestions={mentionSuggestions}
+                            onSelect={insertMention}
+                            maxHeight={suggestionsMaxHeight}
+                            topSpacer={suggestionsTopSpacer}
+                        />
+                    </View>
+                )}
                 <View
                     style={[
                         style.inputFieldWrapper,
@@ -713,7 +755,6 @@ const MessageInput: React.FC<MessageInputProps> = ({
                         disabled={inputDisabled}
                     />
                 </View>
-
                 {!isReadOnly && !existingRoom && (
                     <Pressable
                         style={style.sendButton}
@@ -731,22 +772,6 @@ const MessageInput: React.FC<MessageInputProps> = ({
                         />
                     </Pressable>
                 )}
-                <View
-                    pointerEvents="box-none"
-                    style={[
-                        style.mentionOverlay,
-                        repliedEvent && !isEditingMessage && !isReadOnly
-                            ? style.mentionOverlayWithReply
-                            : null,
-                    ]}>
-                    {showMentionSuggestions && (
-                        <ChatMentionSuggestions
-                            visible
-                            suggestions={mentionSuggestions}
-                            onSelect={insertMention}
-                        />
-                    )}
-                </View>
             </View>
 
             {existingRoom && (
@@ -1046,12 +1071,14 @@ const styles = (theme: Theme, insets: Insets) =>
 
         mentionOverlay: {
             position: 'absolute',
-            left: -(theme.spacing.md + (insets.left || 0)),
-            right: -(theme.spacing.md + (insets.right || 0)),
+
             bottom: '100%',
             marginBottom: 9, //so we can still see the top border of MessageInput
+            maxHeight: SUGGESTIONS_MAX_HEIGHT,
             zIndex: 20,
             elevation: 20,
+            left: -(theme.spacing.md + (insets.left || 0)),
+            right: -(theme.spacing.md + (insets.right || 0)),
         },
         mentionOverlayWithReply: {
             transform: [{ translateY: -(59 + 1) }], // moves overlay up by reply bar height + border
