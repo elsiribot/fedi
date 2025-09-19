@@ -1113,6 +1113,10 @@ export const selectLastSelectedCommunityChats = createSelector(
             : [],
 )
 
+export const selectDefaultChats = (s: CommonState, federationId: string) => {
+    return s.federation.defaultCommunityChats[federationId] || []
+}
+
 export const selectMaxStableBalanceSats = createSelector(
     selectFederationMetadata,
     (metadata): Sats | undefined => {

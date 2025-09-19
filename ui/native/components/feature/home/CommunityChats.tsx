@@ -13,7 +13,7 @@ import { getDefaultGroupChats } from '@fedi/common/utils/FederationUtils'
 
 import { useAppSelector } from '../../../state/hooks'
 import Flex from '../../ui/Flex'
-import CommunityChatTile from './CommunityChatTile'
+import DefaultChatTile from './DefaultChatTile'
 
 const CommunityChats = () => {
     const { theme } = useTheme()
@@ -77,10 +77,11 @@ const CommunityChats = () => {
                 {t('feature.chat.community-news')}
             </Text>
             {chats.map((chat: MatrixRoom | undefined, idx) => (
-                <CommunityChatTile
+                <DefaultChatTile
                     key={`chat-tile-${idx}`}
                     room={chat}
                     onSelect={handleOpenChat}
+                    federationOrCommunity={selectedCommunity}
                 />
             ))}
         </Flex>

@@ -1,12 +1,25 @@
+import { useNavigation } from '@react-navigation/native'
 import type { NativeStackScreenProps } from '@react-navigation/native-stack'
-import { Button, Text, Theme, useTheme } from '@rneui/themed'
+import { Button, Divider, Text, Theme, useTheme } from '@rneui/themed'
 import React from 'react'
 import { Trans, useTranslation } from 'react-i18next'
-import { Linking, StyleProp, StyleSheet, View, ViewStyle } from 'react-native'
+import { Linking, StyleSheet } from 'react-native'
+import LinearGradient from 'react-native-linear-gradient'
 
+import { theme as fediTheme } from '@fedi/common/constants/theme'
 import { usePopupFederationInfo } from '@fedi/common/hooks/federation'
-import { selectLoadedFederation } from '@fedi/common/redux'
-import { Federation, Sats } from '@fedi/common/types'
+import {
+    selectDefaultChats,
+    selectIsInternetUnreachable,
+    selectLoadedFederation,
+} from '@fedi/common/redux'
+import {
+    ChatType,
+    Federation,
+    LoadedFederation,
+    MatrixRoom,
+    Sats,
+} from '@fedi/common/types'
 import amountUtils from '@fedi/common/utils/AmountUtils'
 import {
     getFederationMaxBalanceMsats,
@@ -15,9 +28,13 @@ import {
     getFederationWelcomeMessage,
 } from '@fedi/common/utils/FederationUtils'
 
-import ConnectionStatusCard from '../components/feature/federations/ConnectionStatusCard'
 import { FederationLogo } from '../components/feature/federations/FederationLogo'
+import FederationStatusIndicator from '../components/feature/federations/FederationStatusIndicator'
+import DefaultChatTile from '../components/feature/home/DefaultChatTile'
+import Flex from '../components/ui/Flex'
 import { SafeAreaContainer } from '../components/ui/SafeArea'
+import ShadowScrollView from '../components/ui/ShadowScrollView'
+import SvgImage from '../components/ui/SvgImage'
 import { useAppSelector } from '../state/hooks'
 import type { RootStackParamList } from '../types/navigation'
 
@@ -34,8 +51,16 @@ const FederationDetails: React.FC<Props> = ({ route }: Props) => {
     const federation = useAppSelector(s =>
         selectLoadedFederation(s, federationId),
     )
-
-    const popupInfo = usePopupFederationInfo(federation?.meta || {})
+    const federationChats = useAppSelector(s =>
+        selectDefaultChats(s, federationId),
+    )
+    const navigation = useNavigation()
+    const handleOpenChat = (chat: MatrixRoom) => {
+        navigation.navigate('ChatRoomConversation', {
+            roomId: chat.id,
+            chatType: chat.directUserId ? ChatType.direct : ChatType.group,
+        })
+    }
 
     if (!federation) return null
 
@@ -56,73 +81,103 @@ const FederationDetails: React.FC<Props> = ({ route }: Props) => {
 
     return (
         <SafeAreaContainer edges="notop">
-            <View style={style.content}>
-                <FederationLogo federation={federation} size={72} />
-                <View style={style.textContainer}>
-                    <Text
-                        h2
-                        medium
-                        maxFontSizeMultiplier={1.2}
-                        style={style.title}>
-                        {federation.name}
-                    </Text>
-                    {popupInfo && (
-                        <PopupFederationPill federation={federation} />
-                    )}
-                    {welcomeMessage && (
-                        <Text
-                            medium
-                            style={style.textStyle}
-                            maxFontSizeMultiplier={1.2}>
-                            {welcomeMessage}
+            <Flex gap="lg" style={style.header}>
+                <Flex row align="center" gap="lg">
+                    <FederationLogo federation={federation} size={72} />
+                    <Flex grow shrink>
+                        <Text h2 medium maxFontSizeMultiplier={1.2}>
+                            {federation.name}
                         </Text>
-                    )}
-                    <View style={style.balanceContainer}>
-                        <Text
-                            medium
-                            style={style.textStyle}
-                            maxFontSizeMultiplier={1.2}>
-                            {t('phrases.wallet-balance', {
-                                balance: amountUtils.formatSats(walletBalance),
-                            })}
+                    </Flex>
+                </Flex>
+                <Flex gap="md">
+                    <FederationEndIndicator federation={federation} />
+                    <FederationStatus federation={federation} />
+                </Flex>
+            </Flex>
+            <ShadowScrollView
+                style={style.scrollContent}
+                contentContainerStyle={style.scrollContentBody}>
+                {federationChats.length > 0 && (
+                    <Flex gap="sm" fullWidth>
+                        <Text bold h2>
+                            {t('feature.chat.federation-news')}
                         </Text>
-                        <Text
-                            medium
-                            style={style.textStyle}
-                            maxFontSizeMultiplier={1.2}>
-                            {t('phrases.spend-limit', {
-                                limit: amountUtils.formatSats(spendLimit),
-                            })}
+                        {federationChats.map((chat, idx) => (
+                            <DefaultChatTile
+                                key={`chat-tile-${idx}`}
+                                room={chat}
+                                onSelect={handleOpenChat}
+                                federationOrCommunity={federation}
+                            />
+                        ))}
+                    </Flex>
+                )}
+                {welcomeMessage && (
+                    <Text maxFontSizeMultiplier={1.2}>{welcomeMessage}</Text>
+                )}
+                <Text maxFontSizeMultiplier={1.2}>
+                    {t('phrases.wallet-balance', {
+                        balance: amountUtils.formatSats(walletBalance),
+                    })}
+                </Text>
+                <Text maxFontSizeMultiplier={1.2}>
+                    {t('phrases.spend-limit', {
+                        limit: amountUtils.formatSats(spendLimit),
+                    })}
+                </Text>
+            </ShadowScrollView>
+            <Flex style={style.actionsContainer}>
+                {tosUrl && (
+                    <Button
+                        bubble
+                        fullWidth
+                        outline
+                        onPress={() => Linking.openURL(tosUrl)}>
+                        <Text adjustsFontSizeToFit medium numberOfLines={1}>
+                            {t(
+                                'feature.federations.federation-terms-and-conditions',
+                            )}
                         </Text>
-                    </View>
-                </View>
-                <ConnectionStatusCard
-                    status={federation.status}
-                    hideArrow={true}
-                />
-            </View>
-            {tosUrl && (
-                <Button
-                    bubble
-                    fullWidth
-                    outline
-                    onPress={() => Linking.openURL(tosUrl)}>
-                    <Text
-                        adjustsFontSizeToFit
-                        medium
-                        style={style.textStyle}
-                        numberOfLines={1}>
-                        {t(
-                            'feature.federations.federation-terms-and-conditions',
-                        )}
-                    </Text>
-                </Button>
-            )}
+                    </Button>
+                )}
+            </Flex>
         </SafeAreaContainer>
     )
 }
 
-const PopupFederationPill = ({ federation }: { federation: Federation }) => {
+const FederationStatus = ({ federation }: { federation: LoadedFederation }) => {
+    const { t } = useTranslation()
+    const { theme } = useTheme()
+    const style = styles(theme)
+
+    const status = federation.status || 'offline'
+    const caption = t(`feature.federations.connection-status-${status}`)
+    const isOffline = useAppSelector(selectIsInternetUnreachable)
+
+    return (
+        <Flex gap="sm" style={style.federationStatusCard}>
+            <Flex row align="center" justify="between">
+                <Flex grow shrink>
+                    <Text caption maxFontSizeMultiplier={1.2}>
+                        {isOffline
+                            ? t('feature.federations.last-known-status')
+                            : `${t('words.status')}:`}
+                    </Text>
+                </Flex>
+                <FederationStatusIndicator status={status} />
+            </Flex>
+            <Divider />
+            <Text caption>
+                {isOffline
+                    ? t('feature.federations.please-reconnect')
+                    : caption}
+            </Text>
+        </Flex>
+    )
+}
+
+const FederationEndIndicator = ({ federation }: { federation: Federation }) => {
     const { t } = useTranslation()
     const { theme } = useTheme()
     const popupInfo = usePopupFederationInfo(federation?.meta || {})
@@ -131,81 +186,77 @@ const PopupFederationPill = ({ federation }: { federation: Federation }) => {
 
     if (!popupInfo) return null
 
-    const textStyle = popupInfo.endsSoon ? style.lightText : undefined
-
-    const pillStyles: StyleProp<ViewStyle>[] = [style.pill]
     if (popupInfo.ended) {
-        pillStyles.push(style.pillEnded)
-    } else if (popupInfo.endsSoon) {
-        pillStyles.push(style.pillEndsSoon)
+        return (
+            <Flex
+                style={[style.federationEndedCard, style.popupFederationCard]}>
+                <Text caption>
+                    {popupInfo?.endedMessage || (
+                        <Trans
+                            t={t}
+                            i18nKey="feature.popup.ended-description"
+                            values={{ date: popupInfo?.endsAtText }}
+                            components={{ bold: <Text caption bold /> }}
+                        />
+                    )}
+                </Text>
+            </Flex>
+        )
     }
 
-    const countdownI18nText =
-        popupInfo.secondsLeft <= 0 ? (
-            <Text caption bold>
-                {t('feature.popup.ended')}
+    return (
+        <LinearGradient
+            start={{ x: 0.1, y: 1 }}
+            end={{ x: 0.9, y: 0 }}
+            colors={[...fediTheme.skyLinearGradient]}
+            style={style.popupFederationCard}>
+            <Flex row gap="sm" align="center">
+                <SvgImage name="Clock" size={16} />
+                <Text caption>
+                    {t('feature.federations.federation-ends-in')}
+                </Text>
+            </Flex>
+            <Text h2 medium>
+                {popupInfo.endsInText}
             </Text>
-        ) : (
-            <Text caption style={textStyle}>
-                <Trans
-                    t={t}
-                    i18nKey="feature.popup.ending-in"
-                    values={{ time: popupInfo.endsInText }}
-                    components={{
-                        bold: <Text caption bold style={textStyle} />,
-                    }}
-                />
-            </Text>
-        )
-
-    return <View style={pillStyles}>{countdownI18nText}</View>
+        </LinearGradient>
+    )
 }
 
 const styles = (theme: Theme) =>
     StyleSheet.create({
-        container: {
+        scrollContent: {
             flex: 1,
-            alignItems: 'center',
-            justifyContent: 'center',
-            padding: theme.spacing.lg,
         },
-        content: {
+        scrollContentBody: {
+            display: 'flex',
+            flexDirection: 'column',
             flex: 1,
-            alignItems: 'center',
-            justifyContent: 'center',
-            gap: 16,
+            gap: theme.spacing.lg,
         },
-        textContainer: {
+        header: {
+            paddingVertical: theme.spacing.lg,
+        },
+        federationStatusCard: {
+            backgroundColor: theme.colors.offWhite100,
+            borderRadius: 20,
+            padding: theme.spacing.md,
+        },
+        popupFederationCard: {
+            display: 'flex',
+            flexDirection: 'row',
             alignItems: 'center',
-            justifyContent: 'center',
+            justifyContent: 'space-between',
             gap: theme.spacing.md,
+            paddingVertical: theme.spacing.md,
+            paddingHorizontal: theme.spacing.lg,
+            borderRadius: theme.borders.defaultRadius,
         },
-        balanceContainer: {
-            alignItems: 'center',
+        federationEndedCard: {
+            backgroundColor: theme.colors.extraLightGrey,
         },
-        title: {
-            textAlign: 'center',
-        },
-        textStyle: {
-            textAlign: 'center',
-        },
-        pillEndsSoon: {
-            backgroundColor: theme.colors.red,
-            color: theme.colors.white,
-        },
-        pillEnded: {
-            backgroundColor: theme.colors.lightGrey,
-            color: theme.colors.primary,
-        },
-        pill: {
-            paddingVertical: theme.spacing.xxs,
-            paddingHorizontal: theme.spacing.sm,
-            backgroundColor: '#BAE0FE',
-            color: theme.colors.primary,
-            borderRadius: 30,
-        },
-        lightText: {
-            color: theme.colors.secondary,
+        actionsContainer: {
+            paddingTop: theme.spacing.lg,
         },
     })
 

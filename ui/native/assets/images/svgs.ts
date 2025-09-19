@@ -42,6 +42,7 @@ export { default as ChevronLeft } from '@fedi/common/assets/svgs/chevron-left.sv
 export { default as ChevronRightSmall } from '@fedi/common/assets/svgs/chevron-right-small.svg'
 export { default as ChevronRight } from '@fedi/common/assets/svgs/chevron-right.svg'
 export { default as Clipboard } from '@fedi/common/assets/svgs/clipboard.svg'
+export { default as Clock } from '@fedi/common/assets/svgs/clock.svg'
 export { default as Close } from '@fedi/common/assets/svgs/close.svg'
 export { default as CogFilled } from '@fedi/common/assets/svgs/cog-filled.svg'
 export { default as Cog } from '@fedi/common/assets/svgs/cog.svg'

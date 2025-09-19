@@ -19,7 +19,6 @@ import CommunityDetailsHeader from '../components/feature/federations/CommunityD
 import FederationDetailsHeader from '../components/feature/federations/FederationDetailsHeader'
 import FederationInviteHeader from '../components/feature/federations/FederationInviteHeader'
 import JoinFederationHeader from '../components/feature/federations/JoinFederationHeader'
-import PopupFederationEndedHeader from '../components/feature/federations/PopupFederationEndedHeader'
 import NostrSettingsHeader from '../components/feature/fedimods/NostrSettingsHeader'
 import EulaHeader from '../components/feature/onboarding/EulaHeader'
 import NewMemberAvatarImageHeader from '../components/feature/onboarding/NewMemberAvatarImageHeader'
@@ -137,7 +136,6 @@ import OmniScanner from './OmniScanner'
 import PersonalRecovery from './PersonalRecovery'
 import PersonalRecoverySuccess from './PersonalRecoverySuccess'
 import PinAccess from './PinAccess'
-import PopupFederationEnded from './PopupFederationEnded'
 import PublicCommunities from './PublicCommunities'
 import PublicFederations from './PublicFederations'
 import Receive from './Receive'
@@ -989,16 +987,6 @@ export const MainNavigator = () => {
                                 options={() => ({
                                     header: () => (
                                         <PersonalRecoveryHeader backButton />
-                                    ),
-                                })}
-                            />
-                            {/* Popup federations */}
-                            <Stack.Screen
-                                name="PopupFederationEnded"
-                                component={PopupFederationEnded}
-                                options={() => ({
-                                    header: () => (
-                                        <PopupFederationEndedHeader />
                                     ),
                                 })}
                             />
