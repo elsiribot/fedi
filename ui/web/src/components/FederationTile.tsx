@@ -1,3 +1,4 @@
+import Link from 'next/link'
 import React from 'react'
 import { useTranslation } from 'react-i18next'
 
@@ -25,7 +26,7 @@ const FederationTile: React.FC<Props> = ({ federation }) => {
 
     return (
         <Container>
-            <TileHeader>
+            <TileHeader as={Link} href={`/federation-details/${federation.id}`}>
                 <FederationAvatar federation={federation} size="md" />
                 <Text weight="bold" css={{ color: theme.colors.primary }}>
                     {federation?.name}
