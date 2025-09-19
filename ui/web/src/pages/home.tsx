@@ -13,10 +13,12 @@ import {
 } from '@fedi/common/redux'
 import { selectVisibleCommunityMods } from '@fedi/common/redux/mod'
 import { selectCanShowSurvey } from '@fedi/common/redux/support'
+import { getFederationPinnedMessage } from '@fedi/common/utils/FederationUtils'
 
 import DefaultRoomPreview from '../components/Chat/DefaultRoomPreview'
 import { ContentBlock } from '../components/ContentBlock'
 import { FediModTiles } from '../components/FediModTiles'
+import PinnedMessage from '../components/Home/PinnedMessage'
 import { Icon } from '../components/Icon'
 import { InstallBanner } from '../components/InstallBanner'
 import * as Layout from '../components/Layout'
@@ -56,6 +58,9 @@ function HomePage() {
     const onboardingMethod = useAppSelector(selectOnboardingMethod)
     const canShowSurvey = useAppSelector(selectCanShowSurvey)
     const isNewSeedUser = onboardingMethod !== 'restored'
+    const pinnedMessage = getFederationPinnedMessage(
+        selectedCommunity?.meta || {},
+    )
 
     // Get rates from cache
     useEffect(() => {
@@ -70,6 +75,10 @@ function HomePage() {
             <Layout.Root>
                 <Layout.Content>
                     <Content>
+                        {pinnedMessage && (
+                            <PinnedMessage pinnedMessage={pinnedMessage} />
+                        )}
+
                         {selectedCommunity &&
                             selectedCommunityChats.length > 0 && (
                                 <Section>
