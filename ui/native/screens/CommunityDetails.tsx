@@ -61,7 +61,7 @@ const CommunityDetails: React.FC<Props> = ({ route, navigation }: Props) => {
     return (
         <SafeAreaContainer edges="notop">
             <Flex grow gap="lg" style={style.content}>
-                <Flex row align="center" gap="lg">
+                <Flex row align="center" gap="lg" style={style.headerRow}>
                     <FederationLogo federation={community} size={72} />
                     <Text
                         h2
