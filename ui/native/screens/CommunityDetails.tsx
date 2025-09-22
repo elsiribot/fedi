@@ -67,6 +67,10 @@ const CommunityDetails: React.FC<Props> = ({ route, navigation }: Props) => {
                         h2
                         medium
                         maxFontSizeMultiplier={1.2}
+                        numberOfLines={1}
+                        adjustsFontSizeToFit
+                        minimumFontScale={0.5}
+                        ellipsizeMode="tail"
                         style={style.title}>
                         {community.name}
                     </Text>
@@ -158,13 +162,19 @@ const styles = (theme: Theme) =>
         content: {
             paddingVertical: theme.spacing.lg,
         },
+        headerRow: {
+            minWidth: 0,
+        },
         textContainer: {
             alignItems: 'center',
             justifyContent: 'center',
             gap: theme.spacing.md,
         },
         title: {
-            textAlign: 'center',
+            flexGrow: 1,
+            flexShrink: 1,
+            flexBasis: 0,
+            minWidth: 0,
         },
         leaveCommunityText: {
             textDecorationLine: 'underline',
