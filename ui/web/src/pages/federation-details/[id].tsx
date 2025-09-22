@@ -1,18 +1,8 @@
 import { useRouter } from 'next/router'
-import { Trans, useTranslation } from 'react-i18next'
+import { useTranslation } from 'react-i18next'
 
-import offlineIcon from '@fedi/common/assets/svgs/alert-warning-triangle.svg'
-import clockIcon from '@fedi/common/assets/svgs/clock.svg'
-import unstableIcon from '@fedi/common/assets/svgs/info.svg'
-import onlineIcon from '@fedi/common/assets/svgs/online-dot.svg'
-import { theme } from '@fedi/common/constants/theme'
-import { usePopupFederationInfo } from '@fedi/common/hooks/federation'
-import {
-    selectDefaultChats,
-    selectIsInternetUnreachable,
-    selectLoadedFederation,
-} from '@fedi/common/redux'
-import { LoadedFederation, Sats } from '@fedi/common/types'
+import { selectDefaultChats, selectLoadedFederation } from '@fedi/common/redux'
+import { Sats } from '@fedi/common/types'
 import amountUtils from '@fedi/common/utils/AmountUtils'
 import {
     getFederationMaxBalanceMsats,
@@ -25,7 +15,8 @@ import { Button } from '../../components/Button'
 import DefaultRoomPreview from '../../components/Chat/DefaultRoomPreview'
 import { ContentBlock } from '../../components/ContentBlock'
 import { FederationAvatar } from '../../components/FederationAvatar'
-import { Icon } from '../../components/Icon'
+import FederationEndIndicator from '../../components/FederationDetails/FederationEndIndicator'
+import { FederationStatus } from '../../components/FederationDetails/FederationStatus'
 import * as Layout from '../../components/Layout'
 import { ShadowScroller } from '../../components/ShadowScroller'
 import { Text } from '../../components/Text'
@@ -124,159 +115,6 @@ function FederationDetails() {
         </ContentBlock>
     )
 }
-
-function FederationEndIndicator({
-    federation,
-}: {
-    federation: LoadedFederation
-}) {
-    const { t } = useTranslation()
-    const popupInfo = usePopupFederationInfo(federation?.meta || {})
-
-    if (!popupInfo) return null
-
-    if (popupInfo.ended) {
-        return (
-            <FederationEndCard variant="ended">
-                <Text variant="caption">
-                    {popupInfo.endedMessage || (
-                        <Trans
-                            t={t}
-                            i18nKey="feature.popup.ended-description"
-                            values={{ date: popupInfo?.endsAtText }}
-                            components={{
-                                bold: (
-                                    // @ts-expect-error - although usually infertile, `Trans` manages to obtain `children` to insert into the `Text` component
-                                    <Text
-                                        variant="caption"
-                                        weight="bold"
-                                        css={{ display: 'inline' }}
-                                    />
-                                ),
-                            }}
-                        />
-                    )}
-                </Text>
-            </FederationEndCard>
-        )
-    }
-
-    return (
-        <FederationEndCard>
-            <FederationEndingLabel>
-                <Icon icon={clockIcon} size={16} />
-                <Text variant="caption">
-                    {t('feature.federations.federation-ends-in')}
-                </Text>
-            </FederationEndingLabel>
-            <Text variant="h2" weight="medium">
-                {popupInfo.endsInText}
-            </Text>
-        </FederationEndCard>
-    )
-}
-
-function FederationStatus({ federation }: { federation: LoadedFederation }) {
-    const { t } = useTranslation()
-
-    const status = federation.status || 'offline'
-    const caption = t(`feature.federations.connection-status-${status}`)
-    const isOffline = useAppSelector(selectIsInternetUnreachable)
-
-    let statusIcon = offlineIcon
-    let statusText = t('words.offline')
-    let statusColor = theme.colors.red
-
-    if (status === 'online') {
-        statusIcon = onlineIcon
-        statusText = t('words.online')
-        statusColor = theme.colors.success
-    } else if (status === 'unstable') {
-        statusIcon = unstableIcon
-        statusText = t('words.unstable')
-    }
-
-    return (
-        <FederationStatusCard>
-            <FederationStatusHeader>
-                <Text variant="caption" css={{ flexGrow: 1 }}>
-                    {isOffline
-                        ? t('feature.federations.last-known-status')
-                        : `${t('words.status')}:`}
-                </Text>
-                <FederationStatusIndicator>
-                    <Icon icon={statusIcon} color={statusColor} size={12} />
-                    <Text variant="caption">{statusText}</Text>
-                </FederationStatusIndicator>
-            </FederationStatusHeader>
-            <FederationStatusDivider />
-            <Text variant="caption">
-                {isOffline
-                    ? t('feature.federations.please-reconnect')
-                    : caption}
-            </Text>
-        </FederationStatusCard>
-    )
-}
-
-const FederationStatusDivider = styled('div', {
-    backgroundColor: theme.colors.lightGrey,
-    height: 1,
-    width: '100%',
-})
-
-const FederationStatusCard = styled('div', {
-    backgroundColor: theme.colors.offWhite100,
-    borderRadius: 20,
-    padding: theme.spacing.md,
-    display: 'flex',
-    flexDirection: 'column',
-    gap: theme.spacing.sm,
-})
-
-const FederationStatusHeader = styled('div', {
-    display: 'flex',
-    alignItems: 'center',
-})
-
-const FederationStatusIndicator = styled('div', {
-    display: 'flex',
-    alignItems: 'center',
-    flexShrink: 0,
-    backgroundColor: theme.colors.white,
-    borderRadius: 8,
-    padding: `${theme.spacing.xs}px ${theme.spacing.sm}px`,
-    gap: theme.spacing.xs,
-})
-
-const FederationEndCard = styled('div', {
-    display: 'flex',
-    alignItems: 'center',
-    padding: `${theme.spacing.md}px ${theme.spacing.lg}px`,
-    borderRadius: 16,
-
-    variants: {
-        variant: {
-            ended: {
-                backgroundColor: theme.colors.extraLightGrey,
-            },
-            default: {
-                background: `linear-gradient(-30deg, ${theme.colors.orange200}, ${theme.colors.blue200})`,
-            },
-        },
-    },
-
-    defaultVariants: {
-        variant: 'default',
-    },
-})
-
-const FederationEndingLabel = styled('div', {
-    display: 'flex',
-    alignItems: 'center',
-    gap: theme.spacing.sm,
-    flex: 1,
-})
 
 const FederationHeader = styled('div', {
     display: 'flex',
