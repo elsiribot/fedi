@@ -52,7 +52,7 @@ const ChatEventCollection: React.FC<Props> = memo(
                         </Text>
                     </Flex>
                 )}
-                <Flex columnReverse>
+                <Flex style={style.chatEventContainer}>
                     {collection.map(events => (
                         <ChatEventTimeFrame
                             key={events.at(-1)?.id}
@@ -82,6 +82,9 @@ const styles = (theme: Theme) =>
         container: {
             marginBottom: theme.spacing.md,
             color: theme.colors.darkGrey,
+        },
+        chatEventContainer: {
+            flexDirection: 'column-reverse',
         },
         timestampContainer: {
             marginBottom: theme.spacing.md,
