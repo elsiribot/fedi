@@ -106,6 +106,7 @@ const ChatTextEvent: React.FC<Props> = ({
                 )}
 
                 <MessageContents
+                    roomMembers={roomMembers}
                     content={cleanedContentForDisplay}
                     sentByMe={isMe}
                     textStyles={[

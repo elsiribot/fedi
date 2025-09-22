@@ -13,11 +13,13 @@ import {
 import Hyperlink from 'react-native-hyperlink'
 
 import { useToast } from '@fedi/common/hooks/toast'
+import { MatrixRoomMember } from '@fedi/common/types/matrix'
 import { makeLog } from '@fedi/common/utils/log'
 import {
     decodeFediMatrixRoomUri,
     splitEveryoneRuns,
     splitHtmlRuns,
+    parseMentionsFromText,
 } from '@fedi/common/utils/matrix'
 
 import EmbeddedJoinGroupButton from './EmbeddedJoinGroupButton'
@@ -30,6 +32,7 @@ type MessageContentsProps = {
     textStyles: StyleProp<ViewStyle | TextStyle>[]
     onMentionPress?: (userId: string) => void
     currentUserId?: string
+    roomMembers?: MatrixRoomMember[]
 }
 
 const MessageContents: React.FC<MessageContentsProps> = ({
@@ -38,6 +41,7 @@ const MessageContents: React.FC<MessageContentsProps> = ({
     textStyles,
     onMentionPress,
     currentUserId,
+    roomMembers,
 }: MessageContentsProps) => {
     const { theme } = useTheme()
     const toast = useToast()
@@ -53,7 +57,7 @@ const MessageContents: React.FC<MessageContentsProps> = ({
                         const after = url.slice(hashIndex + 2)
                         const decoded = decodeURIComponent(after)
 
-                        // User mention: "@localpart:server"
+                        // Match a Matrix user ID at start of string: "@localpart:server" (stops before '/', '?', '#')
                         const userMatch = decoded.match(/^@[^:/?#]+:[^/?#]+/)
                         if (userMatch) {
                             const mentionedId = userMatch[0]
@@ -103,8 +107,40 @@ const MessageContents: React.FC<MessageContentsProps> = ({
         (block: string, key?: string | number, mediumWeight?: boolean) => {
             const hasHtml =
                 /<a\s+href="/i.test(block) || /<br\s*\/?>/i.test(block)
+
+            // If it's plain text, try to "upgrade" it using our mention parser so
+            // multi-word display-name mentions become real <a> anchors.
             if (!hasHtml) {
-                const parts = splitEveryoneRuns(block.trim())
+                const trimmed = block.trim()
+                if (roomMembers && trimmed) {
+                    try {
+                        const { formattedBody } = parseMentionsFromText(
+                            trimmed,
+                            roomMembers,
+                        )
+                        if (
+                            formattedBody &&
+                            /<a\s+href="/i.test(formattedBody)
+                        ) {
+                            // Re-run through this renderer; next branch will handle HTML.
+                            return renderRichBlock(
+                                formattedBody,
+                                key ?? 'plain-upgraded',
+                                mediumWeight,
+                            )
+                        }
+                    } catch (err) {
+                        log.warn(
+                            'mention-parse: failed to upgrade plain text',
+                            {
+                                err,
+                            },
+                        )
+                    }
+                }
+
+                // fallback: keep existing @room underline behavior
+                const parts = splitEveryoneRuns(trimmed)
                 return (
                     <Text
                         key={key ?? 'plain'}
@@ -133,6 +169,7 @@ const MessageContents: React.FC<MessageContentsProps> = ({
                 )
             }
 
+            // HTML branch (formatted_body or upgraded plain text)
             const runs = splitHtmlRuns(block)
             return (
                 <Text
@@ -153,7 +190,6 @@ const MessageContents: React.FC<MessageContentsProps> = ({
                                     const after = r.href.slice(hashIndex + 2)
                                     const decoded = decodeURIComponent(after)
                                     const userMatch =
-                                        // Match a Matrix user ID at start of string: "@localpart:server" (stops before '/', '?', '#')
                                         decoded.match(/^@[^:/?#]+:[^/?#]+/)
                                     if (userMatch) {
                                         isSelf =
@@ -227,6 +263,7 @@ const MessageContents: React.FC<MessageContentsProps> = ({
             textStyles,
             theme,
             currentUserId,
+            roomMembers,
         ],
     )
 
@@ -296,7 +333,7 @@ const MessageContents: React.FC<MessageContentsProps> = ({
         // otherwise just render text normally with consistent container
         text = (
             <View style={{ minHeight: 20 }}>
-                {renderRichBlock(content, 'only', true)}
+                {renderRichBlock(content, 'only')}
             </View>
         )
     }
