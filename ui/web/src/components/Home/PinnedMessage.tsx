@@ -20,9 +20,10 @@ export default function PinnedMessage({
 }
 
 const PinnedMessageContainer = styled('div', {
-    background: `linear-gradient(-30deg, ${theme.colors.orange200}, ${theme.colors.blue200})`,
-    display: 'flex',
     alignItems: 'center',
-    padding: `12px 24px`,
+    background: `linear-gradient(-30deg, ${theme.colors.orange200}, ${theme.colors.blue200})`,
     borderRadius: 16,
+    display: 'flex',
+    gap: 16,
+    padding: 16,
 })
