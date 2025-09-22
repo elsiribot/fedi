@@ -1,8 +1,6 @@
-import Link from 'next/link'
 import { useEffect } from 'react'
 import { Trans, useTranslation } from 'react-i18next'
 
-import ArrowRightIcon from '@fedi/common/assets/svgs/chevron-right.svg'
 import ProfileIcon from '@fedi/common/assets/svgs/profile.svg'
 import { ErrorBoundary } from '@fedi/common/components/ErrorBoundary'
 import { useSyncCurrencyRatesAndCache } from '@fedi/common/hooks/currency'
@@ -12,14 +10,12 @@ import {
     selectLastSelectedCommunity,
     selectMatrixAuth,
     selectOnboardingMethod,
-    selectMatrixRoom,
 } from '@fedi/common/redux'
 import { selectVisibleCommunityMods } from '@fedi/common/redux/mod'
 import { selectCanShowSurvey } from '@fedi/common/redux/support'
-import stringUtils from '@fedi/common/utils/StringUtils'
 
+import DefaultRoomPreview from '../components/Chat/DefaultRoomPreview'
 import { ContentBlock } from '../components/ContentBlock'
-import { FederationAvatar } from '../components/FederationAvatar'
 import { FediModTiles } from '../components/FediModTiles'
 import { Icon } from '../components/Icon'
 import { InstallBanner } from '../components/InstallBanner'
@@ -53,18 +49,13 @@ function HomePage() {
 
     const selectedCommunity = useAppSelector(selectLastSelectedCommunity)
     const selectedCommunityMods = useAppSelector(selectVisibleCommunityMods)
+    const selectedCommunityChats = useAppSelector(s =>
+        selectLastSelectedCommunityChats(s),
+    )
     const matrixAuth = useAppSelector(selectMatrixAuth)
-    const newsItems = useAppSelector(s => selectLastSelectedCommunityChats(s))
     const onboardingMethod = useAppSelector(selectOnboardingMethod)
     const canShowSurvey = useAppSelector(selectCanShowSurvey)
     const isNewSeedUser = onboardingMethod !== 'restored'
-
-    // Get first chat message to use as Federation News for now
-    // Improvement: Show carousel of announcements to show multiple news items
-    const newsItemId = newsItems.length > 0 ? newsItems[0] : null
-    const newsItem = useAppSelector(s =>
-        newsItemId ? selectMatrixRoom(s, newsItemId.id) : undefined,
-    )
 
     // Get rates from cache
     useEffect(() => {
@@ -79,53 +70,26 @@ function HomePage() {
             <Layout.Root>
                 <Layout.Content>
                     <Content>
-                        {selectedCommunity && newsItem && (
-                            <Section>
-                                <Title weight="bold">
-                                    {t('feature.home.community-news-title')}
-                                </Title>
+                        {selectedCommunity &&
+                            selectedCommunityChats.length > 0 && (
+                                <Section>
+                                    <Title weight="bold">
+                                        {t('feature.home.community-news-title')}
+                                    </Title>
 
-                                <NewsContainer>
-                                    <NewsItem
-                                        href={`/chat/room/${newsItem.id}`}>
-                                        <NewsItemIcon>
-                                            <FederationAvatar
-                                                federation={selectedCommunity}
-                                                size="sm"
+                                    <NewsContainer>
+                                        {selectedCommunityChats.map(room => (
+                                            <DefaultRoomPreview
+                                                room={room}
+                                                federationOrCommunity={
+                                                    selectedCommunity
+                                                }
+                                                key={`default-chat-${room.id}`}
                                             />
-                                        </NewsItemIcon>
-                                        <NewsItemText>
-                                            <Text variant="body" weight="bold">
-                                                {stringUtils.truncateString(
-                                                    newsItem.name,
-                                                    25,
-                                                )}
-                                            </Text>
-                                            {newsItem.preview && (
-                                                <Text variant="small">
-                                                    {stringUtils.truncateString(
-                                                        stringUtils.stripNewLines(
-                                                            'body' in
-                                                                newsItem.preview
-                                                                    .content
-                                                                ? newsItem
-                                                                      .preview
-                                                                      .content
-                                                                      .body
-                                                                : '',
-                                                        ),
-                                                        25,
-                                                    )}
-                                                </Text>
-                                            )}
-                                        </NewsItemText>
-                                        <NewsItemArrow>
-                                            <Icon icon={ArrowRightIcon} />
-                                        </NewsItemArrow>
-                                    </NewsItem>
-                                </NewsContainer>
-                            </Section>
-                        )}
+                                        ))}
+                                    </NewsContainer>
+                                </Section>
+                            )}
 
                         <Section>
                             <Title weight="bold">
@@ -208,11 +172,16 @@ const Content = styled('div', {
     display: 'flex',
     flexDirection: 'column',
     gap: 20,
-    marginTop: 12,
+
+    '@sm': {
+        marginTop: 12,
+    },
 })
 
 const Section = styled('div', {
-    marginBottom: 20,
+    display: 'flex',
+    flexDirection: 'column',
+    gap: 8,
 })
 
 const Title = styled(Text, {
@@ -224,37 +193,10 @@ const SubTitle = styled(Text, {
     color: theme.colors.darkGrey,
 })
 
-const NewsContainer = styled('div', {})
-
-const NewsItem = styled(Link, {
-    alignItems: 'center',
-    background: theme.colors.offWhite100,
-    borderRadius: 20,
-    boxSizing: 'border-box',
-    color: theme.colors.night,
-    display: 'flex',
-    gap: 10,
-    overflow: 'hidden',
-    padding: 15,
-})
-
-const NewsItemIcon = styled('div', {
-    alignItems: 'center',
-    display: 'flex',
-    minWidth: 30,
-})
-
-const NewsItemText = styled('div', {
+const NewsContainer = styled('div', {
     display: 'flex',
     flexDirection: 'column',
-    flex: 1,
-    textAlign: 'left',
-})
-
-const NewsItemArrow = styled('div', {
-    alignItems: 'center',
-    display: 'flex',
-    width: 20,
+    gap: 8,
 })
 
 const ModalContent = styled('div', {
