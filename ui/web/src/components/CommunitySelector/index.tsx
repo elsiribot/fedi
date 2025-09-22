@@ -10,6 +10,7 @@ import {
 import { onboardingRoute } from '../../constants/routes'
 import { useAppSelector } from '../../hooks'
 import { styled, theme } from '../../styles'
+import AvatarStack from '../AvatarStack'
 import CommunitiesOverlay from '../CommunitiesOverlay'
 import { FederationAvatar } from '../FederationAvatar'
 import { Icon } from '../Icon'
@@ -33,16 +34,26 @@ export const CommunitySelector: React.FC<Props> = ({ onClick }) => {
         }
     }
 
+    const nonSelectedCommunities = communities.filter(
+        community => community.id !== (selectedCommunity?.id ?? ''),
+    )
+    const firstThreeCommunities = [
+        selectedCommunity,
+        ...nonSelectedCommunities.slice(0, 2),
+    ].filter(x => x !== undefined)
+
     return (
         <>
             <Container onClick={handleClick}>
                 <Wrapper>
-                    {selectedCommunity && (
-                        <FederationAvatar
-                            federation={selectedCommunity}
-                            size="xs"
-                        />
-                    )}
+                    <AvatarStack
+                        data={firstThreeCommunities}
+                        renderAvatar={item => (
+                            <FederationAvatar federation={item} size="sm" />
+                        )}
+                        stackDirection="rtl"
+                        size={32}
+                    />
                     <Icon icon={ChevronDownIcon} size="sm" />
                 </Wrapper>
             </Container>
@@ -70,7 +81,8 @@ const Wrapper = styled('div', {
     display: 'flex',
     gap: 10,
     justifyContent: 'center',
-    padding: '5px 12px',
+    padding: theme.space.xs,
+    paddingRight: theme.space.md,
     '& > button': {
         display: 'block',
     },
