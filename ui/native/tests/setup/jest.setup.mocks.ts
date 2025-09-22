@@ -157,9 +157,11 @@ jest.mock('react-native', () => ({
     Button: jest.requireActual('react-native').Button,
     Dimensions: jest.requireActual('react-native').Dimensions,
     Easing: jest.requireActual('react-native').Easing,
+    FlatList: jest.requireActual('react-native').FlatList,
     Image: jest.requireActual('react-native').Image,
     ImageBackground: jest.requireActual('react-native').ImageBackground,
     Insets: jest.requireActual('react-native').Insets,
+    InteractionManager: jest.requireActual('react-native').InteractionManager,
     Keyboard: jest.requireActual('react-native').Keyboard,
     KeyboardEvent: jest.requireActual('react-native').KeyboardEvent,
     KeyboardAvoidingView:
@@ -345,4 +347,9 @@ jest.mock('react-native-modal', () => jest.requireActual('react-native').Modal)
 
 jest.mock('@react-navigation/elements', () => ({
     useHeaderHeight: jest.fn(() => 100),
+}))
+
+jest.mock('@react-native-clipboard/clipboard', () => ({
+    getString: jest.fn(),
+    setString: jest.fn(),
 }))

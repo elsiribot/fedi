@@ -52,6 +52,7 @@ const CenterOverlay: React.FC<CenterOverlayProps> = ({
             animationOut="fadeOut"
             useNativeDriver
             useNativeDriverForBackdrop
+            testID="center-overlay"
             style={style.modalContainer}>
             {/* wraps the modal content for keyboard avoidance - required by react-native-modal */}
             <KeyboardAvoidingView

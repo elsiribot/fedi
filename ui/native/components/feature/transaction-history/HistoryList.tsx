@@ -110,7 +110,7 @@ export function HistoryList<T extends { id: string }>({
                     index,
                 })}
                 initialNumToRender={20}
-                onRefresh={() => onRefresh && onRefresh()}
+                onRefresh={onRefresh ? onRefresh : undefined}
                 refreshing={loading || false}
                 onEndReached={() => onEndReached && onEndReached()}
                 onEndReachedThreshold={0.9}
