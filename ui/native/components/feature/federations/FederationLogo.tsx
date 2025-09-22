@@ -13,13 +13,13 @@ import SvgImage, { SvgImageSize } from '../../ui/SvgImage'
 type Props = {
     federation?: Pick<LoadedFederation, 'id' | 'name' | 'meta'>
     size: SvgImageSize | number
-    hex?: boolean
+    shape?: 'square' | 'hex' | 'circle'
 }
 
 export const FederationLogo: React.FC<Props> = ({
     federation,
     size,
-    hex = false,
+    shape = 'square',
 }) => {
     const { theme } = useTheme()
 
@@ -32,13 +32,16 @@ export const FederationLogo: React.FC<Props> = ({
 
     const style = styles(theme)
 
+    const shapeStyle =
+        shape === 'circle' ? style.shapeCircle : style.shapeSquare
+
     if (!iconUrl) {
         return (
             <View>
                 <SvgImage
                     name="Federation"
                     size={svgSize}
-                    svgProps={{ ...style.svgIconImage, ...svgProps }}
+                    svgProps={{ ...shapeStyle, ...svgProps }}
                 />
             </View>
         )
@@ -50,22 +53,22 @@ export const FederationLogo: React.FC<Props> = ({
                 style={[
                     svgProps,
                     style.fallbackIconContainer,
-                    hex ? { backgroundColor: 'transparent' } : {},
+                    shape === 'hex' ? { backgroundColor: 'transparent' } : {},
                 ]}>
-                {!hex && (
+                {shape === 'square' && (
                     <Image
-                        style={style.fallbackIconLayer}
+                        style={[style.fallbackIconLayer, shapeStyle]}
                         source={Images.FallbackInset}
                     />
                 )}
                 <Flex center style={style.fallbackIconLayer}>
                     <ActivityIndicator size={16} color={theme.colors.primary} />
                 </Flex>
-                {hex ? (
+                {shape === 'hex' ? (
                     <HexImage imageUrl={iconUrl} />
                 ) : (
                     <Image
-                        style={[style.iconImage, svgProps]}
+                        style={[style.iconImage, svgProps, shapeStyle]}
                         source={{ uri: iconUrl }}
                         resizeMode="cover"
                     />
@@ -90,10 +93,14 @@ const styles = (theme: Theme) =>
             height: '100%',
         },
         iconImage: {
-            borderRadius: 8,
             backgroundColor: theme.colors.white,
         },
-        svgIconImage: {
+        shapeSquare: {
             borderRadius: 8,
+            overflow: 'hidden',
+        },
+        shapeCircle: {
+            borderRadius: 1024,
+            overflow: 'hidden',
         },
     })
