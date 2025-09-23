@@ -1,19 +1,28 @@
-import React, { createContext, useContext } from 'react'
+import React, { createContext, useContext, useState } from 'react'
 
 type ToastScope = 'global' | 'overlay'
 
-const ToastScopeContext = createContext<ToastScope>('global')
+type Ctx = {
+    scope: ToastScope
+    setScope: (scope: ToastScope) => void
+}
+
+const ToastScopeContext = createContext<Ctx>({
+    scope: 'global',
+    setScope: () => {},
+})
 
 export const ToastScopeProvider = ({
-    value,
     children,
 }: {
-    value: ToastScope
     children: React.ReactNode
-}) => (
-    <ToastScopeContext.Provider value={value}>
-        {children}
-    </ToastScopeContext.Provider>
-)
+}) => {
+    const [scope, setScope] = useState<ToastScope>('global')
+    return (
+        <ToastScopeContext.Provider value={{ scope, setScope }}>
+            {children}
+        </ToastScopeContext.Provider>
+    )
+}
 
 export const useToastScope = () => useContext(ToastScopeContext)

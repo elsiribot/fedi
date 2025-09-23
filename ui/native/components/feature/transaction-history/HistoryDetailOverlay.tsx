@@ -1,5 +1,5 @@
 import { Theme, useTheme, Button } from '@rneui/themed'
-import React, { useMemo, useState } from 'react'
+import React, { useEffect, useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { StyleSheet, Text } from 'react-native'
 
@@ -7,7 +7,7 @@ import { ErrorBoundary } from '@fedi/common/components/ErrorBoundary'
 import { FeeItem } from '@fedi/common/hooks/transactions'
 import { Federation } from '@fedi/common/types'
 
-import { ToastScopeProvider } from '../../../state/contexts/ToastScopeContext'
+import { useToastScope } from '../../../state/contexts/ToastScopeContext'
 import { useLaunchZendesk } from '../../../utils/hooks/support'
 import CenterOverlay from '../../ui/CenterOverlay'
 import Flex from '../../ui/Flex'
@@ -37,6 +37,13 @@ const HistoryDetailOverlay: React.FC<HistoryDetailOverlayProps> = ({
 
     const style = styles(theme)
     const { launchZendesk } = useLaunchZendesk()
+    const { setScope } = useToastScope()
+
+    useEffect(() => {
+        if (show) setScope('overlay')
+        else setScope('global')
+        return () => setScope('global')
+    }, [show, setScope])
 
     const content = useMemo(() => {
         if (!itemDetails) return <></>
@@ -77,11 +84,7 @@ const HistoryDetailOverlay: React.FC<HistoryDetailOverlayProps> = ({
             show={show}
             onBackdropPress={itemDetails.onClose}
             overlayStyle={style.overlayStyle}
-            topLayer={
-                <ToastScopeProvider value="overlay">
-                    <OverlayToast />
-                </ToastScopeProvider>
-            }>
+            topLayer={<OverlayToast />}>
             <ErrorBoundary
                 fallback={
                     <Flex center style={style.overlayErrorContainer}>

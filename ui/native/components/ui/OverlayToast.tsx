@@ -12,6 +12,7 @@ import LinearGradient from 'react-native-linear-gradient'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 
 import { theme as fediTheme } from '@fedi/common/constants/theme'
+import { useToast } from '@fedi/common/hooks/toast'
 import { selectToast } from '@fedi/common/redux'
 
 import { useToastScope } from '../../state/contexts/ToastScopeContext'
@@ -23,9 +24,11 @@ import SvgImage, { SvgImageSize } from './SvgImage'
 const nightGradient = [...fediTheme.nightHoloAmbientGradient]
 
 export default function OverlayToast() {
-    const scope = useToastScope()
+    const { scope, setScope } = useToastScope()
+    const toast = useAppSelector(state =>
+        scope === 'overlay' ? selectToast(state) : null,
+    )
     const shouldRender = scope === 'overlay'
-    const toast = useAppSelector(selectToast)
     const { theme } = useTheme()
     const insets = useSafeAreaInsets()
     const dims = useWindowDimensions()
@@ -33,6 +36,16 @@ export default function OverlayToast() {
     const [height, setHeight] = useState(100)
     const [open, setOpen] = useState(!!toast)
     const [cached, setCached] = useState(toast)
+    const { close } = useToast()
+
+    useEffect(() => {
+        setScope('overlay')
+        return () => {
+            // ensure redux toast is cleared so ToastManager won't render it later
+            close()
+            setScope('global')
+        }
+    }, [setScope, close])
 
     useEffect(() => {
         if (toast) {
@@ -109,7 +122,11 @@ export default function OverlayToast() {
                                                 </Text>
                                             </Flex>
                                             <Pressable
-                                                onPress={() => setOpen(false)}>
+                                                onPress={() => {
+                                                    setOpen(false)
+                                                    // also clear redux state immediately
+                                                    close()
+                                                }}>
                                                 <SvgImage
                                                     name="Close"
                                                     color={theme.colors.grey}

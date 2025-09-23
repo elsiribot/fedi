@@ -38,10 +38,13 @@ export type ExtendedToast = {
 const nightGradient = [...fediTheme.nightHoloAmbientGradient]
 
 export default function ToastManager() {
-    const scope = useToastScope()
+    const { scope } = useToastScope()
+    const toast = useAppSelector(state =>
+        scope === 'global'
+            ? (selectToast(state) as ExtendedToast | null)
+            : null,
+    )
     const shouldRender = scope === 'global'
-
-    const toast = useAppSelector(selectToast) as ExtendedToast | null
     const slideAnim = useRef(new Animated.Value(-100)).current
     const dimensions = useWindowDimensions()
     const insets = useSafeAreaInsets()
@@ -91,7 +94,7 @@ export default function ToastManager() {
     const maxMultiplier = 1.4
     const actionLabel = cachedToast?.action?.label ?? t('feature.support.title')
 
-    if (!shouldRender) return null
+    if (!shouldRender || !cachedToast) return null
 
     return (
         <Animated.View
