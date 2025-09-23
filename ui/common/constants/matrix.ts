@@ -39,3 +39,7 @@ export const QUOTE_USER_REGEX = /^> <@([^>]+)>/ // matches quote line and captur
 //mentions
 export const MATRIX_URL_BASE = 'https://matrix.to/#/'
 export const ROOM_MENTION = 'room'
+
+// pagination
+export const DEFAULT_PAGINATION_SIZE = 15
+export const SEARCH_PAGINATION_SIZE = 100

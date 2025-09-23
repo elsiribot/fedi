@@ -324,7 +324,7 @@ const ChatConversation: React.FC<MessagesListProps> = ({
                     inverted={events.length > 0}
                     // adjust this for more/less aggressive loading
                     onEndReachedThreshold={0.1}
-                    onEndReached={handlePaginate}
+                    onEndReached={() => handlePaginate()}
                     refreshing={isPaginating}
                     maintainVisibleContentPosition={{
                         minIndexForVisible: 1,

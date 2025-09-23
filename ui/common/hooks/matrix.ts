@@ -1,7 +1,11 @@
 import type { TFunction } from 'i18next'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 
-import { ROOM_MENTION } from '../constants/matrix'
+import {
+    DEFAULT_PAGINATION_SIZE,
+    ROOM_MENTION,
+    SEARCH_PAGINATION_SIZE,
+} from '../constants/matrix'
 import {
     acceptMatrixPaymentRequest,
     cancelMatrixPayment,
@@ -32,6 +36,11 @@ import {
     checkBolt11PaymentResult,
     sendMatrixFormResponse,
     createMatrixRoom,
+    selectMatrixChatsList,
+    setChatsListSearchQuery,
+    selectMatrixRoomEvents,
+    selectMatrixRoomMembers,
+    setChatTimelineSearchQuery,
 } from '../redux'
 import {
     MatrixFormEvent,
@@ -60,12 +69,13 @@ import {
     matrixUrlMetadataSchema,
     getLocalizedTextWithFallback,
     stripReplyFromBody,
+    isTextEvent,
 } from '../utils/matrix'
 import { useAmountFormatter } from './amount'
 import { useFedimint } from './fedimint'
 import { useCommonDispatch, useCommonSelector } from './redux'
 import { useToast } from './toast'
-import { useUpdatingRef } from './util'
+import { useDebouncedEffect, useUpdatingRef } from './util'
 
 const log = makeLog('common/hooks/matrix')
 /**
@@ -77,6 +87,122 @@ export function usePushNotificationToken() {
         selectMatrixPushNotificationToken,
     )
     return pushNotificationToken
+}
+
+export function useChatsListSearch(initialQuery?: string) {
+    const dispatch = useCommonDispatch()
+    const chatsListSearchQuery = useCommonSelector(
+        s => s.matrix.chatsListSearchQuery,
+    )
+    const chatsList = useCommonSelector(s => selectMatrixChatsList(s))
+
+    const filteredChatsList = useMemo(() => {
+        if (!chatsListSearchQuery) return chatsList
+        return chatsList.filter(c =>
+            c.name?.toLowerCase().includes(chatsListSearchQuery.toLowerCase()),
+        )
+    }, [chatsList, chatsListSearchQuery])
+
+    // if query is provided by the hook consumer, auto-set it to redux state
+    useEffect(() => {
+        if (initialQuery) {
+            dispatch(setChatsListSearchQuery(initialQuery))
+        }
+    }, [initialQuery, dispatch])
+
+    return {
+        query: chatsListSearchQuery,
+        setQuery: (q: string) => dispatch(setChatsListSearchQuery(q)),
+        clearSearch: () => dispatch(setChatsListSearchQuery('')),
+        filteredChatsList,
+    }
+}
+
+export function useChatTimelineSearch(roomId: MatrixRoom['id']) {
+    const dispatch = useCommonDispatch()
+    const chatTimelineSearchQuery = useCommonSelector(
+        s => s.matrix.chatTimelineSearchQuery,
+    )
+    const [hasTriggeredInitialPagination, setHasTriggeredInitialPagination] =
+        useState(false)
+
+    const { paginationStatus, isPaginating, handlePaginate } =
+        useObserveMatrixRoom(roomId)
+    const roomEvents = useCommonSelector(s => selectMatrixRoomEvents(s, roomId))
+    const roomMembers = useCommonSelector(s =>
+        selectMatrixRoomMembers(s, roomId),
+    )
+
+    const clearSearch = () => {
+        dispatch(setChatTimelineSearchQuery(''))
+    }
+
+    // Create member lookup for efficient sender name searching
+    const memberLookup = useMemo(() => {
+        return roomMembers.reduce(
+            (acc, member) => {
+                acc[member.id] =
+                    member.displayName || matrixIdToUsername(member.id)
+                return acc
+            },
+            {} as Record<string, string>,
+        )
+    }, [roomMembers])
+
+    const searchResults = useMemo(() => {
+        if (chatTimelineSearchQuery.trim() === '') return []
+
+        const queryLower = chatTimelineSearchQuery.toLowerCase()
+
+        return roomEvents.filter(event => {
+            let bodyMatch = false
+            if (isTextEvent(event)) {
+                bodyMatch = (event.content as { body: string }).body
+                    .toLowerCase()
+                    .includes(queryLower)
+            }
+
+            // matches search query to sender display names
+            const senderName =
+                memberLookup[event.sender] || matrixIdToUsername(event.sender)
+            const senderMatch = senderName.toLowerCase().includes(queryLower)
+
+            return bodyMatch || senderMatch
+        })
+    }, [roomEvents, chatTimelineSearchQuery, memberLookup])
+
+    const canSearchFurther = useMemo(() => {
+        return (
+            paginationStatus !== 'timelineStartReached' &&
+            paginationStatus !== 'paginating'
+        )
+    }, [paginationStatus])
+
+    // do an initial pagination on mount to get a big batch of results to search through
+    // after this the user can click Load More to get more results
+    useDebouncedEffect(
+        () => {
+            if (hasTriggeredInitialPagination) return
+            setHasTriggeredInitialPagination(true)
+            handlePaginate(SEARCH_PAGINATION_SIZE)
+        },
+        [dispatch, handlePaginate, hasTriggeredInitialPagination],
+        200,
+    )
+
+    const isSearching = isPaginating && chatTimelineSearchQuery.trim() !== ''
+
+    return {
+        query: chatTimelineSearchQuery,
+        setQuery: (q: string) => dispatch(setChatTimelineSearchQuery(q)),
+        clearSearch,
+        searchResults,
+        canSearchFurther,
+        handlePaginate,
+        paginationStatus,
+        isPaginating,
+        isSearching,
+    }
 }
 
 export function useMatrixUserSearch() {
@@ -212,17 +338,20 @@ export function useObserveMatrixRoom(roomId: MatrixRoom['id']) {
         )
     }, [matrixStarted, roomId, latestEventId, dispatch, fedimint])
 
-    const handlePaginate = useCallback(async () => {
-        // don't paginate if we don't know the pagination status yet
-        if (!paginationStatus) return
-        // don't paginate if we're already paginating
-        if (isPaginating) return
-        // don't paginate if there is nothing else to paginate
-        if (paginationStatus === 'timelineStartReached') return
-        await dispatch(
-            paginateMatrixRoomTimeline({ fedimint, roomId, limit: 15 }),
-        ).unwrap()
-    }, [paginationStatus, isPaginating, dispatch, roomId, fedimint])
+    const handlePaginate = useCallback(
+        async (limit: number = DEFAULT_PAGINATION_SIZE) => {
+            // don't paginate if we don't know the pagination status yet
+            if (!paginationStatus) return
+            // don't paginate if we're already paginating
+            if (isPaginating) return
+            // don't paginate if there is nothing else to paginate
+            if (paginationStatus === 'timelineStartReached') return
+            await dispatch(
+                paginateMatrixRoomTimeline({ fedimint, roomId, limit }),
+            ).unwrap()
+        },
+        [paginationStatus, isPaginating, dispatch, roomId, fedimint],
+    )
 
     // this is the initial pagination fetch for most recent events which
     // waits until the pagination status is observed and defined

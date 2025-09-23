@@ -164,6 +164,8 @@ const initialState = {
         event: null as MatrixEvent | null,
     } satisfies ChatReplyState,
     tempMediaUriMap: {} as Record<string, string>,
+    chatsListSearchQuery: '' as string,
+    chatTimelineSearchQuery: '' as string,
 }
 
 export type MatrixState = typeof initialState
@@ -486,6 +488,12 @@ export const matrixSlice = createSlice({
         ) {
             state.tempMediaUriMap[action.payload.hash] = action.payload.uri
         },
+        setChatsListSearchQuery(state, action: PayloadAction<string>) {
+            state.chatsListSearchQuery = action.payload
+        },
+        setChatTimelineSearchQuery(state, action: PayloadAction<string>) {
+            state.chatTimelineSearchQuery = action.payload
+        },
     },
     extraReducers: builder => {
         builder.addCase(startMatrixClient.pending, state => {
@@ -683,6 +691,8 @@ export const {
     setChatReplyingToMessage,
     clearChatReplyingToMessage,
     addTempMediaUriEntry,
+    setChatsListSearchQuery,
+    setChatTimelineSearchQuery,
 } = matrixSlice.actions
 
 /*** Async thunk actions ***/
