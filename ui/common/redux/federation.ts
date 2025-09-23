@@ -488,10 +488,7 @@ export const refreshCommunities = createAsyncThunk<
     dispatch(setCommunities(communityListItems))
     const state = getState()
     const joinedCommunities = selectCommunities(state)
-    log.debug(
-        'joinedCommunities',
-        joinedCommunities.map(c => ({ id: c.id, name: c.name, meta: c.meta })),
-    )
+    log.info(`processing meta for ${joinedCommunities.length} communities`)
     joinedCommunities.map(community => {
         if (
             'meta' in community &&
@@ -522,9 +519,11 @@ export const refreshCommunities = createAsyncThunk<
     // and set it as selected
     if (!joinedCommunities.find(c => c.id === FEDI_GLOBAL_COMMUNITY_INVITE)) {
         log.debug('fedi global community not joined, joining...')
-        await dispatch(
+        const joinedCommunity = await dispatch(
             joinCommunity({ fedimint, code: FEDI_GLOBAL_COMMUNITY_INVITE }),
-        )
+        ).unwrap()
+
+        dispatch(setCommunities([joinedCommunity, ...joinedCommunities]))
         dispatch(setLastSelectedCommunityId(FEDI_GLOBAL_COMMUNITY_INVITE))
     }
 
@@ -562,6 +561,7 @@ export const refreshFederations = createAsyncThunk<
     dispatch(setFederations(federations))
 
     // Process federation metadata for default chats
+    log.info(`processing meta for ${federations.length} federations`)
     federations.map(federation => {
         if (
             'meta' in federation &&
@@ -580,6 +580,10 @@ export const refreshFederations = createAsyncThunk<
     // there should always be a lastUsedFederation for new users who join federations
     // but existing users who upgrade after joining federations won't have this so we set it here
     if (!getState().federation.lastUsedFederationId) {
+        log.info(
+            'no lastUsedFederationId, setting to first federation: ',
+            federations[0]?.id,
+        )
         dispatch(setLastUsedFederationId(federations[0]?.id || null))
     }
 
