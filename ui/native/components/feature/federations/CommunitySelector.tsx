@@ -3,7 +3,7 @@ import React, { useState } from 'react'
 import { Pressable, StyleSheet } from 'react-native'
 
 import {
-    selectCommunities,
+    selectCommunityStack,
     selectLastSelectedCommunity,
 } from '@fedi/common/redux'
 
@@ -17,7 +17,7 @@ import { FederationLogo } from './FederationLogo'
 const CommunitySelector: React.FC = () => {
     const { theme } = useTheme()
     const selectedCommunity = useAppSelector(selectLastSelectedCommunity)
-    const communities = useAppSelector(selectCommunities)
+    const communityStack = useAppSelector(selectCommunityStack)
     const [showCommunities, setShowCommunities] = useState(false)
 
     const style = styles(theme)
@@ -27,14 +27,6 @@ const CommunitySelector: React.FC = () => {
     }
 
     if (!selectedCommunity) return <></>
-
-    const nonSelectedCommunities = communities.filter(
-        community => community.id !== selectedCommunity.id,
-    )
-    const firstThreeCommunities = [
-        selectedCommunity,
-        ...nonSelectedCommunities.slice(0, 2),
-    ]
 
     return (
         <>
@@ -49,7 +41,7 @@ const CommunitySelector: React.FC = () => {
                     style={style.container}
                     onPress={openCommunitiesOverlay}>
                     <AvatarStack
-                        data={firstThreeCommunities}
+                        data={communityStack}
                         stackDirection="rtl"
                         renderAvatar={(item, size) => (
                             <FederationLogo

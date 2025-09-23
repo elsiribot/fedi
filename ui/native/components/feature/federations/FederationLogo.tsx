@@ -11,7 +11,7 @@ import HexImage from '../../ui/HexImage'
 import SvgImage, { SvgImageSize } from '../../ui/SvgImage'
 
 type Props = {
-    federation?: Pick<LoadedFederation, 'id' | 'name' | 'meta'>
+    federation?: Pick<LoadedFederation, 'id' | 'meta'>
     size: SvgImageSize | number
     shape?: 'square' | 'hex' | 'circle'
 }
