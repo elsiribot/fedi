@@ -292,11 +292,11 @@ const ActionContainer = styled('div', {
         side: {
             left: {
                 left: 0,
-                paddingRight: theme.space.md,
+                paddingRight: theme.spacing.md,
             },
             right: {
                 right: 0,
-                paddingLeft: theme.space.md,
+                paddingLeft: theme.spacing.md,
             },
         },
     },

@@ -61,13 +61,13 @@ const LnurlNotice = styled('div', {
     marginTop: 'auto',
     marginBottom: 'auto',
     backgroundColor: theme.colors.offWhite100,
-    padding: theme.space.md,
-    gap: theme.space.xs,
+    padding: theme.spacing.md,
+    gap: theme.spacing.xs,
     borderRadius: 8,
 })
 
 const LnurlNoticeTitle = styled(Text, {
-    marginBottom: theme.space.xs,
+    marginBottom: theme.spacing.xs,
     textAlign: 'center',
 })
 

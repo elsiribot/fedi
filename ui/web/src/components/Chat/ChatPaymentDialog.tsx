@@ -141,10 +141,10 @@ export const ChatPaymentDialog: React.FC<Props> = ({
 
 const MemberContainer = styled('div', {
     display: 'flex',
-    gap: theme.space.sm,
+    gap: theme.spacing.sm,
     alignItems: 'center',
     justifyContent: 'center',
-    marginBottom: theme.space.xl,
+    marginBottom: theme.spacing.xl,
 })
 
 const AmountContainer = styled('div', {

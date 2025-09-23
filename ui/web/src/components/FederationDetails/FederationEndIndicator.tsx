@@ -55,7 +55,7 @@ export default function FederationEndIndicator({
 const FederationEndCard = styled('div', {
     display: 'flex',
     alignItems: 'center',
-    padding: `${theme.space.md}px ${theme.space.lg}px`,
+    padding: `${theme.spacing.md}px ${theme.spacing.lg}px`,
     borderRadius: 16,
 
     variants: {
@@ -77,6 +77,6 @@ const FederationEndCard = styled('div', {
 const FederationEndingLabel = styled('div', {
     display: 'flex',
     alignItems: 'center',
-    gap: theme.space.sm,
+    gap: theme.spacing.sm,
     flex: 1,
 })

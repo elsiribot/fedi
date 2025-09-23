@@ -34,7 +34,7 @@ export const {
             mono: `"SFMono-Regular", Consolas, "Liberation Mono", Menlo, Courier, monospace`,
         },
         sizes: intMapToPx(fediTheme.sizes),
-        space: intMapToPx(fediTheme.spacing),
+        spacing: intMapToPx(fediTheme.spacing),
         fontSizes: intMapToPx(fediTheme.fontSizes),
         fontWeights: fediTheme.fontWeights,
     },

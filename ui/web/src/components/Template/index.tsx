@@ -162,7 +162,7 @@ const HomeHeader = styled('div', {
     alignItems: 'center',
     display: 'flex',
     flexDirection: 'column',
-    gap: theme.space.sm,
+    gap: theme.spacing.sm,
     padding: '8px var(--template-padding)',
 
     holoGradient: 'm500',
@@ -172,7 +172,7 @@ const HomeHeader = styled('div', {
     '@sm': {
         width: '100%',
         padding: '0 16px',
-        gap: theme.space.sm,
+        gap: theme.spacing.sm,
     },
 })
 

@@ -66,10 +66,10 @@ const Wrapper = styled('div', {
     borderRadius: 16,
     display: 'flex',
     flexDirection: 'column',
-    gap: theme.space.sm,
-    padding: theme.space.lg,
-    marginTop: theme.space.xl,
-    marginBottom: theme.space.lg,
+    gap: theme.spacing.sm,
+    padding: theme.spacing.lg,
+    marginTop: theme.spacing.xl,
+    marginBottom: theme.spacing.lg,
     holoGradient: '400',
 })
 
@@ -78,7 +78,7 @@ const Content = styled('div', {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    gap: theme.space.lg,
+    gap: theme.spacing.lg,
 })
 
 const TextWrapper = styled('div', {
