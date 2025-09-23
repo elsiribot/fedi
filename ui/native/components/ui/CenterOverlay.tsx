@@ -20,6 +20,7 @@ type CenterOverlayProps = {
     overlayStyle?: StyleProp<ViewStyle>
     children: React.ReactNode
     showCloseButton?: boolean
+    topLayer?: React.ReactNode
 }
 
 const width = Dimensions.get('window').width
@@ -30,6 +31,7 @@ const CenterOverlay: React.FC<CenterOverlayProps> = ({
     overlayStyle,
     children,
     showCloseButton = false,
+    topLayer,
 }) => {
     const { theme } = useTheme()
     const style = styles(theme)
@@ -74,6 +76,13 @@ const CenterOverlay: React.FC<CenterOverlayProps> = ({
                     )}
                 </View>
             </KeyboardAvoidingView>
+
+            {/* full-screen non-blocking layer for floating UI like (overlay toasts) */}
+            {topLayer ? (
+                <View style={StyleSheet.absoluteFill} pointerEvents="box-none">
+                    {topLayer}
+                </View>
+            ) : null}
         </Modal>
     )
 }

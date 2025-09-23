@@ -7,9 +7,11 @@ import { ErrorBoundary } from '@fedi/common/components/ErrorBoundary'
 import { FeeItem } from '@fedi/common/hooks/transactions'
 import { Federation } from '@fedi/common/types'
 
+import { ToastScopeProvider } from '../../../state/contexts/ToastScopeContext'
 import { useLaunchZendesk } from '../../../utils/hooks/support'
 import CenterOverlay from '../../ui/CenterOverlay'
 import Flex from '../../ui/Flex'
+import OverlayToast from '../../ui/OverlayToast'
 import SvgImage, { SvgImageSize } from '../../ui/SvgImage'
 import { FeeBreakdown } from '../send/FeeBreakdown'
 import { HistoryDetail, HistoryDetailProps } from './HistoryDetail'
@@ -74,7 +76,12 @@ const HistoryDetailOverlay: React.FC<HistoryDetailOverlayProps> = ({
             key="detail-overlay"
             show={show}
             onBackdropPress={itemDetails.onClose}
-            overlayStyle={style.overlayStyle}>
+            overlayStyle={style.overlayStyle}
+            topLayer={
+                <ToastScopeProvider value="overlay">
+                    <OverlayToast />
+                </ToastScopeProvider>
+            }>
             <ErrorBoundary
                 fallback={
                     <Flex center style={style.overlayErrorContainer}>
