@@ -28,7 +28,7 @@ const FederationsHeader: React.FC = () => {
             <Header
                 transparent
                 containerStyle={style.headerContainer}
-                headerLeft={<Text h2>{t('words.federations')}</Text>}
+                headerLeft={<Text h2>{t('words.wallets')}</Text>}
                 headerRight={
                     <MainHeaderButtons onAddPress={openJoinCommunity} />
                 }
