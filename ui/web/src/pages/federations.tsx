@@ -67,7 +67,7 @@ function FederationsPage() {
         <ContentBlock>
             <Layout.Root>
                 <Layout.Header>
-                    <Layout.Title>{t('words.federations')}</Layout.Title>
+                    <Layout.Title>{t('words.wallets')}</Layout.Title>
                     <MainHeaderButtons
                         onAddPress={() => router.push('/onboarding')}
                     />
