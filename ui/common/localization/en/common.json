@@ -572,6 +572,7 @@
             "connection-status-unstable": "This federation is unstable. Please reach out to the guardians or community leader for further information.",
             "copied-federation-invite": "Copied federation invite link",
             "drawer-subtitle": "Federations are home to your wallet, news and services.",
+            "expired-message": "This federation has expired. Transactions are no longer available.",
             "enter-federation-code": "Enter a federation code",
             "federation-details": "Federation Details",
             "federation-ends-in": "Federation ends in",

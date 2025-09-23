@@ -1,13 +1,15 @@
 import { useNavigation } from '@react-navigation/native'
 import type { NativeStackScreenProps } from '@react-navigation/native-stack'
 import { Button, Divider, Text, Theme, useTheme } from '@rneui/themed'
-import React from 'react'
-import { Trans, useTranslation } from 'react-i18next'
+import React, { useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import { Linking, StyleSheet } from 'react-native'
 import LinearGradient from 'react-native-linear-gradient'
 
 import { theme as fediTheme } from '@fedi/common/constants/theme'
 import { usePopupFederationInfo } from '@fedi/common/hooks/federation'
+import { useLeaveFederation } from '@fedi/common/hooks/leave'
+import { useToast } from '@fedi/common/hooks/toast'
 import {
     selectDefaultChats,
     selectIsInternetUnreachable,
@@ -15,7 +17,6 @@ import {
 } from '@fedi/common/redux'
 import {
     ChatType,
-    Federation,
     LoadedFederation,
     MatrixRoom,
     Sats,
@@ -28,6 +29,7 @@ import {
     getFederationWelcomeMessage,
 } from '@fedi/common/utils/FederationUtils'
 
+import { fedimint } from '../bridge'
 import { FederationLogo } from '../components/feature/federations/FederationLogo'
 import FederationStatusIndicator from '../components/feature/federations/FederationStatusIndicator'
 import DefaultChatTile from '../components/feature/home/DefaultChatTile'
@@ -36,6 +38,7 @@ import { SafeAreaContainer } from '../components/ui/SafeArea'
 import ShadowScrollView from '../components/ui/ShadowScrollView'
 import SvgImage from '../components/ui/SvgImage'
 import { useAppSelector } from '../state/hooks'
+import { reset } from '../state/navigation'
 import type { RootStackParamList } from '../types/navigation'
 
 export type Props = NativeStackScreenProps<
@@ -48,18 +51,49 @@ const FederationDetails: React.FC<Props> = ({ route }: Props) => {
     const { theme } = useTheme()
     const { federationId } = route.params
 
+    const [isLeavingFederation, setIsLeavingFederation] = useState(false)
+
     const federation = useAppSelector(s =>
         selectLoadedFederation(s, federationId),
     )
     const federationChats = useAppSelector(s =>
         selectDefaultChats(s, federationId),
     )
+    const popupInfo = usePopupFederationInfo(federation?.meta || {})
     const navigation = useNavigation()
+    const toast = useToast()
     const handleOpenChat = (chat: MatrixRoom) => {
         navigation.navigate('ChatRoomConversation', {
             roomId: chat.id,
             chatType: chat.directUserId ? ChatType.direct : ChatType.group,
         })
+    }
+    const { handleLeaveFederation, validateCanLeaveFederation } =
+        useLeaveFederation({
+            t,
+            federationId,
+            fedimint,
+        })
+
+    const handleLeave = () => {
+        if (!federation) return
+
+        const canLeave = validateCanLeaveFederation(federation)
+
+        setIsLeavingFederation(true)
+
+        if (canLeave) {
+            handleLeaveFederation()
+                .then(() => {
+                    navigation.dispatch(
+                        reset('TabsNavigator', {
+                            initialRouteName: 'Federations',
+                        }),
+                    )
+                })
+                .catch(e => toast.error(t, e))
+                .finally(() => setIsLeavingFederation(false))
+        }
     }
 
     if (!federation) return null
@@ -91,8 +125,10 @@ const FederationDetails: React.FC<Props> = ({ route }: Props) => {
                     </Flex>
                 </Flex>
                 <Flex gap="md">
-                    <FederationEndIndicator federation={federation} />
-                    <FederationStatus federation={federation} />
+                    <FederationEndIndicator popupInfo={popupInfo} />
+                    {popupInfo?.ended ? null : (
+                        <FederationStatus federation={federation} />
+                    )}
                 </Flex>
             </Flex>
             <ShadowScrollView
@@ -127,7 +163,15 @@ const FederationDetails: React.FC<Props> = ({ route }: Props) => {
                     })}
                 </Text>
             </ShadowScrollView>
-            <Flex style={style.actionsContainer}>
+            <Flex style={style.actionsContainer} gap="md">
+                {popupInfo?.ended && (
+                    <Button
+                        fullWidth
+                        onPress={handleLeave}
+                        title={t('feature.federations.leave-federation')}
+                        loading={isLeavingFederation}
+                    />
+                )}
                 {tosUrl && (
                     <Button
                         bubble
@@ -177,10 +221,13 @@ const FederationStatus = ({ federation }: { federation: LoadedFederation }) => {
     )
 }
 
-const FederationEndIndicator = ({ federation }: { federation: Federation }) => {
+const FederationEndIndicator = ({
+    popupInfo,
+}: {
+    popupInfo: ReturnType<typeof usePopupFederationInfo>
+}) => {
     const { t } = useTranslation()
     const { theme } = useTheme()
-    const popupInfo = usePopupFederationInfo(federation?.meta || {})
 
     const style = styles(theme)
 
@@ -190,16 +237,7 @@ const FederationEndIndicator = ({ federation }: { federation: Federation }) => {
         return (
             <Flex
                 style={[style.federationEndedCard, style.popupFederationCard]}>
-                <Text caption>
-                    {popupInfo?.endedMessage || (
-                        <Trans
-                            t={t}
-                            i18nKey="feature.popup.ended-description"
-                            values={{ date: popupInfo?.endsAtText }}
-                            components={{ bold: <Text caption bold /> }}
-                        />
-                    )}
-                </Text>
+                <Text caption>{t('feature.federations.expired-message')}</Text>
             </Flex>
         )
     }
