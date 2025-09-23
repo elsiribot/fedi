@@ -58,7 +58,7 @@ const DefaultChatTile = ({
                     <FederationLogo
                         federation={federationOrCommunity}
                         size={theme.sizes.mediumAvatar}
-                        hex
+                        shape="hex"
                     />
                 ) : (
                     <ChatAvatar

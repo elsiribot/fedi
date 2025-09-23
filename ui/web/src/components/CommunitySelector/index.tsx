@@ -2,14 +2,12 @@ import { useRouter } from 'next/router'
 import React, { useState } from 'react'
 
 import ChevronDownIcon from '@fedi/common/assets/svgs/chevron-down.svg'
-import {
-    selectLastSelectedCommunity,
-    selectCommunities,
-} from '@fedi/common/redux'
+import { selectCommunities, selectCommunityStack } from '@fedi/common/redux'
 
 import { onboardingRoute } from '../../constants/routes'
 import { useAppSelector } from '../../hooks'
 import { styled, theme } from '../../styles'
+import AvatarStack from '../AvatarStack'
 import CommunitiesOverlay from '../CommunitiesOverlay'
 import { FederationAvatar } from '../FederationAvatar'
 import { Icon } from '../Icon'
@@ -20,8 +18,8 @@ type Props = {
 
 export const CommunitySelector: React.FC<Props> = ({ onClick }) => {
     const { push } = useRouter()
-    const selectedCommunity = useAppSelector(selectLastSelectedCommunity)
     const communities = useAppSelector(selectCommunities)
+    const communityStack = useAppSelector(selectCommunityStack)
     const [showCommunities, setShowCommunities] = useState(false)
 
     const handleClick = () => {
@@ -37,12 +35,14 @@ export const CommunitySelector: React.FC<Props> = ({ onClick }) => {
         <>
             <Container onClick={handleClick}>
                 <Wrapper>
-                    {selectedCommunity && (
-                        <FederationAvatar
-                            federation={selectedCommunity}
-                            size="xs"
-                        />
-                    )}
+                    <AvatarStack
+                        data={communityStack}
+                        renderAvatar={item => (
+                            <FederationAvatar federation={item} size="sm" />
+                        )}
+                        stackDirection="rtl"
+                        size={32}
+                    />
                     <Icon icon={ChevronDownIcon} size="sm" />
                 </Wrapper>
             </Container>
@@ -70,7 +70,8 @@ const Wrapper = styled('div', {
     display: 'flex',
     gap: 10,
     justifyContent: 'center',
-    padding: '5px 12px',
+    padding: theme.spacing.xs,
+    paddingRight: theme.spacing.md,
     '& > button': {
         display: 'block',
     },

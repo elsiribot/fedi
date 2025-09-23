@@ -1402,3 +1402,18 @@ export const selectGuardianFederation = createSelector(
         })
     },
 )
+
+// Selects up to three communities, the selected community being the first
+// If the last-selected community is undefined, falls back to the global community
+export const selectCommunityStack = createSelector(
+    selectCommunities,
+    selectLastSelectedCommunity,
+    (communities, lastSelectedCommunity) => {
+        const selectedCommunity = lastSelectedCommunity ?? FEDI_GLOBAL_COMMUNITY
+        const nonSelectedCommunities = communities.filter(
+            c => c.id !== selectedCommunity.id,
+        )
+
+        return [selectedCommunity, ...nonSelectedCommunities.slice(2)]
+    },
+)

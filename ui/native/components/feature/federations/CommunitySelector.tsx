@@ -2,9 +2,13 @@ import { Theme, useTheme } from '@rneui/themed'
 import React, { useState } from 'react'
 import { Pressable, StyleSheet } from 'react-native'
 
-import { selectLastSelectedCommunity } from '@fedi/common/redux'
+import {
+    selectCommunityStack,
+    selectLastSelectedCommunity,
+} from '@fedi/common/redux'
 
 import { useAppSelector } from '../../../state/hooks'
+import AvatarStack from '../../ui/AvatarStack'
 import HoloGradient from '../../ui/HoloGradient'
 import SvgImage, { SvgImageSize } from '../../ui/SvgImage'
 import CommunitiesOverlay from './CommunitiesOverlay'
@@ -13,6 +17,7 @@ import { FederationLogo } from './FederationLogo'
 const CommunitySelector: React.FC = () => {
     const { theme } = useTheme()
     const selectedCommunity = useAppSelector(selectLastSelectedCommunity)
+    const communityStack = useAppSelector(selectCommunityStack)
     const [showCommunities, setShowCommunities] = useState(false)
 
     const style = styles(theme)
@@ -35,10 +40,16 @@ const CommunitySelector: React.FC = () => {
                         .replaceAll(' ', '')}
                     style={style.container}
                     onPress={openCommunitiesOverlay}>
-                    <FederationLogo
-                        federation={selectedCommunity}
-                        size={24}
-                        hex
+                    <AvatarStack
+                        data={communityStack}
+                        stackDirection="rtl"
+                        renderAvatar={(item, size) => (
+                            <FederationLogo
+                                federation={item}
+                                size={size}
+                                shape="circle"
+                            />
+                        )}
                     />
                     <SvgImage
                         name="ChevronDown"
@@ -71,8 +82,8 @@ const styles = (theme: Theme) =>
             alignItems: 'center',
             justifyContent: 'center',
             alignSelf: 'center',
-            paddingVertical: theme.spacing.xs,
-            paddingHorizontal: theme.spacing.md,
+            padding: theme.spacing.xs,
+            paddingRight: theme.spacing.md,
             gap: theme.spacing.sm,
             borderRadius: 50,
             backgroundColor: theme.colors.white,
