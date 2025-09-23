@@ -6,7 +6,7 @@ import { getFederationIconUrl } from '@fedi/common/utils/FederationUtils'
 import { Avatar, AvatarProps } from './Avatar'
 
 type Props = Omit<AvatarProps, 'id' | 'shape' | 'name'> & {
-    federation: Pick<LoadedFederation, 'id' | 'name' | 'meta'>
+    federation: Pick<LoadedFederation, 'id' | 'meta'> & { name?: string }
 }
 
 export const FederationAvatar: React.FC<Props> = ({ federation, ...props }) => {

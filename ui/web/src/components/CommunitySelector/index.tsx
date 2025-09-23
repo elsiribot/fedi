@@ -2,10 +2,7 @@ import { useRouter } from 'next/router'
 import React, { useState } from 'react'
 
 import ChevronDownIcon from '@fedi/common/assets/svgs/chevron-down.svg'
-import {
-    selectLastSelectedCommunity,
-    selectCommunities,
-} from '@fedi/common/redux'
+import { selectCommunities, selectCommunityStack } from '@fedi/common/redux'
 
 import { onboardingRoute } from '../../constants/routes'
 import { useAppSelector } from '../../hooks'
@@ -21,8 +18,8 @@ type Props = {
 
 export const CommunitySelector: React.FC<Props> = ({ onClick }) => {
     const { push } = useRouter()
-    const selectedCommunity = useAppSelector(selectLastSelectedCommunity)
     const communities = useAppSelector(selectCommunities)
+    const communityStack = useAppSelector(selectCommunityStack)
     const [showCommunities, setShowCommunities] = useState(false)
 
     const handleClick = () => {
@@ -34,20 +31,12 @@ export const CommunitySelector: React.FC<Props> = ({ onClick }) => {
         }
     }
 
-    const nonSelectedCommunities = communities.filter(
-        community => community.id !== (selectedCommunity?.id ?? ''),
-    )
-    const firstThreeCommunities = [
-        selectedCommunity,
-        ...nonSelectedCommunities.slice(0, 2),
-    ].filter(x => x !== undefined)
-
     return (
         <>
             <Container onClick={handleClick}>
                 <Wrapper>
                     <AvatarStack
-                        data={firstThreeCommunities}
+                        data={communityStack}
                         renderAvatar={item => (
                             <FederationAvatar federation={item} size="sm" />
                         )}
