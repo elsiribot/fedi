@@ -5,7 +5,7 @@ import { useTranslation } from 'react-i18next'
 
 import CommunityCreateImage from '@fedi/common/assets/images/community-create-graphic.png'
 import BuildingIcon from '@fedi/common/assets/svgs/building.svg'
-import ChatIcon from '@fedi/common/assets/svgs/chat-thin.svg'
+import ChatIcon from '@fedi/common/assets/svgs/chat.svg'
 import ToolIcon from '@fedi/common/assets/svgs/tool.svg'
 import { ParserDataType } from '@fedi/common/types'
 
