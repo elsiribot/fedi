@@ -1,6 +1,10 @@
 import { useRouter } from 'next/router'
+import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 
+import { usePopupFederationInfo } from '@fedi/common/hooks/federation'
+import { useLeaveFederation } from '@fedi/common/hooks/leave'
+import { useToast } from '@fedi/common/hooks/toast'
 import { selectDefaultChats, selectLoadedFederation } from '@fedi/common/redux'
 import { Sats } from '@fedi/common/types'
 import amountUtils from '@fedi/common/utils/AmountUtils'
@@ -21,15 +25,42 @@ import * as Layout from '../../components/Layout'
 import { ShadowScroller } from '../../components/ShadowScroller'
 import { Text } from '../../components/Text'
 import { useAppSelector } from '../../hooks'
-import { styled } from '../../styles'
+import { fedimint } from '../../lib/bridge'
+import { styled, theme } from '../../styles'
 
 function FederationDetails() {
-    const { query, isReady } = useRouter()
+    const { query, isReady, push } = useRouter()
     const { t } = useTranslation()
+
+    const [isLeavingFederation, setIsLeavingFederation] = useState(false)
 
     const id = (query.id as string | undefined) ?? ''
     const federation = useAppSelector(s => selectLoadedFederation(s, id))
     const federationChats = useAppSelector(s => selectDefaultChats(s, id))
+    const popupInfo = usePopupFederationInfo(federation?.meta || {})
+    const toast = useToast()
+
+    const { handleLeaveFederation, validateCanLeaveFederation } =
+        useLeaveFederation({
+            t,
+            federationId: federation?.id || '',
+            fedimint,
+        })
+
+    const handleLeave = () => {
+        if (!federation) return
+
+        const canLeave = validateCanLeaveFederation(federation)
+
+        setIsLeavingFederation(true)
+
+        if (canLeave) {
+            handleLeaveFederation()
+                .then(() => push('/federations'))
+                .catch(e => toast.error(t, e))
+                .finally(() => setIsLeavingFederation(false))
+        }
+    }
 
     if (!federation || !isReady || !id) return null
 
@@ -66,7 +97,9 @@ function FederationDetails() {
                                 <Text variant="h2">{federation.name}</Text>
                             </FederationHeader>
                             <FederationEndIndicator federation={federation} />
-                            <FederationStatus federation={federation} />
+                            {popupInfo?.ended ? null : (
+                                <FederationStatus federation={federation} />
+                            )}
                         </HeaderContent>
                         <ScrollableContent>
                             {federationChats.length > 0 && (
@@ -97,17 +130,26 @@ function FederationDetails() {
                             </Text>
                         </ScrollableContent>
                     </Content>
-                    {tosUrl && (
+                    {(tosUrl || popupInfo?.ended) && (
                         <Actions>
-                            <Button
-                                variant="secondary"
-                                as="a"
-                                href={tosUrl}
-                                target="_blank">
-                                {t(
-                                    'feature.federations.federation-terms-and-conditions',
-                                )}
-                            </Button>
+                            {popupInfo?.ended && (
+                                <Button
+                                    onClick={handleLeave}
+                                    loading={isLeavingFederation}>
+                                    {t('feature.federations.leave-federation')}
+                                </Button>
+                            )}
+                            {tosUrl && (
+                                <Button
+                                    variant="secondary"
+                                    as="a"
+                                    href={tosUrl}
+                                    target="_blank">
+                                    {t(
+                                        'feature.federations.federation-terms-and-conditions',
+                                    )}
+                                </Button>
+                            )}
                         </Actions>
                     )}
                 </Layout.Content>
@@ -139,6 +181,7 @@ const ScrollableContent = styled(ShadowScroller, {
 const Actions = styled('div', {
     display: 'flex',
     flexDirection: 'column',
+    gap: theme.spacing.md,
     paddingTop: 16,
     paddingBottom: 16,
 
