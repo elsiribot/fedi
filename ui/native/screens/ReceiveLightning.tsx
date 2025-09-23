@@ -138,6 +138,7 @@ const ReceiveLightning: React.FC<Props> = ({ navigation, route }: Props) => {
             if (invoice) {
                 navigation.navigate('BitcoinRequest', {
                     invoice,
+                    federationId,
                 })
             }
         } catch (e) {

@@ -26,14 +26,13 @@ export type Props = NativeStackScreenProps<RootStackParamList, 'BitcoinRequest'>
 const BitcoinRequest: React.FC<Props> = ({ route }: Props) => {
     const { theme } = useTheme()
     const { t } = useTranslation()
-    const { invoice, federationId = '' } = route.params
+    const { invoice, federationId = null } = route.params
 
     const [isLoading, setIsLoading] = useState<boolean>(true)
     const [decoded, setDecoded] = useState<RpcInvoice | null>(null)
     const selectedFiatCurrency = useAppSelector(selectCurrency)
 
     useEffect(() => {
-        if (!federationId) return
         fedimint
             .rpcResult('decodeInvoice', { invoice, federationId })
             .match(
@@ -87,7 +86,7 @@ const BitcoinRequest: React.FC<Props> = ({ route }: Props) => {
                     })
                 }
                 type={BitcoinOrLightning.lightning}
-                federationId={federationId}
+                federationId={federationId || ''}
             />
         </SafeScrollArea>
     )
