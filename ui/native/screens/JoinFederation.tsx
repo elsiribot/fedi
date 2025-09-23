@@ -53,7 +53,13 @@ const JoinFederation: React.FC<Props> = ({ navigation, route }: Props) => {
 
     const goToNextScreen = useCallback(() => {
         if (!federationPreview && !communityPreview) return
-        navigation.replace(hasMatrixAuth ? 'TabsNavigator' : 'EnterDisplayName')
+        if (hasMatrixAuth) {
+            navigation.replace('TabsNavigator', {
+                initialRouteName: 'Federations',
+            })
+        } else {
+            navigation.replace('EnterDisplayName')
+        }
     }, [federationPreview, communityPreview, hasMatrixAuth, navigation])
 
     // If they came here with route state, paste the code for them
