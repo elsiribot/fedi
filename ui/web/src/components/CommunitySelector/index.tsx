@@ -70,8 +70,8 @@ const Wrapper = styled('div', {
     display: 'flex',
     gap: 10,
     justifyContent: 'center',
-    padding: theme.space.xs,
-    paddingRight: theme.space.md,
+    padding: theme.spacing.xs,
+    paddingRight: theme.spacing.md,
     '& > button': {
         display: 'block',
     },
