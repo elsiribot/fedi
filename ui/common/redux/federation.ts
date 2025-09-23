@@ -1414,6 +1414,6 @@ export const selectCommunityStack = createSelector(
             c => c.id !== selectedCommunity.id,
         )
 
-        return [selectedCommunity, ...nonSelectedCommunities.slice(2)]
+        return [selectedCommunity, ...nonSelectedCommunities.slice(0, 2)]
     },
 )
