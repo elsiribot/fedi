@@ -1,10 +1,11 @@
 import { useTheme, type Theme } from '@rneui/themed'
 import React from 'react'
-import { StyleSheet, View } from 'react-native'
+import { StyleSheet } from 'react-native'
 
 import { selectLastUsedFederation } from '@fedi/common/redux/federation'
 
 import { useAppSelector } from '../../../state/hooks'
+import GradientView from '../../ui/GradientView'
 import FederationTile from './FederationTile'
 
 const FeaturedFederation: React.FC = () => {
@@ -13,16 +14,11 @@ const FeaturedFederation: React.FC = () => {
     const lastUsedFederation = useAppSelector(selectLastUsedFederation)
 
     return (
-        // <HoloGradient level="m500" gradientStyle={style.gradientContainer}>
-        // {lastUsedFederation && (
-        //     <FederationTile federation={lastUsedFederation} />
-        // )}
-        // </HoloGradient>
-        <View style={style.container}>
+        <GradientView variant="sky" style={style.container}>
             {lastUsedFederation && (
                 <FederationTile federation={lastUsedFederation} />
             )}
-        </View>
+        </GradientView>
     )
 }
 
@@ -31,15 +27,9 @@ const styles = (theme: Theme) =>
         container: {
             borderBottomLeftRadius: 16,
             borderBottomRightRadius: 16,
-            paddingHorizontal: theme.spacing.lg,
+            padding: theme.spacing.lg,
             width: '100%',
             backgroundColor: theme.colors.secondary,
-        },
-        gradientContainer: {
-            borderBottomLeftRadius: 16,
-            borderBottomRightRadius: 16,
-            paddingHorizontal: theme.spacing.lg,
-            width: '100%',
         },
     })
 

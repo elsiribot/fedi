@@ -10,8 +10,8 @@ import { useAppSelector } from '../../../state/hooks'
 import { NavigationHook } from '../../../types/navigation'
 import { isNightly } from '../../../utils/device-info'
 import Flex from '../../ui/Flex'
+import GradientView from '../../ui/GradientView'
 import Header from '../../ui/Header'
-import HoloGradient from '../../ui/HoloGradient'
 import MainHeaderButtons from '../../ui/MainHeaderButtons'
 import CommunitySelector from '../federations/CommunitySelector'
 import SelectedCommunity from '../federations/SelectedCommunity'
@@ -31,7 +31,7 @@ const HomeHeader: React.FC = () => {
     }
 
     return (
-        <HoloGradient level="m500" gradientStyle={style.container}>
+        <GradientView variant="sky" style={style.container}>
             <Flex gap="md" style={style.contentContainer}>
                 <Header
                     transparent
@@ -57,7 +57,7 @@ const HomeHeader: React.FC = () => {
                     <SelectedCommunity community={selectedCommunity} />
                 )}
             </Flex>
-        </HoloGradient>
+        </GradientView>
     )
 }
 

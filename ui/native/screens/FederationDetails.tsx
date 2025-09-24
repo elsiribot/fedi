@@ -4,9 +4,7 @@ import { Button, Divider, Text, Theme, useTheme } from '@rneui/themed'
 import React from 'react'
 import { Trans, useTranslation } from 'react-i18next'
 import { Linking, StyleSheet } from 'react-native'
-import LinearGradient from 'react-native-linear-gradient'
 
-import { theme as fediTheme } from '@fedi/common/constants/theme'
 import { usePopupFederationInfo } from '@fedi/common/hooks/federation'
 import {
     selectDefaultChats,
@@ -32,6 +30,7 @@ import { FederationLogo } from '../components/feature/federations/FederationLogo
 import FederationStatusIndicator from '../components/feature/federations/FederationStatusIndicator'
 import DefaultChatTile from '../components/feature/home/DefaultChatTile'
 import Flex from '../components/ui/Flex'
+import GradientView from '../components/ui/GradientView'
 import { SafeAreaContainer } from '../components/ui/SafeArea'
 import ShadowScrollView from '../components/ui/ShadowScrollView'
 import SvgImage from '../components/ui/SvgImage'
@@ -205,11 +204,7 @@ const FederationEndIndicator = ({ federation }: { federation: Federation }) => {
     }
 
     return (
-        <LinearGradient
-            start={{ x: 0.1, y: 1 }}
-            end={{ x: 0.9, y: 0 }}
-            colors={[...fediTheme.skyLinearGradient]}
-            style={style.popupFederationCard}>
+        <GradientView variant="sky-banner" style={style.popupFederationCard}>
             <Flex row gap="sm" align="center">
                 <SvgImage name="Clock" size={16} />
                 <Text caption>
@@ -219,7 +214,7 @@ const FederationEndIndicator = ({ federation }: { federation: Federation }) => {
             <Text h2 medium>
                 {popupInfo.endsInText}
             </Text>
-        </LinearGradient>
+        </GradientView>
     )
 }
 
