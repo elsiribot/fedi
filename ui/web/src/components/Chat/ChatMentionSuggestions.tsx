@@ -17,7 +17,6 @@ interface Props {
     visible: boolean
     suggestions: MentionSelect[]
     onSelect: (item: MentionSelect) => void
-    query?: string
 }
 
 const formatNpub = (id: string) => {
@@ -29,9 +28,8 @@ export default function ChatMentionSuggestions({
     visible,
     suggestions,
     onSelect,
-    query = '',
 }: Props) {
-    const includeRoom = !!query && ROOM_MENTION.startsWith(query.toLowerCase())
+    const includeRoom = true
 
     const ROOM_ITEM: RoomItem = {
         id: '@room',
@@ -61,7 +59,7 @@ export default function ChatMentionSuggestions({
                                         displayName: ROOM_MENTION,
                                     })
                                 }>
-                                <RoomBadge>@</RoomBadge>
+                                <Avatar size="md" id="@room" name="@room" />
                                 <Meta>
                                     <Text variant="caption" weight="medium">
                                         @{ROOM_MENTION}
@@ -76,11 +74,12 @@ export default function ChatMentionSuggestions({
 
                     return (
                         <Row key={s.id} onClick={() => onSelect(s)}>
-                            {avatarSrc ? (
-                                <AvatarImg alt="chatAvatar" src={avatarSrc} />
-                            ) : (
-                                <Avatar size="md" id={s.id} name={primary} />
-                            )}
+                            <Avatar
+                                size="md"
+                                id={s.id}
+                                name={primary}
+                                src={avatarSrc}
+                            />
                             <Meta>
                                 <Text variant="caption" weight="medium">
                                     {primary}
@@ -130,31 +129,10 @@ const Row = styled('button', {
     '& + &': { borderTop: `1px solid ${theme.colors.extraLightGrey}` },
 })
 
-const AvatarImg = styled('img', {
-    width: 28,
-    height: 28,
-    borderRadius: 14,
-    objectFit: 'cover',
-    flexShrink: 0,
-})
-
 const Meta = styled('div', {
     display: 'flex',
     flexDirection: 'column',
     alignItems: 'flex-start',
     gap: 2,
     minWidth: 0,
-})
-
-const RoomBadge = styled('div', {
-    width: 28,
-    height: 28,
-    borderRadius: 14,
-    backgroundColor: theme.colors.blue,
-    color: theme.colors.white,
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    fontWeight: 700,
-    flexShrink: 0,
 })

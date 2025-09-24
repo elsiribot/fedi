@@ -140,7 +140,6 @@ export const ChatConversation: React.FC<Props> = ({
         mentionSuggestions,
         shouldShowSuggestions,
         detectMentionTrigger,
-        activeMentionQuery,
         insertMention: insertMentionFromHook,
     } = useMentionInput(membersForMentions, cursor)
 
@@ -446,7 +445,6 @@ export const ChatConversation: React.FC<Props> = ({
                                 visible={showMentionSuggestions}
                                 suggestions={mentionSuggestions}
                                 onSelect={insertMention}
-                                query={activeMentionQuery ?? ''}
                             />
                         </MentionOverlay>
                     )}
@@ -530,13 +528,11 @@ const Actions = styled('form', {
     flexDirection: 'column',
     padding: 8,
     width: '100%',
-
     '@standalone': {
         '@sm': {
             paddingBottom: 'env(safe-area-inset-bottom, 16px)',
         },
     },
-
     position: 'relative',
 })
 

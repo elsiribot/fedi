@@ -1,5 +1,6 @@
 import React from 'react'
 
+import { ROOM_MENTION } from '@fedi/common/constants/matrix'
 import { selectMatrixAuth, selectMatrixRoomMembers } from '@fedi/common/redux'
 import { MatrixEvent } from '@fedi/common/types'
 import { parseMessageText } from '@fedi/common/utils/chat'
@@ -8,6 +9,7 @@ import {
     isHtmlFormattedContent,
     stripReplyFromFormattedBody,
     splitHtmlRuns,
+    splitEveryoneRuns,
     parseMentionsFromText,
 } from '@fedi/common/utils/matrix'
 
@@ -27,6 +29,20 @@ const renderTextWithBreaks = (text: string) =>
             {index !== array.length - 1 && <br />}
         </React.Fragment>
     ))
+
+// underline @room tokens inside text
+const renderTextWithRoomUnderline = (text: string) => {
+    const runs = splitEveryoneRuns(text)
+    return runs.map((r, i) =>
+        r.type === 'everyone' && r.text.toLowerCase() === `@${ROOM_MENTION}` ? (
+            <Underline key={`ev-${i}`}>{r.text}</Underline>
+        ) : (
+            <React.Fragment key={`tx-${i}`}>
+                {renderTextWithBreaks(r.text)}
+            </React.Fragment>
+        ),
+    )
+}
 
 export const ChatTextEvent: React.FC<Props> = ({ event }) => {
     const content = event.content
@@ -61,7 +77,23 @@ export const ChatTextEvent: React.FC<Props> = ({ event }) => {
                             </A>
                         ) : (
                             <React.Fragment key={`txt-${i}`}>
-                                {renderTextWithBreaks(r.text)}
+                                {parseMessageText(r.text).map((seg, j) =>
+                                    seg.type === 'text' ? (
+                                        <React.Fragment key={`t-${i}-${j}`}>
+                                            {renderTextWithRoomUnderline(
+                                                seg.content,
+                                            )}
+                                        </React.Fragment>
+                                    ) : (
+                                        <ExternalLink
+                                            key={`a-${i}-${j}`}
+                                            href={seg.content}
+                                            target="_blank"
+                                            rel="noopener noreferrer">
+                                            {seg.content}
+                                        </ExternalLink>
+                                    ),
+                                )}
                             </React.Fragment>
                         ),
                     )}
@@ -120,7 +152,7 @@ export const ChatTextEvent: React.FC<Props> = ({ event }) => {
             {segments.map((segment, index) => (
                 <React.Fragment key={index}>
                     {segment.type === 'text' ? (
-                        renderTextWithBreaks(segment.content)
+                        renderTextWithRoomUnderline(segment.content)
                     ) : (
                         <ExternalLink
                             href={segment.content}
@@ -155,4 +187,8 @@ const ExternalLink = styled('a', {
     '&:hover': {
         opacity: 0.8,
     },
+})
+
+const Underline = styled('span', {
+    textDecoration: 'underline',
 })
