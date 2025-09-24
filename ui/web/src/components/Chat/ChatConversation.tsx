@@ -205,7 +205,7 @@ export const ChatConversation: React.FC<Props> = ({
 
     const handleInputKeyDown = useCallback(
         (ev: React.KeyboardEvent) => {
-            if (ev.key === 'Enter' && !(ev.shiftKey || ev.metaKey)) {
+            if (ev.key === 'Enter' && (ev.shiftKey || ev.metaKey)) {
                 ev.preventDefault()
                 handleSend()
             }
