@@ -80,9 +80,8 @@ const FederationDetails: React.FC<Props> = ({ route }: Props) => {
 
         const canLeave = validateCanLeaveFederation(federation)
 
-        setIsLeavingFederation(true)
-
         if (canLeave) {
+            setIsLeavingFederation(true)
             handleLeaveFederation()
                 .then(() => {
                     navigation.dispatch(

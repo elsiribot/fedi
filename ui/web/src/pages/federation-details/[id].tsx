@@ -52,9 +52,8 @@ function FederationDetails() {
 
         const canLeave = validateCanLeaveFederation(federation)
 
-        setIsLeavingFederation(true)
-
         if (canLeave) {
+            setIsLeavingFederation(true)
             handleLeaveFederation()
                 .then(() => push('/federations'))
                 .catch(e => toast.error(t, e))
