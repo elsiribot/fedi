@@ -1,14 +1,13 @@
 import Image from 'next/image'
-import React, { useEffect, useRef, useState } from 'react'
+import React, { useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 
 import ImageOff from '@fedi/common/assets/svgs/image-off.svg'
 import { MatrixEvent } from '@fedi/common/types'
-import { scaleAttachment } from '@fedi/common/utils/media'
 
 import { Icon } from '../../components/Icon'
 import { Text } from '../../components/Text'
-import { useLoadMedia } from '../../hooks/media'
+import { useLoadMedia, useScaledDimensions } from '../../hooks/media'
 import { styled, theme } from '../../styles'
 import { ChatMediaPreview } from './ChatMediaPreview'
 
@@ -16,34 +15,18 @@ interface Props {
     event: MatrixEvent<'m.image'>
 }
 
-const MAX_HEIGHT = 400
-
 export const ChatImageEvent: React.FC<Props> = ({ event }) => {
     const { t } = useTranslation()
-    const { error, src } = useLoadMedia(event)
-
     const widthRef = useRef<HTMLDivElement>(null)
-
-    const [scaledWidth, setScaledWidth] = useState<number>(0)
-    const [scaledHeight, setScaledHeight] = useState<number>(0)
+    const { error, src } = useLoadMedia(event)
+    const { id, content } = event
+    const { width, height } = useScaledDimensions({
+        id,
+        originalWidth: content.info?.width ?? 0,
+        originalHeight: content.info?.height ?? 0,
+        containerRef: widthRef,
+    })
     const [showMediaPreview, setShowMediaPreview] = useState(false)
-    const [dataLoaded, setDataLoaded] = useState(false)
-
-    useEffect(() => {
-        if (!src) return
-        if (!widthRef.current) return
-        const wrapper = widthRef.current
-
-        const { width, height } = scaleAttachment(
-            event.content.info?.width ?? 0,
-            event.content.info?.height ?? 0,
-            wrapper.clientWidth,
-            MAX_HEIGHT,
-        )
-
-        setScaledWidth(width)
-        setScaledHeight(height)
-    }, [event.content, src])
 
     if (error) {
         return (
@@ -65,25 +48,13 @@ export const ChatImageEvent: React.FC<Props> = ({ event }) => {
                 src={src}
                 name={event.content.body}
                 trigger={
-                    <ImgWrapper>
-                        {!dataLoaded && (
-                            <ImagePlaceholder
-                                style={{
-                                    width: scaledWidth,
-                                    height: scaledHeight,
-                                }}
-                            />
-                        )}
+                    <ImgWrapper style={{ width, height }}>
                         {src && (
                             <Img
                                 src={src}
                                 alt="image"
-                                width={scaledWidth}
-                                height={scaledHeight}
-                                loading="lazy"
-                                onLoad={() =>
-                                    setTimeout(() => setDataLoaded(true), 200)
-                                }
+                                width={width}
+                                height={height}
                             />
                         )}
                     </ImgWrapper>
@@ -92,8 +63,8 @@ export const ChatImageEvent: React.FC<Props> = ({ event }) => {
                     <PreviewImg
                         src={src}
                         alt="preview-image"
-                        width={scaledWidth}
-                        height={scaledHeight}
+                        width={width}
+                        height={height}
                     />
                 )}
             </ChatMediaPreview>
@@ -114,12 +85,6 @@ const ImgWrapper = styled('div', {
     display: 'flex',
     justifyContent: 'center',
     position: 'relative',
-})
-
-const ImagePlaceholder = styled('div', {
-    background: theme.colors.extraLightGrey,
-    borderRadius: theme.sizes.xxs,
-    position: 'absolute',
 })
 
 const Img = styled(Image, {

@@ -52,7 +52,7 @@ export const ChatEventCollection: React.FC<Props> = ({
                           : roomMember?.displayName || '...'
 
                     return (
-                        <div key={events[0].id}>
+                        <div key={events.at(-1)?.id}>
                             {showUsernames && !isMe && (
                                 <Username>{displayName}</Username>
                             )}

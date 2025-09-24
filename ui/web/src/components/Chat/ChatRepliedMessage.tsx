@@ -20,7 +20,7 @@ export const ChatRepliedMessage: React.FC<Props> = ({
     const [isPressed, setIsPressed] = useState(false)
 
     const truncatedBody = useMemo(() => {
-        const body = ('body' in data.content && data.content.body) || 'Message'
+        const body = data?.content?.body || 'Message'
         // Dynamically adjust truncation length based on message size for better readability
         // Longer messages get more characters before truncation to preserve context
         const maxLength =

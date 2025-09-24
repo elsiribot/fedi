@@ -209,6 +209,8 @@ export const ChatConversation: React.FC<Props> = ({
                 ev.preventDefault()
             }
 
+            if (!value.trim() && !files.length) return
+
             try {
                 setIsSending(true)
                 await onSendMessage(value, files, repliedEvent?.id ?? null)
@@ -352,10 +354,11 @@ export const ChatConversation: React.FC<Props> = ({
                     }>
                     {eventGroups.map(collection => (
                         <div
-                            key={collection[0][0].id}
-                            data-event-id={collection[0][0].id}
+                            key={collection[0].at(-1)?.id}
+                            data-event-id={collection[0].at(-1)?.id}
                             className={
-                                highlightedMessageId === collection[0][0].id
+                                highlightedMessageId ===
+                                collection[0].at(-1)?.id
                                     ? 'highlighted'
                                     : ''
                             }>
