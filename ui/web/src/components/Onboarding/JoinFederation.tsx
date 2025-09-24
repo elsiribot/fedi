@@ -7,13 +7,12 @@ import { makeLog } from '@fedi/common/utils/log'
 
 import { useMediaQuery } from '../../hooks'
 import { fedimint } from '../../lib/bridge'
-import { config } from '../../styles'
+import { config, styled } from '../../styles'
 import { HoloLoader } from '../HoloLoader'
-import { Header, Title } from '../Layout'
+import * as Layout from '../Layout'
 import { Redirect } from '../Redirect'
 import CommunityPreview from './CommunityPreview'
 import FederationPreview from './FederationPreview'
-import { OnboardingContainer, OnboardingContent } from './components'
 
 const log = makeLog('JoinFederation')
 
@@ -48,11 +47,9 @@ export const JoinFederation: React.FC = () => {
 
     if (isFetchingPreview) {
         return (
-            <OnboardingContainer>
-                <OnboardingContent fullWidth={true}>
-                    <HoloLoader size={'xl'} />
-                </OnboardingContent>
-            </OnboardingContainer>
+            <LoadingWrapper>
+                <HoloLoader size={'xl'} />
+            </LoadingWrapper>
         )
     }
 
@@ -97,13 +94,21 @@ export const JoinFederation: React.FC = () => {
     }
 
     return (
-        <OnboardingContainer>
+        <Layout.Root>
             {isSm && (
-                <Header back>
-                    <Title subheader>{t('words.welcome')}</Title>
-                </Header>
+                <Layout.Header back>
+                    <Layout.Title subheader>{t('words.welcome')}</Layout.Title>
+                </Layout.Header>
             )}
-            {content}
-        </OnboardingContainer>
+            <Layout.Content>{content}</Layout.Content>
+        </Layout.Root>
     )
 }
+
+const LoadingWrapper = styled('div', {
+    alignItems: 'center',
+    display: 'flex',
+    flex: 1,
+    flexDirection: 'column',
+    justifyContent: 'center',
+})

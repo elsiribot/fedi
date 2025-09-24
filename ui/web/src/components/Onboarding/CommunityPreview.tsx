@@ -11,8 +11,8 @@ import {
 import { styled, theme } from '../../styles'
 import { Button } from '../Button'
 import { FederationAvatar } from '../FederationAvatar'
+import * as Layout from '../Layout'
 import { Text } from '../Text'
-import { OnboardingActions, OnboardingContent } from './components'
 
 type Props = {
     community: CommunityPreview
@@ -76,8 +76,8 @@ const CommunityPreview: React.FC<Props> = ({
     ) : null
 
     return (
-        <>
-            <OnboardingContent fullWidth={!community}>
+        <Layout.Root>
+            <Layout.Content fullWidth={!community}>
                 <FederationPreviewOuter>
                     <FederationPreviewInner>
                         <AvatarWrapper>
@@ -106,9 +106,9 @@ const CommunityPreview: React.FC<Props> = ({
                         </CustomWelcomeMessage>
                     </FederationPreviewInner>
                 </FederationPreviewOuter>
-            </OnboardingContent>
-            {actions && <OnboardingActions>{actions}</OnboardingActions>}
-        </>
+            </Layout.Content>
+            {actions && <Layout.Actions>{actions}</Layout.Actions>}
+        </Layout.Root>
     )
 }
 

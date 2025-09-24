@@ -995,7 +995,7 @@
             "recovery-in-progress-payments": "Recovery is in progress. Payments will be available soon.",
             "search-files": "Search files",
             "select-a-device": "Select a device",
-            "select-a-device-guidance": "Select a device to transfer an existing wallet from",
+            "select-a-device-guidance": "Select a device to transfer an existing wallet from.",
             "social-recovery": "Social recovery",
             "social-recovery-instructions": "Open your social recovery Fedi file that was created when you recorded your backup video. We prompted you to save the file and share it with friends.",
             "social-recovery-method": "If you recorded a video, meet with the guardians to have them confirm your identity",

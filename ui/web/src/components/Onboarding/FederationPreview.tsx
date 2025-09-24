@@ -13,9 +13,9 @@ import { styled, theme } from '../../styles'
 import { Button } from '../Button'
 import { FederationAvatar } from '../FederationAvatar'
 import FederationEndedPreview from '../FederationEndedPreview'
+import * as Layout from '../Layout'
 import { Switch } from '../Switch'
 import { Text } from '../Text'
-import { OnboardingActions, OnboardingContent } from './components'
 
 type Props = {
     federation: RpcFederationPreview
@@ -129,7 +129,7 @@ const FederationPreview: React.FC<Props> = ({
                             variant="small"
                             css={{
                                 color: theme.colors.grey,
-                                textAlign: 'left',
+                                textAlign: 'center',
                             }}>
                             <Trans
                                 i18nKey="feature.onboarding.terms-url"
@@ -168,12 +168,10 @@ const FederationPreview: React.FC<Props> = ({
     }
 
     return (
-        <>
-            <OnboardingContent fullWidth={!federation}>
-                {content}
-            </OnboardingContent>
-            {actions && <OnboardingActions>{actions}</OnboardingActions>}
-        </>
+        <Layout.Root>
+            <Layout.Content fullWidth={!federation}>{content}</Layout.Content>
+            {actions && <Layout.Actions>{actions}</Layout.Actions>}
+        </Layout.Root>
     )
 }
 

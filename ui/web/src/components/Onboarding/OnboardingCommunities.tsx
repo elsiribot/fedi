@@ -12,16 +12,11 @@ import { ParserDataType } from '@fedi/common/types'
 import { keyframes, styled, theme } from '../../styles'
 import { Button } from '../Button'
 import { Icon } from '../Icon'
-import { Header, Title } from '../Layout'
+import * as Layout from '../Layout'
 import { OmniInput } from '../OmniInput'
 import PublicFederations from '../PublicFederations'
 import { Switcher } from '../Switcher'
 import { Text } from '../Text'
-import {
-    OnboardingActions,
-    OnboardingContainer,
-    OnboardingContent,
-} from './components'
 
 type TabValue = 'discover' | 'join' | 'create'
 
@@ -144,8 +139,7 @@ export function OnboardingCommunities() {
                         <Image
                             src={CommunityCreateImage}
                             alt="Create Community"
-                            width={400}
-                            height={300}
+                            style={{ width: '100%', height: 'auto' }}
                         />
                     </ImageWrapper>
                     <InfoEntryList items={createInfoItems} />
@@ -162,11 +156,13 @@ export function OnboardingCommunities() {
     }
 
     return (
-        <OnboardingContainer>
-            <Header back>
-                <Title subheader>{t('phrases.join-a-community')}</Title>
-            </Header>
-            <OnboardingContent justify="start">
+        <Layout.Root>
+            <Layout.Header centered back>
+                <Layout.Title subheader>
+                    {t('phrases.join-a-community')}
+                </Layout.Title>
+            </Layout.Header>
+            <Layout.Content>
                 <Content>
                     <TitleWrapper>
                         <Text variant="h2" css={{ marginBottom: 0 }}>
@@ -185,13 +181,13 @@ export function OnboardingCommunities() {
                     />
                     <Body>{body}</Body>
                 </Content>
-            </OnboardingContent>
-            <OnboardingActions>
+            </Layout.Content>
+            <Layout.Actions>
                 <Button variant="tertiary" onClick={() => push('/home')}>
                     {t('phrases.maybe-later')}
                 </Button>
-            </OnboardingActions>
-        </OnboardingContainer>
+            </Layout.Actions>
+        </Layout.Root>
     )
 }
 
@@ -234,10 +230,8 @@ const CreateContentWrapper = styled('div', {
 })
 
 const ImageWrapper = styled('div', {
-    '& img': {
-        maxWidth: '100%',
-        height: 'auto',
-    },
+    maxWidth: '100%',
+    height: 'auto',
 })
 
 const InfoListContainer = styled('div', {

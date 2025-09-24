@@ -12,12 +12,14 @@ import { ShadowScroller } from './ShadowScroller'
 type Props = {
     back?: string | boolean
     showCloseButton?: boolean
+    centered?: boolean
 }
 
 export function Header({
     children,
     back,
     showCloseButton,
+    centered,
     ...props
 }: React.ComponentProps<typeof HeaderContainer> & Props) {
     const isSm = useMediaQuery(config.media.sm)
@@ -40,7 +42,7 @@ export function Header({
                     />
                 </ButtonWrapper>
             )}
-            <HeaderContent>{children}</HeaderContent>
+            <HeaderContent centered={centered}>{children}</HeaderContent>
             {showCloseButton && (
                 <ButtonWrapper isClose>
                     <Icon icon={CloseIcon} onClick={() => router.back()} />
@@ -100,6 +102,14 @@ const HeaderContent = styled('div', {
 
     '@sm': {
         padding: '0 16px',
+    },
+
+    variants: {
+        centered: {
+            true: {
+                justifyContent: 'center',
+            },
+        },
     },
 })
 
