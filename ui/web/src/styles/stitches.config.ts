@@ -1,6 +1,10 @@
 import { CSS, createStitches } from '@stitches/react'
 
 import { theme as fediTheme } from '@fedi/common/constants/theme'
+import {
+    FediGradientVariant,
+    makeFediGradient,
+} from '@fedi/common/utils/gradients'
 
 export const {
     styled,
@@ -47,10 +51,10 @@ export const {
         standalone: '(display-mode: standalone)',
     },
     utils: {
-        holoGradient: (value: keyof (typeof fediTheme)['holoGradient']) => ({
-            backgroundImage: `radial-gradient(89.9% 222.34% at 7.36% 24.19%, ${fediTheme.holoGradient[
-                value
-            ].join(', ')})`,
+        fediGradient: (value: FediGradientVariant) => ({
+            backgroundImage: `url(data:image/svg+xml;base64,${btoa(
+                makeFediGradient({ variant: value }),
+            )})`,
         }),
         nightGradient: () => ({
             backgroundImage: [

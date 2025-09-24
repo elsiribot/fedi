@@ -70,7 +70,7 @@ const Wrapper = styled('div', {
     padding: theme.spacing.lg,
     marginTop: theme.spacing.xl,
     marginBottom: theme.spacing.lg,
-    holoGradient: '400',
+    fediGradient: 'sky-banner',
 })
 
 const Content = styled('div', {
