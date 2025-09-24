@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next'
 import PlusIcon from '@fedi/common/assets/svgs/plus.svg'
 import SendArrowUpCircleIcon from '@fedi/common/assets/svgs/send-arrow-up-circle.svg'
 import WalletIcon from '@fedi/common/assets/svgs/wallet.svg'
+import { useMentionInput } from '@fedi/common/hooks/matrix'
 import { useToast } from '@fedi/common/hooks/toast'
 import {
     selectMatrixRoom,
@@ -12,12 +13,20 @@ import {
     selectReplyingToMessageEventForRoom,
     clearChatReplyingToMessage,
     selectMatrixRoomMembers,
+    selectMatrixAuth,
 } from '@fedi/common/redux'
-import { ChatType, MatrixEvent } from '@fedi/common/types'
+import {
+    ChatType,
+    MatrixEvent,
+    MentionSelect,
+    MatrixRoomMember,
+} from '@fedi/common/types'
+import { RpcMatrixMembership } from '@fedi/common/types/bindings'
 import { makeLog } from '@fedi/common/utils/log'
 import {
     makeMatrixEventGroups,
     stripReplyFromBody,
+    matrixIdToUsername,
 } from '@fedi/common/utils/matrix'
 
 import {
@@ -34,6 +43,7 @@ import { Text } from '../Text'
 import { ChatAttachmentThumbnail } from './ChatAttachmentThumbnail'
 import { ChatAvatar } from './ChatAvatar'
 import { ChatEventCollection } from './ChatEventCollection'
+import ChatMentionSuggestions from './ChatMentionSuggestions'
 
 const log = makeLog('ChatConversation')
 const HIGHLIGHT_DURATION = 3000
@@ -43,7 +53,6 @@ interface Props {
     id: string
     name: string
     events: MatrixEvent[]
-    onSendMessage(message: string, files: File[]): Promise<void>
     isPublic?: boolean
     headerActions?: React.ReactNode
     onWalletClick?(): void
@@ -77,12 +86,15 @@ export const ChatConversation: React.FC<Props> = ({
     const user = useAppSelector(s => selectMatrixUser(s, id))
     const isReadOnly = useAppSelector(s => selectMatrixRoomIsReadOnly(s, id))
     const roomMembers = useAppSelector(s => selectMatrixRoomMembers(s, id))
+    const auth = useAppSelector(s => selectMatrixAuth(s))
+    const selfUserId = auth?.userId || undefined
 
     const [value, setValue] = useState('')
     const [isSending, setIsSending] = useState(false)
     const [hasPaginated, setHasPaginated] = useState(false)
     const [isPaginating, setIsPaginating] = useState(false)
     const [files, setFiles] = useState<File[]>([])
+    const [cursor, setCursor] = useState(0)
 
     const repliedEvent = useAppSelector(s =>
         selectReplyingToMessageEventForRoom(s, id),
@@ -97,18 +109,53 @@ export const ChatConversation: React.FC<Props> = ({
 
     useAutosizeTextArea(inputRef.current, value)
 
+    const mentionEnabled = type === ChatType.group && (!!room || !!isPublic)
+    const membersForMentions = useMemo<MatrixRoomMember[]>(() => {
+        if (!mentionEnabled) return []
+        const list = (roomMembers || []) as MatrixRoomMember[]
+        if (!selfUserId) return list
+        if (list.some(m => m.id === selfUserId)) return list
+        const displayName =
+            (auth?.displayName || '').trim() || matrixIdToUsername(selfUserId)
+        const selfAsMember: MatrixRoomMember = {
+            id: selfUserId,
+            displayName,
+            avatarUrl: auth?.avatarUrl,
+            powerLevel: 0,
+            roomId: id,
+            membership: 'join' as RpcMatrixMembership,
+            ignored: false,
+        }
+        return [...list, selfAsMember]
+    }, [
+        mentionEnabled,
+        roomMembers,
+        selfUserId,
+        auth?.displayName,
+        auth?.avatarUrl,
+        id,
+    ])
+
+    const {
+        mentionSuggestions,
+        shouldShowSuggestions,
+        detectMentionTrigger,
+        activeMentionQuery,
+        insertMention: insertMentionFromHook,
+    } = useMentionInput(membersForMentions, cursor)
+
+    const showMentionSuggestions =
+        mentionEnabled && !isReadOnly && shouldShowSuggestions
+
     const eventGroups = useMemo(
         () => makeMatrixEventGroups(events, 'desc'),
         [events],
     )
 
-    // Any time we get a change in the number of events, we reset hasPaginated
-    // so that the user will attempt pagination again.
     useEffect(() => {
         setHasPaginated(false)
     }, [events.length])
 
-    // Handle loading initial messages
     useEffect(() => {
         if (!onPaginate) return
         setIsPaginating(true)
@@ -189,17 +236,12 @@ export const ChatConversation: React.FC<Props> = ({
         event: React.ChangeEvent<HTMLInputElement>,
     ) => {
         if (!event.target.files || !event.target.files.length) return
-
-        // converts FileList to Array
         const filesArr = Array.from(event.target.files)
-
         setFiles(prev => [...prev, ...filesArr])
     }
 
     const handleOnRemoveThumbnail = (idx: number) => {
-        // get everything back except item at idx
         const newFiles = [...files.slice(0, idx), ...files.slice(idx + 1)]
-
         setFiles(newFiles)
     }
 
@@ -212,6 +254,38 @@ export const ChatConversation: React.FC<Props> = ({
         },
         [handleSend],
     )
+
+    const handleInputChange = (ev: React.ChangeEvent<HTMLTextAreaElement>) => {
+        const v = ev.currentTarget.value
+        setValue(v)
+        const c = ev.currentTarget.selectionStart ?? v.length
+        setCursor(c)
+        if (mentionEnabled) detectMentionTrigger(v, c)
+    }
+
+    const handleInputSelect: React.ReactEventHandler<
+        HTMLTextAreaElement
+    > = ev => {
+        const c = ev.currentTarget.selectionStart ?? value.length
+        setCursor(c)
+        if (mentionEnabled) detectMentionTrigger(value, c)
+    }
+
+    const insertMention = (item: MentionSelect) => {
+        const { newText, newCursorPosition } = insertMentionFromHook(
+            item,
+            value,
+        )
+        setValue(newText)
+        setCursor(newCursorPosition)
+        requestAnimationFrame(() => {
+            if (inputRef.current) {
+                inputRef.current.selectionStart = newCursorPosition
+                inputRef.current.selectionEnd = newCursorPosition
+                inputRef.current.focus()
+            }
+        })
+    }
 
     const replySender = useMemo(() => {
         if (!repliedEvent?.sender) return undefined
@@ -235,7 +309,6 @@ export const ChatConversation: React.FC<Props> = ({
         const body =
             ('body' in repliedEvent.content && repliedEvent.content.body) ||
             'Message'
-        // TOOD: resolve this tech debt
         const formattedBody =
             'formatted_body' in repliedEvent.content
                 ? repliedEvent.content.formatted_body
@@ -341,7 +414,10 @@ export const ChatConversation: React.FC<Props> = ({
                         <Input
                             ref={inputRef}
                             value={value}
-                            onChange={ev => setValue(ev.currentTarget.value)}
+                            onSelect={handleInputSelect}
+                            onChange={handleInputChange}
+                            onKeyUp={handleInputSelect}
+                            onClick={handleInputSelect}
                             placeholder={t(
                                 isReadOnly
                                     ? 'feature.chat.broadcast-only-notice'
@@ -364,10 +440,20 @@ export const ChatConversation: React.FC<Props> = ({
                         )}
                     </InputRow>
 
+                    {showMentionSuggestions && (
+                        <MentionOverlay>
+                            <ChatMentionSuggestions
+                                visible={showMentionSuggestions}
+                                suggestions={mentionSuggestions}
+                                onSelect={insertMention}
+                                query={activeMentionQuery ?? ''}
+                            />
+                        </MentionOverlay>
+                    )}
+
                     {!isReadOnly && (
                         <ActionsRow>
                             <InputActions>
-                                {/* In-chat payments only available for DirectChat after a room has already been created with the user */}
                                 {type === ChatType.direct && (
                                     <Icon
                                         aria-label="wallet-icon"
@@ -376,7 +462,6 @@ export const ChatConversation: React.FC<Props> = ({
                                         onClick={onWalletClick}
                                     />
                                 )}
-                                {/* To prevent users from uploading unencrypted media, media uploads are not available in public chats */}
                                 {!isPublic && (
                                     <Icon
                                         aria-label="plus-icon"
@@ -451,6 +536,8 @@ const Actions = styled('form', {
             paddingBottom: 'env(safe-area-inset-bottom, 16px)',
         },
     },
+
+    position: 'relative',
 })
 
 const ThumbnailsRow = styled('div', {
@@ -464,6 +551,7 @@ const ThumbnailsRow = styled('div', {
 
 const InputRow = styled('div', {
     width: '100%',
+    position: 'relative',
 })
 
 const ActionsRow = styled('div', {
@@ -586,4 +674,13 @@ const ReplyCloseButton = styled('button', {
     '&:hover': {
         backgroundColor: theme.colors.primary10,
     },
+})
+
+const MentionOverlay = styled('div', {
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    bottom: '100%',
+    marginBottom: 0,
+    zIndex: 20,
 })

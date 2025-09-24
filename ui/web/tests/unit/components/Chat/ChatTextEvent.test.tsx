@@ -5,6 +5,10 @@ import { createMockNonPaymentEvent } from '@fedi/common/tests/mock-data/matrix-e
 
 import { ChatTextEvent } from '../../../../src/components/Chat/ChatTextEvent'
 
+jest.mock('../../../../src/hooks', () => ({
+    useAppSelector: jest.fn().mockReturnValue(undefined),
+}))
+
 // Mock text events for different scenarios
 const mockTextOnlyEvent = createMockNonPaymentEvent({
     content: {
@@ -26,7 +30,7 @@ const mockUrlOnlyEvent = createMockNonPaymentEvent({
 
 describe('/components/Chat/ChatTextEvent', () => {
     beforeEach(() => {
-        jest.clearAllMocks()
+        jest.resetAllMocks()
     })
 
     describe('when rendering text-only content', () => {
