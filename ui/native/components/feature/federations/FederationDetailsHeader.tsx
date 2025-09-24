@@ -4,6 +4,7 @@ import React from 'react'
 import { useTranslation } from 'react-i18next'
 
 import { selectLoadedFederation } from '@fedi/common/redux'
+import { shouldShowInviteCode } from '@fedi/common/utils/FederationUtils'
 
 import { useAppSelector } from '../../../state/hooks'
 import { NavigationHook, RootStackParamList } from '../../../types/navigation'
@@ -23,6 +24,7 @@ const FederationDetailsHeader: React.FC = () => {
     const federation = useAppSelector(s =>
         selectLoadedFederation(s, federationId),
     )
+    const shouldShowInvite = shouldShowInviteCode(federation?.meta ?? {})
 
     return (
         <Header
@@ -33,7 +35,7 @@ const FederationDetailsHeader: React.FC = () => {
                 </Text>
             }
             headerRight={
-                federation && (
+                federation && shouldShowInvite ? (
                     <PressableIcon
                         svgName="Qr"
                         onPress={() =>
@@ -42,7 +44,7 @@ const FederationDetailsHeader: React.FC = () => {
                             })
                         }
                     />
-                )
+                ) : undefined
             }
         />
     )
