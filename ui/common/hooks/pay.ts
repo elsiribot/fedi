@@ -357,7 +357,7 @@ export function useLnurlReceiveCode(
     }, [fedimint, federationId, supportsLnurl, dispatch, isFetching])
 
     return {
-        isLoading: isFetching || supportsLnurl === null,
+        isLoading: supportsLnurl === null ? false : isFetching,
         lnurlReceiveCode,
         supportsLnurl,
     }
