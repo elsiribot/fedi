@@ -427,20 +427,6 @@ export const matrixSlice = createSlice({
                 ...action.payload.map(media => ({ media, visible: true })),
             ]
         },
-        matchAndRemovePreviewMedia(
-            state,
-            action: PayloadAction<
-                MatrixEventContentType<'m.image' | 'm.video'>
-            >,
-        ) {
-            state.previewMedia = state.previewMedia.filter(
-                cached =>
-                    !doesEventContentMatchPreviewMedia(
-                        cached.media,
-                        action.payload,
-                    ),
-            )
-        },
         matchAndHidePreviewMedia(
             state,
             action: PayloadAction<Array<MatrixEvent<'m.image' | 'm.video'>>>,
@@ -686,7 +672,6 @@ export const {
     setMessageToEdit,
     addPreviewMedia,
     matchAndHidePreviewMedia,
-    matchAndRemovePreviewMedia,
     updateMatrixRoomMultispendEvent,
     setChatReplyingToMessage,
     clearChatReplyingToMessage,

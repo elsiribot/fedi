@@ -72,6 +72,7 @@ const ChatConversation: React.FC<MessagesListProps> = ({
     const [highlightedMessageId, setHighlightedMessageId] = useState<
         string | null
     >(null)
+    const [visibleItems, setVisibleItems] = useState<string[]>([])
     const animatedNewMessageBottom = useRef(new Animated.Value(0)).current
     const previewMedia = useAppSelector(selectPreviewMedia)
     const hasLoadedEvents = useAppSelector(s =>
@@ -235,9 +236,11 @@ const ChatConversation: React.FC<MessagesListProps> = ({
 
     const renderEventGroup: ListRenderItem<MatrixEvent[][]> = useCallback(
         ({ item }) => {
+            const key = item[0].at(-1)?.id
+
             return (
                 <ChatEventCollection
-                    key={item[0].at(-1)?.id}
+                    key={key}
                     roomId={id}
                     collection={item}
                     showUsernames={
@@ -250,10 +253,18 @@ const ChatConversation: React.FC<MessagesListProps> = ({
                     isPublic={isPublic}
                     onReplyTap={scrollToMessage}
                     highlightedMessageId={highlightedMessageId}
+                    isInViewport={visibleItems.includes(key ?? '')}
                 />
             )
         },
-        [id, type, isPublic, scrollToMessage, highlightedMessageId],
+        [
+            id,
+            type,
+            isPublic,
+            scrollToMessage,
+            highlightedMessageId,
+            visibleItems,
+        ],
     )
 
     // Hide the preview cached media events when the ACTUAL chat image/video events come
@@ -335,6 +346,10 @@ const ChatConversation: React.FC<MessagesListProps> = ({
                     maxToRenderPerBatch={10}
                     windowSize={10}
                     initialNumToRender={10}
+                    onViewableItemsChanged={({ viewableItems }) => {
+                        setVisibleItems(viewableItems.map(item => item.key))
+                    }}
+                    viewabilityConfig={{ itemVisiblePercentThreshold: 1 }}
                 />
             ) : (
                 <Flex justify="center" grow>
