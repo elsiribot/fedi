@@ -12,6 +12,7 @@ import { getFormattedDeviceInfo } from '@fedi/common/utils/device'
 
 import { fedimint } from '../../lib/bridge'
 import { styled, theme } from '../../styles'
+import { HoloLoader } from '../HoloLoader'
 import { Icon } from '../Icon'
 import { Header, Title } from '../Layout'
 import { Text } from '../Text'
@@ -57,15 +58,21 @@ export const SelectDevice: React.FC = () => {
     const { t } = useTranslation()
     const router = useRouter()
 
-    const { registeredDevices, handleTransfer } = useDeviceRegistration(
-        t,
-        fedimint,
-    )
+    const { isProcessing, registeredDevices, handleTransfer } =
+        useDeviceRegistration(t, fedimint)
 
     const onDeviceSelect = (device: RpcRegisteredDevice) => {
         handleTransfer(device, () => {
             router.push('/home')
         })
+    }
+
+    if (isProcessing) {
+        return (
+            <LoadingWrapper>
+                <HoloLoader size={'xl'} />
+            </LoadingWrapper>
+        )
     }
 
     return (
@@ -132,4 +139,12 @@ const DeviceIconWrapper = styled('div', {
     height: 40,
     justifyContent: 'center',
     width: 40,
+})
+
+const LoadingWrapper = styled('div', {
+    alignItems: 'center',
+    display: 'flex',
+    flex: 1,
+    flexDirection: 'column',
+    justifyContent: 'center',
 })
