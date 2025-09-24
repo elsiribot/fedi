@@ -111,7 +111,6 @@ export const theme = {
     // Figma has the gradient using gray on top of white, but we can simplify components
     // by using a flat gradient instead of an overlay on top of white.
     dayLinearGradient: ['rgba(255, 255, 255, 1)', 'rgba(228, 228, 228, 1)'],
-    skyLinearGradient: [HEX_COLORS.orange200, HEX_COLORS.blue200],
 } as const
 
 function makeHoloGradientRgbas(alphaMultiplier: number) {
