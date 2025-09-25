@@ -134,16 +134,14 @@ function FederationsPage() {
                 title={t('feature.home.backup-wallet-title')}
                 description={t('feature.home.backup-wallet-description')}>
                 <ModalContent aria-label="test">
-                    <ModalIconWrapper>
-                        <Avatar
-                            size="md"
-                            id=""
-                            name="list"
-                            holo
-                            icon={WordListIcon}
-                            css={{ alignSelf: 'center' }}
-                        />
-                    </ModalIconWrapper>
+                    <Avatar
+                        size="md"
+                        id=""
+                        name="list"
+                        holo
+                        icon={WordListIcon}
+                        css={{ alignSelf: 'center' }}
+                    />
                     <ModalTextWrapper>
                         <Text variant="h2">
                             {t('feature.home.backup-wallet-title')}
@@ -208,7 +206,7 @@ const ModalIconWrapper = styled('div', {
     boxSizing: 'border-box',
     display: 'flex',
     height: 50,
-    holoGradient: '600',
+    fediGradient: 'sky',
     justifyContent: 'center',
     marginBottom: 10,
     padding: 5,

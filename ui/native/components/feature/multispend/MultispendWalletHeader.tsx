@@ -16,8 +16,8 @@ import { fedimint } from '../../../bridge'
 import { reset } from '../../../state/navigation'
 import CustomOverlay from '../../ui/CustomOverlay'
 import Flex from '../../ui/Flex'
+import GradientView from '../../ui/GradientView'
 import HoloCircle from '../../ui/HoloCircle'
-import HoloGradient from '../../ui/HoloGradient'
 import { PressableIcon } from '../../ui/PressableIcon'
 import SvgImage from '../../ui/SvgImage'
 
@@ -109,7 +109,7 @@ const MultispendWalletHeader: React.FC<Props> = ({ roomId }) => {
     }
 
     return (
-        <HoloGradient style={style.container} level="m500">
+        <GradientView variant="sky" style={style.container}>
             <Flex
                 row
                 align="center"
@@ -187,7 +187,7 @@ const MultispendWalletHeader: React.FC<Props> = ({ roomId }) => {
                         : rejectConfirmationContents
                 }
             />
-        </HoloGradient>
+        </GradientView>
     )
 }
 

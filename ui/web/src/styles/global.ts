@@ -42,7 +42,7 @@ export const globalStyles = globalCss({
     body: {
         lineHeight: 1.5,
         '-webkit-font-smoothing': 'antialiased',
-        holoGradient: '100',
+        fediGradient: 'sky',
         backgroundAttachment: 'fixed',
     },
     'img, picture, video, canvas, svg': {

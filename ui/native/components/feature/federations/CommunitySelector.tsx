@@ -9,7 +9,7 @@ import {
 
 import { useAppSelector } from '../../../state/hooks'
 import AvatarStack from '../../ui/AvatarStack'
-import HoloGradient from '../../ui/HoloGradient'
+import GradientView from '../../ui/GradientView'
 import SvgImage, { SvgImageSize } from '../../ui/SvgImage'
 import CommunitiesOverlay from './CommunitiesOverlay'
 import { FederationLogo } from './FederationLogo'
@@ -30,34 +30,34 @@ const CommunitySelector: React.FC = () => {
 
     return (
         <>
-            <HoloGradient
-                level="900"
-                style={style.gradientContainer}
-                gradientStyle={style.gradient}>
-                <Pressable
-                    testID={selectedCommunity.name
-                        .concat('SelectorButton')
-                        .replaceAll(' ', '')}
-                    style={style.container}
-                    onPress={openCommunitiesOverlay}>
-                    <AvatarStack
-                        data={communityStack}
-                        stackDirection="rtl"
-                        renderAvatar={(item, size) => (
-                            <FederationLogo
-                                federation={item}
-                                size={size}
-                                shape="circle"
-                            />
-                        )}
-                    />
-                    <SvgImage
-                        name="ChevronDown"
-                        size={SvgImageSize.sm}
-                        color={theme.colors.primary}
-                    />
-                </Pressable>
-            </HoloGradient>
+            <Pressable
+                testID={selectedCommunity.name
+                    .concat('SelectorButton')
+                    .replaceAll(' ', '')}
+                onPress={openCommunitiesOverlay}>
+                <GradientView
+                    variant="sky-banner"
+                    style={style.gradientContainer}>
+                    <GradientView variant="white" style={style.content}>
+                        <AvatarStack
+                            data={communityStack}
+                            stackDirection="rtl"
+                            renderAvatar={(item, size) => (
+                                <FederationLogo
+                                    federation={item}
+                                    size={size}
+                                    shape="circle"
+                                />
+                            )}
+                        />
+                        <SvgImage
+                            name="ChevronDown"
+                            size={SvgImageSize.sm}
+                            color={theme.colors.primary}
+                        />
+                    </GradientView>
+                </GradientView>
+            </Pressable>
             <CommunitiesOverlay
                 open={showCommunities}
                 onOpenChange={setShowCommunities}
@@ -69,15 +69,10 @@ const CommunitySelector: React.FC = () => {
 const styles = (theme: Theme) =>
     StyleSheet.create({
         gradientContainer: {
-            borderRadius: 50,
-            ...theme.styles.subtleShadow,
-        },
-        gradient: {
             padding: theme.spacing.xxs,
             borderRadius: 50,
-            alignSelf: 'center',
         },
-        container: {
+        content: {
             flexDirection: 'row',
             alignItems: 'center',
             justifyContent: 'center',
@@ -86,7 +81,6 @@ const styles = (theme: Theme) =>
             paddingRight: theme.spacing.md,
             gap: theme.spacing.sm,
             borderRadius: 50,
-            backgroundColor: theme.colors.white,
         },
         federationName: {
             flexGrow: 1,

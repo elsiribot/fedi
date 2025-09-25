@@ -235,7 +235,7 @@ const ModalIconWrapper = styled('div', {
     boxSizing: 'border-box',
     display: 'flex',
     height: 50,
-    holoGradient: '600',
+    fediGradient: 'sky',
     justifyContent: 'center',
     marginBottom: 10,
     padding: 5,

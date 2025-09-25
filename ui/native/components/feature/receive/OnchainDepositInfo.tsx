@@ -9,7 +9,7 @@ import { Federation } from '@fedi/common/types'
 import { fedimint } from '../../../bridge'
 import { useAppDispatch } from '../../../state/hooks'
 import Flex from '../../ui/Flex'
-import HoloGradient from '../../ui/HoloGradient'
+import HoloAlert from '../../ui/HoloAlert'
 import SvgImage, { SvgImageName } from '../../ui/SvgImage'
 
 type RowProps = {
@@ -97,16 +97,13 @@ const OnchainDepositInfo: React.FC<Props> = ({ federationId }) => {
     }, [dispatch, federationId])
 
     return (
-        <HoloGradient
-            level="900"
-            style={style.gradientContainer}
-            gradientStyle={style.gradient}>
+        <HoloAlert containerStyle={style.gradient}>
             <Flex gap="md" style={style.content}>
                 {rows.map((row, idx) => (
                     <InfoRow key={`info-row-onchain-${idx}`} {...row} />
                 ))}
             </Flex>
-        </HoloGradient>
+        </HoloAlert>
     )
 }
 

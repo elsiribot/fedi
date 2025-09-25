@@ -1,9 +1,7 @@
 import { Text, Theme, useTheme } from '@rneui/themed'
 import { StyleSheet } from 'react-native'
-import LinearGradient from 'react-native-linear-gradient'
 
-import { theme as fediTheme } from '@fedi/common/constants/theme'
-
+import GradientView from '../../ui/GradientView'
 import SvgImage from '../../ui/SvgImage'
 
 type Props = {
@@ -13,16 +11,12 @@ const PinnedMessage = ({ message }: Props) => {
     const { theme } = useTheme()
     const style = styles(theme)
     return (
-        <LinearGradient
-            start={{ x: 0.1, y: 1 }}
-            end={{ x: 0.9, y: 0 }}
-            colors={[...fediTheme.skyLinearGradient]}
-            style={style.content}>
+        <GradientView variant="sky-banner" style={style.content}>
             <SvgImage name="Pin" />
             <Text caption style={style.message}>
                 {message}
             </Text>
-        </LinearGradient>
+        </GradientView>
     )
 }
 
