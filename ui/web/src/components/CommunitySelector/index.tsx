@@ -58,7 +58,7 @@ const Container = styled('div', {
     boxSizing: 'border-box',
     borderRadius: 9999,
     cursor: 'pointer',
-    holoGradient: '600',
+    fediGradient: 'sky-banner',
     padding: 2,
     overflow: 'none',
 })
@@ -70,6 +70,7 @@ const Wrapper = styled('div', {
     display: 'flex',
     gap: 10,
     justifyContent: 'center',
+    fediGradient: 'white',
     padding: theme.spacing.xs,
     paddingRight: theme.spacing.md,
     '& > button': {

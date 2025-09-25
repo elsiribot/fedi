@@ -165,7 +165,7 @@ const HomeHeader = styled('div', {
     gap: theme.spacing.sm,
     padding: '8px var(--template-padding)',
 
-    holoGradient: 'm500',
+    fediGradient: 'sky',
     borderBottomLeftRadius: 16,
     borderBottomRightRadius: 16,
 
