@@ -314,22 +314,19 @@ export function useLnurlReceiveCode(
     )
     const dispatch = useCommonDispatch()
     const [isFetching, setIsFetching] = useState(false)
-    const [hasFetched, setHasFetched] = useState(false)
 
     useEffect(() => {
-        if (hasFetched) return
-        const refreshCode = async () => {
-            setIsFetching(true)
-            await dispatch(refreshLnurlReceive({ fedimint, federationId }))
-            setIsFetching(false)
-            setHasFetched(true)
-        }
+        if (supportsLnurl === false || !federationId) return
 
-        refreshCode()
-    }, [fedimint, federationId, dispatch, hasFetched])
+        setIsFetching(true)
+        dispatch(refreshLnurlReceive({ fedimint, federationId }))
+            .unwrap()
+            .catch(e => log.error('Failed to refresh lnurl receive code', e))
+            .finally(() => setIsFetching(false))
+    }, [fedimint, federationId, supportsLnurl, dispatch])
 
     return {
-        isLoading: isFetching || supportsLnurl === null,
+        isLoading: isFetching,
         lnurlReceiveCode,
         supportsLnurl,
     }
