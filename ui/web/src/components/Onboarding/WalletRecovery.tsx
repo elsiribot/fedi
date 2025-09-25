@@ -1,7 +1,7 @@
 import React from 'react'
 import { useTranslation } from 'react-i18next'
 
-import SocialPeopleIcon from '@fedi/common/assets/svgs/social-people.svg'
+// import SocialPeopleIcon from '@fedi/common/assets/svgs/social-people.svg'
 import WordListIcon from '@fedi/common/assets/svgs/word-list.svg'
 
 import { ActionCard } from '../../components/ActionCard'
@@ -34,7 +34,8 @@ export const WalletRecovery: React.FC = () => {
                             </Button>
                         }
                     />
-                    <ActionCard
+                    {/* Disabled until social recovery is supported on web */}
+                    {/* <ActionCard
                         icon={SocialPeopleIcon}
                         title={t('feature.recovery.social-recovery')}
                         description={t(
@@ -45,7 +46,7 @@ export const WalletRecovery: React.FC = () => {
                                 {t('feature.recovery.start-social-recovery')}
                             </Button>
                         }
-                    />
+                    /> */}
                 </Cards>
             </Layout.Content>
         </Layout.Root>
