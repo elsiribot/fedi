@@ -165,6 +165,7 @@ const MessageContents: React.FC<MessageContentsProps> = ({
                                 </React.Fragment>
                             ),
                         )}
+                        <Text key="tail-plain">{'\u200B'}</Text>
                     </Text>
                 )
             }
@@ -253,6 +254,7 @@ const MessageContents: React.FC<MessageContentsProps> = ({
                             ),
                         )
                     })}
+                    <Text key="tail-rich">{'\u200B'}</Text>
                 </Text>
             )
         },
