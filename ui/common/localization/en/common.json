@@ -57,6 +57,7 @@
         "from": "From",
         "general": "General",
         "group": "Group",
+        "guardians": "Guardians",
         "hello": "Hello",
         "hide": "Hide",
         "history": "History",
@@ -570,6 +571,7 @@
             "connection-status-offline": "This federation is offline. Please reach out to the guardians or community leader for further information.",
             "connection-status-online": "This federation is fully active",
             "connection-status-unstable": "This federation is unstable. Please reach out to the guardians or community leader for further information.",
+            "connection-status-expired": "This federation has expired. Transactions are no longer available.",
             "copied-federation-invite": "Copied federation invite link",
             "drawer-subtitle": "Federations are home to your wallet, news and services.",
             "expired-message": "This federation has expired. Transactions are no longer available.",
@@ -594,7 +596,9 @@
             "please-reconnect": "Please reconnect to the internet to refresh the federation status.",
             "recover-from-scratch": "Recover from scratch",
             "recover-from-scratch-warning": "Warning: This takes a long time. You should NOT select this option unless instructed by Fedi support.",
-            "scan-federation-invite": "Scan a federation Invite"
+            "scan-federation-invite": "Scan a federation Invite",
+            "spend-limit": "Spend limit",
+            "wallet-balance": "Wallet balance"
         },
         "fedimods": {
             "add-a-mod": "Add a Mini App",
