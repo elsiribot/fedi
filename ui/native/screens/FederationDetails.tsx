@@ -1,6 +1,6 @@
 import { useNavigation } from '@react-navigation/native'
 import type { NativeStackScreenProps } from '@react-navigation/native-stack'
-import { Button, Divider, Text, Theme, useTheme } from '@rneui/themed'
+import { Button, Text, Theme, useTheme } from '@rneui/themed'
 import React, { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Linking, StyleSheet } from 'react-native'
@@ -8,34 +8,22 @@ import { Linking, StyleSheet } from 'react-native'
 import { usePopupFederationInfo } from '@fedi/common/hooks/federation'
 import { useLeaveFederation } from '@fedi/common/hooks/leave'
 import { useToast } from '@fedi/common/hooks/toast'
+import { selectDefaultChats, selectLoadedFederation } from '@fedi/common/redux'
+import { ChatType, MatrixRoom } from '@fedi/common/types'
 import {
-    selectDefaultChats,
-    selectIsInternetUnreachable,
-    selectLoadedFederation,
-} from '@fedi/common/redux'
-import {
-    ChatType,
-    LoadedFederation,
-    MatrixRoom,
-    Sats,
-} from '@fedi/common/types'
-import amountUtils from '@fedi/common/utils/AmountUtils'
-import {
-    getFederationMaxBalanceMsats,
-    getFederationMaxInvoiceMsats,
     getFederationTosUrl,
     getFederationWelcomeMessage,
 } from '@fedi/common/utils/FederationUtils'
 
 import { fedimint } from '../bridge'
+import FederationDetailStats from '../components/feature/federations/FederationDetailStats'
 import { FederationLogo } from '../components/feature/federations/FederationLogo'
-import FederationStatusIndicator from '../components/feature/federations/FederationStatusIndicator'
+import FederationPopupCountdown from '../components/feature/federations/FederationPopupCountdown'
+import FederationStatus from '../components/feature/federations/FederationStatus'
 import DefaultChatTile from '../components/feature/home/DefaultChatTile'
 import Flex from '../components/ui/Flex'
-import GradientView from '../components/ui/GradientView'
 import { SafeAreaContainer } from '../components/ui/SafeArea'
 import ShadowScrollView from '../components/ui/ShadowScrollView'
-import SvgImage from '../components/ui/SvgImage'
 import { useAppSelector } from '../state/hooks'
 import { reset } from '../state/navigation'
 import type { RootStackParamList } from '../types/navigation'
@@ -98,16 +86,6 @@ const FederationDetails: React.FC<Props> = ({ route }: Props) => {
 
     const welcomeMessage = getFederationWelcomeMessage(federation.meta)
     const tosUrl = getFederationTosUrl(federation.meta)
-    const maxBalanceMsats = getFederationMaxBalanceMsats(federation?.meta)
-    const maxInvoiceMsats = getFederationMaxInvoiceMsats(federation?.meta)
-
-    const walletBalance: Sats = maxBalanceMsats
-        ? ((maxBalanceMsats / 1000) as Sats)
-        : (1_000_000_000 as Sats)
-
-    const spendLimit: Sats = maxInvoiceMsats
-        ? ((maxInvoiceMsats / 1000) as Sats)
-        : (1_000_000_000 as Sats)
 
     const style = styles(theme)
 
@@ -123,10 +101,9 @@ const FederationDetails: React.FC<Props> = ({ route }: Props) => {
                     </Flex>
                 </Flex>
                 <Flex gap="md">
-                    <FederationEndIndicator popupInfo={popupInfo} />
-                    {popupInfo?.ended ? null : (
-                        <FederationStatus federation={federation} />
-                    )}
+                    <FederationPopupCountdown federation={federation} />
+                    <FederationDetailStats federation={federation} />
+                    <FederationStatus federation={federation} />
                 </Flex>
             </Flex>
             <ShadowScrollView
@@ -150,16 +127,6 @@ const FederationDetails: React.FC<Props> = ({ route }: Props) => {
                 {welcomeMessage && (
                     <Text maxFontSizeMultiplier={1.2}>{welcomeMessage}</Text>
                 )}
-                <Text maxFontSizeMultiplier={1.2}>
-                    {t('phrases.wallet-balance', {
-                        balance: amountUtils.formatSats(walletBalance),
-                    })}
-                </Text>
-                <Text maxFontSizeMultiplier={1.2}>
-                    {t('phrases.spend-limit', {
-                        limit: amountUtils.formatSats(spendLimit),
-                    })}
-                </Text>
             </ShadowScrollView>
             <Flex style={style.actionsContainer} gap="md">
                 {popupInfo?.ended && (
@@ -185,73 +152,6 @@ const FederationDetails: React.FC<Props> = ({ route }: Props) => {
                 )}
             </Flex>
         </SafeAreaContainer>
-    )
-}
-
-const FederationStatus = ({ federation }: { federation: LoadedFederation }) => {
-    const { t } = useTranslation()
-    const { theme } = useTheme()
-    const style = styles(theme)
-
-    const status = federation.status || 'offline'
-    const caption = t(`feature.federations.connection-status-${status}`)
-    const isOffline = useAppSelector(selectIsInternetUnreachable)
-
-    return (
-        <Flex gap="sm" style={style.federationStatusCard}>
-            <Flex row align="center" justify="between">
-                <Flex grow shrink>
-                    <Text caption maxFontSizeMultiplier={1.2}>
-                        {isOffline
-                            ? t('feature.federations.last-known-status')
-                            : `${t('words.status')}:`}
-                    </Text>
-                </Flex>
-                <FederationStatusIndicator status={status} />
-            </Flex>
-            <Divider />
-            <Text caption>
-                {isOffline
-                    ? t('feature.federations.please-reconnect')
-                    : caption}
-            </Text>
-        </Flex>
-    )
-}
-
-const FederationEndIndicator = ({
-    popupInfo,
-}: {
-    popupInfo: ReturnType<typeof usePopupFederationInfo>
-}) => {
-    const { t } = useTranslation()
-    const { theme } = useTheme()
-
-    const style = styles(theme)
-
-    if (!popupInfo) return null
-
-    if (popupInfo.ended) {
-        return (
-            <Flex
-                style={[style.federationEndedCard, style.popupFederationCard]}>
-                <Text caption>{t('feature.federations.expired-message')}</Text>
-            </Flex>
-        )
-    }
-
-    return (
-        <GradientView variant="sky-banner" style={style.popupFederationCard}>
-            <Flex row gap="sm" align="center">
-                <SvgImage name="Clock" size={16} />
-                <Text caption>
-                    {t('feature.federations.federation-ends-in')}
-                </Text>
-            </Flex>
-            <Text h2 medium>
-                {popupInfo.endsInText}
-            </Text>
-        </GradientView>
     )
 }
 
