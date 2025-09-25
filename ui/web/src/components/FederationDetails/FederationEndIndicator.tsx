@@ -1,4 +1,4 @@
-import { Trans, useTranslation } from 'react-i18next'
+import { useTranslation } from 'react-i18next'
 
 import clockIcon from '@fedi/common/assets/svgs/clock.svg'
 import { usePopupFederationInfo } from '@fedi/common/hooks/federation'
@@ -22,16 +22,7 @@ export default function FederationEndIndicator({
         return (
             <FederationEndCard variant="ended">
                 <Text variant="caption">
-                    {popupInfo.endedMessage || (
-                        <Trans
-                            t={t}
-                            i18nKey="feature.popup.ended-description"
-                            values={{ date: popupInfo?.endsAtText }}
-                            components={{
-                                bold: <strong />,
-                            }}
-                        />
-                    )}
+                    {t('feature.federations.expired-message')}
                 </Text>
             </FederationEndCard>
         )
@@ -55,7 +46,7 @@ export default function FederationEndIndicator({
 const FederationEndCard = styled('div', {
     display: 'flex',
     alignItems: 'center',
-    padding: `${theme.spacing.md}px ${theme.spacing.lg}px`,
+    padding: `${theme.spacing.md} ${theme.spacing.lg}`,
     borderRadius: 16,
 
     variants: {
