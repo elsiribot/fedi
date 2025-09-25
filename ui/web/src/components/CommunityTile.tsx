@@ -62,7 +62,9 @@ const CommunityInfo = styled('div', {
 })
 
 const IconContainer = styled('div', {
-    marginLeft: 'auto',
+    alignItems: 'center',
+    display: 'flex',
+    justifyContent: 'center',
 })
 
 export default CommunityTile
