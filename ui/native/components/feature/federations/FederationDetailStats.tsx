@@ -3,6 +3,7 @@ import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { ActivityIndicator, StyleSheet } from 'react-native'
 
+import { FALLBACK_LIMIT_MSATS } from '@fedi/common/constants/limits'
 import { GuardianStatus } from '@fedi/common/types/bindings'
 import amountUtils from '@fedi/common/utils/AmountUtils'
 import {
@@ -12,11 +13,8 @@ import {
 import { formatLargeNumber } from '@fedi/common/utils/format'
 
 import { fedimint } from '../../../bridge'
-import { LoadedFederation, MSats } from '../../../types'
+import { LoadedFederation } from '../../../types'
 import { Column, Row } from '../../ui/Flex'
-
-// If no max invoice or max balance limit is set in federation metadata, falls back to 1B sats (1T MSats)
-const fallbackMsats = 1_000_000_000_000 as MSats
 
 function FederationDetailStats({
     federation,
@@ -38,11 +36,11 @@ function FederationDetailStats({
     const maxBalanceMsats = getFederationMaxBalanceMsats(federation?.meta)
     const maxInvoiceMsats = getFederationMaxInvoiceMsats(federation?.meta)
     const formattedWalletBalance = `${formatLargeNumber(
-        amountUtils.msatToSat(maxBalanceMsats ?? fallbackMsats),
+        amountUtils.msatToSat(maxBalanceMsats ?? FALLBACK_LIMIT_MSATS),
         'K',
     )} ${t('words.sats').toUpperCase()}`
     const formattedSpendLimit = `${formatLargeNumber(
-        amountUtils.msatToSat(maxInvoiceMsats ?? fallbackMsats),
+        amountUtils.msatToSat(maxInvoiceMsats ?? FALLBACK_LIMIT_MSATS),
         'K',
     )} ${t('words.sats').toUpperCase()}`
 
