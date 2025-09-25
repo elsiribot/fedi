@@ -33,7 +33,7 @@ const Container = styled('div', {
     backgroundColor: theme.colors.extraLightGrey,
     borderRadius: 20,
     display: 'flex',
-    height: 40,
+    minHeight: 40,
     overflow: 'hidden',
     width: '100%',
 })
