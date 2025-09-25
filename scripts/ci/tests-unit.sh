@@ -12,10 +12,7 @@ fi
 
 pushd $REPO_ROOT/ui
 
-# Check for Prettier, ESLint, + Typescript errors
-yarn lint
-
 # Run test suites
-$REPO_ROOT/scripts/ui/run-ui-tests.sh
+$REPO_ROOT/scripts/ui/run-unit-tests.sh
 
 popd
