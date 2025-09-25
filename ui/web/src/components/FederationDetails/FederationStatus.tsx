@@ -4,6 +4,7 @@ import offlineIcon from '@fedi/common/assets/svgs/alert-warning-triangle.svg'
 import unstableIcon from '@fedi/common/assets/svgs/info.svg'
 import onlineIcon from '@fedi/common/assets/svgs/online-dot.svg'
 import { theme } from '@fedi/common/constants/theme'
+import { usePopupFederationInfo } from '@fedi/common/hooks/federation'
 import { selectIsInternetUnreachable } from '@fedi/common/redux'
 import { LoadedFederation } from '@fedi/common/types'
 
@@ -22,6 +23,7 @@ export function FederationStatus({
     const status = federation.status || 'offline'
     const caption = t(`feature.federations.connection-status-${status}`)
     const isOffline = useAppSelector(selectIsInternetUnreachable)
+    const popupInfo = usePopupFederationInfo(federation?.meta || {})
 
     let statusIcon = offlineIcon
     let statusText = t('words.offline')
@@ -34,6 +36,12 @@ export function FederationStatus({
     } else if (status === 'unstable') {
         statusIcon = unstableIcon
         statusText = t('words.unstable')
+    }
+
+    if (popupInfo?.ended) {
+        statusIcon = onlineIcon
+        statusText = t('words.expired')
+        statusColor = theme.colors.grey
     }
 
     return (
@@ -60,13 +68,13 @@ export function FederationStatus({
 }
 
 const FederationStatusDivider = styled('div', {
-    backgroundColor: theme.colors.lightGrey,
+    backgroundColor: theme.colors.extraLightGrey,
     height: 1,
     width: '100%',
 })
 
 const FederationStatusCard = styled('div', {
-    backgroundColor: theme.colors.offWhite100,
+    backgroundColor: theme.colors.grey50,
     borderRadius: 20,
     padding: theme.spacing.md,
     display: 'flex',

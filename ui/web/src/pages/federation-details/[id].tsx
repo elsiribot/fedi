@@ -19,6 +19,7 @@ import { Button } from '../../components/Button'
 import DefaultRoomPreview from '../../components/Chat/DefaultRoomPreview'
 import { ContentBlock } from '../../components/ContentBlock'
 import { FederationAvatar } from '../../components/FederationAvatar'
+import FederationDetailStats from '../../components/FederationDetails/FederationDetailStats'
 import FederationEndIndicator from '../../components/FederationDetails/FederationEndIndicator'
 import { FederationStatus } from '../../components/FederationDetails/FederationStatus'
 import * as Layout from '../../components/Layout'
@@ -96,9 +97,8 @@ function FederationDetails() {
                                 <Text variant="h2">{federation.name}</Text>
                             </FederationHeader>
                             <FederationEndIndicator federation={federation} />
-                            {popupInfo?.ended ? null : (
-                                <FederationStatus federation={federation} />
-                            )}
+                            <FederationDetailStats federation={federation} />
+                            <FederationStatus federation={federation} />
                         </HeaderContent>
                         <ScrollableContent>
                             {federationChats.length > 0 && (
