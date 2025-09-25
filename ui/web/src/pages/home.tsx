@@ -15,7 +15,7 @@ import { selectVisibleCommunityMods } from '@fedi/common/redux/mod'
 import { selectCanShowSurvey } from '@fedi/common/redux/support'
 import { getFederationPinnedMessage } from '@fedi/common/utils/FederationUtils'
 
-import DefaultRoomPreview from '../components/Chat/DefaultRoomPreview'
+import { DefaultRoomPreview } from '../components/Chat/DefaultRoomPreview'
 import { ContentBlock } from '../components/ContentBlock'
 import { FediModTiles } from '../components/FediModTiles'
 import PinnedMessage from '../components/Home/PinnedMessage'

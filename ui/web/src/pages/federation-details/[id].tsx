@@ -16,7 +16,7 @@ import {
 } from '@fedi/common/utils/FederationUtils'
 
 import { Button } from '../../components/Button'
-import DefaultRoomPreview from '../../components/Chat/DefaultRoomPreview'
+import { DefaultRoomPreview } from '../../components/Chat/DefaultRoomPreview'
 import { ContentBlock } from '../../components/ContentBlock'
 import { FederationAvatar } from '../../components/FederationAvatar'
 import FederationEndIndicator from '../../components/FederationDetails/FederationEndIndicator'

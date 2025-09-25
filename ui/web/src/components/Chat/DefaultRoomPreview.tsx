@@ -4,12 +4,13 @@ import ArrowRightIcon from '@fedi/common/assets/svgs/chevron-right.svg'
 import { Community, LoadedFederation, MatrixRoom } from '@fedi/common/types'
 import stringUtils from '@fedi/common/utils/StringUtils'
 
+import { chatRoomRoute } from '../../constants/routes'
 import { styled, theme } from '../../styles'
 import { FederationAvatar } from '../FederationAvatar'
 import { Icon } from '../Icon'
 import { Text } from '../Text'
 
-export default function DefaultRoomPreview({
+export function DefaultRoomPreview({
     room,
     federationOrCommunity,
 }: {
@@ -17,7 +18,7 @@ export default function DefaultRoomPreview({
     federationOrCommunity: Community | LoadedFederation
 }) {
     return (
-        <DefaultRoomContainer href={`/room/room/${room.id}`}>
+        <DefaultRoomContainer href={chatRoomRoute(room.id)}>
             <FederationAvatar
                 federation={federationOrCommunity}
                 size="sm"
