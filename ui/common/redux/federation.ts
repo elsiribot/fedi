@@ -12,13 +12,10 @@ import {
     CommonState,
     previewCommunityDefaultChats,
     previewFederationDefaultChats,
+    selectFeatureFlags,
     selectIsInternetUnreachable,
     selectIsNostrClientEnabled,
 } from '.'
-import {
-    FEDI_GLOBAL_COMMUNITY,
-    FEDI_GLOBAL_COMMUNITY_INVITE,
-} from '../constants/community'
 import {
     Community,
     Federation,
@@ -364,9 +361,9 @@ export const federationSlice = createSlice({
                 fed => fed.id !== communityId,
             )
             // users cannot leave fedi global community
-            // so if there is only one community left, set it as selected
+            // so if there is only one community left, set it as selected since it MUST be the global community
             if (state.communities.length === 1) {
-                state.lastSelectedCommunityId = FEDI_GLOBAL_COMMUNITY.id
+                state.lastSelectedCommunityId = state.communities[0]?.id
             } else {
                 // reset lastSelectedCommunityId if it was the one that was left
                 if (state.lastSelectedCommunityId === communityId) {
@@ -515,17 +512,8 @@ export const refreshCommunities = createAsyncThunk<
         )
         dispatch(setLastSelectedCommunityId(joinedCommunities[0].id))
     }
-    // auto-join the default fedi global community if not already joined
-    // and set it as selected
-    if (!joinedCommunities.find(c => c.id === FEDI_GLOBAL_COMMUNITY_INVITE)) {
-        log.debug('fedi global community not joined, joining...')
-        const joinedCommunity = await dispatch(
-            joinCommunity({ fedimint, code: FEDI_GLOBAL_COMMUNITY_INVITE }),
-        ).unwrap()
-
-        dispatch(setCommunities([joinedCommunity, ...joinedCommunities]))
-        dispatch(setLastSelectedCommunityId(FEDI_GLOBAL_COMMUNITY_INVITE))
-    }
+    // users must always be joined to the default un-leaveable global community
+    await dispatch(ensureDefaultCommunityIsJoined({ fedimint }))
 
     return joinedCommunities
 })
@@ -718,6 +706,38 @@ export const checkFederationForAutojoinCommunities = createAsyncThunk<
                 )
             }),
         )
+    },
+)
+
+// if not already joined, auto-join the default fedi global community and set it as selected
+export const ensureDefaultCommunityIsJoined = createAsyncThunk<
+    void,
+    { fedimint: FedimintBridge },
+    { state: CommonState }
+>(
+    'federation/ensureDefaultCommunityIsJoined',
+    async ({ fedimint }, { getState, dispatch }) => {
+        const state = getState()
+        const defaultCommunityInviteCode = selectGlobalCommunityInvite(state)
+
+        // this should never happen since it comes from the bridge feature flags
+        if (!defaultCommunityInviteCode) {
+            log.warn('no default community invite code found')
+            return
+        }
+        const joinedCommunities = selectCommunities(state)
+        if (!joinedCommunities.find(c => c.id === defaultCommunityInviteCode)) {
+            log.debug('fedi global community not joined, joining...')
+            const joinedCommunity = await dispatch(
+                joinCommunity({ fedimint, code: defaultCommunityInviteCode }),
+            ).unwrap()
+
+            dispatch(setCommunities([joinedCommunity, ...joinedCommunities]))
+            dispatch(
+                processCommunityMeta({ fedimint, community: joinedCommunity }),
+            )
+            dispatch(setLastSelectedCommunityId(defaultCommunityInviteCode))
+        }
     },
 )
 
@@ -983,7 +1003,10 @@ export const selectLastSelectedCommunity = createSelector(
 export const selectCanLeaveCommunity = createSelector(
     (s: CommonState, communityId: Community['id']) =>
         selectCommunity(s, communityId),
-    community => community?.id !== FEDI_GLOBAL_COMMUNITY_INVITE,
+    (s: CommonState, _communityId: Community['id']) =>
+        selectGlobalCommunityInvite(s),
+    (community, globalCommunityInvite) =>
+        community?.id !== globalCommunityInvite,
 )
 
 export const selectAlphabeticallySortedFederations = createSelector(
@@ -1167,6 +1190,23 @@ export const selectCommunityMetadata = createSelector(
         selectCommunity(s, communityId),
     community => {
         return community ? community.meta : {}
+    },
+)
+
+export const selectGlobalCommunityInvite = createSelector(
+    (s: CommonState) => selectFeatureFlags(s),
+    featureFlags => {
+        return featureFlags?.global_community?.invite_code
+    },
+)
+
+export const selectGlobalCommunityMetadata = createSelector(
+    (s: CommonState) => selectGlobalCommunityInvite(s),
+    (s: CommonState) => s,
+    (globalCommunityInvite, s) => {
+        // this should never happen since it comes from the bridge feature flags
+        if (!globalCommunityInvite) return undefined
+        return selectCommunityMetadata(s, globalCommunityInvite)
     },
 )
 
@@ -1408,16 +1448,15 @@ export const selectGuardianFederation = createSelector(
 )
 
 // Selects up to three communities, the selected community being the first
-// If the last-selected community is undefined, falls back to the global community
 export const selectCommunityStack = createSelector(
     selectCommunities,
     selectLastSelectedCommunity,
     (communities, lastSelectedCommunity) => {
-        const selectedCommunity = lastSelectedCommunity ?? FEDI_GLOBAL_COMMUNITY
+        const selectedCommunity = lastSelectedCommunity
+        if (!selectedCommunity) return []
         const nonSelectedCommunities = communities.filter(
             c => c.id !== selectedCommunity.id,
         )
-
         return [selectedCommunity, ...nonSelectedCommunities.slice(0, 2)]
     },
 )

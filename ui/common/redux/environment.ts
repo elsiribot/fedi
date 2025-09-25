@@ -197,7 +197,8 @@ export const refreshOnboardingStatus = createAsyncThunk<
         // generate a random display name after matrix client is resolved
         // but only if matrix_setup
         await dispatch(startMatrixClient({ fedimint }))
-        dispatch(getBridgeInfo(fedimint))
+        // we need to await the feature flags before refreshing communities
+        await dispatch(getBridgeInfo(fedimint))
 
         // wait until after the matrix client is started to refresh federations & communities
         // because the latest metadata may include new default chats that require

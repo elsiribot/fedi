@@ -17,9 +17,8 @@ import {
     selectLoadedFederations,
     selectCommunity,
     selectCommunities,
-    selectCommunityMetadata,
+    selectGlobalCommunityMetadata,
 } from '.'
-import { FEDI_GLOBAL_COMMUNITY_INVITE } from '../constants/community'
 import {
     ChatReplyState,
     Federation,
@@ -2487,8 +2486,7 @@ export const selectCommunityDefaultRoomIds = createSelector(
 
 export const selectDefaultMatrixRoomIds = createSelector(
     (s: CommonState) => selectLoadedFederations(s),
-    (s: CommonState) =>
-        selectCommunityMetadata(s, FEDI_GLOBAL_COMMUNITY_INVITE),
+    (s: CommonState) => selectGlobalCommunityMetadata(s),
     (federations, globalCommunityMeta) => {
         let defaultMatrixRoomIds: MatrixRoom['id'][] = federations.reduce(
             (result: MatrixRoom['id'][], f: Federation) => {

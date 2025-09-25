@@ -1,8 +1,7 @@
 import { PayloadAction, createSelector, createSlice } from '@reduxjs/toolkit'
 import omit from 'lodash/omit'
 
-import { CommonState, federationSlice, selectCommunityMetadata } from '.'
-import { FEDI_GLOBAL_COMMUNITY_INVITE } from '../constants/community'
+import { CommonState, federationSlice, selectGlobalCommunityMetadata } from '.'
 import { FediMod } from '../types'
 import { getCommunityFediMods } from '../utils/FederationUtils'
 import { deduplicate } from '../utils/fedimods'
@@ -162,11 +161,9 @@ export const selectCommunityMods = createSelector(
 
 // Global mods
 export const selectGlobalMods = createSelector(
-    (s: CommonState) =>
-        selectCommunityMetadata(s, FEDI_GLOBAL_COMMUNITY_INVITE),
+    (s: CommonState) => selectGlobalCommunityMetadata(s),
     globalCommunityMeta => {
         if (!globalCommunityMeta) return []
-
         return getCommunityFediMods(globalCommunityMeta)
     },
 )
@@ -175,8 +172,7 @@ export const selectGlobalMods = createSelector(
 // to show on new wallet (home) page/screen when user hasn't yet
 // joined a federation
 export const selectCoreMods = createSelector(
-    (s: CommonState) =>
-        selectCommunityMetadata(s, FEDI_GLOBAL_COMMUNITY_INVITE),
+    (s: CommonState) => selectGlobalCommunityMetadata(s),
     globalCommunityMeta => {
         if (!globalCommunityMeta) return []
         const mods = getCommunityFediMods(globalCommunityMeta)
