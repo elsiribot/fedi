@@ -1,13 +1,7 @@
 import { TFunction } from 'i18next'
 import { useCallback, useEffect, useState } from 'react'
 
-import {
-    listGateways,
-    refreshLnurlReceive,
-    selectFederation,
-    selectLnurlReceiveCode,
-    selectSupportsRecurringdLnurl,
-} from '../redux'
+import { listGateways, selectFederation } from '../redux'
 import {
     AnyParsedData,
     Invoice,
@@ -328,38 +322,6 @@ export function useOmniPaymentState(
         resetOmniPaymentState,
         isLoading,
         error,
-    }
-}
-
-export function useLnurlReceiveCode(
-    fedimint: FedimintBridge,
-    federationId: string,
-) {
-    const supportsLnurl = useCommonSelector(s =>
-        selectSupportsRecurringdLnurl(s, federationId),
-    )
-    const lnurlReceiveCode = useCommonSelector(s =>
-        selectLnurlReceiveCode(s, federationId),
-    )
-    const dispatch = useCommonDispatch()
-    const [isFetching, setIsFetching] = useState(false)
-
-    useEffect(() => {
-        const refreshCode = async () => {
-            setIsFetching(true)
-            await dispatch(refreshLnurlReceive({ fedimint, federationId }))
-            setIsFetching(false)
-        }
-        // Only runs once. supportsLnurl is null on first load.
-        if (!isFetching && supportsLnurl === null) {
-            refreshCode()
-        }
-    }, [fedimint, federationId, supportsLnurl, dispatch, isFetching])
-
-    return {
-        isLoading: supportsLnurl === null ? false : isFetching,
-        lnurlReceiveCode,
-        supportsLnurl,
     }
 }
 
