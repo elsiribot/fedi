@@ -21,27 +21,29 @@ export function FederationStatus({
     const { t } = useTranslation()
 
     const status = federation.status || 'offline'
-    const caption = t(`feature.federations.connection-status-${status}`)
     const isOffline = useAppSelector(selectIsInternetUnreachable)
     const popupInfo = usePopupFederationInfo(federation?.meta || {})
 
+    let statusMessage = t('feature.federations.connection-status-offline')
     let statusIcon = offlineIcon
-    let statusText = t('words.offline')
-    let statusColor = theme.colors.red
+    let statusIconColor = theme.colors.red
+    let statusWord = t('words.offline')
 
     if (status === 'online') {
         statusIcon = onlineIcon
-        statusText = t('words.online')
-        statusColor = theme.colors.success
+        statusIconColor = theme.colors.success
+        statusWord = t('words.online')
+        statusMessage = t('feature.federations.connection-status-online')
     } else if (status === 'unstable') {
         statusIcon = unstableIcon
-        statusText = t('words.unstable')
+        statusWord = t('words.unstable')
+        statusMessage = t('feature.federations.connection-status-unstable')
     }
 
     if (popupInfo?.ended) {
         statusIcon = onlineIcon
-        statusText = t('words.expired')
-        statusColor = theme.colors.grey
+        statusWord = t('words.expired')
+        statusIconColor = theme.colors.grey
     }
 
     return (
@@ -53,15 +55,15 @@ export function FederationStatus({
                         : `${t('words.status')}:`}
                 </Text>
                 <FederationStatusIndicator>
-                    <Icon icon={statusIcon} color={statusColor} size={12} />
-                    <Text variant="caption">{statusText}</Text>
+                    <Icon icon={statusIcon} color={statusIconColor} size={12} />
+                    <Text variant="caption">{statusWord}</Text>
                 </FederationStatusIndicator>
             </FederationStatusHeader>
             <FederationStatusDivider />
             <Text variant="caption">
                 {isOffline
                     ? t('feature.federations.please-reconnect')
-                    : caption}
+                    : statusMessage}
             </Text>
         </FederationStatusCard>
     )
