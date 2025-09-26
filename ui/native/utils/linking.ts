@@ -4,6 +4,7 @@ import { NativeStackNavigationProp } from '@react-navigation/native-stack'
 import { Linking } from 'react-native'
 
 import {
+    NavigationParams,
     type NavigationAction,
     type ParsedDeepLink,
     type ScreenConfig,
@@ -110,9 +111,7 @@ export const setAppUnlocked = (unlocked: boolean) => {
 export function createNavigationAction(
     parsedLink: ParsedDeepLink,
 ): NavigationAction | null {
-    if (!parsedLink.isValid) {
-        return null
-    }
+    if (!parsedLink.isValid) return null
 
     const { screen, id } = parsedLink
 
@@ -122,7 +121,7 @@ export function createNavigationAction(
             return {
                 type: 'navigate',
                 screen: 'MainNavigator',
-                nested: {
+                params: {
                     screen: 'ChatRoomConversation',
                     params: { roomId: id },
                 },
@@ -133,7 +132,7 @@ export function createNavigationAction(
             return {
                 type: 'navigate',
                 screen: 'MainNavigator',
-                nested: {
+                params: {
                     screen: 'ChatUserConversation',
                     params: { userId: id },
                 },
@@ -143,7 +142,7 @@ export function createNavigationAction(
             return {
                 type: 'navigate',
                 screen: 'MainNavigator',
-                nested: {
+                params: {
                     screen: 'TabsNavigator',
                     params: { screen: 'Home' },
                 },
@@ -153,7 +152,7 @@ export function createNavigationAction(
             return {
                 type: 'navigate',
                 screen: 'MainNavigator',
-                nested: {
+                params: {
                     screen: 'TabsNavigator',
                     params: { screen: 'Chat' },
                 },
@@ -163,7 +162,7 @@ export function createNavigationAction(
             return {
                 type: 'navigate',
                 screen: 'MainNavigator',
-                nested: {
+                params: {
                     screen: 'OmniScanner',
                 },
             }
@@ -172,7 +171,7 @@ export function createNavigationAction(
             return {
                 type: 'navigate',
                 screen: 'MainNavigator',
-                nested: {
+                params: {
                     screen: 'TabsNavigator',
                     params: { screen: 'Federations' },
                 },
@@ -182,7 +181,7 @@ export function createNavigationAction(
             return {
                 type: 'navigate',
                 screen: 'MainNavigator',
-                nested: {
+                params: {
                     screen: 'Send',
                 },
             }
@@ -191,7 +190,7 @@ export function createNavigationAction(
             return {
                 type: 'navigate',
                 screen: 'MainNavigator',
-                nested: {
+                params: {
                     screen: 'Transactions',
                 },
             }
@@ -201,10 +200,7 @@ export function createNavigationAction(
             return {
                 type: 'navigate',
                 screen: 'MainNavigator',
-                nested: {
-                    screen: 'ShareLogs',
-                    params: { ticketNumber: id },
-                },
+                params: { screen: 'ShareLogs', params: { ticketNumber: id } },
             }
 
         default:
@@ -213,22 +209,38 @@ export function createNavigationAction(
 }
 
 /**
+ * Helper to peel down nested params to find the leaf { screen, params }
+ */
+const resolveLeaf = (
+    screen: string,
+    params?: NavigationParams,
+): { leafScreen: string; leafParams?: NavigationParams } => {
+    let curScreen = screen
+    let curParams = params
+
+    while (curParams?.screen) {
+        curScreen = curParams.screen
+        curParams = curParams.params
+    }
+
+    return { leafScreen: curScreen, leafParams: curParams }
+}
+
+/**
  * Execute a navigation action using React Navigation
  */
 const executeNavigationAction = (action: NavigationAction): boolean => {
     try {
-        if (action.nested) {
-            navigationRef?.dispatch(
-                CommonActions.navigate(action.screen, {
-                    screen: action.nested.screen,
-                    params: action.nested.params,
-                }),
-            )
-        } else {
-            navigationRef?.dispatch(
-                CommonActions.navigate(action.screen, action.params),
-            )
-        }
+        const { leafScreen, leafParams } = resolveLeaf(
+            action.screen,
+            action.params,
+        )
+
+        // If our ref is already the Main stack, navigating to the leaf screen directly is correct.
+        // This avoids trying to navigate "to MainNavigator" (a no-op) and falling back to Home.
+        log.info('[NAV DISPATCH]', { screen: leafScreen, params: leafParams })
+        navigationRef?.dispatch(CommonActions.navigate(leafScreen, leafParams))
+
         return true
     } catch (error) {
         log.error('Navigation dispatch error:', error)
