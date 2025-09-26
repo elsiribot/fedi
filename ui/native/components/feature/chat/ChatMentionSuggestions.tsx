@@ -88,6 +88,11 @@ const ChatMentionSuggestions: React.FC<Props> = ({
                     )}
                     renderItem={({ item, index }) => {
                         const isRoom = item.kind === 'room'
+                        const roomAvatarUser = {
+                            id: '@room',
+                            displayName: `@${ROOM_MENTION}`,
+                        } as MatrixRoomMember
+
                         return (
                             <Pressable
                                 style={({ pressed }) => [
@@ -109,8 +114,29 @@ const ChatMentionSuggestions: React.FC<Props> = ({
                                     )
                                 }>
                                 {isRoom ? (
-                                    <View style={style.roomBadge}>
-                                        <Text style={style.roomAt}>@</Text>
+                                    <View style={{ position: 'relative' }}>
+                                        <ChatAvatar
+                                            user={roomAvatarUser}
+                                            size={AvatarSize.md}
+                                        />
+                                        <View
+                                            style={{
+                                                ...StyleSheet.absoluteFillObject,
+                                                alignItems: 'center',
+                                                justifyContent: 'center',
+                                                backgroundColor:
+                                                    theme.colors.blue,
+                                                borderRadius: 999, // keep it circular regardless of platform size
+                                            }}>
+                                            <Text
+                                                style={style.roomAt}
+                                                maxFontSizeMultiplier={
+                                                    theme.multipliers
+                                                        .headerMaxFontMultiplier
+                                                }>
+                                                @
+                                            </Text>
+                                        </View>
                                     </View>
                                 ) : (
                                     <ChatAvatar
@@ -183,19 +209,25 @@ const styles = (theme: Theme) =>
         textCol: { flex: 1, marginLeft: theme.spacing.md },
         name: { color: theme.colors.night },
         sub: { color: theme.colors.grey, opacity: 0.8 },
-        roomBadge: {
-            width: theme.sizes.mediumAvatar,
-            height: theme.sizes.mediumAvatar,
-            borderRadius: theme.sizes.mediumAvatar / 2,
-            backgroundColor: theme.colors.blue,
-            justifyContent: 'center',
-            alignItems: 'center',
-        },
         roomAt: {
             color: theme.colors.white,
             fontWeight: '700',
             fontSize: 16,
             lineHeight: 18,
+        },
+        roomAvatarWrap: {
+            position: 'relative',
+        },
+        roomOverlay: {
+            position: 'absolute',
+            top: 0,
+            right: 0,
+            bottom: 0,
+            left: 0,
+            alignItems: 'center',
+            justifyContent: 'center',
+            backgroundColor: theme.colors.blue,
+            borderRadius: 999,
         },
     })
 

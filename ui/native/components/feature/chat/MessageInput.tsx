@@ -22,6 +22,7 @@ import {
 import { Asset, ImageLibraryOptions } from 'react-native-image-picker'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 
+import { ROOM_MENTION } from '@fedi/common/constants/matrix'
 import { theme as fediTheme } from '@fedi/common/constants/theme'
 import { useMentionInput } from '@fedi/common/hooks/matrix'
 import { useToast } from '@fedi/common/hooks/toast'
@@ -131,6 +132,7 @@ const MessageInput: React.FC<MessageInputProps> = ({
     const [replyAnimation] = useState(new Animated.Value(0))
 
     const [selectionStart, setSelectionStart] = useState(0)
+    const forcedSelection: number | null = null
     const directUserId = useMemo(
         () => existingRoom?.directUserId ?? null,
         [existingRoom],
@@ -139,6 +141,7 @@ const MessageInput: React.FC<MessageInputProps> = ({
         () => !(!!directUserId || (!existingRoom && !isPublic)),
         [directUserId, existingRoom, isPublic],
     )
+    const [forceHideSuggestions, setForceHideSuggestions] = useState(false)
 
     // Build candidates for the mention hook, injecting "self" if missing so we can self-mention by display name.
     const membersForMentions: MatrixRoomMember[] = useMemo(() => {
@@ -161,12 +164,8 @@ const MessageInput: React.FC<MessageInputProps> = ({
         return [...list, selfAsMember]
     }, [mentionEnabled, roomMembers, selfUserId, auth?.displayName, id])
 
-    const {
-        mentionSuggestions,
-        shouldShowSuggestions,
-        detectMentionTrigger,
-        insertMention: insertMentionFromHook,
-    } = useMentionInput(membersForMentions, selectionStart)
+    const { mentionSuggestions, shouldShowSuggestions, detectMentionTrigger } =
+        useMentionInput(membersForMentions, selectionStart)
 
     const MIN_INPUT_H = theme.sizes.minMessageInputHeight
     const [inputHeight, setInputHeight] = useState<number>(MIN_INPUT_H)
@@ -571,13 +570,14 @@ const MessageInput: React.FC<MessageInputProps> = ({
 
     const handleSelectionChange = useCallback(
         (e: NativeSyntheticEvent<TextInputSelectionChangeEventData>) => {
+            if (forcedSelection !== null) return
             const s = e.nativeEvent.selection.start
             setSelectionStart(s)
             if (mentionEnabled) {
                 detectMentionTrigger(messageText, s)
             }
         },
-        [detectMentionTrigger, messageText, mentionEnabled],
+        [detectMentionTrigger, messageText, mentionEnabled, forcedSelection],
     )
 
     const onChangeText = useCallback(
@@ -597,14 +597,45 @@ const MessageInput: React.FC<MessageInputProps> = ({
 
     const insertMention = useCallback(
         (item: MentionSelect) => {
-            const { newText, newCursorPosition } = insertMentionFromHook(
-                item,
-                messageText,
-            )
+            const text = messageText
+            const cursor = selectionStart
+
+            const label =
+                item.id === '@room'
+                    ? `@${ROOM_MENTION}`
+                    : `@${(item.displayName || matrixIdToUsername(item.id)).trim()}`
+            const insertion = `${label} `
+
+            //fix for Android 9 and under 'caret doesn't move to end of line' Git Issue 8843
+            // target the token immediately before the caret
+            const left = text.slice(0, cursor)
+            // matches an @-mention immediately before the cursor: start/space + '@' + the current handle fragment, anchored to the end.
+            const match = left.match(/(^|\s)@([^\s\r\n]*)$/)
+            const start = match
+                ? cursor - ((match[2]?.length ?? 0) + 1)
+                : cursor
+
+            const before = text.slice(0, start)
+            const after = text.slice(cursor)
+            const newText = before + insertion + after
+            const nextCursor = before.length + insertion.length
+
             setMessageText(newText)
-            setSelectionStart(newCursorPosition)
+            setSelectionStart(nextCursor)
+
+            setForceHideSuggestions(true)
+            // send a "no active token" signal — most hooks treat a negative index as "clear"
+            detectMentionTrigger(newText, -1)
+
+            requestAnimationFrame(() => {
+                inputRef.current?.setNativeProps?.({
+                    selection: { start: nextCursor, end: nextCursor },
+                })
+                setForceHideSuggestions(false)
+            })
+            //end of bugfix
         },
-        [insertMentionFromHook, messageText],
+        [messageText, selectionStart, detectMentionTrigger],
     )
 
     const showMentionSuggestions =
@@ -706,7 +737,7 @@ const MessageInput: React.FC<MessageInputProps> = ({
 
             {/* input row */}
             <View style={style.inputContainer}>
-                {showMentionSuggestions && (
+                {showMentionSuggestions && !forceHideSuggestions && (
                     <View
                         pointerEvents="box-none"
                         style={[
@@ -724,6 +755,7 @@ const MessageInput: React.FC<MessageInputProps> = ({
                         />
                     </View>
                 )}
+
                 <View
                     style={[
                         style.inputFieldWrapper,
@@ -736,7 +768,15 @@ const MessageInput: React.FC<MessageInputProps> = ({
                         ref={(ref: TextInput | null) => {
                             inputRef.current = ref
                         }}
-                        placeholder={`${placeholder}`}
+                        selection={
+                            forcedSelection !== null
+                                ? {
+                                      start: forcedSelection,
+                                      end: forcedSelection,
+                                  }
+                                : undefined
+                        }
+                        placeholder={placeholder}
                         onContentSizeChange={handleContentSizeChange}
                         containerStyle={[
                             style.textInputOuter,
@@ -755,6 +795,7 @@ const MessageInput: React.FC<MessageInputProps> = ({
                         disabled={inputDisabled}
                     />
                 </View>
+
                 {!isReadOnly && !existingRoom && (
                     <Pressable
                         style={style.sendButton}
