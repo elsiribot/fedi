@@ -16,28 +16,31 @@ const FederationStatus = ({ federation }: { federation: LoadedFederation }) => {
     const style = styles(theme)
 
     const status = federation.status || 'offline'
-    const caption = t(`feature.federations.connection-status-${status}`)
     const isOffline = useAppSelector(selectIsInternetUnreachable)
 
     const popupInfo = usePopupFederationInfo(federation?.meta ?? {})
 
+    let statusMessage = t('feature.federations.connection-status-offline')
     let statusIcon: SvgImageName = 'AlertWarningTriangle'
-    let statusText = t('words.offline')
-    let statusColor = theme.colors.red
+    let statusWord = t('words.offline')
+    let statusIconColor = theme.colors.red
 
     if (status === 'online') {
         statusIcon = 'Online'
-        statusText = t('words.online')
-        statusColor = theme.colors.success
+        statusIconColor = theme.colors.success
+        statusWord = t('words.online')
+        statusMessage = t('feature.federations.connection-status-online')
     } else if (status === 'unstable') {
         statusIcon = 'Info'
-        statusText = t('words.unstable')
+        statusWord = t('words.unstable')
+        statusMessage = t('feature.federations.connection-status-unstable')
     }
 
     if (popupInfo?.ended) {
         statusIcon = 'Online'
-        statusText = t('words.expired')
-        statusColor = theme.colors.grey
+        statusIconColor = theme.colors.grey
+        statusWord = t('words.expired')
+        statusMessage = t('feature.federations.connection-status-expired')
     }
 
     return (
@@ -51,14 +54,18 @@ const FederationStatus = ({ federation }: { federation: LoadedFederation }) => {
                     </Text>
                 </Column>
                 <Row center shrink={false} style={style.statusBadge}>
-                    <SvgImage size={16} name={statusIcon} color={statusColor} />
+                    <SvgImage
+                        size={16}
+                        name={statusIcon}
+                        color={statusIconColor}
+                    />
                     <Text
                         medium
                         caption
                         numberOfLines={1}
                         adjustsFontSizeToFit
                         maxFontSizeMultiplier={1.4}>
-                        {statusText}
+                        {statusWord}
                     </Text>
                 </Row>
             </Row>
@@ -66,7 +73,7 @@ const FederationStatus = ({ federation }: { federation: LoadedFederation }) => {
             <Text caption>
                 {isOffline
                     ? t('feature.federations.please-reconnect')
-                    : caption}
+                    : statusMessage}
             </Text>
         </Column>
     )
