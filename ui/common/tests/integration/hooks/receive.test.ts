@@ -52,7 +52,7 @@ describe('common/hooks/receive', () => {
                 expect(result.current.invoice).toBeTruthy()
                 expect(result.current.isInvoiceLoading).toBeFalsy()
             })
-        }, 30000)
+        })
 
         it('should invoke an error if creating the lightning invoice fails', async () => {
             await builder.withFederationJoined()
@@ -82,7 +82,7 @@ describe('common/hooks/receive', () => {
 
                 expect(invoiceResult).rejects.toThrow()
             })
-        }, 30000)
+        })
 
         it('should fire the listener callback when the invoice has been paid', async () => {
             await builder.withEcashReceived(10000)
@@ -125,7 +125,7 @@ describe('common/hooks/receive', () => {
             await waitFor(() => {
                 expect(onInvoicePaid).toHaveBeenCalled()
             })
-        }, 30000)
+        })
     })
 
     describe('useMakeOnchainAddress', () => {
@@ -155,7 +155,7 @@ describe('common/hooks/receive', () => {
             await waitFor(() => {
                 expect(result.current.address).toBeTruthy()
             })
-        }, 30000)
+        })
 
         it('should add transaction notes', async () => {
             await builder.withFederationJoined()
@@ -195,7 +195,7 @@ describe('common/hooks/receive', () => {
 
                 expect(transaction.txnNotes).toBe('test notes')
             })
-        }, 30000)
+        })
 
         it('should throw if making an onchain address fails', async () => {
             await builder.withFederationJoined()
@@ -223,7 +223,7 @@ describe('common/hooks/receive', () => {
                     'Federation not found',
                 )
             })
-        }, 30000)
+        })
 
         it('should throw if saving notes fails', async () => {
             await builder.withFederationJoined()
@@ -259,7 +259,7 @@ describe('common/hooks/receive', () => {
             } as unknown as string)
 
             expect(saveNotesResult).rejects.toThrow('Bad request')
-        }, 30000)
+        })
     })
 
     describe('useLnurlReceiveCode', () => {
@@ -361,6 +361,6 @@ describe('common/hooks/receive', () => {
             expect(lnPayTxn).toBeTruthy()
             expect(lnPayTxn?.state?.type).toBe('success')
             expect(lnurlClaimedTxn).toBeTruthy()
-        }, 30000)
+        })
     })
 })
