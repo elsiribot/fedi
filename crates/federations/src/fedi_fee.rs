@@ -399,10 +399,17 @@ impl FediFeeRemittanceService {
         // We keep division as the very last step to ensure minimal loss in precision.
         // We also perform regular (floor) division to ensure that the invoice is never
         // overestimated.
-        let invoice_amt_numerator =
-            MILLION * (outstanding_fees.msats - gateway_fees.base_msat as u64);
+        let invoice_amt_numerator = MILLION
+            * (outstanding_fees
+                .msats
+                .checked_sub(gateway_fees.base_msat as u64)
+                .ok_or(anyhow!("Accrued fee < base gateway fees!"))?);
         let invoice_amt_denominator = MILLION + gateway_fees.proportional_millionths as u64;
         let invoice_amt = invoice_amt_numerator / invoice_amt_denominator;
+
+        if invoice_amt == 0 {
+            bail!("Fedi fee less gateway fee would be effectively 0");
+        }
 
         let invoice = fed
             .fedi_fee_helper
