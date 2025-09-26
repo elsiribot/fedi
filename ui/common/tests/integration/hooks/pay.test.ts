@@ -132,7 +132,7 @@ describe('sending payments', () => {
                 const res = await result.current.handleOmniSend(1 as Sats)
                 expect('preimage' in res && res.preimage).toBeTruthy()
             })
-        }, 30000)
+        })
     })
 
     describe('useSendEcash', () => {
@@ -168,6 +168,6 @@ describe('sending payments', () => {
 
             // Check that the amounts match
             expect(decoded.amount).toBe(amountUtils.satToMsat(2 as Sats))
-        }, 30000)
+        })
     })
 })

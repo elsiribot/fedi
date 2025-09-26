@@ -93,7 +93,7 @@ describe('group chat interactions between 2 users', () => {
             })
             expect(eventWithMessage).toBeDefined()
         })
-    }, 30000)
+    })
 })
 
 describe('group chat interactions among 3 users', () => {
@@ -218,7 +218,7 @@ describe('group chat interactions among 3 users', () => {
             )
             expect(decryptableMessageInCharlieTimeline).toBeDefined()
         })
-    }, 30000)
+    })
 
     describe('chained replies', () => {
         it("alice sends a message, bob replies, charlie replies to bob's reply", async () => {
@@ -401,7 +401,7 @@ describe('group chat interactions among 3 users', () => {
                 expect(repliedData?.content.body).toBe(messageFromAlice)
                 expect(repliedData?.sender).toBe(authAlice?.userId)
             })
-        }, 30000)
+        })
     })
 })
 
@@ -517,5 +517,5 @@ describe('direct chat interactions between 2 users', () => {
             expect(repliedData?.content.body).toBe('hi bob this is alice')
             expect(repliedData?.sender).toBe(aliceAuth?.userId)
         })
-    }, 30000)
+    })
 })

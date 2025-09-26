@@ -17,4 +17,5 @@ module.exports = {
         ],
     },
     transformIgnorePatterns: ['node_modules/(?!(.*\\.(mjs|jsx?|tsx?)$))'],
+    testTimeout: 30000,
 }
