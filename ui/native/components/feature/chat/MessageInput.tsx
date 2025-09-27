@@ -84,7 +84,6 @@ type MessageInputProps = {
 }
 
 const log = makeLog('MessageInput')
-const SUGGESTIONS_MAX_HEIGHT = 280
 const SUGGESTIONS_MIN_HEIGHT = 120
 
 const imageOptions: ImageLibraryOptions = {
@@ -739,7 +738,7 @@ const MessageInput: React.FC<MessageInputProps> = ({
             <View style={style.inputContainer}>
                 {showMentionSuggestions && !forceHideSuggestions && (
                     <View
-                        pointerEvents="box-none"
+                        pointerEvents="auto"
                         style={[
                             style.mentionOverlay,
                             repliedEvent && !isEditingMessage && !isReadOnly
@@ -1115,7 +1114,6 @@ const styles = (theme: Theme, insets: Insets) =>
 
             bottom: '100%',
             marginBottom: 9, //so we can still see the top border of MessageInput
-            maxHeight: SUGGESTIONS_MAX_HEIGHT,
             zIndex: 20,
             elevation: 20,
             left: -(theme.spacing.md + (insets.left || 0)),

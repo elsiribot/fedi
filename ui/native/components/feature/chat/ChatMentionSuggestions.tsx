@@ -1,6 +1,6 @@
 import { Text, Theme, useTheme } from '@rneui/themed'
 import React, { useMemo } from 'react'
-import { FlatList, Pressable, StyleSheet, View } from 'react-native'
+import { FlatList, Platform, Pressable, StyleSheet, View } from 'react-native'
 import { NativeViewGestureHandler } from 'react-native-gesture-handler'
 
 import { ROOM_MENTION } from '@fedi/common/constants/matrix'
@@ -12,6 +12,7 @@ import {
 } from '@fedi/common/types'
 import { getUserSuffix, matrixIdToUsername } from '@fedi/common/utils/matrix'
 
+import { isAndroidAPI35Plus } from '../../../utils/layout'
 import { AvatarSize } from '../../ui/Avatar'
 import ChatAvatar from '../chat/ChatAvatar'
 
@@ -36,6 +37,7 @@ const ChatMentionSuggestions: React.FC<Props> = ({
 }) => {
     const { theme } = useTheme()
     const style = styles(theme)
+    const isAPI35Plus = isAndroidAPI35Plus()
 
     const list = useMemo<MentionItem[]>(
         () => [
@@ -47,128 +49,146 @@ const ChatMentionSuggestions: React.FC<Props> = ({
 
     if (!visible || list.length === 0) return null
 
-    // exact content height = prevents tiny scroll with only 2 items
     const contentHeight =
         list.length * ROW_HEIGHT + Math.max(0, list.length - 1) * SEPARATOR_H
     const maxH = Math.max(0, maxHeight ?? DEFAULT_MAX_HEIGHT)
-    const containerHeight = Math.min(contentHeight, maxH)
-    const needsScroll = contentHeight > maxH //is scroll required?
+
+    // fixed viewport so short lists can bottom-dock and long lists can scroll.
+    const viewportHeight = maxH
+    const needsScroll = contentHeight > maxH
+
+    const renderItem = ({
+        item,
+        index,
+    }: {
+        item: MentionItem
+        index: number
+    }) => {
+        const isRoom = item.kind === 'room'
+        const roomAvatarUser = {
+            id: '@room',
+            displayName: `@${ROOM_MENTION}`,
+        } as MatrixRoomMember
+
+        return (
+            <Pressable
+                style={({ pressed }) => [
+                    style.row,
+                    pressed && style.rowPressed,
+                    index === list.length - 1 && style.rowLast,
+                ]}
+                android_ripple={{ color: theme.colors.primary05 }}
+                onPress={() =>
+                    onSelect(
+                        isRoom
+                            ? { id: '@room', displayName: ROOM_MENTION }
+                            : item,
+                    )
+                }>
+                {isRoom ? (
+                    <View style={{ position: 'relative' }}>
+                        <ChatAvatar
+                            user={roomAvatarUser}
+                            size={AvatarSize.md}
+                        />
+                        <View
+                            style={{
+                                ...StyleSheet.absoluteFillObject,
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                backgroundColor: theme.colors.blue,
+                                borderRadius: 999,
+                            }}>
+                            <Text
+                                style={style.roomAt}
+                                maxFontSizeMultiplier={
+                                    theme.multipliers.headerMaxFontMultiplier
+                                }>
+                                @
+                            </Text>
+                        </View>
+                    </View>
+                ) : (
+                    <ChatAvatar user={item} size={AvatarSize.md} />
+                )}
+
+                <View style={style.textCol}>
+                    <Text medium numberOfLines={1} style={style.name}>
+                        {isRoom
+                            ? `@${ROOM_MENTION}`
+                            : item.displayName || matrixIdToUsername(item.id)}
+                    </Text>
+                    {!isRoom && (
+                        <Text caption numberOfLines={1} style={style.sub}>
+                            {getUserSuffix(item.id)}
+                        </Text>
+                    )}
+                </View>
+            </Pressable>
+        )
+    }
+
+    // SDK35-only: slightly larger top inset so the first row isn't clipped by the container border
+    const sdk35TopInset = isAPI35Plus ? 8 : 0
+
+    const List = (
+        <FlatList<MentionItem>
+            data={list}
+            keyExtractor={(item, i) =>
+                item.kind === 'room' ? `room-${i}` : item.id
+            }
+            style={style.mentionsListStyle}
+            scrollEnabled={needsScroll}
+            nestedScrollEnabled
+            showsVerticalScrollIndicator={needsScroll}
+            keyboardShouldPersistTaps={
+                Platform.OS === 'android'
+                    ? isAPI35Plus
+                        ? 'always'
+                        : 'handled'
+                    : 'handled'
+            }
+            removeClippedSubviews={false}
+            initialNumToRender={8}
+            windowSize={7}
+            scrollEventThrottle={16}
+            contentInsetAdjustmentBehavior="never"
+            bounces={false}
+            // header spacer ONLY when scrolling, so the first row never tucks under the toolbar
+            ListHeaderComponent={
+                needsScroll && topSpacer ? (
+                    <View style={{ height: topSpacer }} />
+                ) : null
+            }
+            contentContainerStyle={{
+                paddingHorizontal: 0,
+                paddingBottom: 1,
+                paddingTop: sdk35TopInset, //sdk35 only, stop top item being clipped
+                flexGrow: 1,
+                // bottom-dock short lists so items sit right above the input
+                justifyContent: needsScroll ? 'flex-start' : 'flex-end',
+            }}
+            ItemSeparatorComponent={() => <View style={style.separator} />}
+            renderItem={renderItem}
+        />
+    )
 
     return (
         <View
-            style={[style.container, { height: containerHeight }]}
+            // fixed viewport height (critical for scrolling).
+            style={[style.container, { height: viewportHeight }]}
             pointerEvents="auto"
             collapsable={false}>
-            <NativeViewGestureHandler disallowInterruption>
-                <FlatList<MentionItem>
-                    data={list}
-                    keyExtractor={(item, i) =>
-                        item.kind === 'room' ? `room-${i}` : item.id
-                    }
-                    style={{ height: containerHeight, width: '100%' }}
-                    scrollEnabled={needsScroll}
-                    nestedScrollEnabled
-                    showsVerticalScrollIndicator={needsScroll}
-                    keyboardShouldPersistTaps="always"
-                    removeClippedSubviews={false}
-                    initialNumToRender={8}
-                    windowSize={7}
-                    scrollEventThrottle={16}
-                    ListHeaderComponent={
-                        needsScroll && topSpacer > 0 ? (
-                            <View style={{ height: topSpacer }} />
-                        ) : null
-                    }
-                    contentContainerStyle={{
-                        paddingHorizontal: 0,
-                        paddingBottom: 1,
-                    }}
-                    ItemSeparatorComponent={() => (
-                        <View style={style.separator} />
-                    )}
-                    renderItem={({ item, index }) => {
-                        const isRoom = item.kind === 'room'
-                        const roomAvatarUser = {
-                            id: '@room',
-                            displayName: `@${ROOM_MENTION}`,
-                        } as MatrixRoomMember
-
-                        return (
-                            <Pressable
-                                style={({ pressed }) => [
-                                    style.row,
-                                    pressed && style.rowPressed,
-                                    index === list.length - 1 && style.rowLast,
-                                ]}
-                                android_ripple={{
-                                    color: theme.colors.primary05,
-                                }}
-                                onPress={() =>
-                                    onSelect(
-                                        isRoom
-                                            ? {
-                                                  id: '@room',
-                                                  displayName: ROOM_MENTION,
-                                              }
-                                            : item,
-                                    )
-                                }>
-                                {isRoom ? (
-                                    <View style={{ position: 'relative' }}>
-                                        <ChatAvatar
-                                            user={roomAvatarUser}
-                                            size={AvatarSize.md}
-                                        />
-                                        <View
-                                            style={{
-                                                ...StyleSheet.absoluteFillObject,
-                                                alignItems: 'center',
-                                                justifyContent: 'center',
-                                                backgroundColor:
-                                                    theme.colors.blue,
-                                                borderRadius: 999, // keep it circular regardless of platform size
-                                            }}>
-                                            <Text
-                                                style={style.roomAt}
-                                                maxFontSizeMultiplier={
-                                                    theme.multipliers
-                                                        .headerMaxFontMultiplier
-                                                }>
-                                                @
-                                            </Text>
-                                        </View>
-                                    </View>
-                                ) : (
-                                    <ChatAvatar
-                                        user={item}
-                                        size={AvatarSize.md}
-                                    />
-                                )}
-
-                                <View style={style.textCol}>
-                                    <Text
-                                        medium
-                                        numberOfLines={1}
-                                        style={style.name}>
-                                        {isRoom
-                                            ? `@${ROOM_MENTION}`
-                                            : item.displayName ||
-                                              matrixIdToUsername(item.id)}
-                                    </Text>
-                                    {!isRoom && (
-                                        <Text
-                                            caption
-                                            numberOfLines={1}
-                                            style={style.sub}>
-                                            {getUserSuffix(item.id)}
-                                        </Text>
-                                    )}
-                                </View>
-                            </Pressable>
-                        )
-                    }}
-                />
-            </NativeViewGestureHandler>
+            {Platform.OS === 'android' ? (
+                <NativeViewGestureHandler
+                    enabled={needsScroll}
+                    shouldCancelWhenOutside={false}
+                    disallowInterruption>
+                    {List}
+                </NativeViewGestureHandler>
+            ) : (
+                List
+            )}
         </View>
     )
 }
@@ -188,6 +208,10 @@ const styles = (theme: Theme) =>
             zIndex: 3,
             borderTopWidth: 1,
             borderTopColor: theme.colors.extraLightGrey,
+        },
+        mentionsListStyle: {
+            width: '100%',
+            height: '100%',
         },
         row: {
             minHeight: 48,
@@ -214,20 +238,6 @@ const styles = (theme: Theme) =>
             fontWeight: '700',
             fontSize: 16,
             lineHeight: 18,
-        },
-        roomAvatarWrap: {
-            position: 'relative',
-        },
-        roomOverlay: {
-            position: 'absolute',
-            top: 0,
-            right: 0,
-            bottom: 0,
-            left: 0,
-            alignItems: 'center',
-            justifyContent: 'center',
-            backgroundColor: theme.colors.blue,
-            borderRadius: 999,
         },
     })
 
