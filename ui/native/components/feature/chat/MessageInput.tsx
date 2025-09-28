@@ -128,7 +128,6 @@ const MessageInput: React.FC<MessageInputProps> = ({
     const [isFocused, setIsFocused] = useState(false)
     const [messageText, setMessageText] = useState<string>(drafts[id] ?? '')
     const [isSendingMessage, setIsSendingMessage] = useState(false)
-    const [replyAnimation] = useState(new Animated.Value(0))
 
     const [selectionStart, setSelectionStart] = useState(0)
     const forcedSelection: number | null = null
@@ -175,38 +174,22 @@ const MessageInput: React.FC<MessageInputProps> = ({
     const isEditingMessage = !!editingMessage
     const inputDisabled = isSending || isReadOnly
 
+    const replyOpacity = useRef(new Animated.Value(0)).current
     // animate reply bar appearance/disappearance
     useEffect(() => {
-        if (repliedEvent && !isEditingMessage && !isReadOnly) {
-            Animated.timing(replyAnimation, {
-                toValue: 1,
-                duration: 200,
-                useNativeDriver: true,
-            }).start()
+        const visible = !!(repliedEvent && !isEditingMessage && !isReadOnly)
+        const anim = Animated.timing(replyOpacity, {
+            toValue: visible ? 1 : 0,
+            duration: visible ? 200 : 150,
+            useNativeDriver: true,
+        })
+        anim.start()
+        return () => anim.stop()
+    }, [repliedEvent, isEditingMessage, isReadOnly, replyOpacity])
 
-            // notify parent about reply bar height
-            if (onReplyBarHeightChanged) {
-                onReplyBarHeightChanged(110)
-            }
-        } else {
-            Animated.timing(replyAnimation, {
-                toValue: 0,
-                duration: 150,
-                useNativeDriver: true,
-            }).start()
-
-            // reset reply bar height
-            if (onReplyBarHeightChanged) {
-                onReplyBarHeightChanged(0)
-            }
-        }
-    }, [
-        repliedEvent,
-        isEditingMessage,
-        isReadOnly,
-        replyAnimation,
-        onReplyBarHeightChanged,
-    ])
+    useEffect(() => {
+        onReplyBarHeightChanged?.(0)
+    }, [onReplyBarHeightChanged])
 
     useDebouncedEffect(
         () => {
@@ -526,28 +509,28 @@ const MessageInput: React.FC<MessageInputProps> = ({
 
         return (
             <Animated.View
-                style={[
-                    style.replyBarContainer,
-                    {
-                        transform: [
-                            {
-                                translateY: replyAnimation.interpolate({
-                                    inputRange: [0, 1],
-                                    outputRange: [-5, 0],
-                                }),
-                            },
-                        ],
-                        opacity: replyAnimation,
-                    },
-                ]}>
+                style={[style.replyBarContainer, { opacity: replyOpacity }]}>
                 <View style={style.replyBar}>
                     <View style={style.replyIndicator} />
                     <View style={style.replyContent}>
-                        <Text style={style.replySender} numberOfLines={1}>
+                        <Text
+                            style={style.replySender}
+                            numberOfLines={1}
+                            maxFontSizeMultiplier={
+                                theme.multipliers?.headerMaxFontMultiplier ??
+                                1.3
+                            }>
                             {/* TODO: make local for this */}
                             Replying to {sender}
                         </Text>
-                        <Text style={style.replyBody} numberOfLines={1}>
+                        <Text
+                            style={style.replyBody}
+                            numberOfLines={1}
+                            maxFontSizeMultiplier={
+                                theme.multipliers?.bodyMaxFontMultiplier ??
+                                theme.multipliers?.headerMaxFontMultiplier ??
+                                1.3
+                            }>
                             {bodySnippet}
                         </Text>
                     </View>
@@ -682,10 +665,6 @@ const MessageInput: React.FC<MessageInputProps> = ({
                           ),
                       },
                 isReadOnly ? { borderTopWidth: 0 } : {},
-                // push content up when reply bar is visible
-                repliedEvent && !isEditingMessage && !isReadOnly
-                    ? { marginTop: -60 }
-                    : {},
             ]}>
             {renderReplyBar()}
             {documentListItems.length > 0 && (
@@ -737,14 +716,7 @@ const MessageInput: React.FC<MessageInputProps> = ({
             {/* input row */}
             <View style={style.inputContainer}>
                 {showMentionSuggestions && !forceHideSuggestions && (
-                    <View
-                        pointerEvents="auto"
-                        style={[
-                            style.mentionOverlay,
-                            repliedEvent && !isEditingMessage && !isReadOnly
-                                ? style.mentionOverlayWithReply
-                                : null,
-                        ]}>
+                    <View pointerEvents="auto" style={style.mentionOverlay}>
                         <ChatMentionSuggestions
                             visible
                             suggestions={mentionSuggestions}
@@ -1055,23 +1027,28 @@ const styles = (theme: Theme, insets: Insets) =>
             gap: theme.spacing.md,
         },
         replyBarContainer: {
-            position: 'absolute',
-            top: -(59 + 1),
-            left: -(theme.spacing.md + (insets.left || 0)),
-            right: -(theme.spacing.md + (insets.right || 0)),
+            position: 'relative',
+            // Stretch the bar content edge-to-edge:
+            marginLeft: -(theme.spacing.md + (insets.left || 0)),
+            marginRight: -(theme.spacing.md + (insets.right || 0)),
+            // Fill the container's top padding area with the same background without changing the bar's internal height/padding.
+            marginTop: -theme.spacing.sm,
+            paddingTop: Math.max(theme.spacing.sm - 4, 0),
+            backgroundColor: theme.colors.offWhite100,
             width: 'auto',
-            zIndex: 1,
+            alignSelf: 'stretch',
         },
         replyBar: {
             width: '100%',
             height: 59,
-            backgroundColor: theme.colors.offWhite100,
-            borderTopWidth: 1,
-            borderTopColor: theme.colors.lightGrey,
+            backgroundColor: 'transparent',
+            borderTopWidth: 0,
+            borderBottomWidth: 1,
+            borderBottomColor: theme.colors.lightGrey,
             paddingTop: 12,
-            paddingRight: theme.spacing.md + (insets.right || 0) + 16,
+            paddingRight: (insets.right || 0) + 16,
             paddingBottom: 12,
-            paddingLeft: theme.spacing.md + (insets.left || 0) + 16,
+            paddingLeft: (insets.left || 0) + 20,
             flexDirection: 'row',
             alignItems: 'center',
             gap: 16,
@@ -1082,6 +1059,7 @@ const styles = (theme: Theme, insets: Insets) =>
             backgroundColor: theme.colors.primary || '#007AFF',
             borderRadius: 2,
             flexShrink: 0,
+            marginRight: 12,
         },
         replyContent: {
             flex: 1,
@@ -1108,19 +1086,14 @@ const styles = (theme: Theme, insets: Insets) =>
             alignItems: 'center',
             justifyContent: 'center',
         },
-
         mentionOverlay: {
             position: 'absolute',
-
             bottom: '100%',
             marginBottom: 9, //so we can still see the top border of MessageInput
-            zIndex: 20,
-            elevation: 20,
+            zIndex: 2,
+            elevation: 2,
             left: -(theme.spacing.md + (insets.left || 0)),
             right: -(theme.spacing.md + (insets.right || 0)),
-        },
-        mentionOverlayWithReply: {
-            transform: [{ translateY: -(59 + 1) }], // moves overlay up by reply bar height + border
         },
     })
 

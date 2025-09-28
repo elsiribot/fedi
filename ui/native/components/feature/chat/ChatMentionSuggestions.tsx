@@ -211,7 +211,6 @@ const styles = (theme: Theme) =>
         },
         mentionsListStyle: {
             width: '100%',
-            height: '100%',
         },
         row: {
             minHeight: 48,
