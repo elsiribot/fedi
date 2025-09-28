@@ -4,8 +4,10 @@ import React, { ReactNode, useCallback } from 'react'
 import { useTranslation } from 'react-i18next'
 import {
     Linking,
+    Platform,
     StyleProp,
     StyleSheet,
+    TextProps as RNTextProps,
     TextStyle,
     View,
     ViewStyle,
@@ -25,6 +27,10 @@ import {
 import EmbeddedJoinGroupButton from './EmbeddedJoinGroupButton'
 
 const log = makeLog('MessageContents')
+
+// Android-only rendering quirk: last run after an <a> can disappear.
+// Fix by appending a non-breaking-space tail and using a simpler break strategy.
+const NEEDS_TAIL_FIX = Platform.OS === 'android'
 
 type MessageContentsProps = {
     content: string
@@ -105,6 +111,9 @@ const MessageContents: React.FC<MessageContentsProps> = ({
     // shared renderer used in both branches
     const renderRichBlock = useCallback(
         (block: string, key?: string | number, mediumWeight?: boolean) => {
+            const androidTextProps: Partial<RNTextProps> = NEEDS_TAIL_FIX
+                ? { textBreakStrategy: 'simple' }
+                : {}
             const hasHtml =
                 /<a\s+href="/i.test(block) || /<br\s*\/?>/i.test(block)
 
@@ -146,6 +155,7 @@ const MessageContents: React.FC<MessageContentsProps> = ({
                         key={key ?? 'plain'}
                         caption
                         {...(mediumWeight ? { medium: true } : {})}
+                        {...androidTextProps}
                         style={[...textStyles, styles(theme).consistentText]}>
                         {parts.map((p, idx) =>
                             p.type === 'everyone' ? (
@@ -165,7 +175,9 @@ const MessageContents: React.FC<MessageContentsProps> = ({
                                 </React.Fragment>
                             ),
                         )}
-                        <Text key="tail-plain">{'\u200B'}</Text>
+                        {NEEDS_TAIL_FIX && (
+                            <Text key="tail-plain">{'\u00A0'}</Text>
+                        )}
                     </Text>
                 )
             }
@@ -177,6 +189,7 @@ const MessageContents: React.FC<MessageContentsProps> = ({
                     key={key ?? 'rich'}
                     caption
                     {...(mediumWeight ? { medium: true } : {})}
+                    {...androidTextProps}
                     style={[...textStyles, styles(theme).consistentText]}>
                     {runs.flatMap((r, idx) => {
                         if (r.type === 'link' && r.href) {
@@ -254,7 +267,7 @@ const MessageContents: React.FC<MessageContentsProps> = ({
                             ),
                         )
                     })}
-                    <Text key="tail-rich">{'\u200B'}</Text>
+                    {NEEDS_TAIL_FIX && <Text key="tail-rich">{'\u00A0'}</Text>}
                 </Text>
             )
         },
