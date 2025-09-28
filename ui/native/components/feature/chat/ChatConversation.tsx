@@ -1,3 +1,4 @@
+import { RouteProp, useRoute } from '@react-navigation/native'
 import { Text, Theme, useTheme } from '@rneui/themed'
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
@@ -14,6 +15,7 @@ import {
 } from 'react-native'
 
 import { useObserveMatrixRoom } from '@fedi/common/hooks/matrix'
+import { useDebouncedEffect } from '@fedi/common/hooks/util'
 import {
     matchAndHidePreviewMedia,
     selectPreviewMedia,
@@ -36,6 +38,7 @@ import {
 } from '@fedi/common/utils/matrix'
 
 import { useAppDispatch, useAppSelector } from '../../../state/hooks'
+import { RootStackParamList } from '../../../types/navigation'
 import Flex from '../../ui/Flex'
 import ChatEventCollection from './ChatEventCollection'
 import { ChatUserActionsOverlay } from './ChatUserActionsOverlay'
@@ -53,6 +56,10 @@ type MessagesListProps = {
     newMessageBottomOffset: number
     replyBarOffset?: number
 }
+type ChatRoomConversationRouteProp = RouteProp<
+    RootStackParamList,
+    'ChatRoomConversation'
+>
 
 const ChatConversation: React.FC<MessagesListProps> = ({
     type,
@@ -63,6 +70,8 @@ const ChatConversation: React.FC<MessagesListProps> = ({
 }: MessagesListProps) => {
     const { t } = useTranslation()
     const { theme } = useTheme()
+    const router = useRoute<ChatRoomConversationRouteProp>()
+    const { scrollToMessageId } = router.params
     const matrixAuth = useAppSelector(selectMatrixAuth)
     const myId = useMemo(() => matrixAuth?.userId, [matrixAuth])
     const isBroadcast = !!useAppSelector(s => selectMatrixRoom(s, id))
@@ -275,6 +284,16 @@ const ChatConversation: React.FC<MessagesListProps> = ({
             ),
         )
     }, [events, dispatch])
+
+    useDebouncedEffect(
+        () => {
+            if (scrollToMessageId) {
+                scrollToMessage(scrollToMessageId)
+            }
+        },
+        [scrollToMessageId],
+        300,
+    )
 
     return (
         <>

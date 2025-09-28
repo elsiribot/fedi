@@ -23,7 +23,7 @@ import { useAppDispatch, useAppSelector } from '../../../state/hooks'
 import { NavigationHook } from '../../../types/navigation'
 import HoloLoader from '../../ui/HoloLoader'
 import { ChatRoomActionsOverlay } from './ChatRoomActionsOverlay'
-import ChatTile from './ChatTile'
+import ChatRoomTile from './ChatRoomTile'
 
 const WINDOW_WIDTH = Dimensions.get('window').width
 
@@ -66,7 +66,7 @@ const ChatsList: React.FC = () => {
         ({ item }) => {
             return (
                 <ErrorBoundary fallback={null}>
-                    <ChatTile
+                    <ChatRoomTile
                         room={item}
                         onSelect={handleOpenChat}
                         onLongPress={handleLongPressChat}

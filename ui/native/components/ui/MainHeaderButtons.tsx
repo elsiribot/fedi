@@ -10,9 +10,10 @@ import { PressableIcon } from './PressableIcon'
 
 type Props = {
     onAddPress: () => void
+    onSearchPress?: () => void
 }
 
-const MainHeaderButtons: React.FC<Props> = ({ onAddPress }) => {
+const MainHeaderButtons: React.FC<Props> = ({ onAddPress, onSearchPress }) => {
     const { theme } = useTheme()
     const navigation = useNavigation<NavigationHook>()
 
@@ -29,6 +30,15 @@ const MainHeaderButtons: React.FC<Props> = ({ onAddPress }) => {
     return (
         <Flex row align="center" gap="md">
             {/* TODO: add gradients to bubbleButton styling to match designs */}
+            {onSearchPress && (
+                <PressableIcon
+                    containerStyle={style.bubbleButton}
+                    onPress={onSearchPress}
+                    hitSlop={5}
+                    svgName="Search"
+                    svgProps={{ size: 16 }}
+                />
+            )}
             {onAddPress && (
                 <PressableIcon
                     containerStyle={style.bubbleButton}

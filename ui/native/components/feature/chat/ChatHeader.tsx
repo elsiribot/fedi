@@ -30,6 +30,10 @@ const ChatHeader: React.FC = () => {
         completeOpenedNewChat()
     }
 
+    const handleSearch = () => {
+        navigation.navigate('ChatsListSearch', { initialQuery: '' })
+    }
+
     return (
         <>
             <Header
@@ -40,7 +44,12 @@ const ChatHeader: React.FC = () => {
                         {t('words.chat')}
                     </Text>
                 }
-                headerRight={<MainHeaderButtons onAddPress={goToNewMessage} />}
+                headerRight={
+                    <MainHeaderButtons
+                        onAddPress={goToNewMessage}
+                        onSearchPress={handleSearch}
+                    />
+                }
             />
             <ChatConnectionBadge />
             <Tooltip

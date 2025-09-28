@@ -11,7 +11,9 @@ import PersonalBackupHeader from '../components/feature/backup/PersonalBackupHea
 import RecoveryWordsHeader from '../components/feature/backup/RecoveryWordsHeader'
 import SocialBackupHeader from '../components/feature/backup/SocialBackupHeader'
 import ChatConversationHeader from '../components/feature/chat/ChatConversationHeader'
+import ChatConversationSearchHeader from '../components/feature/chat/ChatConversationSearchHeader'
 import ChatRoomMembersHeader from '../components/feature/chat/ChatRoomMembersHeader'
+import ChatsListSearchHeader from '../components/feature/chat/ChatsListSearchHeader'
 import ConfirmJoinPublicGroupHeader from '../components/feature/chat/ConfirmJoinPublicGroupHeader'
 import CreatePollHeader from '../components/feature/chat/CreatePollHeader'
 import DefaultChatHeader from '../components/feature/chat/DefaultChatHeader'
@@ -75,6 +77,7 @@ import AddFediMod from './AddFediMod'
 import AssignMultispendVoters from './AssignMultispendVoters'
 import BitcoinRequest from './BitcoinRequest'
 import BugReportSuccess from './BugReportSuccess'
+import ChatConversationSearch from './ChatConversationSearch'
 import ChatImageViewer from './ChatImageViewer'
 import ChatRoomConversation from './ChatRoomConversation'
 import ChatRoomInvite from './ChatRoomInvite'
@@ -82,6 +85,7 @@ import ChatRoomMembers from './ChatRoomMembers'
 import ChatUserConversation from './ChatUserConversation'
 import ChatVideoViewer from './ChatVideoViewer'
 import ChatWallet from './ChatWallet'
+import ChatsListSearch from './ChatsListSearch'
 import ChooseBackupMethod from './ChooseBackupMethod'
 import ChooseRecoveryMethod from './ChooseRecoveryMethod'
 import CommunityDetails from './CommunityDetails'
@@ -436,6 +440,22 @@ export const MainNavigator = () => {
                                                     'feature.chat.new-message',
                                                 )}
                                             />
+                                        ),
+                                    })}
+                                />
+                                <Stack.Screen
+                                    name="ChatsListSearch"
+                                    component={ChatsListSearch}
+                                    options={() => ({
+                                        header: () => <ChatsListSearchHeader />,
+                                    })}
+                                />
+                                <Stack.Screen
+                                    name="ChatConversationSearch"
+                                    component={ChatConversationSearch}
+                                    options={() => ({
+                                        header: () => (
+                                            <ChatConversationSearchHeader />
                                         ),
                                     })}
                                 />
