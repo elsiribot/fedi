@@ -12,18 +12,17 @@ import {
     selectOnboardingMethod,
 } from '@fedi/common/redux'
 import { selectVisibleCommunityMods } from '@fedi/common/redux/mod'
-import { selectCanShowSurvey } from '@fedi/common/redux/support'
 import { getFederationPinnedMessage } from '@fedi/common/utils/FederationUtils'
 
 import { DefaultRoomPreview } from '../components/Chat/DefaultRoomPreview'
 import { ContentBlock } from '../components/ContentBlock'
+import { DisplayNameModal } from '../components/DisplayNameModal'
 import { FediModTiles } from '../components/FediModTiles'
 import PinnedMessage from '../components/Home/PinnedMessage'
 import { Icon } from '../components/Icon'
 import { InstallBanner } from '../components/InstallBanner'
 import * as Layout from '../components/Layout'
 import { Modal } from '../components/Modal'
-import SurveyModal from '../components/SurveyModal'
 import { Text } from '../components/Text'
 import {
     useAppSelector,
@@ -56,7 +55,6 @@ function HomePage() {
     )
     const matrixAuth = useAppSelector(selectMatrixAuth)
     const onboardingMethod = useAppSelector(selectOnboardingMethod)
-    const canShowSurvey = useAppSelector(selectCanShowSurvey)
     const isNewSeedUser = onboardingMethod !== 'restored'
     const pinnedMessage = getFederationPinnedMessage(
         selectedCommunity?.meta || {},
@@ -172,7 +170,7 @@ function HomePage() {
                 </ModalContent>
             </Modal>
 
-            {canShowSurvey && <SurveyModal />}
+            <DisplayNameModal />
         </ContentBlock>
     )
 }
