@@ -66,7 +66,7 @@ const initialState = {
     federations: [] as Federation[],
     publicFederations: [] as PublicFederation[],
     payFromFederationId: null as Federation['id'] | null,
-    lastUsedFederationId: null as Federation['id'] | null,
+    recentlyUsedFederationIds: [] as Array<Federation['id']>,
     lastSelectedCommunityId: null as Community['id'] | null,
     authenticatedGuardian: null as Guardian | null,
     customFediMods: {} as Record<Federation['id'], FediMod[] | undefined>,
@@ -248,8 +248,10 @@ export const federationSlice = createSlice({
         setPayFromFederationId(state, action: PayloadAction<string | null>) {
             state.payFromFederationId = action.payload
         },
-        setLastUsedFederationId(state, action: PayloadAction<string | null>) {
-            state.lastUsedFederationId = action.payload
+        setLastUsedFederationId(state, action: PayloadAction<string>) {
+            state.recentlyUsedFederationIds = Array.from(
+                new Set([action.payload, ...state.recentlyUsedFederationIds]),
+            )
         },
         setLastSelectedCommunityId(
             state,
@@ -368,15 +370,30 @@ export const federationSlice = createSlice({
                 fed => fed.id !== federationId,
             )
             if (state.federations.length === 0) {
-                state.lastUsedFederationId = null
                 state.payFromFederationId = null
             } else {
-                // reset lastUsedFederationId and payFromFederationId if they were the one that was left
-                if (state.lastUsedFederationId === federationId) {
-                    state.lastUsedFederationId = state.federations[0]?.id
+                // Remove `federationId` from the recently-used list
+                state.recentlyUsedFederationIds =
+                    state.recentlyUsedFederationIds.filter(
+                        id => id !== federationId,
+                    )
+
+                // If there are no recently-used federations, set it to the first available federation (if any)
+                if (
+                    state.recentlyUsedFederationIds.length === 0 &&
+                    state.federations.length > 0
+                ) {
+                    state.recentlyUsedFederationIds = Array.from(
+                        new Set([
+                            state.federations[0].id,
+                            ...state.recentlyUsedFederationIds,
+                        ]),
+                    )
                 }
+
                 if (state.payFromFederationId === federationId) {
-                    state.payFromFederationId = state.federations[0]?.id
+                    state.payFromFederationId =
+                        state.recentlyUsedFederationIds[0] ?? null
                 }
             }
             if (state.customFediMods[federationId]) {
@@ -407,7 +424,8 @@ export const federationSlice = createSlice({
 
         builder.addCase(loadFromStorage.fulfilled, (state, action) => {
             if (!action.payload) return
-            state.lastUsedFederationId = action.payload.lastUsedFederationId
+            state.recentlyUsedFederationIds =
+                action.payload.recentlyUsedFederationIds
             state.lastSelectedCommunityId =
                 action.payload.lastSelectedCommunityId
             state.authenticatedGuardian = action.payload.authenticatedGuardian
@@ -600,12 +618,15 @@ export const refreshFederations = createAsyncThunk<
 
     // there should always be a lastUsedFederation for new users who join federations
     // but existing users who upgrade after joining federations won't have this so we set it here
-    if (!getState().federation.lastUsedFederationId) {
+    if (!selectLastUsedFederationId(getState())) {
+        const firstFederationId = federations[0]?.id
         log.info(
             'no lastUsedFederationId, setting to first federation: ',
-            federations[0]?.id,
+            firstFederationId,
         )
-        dispatch(setLastUsedFederationId(federations[0]?.id || null))
+        if (firstFederationId) {
+            dispatch(setLastUsedFederationId(firstFederationId))
+        }
     }
 
     return selectFederations(getState())
@@ -838,7 +859,10 @@ export const joinFederation = createAsyncThunk<
     { state: CommonState }
 >(
     'federation/joinFederation',
-    async ({ fedimint, code, recoverFromScratch = false }, { getState }) => {
+    async (
+        { fedimint, code, recoverFromScratch = false },
+        { getState, dispatch },
+    ) => {
         log.info(
             `joinFederation: joining federation with code '${code}' / recoverFromScratch: ${recoverFromScratch}`,
         )
@@ -855,6 +879,8 @@ export const joinFederation = createAsyncThunk<
 
         const joinedFederation = selectFederation(getState(), federation.id)
         if (!joinedFederation) throw new Error('errors.unknown-error')
+
+        dispatch(setLastUsedFederationId(joinedFederation.id))
         return joinedFederation
     },
 )
@@ -997,9 +1023,12 @@ export const selectLoadedFederations = createSelector(
         }, []),
 )
 
+export const selectLastUsedFederationId = (s: CommonState) =>
+    s.federation.recentlyUsedFederationIds[0] ?? null
+
 // non-featured federations are just loaded federations excluding the last used federation
 export const selectNonFeaturedFederations = createSelector(
-    (s: CommonState) => s.federation.lastUsedFederationId,
+    selectLastUsedFederationId,
     selectLoadedFederations,
     (lastUsedFederationId, federations) =>
         lastUsedFederationId
@@ -1112,17 +1141,13 @@ export const selectLoadedFederation = (s: CommonState, id: string) =>
 
 export const selectLastUsedFederation = createSelector(
     selectLoadedFederations,
-    (s: CommonState) => s.federation.lastUsedFederationId,
+    selectLastUsedFederationId,
     (federations, lastUsedFederationId): LoadedFederation | undefined =>
         lastUsedFederationId
             ? federations.find(f => f.id === lastUsedFederationId) ||
               federations[0]
             : federations[0],
 )
-
-export const selectLastUsedFederationId = (s: CommonState) => {
-    return selectLastUsedFederation(s)?.id
-}
 
 export const selectReusedEcashFederations = createSelector(
     selectLoadedFederations,

@@ -1,12 +1,16 @@
 import '@testing-library/jest-dom'
 import { screen } from '@testing-library/react'
 
-import { setupStore } from '@fedi/common/redux'
+import {
+    setFederations,
+    setInvoiceToPay,
+    setLastUsedFederationId,
+    setupStore,
+} from '@fedi/common/redux'
 import { mockFederation1 } from '@fedi/common/tests/mock-data/federation'
 import { MSats } from '@fedi/common/types'
 
 import { FediModBrowser } from '../../../src/components/FediModBrowser'
-import { AppState } from '../../../src/state/store'
 import { renderWithProviders } from '../../utils/render'
 
 const onCloseSpy = jest.fn()
@@ -26,12 +30,10 @@ jest.mock('../../../src/hooks/browser', () => ({
 }))
 
 describe('/components/FediModBrowser', () => {
-    let store
-    let state: AppState
+    let store: ReturnType<typeof setupStore>
 
     beforeAll(() => {
         store = setupStore()
-        state = store.getState()
     })
 
     beforeEach(() => {
@@ -40,16 +42,12 @@ describe('/components/FediModBrowser', () => {
 
     describe('when the component is rendered', () => {
         it('should display the iframe and navbar', () => {
+            store.dispatch(setFederations([mockFederation1]))
+            store.dispatch(setLastUsedFederationId('1'))
             renderWithProviders(
                 <FediModBrowser url="https://test.com" onClose={() => {}} />,
                 {
-                    preloadedState: {
-                        federation: {
-                            ...state.federation,
-                            federations: [mockFederation1],
-                            lastUsedFederationId: '1',
-                        },
-                    },
+                    store,
                 },
             )
 
@@ -65,16 +63,12 @@ describe('/components/FediModBrowser', () => {
 
     describe('when the user clicks the close button', () => {
         it('should call the onClose function', () => {
+            store.dispatch(setFederations([mockFederation1]))
+            store.dispatch(setLastUsedFederationId('1'))
             renderWithProviders(
                 <FediModBrowser url="https://test.com" onClose={onCloseSpy} />,
                 {
-                    preloadedState: {
-                        federation: {
-                            ...state.federation,
-                            federations: [mockFederation1],
-                            lastUsedFederationId: '1',
-                        },
-                    },
+                    store,
                 },
             )
 
@@ -87,26 +81,21 @@ describe('/components/FediModBrowser', () => {
 
     describe('when there is an invoice', () => {
         it('the overlay should be visible', () => {
+            store.dispatch(setFederations([mockFederation1]))
+            store.dispatch(setLastUsedFederationId('1'))
+            store.dispatch(
+                setInvoiceToPay({
+                    paymentHash: 'payment-hash',
+                    amount: 100000 as MSats,
+                    invoice: 'test',
+                    fee: null,
+                    description: 'description',
+                }),
+            )
             renderWithProviders(
                 <FediModBrowser url="https://test.com" onClose={() => {}} />,
                 {
-                    preloadedState: {
-                        federation: {
-                            ...state.federation,
-                            federations: [mockFederation1],
-                            lastUsedFederationId: '1',
-                        },
-                        browser: {
-                            ...state.browser,
-                            invoiceToPay: {
-                                paymentHash: 'payment-hash',
-                                amount: 100000 as MSats,
-                                invoice: 'test',
-                                fee: null,
-                                description: 'description',
-                            },
-                        },
-                    },
+                    store,
                 },
             )
 

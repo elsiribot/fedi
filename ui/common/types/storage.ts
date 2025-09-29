@@ -258,6 +258,12 @@ export interface StoredStateV31 extends Omit<StoredStateV30, 'version'> {
     autojoinNoticesToDisplay: Array<Community['id']>
 }
 
+export interface StoredStateV32
+    extends Omit<StoredStateV31, 'version' | 'lastUsedFederationId'> {
+    version: 32
+    recentlyUsedFederationIds: Array<string>
+}
+
 /*** Union of all past shapes of stored state ***/
 export type AnyStoredState =
     | StoredStateV0
@@ -292,9 +298,10 @@ export type AnyStoredState =
     | StoredStateV29
     | StoredStateV30
     | StoredStateV31
+    | StoredStateV32
 
 /*** Alias for the latest version of stored state ***/
-export type LatestStoredState = StoredStateV31
+export type LatestStoredState = StoredStateV32
 
 export interface StorageApi {
     getItem(key: string): Promise<string | null>

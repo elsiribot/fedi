@@ -1,7 +1,12 @@
 import '@testing-library/jest-dom'
 import { screen } from '@testing-library/react'
 
-import { setupStore } from '@fedi/common/redux'
+import {
+    setCommunities,
+    setFederations,
+    setLastUsedFederationId,
+    setupStore,
+} from '@fedi/common/redux'
 import {
     mockFederation1,
     mockCommunity,
@@ -43,7 +48,7 @@ const mockCommunityChat = {
 
 // TOOD: unskip and refactor this to the federations.tsx / FederationsPage
 describe.skip('/pages/home', () => {
-    let store
+    let store: ReturnType<typeof setupStore>
     let state: AppState
 
     beforeAll(() => {
@@ -53,20 +58,11 @@ describe.skip('/pages/home', () => {
 
     describe('when the page loads for the first time', () => {
         it('should render the install banner component', async () => {
+            store.dispatch(setCommunities([mockCommunity]))
+            store.dispatch(setLastUsedFederationId('1'))
+
             renderWithProviders(<HomePage />, {
-                preloadedState: {
-                    federation: {
-                        ...state.federation,
-                        communities: [mockCommunity],
-                        lastSelectedCommunityId: '1',
-                    },
-                    nux: {
-                        steps: {
-                            ...state.nux.steps,
-                            pwaHasDismissedInstallPrompt: false,
-                        },
-                    },
-                },
+                store,
             })
 
             const component = screen.getByLabelText('Install Banner')
@@ -75,14 +71,7 @@ describe.skip('/pages/home', () => {
 
         it('should call useSyncCurrencyRatesAndCache', () => {
             renderWithProviders(<HomePage />, {
-                preloadedState: {
-                    nux: {
-                        steps: {
-                            ...state.nux.steps,
-                            pwaHasDismissedInstallPrompt: false,
-                        },
-                    },
-                },
+                store,
             })
 
             expect(ratesSpy).toHaveBeenCalled()
@@ -92,14 +81,10 @@ describe.skip('/pages/home', () => {
     // TOOD: unskip and refactor this to the federations.tsx / FederationsPage
     describe.skip("when the user hasn't already backed up their seed and they have a balance above minimum level", () => {
         it('should render the backup wallet modal', () => {
+            store.dispatch(setFederations([mockFederation1]))
+            store.dispatch(setLastUsedFederationId('1'))
             renderWithProviders(<HomePage />, {
-                preloadedState: {
-                    federation: {
-                        ...state.federation,
-                        federations: [mockFederation1],
-                        lastUsedFederationId: '1',
-                    },
-                },
+                store,
             })
 
             const modal = screen.getByRole('dialog')
@@ -136,7 +121,7 @@ describe.skip('/pages/home', () => {
                             federation: {
                                 ...state.federation,
                                 federations: [recoveringFederation],
-                                lastUsedFederationId: '1',
+                                recentlyUsedFederationIds: ['1'],
                                 defaultCommunityChats: {
                                     '1': [mockCommunityChat],
                                 },
@@ -161,7 +146,7 @@ describe.skip('/pages/home', () => {
                             federation: {
                                 ...state.federation,
                                 federations: [mockFederation1],
-                                lastUsedFederationId: '1',
+                                recentlyUsedFederationIds: ['1'],
                                 defaultCommunityChats: {
                                     '1': [mockCommunityChat],
                                 },
@@ -182,14 +167,10 @@ describe.skip('/pages/home', () => {
 
         describe('when the user is part of a community', () => {
             it('should not render the Bitcoin Wallet and render correct title', () => {
+                store.dispatch(setCommunities([mockCommunity]))
+                store.dispatch(setLastUsedFederationId('1'))
                 renderWithProviders(<HomePage />, {
-                    preloadedState: {
-                        federation: {
-                            ...state.federation,
-                            communities: [mockCommunity],
-                            lastSelectedCommunityId: '1',
-                        },
-                    },
+                    store,
                 })
 
                 const wallet = screen.queryByTestId('bitcoin-wallet')

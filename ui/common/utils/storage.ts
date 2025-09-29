@@ -27,7 +27,7 @@ export const STATE_STORAGE_KEY = 'fedi:state'
  */
 export function transformStateToStorage(state: CommonState): LatestStoredState {
     const transformedState: LatestStoredState = {
-        version: 31,
+        version: 32,
         onchainDepositsEnabled: state.environment.onchainDepositsEnabled,
         developerMode: state.environment.developerMode,
         stableBalanceEnabled: state.environment.stableBalanceEnabled,
@@ -54,8 +54,8 @@ export function transformStateToStorage(state: CommonState): LatestStoredState {
         },
         seenFederationRatings: state.federation.seenFederationRatings,
         lastShownSurveyTimestamp: state.support.lastShownSurveyTimestamp,
-        lastUsedFederationId: state.federation.lastUsedFederationId,
         lastSelectedCommunityId: state.federation.lastSelectedCommunityId,
+        recentlyUsedFederationIds: state.federation.recentlyUsedFederationIds,
         previouslyAutojoinedCommunities:
             state.federation.previouslyAutojoinedCommunities,
         autojoinNoticesToDisplay: state.federation.autojoinNoticesToDisplay,
@@ -681,6 +681,16 @@ async function migrateStoredState(
             ...migrationState,
             version: 31,
             autojoinNoticesToDisplay: [],
+        }
+    }
+
+    if (migrationState.version === 31) {
+        migrationState = {
+            ...migrationState,
+            version: 32,
+            recentlyUsedFederationIds: migrationState.lastUsedFederationId
+                ? [migrationState.lastUsedFederationId]
+                : [],
         }
     }
 
