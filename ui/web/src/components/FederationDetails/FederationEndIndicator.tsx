@@ -5,6 +5,7 @@ import { usePopupFederationInfo } from '@fedi/common/hooks/federation'
 import { LoadedFederation } from '@fedi/common/types'
 
 import { styled, theme } from '../../styles'
+import { Row } from '../Flex'
 import { Icon } from '../Icon'
 import { Text } from '../Text'
 
@@ -16,58 +17,23 @@ export default function FederationEndIndicator({
     const { t } = useTranslation()
     const popupInfo = usePopupFederationInfo(federation?.meta || {})
 
-    if (!popupInfo) return null
-
-    if (popupInfo.ended) {
-        return (
-            <FederationEndCard variant="ended">
-                <Text variant="caption">
-                    {t('feature.federations.expired-message')}
-                </Text>
-            </FederationEndCard>
-        )
-    }
+    if (!popupInfo || popupInfo.ended) return null
 
     return (
-        <FederationEndCard>
-            <FederationEndingLabel>
+        <FederationEndCard align="center">
+            <Row align="center" gap="sm" grow>
                 <Icon icon={clockIcon} size={16} />
                 <Text variant="caption">
                     {t('feature.federations.federation-ends-in')}
                 </Text>
-            </FederationEndingLabel>
-            <Text variant="h2" weight="medium">
-                {popupInfo.endsInText}
-            </Text>
+            </Row>
+            <Text weight="medium">{popupInfo.endsInText}</Text>
         </FederationEndCard>
     )
 }
 
-const FederationEndCard = styled('div', {
-    display: 'flex',
-    alignItems: 'center',
+const FederationEndCard = styled(Row, {
     padding: `${theme.spacing.md} ${theme.spacing.lg}`,
     borderRadius: 16,
-
-    variants: {
-        variant: {
-            ended: {
-                backgroundColor: theme.colors.extraLightGrey,
-            },
-            default: {
-                background: `linear-gradient(-30deg, ${theme.colors.orange200}, ${theme.colors.blue200})`,
-            },
-        },
-    },
-
-    defaultVariants: {
-        variant: 'default',
-    },
-})
-
-const FederationEndingLabel = styled('div', {
-    display: 'flex',
-    alignItems: 'center',
-    gap: theme.spacing.sm,
-    flex: 1,
+    backgroundColor: theme.colors.grey50,
 })

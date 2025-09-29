@@ -4,6 +4,7 @@ import offlineIcon from '@fedi/common/assets/svgs/alert-warning-triangle.svg'
 import unstableIcon from '@fedi/common/assets/svgs/info.svg'
 import onlineIcon from '@fedi/common/assets/svgs/online-dot.svg'
 import { theme } from '@fedi/common/constants/theme'
+import { usePopupFederationInfo } from '@fedi/common/hooks/federation'
 import { selectIsInternetUnreachable } from '@fedi/common/redux'
 import { LoadedFederation } from '@fedi/common/types'
 
@@ -20,20 +21,29 @@ export function FederationStatus({
     const { t } = useTranslation()
 
     const status = federation.status || 'offline'
-    const caption = t(`feature.federations.connection-status-${status}`)
     const isOffline = useAppSelector(selectIsInternetUnreachable)
+    const popupInfo = usePopupFederationInfo(federation?.meta || {})
 
+    let statusMessage = t('feature.federations.connection-status-offline')
     let statusIcon = offlineIcon
-    let statusText = t('words.offline')
-    let statusColor = theme.colors.red
+    let statusIconColor = theme.colors.red
+    let statusWord = t('words.offline')
 
     if (status === 'online') {
         statusIcon = onlineIcon
-        statusText = t('words.online')
-        statusColor = theme.colors.success
+        statusIconColor = theme.colors.success
+        statusWord = t('words.online')
+        statusMessage = t('feature.federations.connection-status-online')
     } else if (status === 'unstable') {
         statusIcon = unstableIcon
-        statusText = t('words.unstable')
+        statusWord = t('words.unstable')
+        statusMessage = t('feature.federations.connection-status-unstable')
+    }
+
+    if (popupInfo?.ended) {
+        statusIcon = onlineIcon
+        statusWord = t('words.expired')
+        statusIconColor = theme.colors.grey
     }
 
     return (
@@ -45,28 +55,28 @@ export function FederationStatus({
                         : `${t('words.status')}:`}
                 </Text>
                 <FederationStatusIndicator>
-                    <Icon icon={statusIcon} color={statusColor} size={12} />
-                    <Text variant="caption">{statusText}</Text>
+                    <Icon icon={statusIcon} color={statusIconColor} size={12} />
+                    <Text variant="caption">{statusWord}</Text>
                 </FederationStatusIndicator>
             </FederationStatusHeader>
             <FederationStatusDivider />
             <Text variant="caption">
                 {isOffline
                     ? t('feature.federations.please-reconnect')
-                    : caption}
+                    : statusMessage}
             </Text>
         </FederationStatusCard>
     )
 }
 
 const FederationStatusDivider = styled('div', {
-    backgroundColor: theme.colors.lightGrey,
+    backgroundColor: theme.colors.extraLightGrey,
     height: 1,
     width: '100%',
 })
 
 const FederationStatusCard = styled('div', {
-    backgroundColor: theme.colors.offWhite100,
+    backgroundColor: theme.colors.grey50,
     borderRadius: 20,
     padding: theme.spacing.md,
     display: 'flex',

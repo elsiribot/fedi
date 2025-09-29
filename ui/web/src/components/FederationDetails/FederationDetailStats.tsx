@@ -1,9 +1,8 @@
-import { Divider, Text, Theme, useTheme } from '@rneui/themed'
 import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { ActivityIndicator, StyleSheet } from 'react-native'
 
 import { FALLBACK_LIMIT_MSATS } from '@fedi/common/constants/limits'
+import { LoadedFederation } from '@fedi/common/types'
 import { GuardianStatus } from '@fedi/common/types/bindings'
 import amountUtils from '@fedi/common/utils/AmountUtils'
 import {
@@ -12,9 +11,11 @@ import {
 } from '@fedi/common/utils/FederationUtils'
 import { formatLargeNumber } from '@fedi/common/utils/format'
 
-import { fedimint } from '../../../bridge'
-import { LoadedFederation } from '../../../types'
-import { Column, Row } from '../../ui/Flex'
+import { fedimint } from '../../lib/bridge'
+import { styled, theme } from '../../styles'
+import { CircularLoader } from '../CircularLoader'
+import { Column, Row } from '../Flex'
+import { Text } from '../Text'
 
 function FederationDetailStats({
     federation,
@@ -26,7 +27,6 @@ function FederationDetailStats({
     const [isLoadingGuardians, setIsLoadingGuardians] = useState(true)
 
     const { t } = useTranslation()
-    const { theme } = useTheme()
 
     const totalGuardians = guardianStatuses ? guardianStatuses.length : 0
     const onlineGuardians = guardianStatuses
@@ -51,53 +51,54 @@ function FederationDetailStats({
             .finally(() => setIsLoadingGuardians(false))
     }, [federation.id])
 
-    const style = styles(theme)
-
     return (
-        <Row style={style.container}>
+        <Container>
             <Column align="center" grow gap="xs">
-                <Text small medium>
+                <Text variant="small" weight="medium">
                     {t('words.guardians')}
                 </Text>
                 {isLoadingGuardians ? (
-                    <ActivityIndicator />
+                    <CircularLoader size="md" />
                 ) : (
-                    <Text caption medium>
+                    <Text variant="caption" weight="medium">
                         {guardianStatuses
                             ? `${onlineGuardians}/${totalGuardians}`
                             : '--/--'}
                     </Text>
                 )}
             </Column>
-            <Divider orientation="vertical" />
+            <Divider />
             <Column align="center" grow gap="xs">
-                <Text small medium>
+                <Text variant="small" weight="medium">
                     {t('feature.federations.wallet-balance')}
                 </Text>
-                <Text caption medium>
+                <Text variant="caption" weight="medium">
                     {formattedWalletBalance}
                 </Text>
             </Column>
-            <Divider orientation="vertical" />
+            <Divider />
             <Column align="center" grow gap="xs">
-                <Text small medium>
+                <Text variant="small" weight="medium">
                     {t('feature.federations.spend-limit')}
                 </Text>
-                <Text caption medium>
+                <Text variant="caption" weight="medium">
                     {formattedSpendLimit}
                 </Text>
             </Column>
-        </Row>
+        </Container>
     )
 }
 
-const styles = (theme: Theme) =>
-    StyleSheet.create({
-        container: {
-            padding: theme.spacing.md,
-            borderRadius: theme.borders.defaultRadius,
-            backgroundColor: theme.colors.grey50,
-        },
-    })
+const Container = styled(Row, {
+    padding: theme.spacing.md,
+    borderRadius: 16,
+    backgroundColor: theme.colors.grey50,
+})
+
+const Divider = styled('div', {
+    width: 1,
+    height: '100%',
+    backgroundColor: theme.colors.extraLightGrey,
+})
 
 export default FederationDetailStats
