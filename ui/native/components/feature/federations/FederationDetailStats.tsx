@@ -96,7 +96,8 @@ const styles = (theme: Theme) =>
         container: {
             padding: theme.spacing.md,
             borderRadius: theme.borders.defaultRadius,
-            backgroundColor: theme.colors.grey50,
+            borderWidth: 1,
+            borderColor: theme.colors.extraLightGrey,
         },
     })
 

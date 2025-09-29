@@ -10,6 +10,7 @@ import { LoadedFederation } from '@fedi/common/types'
 
 import { useAppSelector } from '../../hooks'
 import { styled } from '../../styles'
+import { Row } from '../Flex'
 import { Icon } from '../Icon'
 import { Text } from '../Text'
 
@@ -54,10 +55,10 @@ export function FederationStatus({
                         ? t('feature.federations.last-known-status')
                         : `${t('words.status')}:`}
                 </Text>
-                <FederationStatusIndicator>
+                <Row center gap="xs">
                     <Icon icon={statusIcon} color={statusIconColor} size={12} />
                     <Text variant="caption">{statusWord}</Text>
-                </FederationStatusIndicator>
+                </Row>
             </FederationStatusHeader>
             <FederationStatusDivider />
             <Text variant="caption">
@@ -76,7 +77,7 @@ const FederationStatusDivider = styled('div', {
 })
 
 const FederationStatusCard = styled('div', {
-    backgroundColor: theme.colors.grey50,
+    border: `solid 1px ${theme.colors.extraLightGrey}`,
     borderRadius: 20,
     padding: theme.spacing.md,
     display: 'flex',
@@ -87,14 +88,4 @@ const FederationStatusCard = styled('div', {
 const FederationStatusHeader = styled('div', {
     display: 'flex',
     alignItems: 'center',
-})
-
-const FederationStatusIndicator = styled('div', {
-    display: 'flex',
-    alignItems: 'center',
-    flexShrink: 0,
-    backgroundColor: theme.colors.white,
-    borderRadius: 8,
-    padding: `${theme.spacing.xs}px ${theme.spacing.sm}px`,
-    gap: theme.spacing.xs,
 })

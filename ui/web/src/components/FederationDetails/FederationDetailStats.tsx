@@ -92,7 +92,7 @@ function FederationDetailStats({
 const Container = styled(Row, {
     padding: theme.spacing.md,
     borderRadius: 16,
-    backgroundColor: theme.colors.grey50,
+    border: `solid 1px ${theme.colors.extraLightGrey}`,
 })
 
 const Divider = styled('div', {

@@ -201,6 +201,7 @@ export function usePopupFederationInfo(metadata: FederationMetadata) {
     const popupInfo = getFederationPopupInfo(meta)
 
     const endedMessage = popupInfo?.endedMessage
+    const countdownMessage = popupInfo?.countdownMessage
 
     // Uncomment me to test popup federations
     // const [rawTimestamp] = useState((Date.now() / 1000 + 30).toString())
@@ -263,6 +264,7 @@ export function usePopupFederationInfo(metadata: FederationMetadata) {
         endsAtText:
             dateUtils.formatPopupFederationEndsAtTimestamp(endTimestamp),
         ended: secondsLeft < 0,
+        countdownMessage,
     }
 }
 

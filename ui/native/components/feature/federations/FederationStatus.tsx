@@ -53,7 +53,7 @@ const FederationStatus = ({ federation }: { federation: LoadedFederation }) => {
                             : t('words.status')}
                     </Text>
                 </Column>
-                <Row center shrink={false} style={style.statusBadge}>
+                <Row center shrink={false} gap="xs">
                     <SvgImage
                         size={16}
                         name={statusIcon}
@@ -82,16 +82,10 @@ const FederationStatus = ({ federation }: { federation: LoadedFederation }) => {
 const styles = (theme: Theme) =>
     StyleSheet.create({
         federationStatusCard: {
-            backgroundColor: theme.colors.grey50,
+            borderWidth: 1,
+            borderColor: theme.colors.extraLightGrey,
             borderRadius: 20,
             padding: theme.spacing.lg,
-        },
-        statusBadge: {
-            borderRadius: 8,
-            backgroundColor: theme.colors.white,
-            paddingHorizontal: theme.spacing.sm,
-            paddingVertical: theme.spacing.xs,
-            gap: theme.spacing.xs,
         },
     })
 
