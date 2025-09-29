@@ -391,19 +391,6 @@ const FediModBrowser: React.FC<Props> = ({ route }) => {
                 username: member.displayName,
             }
         },
-        [InjectionMessageType.fedi_getActiveFederation]: async () => {
-            log.info('fedi.getPaymentFederation')
-
-            if (!paymentFederation) {
-                throw new Error('No payment federation')
-            }
-
-            return {
-                id: paymentFederation.id,
-                name: paymentFederation.name,
-                network: paymentFederation.network,
-            }
-        },
         [InjectionMessageType.fedi_getCurrencyCode]: async () => {
             log.info('fedi.fedi_getCurrencyCode')
 
