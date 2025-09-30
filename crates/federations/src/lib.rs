@@ -7,7 +7,7 @@ use anyhow::{Context, bail};
 use bitcoin::Network;
 use device_registration::DeviceRegistrationService;
 use federation_sm::{FederationState, FederationStateMachine};
-use federation_v2::FederationV2;
+use federation_v2::{FederationPrefetchedInfo, FederationV2};
 use federations_locker::FederationsLocker;
 use fedimint_core::config::FederationIdPrefix;
 use fedimint_core::invite_code::InviteCode;
@@ -34,6 +34,7 @@ pub struct Federations {
     federations_locker: FederationsLocker,
     multispend_services: Arc<dyn MultispendNotifications>,
     device_registration_service: Arc<DeviceRegistrationService>,
+    last_federation_preview_info: Mutex<Option<FederationPrefetchedInfo>>,
 }
 
 impl Federations {
@@ -49,6 +50,7 @@ impl Federations {
             federations_locker: Default::default(),
             multispend_services,
             device_registration_service,
+            last_federation_preview_info: Mutex::new(None),
         }
     }
 
@@ -130,16 +132,18 @@ impl Federations {
         &self,
         invite_code: &str,
     ) -> anyhow::Result<RpcFederationPreview> {
-        let invite_code = invite_code.to_lowercase();
         let root_mnemonic = self.runtime.app_state.root_mnemonic().await;
         let device_index = self.runtime.app_state.device_index().await;
-        FederationV2::federation_preview(
-            &invite_code,
+        let info = FederationPrefetchedInfo::fetch(
+            invite_code,
             &root_mnemonic,
             device_index,
             self.runtime.feature_catalog.override_localhost.is_some(),
         )
-        .await
+        .await?;
+        let preview = FederationV2::federation_preview(&info).await;
+        *self.last_federation_preview_info.ensure_lock() = Some(info);
+        preview
     }
 
     /// Joins federation from invite code
@@ -160,10 +164,25 @@ impl Federations {
             .entry(federation_id.clone())
             .or_insert_with(FederationStateMachine::prepare_for_join)
             .clone();
+
+        let last_info = self.last_federation_preview_info.ensure_lock().take();
+        let info = if let Some(last_info) = last_info
+            && last_info.federation_id == invite_code.federation_id()
+        {
+            last_info
+        } else {
+            FederationPrefetchedInfo::fetch(
+                &invite_code_string,
+                &self.runtime.app_state.root_mnemonic().await,
+                self.runtime.app_state.device_index().await,
+                self.runtime.feature_catalog.override_localhost.is_some(),
+            )
+            .await?
+        };
         let federation_arc = fed_sm
             .join(
                 federation_id,
-                invite_code_string,
+                info,
                 self.runtime.clone(),
                 &self.federations_locker,
                 recover_from_scratch,

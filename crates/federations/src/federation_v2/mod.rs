@@ -32,8 +32,11 @@ use fedi_social_client::{
     SocialRecoveryClient, SocialRecoveryState, SocialVerification, UserSeedPhrase,
 };
 use fedimint_api_client::api::net::Connector;
-use fedimint_api_client::api::{DynGlobalApi, DynModuleApi, FederationApiExt as _, StatusResponse};
+use fedimint_api_client::api::{
+    DynClientConnector, DynGlobalApi, DynModuleApi, FederationApiExt as _, StatusResponse,
+};
 use fedimint_bip39::Bip39RootSecretStrategy;
+use fedimint_client::backup::ClientBackup;
 use fedimint_client::db::{CachedApiVersionSetKey, ChronologicalOperationLogKey};
 use fedimint_client::meta::MetaService;
 use fedimint_client::module::ClientModule;
@@ -239,6 +242,16 @@ pub struct FederationV2 {
     // Used to ensure that multiple calls to list_transactions doesn't trigger multiple
     // subscriptions for the same operation.
     pub lnurl_subbed_op_ids: Mutex<HashSet<OperationId>>,
+}
+
+/// Info about a federation fetching during preview. it is used during joining
+/// to avoid fetching it again
+pub struct FederationPrefetchedInfo {
+    pub(crate) federation_id: FederationId,
+    client_config: ClientConfig,
+    backup: Option<ClientBackup>,
+    connector: DynClientConnector,
+    invite_code: InviteCode,
 }
 
 impl FederationV2 {
@@ -482,40 +495,13 @@ impl FederationV2 {
     }
 
     pub async fn federation_preview(
-        invite_code: &str,
-        root_mnemonic: &bip39::Mnemonic,
-        device_index: u8,
-        should_override_localhost: bool,
+        info: &FederationPrefetchedInfo,
     ) -> Result<RpcFederationPreview> {
-        let invite_code = invite_code.to_lowercase();
-        let mut invite_code = InviteCode::from_str(&invite_code)?;
-        if should_override_localhost {
-            override_localhost_invite_code(&mut invite_code);
-        }
-        let api_single_guardian =
-            DynGlobalApi::from_endpoints(invite_code.peers(), &invite_code.api_secret()).await?;
-        let client_root_sercet = {
-            let federation_id = invite_code.federation_id();
-            // We do an additional derivation using `DerivableSecret::federation_key` since
-            // that is what fedimint-client does internally
-            Self::client_root_secret_from_root_mnemonic(root_mnemonic, &federation_id, device_index)
-                .federation_key(&federation_id)
-        };
-        let decoders = ModuleDecoderRegistry::default().with_fallback();
-        let (client_config, backup) = tokio::join!(
-            download_from_invite_code(&invite_code),
-            Client::download_backup_from_federation_static(
-                &api_single_guardian,
-                &client_root_sercet,
-                &decoders,
-            )
-        );
-        let config = client_config.context("failed to connect")?;
-
         let meta_source =
             MetaModuleMetaSourceWithFallback::new(LegacyMetaSourceWithExternalUrl::default());
+        let api = DynGlobalApi::new(info.connector.clone())?;
         let meta = meta_source
-            .fetch(&config, &api_single_guardian, FetchKind::Initial, None)
+            .fetch(&info.client_config, &api, FetchKind::Initial, None)
             .await?
             .values
             .into_iter()
@@ -523,18 +509,24 @@ impl FederationV2 {
             .collect();
 
         Ok(RpcFederationPreview {
-            id: RpcFederationId(config.global.calculate_federation_id().to_string()),
-            name: config
+            id: RpcFederationId(info.federation_id.to_string()),
+            name: info
+                .client_config
                 .global
                 .federation_name()
                 .map(|x| x.to_owned())
-                .unwrap_or(config.global.calculate_federation_id().to_string()[0..8].to_string()),
+                .unwrap_or(
+                    info.client_config
+                        .global
+                        .calculate_federation_id()
+                        .to_string()[0..8]
+                        .to_string(),
+                ),
             meta,
-            invite_code: invite_code.to_string(),
-            returning_member_status: match backup {
-                Ok(Some(_)) => RpcReturningMemberStatus::ReturningMember,
-                Ok(None) => RpcReturningMemberStatus::NewMember,
-                Err(_) => RpcReturningMemberStatus::Unknown,
+            invite_code: info.invite_code.to_string(),
+            returning_member_status: match info.backup {
+                Some(_) => RpcReturningMemberStatus::ReturningMember,
+                None => RpcReturningMemberStatus::NewMember,
             },
         })
     }
@@ -545,7 +537,7 @@ impl FederationV2 {
     pub async fn join(
         runtime: Arc<Runtime>,
         federation_id_string: String,
-        invite_code_string: String,
+        info: FederationPrefetchedInfo,
         guard: FederationLockGuard,
         recover_from_scratch: bool,
         fedi_fee_helper: Arc<FediFeeHelper>,
@@ -563,31 +555,22 @@ impl FederationV2 {
         let root_mnemonic = runtime.app_state.root_mnemonic().await;
         let device_index = runtime.app_state.device_index().await;
 
-        let mut invite_code =
-            InviteCode::from_str(&invite_code_string).context("invalid invite code")?;
-        if runtime.feature_catalog.override_localhost.is_some() {
-            override_localhost_invite_code(&mut invite_code);
-        }
-        let mut client_config: ClientConfig = download_from_invite_code(&invite_code).await?;
-        if runtime.feature_catalog.override_localhost.is_some() {
-            override_localhost_client_config(&mut client_config);
-        }
-
         // fedimint-client will add decoders
         let mut dbtx = federation_db.begin_transaction().await;
         let fedi_config = FediConfig {
-            client_config: client_config.clone(),
+            client_config: info.client_config.clone(),
         };
         dbtx.insert_entry(
             &FediRawClientConfigKey,
             &serde_json::to_string(&fedi_config)?,
         )
         .await;
+        let invite_code_string = info.invite_code.to_string();
         dbtx.insert_entry(&InviteCodeKey, &invite_code_string).await;
         dbtx.commit_tx().await;
 
         let client_builder = Self::build_client_builder(federation_db.clone()).await?;
-        let federation_id = client_config.calculate_federation_id();
+        let federation_id = info.federation_id;
         let client_secret =
             fedimint_client::RootSecret::Custom(Self::client_root_secret_from_root_mnemonic(
                 &root_mnemonic,
@@ -598,14 +581,13 @@ impl FederationV2 {
             Self::auxiliary_secret_from_root_mnemonic(&root_mnemonic, &federation_id, device_index);
         // restore from scratch is not used because it takes too much time.
         // FIXME: api secret
-        let client_preview = client_builder.preview(&invite_code).await?;
-        let client_backup = client_preview
-            .download_backup_from_federation(client_secret.clone())
+        let client_preview = client_builder
+            .preview_with_existing_config(info.client_config.clone(), None)
             .await?;
         let client = if recover_from_scratch {
             info!("recovering from scratch");
             client_preview.recover(client_secret, None).await?
-        } else if let Some(client_backup) = client_backup {
+        } else if let Some(client_backup) = info.backup {
             // Ensure that rejoin attempt after nonce reuse check failure can never enter
             // this branch
             if runtime
@@ -4597,11 +4579,59 @@ fn internal_pay_is_bad_state(outcome: serde_json::Value) -> bool {
     serde_json::from_value::<InternalPayState>(outcome).is_err()
 }
 
-pub async fn download_from_invite_code(invite_code: &InviteCode) -> anyhow::Result<ClientConfig> {
+pub async fn download_from_invite_code(
+    invite_code: &InviteCode,
+) -> anyhow::Result<(ClientConfig, DynGlobalApi)> {
     let connector = Connector::Tcp;
     connector.download_from_invite_code(invite_code).await
 }
 
+impl FederationPrefetchedInfo {
+    pub async fn fetch(
+        invite_code: &str,
+        root_mnemonic: &bip39::Mnemonic,
+        device_index: u8,
+        should_override_localhost: bool,
+    ) -> anyhow::Result<Self> {
+        let invite_code = invite_code.to_lowercase();
+        let mut invite_code = InviteCode::from_str(&invite_code)?;
+        if should_override_localhost {
+            override_localhost_invite_code(&mut invite_code);
+        }
+        let api_single_guardian =
+            DynGlobalApi::from_endpoints(invite_code.peers(), &invite_code.api_secret()).await?;
+        let federation_id = invite_code.federation_id();
+        let client_root_sercet = {
+            // We do an additional derivation using `DerivableSecret::federation_key` since
+            // that is what fedimint-client does internally
+            FederationV2::client_root_secret_from_root_mnemonic(
+                root_mnemonic,
+                &federation_id,
+                device_index,
+            )
+            .federation_key(&federation_id)
+        };
+        let decoders = ModuleDecoderRegistry::default().with_fallback();
+        let ((mut client_config, api), backup) = tokio::try_join!(
+            download_from_invite_code(&invite_code),
+            Client::download_backup_from_federation_static(
+                &api_single_guardian,
+                &client_root_sercet,
+                &decoders,
+            )
+        )?;
+        if should_override_localhost {
+            override_localhost_client_config(&mut client_config);
+        }
+        Ok(Self {
+            federation_id,
+            client_config,
+            backup,
+            invite_code,
+            connector: api.connector().clone(),
+        })
+    }
+}
 #[cfg(test)]
 mod tests {
     use super::*;
