@@ -16,11 +16,12 @@ import {
     selectStableBalance,
     selectStableBalancePending,
     selectStableBalanceSats,
+    setPayFromFederationId,
 } from '@fedi/common/redux'
 import { LoadedFederation } from '@fedi/common/types'
 
 import { fedimint } from '../../../bridge'
-import { useAppSelector } from '../../../state/hooks'
+import { useAppDispatch, useAppSelector } from '../../../state/hooks'
 import { NavigationHook } from '../../../types/navigation'
 import WalletButtons from '../../feature/wallet/WalletButtons'
 import { BubbleCard } from '../../ui/BubbleView'
@@ -36,6 +37,7 @@ const StabilityWallet: React.FC<Props> = ({ federation }) => {
     const { theme } = useTheme()
     const { t } = useTranslation()
     const navigation = useNavigation<NavigationHook>()
+    const dispatch = useAppDispatch()
     const toast = useToast()
 
     const [hasOpenedStabilityPool] = useNuxStep('hasOpenedStabilityPool')
@@ -88,6 +90,7 @@ const StabilityWallet: React.FC<Props> = ({ federation }) => {
                 status: 'error',
             })
         } else {
+            dispatch(setPayFromFederationId(federation.id))
             navigation.navigate('StabilityDeposit', {
                 federationId: federation.id,
             })
@@ -101,6 +104,7 @@ const StabilityWallet: React.FC<Props> = ({ federation }) => {
                 status: 'error',
             })
         } else {
+            dispatch(setPayFromFederationId(federation.id))
             navigation.navigate('StabilityWithdraw', {
                 federationId: federation.id,
             })

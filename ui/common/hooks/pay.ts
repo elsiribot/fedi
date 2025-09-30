@@ -1,7 +1,11 @@
 import { TFunction } from 'i18next'
 import { useCallback, useEffect, useState } from 'react'
 
-import { listGateways, selectFederation } from '../redux'
+import {
+    listGateways,
+    selectFederation,
+    setLastUsedFederationId,
+} from '../redux'
 import {
     AnyParsedData,
     Invoice,
@@ -276,6 +280,9 @@ export function useOmniPaymentState(
                 log.error('handleOmniSend', err)
                 setError(formatErrorMessage(t, err, 'errors.unknown-error'))
                 throw err
+            } finally {
+                if (federationId)
+                    dispatch(setLastUsedFederationId(federationId))
             }
         },
         [
@@ -327,6 +334,7 @@ export function useOmniPaymentState(
 
 export function useSendEcash(fedimint: FedimintBridge, federationId: string) {
     const federation = useCommonSelector(s => selectFederation(s, federationId))
+    const dispatch = useCommonDispatch()
 
     const [notes, setNotes] = useState<string | null>(null)
     const [operationId, setOperationId] = useState<string | null>(null)
@@ -367,9 +375,10 @@ export function useSendEcash(fedimint: FedimintBridge, federationId: string) {
                 throw e
             } finally {
                 setIsGeneratingEcash(false)
+                dispatch(setLastUsedFederationId(federation.id))
             }
         },
-        [federation, fedimint],
+        [federation, fedimint, dispatch],
     )
 
     return {

@@ -52,6 +52,12 @@ describe('common/hooks/receive', () => {
                 expect(result.current.invoice).toBeTruthy()
                 expect(result.current.isInvoiceLoading).toBeFalsy()
             })
+
+            // Confirm that `lastUsedFederationId` is updated
+            const lastUsedFederationId = selectLastUsedFederationId(
+                store.getState(),
+            )
+            expect(lastUsedFederationId).toEqual(federationId)
         })
 
         it('should invoke an error if creating the lightning invoice fails', async () => {
@@ -82,6 +88,11 @@ describe('common/hooks/receive', () => {
 
                 expect(invoiceResult).rejects.toThrow()
             })
+
+            const lastUsedFederationId = selectLastUsedFederationId(
+                store.getState(),
+            )
+            expect(lastUsedFederationId).toEqual(federationId)
         })
 
         it('should fire the listener callback when the invoice has been paid', async () => {
@@ -155,6 +166,11 @@ describe('common/hooks/receive', () => {
             await waitFor(() => {
                 expect(result.current.address).toBeTruthy()
             })
+
+            const lastUsedFederationId = selectLastUsedFederationId(
+                store.getState(),
+            )
+            expect(lastUsedFederationId).toEqual(federationId)
         })
 
         it('should add transaction notes', async () => {
@@ -283,6 +299,11 @@ describe('common/hooks/receive', () => {
                 expect(result.current.lnurlReceiveCode).toBeTruthy()
                 expect(result.current.isLoading).toBeFalsy()
             })
+
+            const lastUsedFederationId = selectLastUsedFederationId(
+                store.getState(),
+            )
+            expect(lastUsedFederationId).toEqual(federationId)
         })
 
         it('should receive funds to an LNURL receive code', async () => {

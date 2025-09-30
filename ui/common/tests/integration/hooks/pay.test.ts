@@ -59,6 +59,11 @@ describe('sending payments', () => {
                 const res = await result.current.handleOmniSend(amountSats)
                 expect('preimage' in res && res.preimage).toBeTruthy()
             })
+
+            const lastUsedFederationId = selectLastUsedFederationId(
+                store.getState(),
+            )
+            expect(lastUsedFederationId).toEqual(federationId)
         })
 
         it('should parse and pay an onchain address', async () => {
@@ -95,6 +100,11 @@ describe('sending payments', () => {
                 const res = await result.current.handleOmniSend(1000 as Sats)
                 expect('txid' in res && res.txid).toBeTruthy()
             })
+
+            const lastUsedFederationId = selectLastUsedFederationId(
+                store.getState(),
+            )
+            expect(lastUsedFederationId).toEqual(federationId)
         })
 
         it('should parse and pay an lnurl receive code', async () => {
@@ -132,6 +142,11 @@ describe('sending payments', () => {
                 const res = await result.current.handleOmniSend(1 as Sats)
                 expect('preimage' in res && res.preimage).toBeTruthy()
             })
+
+            const lastUsedFederationId = selectLastUsedFederationId(
+                store.getState(),
+            )
+            expect(lastUsedFederationId).toEqual(federationId)
         })
     })
 
@@ -168,6 +183,11 @@ describe('sending payments', () => {
 
             // Check that the amounts match
             expect(decoded.amount).toBe(amountUtils.satToMsat(2 as Sats))
+
+            const lastUsedFederationId = selectLastUsedFederationId(
+                store.getState(),
+            )
+            expect(lastUsedFederationId).toEqual(federationId)
         })
     })
 })
