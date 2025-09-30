@@ -5,7 +5,6 @@ import {
     refreshLnurlReceive,
     selectLnurlReceiveCode,
     selectSupportsRecurringdLnurl,
-    setLastUsedFederationId,
 } from '../redux'
 import { ParsedLnurlWithdraw, Sats, TransactionListEntry } from '../types'
 import amountUtils from '../utils/AmountUtils'
@@ -37,8 +36,6 @@ export const useMakeLightningRequest = ({
     const [invoice, setInvoice] = useState<string | null>(null)
     const [isInvoiceLoading, setIsInvoiceLoading] = useState<boolean>(false)
 
-    const dispatch = useCommonDispatch()
-
     const reset = useCallback(() => {
         setInvoice(null)
         setIsInvoiceLoading(false)
@@ -69,10 +66,9 @@ export const useMakeLightningRequest = ({
                 throw e
             } finally {
                 setIsInvoiceLoading(false)
-                dispatch(setLastUsedFederationId(federationId))
             }
         },
-        [federationId, fedimint, dispatch],
+        [federationId, fedimint],
     )
 
     useEffect(() => {
@@ -120,8 +116,6 @@ export const useMakeOnchainAddress = ({
     const [address, setAddress] = useState<string | null>(null)
     const [isAddressLoading, setIsAddressLoading] = useState<boolean>(false)
 
-    const dispatch = useCommonDispatch()
-
     const { transactions, fetchTransactions } = useTransactionHistory(
         fedimint,
         federationId || '',
@@ -161,9 +155,8 @@ export const useMakeOnchainAddress = ({
             throw e
         } finally {
             setIsAddressLoading(false)
-            dispatch(setLastUsedFederationId(federationId))
         }
-    }, [federationId, fedimint, fetchTransactions, dispatch])
+    }, [federationId, fedimint, fetchTransactions])
 
     const onSaveNotes = useCallback(
         async (notes: string) => {
@@ -229,8 +222,6 @@ export function useLnurlWithdraw({
 }) {
     const [isWithdrawing, setIsWithdrawing] = useState(false)
 
-    const dispatch = useCommonDispatch()
-
     const reset = () => {
         setIsWithdrawing(false)
     }
@@ -294,7 +285,6 @@ export function useLnurlWithdraw({
                     },
                 )
             setIsWithdrawing(false)
-            dispatch(setLastUsedFederationId(federationId))
         },
         [
             federationId,
@@ -302,7 +292,6 @@ export function useLnurlWithdraw({
             lnurlw,
             waitForLnurlTransaction,
             onWithdrawPaid,
-            dispatch,
         ],
     )
 
@@ -335,7 +324,6 @@ export function useLnurlReceiveCode(
             .catch(e => log.error('Failed to refresh lnurl receive code', e))
             .finally(() => {
                 setIsFetching(false)
-                dispatch(setLastUsedFederationId(federationId))
             })
     }, [fedimint, federationId, supportsLnurl, dispatch])
 
