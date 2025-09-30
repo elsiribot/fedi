@@ -24,6 +24,7 @@ const initialState = {
     btcUsdRate: 0 as number,
     fiatUsdRates: {} as Record<string, number | undefined>,
     overrideCurrency: null as SelectableCurrency | null,
+    showFiatTotalBalance: false as boolean,
     currencyLocale: undefined as string | undefined,
     customFederationCurrencies: {} as Record<string, SelectableCurrency>,
 }
@@ -41,6 +42,9 @@ export const currencySlice = createSlice({
             action: PayloadAction<SelectableCurrency | null>,
         ) {
             state.overrideCurrency = action.payload
+        },
+        changeShowFiatTotalBalance(state, action: PayloadAction<boolean>) {
+            state.showFiatTotalBalance = action.payload
         },
         setCurrencyLocale(state, action: PayloadAction<string>) {
             state.currencyLocale = action.payload
@@ -85,6 +89,7 @@ export const currencySlice = createSlice({
 
 export const {
     changeOverrideCurrency,
+    changeShowFiatTotalBalance,
     setCurrencyLocale,
     resetCurrencyState,
     setFederationCurrency,
@@ -253,6 +258,9 @@ export const selectCurrencyLocale = (s: CommonState) =>
 
 export const selectOverrideCurrency = (s: CommonState) =>
     s.currency.overrideCurrency
+
+export const selectShowFiatTotalBalance = (s: CommonState) =>
+    s.currency.showFiatTotalBalance
 
 export const selectCurrency = (
     s: CommonState,

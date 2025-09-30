@@ -5,8 +5,10 @@ import { useTranslation } from 'react-i18next'
 import { StyleSheet } from 'react-native'
 
 import { NavigationHook } from '../../../types/navigation'
+import Flex from '../../ui/Flex'
 import Header from '../../ui/Header'
 import MainHeaderButtons from '../../ui/MainHeaderButtons'
+import TotalBalance from '../../ui/TotalBalance'
 
 const ModsHeader: React.FC = () => {
     const { theme } = useTheme()
@@ -20,9 +22,9 @@ const ModsHeader: React.FC = () => {
     }
 
     return (
-        <>
+        <Flex gap="xs" style={style.container}>
             <Header
-                containerStyle={style.container}
+                containerStyle={style.headerContainer}
                 headerLeft={
                     <Text h2 medium numberOfLines={1} adjustsFontSizeToFit>
                         {t('phrases.mini-apps')}
@@ -30,7 +32,8 @@ const ModsHeader: React.FC = () => {
                 }
                 headerRight={<MainHeaderButtons onAddPress={handleAddPress} />}
             />
-        </>
+            <TotalBalance />
+        </Flex>
     )
 }
 
@@ -38,6 +41,9 @@ const styles = (theme: Theme) =>
     StyleSheet.create({
         container: {
             paddingHorizontal: theme.spacing.lg,
+        },
+        headerContainer: {
+            paddingHorizontal: 0,
         },
     })
 

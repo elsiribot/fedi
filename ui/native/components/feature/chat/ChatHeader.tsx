@@ -9,9 +9,11 @@ import { selectIsMatrixChatEmpty } from '@fedi/common/redux'
 
 import { useAppSelector } from '../../../state/hooks'
 import { NavigationHook } from '../../../types/navigation'
+import Flex from '../../ui/Flex'
 import Header from '../../ui/Header'
 import MainHeaderButtons from '../../ui/MainHeaderButtons'
 import { Tooltip } from '../../ui/Tooltip'
+import TotalBalance from '../../ui/TotalBalance'
 import { ChatConnectionBadge } from './ChatConnectionBadge'
 
 const ChatHeader: React.FC = () => {
@@ -36,21 +38,24 @@ const ChatHeader: React.FC = () => {
 
     return (
         <>
-            <Header
-                transparent
-                containerStyle={style.container}
-                headerLeft={
-                    <Text h2 medium numberOfLines={1} adjustsFontSizeToFit>
-                        {t('words.chat')}
-                    </Text>
-                }
-                headerRight={
-                    <MainHeaderButtons
-                        onAddPress={goToNewMessage}
-                        onSearchPress={handleSearch}
-                    />
-                }
-            />
+            <Flex gap="xs" style={style.container}>
+                <Header
+                    transparent
+                    containerStyle={style.headerContainer}
+                    headerLeft={
+                        <Text h2 medium numberOfLines={1} adjustsFontSizeToFit>
+                            {t('words.chat')}
+                        </Text>
+                    }
+                    headerRight={
+                        <MainHeaderButtons
+                            onAddPress={goToNewMessage}
+                            onSearchPress={handleSearch}
+                        />
+                    }
+                />
+                <TotalBalance />
+            </Flex>
             <ChatConnectionBadge />
             <Tooltip
                 shouldShow={isChatEmpty && !hasOpenedNewChat}
@@ -69,6 +74,9 @@ const styles = (theme: Theme) =>
     StyleSheet.create({
         container: {
             paddingHorizontal: theme.spacing.lg,
+        },
+        headerContainer: {
+            paddingHorizontal: 0,
         },
     })
 

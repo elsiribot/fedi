@@ -9,18 +9,23 @@ import {
     selectCurrency,
     selectCurrencyLocale,
     selectFederationBalance,
+    selectLoadedFederations,
     selectMaxInvoiceAmount,
     selectMaxStableBalanceSats,
     selectMinimumDepositAmount,
     selectMinimumWithdrawAmountMsats,
     selectMultispendBalance,
+    selectOverrideCurrency,
     selectPaymentFederation,
     selectShowFiatTxnAmounts,
     selectStabilityPoolAvailableLiquidity,
     selectStableBalanceSats,
+    selectShowFiatTotalBalance,
+    selectTotalBalanceMsats,
     selectWithdrawableStableBalanceCents,
     selectWithdrawableStableBalanceMsats,
     setAmountInputType,
+    changeShowFiatTotalBalance,
 } from '@fedi/common/redux'
 import {
     FiatFXInfo,
@@ -73,6 +78,7 @@ interface SendAmountArgs {
 export type FormattedAmounts = {
     formattedFiat: string
     formattedSats: string
+    formattedBtc?: string
     formattedUsd: string
     formattedPrimaryAmount: string
     formattedSecondaryAmount: string
@@ -198,9 +204,17 @@ export const useAmountFormatter = (currency?: SelectableCurrency) => {
                 symbolPosition === 'none'
                     ? amountUtils.formatSats(amount)
                     : `${amountUtils.formatSats(amount)} SATS`
+
+            const amountBtc = amountUtils.satToBtc(amount)
+            const formattedBtc =
+                symbolPosition === 'none'
+                    ? amountUtils.formatBtc(amountBtc)
+                    : `${amountUtils.formatBtc(amountBtc)} BTC`
+
             return {
                 formattedFiat,
                 formattedSats,
+                formattedBtc,
                 formattedUsd,
                 formattedPrimaryAmount: showFiatTxnAmounts
                     ? formattedFiat
@@ -292,6 +306,43 @@ export const useAmountFormatter = (currency?: SelectableCurrency) => {
     }
 }
 
+/**
+ * Provides state for rendering the total balance across all federations.
+ */
+export function useTotalBalance() {
+    const dispatch = useCommonDispatch()
+    const loadedFederations = useCommonSelector(selectLoadedFederations)
+    const totalBalanceMsats = useCommonSelector(s =>
+        selectTotalBalanceMsats(s),
+    ) as MSats
+    const overrideCurrency = useCommonSelector(selectOverrideCurrency)
+    const showFiatTotalBalance = useCommonSelector(selectShowFiatTotalBalance)
+    const currencyToUse = overrideCurrency ?? SupportedCurrency.USD
+    const { makeFormattedAmountsFromMSats } = useAmountFormatter(currencyToUse)
+    const { formattedBtc, formattedSats, formattedFiat } =
+        makeFormattedAmountsFromMSats(totalBalanceMsats)
+
+    const changeDisplayCurrency = () => {
+        // if the user has an override currency, tapping total balance does nothing
+        if (overrideCurrency) return
+        // otherwise toggle between fiat and sats
+        dispatch(changeShowFiatTotalBalance(!showFiatTotalBalance))
+    }
+
+    return {
+        totalBalanceSats: formattedSats,
+        // always show fiat if the user has an override currency
+        formattedBalance: overrideCurrency
+            ? formattedFiat
+            : showFiatTotalBalance
+              ? formattedFiat
+              : totalBalanceMsats > 1_000_000_000 // if over 1M sats, show BTC unit instead
+                ? formattedBtc
+                : formattedSats,
+        shouldHideTotalBalance: loadedFederations.length === 0,
+        changeDisplayCurrency,
+    }
+}
 /**
  * Provides state for rendering a balance amount in fiat and sats.
  */

@@ -9,6 +9,7 @@ import { isNightly } from '../../../utils/device-info'
 import Flex from '../../ui/Flex'
 import Header from '../../ui/Header'
 import MainHeaderButtons from '../../ui/MainHeaderButtons'
+import TotalBalance from '../../ui/TotalBalance'
 
 const FederationsHeader: React.FC = () => {
     const { theme } = useTheme()
@@ -25,14 +26,17 @@ const FederationsHeader: React.FC = () => {
 
     return (
         <Flex gap="md" style={style.contentContainer}>
-            <Header
-                transparent
-                containerStyle={style.headerContainer}
-                headerLeft={<Text h2>{t('words.wallets')}</Text>}
-                headerRight={
-                    <MainHeaderButtons onAddPress={openJoinCommunity} />
-                }
-            />
+            <Flex gap="xs">
+                <Header
+                    transparent
+                    containerStyle={style.headerContainer}
+                    headerLeft={<Text h2>{t('words.wallets')}</Text>}
+                    headerRight={
+                        <MainHeaderButtons onAddPress={openJoinCommunity} />
+                    }
+                />
+                <TotalBalance />
+            </Flex>
             {/* TODO: restore this on federations screen */}
             {/* <NetworkBanner /> */}
             {showNightlyBanner && (

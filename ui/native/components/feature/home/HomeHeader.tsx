@@ -13,6 +13,7 @@ import Flex from '../../ui/Flex'
 import GradientView from '../../ui/GradientView'
 import Header from '../../ui/Header'
 import MainHeaderButtons from '../../ui/MainHeaderButtons'
+import TotalBalance from '../../ui/TotalBalance'
 import CommunitySelector from '../federations/CommunitySelector'
 import SelectedCommunity from '../federations/SelectedCommunity'
 
@@ -33,14 +34,17 @@ const HomeHeader: React.FC = () => {
     return (
         <GradientView variant="sky" style={style.container}>
             <Flex gap="md" style={style.contentContainer}>
-                <Header
-                    transparent
-                    containerStyle={style.headerContainer}
-                    headerLeft={<CommunitySelector />}
-                    headerRight={
-                        <MainHeaderButtons onAddPress={openJoinCommunity} />
-                    }
-                />
+                <Flex gap="xs">
+                    <Header
+                        transparent
+                        containerStyle={style.headerContainer}
+                        headerLeft={<CommunitySelector />}
+                        headerRight={
+                            <MainHeaderButtons onAddPress={openJoinCommunity} />
+                        }
+                    />
+                    <TotalBalance />
+                </Flex>
                 {/* TODO: restore this on federations screen */}
                 {/* <NetworkBanner /> */}
                 {showNightlyBanner && (

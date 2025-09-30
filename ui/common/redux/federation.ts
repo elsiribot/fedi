@@ -1460,3 +1460,14 @@ export const selectCommunityStack = createSelector(
         return [selectedCommunity, ...nonSelectedCommunities.slice(0, 2)]
     },
 )
+
+// Aggregates the total balance in msats across all federation wallets
+export const selectTotalBalanceMsats = createSelector(
+    selectLoadedFederations,
+    federations => {
+        const totalBalanceMsats = federations.reduce((acc, federation) => {
+            return acc + federation.balance
+        }, 0) as MSats
+        return totalBalanceMsats
+    },
+)
