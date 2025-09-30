@@ -27,7 +27,7 @@ export const STATE_STORAGE_KEY = 'fedi:state'
  */
 export function transformStateToStorage(state: CommonState): LatestStoredState {
     const transformedState: LatestStoredState = {
-        version: 30,
+        version: 31,
         onchainDepositsEnabled: state.environment.onchainDepositsEnabled,
         developerMode: state.environment.developerMode,
         stableBalanceEnabled: state.environment.stableBalanceEnabled,
@@ -58,6 +58,7 @@ export function transformStateToStorage(state: CommonState): LatestStoredState {
         lastSelectedCommunityId: state.federation.lastSelectedCommunityId,
         previouslyAutojoinedCommunities:
             state.federation.previouslyAutojoinedCommunities,
+        autojoinNoticesToDisplay: state.federation.autojoinNoticesToDisplay,
     }
 
     return transformedState
@@ -104,6 +105,7 @@ export function hasStorageStateChanged(
         ['federation', 'authenticatedGuardian'],
         ['federation', 'seenFederationRatings'],
         ['federation', 'previouslyAutojoinedCommunities'],
+        ['federation', 'autojoinNoticesToDisplay'],
         ['matrix', 'drafts'],
         // TODO: migrate legacy mods to customGlobalMods
         ['federation', 'customFediMods'],
@@ -671,6 +673,14 @@ async function migrateStoredState(
             ...migrationState,
             version: 30,
             previouslyAutojoinedCommunities: {},
+        }
+    }
+
+    if (migrationState.version === 30) {
+        migrationState = {
+            ...migrationState,
+            version: 31,
+            autojoinNoticesToDisplay: [],
         }
     }
 

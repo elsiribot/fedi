@@ -10,6 +10,7 @@ import { useNuxStep } from '@fedi/common/hooks/nux'
 import {
     selectCommunityIds,
     selectFederationIds,
+    selectShouldShowAutojoinedCommunityNotice,
     selectLastSelectedCommunity,
     selectOnboardingMethod,
 } from '@fedi/common/redux'
@@ -19,6 +20,7 @@ import { getFederationPinnedMessage } from '@fedi/common/utils/FederationUtils'
 import FirstTimeCommunityEntryOverlay, {
     FirstTimeCommunityEntryItem,
 } from '../components/feature/federations/FirstTimeCommunityEntryOverlay'
+import AutojoinedCommunityNotice from '../components/feature/home/AutojoinedCommunityNotice'
 import CommunityChats from '../components/feature/home/CommunityChats'
 import DisplayNameOverlay from '../components/feature/home/DisplayNameOverlay'
 import PinnedMessage from '../components/feature/home/PinnedMessage'
@@ -47,6 +49,12 @@ const Home: React.FC<Props> = () => {
     )
     const onboardingMethod = useAppSelector(selectOnboardingMethod)
     const canShowSurvey = useAppSelector(selectCanShowSurvey)
+    const shouldShowAutojoinedCommunityNotice = useAppSelector(s =>
+        selectShouldShowAutojoinedCommunityNotice(
+            s,
+            selectedCommunity?.id || '',
+        ),
+    )
     const joinedCommunityCount = useAppSelector(selectCommunityIds).length
     const federationCount = useAppSelector(selectFederationIds).length
     const totalCount = joinedCommunityCount + federationCount
@@ -118,6 +126,11 @@ const Home: React.FC<Props> = () => {
                 contentContainerStyle={style.container}
                 alwaysBounceVertical={false}>
                 <Flex gap="lg" fullWidth>
+                    {shouldShowAutojoinedCommunityNotice && (
+                        <AutojoinedCommunityNotice
+                            communityId={selectedCommunity.id}
+                        />
+                    )}
                     {pinnedMessage && <PinnedMessage message={pinnedMessage} />}
 
                     <CommunityChats />

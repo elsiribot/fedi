@@ -18,7 +18,7 @@ import { useIsStabilityPoolSupported } from '@fedi/common/hooks/federation'
 import { useToast } from '@fedi/common/hooks/toast'
 import {
     changeAuthenticatedGuardian,
-    clearPreviouslyAutojoinedCommunities,
+    clearAutojoinedCommunitiesAndNotices,
     listGateways,
     refreshStabilityPool,
     resetNuxSteps,
@@ -585,13 +585,13 @@ const DeveloperSettings: React.FC<Props> = ({ navigation }) => {
                     }}
                 />
                 <Button
-                    title="Clear previously auto-joined communities"
+                    title="Reset all auto-join community logic"
                     containerStyle={style.buttonContainer}
                     onPress={() => {
-                        reduxDispatch(clearPreviouslyAutojoinedCommunities())
+                        reduxDispatch(clearAutojoinedCommunitiesAndNotices())
                         toast.show({
                             content:
-                                'Previously auto-joined communities cleared!',
+                                'Cleared previously auto-joined communities & notices to display!',
                             status: 'success',
                         })
                     }}

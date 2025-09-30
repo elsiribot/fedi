@@ -76,6 +76,8 @@ const initialState = {
     seenFederationRatings: [] as Array<Federation['id']>,
     // A map of community IDs to the timestamp of when we autojoined them
     previouslyAutojoinedCommunities: {} as Record<Community['id'], number>,
+    // A list of community IDs that were autojoined where a dismissable notice should be displayed to the user
+    autojoinNoticesToDisplay: [] as Array<Community['id']>,
 }
 
 export type FederationState = typeof initialState
@@ -327,8 +329,35 @@ export const federationSlice = createSlice({
                 [communityId]: Date.now(),
             }
         },
-        clearPreviouslyAutojoinedCommunities(state) {
+        clearAutojoinedCommunitiesAndNotices(state) {
             state.previouslyAutojoinedCommunities = {}
+            state.autojoinNoticesToDisplay = []
+        },
+        addAutojoinNoticeToDisplay(
+            state,
+            action: PayloadAction<{
+                communityId: Community['id']
+            }>,
+        ) {
+            if (
+                !state.autojoinNoticesToDisplay.includes(
+                    action.payload.communityId,
+                )
+            ) {
+                state.autojoinNoticesToDisplay = [
+                    ...state.autojoinNoticesToDisplay,
+                    action.payload.communityId,
+                ]
+            }
+        },
+        removeAutojoinNoticeToDisplay(
+            state,
+            action: PayloadAction<{ communityId: Community['id'] }>,
+        ) {
+            state.autojoinNoticesToDisplay =
+                state.autojoinNoticesToDisplay.filter(
+                    id => id !== action.payload.communityId,
+                )
         },
     },
     extraReducers: builder => {
@@ -386,6 +415,8 @@ export const federationSlice = createSlice({
             state.seenFederationRatings = action.payload.seenFederationRatings
             state.previouslyAutojoinedCommunities =
                 action.payload.previouslyAutojoinedCommunities || {}
+            state.autojoinNoticesToDisplay =
+                action.payload.autojoinNoticesToDisplay || []
         })
 
         builder.addCase(
@@ -427,7 +458,9 @@ export const {
     addFederationGateways,
     setSeenFederationRating,
     setPreviouslyAutojoinedCommunity,
-    clearPreviouslyAutojoinedCommunities,
+    clearAutojoinedCommunitiesAndNotices,
+    addAutojoinNoticeToDisplay,
+    removeAutojoinNoticeToDisplay,
 } = federationSlice.actions
 
 /*** Async thunk actions */
@@ -780,6 +813,14 @@ export const autojoinCommunity = createAsyncThunk<
             await dispatch(
                 setPreviouslyAutojoinedCommunity({ communityId: code }),
             )
+            // for existing members, we need to show a dismissable notice explaining the autojoin
+            if (setAsSelected === false) {
+                dispatch(
+                    addAutojoinNoticeToDisplay({
+                        communityId: joinedCommunity.id,
+                    }),
+                )
+            }
             // finally refresh communities to update the list and keep meta fresh
             dispatch(refreshCommunities(fedimint))
         } catch (error) {
@@ -1469,5 +1510,35 @@ export const selectTotalBalanceMsats = createSelector(
             return acc + federation.balance
         }, 0) as MSats
         return totalBalanceMsats
+    },
+)
+
+export const selectFederationByAutojoinCommunityId = createSelector(
+    (s: CommonState, communityId: string) => communityId,
+    (s: CommonState, _communityId: string) => selectLoadedFederations(s),
+    (communityId, loadedFederations) => {
+        return loadedFederations.find(federation => {
+            const autojoinCommunities = getAutojoinCommunities(federation.meta)
+            return autojoinCommunities.includes(communityId)
+        })
+    },
+)
+
+export const selectShouldShowAutojoinedCommunityNotice = createSelector(
+    (_: CommonState, communityId: string) => communityId,
+    (s: CommonState, _communityId: string) =>
+        s.federation.autojoinNoticesToDisplay,
+    (s: CommonState, communityId: string) =>
+        selectFederationByAutojoinCommunityId(s, communityId),
+    (
+        communityId,
+        autojoinNoticesToDisplay,
+        federationWithAutojoinCommunity,
+    ) => {
+        // make sure the community id is found in a joined federations meta
+        return (
+            autojoinNoticesToDisplay.includes(communityId) &&
+            !!federationWithAutojoinCommunity
+        )
     },
 )

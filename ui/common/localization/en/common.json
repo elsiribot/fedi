@@ -526,6 +526,7 @@
             "you-sent-payment": "You sent {{fiat}} ({{amount}}) {{memo}}"
         },
         "communities": {
+            "autojoined-community-notice": "Federation and Community are now separate. To manage money, <federationLink>go to your federation</federationLink>.",
             "community-details": "Community Details",
             "community-mods": "Community Mini Apps",
             "community-terms": "Community Terms",
@@ -560,6 +561,7 @@
         },
         "federation": {
             "add-federation": "Add",
+            "autojoined-community-notice": "Federation and Community are now separate. <communityLink>Access your community here</communityLink>",
             "create-info-1": "A Federation is managed by trusted people called guardians.",
             "create-info-2": "Guardians work together to keep the Federation safe and secure.",
             "create-info-3": "This teamwork protects your wallet, privacy, and keeps your Federation strong.",
