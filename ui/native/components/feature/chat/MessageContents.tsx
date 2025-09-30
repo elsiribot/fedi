@@ -11,6 +11,7 @@ import {
     TextStyle,
     View,
     ViewStyle,
+    Text as RNText,
 } from 'react-native'
 import Hyperlink from 'react-native-hyperlink'
 
@@ -110,15 +111,17 @@ const MessageContents: React.FC<MessageContentsProps> = ({
 
     // shared renderer used in both branches
     const renderRichBlock = useCallback(
-        (block: string, key?: string | number, mediumWeight?: boolean) => {
+        (
+            block: string,
+            key?: string | number,
+            mediumWeight?: boolean,
+        ): React.ReactElement => {
             const androidTextProps: Partial<RNTextProps> = NEEDS_TAIL_FIX
                 ? { textBreakStrategy: 'simple' }
                 : {}
             const hasHtml =
                 /<a\s+href="/i.test(block) || /<br\s*\/?>/i.test(block)
 
-            // If it's plain text, try to "upgrade" it using our mention parser so
-            // multi-word display-name mentions become real <a> anchors.
             if (!hasHtml) {
                 const trimmed = block.trim()
                 if (roomMembers && trimmed) {
@@ -131,7 +134,6 @@ const MessageContents: React.FC<MessageContentsProps> = ({
                             formattedBody &&
                             /<a\s+href="/i.test(formattedBody)
                         ) {
-                            // Re-run through this renderer; next branch will handle HTML.
                             return renderRichBlock(
                                 formattedBody,
                                 key ?? 'plain-upgraded',
@@ -148,7 +150,6 @@ const MessageContents: React.FC<MessageContentsProps> = ({
                     }
                 }
 
-                // fallback: keep existing @room underline behavior
                 const parts = splitEveryoneRuns(trimmed)
                 return (
                     <Text
@@ -159,30 +160,26 @@ const MessageContents: React.FC<MessageContentsProps> = ({
                         style={[...textStyles, styles(theme).consistentText]}>
                         {parts.map((p, idx) =>
                             p.type === 'everyone' ? (
-                                <Text
+                                <RNText
                                     key={`ev-${idx}`}
-                                    caption
-                                    {...(mediumWeight ? { medium: true } : {})}
                                     style={[
                                         linkStyle,
                                         styles(theme).consistentText,
                                     ]}>
                                     {p.text}
-                                </Text>
+                                </RNText>
                             ) : (
-                                <React.Fragment key={`tx-${idx}`}>
+                                <RNText
+                                    key={`tx-${idx}`}
+                                    style={[styles(theme).consistentText]}>
                                     {p.text}
-                                </React.Fragment>
+                                </RNText>
                             ),
-                        )}
-                        {NEEDS_TAIL_FIX && (
-                            <Text key="tail-plain">{'\u00A0'}</Text>
                         )}
                     </Text>
                 )
             }
 
-            // HTML branch (formatted_body or upgraded plain text)
             const runs = splitHtmlRuns(block)
             return (
                 <Text
@@ -193,7 +190,6 @@ const MessageContents: React.FC<MessageContentsProps> = ({
                     style={[...textStyles, styles(theme).consistentText]}>
                     {runs.flatMap((r, idx) => {
                         if (r.type === 'link' && r.href) {
-                            // detect Matrix user mention for styling/behavior
                             let isSelf = false
                             try {
                                 const hashIndex = r.href.indexOf('#/')
@@ -250,24 +246,23 @@ const MessageContents: React.FC<MessageContentsProps> = ({
                         const parts = splitEveryoneRuns(r.text)
                         return parts.map((p, j) =>
                             p.type === 'everyone' ? (
-                                <Text
+                                <RNText
                                     key={`ev-${idx}-${j}`}
-                                    caption
-                                    {...(mediumWeight ? { medium: true } : {})}
                                     style={[
                                         linkStyle,
                                         styles(theme).consistentText,
                                     ]}>
                                     {p.text}
-                                </Text>
+                                </RNText>
                             ) : (
-                                <React.Fragment key={`tx-${idx}-${j}`}>
+                                <RNText
+                                    key={`tx-${idx}-${j}`}
+                                    style={[styles(theme).consistentText]}>
                                     {p.text}
-                                </React.Fragment>
+                                </RNText>
                             ),
                         )
                     })}
-                    {NEEDS_TAIL_FIX && <Text key="tail-rich">{'\u00A0'}</Text>}
                 </Text>
             )
         },
@@ -294,25 +289,19 @@ const MessageContents: React.FC<MessageContentsProps> = ({
         // code strings as separate renderable elements
         const messageElements: string[] = []
 
-        // there may be multiple group invite codes so this makes sure
-        // to convert each of them to a embedded button
         groupCodeMatches.reduce(
             (contentString: string, match: string, index: number) => {
                 const splitText = contentString.split(match)
                 const textBeforeCode = splitText[0]
                 const textAfterCode = splitText[1]
 
-                // push any preceding text in first
                 messageElements.push(textBeforeCode)
-                // then push the group invite code
                 messageElements.push(match)
 
-                // only push subsequent text if this is the last invite code
                 if (index + 1 === groupCodeMatches?.length) {
                     messageElements.push(textAfterCode)
                 }
 
-                // otherwise return the remaining string text for next pass
                 return textAfterCode
             },
             content,
@@ -337,34 +326,32 @@ const MessageContents: React.FC<MessageContentsProps> = ({
                             key={`mi-t-${i}`}
                             linkStyle={linkStyle}
                             onPress={handleLinkPress}
-                            onLongPress={handleLinkLongPress}>
-                            {renderRichBlock(m, `blk-${i}`)}
-                        </Hyperlink>
+                            onLongPress={handleLinkLongPress}
+                            // eslint-disable-next-line react/no-children-prop
+                            children={renderRichBlock(m, `blk-${i}`)}
+                        />
                     )
                 })}
             </View>
         )
     } else {
         // otherwise just render text normally with consistent container
+        const onlyText = renderRichBlock(content, 'only')
+
         text = (
             <View style={{ minHeight: 20 }}>
-                {renderRichBlock(content, 'only')}
+                <Hyperlink
+                    linkStyle={linkStyle}
+                    onPress={handleLinkPress}
+                    onLongPress={handleLinkLongPress}
+                    children={onlyText}
+                />
             </View>
         )
     }
 
-    return (
-        <Hyperlink
-            linkStyle={
-                sentByMe
-                    ? styles(theme).outgoingLinkedText
-                    : styles(theme).incomingLinkedText
-            }
-            onPress={handleLinkPress}
-            onLongPress={handleLinkLongPress}>
-            {text}
-        </Hyperlink>
-    )
+    // final render
+    return <>{text}</>
 }
 
 const styles = (theme: Theme) =>
