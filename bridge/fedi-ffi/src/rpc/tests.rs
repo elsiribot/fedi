@@ -40,6 +40,7 @@ use tracing::info;
 
 mod matrix;
 mod multispend_tests;
+mod nostr_tests;
 
 // nosemgrep: ban-wildcard-imports
 use crate::rpc::*;
@@ -218,6 +219,7 @@ async fn tests_wrapper_for_bridge() -> anyhow::Result<()> {
         test_preview_and_join_community,
         test_list_and_leave_community,
         test_community_meta_bg_refresh,
+        nostr_tests::test_nostr_community_workflow,
         test_existing_device_identifier_v2_migration,
         test_nip44_encrypt_and_decrypt,
     ];
