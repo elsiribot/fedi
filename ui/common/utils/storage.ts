@@ -100,7 +100,7 @@ export function hasStorageStateChanged(
         ['currency', 'overrideCurrency'],
         ['currency', 'customFederationCurrencies'],
         ['currency', 'prices'],
-        ['federation', 'lastUsedFederationId'],
+        ['federation', 'recentlyUsedFederationIds'],
         ['federation', 'lastSelectedCommunityId'],
         ['federation', 'authenticatedGuardian'],
         ['federation', 'seenFederationRatings'],

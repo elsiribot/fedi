@@ -1023,17 +1023,38 @@ export const selectLoadedFederations = createSelector(
         }, []),
 )
 
+export const selectRecentlyUsedFederationIds = (s: CommonState) =>
+    s.federation.recentlyUsedFederationIds
+
 export const selectLastUsedFederationId = (s: CommonState) =>
-    s.federation.recentlyUsedFederationIds[0] ?? null
+    selectRecentlyUsedFederationIds(s)[0] ?? null
 
 // non-featured federations are just loaded federations excluding the last used federation
 export const selectNonFeaturedFederations = createSelector(
     selectLastUsedFederationId,
+    selectRecentlyUsedFederationIds,
     selectLoadedFederations,
-    (lastUsedFederationId, federations) =>
-        lastUsedFederationId
+    (lastUsedFederationId, recentlyUsedFederationIds, federations) => {
+        let federationList = lastUsedFederationId
             ? federations.filter(f => f.id !== lastUsedFederationId)
-            : federations,
+            : federations
+
+        // Sort non-featured federations based on the when they were last-used in recentlyUsedFederationIds
+        federationList = federationList.sort((a, b) => {
+            const recentIndexA = recentlyUsedFederationIds.indexOf(a.id)
+            const recentIndexB = recentlyUsedFederationIds.indexOf(b.id)
+
+            // If not found in the recently-used federation list, bump it to the end of the list
+            const compareA =
+                recentIndexA === -1 ? federationList.length : recentIndexA
+            const compareB =
+                recentIndexB === -1 ? federationList.length : recentIndexB
+
+            return compareA - compareB
+        })
+
+        return federationList
+    },
 )
 
 export const selectFederations = createSelector(
