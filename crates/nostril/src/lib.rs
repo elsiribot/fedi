@@ -1,10 +1,11 @@
+use std::collections::BTreeMap;
 use std::time::Duration;
 
 use fedimint_derive_secret::DerivableSecret;
 use nostr_sdk::secp256k1::{self, Message};
 use nostr_sdk::util::hex;
 use nostr_sdk::{
-    Client, Event, EventBuilder, Filter, Keys, Kind, NostrSigner, PublicKey, Tag, TagKind, ToBech32,
+    Client, EventBuilder, Filter, Keys, Kind, NostrSigner, PublicKey, Tag, TagKind, ToBech32,
 };
 use rand::RngCore;
 use runtime::bridge_runtime::Runtime;
@@ -34,6 +35,15 @@ pub struct RpcNostrSecret {
 pub struct RpcNostrPubkey {
     pub hex: String,
     pub npub: String,
+}
+
+#[derive(Debug, Serialize, Deserialize, TS)]
+#[serde(rename_all = "camelCase")]
+#[ts(export)]
+pub struct RpcNostrCommunity {
+    pub hex_uuid: String,
+    pub name: String,
+    pub meta: BTreeMap<String, String>,
 }
 
 impl Nostril {
@@ -168,9 +178,12 @@ impl Nostril {
         //
         // Note that this is future-looking whereby multi-editor support can be achieved
         // by simply sharing one of the derived keys out-of-band securely.
-        let mut rng = rand::thread_rng();
-        let mut uuid_bytes = [0u8; 32];
-        rng.fill_bytes(&mut uuid_bytes);
+        let uuid_bytes = {
+            let mut rng = rand::thread_rng();
+            let mut uuid_bytes = [0u8; 32];
+            rng.fill_bytes(&mut uuid_bytes);
+            uuid_bytes
+        };
 
         let community_keys = self.community_creation_keys(&uuid_bytes).await?;
         self.sign_and_publish_community(&community_keys, &hex::encode(uuid_bytes), community_json)
@@ -179,7 +192,10 @@ impl Nostril {
 
     /// Fetches community creation events for the given npub (as "owner") and
     /// returns a list
-    pub async fn list_communities(&self, owner_npub: PublicKey) -> anyhow::Result<Vec<Event>> {
+    pub async fn list_communities(
+        &self,
+        owner_npub: PublicKey,
+    ) -> anyhow::Result<Vec<RpcNostrCommunity>> {
         let Some(client) = &self.client else {
             anyhow::bail!("nostr client feature flag is not enabled");
         };
@@ -192,11 +208,25 @@ impl Nostril {
                 Duration::from_secs(10),
             )
             .await?
-            .to_vec())
+            .to_vec()
+            .into_iter()
+            .filter_map(|event| {
+                let community_res = serde_json::from_str::<CommunityJson>(&event.content);
+                let maybe_uuid = event.tags.identifier();
+                match (community_res, maybe_uuid) {
+                    (Ok(community), Some(hex_uuid)) => Some(RpcNostrCommunity {
+                        hex_uuid: hex_uuid.to_owned(),
+                        name: community.name,
+                        meta: community.meta,
+                    }),
+                    _ => None,
+                }
+            })
+            .collect())
     }
 
     /// Fetches our own community creation events and returns a list
-    pub async fn list_our_communities(&self) -> anyhow::Result<Vec<Event>> {
+    pub async fn list_our_communities(&self) -> anyhow::Result<Vec<RpcNostrCommunity>> {
         self.list_communities(self.keys.public_key).await
     }
 

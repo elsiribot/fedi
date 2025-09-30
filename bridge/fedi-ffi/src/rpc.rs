@@ -38,7 +38,7 @@ use multispend::{
     GroupInvitation, GroupInvitationWithKeys, MsEventData, MultispendGroupVoteType,
     MultispendListedEvent, WithdrawRequestWithApprovals, WithdrawalResponseType,
 };
-use nostril::{RpcNostrPubkey, RpcNostrSecret};
+use nostril::{RpcNostrCommunity, RpcNostrPubkey, RpcNostrSecret};
 use rpc_types::error::{ErrorCode, RpcError};
 use rpc_types::event::{Event, EventSink, PanicEvent, SocialRecoveryEvent, TypedEventExt};
 use rpc_types::matrix::{
@@ -760,6 +760,48 @@ async fn nostrRateFederation(
     bridge
         .nostril
         .rate_federation(federation_id, rating, invite_code)
+        .await
+}
+
+#[macro_rules_derive(rpc_method!)]
+async fn nostrCreateCommunity(
+    bridge: &BridgeFull,
+    community_json_str: String,
+) -> anyhow::Result<()> {
+    bridge
+        .nostril
+        .create_community(&serde_json::from_str(&community_json_str)?)
+        .await
+}
+
+#[macro_rules_derive(rpc_method!)]
+async fn nostrListCommunities(
+    bridge: &BridgeFull,
+    owner_npub: RpcNostrPubkey,
+) -> anyhow::Result<Vec<RpcNostrCommunity>> {
+    bridge
+        .nostril
+        .list_communities(nostr::key::PublicKey::parse(&owner_npub.hex)?)
+        .await
+}
+
+#[macro_rules_derive(rpc_method!)]
+async fn nostrListOurCommunities(bridge: &BridgeFull) -> anyhow::Result<Vec<RpcNostrCommunity>> {
+    bridge.nostril.list_our_communities().await
+}
+
+#[macro_rules_derive(rpc_method!)]
+async fn nostrEditCommunity(
+    bridge: &BridgeFull,
+    community_hex_uuid: String,
+    new_community_json_str: String,
+) -> anyhow::Result<()> {
+    bridge
+        .nostril
+        .edit_community(
+            &community_hex_uuid,
+            &serde_json::from_str(&new_community_json_str)?,
+        )
         .await
 }
 
@@ -2242,6 +2284,10 @@ rpc_methods!(RpcMethods {
     nostrEncrypt04,
     nostrDecrypt04,
     nostrRateFederation,
+    nostrCreateCommunity,
+    nostrListCommunities,
+    nostrListOurCommunities,
+    nostrEditCommunity,
     // Stability Pool
     stabilityPoolAccountInfo,
     stabilityPoolNextCycleStartTime,
