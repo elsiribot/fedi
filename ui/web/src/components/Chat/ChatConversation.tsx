@@ -33,6 +33,7 @@ import {
     useAppDispatch,
     useAppSelector,
     useAutosizeTextArea,
+    useDeviceQuery,
 } from '../../hooks'
 import { styled, theme } from '../../styles'
 import { Avatar } from '../Avatar'
@@ -95,6 +96,7 @@ export const ChatConversation: React.FC<Props> = ({
     const [isPaginating, setIsPaginating] = useState(false)
     const [files, setFiles] = useState<File[]>([])
     const [cursor, setCursor] = useState(0)
+    const [height, setHeight] = useState<number>()
 
     const repliedEvent = useAppSelector(s =>
         selectReplyingToMessageEventForRoom(s, id),
@@ -106,8 +108,10 @@ export const ChatConversation: React.FC<Props> = ({
     const inputRef = useRef<HTMLTextAreaElement>(null)
     const fileRef = useRef<HTMLInputElement>(null)
     const messagesRef = useRef<HTMLDivElement>(null)
+    const chatWrapperRef = useRef<HTMLDivElement>(null)
 
     useAutosizeTextArea(inputRef.current, value)
+    const { isIOS } = useDeviceQuery()
 
     const mentionEnabled = type === ChatType.group && (!!room || !!isPublic)
     const membersForMentions = useMemo<MatrixRoomMember[]>(() => {
@@ -150,6 +154,21 @@ export const ChatConversation: React.FC<Props> = ({
         () => makeMatrixEventGroups(events, 'desc'),
         [events],
     )
+
+    // this useEffect is required to handle
+    // an Android only UI bug that causes the keyboard
+    // to overlap the textarea after sending messages
+    // and using multiline messages
+    useEffect(() => {
+        if (isIOS) return
+
+        const update = () =>
+            setHeight(window.visualViewport?.height || window.innerHeight)
+
+        window.visualViewport?.addEventListener('resize', update)
+        return () =>
+            window.visualViewport?.removeEventListener('resize', update)
+    }, [isIOS])
 
     useEffect(() => {
         setHasPaginated(false)
@@ -332,8 +351,8 @@ export const ChatConversation: React.FC<Props> = ({
     }
 
     return (
-        <Layout.Root>
-            <Layout.Header back="/chat">
+        <ChatWrapper ref={chatWrapperRef} style={{ height: height ?? '100%' }}>
+            <HeaderWrapper back="/chat">
                 <HeaderContent>
                     {avatar}
                     <Text weight="medium">{name}</Text>
@@ -342,10 +361,9 @@ export const ChatConversation: React.FC<Props> = ({
                 {headerActions && (
                     <HeaderActions>{headerActions}</HeaderActions>
                 )}
-            </Layout.Header>
-
-            <Layout.Content fullWidth>
-                <Messages
+            </HeaderWrapper>
+            <ContentWrapper>
+                <MessagesWrapper
                     ref={messagesRef}
                     onWheel={
                         onPaginate && !hasPaginated
@@ -373,123 +391,161 @@ export const ChatConversation: React.FC<Props> = ({
                     <PaginationPlaceholder>
                         {isPaginating && <CircularLoader />}
                     </PaginationPlaceholder>
-                </Messages>
-            </Layout.Content>
+                </MessagesWrapper>
+            </ContentWrapper>
+            {repliedEvent && (
+                <ReplyBar>
+                    <ReplyIndicator />
+                    <ReplyContent>
+                        <ReplySender>
+                            Replying to {replySender?.displayName || 'Unknown'}
+                        </ReplySender>
+                        <ReplyBody>{replyPreview}</ReplyBody>
+                    </ReplyContent>
+                    <ReplyCloseButton
+                        type="button"
+                        onClick={() => dispatch(clearChatReplyingToMessage())}>
+                        ×
+                    </ReplyCloseButton>
+                </ReplyBar>
+            )}
 
-            <InputContainer hasReply={!!repliedEvent}>
-                {repliedEvent && (
-                    <ReplyBar>
-                        <ReplyIndicator />
-                        <ReplyContent>
-                            <ReplySender>
-                                Replying to{' '}
-                                {replySender?.displayName || 'Unknown'}
-                            </ReplySender>
-                            <ReplyBody>{replyPreview}</ReplyBody>
-                        </ReplyContent>
-                        <ReplyCloseButton
-                            type="button"
-                            onClick={() =>
-                                dispatch(clearChatReplyingToMessage())
-                            }>
-                            ×
-                        </ReplyCloseButton>
-                    </ReplyBar>
+            <ActionsWrapper>
+                {files.length > 0 && (
+                    <ThumbnailsRow>
+                        {files.map((file, idx: number) => (
+                            <ChatAttachmentThumbnail
+                                key={`${file.name}-${idx}`}
+                                file={file}
+                                onRemove={() => handleOnRemoveThumbnail(idx)}
+                            />
+                        ))}
+                    </ThumbnailsRow>
                 )}
 
-                <Actions onSubmit={handleSend}>
-                    {files.length > 0 && (
-                        <ThumbnailsRow>
-                            {files.map((file, idx: number) => (
-                                <ChatAttachmentThumbnail
-                                    key={`${file.name}-${idx}`}
-                                    file={file}
-                                    onRemove={() =>
-                                        handleOnRemoveThumbnail(idx)
-                                    }
-                                />
-                            ))}
-                        </ThumbnailsRow>
-                    )}
-
-                    <InputRow>
-                        <Input
-                            ref={inputRef}
-                            value={value}
-                            onSelect={handleInputSelect}
-                            onChange={handleInputChange}
-                            onKeyUp={handleInputSelect}
-                            onClick={handleInputSelect}
-                            placeholder={t(
-                                isReadOnly
-                                    ? 'feature.chat.broadcast-only-notice'
-                                    : 'phrases.type-message',
-                            )}
-                            rows={1}
-                            onKeyDown={handleInputKeyDown}
-                            disabled={isReadOnly}
-                        />
-                        {!isReadOnly && (
-                            <input
-                                data-testid="file-upload"
-                                type="file"
-                                ref={fileRef}
-                                hidden
-                                accept="image/*, video/*, .csv, .doc, .docx, .pdf, .ppt, .pptx, .xls, .xlsx, .txt, .zip"
-                                onChange={handleOnUploadMedia}
-                                multiple
-                            />
+                <InputRow>
+                    <Input
+                        ref={inputRef}
+                        value={value}
+                        onSelect={handleInputSelect}
+                        onChange={handleInputChange}
+                        onKeyUp={handleInputSelect}
+                        onClick={handleInputSelect}
+                        placeholder={t(
+                            isReadOnly
+                                ? 'feature.chat.broadcast-only-notice'
+                                : 'phrases.type-message',
                         )}
-                    </InputRow>
-
-                    {showMentionSuggestions && (
-                        <MentionOverlay>
-                            <ChatMentionSuggestions
-                                visible={showMentionSuggestions}
-                                suggestions={mentionSuggestions}
-                                onSelect={insertMention}
-                            />
-                        </MentionOverlay>
-                    )}
-
+                        rows={1}
+                        onKeyDown={handleInputKeyDown}
+                        disabled={isReadOnly}
+                    />
                     {!isReadOnly && (
-                        <ActionsRow>
-                            <InputActions>
-                                {type === ChatType.direct && (
-                                    <Icon
-                                        aria-label="wallet-icon"
-                                        icon={WalletIcon}
-                                        size={32}
-                                        onClick={onWalletClick}
-                                    />
-                                )}
-                                {!isPublic && (
-                                    <Icon
-                                        aria-label="plus-icon"
-                                        icon={PlusIcon}
-                                        size={26}
-                                        onClick={handleOnMediaClick}
-                                    />
-                                )}
-                                {inputActions && inputActions}
-                            </InputActions>
-                            <SendButton
-                                disabled={
-                                    (value.trim().length === 0 &&
-                                        !files.length) ||
-                                    isSending
-                                }
-                                type="submit"
-                                onMouseDown={e => e.preventDefault()}>
-                                <Icon icon={SendArrowUpCircleIcon} />
-                            </SendButton>
-                        </ActionsRow>
+                        <input
+                            data-testid="file-upload"
+                            type="file"
+                            ref={fileRef}
+                            hidden
+                            accept="image/*, video/*, .csv, .doc, .docx, .pdf, .ppt, .pptx, .xls, .xlsx, .txt, .zip"
+                            onChange={handleOnUploadMedia}
+                            multiple
+                        />
                     )}
-                </Actions>
-            </InputContainer>
-        </Layout.Root>
+                </InputRow>
+
+                {showMentionSuggestions && (
+                    <MentionOverlay>
+                        <ChatMentionSuggestions
+                            visible={showMentionSuggestions}
+                            suggestions={mentionSuggestions}
+                            onSelect={insertMention}
+                        />
+                    </MentionOverlay>
+                )}
+
+                {!isReadOnly && (
+                    <ActionsRow>
+                        <InputActions>
+                            {type === ChatType.direct && (
+                                <Icon
+                                    aria-label="wallet-icon"
+                                    icon={WalletIcon}
+                                    size={32}
+                                    onClick={onWalletClick}
+                                />
+                            )}
+                            {!isPublic && (
+                                <Icon
+                                    aria-label="plus-icon"
+                                    icon={PlusIcon}
+                                    size={26}
+                                    onClick={handleOnMediaClick}
+                                />
+                            )}
+                            {inputActions && inputActions}
+                        </InputActions>
+                        <SendButton
+                            disabled={
+                                (value.trim().length === 0 && !files.length) ||
+                                isSending
+                            }
+                            onClick={handleSend}
+                            onMouseDown={e => {
+                                e.preventDefault() // Prevents focus from shifting (keyboard stays open)
+                            }}>
+                            <Icon icon={SendArrowUpCircleIcon} />
+                        </SendButton>
+                    </ActionsRow>
+                )}
+            </ActionsWrapper>
+        </ChatWrapper>
     )
 }
+
+const ChatWrapper = styled('div', {
+    display: 'flex',
+    height: '100%',
+    flexDirection: 'column',
+    overflow: 'hidden',
+})
+
+const HeaderWrapper = styled(Layout.Header, {})
+
+const ContentWrapper = styled(Layout.Content, {})
+
+const MessagesWrapper = styled('div', {
+    display: 'flex',
+    flexDirection: 'column-reverse',
+    flex: 1,
+    minHeight: 0,
+    gap: 16,
+    overflowY: 'auto',
+    padding: 16,
+})
+
+const ActionsWrapper = styled('div', {
+    borderTop: `1px solid ${theme.colors.extraLightGrey}`,
+    flexShrink: 0,
+    display: 'flex',
+    flexDirection: 'column',
+    padding: 8,
+    position: 'relative',
+
+    '@standalone': {
+        '@sm': {
+            paddingBottom: 'env(safe-area-inset-bottom, 16px)',
+        },
+    },
+})
+
+const ActionsRow = styled('div', {
+    alignItems: 'center',
+    display: 'flex',
+    flexDirection: 'row',
+    height: 40,
+    justifyContent: 'space-between',
+    width: '100%',
+})
 
 const HeaderContent = styled('div', {
     display: 'flex',
@@ -506,39 +562,6 @@ const HeaderActions = styled('div', {
     paddingRight: 8,
 })
 
-const Messages = styled('div', {
-    flex: 1,
-    minHeight: 0,
-    display: 'flex',
-    flexDirection: 'column-reverse',
-    padding: 16,
-    overflow: 'auto',
-    '& [data-event-id]': {
-        transition: 'all 0.3s ease',
-    },
-
-    '& [data-event-id].highlighted': {
-        backgroundColor: 'rgba(0, 123, 255, 0.1)',
-        borderRadius: 8,
-        boxShadow: '0 0 8px rgba(0, 123, 255, 0.3)',
-    },
-})
-
-const Actions = styled('form', {
-    alignItems: 'center',
-    borderTop: `1px solid ${theme.colors.lightGrey}`,
-    display: 'flex',
-    flexDirection: 'column',
-    padding: 8,
-    width: '100%',
-    '@standalone': {
-        '@sm': {
-            paddingBottom: 'env(safe-area-inset-bottom, 16px)',
-        },
-    },
-    position: 'relative',
-})
-
 const ThumbnailsRow = styled('div', {
     alignItems: 'center',
     display: 'flex',
@@ -553,14 +576,6 @@ const InputRow = styled('div', {
     position: 'relative',
 })
 
-const ActionsRow = styled('div', {
-    alignItems: 'center',
-    display: 'flex',
-    height: 40,
-    justifyContent: 'space-between',
-    width: '100%',
-})
-
 const InputActions = styled('div', {
     alignItems: 'center',
     display: 'flex',
@@ -568,11 +583,9 @@ const InputActions = styled('div', {
 })
 
 const Input = styled('textarea', {
-    flex: 1,
     maxHeight: 120,
     padding: 4,
     border: 0,
-    background: 'none',
     resize: 'none',
     width: '100%',
 
@@ -610,15 +623,6 @@ const PaginationPlaceholder = styled('div', {
     height: 60,
     flexShrink: 0,
     color: theme.colors.grey,
-})
-
-const InputContainer = styled('div', {
-    display: 'flex',
-    flexDirection: 'column',
-    flexShrink: 0,
-    variants: {
-        hasReply: { true: {} },
-    },
 })
 
 const ReplyBar = styled('div', {
