@@ -156,7 +156,7 @@ describe('SendOffline', () => {
                     federation: {
                         ...state.federation,
                         federations: [mockFederation1],
-                        lastUsedFederationId: mockFederation1.id,
+                        recentlyUsedFederationIds: [mockFederation1.id],
                         payFromFederationId: mockFederation1.id,
                     },
                 },
@@ -207,7 +207,7 @@ describe('SendOffline', () => {
                     federation: {
                         ...state.federation,
                         federations: [mockFederation1],
-                        lastUsedFederationId: mockFederation1.id,
+                        recentlyUsedFederationIds: [mockFederation1.id],
                         payFromFederationId: mockFederation1.id,
                     },
                 },

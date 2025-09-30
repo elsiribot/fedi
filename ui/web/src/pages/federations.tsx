@@ -20,7 +20,7 @@ import { SendPaymentDialog } from '../components/SendPaymentDialog'
 import SurveyModal from '../components/SurveyModal'
 import { useAppSelector } from '../hooks'
 import { fedimint } from '../lib/bridge'
-import { styled } from '../styles'
+import { styled, theme } from '../styles'
 
 function FederationsPage() {
     const { t } = useTranslation()
@@ -53,7 +53,7 @@ function FederationsPage() {
                         onAddPress={() => router.push('/onboarding')}
                     />
                 </Layout.Header>
-                <Layout.Content>
+                <Layout.Content fullWidth>
                     <Content>
                         <FeaturedFederation />
 
@@ -95,7 +95,9 @@ const FederationsListWrapper = styled('div', {
     flex: 1,
     display: 'flex',
     flexDirection: 'column',
-    gap: 16,
+    gap: theme.spacing.lg,
+    paddingLeft: theme.spacing.lg,
+    paddingRight: theme.spacing.lg,
 })
 
 export default FederationsPage

@@ -2,14 +2,17 @@ import '@testing-library/jest-dom'
 import { screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 
-import { setupStore } from '@fedi/common/redux'
+import {
+    setFederations,
+    setLastUsedFederationId,
+    setupStore,
+} from '@fedi/common/redux'
 import {
     mockFederation1,
     mockFederation2,
 } from '@fedi/common/tests/mock-data/federation'
 
 import { FederationWalletSelector } from '../../../src/components/FederationWalletSelector'
-import { AppState } from '../../../src/state/store'
 import { renderWithProviders } from '../../utils/render'
 
 jest.mock('@fedi/common/hooks/amount', () => ({
@@ -23,24 +26,18 @@ jest.mock('@fedi/common/hooks/amount', () => ({
 }))
 
 describe('/components/PaymentFederationSelector', () => {
-    let store
-    let state: AppState
+    let store: ReturnType<typeof setupStore>
 
     beforeAll(() => {
         store = setupStore()
-        state = store.getState()
     })
 
     describe('when the component is rendered with an active federation', () => {
         it('should render name and balance of federation', async () => {
+            store.dispatch(setFederations([mockFederation1]))
+            store.dispatch(setLastUsedFederationId('1'))
             renderWithProviders(<FederationWalletSelector />, {
-                preloadedState: {
-                    federation: {
-                        ...state.federation,
-                        federations: [mockFederation1],
-                        lastUsedFederationId: '1',
-                    },
-                },
+                store,
             })
 
             const name = screen.getByText('test-federation')
@@ -53,14 +50,10 @@ describe('/components/PaymentFederationSelector', () => {
 
     describe('when the component is rendered with two federations', () => {
         it('should render both in dropdown list when it is opened', async () => {
+            store.dispatch(setFederations([mockFederation1, mockFederation2]))
+            store.dispatch(setLastUsedFederationId('1'))
             renderWithProviders(<FederationWalletSelector />, {
-                preloadedState: {
-                    federation: {
-                        ...state.federation,
-                        federations: [mockFederation1, mockFederation2],
-                        lastUsedFederationId: '1',
-                    },
-                },
+                store,
             })
 
             const component = screen.getByLabelText('federation-selector')

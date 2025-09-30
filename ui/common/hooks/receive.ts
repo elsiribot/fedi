@@ -322,7 +322,9 @@ export function useLnurlReceiveCode(
         dispatch(refreshLnurlReceive({ fedimint, federationId }))
             .unwrap()
             .catch(e => log.error('Failed to refresh lnurl receive code', e))
-            .finally(() => setIsFetching(false))
+            .finally(() => {
+                setIsFetching(false)
+            })
     }, [fedimint, federationId, supportsLnurl, dispatch])
 
     return {

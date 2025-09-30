@@ -52,6 +52,7 @@ const BitcoinWallet: React.FC<Props> = ({ federation }: Props) => {
                 status: 'error',
             })
         } else {
+            dispatch(setPayFromFederationId(federation.id))
             navigation.navigate('ReceiveLightning', {
                 federationId: federation.id,
             })
@@ -59,8 +60,8 @@ const BitcoinWallet: React.FC<Props> = ({ federation }: Props) => {
     }
 
     const handleSend = () => {
+        dispatch(setPayFromFederationId(federation.id))
         if (isOffline) {
-            dispatch(setPayFromFederationId(federation.id))
             navigation.navigate('SendOfflineAmount')
         } else {
             navigation.navigate('Send', {
