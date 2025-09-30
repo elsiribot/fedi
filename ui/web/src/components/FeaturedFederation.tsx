@@ -3,7 +3,7 @@ import React from 'react'
 import { selectLastUsedFederation } from '@fedi/common/redux/federation'
 
 import { useAppSelector } from '../hooks'
-import { styled } from '../styles'
+import { styled, theme } from '../styles'
 import FederationTile from './FederationTile'
 
 const FeaturedFederation: React.FC = () => {
@@ -20,7 +20,7 @@ const FeaturedFederation: React.FC = () => {
 
 const Container = styled('div', {
     fediGradient: 'sky',
-    padding: 16,
+    padding: theme.spacing.lg,
     borderRadius: 16,
     '@sm': {
         borderTopLeftRadius: 0,
