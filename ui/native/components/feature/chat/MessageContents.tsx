@@ -29,8 +29,8 @@ import EmbeddedJoinGroupButton from './EmbeddedJoinGroupButton'
 
 const log = makeLog('MessageContents')
 
-// Android-only rendering quirk: last run after an <a> can disappear.
-// Fix by appending a non-breaking-space tail and using a simpler break strategy.
+// Android: prevent the “last run disappears” bug by rendering only <Text> children, giving Hyperlink a single <Text>, and using textBreakStrategy:'simple'.
+// For links ending with an emoji, split and render the trailing emoji without underline (tap still works); no NBSP tail needed.
 const NEEDS_TAIL_FIX = Platform.OS === 'android'
 
 type MessageContentsProps = {
@@ -119,6 +119,62 @@ const MessageContents: React.FC<MessageContentsProps> = ({
             const androidTextProps: Partial<RNTextProps> = NEEDS_TAIL_FIX
                 ? { textBreakStrategy: 'simple' }
                 : {}
+
+            // Helper: split the entire trailing emoji *cluster* (handles VS16 + ZWJ chains)
+            const splitTrailingEmoji = (
+                s: string,
+            ): { base: string; emoji: string } => {
+                try {
+                    const m = s.match(
+                        /^(.*?)(\p{Extended_Pictographic}(?:\uFE0F|\u200D\p{Extended_Pictographic})*)$/u,
+                    )
+                    if (m) return { base: m[1], emoji: m[2] }
+                } catch (e) {
+                    log.warn('Error rendering Emoji content', e)
+                }
+
+                if (!s) return { base: s, emoji: '' }
+                const cps: number[] = []
+                for (let i = 0; i < s.length; ) {
+                    const cp = s.codePointAt(i)
+                    if (cp === undefined) break
+                    cps.push(cp)
+                    i += cp > 0xffff ? 2 : 1
+                }
+                const isRI = (n: number) => n >= 0x1f1e6 && n <= 0x1f1ff
+                const isEP = (n: number) =>
+                    (n >= 0x1f300 && n <= 0x1faff) ||
+                    (n >= 0x1f900 && n <= 0x1f9ff) ||
+                    (n >= 0x2600 && n <= 0x27bf)
+                const ZWJ = 0x200d,
+                    VS16 = 0xfe0f
+                let start = cps.length
+                while (start > 0) {
+                    const cp = cps[start - 1]
+                    if (cp === VS16 || cp === ZWJ || isEP(cp) || isRI(cp)) {
+                        start--
+                        continue
+                    }
+                    if (
+                        start < cps.length &&
+                        isRI(cps[start]) &&
+                        isRI(cps[start - 1])
+                    ) {
+                        start--
+                        continue
+                    }
+                    break
+                }
+                if (start === cps.length) return { base: s, emoji: '' }
+                let idx = 0,
+                    k = 0
+                while (k < start) {
+                    const cp = cps[k++]
+                    idx += cp > 0xffff ? 2 : 1
+                }
+                return { base: s.slice(0, idx), emoji: s.slice(idx) }
+            }
+
             const hasHtml =
                 /<a\s+href="/i.test(block) || /<br\s*\/?>/i.test(block)
 
@@ -214,6 +270,43 @@ const MessageContents: React.FC<MessageContentsProps> = ({
                                         href: r.href,
                                         err,
                                     },
+                                )
+                            }
+
+                            // Avoid underlining trailing emoji in the link text (Android paint bug)
+                            const { base, emoji } = splitTrailingEmoji(r.text)
+                            if (emoji) {
+                                return (
+                                    <RNText
+                                        key={`lnk-${idx}`}
+                                        onPress={
+                                            isSelf
+                                                ? undefined
+                                                : () => handleLinkPress(r.href)
+                                        }
+                                        onLongPress={() =>
+                                            handleLinkLongPress(r.href)
+                                        }
+                                        style={[styles(theme).consistentText]}>
+                                        <RNText
+                                            style={[
+                                                linkStyle,
+                                                styles(theme).consistentText,
+                                                isSelf
+                                                    ? styles(theme).selfMention
+                                                    : null,
+                                            ]}>
+                                            {base}
+                                        </RNText>
+                                        <RNText
+                                            style={[
+                                                linkStyle,
+                                                styles(theme).consistentText,
+                                                { textDecorationLine: 'none' },
+                                            ]}>
+                                            {emoji}
+                                        </RNText>
+                                    </RNText>
                                 )
                             }
 
