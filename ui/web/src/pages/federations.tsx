@@ -53,7 +53,7 @@ function FederationsPage() {
                         onAddPress={() => router.push('/onboarding')}
                     />
                 </Layout.Header>
-                <Layout.Content>
+                <Layout.Content fullWidth>
                     <Content>
                         <FeaturedFederation />
 
@@ -96,6 +96,8 @@ const FederationsListWrapper = styled('div', {
     display: 'flex',
     flexDirection: 'column',
     gap: 16,
+    paddingLeft: 16,
+    paddingRight: 16,
 })
 
 export default FederationsPage
