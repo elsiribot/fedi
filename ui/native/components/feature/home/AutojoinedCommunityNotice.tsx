@@ -2,9 +2,7 @@ import { useNavigation } from '@react-navigation/native'
 import { Text, Theme, useTheme } from '@rneui/themed'
 import { Trans, useTranslation } from 'react-i18next'
 import { StyleSheet } from 'react-native'
-import LinearGradient from 'react-native-linear-gradient'
 
-import { theme as fediTheme } from '@fedi/common/constants/theme'
 import {
     removeAutojoinNoticeToDisplay,
     selectFederationByAutojoinCommunityId,
@@ -13,6 +11,7 @@ import { Community } from '@fedi/common/types'
 import { makeLog } from '@fedi/common/utils/log'
 
 import { useAppDispatch, useAppSelector } from '../../../state/hooks'
+import GradientView from '../../ui/GradientView'
 import { PressableIcon } from '../../ui/PressableIcon'
 
 const log = makeLog('AutojoinedCommunityNotice')
@@ -34,11 +33,7 @@ const AutojoinedCommunityNotice = ({ communityId }: Props) => {
     if (!federationWithAutojoinCommunity) return null
 
     return (
-        <LinearGradient
-            start={{ x: 0.1, y: 1 }}
-            end={{ x: 0.9, y: 0 }}
-            colors={[...fediTheme.skyLinearGradient]}
-            style={style.content}>
+        <GradientView variant="sky-banner" style={style.content}>
             <Text caption style={style.textContainer}>
                 <Trans
                     t={t}
@@ -74,7 +69,7 @@ const AutojoinedCommunityNotice = ({ communityId }: Props) => {
                     )
                 }}
             />
-        </LinearGradient>
+        </GradientView>
     )
 }
 
