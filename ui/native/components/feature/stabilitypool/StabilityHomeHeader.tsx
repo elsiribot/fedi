@@ -28,7 +28,11 @@ const StabilityHomeHeader: React.FC = () => {
         <>
             <Header
                 backButton
-                onBackButtonPress={() => navigation.replace('TabsNavigator')}
+                onBackButtonPress={() =>
+                    navigation.replace('TabsNavigator', {
+                        initialRouteName: 'Federations',
+                    })
+                }
                 headerCenter={
                     <Text bold>{`${selectedCurrency} ${t(
                         'words.balance',

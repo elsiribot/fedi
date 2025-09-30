@@ -246,7 +246,11 @@ const PublicFederations: React.FC<Props> = ({ navigation, route }) => {
                             {t('phrases.maybe-later')}
                         </Text>
                     }
-                    onPress={() => navigation.navigate('TabsNavigator')}
+                    onPress={() =>
+                        navigation.navigate('TabsNavigator', {
+                            initialRouteName: 'Federations',
+                        })
+                    }
                 />
             </View>
         </SafeAreaContainer>

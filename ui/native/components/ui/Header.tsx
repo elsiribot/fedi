@@ -4,7 +4,7 @@ import React, { memo } from 'react'
 import { View, ViewStyle } from 'react-native'
 
 import { reset } from '../../state/navigation'
-import { NavigationHook } from '../../types/navigation'
+import { NavigationHook, TabsNavigatorParamList } from '../../types/navigation'
 import { PressableIcon } from './PressableIcon'
 
 interface HeaderBase {
@@ -23,6 +23,7 @@ interface HeaderBase {
     onClose?: () => void
     inline?: boolean
     transparent?: boolean
+    closeRoute?: keyof TabsNavigatorParamList
 }
 
 interface HeaderWithBackButton extends HeaderBase {
@@ -53,6 +54,7 @@ const Header: React.FC<HeaderProps> = memo(
         closeButton,
         onClose,
         transparent,
+        closeRoute,
     }: HeaderProps) => {
         const { theme } = useTheme()
         const navigation = useNavigation<NavigationHook>()
@@ -87,7 +89,12 @@ const Header: React.FC<HeaderProps> = memo(
                 testID="HeaderCloseButton"
                 onPress={
                     onClose ||
-                    (() => navigation.dispatch(reset('TabsNavigator')))
+                    (() =>
+                        navigation.dispatch(
+                            reset('TabsNavigator', {
+                                initialRouteName: closeRoute ?? 'Home',
+                            }),
+                        ))
                 }
                 hitSlop={10}
                 svgName="Close"
