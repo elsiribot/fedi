@@ -141,7 +141,9 @@ const ScanMemberCode: React.FC<Props> = ({ navigation, route }: Props) => {
                 onUnexpectedSuccess={() =>
                     navigation.canGoBack()
                         ? navigation.goBack()
-                        : navigation.navigate('TabsNavigator')
+                        : navigation.navigate('TabsNavigator', {
+                              initialRouteName: 'Chat',
+                          })
                 }
             />
             {!!scannedUser && (

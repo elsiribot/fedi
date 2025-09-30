@@ -786,6 +786,7 @@ export const MainNavigator = () => {
                                         <CenteredHeader
                                             backButton
                                             closeButton
+                                            closeRoute="Federations"
                                             title={t('words.lnurl')}
                                         />
                                     ),

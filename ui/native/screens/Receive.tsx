@@ -54,7 +54,9 @@ const Receive: React.FC<Props> = ({ route }) => {
                 onUnexpectedSuccess={() => {
                     navigation.canGoBack()
                         ? navigation.goBack()
-                        : navigation.navigate('TabsNavigator')
+                        : navigation.navigate('TabsNavigator', {
+                              initialRouteName: 'Federations',
+                          })
                 }}
                 customActions={[
                     {
