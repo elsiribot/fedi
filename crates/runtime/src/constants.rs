@@ -90,3 +90,5 @@ pub const FEDI_GIFT_EXCLUDED_COMMUNITIES: &[&str] = &[
     // 1 placeholder for QA testing
     "fedi:community10v3xxmmdd46ku6t5090k6et5v90h2unvygazy6r5w3c8xw309ankjum59enkjargw4382um9wf3k7mn5v4h8gtnrdakj7cnswf5kxefk9ucxgv3evyekgd3h8qcrve35vser2dmz89jx2drzxfjkgd34vvergtmjv9mjylglx5n2j",
 ];
+
+pub const NOSTR_COMMUNITY_CREATION_EVENT_KIND: u16 = 30300;

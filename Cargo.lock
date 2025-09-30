@@ -7292,8 +7292,10 @@ version = "0.3.0"
 dependencies = [
  "anyhow",
  "bech32",
+ "fedimint-derive-secret",
  "futures",
  "nostr-sdk",
+ "rand 0.8.5",
  "reqwest 0.12.22",
  "rpc-types",
  "runtime",
