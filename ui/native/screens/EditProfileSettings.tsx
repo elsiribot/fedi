@@ -91,7 +91,7 @@ const EditProfileSettings: React.FC = () => {
                 .andThen(ensureNonNullish)
                 .match(setProfileImageUri, e => {
                     log.error('Failed to launch image library', e)
-                    if (e._tag === 'UserError') {
+                    if (e._tag !== 'UserError') {
                         toast.error(t, e)
                     }
                 })

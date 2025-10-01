@@ -18,6 +18,7 @@ import { ContentBlock } from '../../components/ContentBlock'
 import { Icon } from '../../components/Icon'
 import * as Layout from '../../components/Layout'
 import { Text } from '../../components/Text'
+import { settingsRoute } from '../../constants/routes'
 import { useAppDispatch, useAppSelector } from '../../hooks'
 import { fedimint, writeBridgeFile } from '../../lib/bridge'
 import { theme } from '../../styles'
@@ -93,7 +94,7 @@ const EditProfile = () => {
         }
 
         setIsLoading(false)
-        router.push('/settings')
+        router.push(settingsRoute)
     }, [
         handleSubmitDisplayName,
         profileImageData,
