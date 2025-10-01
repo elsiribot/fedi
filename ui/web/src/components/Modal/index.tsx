@@ -73,7 +73,7 @@ const overlayShow = keyframes({
 
 const Overlay = styled(RadixDialog.Overlay, {
     animation: `${overlayShow} 150ms ease`,
-    background: theme.colors.primary80,
+    background: theme.colors.primary50,
     display: 'grid',
     inset: 0,
     overflow: 'auto',
