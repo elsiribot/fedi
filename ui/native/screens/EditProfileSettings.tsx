@@ -1,4 +1,5 @@
 import { useHeaderHeight } from '@react-navigation/elements'
+import { useNavigation } from '@react-navigation/native'
 import { Button, Input, Text, Theme, useTheme } from '@rneui/themed'
 import React, { useCallback, useState } from 'react'
 import { useTranslation } from 'react-i18next'
@@ -53,6 +54,7 @@ const EditProfileSettings: React.FC = () => {
 
     const toast = useToast()
     const dispatch = useAppDispatch()
+    const navigation = useNavigation()
     const matrixAuth = useAppSelector(selectMatrixAuth)
 
     const insets = useSafeAreaInsets()
@@ -114,17 +116,14 @@ const EditProfileSettings: React.FC = () => {
         }
 
         setIsLoading(false)
-        toast.show({
-            content: t('phrases.changes-saved'),
-            status: 'success',
-        })
+
+        navigation.navigate('Settings')
     }, [
         handleSubmitDisplayName,
-        t,
-        toast,
         dispatch,
         profileImageUri,
         profileImageMimeType,
+        navigation,
     ])
 
     const hasChanged =

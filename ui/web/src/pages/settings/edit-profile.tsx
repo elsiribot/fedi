@@ -1,4 +1,5 @@
 import { styled } from '@stitches/react'
+import { useRouter } from 'next/router'
 import React, { useCallback, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 
@@ -22,19 +23,25 @@ import { fedimint, writeBridgeFile } from '../../lib/bridge'
 import { theme } from '../../styles'
 
 const EditProfile = () => {
+    const [profileImageData, setProfileImageData] = useState<Uint8Array | null>(
+        null,
+    )
+    const [profileImageMimeType, setProfileImageMimeType] = useState('')
+    const [isLoading, setIsLoading] = useState(false)
+
     const { t } = useTranslation()
     const dispatch = useAppDispatch()
     const toast = useToast()
 
     const {
         username,
-        isSubmitting,
         errorMessage,
         handleChangeUsername,
         handleSubmitDisplayName,
     } = useDisplayNameForm(t)
 
     const matrixAuth = useAppSelector(selectMatrixAuth)
+    const router = useRouter()
 
     const [isChangingAvatar, setIsChangingAvatar] = useState<boolean>(false)
 
@@ -46,37 +53,65 @@ const EditProfile = () => {
             try {
                 setIsChangingAvatar(true)
 
-                const path = 'chat-avatar'
                 const mimeType = file.type
                 const data = new Uint8Array(await file.arrayBuffer())
 
-                await writeBridgeFile(path, data)
-
-                await dispatch(
-                    uploadAndSetMatrixAvatarUrl({ fedimint, path, mimeType }),
-                ).unwrap()
-
-                toast.show({
-                    content: t('phrases.changes-saved'),
-                    status: 'success',
-                })
+                setProfileImageMimeType(mimeType)
+                setProfileImageData(data)
             } catch (err) {
                 toast.error(t, 'errors.unknown-error')
             } finally {
                 setIsChangingAvatar(false)
             }
         },
-        [dispatch, t, toast],
+        [t, toast],
     )
 
-    const handleOnDisplayNameSave = async () => {
-        handleSubmitDisplayName(() => {
+    const handleOnDisplayNameSave = useCallback(async () => {
+        setIsLoading(true)
+        await handleSubmitDisplayName(() => {
             toast.show({
                 content: t('phrases.changes-saved'),
                 status: 'success',
             })
         })
-    }
+
+        if (profileImageData) {
+            const path = 'chat-avatar'
+
+            await writeBridgeFile(path, profileImageData)
+            await dispatch(
+                uploadAndSetMatrixAvatarUrl({
+                    fedimint,
+                    mimeType: profileImageMimeType,
+                    path,
+                }),
+            ).unwrap()
+
+            setProfileImageData(null)
+            setProfileImageMimeType('')
+        }
+
+        setIsLoading(false)
+        router.push('/settings')
+    }, [
+        handleSubmitDisplayName,
+        profileImageData,
+        dispatch,
+        router,
+        t,
+        toast,
+        profileImageMimeType,
+    ])
+
+    const profileImageUri = profileImageData
+        ? `data:${profileImageMimeType};base64,${Buffer.from(profileImageData).toString('base64')}`
+        : matrixAuth?.avatarUrl
+
+    const hasChanged =
+        username.trim() !== matrixAuth?.displayName || profileImageData !== null
+
+    const saveButtonDisabled = !hasChanged || isLoading || errorMessage !== null
 
     return (
         <ContentBlock>
@@ -93,7 +128,7 @@ const EditProfile = () => {
                             <Avatar
                                 id={matrixAuth?.userId || ''}
                                 name={matrixAuth?.displayName || ''}
-                                src={matrixAuth?.avatarUrl}
+                                src={profileImageUri}
                                 size="lg"
                             />
                             <AvatarEdit isUploading={isChangingAvatar}>
@@ -144,12 +179,8 @@ const EditProfile = () => {
                 <Layout.Actions>
                     <Button
                         width="full"
-                        loading={isSubmitting}
-                        disabled={
-                            isSubmitting ||
-                            errorMessage !== null ||
-                            username.trim() === matrixAuth?.displayName
-                        }
+                        loading={isLoading}
+                        disabled={saveButtonDisabled}
                         onClick={handleOnDisplayNameSave}>
                         {t('words.save')}
                     </Button>
