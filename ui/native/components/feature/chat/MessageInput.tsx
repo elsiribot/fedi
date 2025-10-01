@@ -85,6 +85,8 @@ type MessageInputProps = {
 
 const log = makeLog('MessageInput')
 const SUGGESTIONS_MIN_HEIGHT = 120
+const CARET_LOCK_MS = 450
+const CARET_LOCK_MS_EMOJI = 900
 
 const imageOptions: ImageLibraryOptions = {
     mediaType: 'mixed',
@@ -560,11 +562,17 @@ const MessageInput: React.FC<MessageInputProps> = ({
             if (forcedSelection !== null) return
             const sel = e.nativeEvent.selection
             const s = Math.max(sel.start, sel.end)
-            // during the brief post-insert window, guard / ignore backwards/stale selection snaps - Android 9
+            // During lock, snap back immediately on backward selection regressions.
             if (
                 Date.now() < ignoreSelUntilRef.current &&
                 s < lastCaretRef.current
             ) {
+                inputRef.current?.setNativeProps?.({
+                    selection: {
+                        start: lastCaretRef.current,
+                        end: lastCaretRef.current,
+                    },
+                })
                 return
             }
             setSelectionStart(s)
@@ -620,10 +628,17 @@ const MessageInput: React.FC<MessageInputProps> = ({
             const nextCursor = before.length + insertion.length
 
             setMessageText(newText)
+            lastValueRef.current = newText
             setSelectionStart(nextCursor)
             lastCaretRef.current = nextCursor
-            // Ignore stale selection events for a brief moment after the programmatic move
-            ignoreSelUntilRef.current = Date.now() + 250
+
+            // ZWJ or VS, any pictographic emoji, skin-tone modifiers, or regional indicators
+            const EMOJIISH_RE =
+                /(?:\u200D|\uFE0F|\p{Extended_Pictographic}|\p{Emoji_Modifier}|\p{Regional_Indicator})/u
+
+            const emojiish = EMOJIISH_RE.test(insertion)
+            ignoreSelUntilRef.current =
+                Date.now() + (emojiish ? CARET_LOCK_MS_EMOJI : CARET_LOCK_MS)
 
             setForceHideSuggestions(true)
             // send a "no active token" signal — most hooks treat a negative index as "clear"
@@ -636,6 +651,20 @@ const MessageInput: React.FC<MessageInputProps> = ({
                 lastCaretRef.current = nextCursor
                 setForceHideSuggestions(false)
             })
+            // Some keyboards apply emoji presentation in a second pass.
+            // Re-assert the caret a couple of times if emoji was present.
+            if (emojiish) {
+                ;[48, 160].forEach(ms =>
+                    setTimeout(() => {
+                        inputRef.current?.setNativeProps?.({
+                            selection: {
+                                start: lastCaretRef.current,
+                                end: lastCaretRef.current,
+                            },
+                        })
+                    }, ms),
+                )
+            }
             //end of bugfix
         },
         [messageText, selectionStart, detectMentionTrigger],
@@ -754,6 +783,8 @@ const MessageInput: React.FC<MessageInputProps> = ({
                         { minHeight: inputHeight },
                     ]}>
                     <Input
+                        disableFullscreenUI
+                        textBreakStrategy="simple"
                         onChangeText={onChangeText}
                         onSelectionChange={handleSelectionChange}
                         value={messageText}
