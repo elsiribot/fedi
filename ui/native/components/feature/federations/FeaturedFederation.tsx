@@ -1,11 +1,10 @@
 import { useTheme, type Theme } from '@rneui/themed'
 import React from 'react'
-import { StyleSheet } from 'react-native'
+import { StyleSheet, View } from 'react-native'
 
 import { selectLastUsedFederation } from '@fedi/common/redux/federation'
 
 import { useAppSelector } from '../../../state/hooks'
-import GradientView from '../../ui/GradientView'
 import FederationTile from './FederationTile'
 
 const FeaturedFederation: React.FC = () => {
@@ -14,11 +13,11 @@ const FeaturedFederation: React.FC = () => {
     const lastUsedFederation = useAppSelector(selectLastUsedFederation)
 
     return (
-        <GradientView variant="sky" style={style.container}>
+        <View style={style.container}>
             {lastUsedFederation && (
                 <FederationTile federation={lastUsedFederation} />
             )}
-        </GradientView>
+        </View>
     )
 }
 

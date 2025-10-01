@@ -9,7 +9,7 @@ import { selectIsMatrixChatEmpty } from '@fedi/common/redux'
 
 import { useAppSelector } from '../../../state/hooks'
 import { NavigationHook } from '../../../types/navigation'
-import Flex from '../../ui/Flex'
+import GradientView from '../../ui/GradientView'
 import Header from '../../ui/Header'
 import MainHeaderButtons from '../../ui/MainHeaderButtons'
 import { Tooltip } from '../../ui/Tooltip'
@@ -38,7 +38,7 @@ const ChatHeader: React.FC = () => {
 
     return (
         <>
-            <Flex gap="xs" style={style.container}>
+            <GradientView variant="sky" style={style.container}>
                 <Header
                     transparent
                     containerStyle={style.headerContainer}
@@ -55,7 +55,7 @@ const ChatHeader: React.FC = () => {
                     }
                 />
                 <TotalBalance />
-            </Flex>
+            </GradientView>
             <ChatConnectionBadge />
             <Tooltip
                 shouldShow={isChatEmpty && !hasOpenedNewChat}
@@ -74,6 +74,9 @@ const styles = (theme: Theme) =>
     StyleSheet.create({
         container: {
             paddingHorizontal: theme.spacing.lg,
+            display: 'flex',
+            gap: theme.spacing.xs,
+            paddingBottom: theme.spacing.md,
         },
         headerContainer: {
             paddingHorizontal: 0,

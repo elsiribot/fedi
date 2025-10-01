@@ -7,6 +7,7 @@ import { StyleSheet, View } from 'react-native'
 import { NavigationHook } from '../../../types/navigation'
 import { isNightly } from '../../../utils/device-info'
 import Flex from '../../ui/Flex'
+import GradientView from '../../ui/GradientView'
 import Header from '../../ui/Header'
 import MainHeaderButtons from '../../ui/MainHeaderButtons'
 import TotalBalance from '../../ui/TotalBalance'
@@ -25,12 +26,16 @@ const FederationsHeader: React.FC = () => {
     }
 
     return (
-        <Flex gap="md" style={style.contentContainer}>
+        <GradientView variant="sky" style={style.container}>
             <Flex gap="xs">
                 <Header
                     transparent
                     containerStyle={style.headerContainer}
-                    headerLeft={<Text h2>{t('words.wallets')}</Text>}
+                    headerLeft={
+                        <Text h2 medium>
+                            {t('words.wallets')}
+                        </Text>
+                    }
                     headerRight={
                         <MainHeaderButtons onAddPress={openJoinCommunity} />
                     }
@@ -46,19 +51,18 @@ const FederationsHeader: React.FC = () => {
                     </Text>
                 </View>
             )}
-        </Flex>
+        </GradientView>
     )
 }
 
 const styles = (theme: Theme) =>
     StyleSheet.create({
         container: {
-            borderBottomLeftRadius: 16,
-            borderBottomRightRadius: 16,
-        },
-        contentContainer: {
             paddingHorizontal: theme.spacing.lg,
             backgroundColor: 'transparent',
+            display: 'flex',
+            gap: theme.spacing.md,
+            paddingBottom: theme.spacing.md,
         },
         headerContainer: {
             justifyContent: 'center',
