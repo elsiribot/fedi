@@ -129,6 +129,11 @@ const MessageInput: React.FC<MessageInputProps> = ({
     const [messageText, setMessageText] = useState<string>(drafts[id] ?? '')
     const [isSendingMessage, setIsSendingMessage] = useState(false)
 
+    // caret tracking (works around late selection events on older Androids)
+    const lastCaretRef = useRef(0)
+    const lastValueRef = useRef(messageText)
+    const ignoreSelUntilRef = useRef(0)
+
     const [selectionStart, setSelectionStart] = useState(0)
     const forcedSelection: number | null = null
     const directUserId = useMemo(
@@ -553,8 +558,17 @@ const MessageInput: React.FC<MessageInputProps> = ({
     const handleSelectionChange = useCallback(
         (e: NativeSyntheticEvent<TextInputSelectionChangeEventData>) => {
             if (forcedSelection !== null) return
-            const s = e.nativeEvent.selection.start
+            const sel = e.nativeEvent.selection
+            const s = Math.max(sel.start, sel.end)
+            // during the brief post-insert window, guard / ignore backwards/stale selection snaps - Android 9
+            if (
+                Date.now() < ignoreSelUntilRef.current &&
+                s < lastCaretRef.current
+            ) {
+                return
+            }
             setSelectionStart(s)
+            lastCaretRef.current = s
             if (mentionEnabled) {
                 detectMentionTrigger(messageText, s)
             }
@@ -564,17 +578,20 @@ const MessageInput: React.FC<MessageInputProps> = ({
 
     const onChangeText = useCallback(
         (value: string) => {
+            // compute a robust caret guess based on last confirmed caret and length delta.
+            const prev = lastValueRef.current
+            const delta = value.length - prev.length
+            const guess = Math.max(
+                0,
+                Math.min(lastCaretRef.current + delta, value.length),
+            )
             setMessageText(value)
-            const cursorGuess =
-                selectionStart > value.length ? value.length : selectionStart
+            lastValueRef.current = value
             if (mentionEnabled) {
-                detectMentionTrigger(
-                    value,
-                    cursorGuess === 0 ? value.length : cursorGuess,
-                )
+                detectMentionTrigger(value, guess === 0 ? value.length : guess)
             }
         },
-        [selectionStart, detectMentionTrigger, mentionEnabled],
+        [detectMentionTrigger, mentionEnabled],
     )
 
     const insertMention = useCallback(
@@ -588,7 +605,7 @@ const MessageInput: React.FC<MessageInputProps> = ({
                     : `@${(item.displayName || matrixIdToUsername(item.id)).trim()}`
             const insertion = `${label} `
 
-            //fix for Android 9 and under 'caret doesn't move to end of line' Git Issue 8843
+            // fix for Android 9 and under 'caret doesn't move to end of line' Git Issue 8843
             // target the token immediately before the caret
             const left = text.slice(0, cursor)
             // matches an @-mention immediately before the cursor: start/space + '@' + the current handle fragment, anchored to the end.
@@ -604,6 +621,9 @@ const MessageInput: React.FC<MessageInputProps> = ({
 
             setMessageText(newText)
             setSelectionStart(nextCursor)
+            lastCaretRef.current = nextCursor
+            // Ignore stale selection events for a brief moment after the programmatic move
+            ignoreSelUntilRef.current = Date.now() + 250
 
             setForceHideSuggestions(true)
             // send a "no active token" signal — most hooks treat a negative index as "clear"
@@ -613,6 +633,7 @@ const MessageInput: React.FC<MessageInputProps> = ({
                 inputRef.current?.setNativeProps?.({
                     selection: { start: nextCursor, end: nextCursor },
                 })
+                lastCaretRef.current = nextCursor
                 setForceHideSuggestions(false)
             })
             //end of bugfix
@@ -761,7 +782,19 @@ const MessageInput: React.FC<MessageInputProps> = ({
                         multiline
                         numberOfLines={3}
                         blurOnSubmit={false}
-                        onFocus={() => setIsFocused(true)}
+                        onFocus={() => {
+                            setIsFocused(true)
+                            // for caret tracking: ensure detector/caret are sane when Android hasn't delivered a selection yet
+                            const pos = Math.min(
+                                lastCaretRef.current ||
+                                    selectionStart ||
+                                    messageText.length,
+                                messageText.length,
+                            )
+                            lastCaretRef.current = pos
+                            if (mentionEnabled)
+                                detectMentionTrigger(messageText, pos)
+                        }}
                         onBlur={() => setIsFocused(false)}
                         disabled={inputDisabled}
                     />
