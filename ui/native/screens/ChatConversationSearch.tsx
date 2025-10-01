@@ -1,15 +1,15 @@
 import type { NativeStackScreenProps } from '@react-navigation/native-stack'
 import { Button, Text, Theme, useTheme } from '@rneui/themed'
-import React, { useCallback, useMemo } from 'react'
+import React, { useCallback } from 'react'
 import { useTranslation } from 'react-i18next'
 import { FlatList, ListRenderItem, StyleSheet, View } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 
 import { ErrorBoundary } from '@fedi/common/components/ErrorBoundary'
+import { SEARCH_PAGINATION_SIZE } from '@fedi/common/constants/matrix'
 import { useChatTimelineSearch } from '@fedi/common/hooks/matrix'
-import { selectMatrixRoom, selectMatrixRoomMembers } from '@fedi/common/redux'
+import { selectMatrixRoom } from '@fedi/common/redux'
 import { SendableMatrixEvent } from '@fedi/common/types'
-import { matrixIdToUsername } from '@fedi/common/utils/matrix'
 
 import ChatMessageTile from '../components/feature/chat/ChatMessageTile'
 import Flex from '../components/ui/Flex'
@@ -33,25 +33,12 @@ const ChatConversationSearch: React.FC<Props> = ({
     const {
         query,
         searchResults,
-        canSearchFurther,
+        canPaginateFurther,
         handlePaginate,
         isSearching,
+        memberLookup,
     } = useChatTimelineSearch(roomId)
-
     const room = useAppSelector(s => selectMatrixRoom(s, roomId))
-    const roomMembers = useAppSelector(s => selectMatrixRoomMembers(s, roomId))
-
-    // Create member lookup for efficient display name retrieval
-    const memberLookup = useMemo(() => {
-        return roomMembers.reduce(
-            (acc, member) => {
-                acc[member.id] =
-                    member.displayName || matrixIdToUsername(member.id)
-                return acc
-            },
-            {} as Record<string, string>,
-        )
-    }, [roomMembers])
 
     const handleSelectMessage = useCallback(
         (event: SendableMatrixEvent) => {
@@ -65,10 +52,10 @@ const ChatConversationSearch: React.FC<Props> = ({
     )
 
     const handleLoadMore = useCallback(() => {
-        if (canSearchFurther && !isSearching) {
-            handlePaginate()
+        if (canPaginateFurther && !isSearching) {
+            handlePaginate(SEARCH_PAGINATION_SIZE)
         }
-    }, [canSearchFurther, isSearching, handlePaginate])
+    }, [canPaginateFurther, isSearching, handlePaginate])
 
     const style = styles(theme)
 
@@ -95,7 +82,7 @@ const ChatConversationSearch: React.FC<Props> = ({
         // don't show load more button if there is no query
         if (!query) return null
         // don't show load more button if we can't search further
-        if (!canSearchFurther) return null
+        if (!canPaginateFurther) return null
 
         return (
             <View style={style.loadMoreContainer}>
@@ -116,7 +103,7 @@ const ChatConversationSearch: React.FC<Props> = ({
                 </Button>
             </View>
         )
-    }, [canSearchFurther, isSearching, handleLoadMore, t, style, query])
+    }, [canPaginateFurther, isSearching, handleLoadMore, t, style, query])
 
     const renderEmptyState = useCallback(() => {
         if (!query) return null

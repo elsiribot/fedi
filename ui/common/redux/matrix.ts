@@ -93,6 +93,7 @@ import {
     isMultispendFinancialTransaction,
     prepareMentionsDataPayload,
     hasMentions,
+    isTextEvent,
 } from '../utils/matrix'
 import { isBolt11 } from '../utils/parser'
 import { upsertListItem, upsertRecordEntity } from '../utils/redux'
@@ -2300,6 +2301,11 @@ export const selectMatrixRoomEvents = createSelector(
 
         return events
     },
+)
+
+export const selectRoomTextEvents = createSelector(
+    selectMatrixRoomEvents,
+    events => events.filter(event => isTextEvent(event)),
 )
 
 export const selectMatrixRoomLatestPaymentEvent = createSelector(

@@ -38,7 +38,7 @@ import {
     createMatrixRoom,
     selectMatrixChatsList,
     setChatsListSearchQuery,
-    selectMatrixRoomEvents,
+    selectRoomTextEvents,
     selectMatrixRoomMembers,
     setChatTimelineSearchQuery,
 } from '../redux'
@@ -118,24 +118,33 @@ export function useChatsListSearch(initialQuery?: string) {
     }
 }
 
-export function useChatTimelineSearch(roomId: MatrixRoom['id']) {
+export function useChatTimelineSearchQuery() {
     const dispatch = useCommonDispatch()
     const chatTimelineSearchQuery = useCommonSelector(
         s => s.matrix.chatTimelineSearchQuery,
     )
-    const [hasTriggeredInitialPagination, setHasTriggeredInitialPagination] =
-        useState(false)
 
-    const { paginationStatus, isPaginating, handlePaginate } =
-        useObserveMatrixRoom(roomId)
-    const roomEvents = useCommonSelector(s => selectMatrixRoomEvents(s, roomId))
+    return {
+        query: chatTimelineSearchQuery,
+        setQuery: (q: string) => dispatch(setChatTimelineSearchQuery(q)),
+        clearSearch: () => dispatch(setChatTimelineSearchQuery('')),
+    }
+}
+
+export function useChatTimelineSearch(roomId: MatrixRoom['id']) {
+    const dispatch = useCommonDispatch()
+    const { query, setQuery, clearSearch } = useChatTimelineSearchQuery()
+    const hasTriggeredInitialPagination = useRef(false)
+    const {
+        paginationStatus,
+        isPaginating,
+        canPaginateFurther,
+        handlePaginate,
+    } = useObserveMatrixRoom(roomId)
+    const textEvents = useCommonSelector(s => selectRoomTextEvents(s, roomId))
     const roomMembers = useCommonSelector(s =>
         selectMatrixRoomMembers(s, roomId),
     )
-
-    const clearSearch = () => {
-        dispatch(setChatTimelineSearchQuery(''))
-    }
 
     // Create member lookup for efficient sender name searching
     const memberLookup = useMemo(() => {
@@ -150,11 +159,11 @@ export function useChatTimelineSearch(roomId: MatrixRoom['id']) {
     }, [roomMembers])
 
     const searchResults = useMemo(() => {
-        if (chatTimelineSearchQuery.trim() === '') return []
+        if (query.trim() === '') return []
 
-        const queryLower = chatTimelineSearchQuery.toLowerCase()
+        const queryLower = query.toLowerCase()
 
-        return roomEvents.filter(event => {
+        return textEvents.filter(event => {
             let bodyMatch = false
             if (isTextEvent(event)) {
                 bodyMatch = (event.content as { body: string }).body
@@ -169,39 +178,33 @@ export function useChatTimelineSearch(roomId: MatrixRoom['id']) {
 
             return bodyMatch || senderMatch
         })
-    }, [roomEvents, chatTimelineSearchQuery, memberLookup])
+    }, [textEvents, query, memberLookup])
 
-    const canSearchFurther = useMemo(() => {
-        return (
-            paginationStatus !== 'timelineStartReached' &&
-            paginationStatus !== 'paginating'
-        )
-    }, [paginationStatus])
+    const isSearching = isPaginating && query.trim() !== ''
 
     // do an initial pagination on mount to get a big batch of results to search through
     // after this the user can click Load More to get more results
     useDebouncedEffect(
         () => {
-            if (hasTriggeredInitialPagination) return
-            setHasTriggeredInitialPagination(true)
+            if (hasTriggeredInitialPagination.current) return
+            hasTriggeredInitialPagination.current = true
             handlePaginate(SEARCH_PAGINATION_SIZE)
         },
         [dispatch, handlePaginate, hasTriggeredInitialPagination],
         200,
     )
 
-    const isSearching = isPaginating && chatTimelineSearchQuery.trim() !== ''
-
     return {
-        query: chatTimelineSearchQuery,
-        setQuery: (q: string) => dispatch(setChatTimelineSearchQuery(q)),
+        query,
+        setQuery,
         clearSearch,
         searchResults,
-        canSearchFurther,
         handlePaginate,
         paginationStatus,
         isPaginating,
+        canPaginateFurther,
         isSearching,
+        memberLookup,
     }
 }
 
@@ -314,6 +317,9 @@ export function useObserveMatrixRoom(roomId: MatrixRoom['id']) {
     const isPaginating = useMemo(() => {
         return paginationStatus === 'paginating'
     }, [paginationStatus])
+    const canPaginateFurther = useMemo(() => {
+        return paginationStatus !== 'timelineStartReached'
+    }, [paginationStatus])
 
     // observeMatrixRoom establishes all of the relevant observables
     // when unmounting we unobserve the room, but only for group chats
@@ -366,6 +372,7 @@ export function useObserveMatrixRoom(roomId: MatrixRoom['id']) {
     return {
         paginationStatus,
         isPaginating,
+        canPaginateFurther,
         handlePaginate,
         showLoading: isPaginating,
     }

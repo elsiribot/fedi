@@ -204,14 +204,14 @@ export function initializeCommonStore({
         },
     )
 
-    const debouncedUpdate = debounce(event => {
+    const updateFederationBalanceDebounced = debounce(event => {
         log.debug('Debounced Balance update', event)
         dispatch(updateFederationBalance(event))
     }, 100) // 100ms delay to maintain trickle effect
 
     // Update balance on bridge events
     const unsubscribeBalance = fedimint.addListener('balance', event => {
-        debouncedUpdate(event)
+        updateFederationBalanceDebounced(event)
     })
 
     // Add or update transactions on bridge events
@@ -271,6 +271,18 @@ export function initializeCommonStore({
     // TODO: Does this logic belong here in redux middleware?
     // This is only called on `roomTimelineUpdate` events, so why not
     // claim ecash in the `MatrixChatClient` (before it touches redux)?
+    const checkForReceivablePaymentsDebounced = debounce(
+        (apiDispatch, roomId) => {
+            apiDispatch(
+                checkForReceivablePayments({
+                    fedimint,
+                    roomId,
+                    receivedPayments,
+                }),
+            )
+        },
+        300,
+    )
     const unsubscribeMatrixPayments = listenerMiddleware.startListening({
         matcher: isAnyOf(
             joinFederation.fulfilled,
@@ -284,13 +296,7 @@ export function initializeCommonStore({
         ) => {
             const roomId =
                 'roomId' in action.payload ? action.payload?.roomId : undefined
-            api.dispatch(
-                checkForReceivablePayments({
-                    fedimint,
-                    roomId,
-                    receivedPayments,
-                }),
-            )
+            checkForReceivablePaymentsDebounced(api.dispatch, roomId)
         },
     })
 

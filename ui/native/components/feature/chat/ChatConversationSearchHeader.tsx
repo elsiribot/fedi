@@ -1,29 +1,20 @@
-import { RouteProp, useRoute } from '@react-navigation/native'
 import { Input, Theme, useTheme } from '@rneui/themed'
 import React from 'react'
 import { useTranslation } from 'react-i18next'
 import { StyleSheet, View } from 'react-native'
 
-import { useChatTimelineSearch } from '@fedi/common/hooks/matrix'
+import { useChatTimelineSearchQuery } from '@fedi/common/hooks/matrix'
 
-import { RootStackParamList } from '../../../types/navigation'
 import Header from '../../ui/Header'
 import { PressableIcon } from '../../ui/PressableIcon'
 import SvgImage from '../../ui/SvgImage'
-
-type ChatConversationSearchRouteProp = RouteProp<
-    RootStackParamList,
-    'ChatConversationSearch'
->
 
 const ChatConversationSearchHeader: React.FC = () => {
     const { t } = useTranslation()
     const { theme } = useTheme()
     const style = styles(theme)
-    const route = useRoute<ChatConversationSearchRouteProp>()
-    const { roomId } = route.params
 
-    const { query, setQuery, clearSearch } = useChatTimelineSearch(roomId)
+    const { query, setQuery, clearSearch } = useChatTimelineSearchQuery()
 
     const handleQueryChange = (newQuery: string) => {
         setQuery(newQuery)
