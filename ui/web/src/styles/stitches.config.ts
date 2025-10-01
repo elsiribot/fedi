@@ -25,6 +25,7 @@ export const {
             primary10: alphaHex(fediTheme.colors.primary, 10),
             primary15: alphaHex(fediTheme.colors.primary, 15),
             primary20: alphaHex(fediTheme.colors.primary, 20),
+            primary50: alphaHex(fediTheme.colors.primary, 50),
             primary80: alphaHex(fediTheme.colors.primary, 80),
             primary90: alphaHex(fediTheme.colors.primary, 90),
 
