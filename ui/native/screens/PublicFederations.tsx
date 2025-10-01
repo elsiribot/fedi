@@ -248,7 +248,10 @@ const PublicFederations: React.FC<Props> = ({ navigation, route }) => {
                     }
                     onPress={() =>
                         navigation.navigate('TabsNavigator', {
-                            initialRouteName: 'Federations',
+                            initialRouteName:
+                                joinedFederationIds.length > 0
+                                    ? 'Federations'
+                                    : 'Home',
                         })
                     }
                 />
