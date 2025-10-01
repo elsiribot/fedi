@@ -11,6 +11,7 @@ import {
     selectPaymentFederation,
     sendMatrixPaymentPush,
     sendMatrixPaymentRequest,
+    setLastUsedFederationId,
     setMatrixDisplayName,
 } from '../redux'
 import { getDisplayNameValidator, parseData } from '../utils/chat'
@@ -148,6 +149,7 @@ export const useChatPaymentPush = (
                         notes,
                     }),
                 ).unwrap()
+                dispatch(setLastUsedFederationId(federationId))
                 onSuccess()
             } catch (err) {
                 toast.error(t, err, 'errors.unknown-error')
@@ -217,6 +219,7 @@ export const useChatPaymentUtils = (
                         notes,
                     }),
                 ).unwrap()
+                dispatch(setLastUsedFederationId(federationId))
                 onSuccess()
             } catch (err) {
                 toast.error(t, err, 'errors.unknown-error')
