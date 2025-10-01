@@ -6,11 +6,7 @@ import { usePopupFederationInfo } from '@fedi/common/hooks/federation'
 import { useLeaveFederation } from '@fedi/common/hooks/leave'
 import { useToast } from '@fedi/common/hooks/toast'
 import { selectDefaultChats, selectLoadedFederation } from '@fedi/common/redux'
-import { Sats } from '@fedi/common/types'
-import amountUtils from '@fedi/common/utils/AmountUtils'
 import {
-    getFederationMaxBalanceMsats,
-    getFederationMaxInvoiceMsats,
     getFederationTosUrl,
     getFederationWelcomeMessage,
 } from '@fedi/common/utils/FederationUtils'
@@ -66,16 +62,6 @@ function FederationDetails() {
 
     const welcomeMessage = getFederationWelcomeMessage(federation.meta)
     const tosUrl = getFederationTosUrl(federation.meta)
-    const maxBalanceMsats = getFederationMaxBalanceMsats(federation?.meta)
-    const maxInvoiceMsats = getFederationMaxInvoiceMsats(federation?.meta)
-
-    const walletBalance: Sats = maxBalanceMsats
-        ? ((maxBalanceMsats / 1000) as Sats)
-        : (1_000_000_000 as Sats)
-
-    const spendLimit: Sats = maxInvoiceMsats
-        ? ((maxInvoiceMsats / 1000) as Sats)
-        : (1_000_000_000 as Sats)
 
     return (
         <ContentBlock>
@@ -116,17 +102,6 @@ function FederationDetails() {
                                 </ChatsContainer>
                             )}
                             {welcomeMessage && <Text>{welcomeMessage}</Text>}
-                            <Text>
-                                {t('phrases.wallet-balance', {
-                                    balance:
-                                        amountUtils.formatSats(walletBalance),
-                                })}
-                            </Text>
-                            <Text>
-                                {t('phrases.spend-limit', {
-                                    limit: amountUtils.formatSats(spendLimit),
-                                })}
-                            </Text>
                         </ScrollableContent>
                     </Content>
                     {(tosUrl || popupInfo?.ended) && (

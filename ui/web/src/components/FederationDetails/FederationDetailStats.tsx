@@ -67,7 +67,6 @@ function FederationDetailStats({
                     </Text>
                 )}
             </Column>
-            <Divider />
             <Column align="center" grow gap="xs">
                 <Text variant="small" weight="medium">
                     {t('feature.federations.wallet-balance')}
@@ -76,7 +75,6 @@ function FederationDetailStats({
                     {formattedWalletBalance}
                 </Text>
             </Column>
-            <Divider />
             <Column align="center" grow gap="xs">
                 <Text variant="small" weight="medium">
                     {t('feature.federations.spend-limit')}
@@ -90,15 +88,13 @@ function FederationDetailStats({
 }
 
 const Container = styled(Row, {
-    padding: theme.spacing.md,
-    borderRadius: 16,
     border: `solid 1px ${theme.colors.extraLightGrey}`,
-})
+    borderRadius: 16,
+    padding: theme.spacing.md,
 
-const Divider = styled('div', {
-    width: 1,
-    height: '100%',
-    backgroundColor: theme.colors.extraLightGrey,
+    '& > :not(:last-child)': {
+        borderRight: `1px solid ${theme.colors.extraLightGrey}`,
+    },
 })
 
 export default FederationDetailStats

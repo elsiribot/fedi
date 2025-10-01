@@ -53,14 +53,13 @@ export function FederationStatus({
                 <Text variant="caption" css={{ flexGrow: 1 }}>
                     {isOffline
                         ? t('feature.federations.last-known-status')
-                        : `${t('words.status')}:`}
+                        : t('words.status')}
                 </Text>
                 <Row center gap="xs">
                     <Icon icon={statusIcon} color={statusIconColor} size={12} />
                     <Text variant="caption">{statusWord}</Text>
                 </Row>
             </FederationStatusHeader>
-            <FederationStatusDivider />
             <Text variant="caption">
                 {isOffline
                     ? t('feature.federations.please-reconnect')
@@ -70,22 +69,18 @@ export function FederationStatus({
     )
 }
 
-const FederationStatusDivider = styled('div', {
-    backgroundColor: theme.colors.extraLightGrey,
-    height: 1,
-    width: '100%',
-})
-
 const FederationStatusCard = styled('div', {
     border: `solid 1px ${theme.colors.extraLightGrey}`,
     borderRadius: 20,
-    padding: theme.spacing.md,
     display: 'flex',
     flexDirection: 'column',
     gap: theme.spacing.sm,
+    padding: theme.spacing.md,
 })
 
 const FederationStatusHeader = styled('div', {
-    display: 'flex',
     alignItems: 'center',
+    borderBottom: `1px solid ${theme.colors.extraLightGrey}`,
+    display: 'flex',
+    padding: '5px 0',
 })

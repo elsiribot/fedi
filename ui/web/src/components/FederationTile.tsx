@@ -6,6 +6,7 @@ import chevronRight from '@fedi/common/assets/svgs/chevron-right.svg'
 import { selectIsFederationRecovering } from '@fedi/common/redux'
 import { LoadedFederation } from '@fedi/common/types'
 
+import { federationRoute } from '../constants/routes'
 import { useAppSelector } from '../hooks'
 import { styled, theme } from '../styles'
 import { BitcoinWallet } from './BitcoinWallet'
@@ -26,7 +27,7 @@ const FederationTile: React.FC<Props> = ({ federation }) => {
 
     return (
         <Container>
-            <TileHeader as={Link} href={`/federation-details/${federation.id}`}>
+            <TileHeader as={Link} href={federationRoute(federation.id)}>
                 <FederationAvatar federation={federation} size="md" />
                 <Text weight="bold" css={{ color: theme.colors.primary }}>
                     {federation?.name}
