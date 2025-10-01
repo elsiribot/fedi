@@ -1035,12 +1035,12 @@ export const selectNonFeaturedFederations = createSelector(
     selectRecentlyUsedFederationIds,
     selectLoadedFederations,
     (lastUsedFederationId, recentlyUsedFederationIds, federations) => {
-        let federationList = lastUsedFederationId
+        const federationList = lastUsedFederationId
             ? federations.filter(f => f.id !== lastUsedFederationId)
             : federations
 
         // Sort non-featured federations based on the when they were last-used in recentlyUsedFederationIds
-        federationList = federationList.toSorted((a, b) => {
+        federationList.sort((a, b) => {
             const recentIndexA = recentlyUsedFederationIds.indexOf(a.id)
             const recentIndexB = recentlyUsedFederationIds.indexOf(b.id)
 
