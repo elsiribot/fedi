@@ -232,6 +232,15 @@ const MessageContents: React.FC<MessageContentsProps> = ({
                                 </RNText>
                             ),
                         )}
+
+                        {NEEDS_TAIL_FIX && (
+                            <RNText
+                                accessibilityElementsHidden
+                                importantForAccessibility="no-hide-descendants"
+                                style={styles(theme).tail}>
+                                {'\u200B'}
+                            </RNText>
+                        )}
                     </Text>
                 )
             }
@@ -274,7 +283,10 @@ const MessageContents: React.FC<MessageContentsProps> = ({
                             }
 
                             // Avoid underlining trailing emoji in the link text (Android paint bug)
-                            const { base, emoji } = splitTrailingEmoji(r.text)
+                            const { base, emoji } =
+                                Platform.OS === 'android'
+                                    ? splitTrailingEmoji(r.text)
+                                    : { base: r.text, emoji: '' }
                             if (emoji) {
                                 return (
                                     <RNText
@@ -356,6 +368,14 @@ const MessageContents: React.FC<MessageContentsProps> = ({
                             ),
                         )
                     })}
+                    {NEEDS_TAIL_FIX && (
+                        <RNText
+                            accessibilityElementsHidden
+                            importantForAccessibility="no-hide-descendants"
+                            style={styles(theme).tail}>
+                            {'\u200B'}
+                        </RNText>
+                    )}
                 </Text>
             )
         },
@@ -414,31 +434,40 @@ const MessageContents: React.FC<MessageContentsProps> = ({
                             />
                         )
                     }
-                    return (
+                    const segHasHtml = /<a\s+href="/i.test(m)
+                    const segHasBareUrl = /\b(?:https?:\/\/|www\.)\S+/i.test(m)
+                    return !segHasHtml && segHasBareUrl ? (
                         <Hyperlink
                             key={`mi-t-${i}`}
                             linkStyle={linkStyle}
                             onPress={handleLinkPress}
                             onLongPress={handleLinkLongPress}
-                            // eslint-disable-next-line react/no-children-prop
                             children={renderRichBlock(m, `blk-${i}`)}
                         />
+                    ) : (
+                        renderRichBlock(m, `blk-${i}`)
                     )
                 })}
             </View>
         )
     } else {
         // otherwise just render text normally with consistent container
+        const contentHasHtml = /<a\s+href="/i.test(content)
+        const contentHasBareUrl = /\b(?:https?:\/\/|www\.)\S+/i.test(content)
         const onlyText = renderRichBlock(content, 'only')
 
         text = (
-            <View style={{ minHeight: 20 }}>
-                <Hyperlink
-                    linkStyle={linkStyle}
-                    onPress={handleLinkPress}
-                    onLongPress={handleLinkLongPress}
-                    children={onlyText}
-                />
+            <View style={styles(theme).hyperlink}>
+                {!contentHasHtml && contentHasBareUrl ? (
+                    <Hyperlink
+                        linkStyle={linkStyle}
+                        onPress={handleLinkPress}
+                        onLongPress={handleLinkLongPress}
+                        children={onlyText}
+                    />
+                ) : (
+                    onlyText
+                )}
             </View>
         )
     }
@@ -468,6 +497,13 @@ const styles = (theme: Theme) =>
         },
         selfMention: {
             fontWeight: '700',
+        },
+        hyperlink: {
+            minHeight: 20,
+        },
+        tail: {
+            opacity: 0,
+            includeFontPadding: false,
         },
     })
 
