@@ -264,6 +264,7 @@ export function useMultispendTxnDisplayUtils(t: TFunction, roomId: RpcRoomId) {
     const multispendStatus = useCommonSelector(s =>
         selectMatrixRoomMultispendStatus(s, roomId),
     )
+
     const roomMembers = useCommonSelector(s =>
         selectMatrixRoomMembers(s, roomId),
     )
