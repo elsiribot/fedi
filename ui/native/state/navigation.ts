@@ -11,6 +11,12 @@ export function navigate(
     return CommonActions.navigate(screenName, params)
 }
 
+export function navigateToHome() {
+    return CommonActions.navigate('TabsNavigator', {
+        screen: 'Home',
+    })
+}
+
 export function reset(
     screenName: keyof RootStackParamList,
     params?: RootStackParamList[keyof RootStackParamList],

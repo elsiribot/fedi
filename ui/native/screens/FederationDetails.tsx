@@ -8,7 +8,11 @@ import { Linking, StyleSheet } from 'react-native'
 import { usePopupFederationInfo } from '@fedi/common/hooks/federation'
 import { useLeaveFederation } from '@fedi/common/hooks/leave'
 import { useToast } from '@fedi/common/hooks/toast'
-import { selectDefaultChats, selectLoadedFederation } from '@fedi/common/redux'
+import {
+    selectDefaultChats,
+    selectLoadedFederation,
+    selectShouldShowAutojoinedNoticeForFederation,
+} from '@fedi/common/redux'
 import { ChatType, MatrixRoom } from '@fedi/common/types'
 import {
     getFederationTosUrl,
@@ -20,6 +24,7 @@ import FederationDetailStats from '../components/feature/federations/FederationD
 import { FederationLogo } from '../components/feature/federations/FederationLogo'
 import FederationPopupCountdown from '../components/feature/federations/FederationPopupCountdown'
 import FederationStatus from '../components/feature/federations/FederationStatus'
+import AutojoinedCommunityNotice from '../components/feature/home/AutojoinedCommunityNotice'
 import DefaultChatTile from '../components/feature/home/DefaultChatTile'
 import Flex from '../components/ui/Flex'
 import { SafeAreaContainer } from '../components/ui/SafeArea'
@@ -45,6 +50,9 @@ const FederationDetails: React.FC<Props> = ({ route }: Props) => {
     )
     const federationChats = useAppSelector(s =>
         selectDefaultChats(s, federationId),
+    )
+    const shouldShowAutojoinedCommunityNotice = useAppSelector(s =>
+        selectShouldShowAutojoinedNoticeForFederation(s, federationId),
     )
     const popupInfo = usePopupFederationInfo(federation?.meta || {})
     const navigation = useNavigation()
@@ -101,6 +109,11 @@ const FederationDetails: React.FC<Props> = ({ route }: Props) => {
                     </Flex>
                 </Flex>
                 <Flex gap="md">
+                    {shouldShowAutojoinedCommunityNotice && (
+                        <AutojoinedCommunityNotice
+                            federationId={federationId}
+                        />
+                    )}
                     <FederationPopupCountdown federation={federation} />
                     <FederationDetailStats federation={federation} />
                     <FederationStatus federation={federation} />

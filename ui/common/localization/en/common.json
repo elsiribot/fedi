@@ -527,6 +527,7 @@
         },
         "communities": {
             "autojoined-community-notice": "Federation and Community are now separate. To manage money, <federationLink>go to your federation</federationLink>.",
+            "autojoined-community-notice-federation": "Federation and Community are now separate. <communityLink>Access your community here</communityLink>.",
             "community-details": "Community Details",
             "community-mods": "Community Mini Apps",
             "community-terms": "Community Terms",

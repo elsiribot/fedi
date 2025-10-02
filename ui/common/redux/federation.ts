@@ -1588,3 +1588,61 @@ export const selectShouldShowAutojoinedCommunityNotice = createSelector(
         )
     },
 )
+
+export const selectShouldShowAutojoinedNoticeForFederation = createSelector(
+    (s: CommonState, federationId: Federation['id']) =>
+        selectLoadedFederation(s, federationId),
+    (s: CommonState, _communityId: string) =>
+        s.federation.autojoinNoticesToDisplay,
+    (federation, autojoinNoticesToDisplay) => {
+        if (!federation?.meta) return false
+        const autojoinCommunities = getAutojoinCommunities(federation.meta)
+        if (autojoinCommunities.length === 0) return false
+        if (autojoinNoticesToDisplay.length === 0) return false
+        return autojoinNoticesToDisplay.some(communityId =>
+            autojoinCommunities.includes(communityId),
+        )
+    },
+)
+
+export const selectAutojoinNoticeInfo = createSelector(
+    (
+        s: CommonState,
+        communityId?: Community['id'],
+        federationId?: Federation['id'],
+    ) => ({
+        communityId,
+        federationId,
+    }),
+    (s: CommonState) => selectLoadedFederations(s),
+    (s: CommonState) => s,
+    ({ communityId, federationId }, loadedFederations, state) => {
+        if (!communityId && !federationId) return null
+        // if communityId is provided, use the existing selector to find the federation
+        if (communityId) {
+            return {
+                federation: selectFederationByAutojoinCommunityId(
+                    state,
+                    communityId,
+                ),
+                autojoinedCommunityId: communityId,
+            }
+        }
+        // if federationId is provided, get the federation & extract the community ID from meta
+        if (federationId) {
+            const federation = loadedFederations.find(
+                f => f.id === federationId,
+            )
+            if (federation) {
+                const autojoinCommunities = getAutojoinCommunities(
+                    federation.meta || {},
+                )
+                // for now just return the first autojoin community
+                return {
+                    federation,
+                    autojoinedCommunityId: autojoinCommunities[0],
+                }
+            }
+        }
+    },
+)
