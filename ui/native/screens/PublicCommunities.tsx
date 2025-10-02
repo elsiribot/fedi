@@ -53,11 +53,11 @@ const PublicCommunities: React.FC<Props> = ({ navigation }) => {
             value: 'join',
             subText: t('feature.communities.guidance-join'),
         },
-        {
-            label: t('words.create'),
-            value: 'create',
-            subText: t('feature.onboarding.description-create'),
-        },
+        // {
+        //     label: t('words.create'),
+        //     value: 'create',
+        //     subText: t('feature.onboarding.description-create'),
+        // },
     ]
 
     const selectedOption =
@@ -97,14 +97,16 @@ const PublicCommunities: React.FC<Props> = ({ navigation }) => {
                 </Text>
             </Flex>
 
-            <View style={style.switcherContainer}>
-                <Switcher<Tab>
-                    options={switcherOptions}
-                    selected={activeTab}
-                    onChange={(newTab: Tab) => setActiveTab(newTab)}
-                />
-            </View>
-
+            {/* TODO: remove this check when either Discover or Create tabs are ready */}
+            {switcherOptions.length > 1 && (
+                <View style={style.switcherContainer}>
+                    <Switcher<Tab>
+                        options={switcherOptions}
+                        selected={activeTab}
+                        onChange={(newTab: Tab) => setActiveTab(newTab)}
+                    />
+                </View>
+            )}
             <ScrollView
                 style={{ flex: 1 }}
                 contentContainerStyle={style.scrollContainer}
