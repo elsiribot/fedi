@@ -141,13 +141,6 @@ const createDisplayNameValidator = (
             // to keep return types consistent
             .refine(username => username.length > 0)
             .refine(username => username.length <= 21)
-            // Validates all lowercase
-            .refine(username => {
-                // Allow "G-Bot" as an exception if specified
-                if (allowBot && username === GUARDIANITO_BOT_DISPLAY_NAME)
-                    return true
-                return !/[A-Z]/.test(username)
-            })
             // Validates No banned words
             .refine(
                 username => {
@@ -281,5 +274,5 @@ export const generateRandomDisplayName = () => {
     const firstWord = wordListFirst[randomIndexFirst]
     const lastWord = wordListLast[randomIndexLast]
 
-    return `${firstWord} ${lastWord}`
+    return `${firstWord[0].toUpperCase()}${firstWord.slice(1)} ${lastWord}`
 }
