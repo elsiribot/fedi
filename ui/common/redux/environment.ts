@@ -16,6 +16,7 @@ import {
     RpcNostrPubkey,
     RpcNostrSecret,
     OnboardingMethod,
+    RpcAppFlavor,
 } from '../types/bindings'
 import { FediModCacheMode } from '../types/fediInternal'
 import { I18nLanguage } from '../types/localization'
@@ -48,6 +49,8 @@ const initialState = {
     internetUnreachableBadgeShown: false,
     onboardingCompleted: false,
     onboardingMethod: null as OnboardingMethod | null,
+    appFlavor: undefined as RpcAppFlavor['type'] | undefined,
+    sessionCount: 0,
 }
 
 export type EnvironmentState = typeof initialState
@@ -127,6 +130,9 @@ export const environmentSlice = createSlice({
         ) {
             state.onboardingMethod = action.payload
         },
+        setAppFlavor(state, action: PayloadAction<RpcAppFlavor['type']>) {
+            state.appFlavor = action.payload
+        },
     },
     extraReducers: builder => {
         builder.addCase(changeLanguage.fulfilled, (state, action) => {
@@ -155,6 +161,9 @@ export const environmentSlice = createSlice({
             if (action.payload.deviceId !== undefined) {
                 state.deviceId = action.payload.deviceId
             }
+            if (action.payload.sessionCount !== undefined) {
+                state.sessionCount = action.payload.sessionCount + 1
+            }
         })
     },
 })
@@ -181,6 +190,7 @@ export const {
     setInternetUnreachableBadgeVisibility,
     setOnboardingCompleted,
     setOnboardingMethod,
+    setAppFlavor,
 } = environmentSlice.actions
 
 /*** Async thunk actions ***/
@@ -404,3 +414,5 @@ export const selectOnboardingCompleted = (s: CommonState) =>
 
 export const selectOnboardingMethod = (s: CommonState) =>
     s.environment.onboardingMethod
+
+export const selectAppFlavor = (s: CommonState) => s.environment.appFlavor

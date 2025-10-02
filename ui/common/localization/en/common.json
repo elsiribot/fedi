@@ -127,6 +127,7 @@
         "status": "Status",
         "stay": "Stay",
         "submit": "Submit",
+        "sure": "Sure",
         "time": "Time",
         "title": "Title",
         "to": "To",
@@ -223,6 +224,7 @@
         "no-result": "No Result",
         "no-transactions": "No transactions",
         "not-set": "Not Set",
+        "not-now": "Not now",
         "onchain-address": "On-chain address",
         "open-in-browser": "Open in browser",
         "payment-received": "Payment Received",
@@ -1127,7 +1129,10 @@
                 "vnd": "Vietnam Dong",
                 "zar": "South African Rand",
                 "zmw": "Zambian Kwacha"
-            }
+            },
+            "app-settings": "App Settings",
+            "usage-sharing": "Usage sharing",
+            "analytics-updated-error": "Failed to update analytics consent"
         },
         "stabilitypool": {
             "amount-may-vary": "Amount may vary",
@@ -1178,6 +1183,8 @@
             "you-withdrew": "You withdrew"
         },
         "support": {
+            "analytics-consent-title": "Can we learn from you?",
+            "analytics-consent-description": "Help us make Fedi better by sharing general app usage. No personal info. Opt out anytime.",
             "effective-support-1a": "By proceeding, you agree that Fedi may collect some ",
             "effective-support-1b": " solely to provide you the best support possible.",
             "effective-support-2a": "Prefer not to share? No problem! You\ncan always explore our ",

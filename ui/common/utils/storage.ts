@@ -27,7 +27,7 @@ export const STATE_STORAGE_KEY = 'fedi:state'
  */
 export function transformStateToStorage(state: CommonState): LatestStoredState {
     const transformedState: LatestStoredState = {
-        version: 32,
+        version: 33,
         onchainDepositsEnabled: state.environment.onchainDepositsEnabled,
         developerMode: state.environment.developerMode,
         stableBalanceEnabled: state.environment.stableBalanceEnabled,
@@ -59,6 +59,9 @@ export function transformStateToStorage(state: CommonState): LatestStoredState {
         previouslyAutojoinedCommunities:
             state.federation.previouslyAutojoinedCommunities,
         autojoinNoticesToDisplay: state.federation.autojoinNoticesToDisplay,
+        analyticsId: state.analytics.analyticsId,
+        hasConsentedToAnalytics: state.analytics.hasConsentedToAnalytics,
+        sessionCount: state.environment.sessionCount,
     }
 
     return transformedState
@@ -97,6 +100,7 @@ export function hasStorageStateChanged(
         ['environment', 'stableBalanceEnabled'],
         ['environment', 'showFiatTxnAmounts'],
         ['environment', 'deviceId'],
+        ['environment', 'sessionCount'],
         ['currency', 'overrideCurrency'],
         ['currency', 'customFederationCurrencies'],
         ['currency', 'prices'],
@@ -117,6 +121,8 @@ export function hasStorageStateChanged(
         ['support', 'supportPermissionGranted'],
         ['support', 'zendeskPushNotificationToken'],
         ['support', 'lastShownSurveyTimestamp'],
+        ['analytics', 'analyticsId'],
+        ['analytics', 'hasConsentedToAnalytics'],
     ]
 
     for (const keysToCheck of keysetsToCheck) {
@@ -661,7 +667,7 @@ async function migrateStoredState(
 
     if (migrationState.version === 28) {
         // eslint-disable-next-line @typescript-eslint/no-unused-vars
-        const { externalMeta, ...rest } = migrationState
+        const { externalMeta, version, ...rest } = migrationState
         migrationState = {
             ...rest,
             version: 29,
@@ -691,6 +697,16 @@ async function migrateStoredState(
             recentlyUsedFederationIds: migrationState.lastUsedFederationId
                 ? [migrationState.lastUsedFederationId]
                 : [],
+        }
+    }
+
+    if (migrationState.version === 32) {
+        migrationState = {
+            ...migrationState,
+            version: 33,
+            analyticsId: null,
+            hasConsentedToAnalytics: null,
+            sessionCount: 0,
         }
     }
 

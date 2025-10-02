@@ -145,7 +145,7 @@ const theme = createTheme({
                 paddingLeft: 10,
                 paddingRight: 10,
                 fontFamily: 'AlbertSans-Regular',
-                ...(props.day || props.outline
+                ...(props.day || props.outline || props.text
                     ? { color: theme.colors?.primary }
                     : {}),
             },
@@ -168,7 +168,7 @@ const theme = createTheme({
             },
             buttonStyle: {
                 borderRadius: 60,
-                ...(props.loading || props.outline
+                ...(props.loading || props.outline || props.text
                     ? {
                           backgroundColor: 'transparent',
                           color: theme.colors?.primary,

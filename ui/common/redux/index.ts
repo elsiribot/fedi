@@ -19,6 +19,7 @@ import {
 import { FedimintBridge } from '../utils/fedimint'
 import { makeLog } from '../utils/log'
 import { hasStorageStateChanged } from '../utils/storage'
+import { analyticsSlice } from './analytics'
 import { browserSlice } from './browser'
 import { currencySlice, refreshHistoricalCurrencyRates } from './currency'
 import { environmentSlice } from './environment'
@@ -82,6 +83,7 @@ export const commonReducers = {
     security: securitySlice.reducer,
     browser: browserSlice.reducer,
     support: supportSlice.reducer,
+    analytics: analyticsSlice.reducer,
 }
 
 type CommonReducers = typeof commonReducers

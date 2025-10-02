@@ -17,6 +17,7 @@ import {
     refreshOnboardingStatus,
     selectOnboardingCompleted,
     selectMatrixAuth,
+    setAppFlavor,
 } from '@fedi/common/redux'
 import { selectStorageIsReady } from '@fedi/common/redux/storage'
 import {
@@ -30,6 +31,7 @@ import { makeLog } from '@fedi/common/utils/log'
 import { version } from '../../package.json'
 import { useAppDispatch, useAppSelector, useDeviceQuery } from '../hooks'
 import { fedimint, initializeBridge } from '../lib/bridge'
+import { getAppFlavor } from '../lib/bridge/worker'
 import { keyframes, styled, theme } from '../styles'
 import { generateDeviceId, isNightly } from '../utils/browserInfo'
 import { isDeepLink, getDeepLinkPath } from '../utils/linking'
@@ -75,6 +77,8 @@ export const FediBridgeInitializer: React.FC<Props> = ({ children }) => {
                     .current(initializeDeviceIdWeb({ deviceId: newDeviceId }))
                     .unwrap()
                 dispatchRef.current(initializePwaVersion({ version }))
+                const appFlavor = getAppFlavor()
+                dispatchRef.current(setAppFlavor(appFlavor))
                 log.info('initializing bridge with deviceId', deviceId)
                 await initializeBridge(deviceId)
 

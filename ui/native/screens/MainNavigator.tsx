@@ -74,6 +74,7 @@ import { MSats } from '../types'
 import { MAIN_NAVIGATOR_ID, RootStackParamList } from '../types/navigation'
 import { useIsFeatureUnlocked } from '../utils/hooks/security'
 import AddFediMod from './AddFediMod'
+import AppSettings from './AppSettings'
 import AssignMultispendVoters from './AssignMultispendVoters'
 import BitcoinRequest from './BitcoinRequest'
 import BugReportSuccess from './BugReportSuccess'
@@ -1141,6 +1142,20 @@ export const MainNavigator = () => {
                                 component={PinAccess}
                                 options={() => ({
                                     header: () => <PinAccessHeader />,
+                                })}
+                            />
+                            <Stack.Screen
+                                name="AppSettings"
+                                component={AppSettings}
+                                options={() => ({
+                                    header: () => (
+                                        <CenteredHeader
+                                            backButton
+                                            title={t(
+                                                'feature.settings.app-settings',
+                                            )}
+                                        />
+                                    ),
                                 })}
                             />
                             <Stack.Screen

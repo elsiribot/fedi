@@ -12,10 +12,11 @@ import { Icon } from '../Icon'
 interface Props {
     open: boolean
     children: React.ReactElement
-    onClick(): void
+    onClick?(): void
     title?: string
     description?: string
     buttonText?: string
+    showActions?: boolean
     onOpenChange?(open: boolean): void
     showCloseButton?: boolean
 }
@@ -27,6 +28,7 @@ export const Modal: React.FC<Props> = ({
     title,
     description,
     buttonText,
+    showActions = true,
     onOpenChange,
     showCloseButton,
 }) => {
@@ -51,14 +53,16 @@ export const Modal: React.FC<Props> = ({
                         </VisuallyHidden>
 
                         <Children>{children}</Children>
-                        <Actions>
-                            <Button
-                                variant="primary"
-                                onClick={onClick}
-                                width="full">
-                                {buttonText ?? t('words.continue')}
-                            </Button>
-                        </Actions>
+                        {showActions && (
+                            <Actions>
+                                <Button
+                                    variant="primary"
+                                    onClick={onClick ?? (() => {})}
+                                    width="full">
+                                    {buttonText ?? t('words.continue')}
+                                </Button>
+                            </Actions>
+                        )}
                     </Content>
                 </Overlay>
             </RadixDialog.Portal>

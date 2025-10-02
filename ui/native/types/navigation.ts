@@ -52,6 +52,7 @@ export type TabsNavigatorParamList = {
     Federations: undefined
 }
 export type RootStackParamList = {
+    AppSettings: undefined
     AddFediMod: undefined
     BitcoinRequest: { invoice: string; federationId?: Federation['id'] }
     BugReportSuccess: undefined

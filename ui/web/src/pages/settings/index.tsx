@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next'
 import LanguageIcon from '@fedi/common/assets/svgs/language.svg'
 import NostrIcon from '@fedi/common/assets/svgs/nostr.svg'
 import NoteIcon from '@fedi/common/assets/svgs/note.svg'
+import SettingsIcon from '@fedi/common/assets/svgs/settings.svg'
 import UsdIcon from '@fedi/common/assets/svgs/usd.svg'
 import UserIcon from '@fedi/common/assets/svgs/user.svg'
 import { useLeaveCommunity, useLeaveFederation } from '@fedi/common/hooks/leave'
@@ -119,6 +120,11 @@ function AdminPage() {
                     label: t('feature.nostr.nostr-settings'),
                     icon: NostrIcon,
                     href: `/settings/nostr`,
+                },
+                {
+                    label: t('feature.settings.app-settings'),
+                    icon: SettingsIcon,
+                    href: `/settings/app`,
                 },
             ],
         },

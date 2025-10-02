@@ -14,6 +14,7 @@ import {
 import { selectVisibleCommunityMods } from '@fedi/common/redux/mod'
 import { getFederationPinnedMessage } from '@fedi/common/utils/FederationUtils'
 
+import AnalyticsConsentModal from '../components/AnalyticsConsentModal'
 import { DefaultRoomPreview } from '../components/Chat/DefaultRoomPreview'
 import { ContentBlock } from '../components/ContentBlock'
 import { DisplayNameModal } from '../components/DisplayNameModal'
@@ -171,6 +172,7 @@ function HomePage() {
             </Modal>
 
             <DisplayNameModal />
+            <AnalyticsConsentModal />
         </ContentBlock>
     )
 }

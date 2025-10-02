@@ -264,6 +264,13 @@ export interface StoredStateV32
     recentlyUsedFederationIds: Array<string>
 }
 
+export interface StoredStateV33 extends Omit<StoredStateV32, 'version'> {
+    version: 33
+    analyticsId: string | null
+    hasConsentedToAnalytics: boolean | null
+    sessionCount: number
+}
+
 /*** Union of all past shapes of stored state ***/
 export type AnyStoredState =
     | StoredStateV0
@@ -299,9 +306,10 @@ export type AnyStoredState =
     | StoredStateV30
     | StoredStateV31
     | StoredStateV32
+    | StoredStateV33
 
 /*** Alias for the latest version of stored state ***/
-export type LatestStoredState = StoredStateV32
+export type LatestStoredState = StoredStateV33
 
 export interface StorageApi {
     getItem(key: string): Promise<string | null>

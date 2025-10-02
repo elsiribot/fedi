@@ -102,6 +102,7 @@ declare module '@rneui/themed' {
         outline?: boolean
         night?: boolean
         bubble?: boolean
+        text?: boolean
     }
     export interface CardProps {
         bubble?: boolean

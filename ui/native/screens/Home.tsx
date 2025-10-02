@@ -20,6 +20,7 @@ import { getFederationPinnedMessage } from '@fedi/common/utils/FederationUtils'
 import FirstTimeCommunityEntryOverlay, {
     FirstTimeCommunityEntryItem,
 } from '../components/feature/federations/FirstTimeCommunityEntryOverlay'
+import AnalyticsConsentOverlay from '../components/feature/home/AnalyticsConsentOverlay'
 import AutojoinedCommunityNotice from '../components/feature/home/AutojoinedCommunityNotice'
 import CommunityChats from '../components/feature/home/CommunityChats'
 import DisplayNameOverlay from '../components/feature/home/DisplayNameOverlay'
@@ -154,6 +155,7 @@ const Home: React.FC<Props> = () => {
                 onDismiss={handleCommunityDismiss}
             />
             {canShowSurvey && <SurveyOverlay />}
+            <AnalyticsConsentOverlay />
         </View>
     )
 }
