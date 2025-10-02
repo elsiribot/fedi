@@ -336,28 +336,35 @@ impl FediFeeRemittanceService {
             ))
             .await;
         let remittance_threshold = fed.fedi_fee_schedule().await.remittance_threshold_msat;
-        let should_remit = match (
+        let (should_remit, accrued_fee_exceeds_threshold) = match (
             outstanding_fees.msats.cmp(&remittance_threshold),
             last_remittance_timestamp,
         ) {
-            (Ordering::Equal, _) | (Ordering::Greater, _) => true,
+            (Ordering::Equal, _) | (Ordering::Greater, _) => (true, true),
             (Ordering::Less, Some(last_timestamp))
                 if fedimint_core::time::now()
                     .duration_since(last_timestamp)
                     .unwrap_or_default()
                     > FEDI_FEE_REMITTANCE_MAX_DELAY =>
             {
-                true
+                (true, false)
             }
-            _ => false,
+            _ => (false, false),
         };
         if !should_remit {
             info!("Fedi fee remittance not initiated, threshold not met AND max delay not hit");
             return;
         }
         fed.spawn_cancellable("remit_fedi_fee", move |fed2| async move {
-            let _ =
-                Self::remit_fedi_fee(guard, &fed2, outstanding_fees, module, tx_direction).await;
+            let _ = Self::remit_fedi_fee(
+                guard,
+                &fed2,
+                outstanding_fees,
+                module,
+                tx_direction,
+                accrued_fee_exceeds_threshold,
+            )
+            .await;
         });
     }
 
@@ -370,46 +377,46 @@ impl FediFeeRemittanceService {
         outstanding_fees: Amount,
         module: ModuleKind,
         tx_direction: RpcTransactionDirection,
+        accrued_fee_exceeds_threshold: bool,
     ) -> anyhow::Result<()> {
-        info!("fedi fee threshold exceeded, remitting");
         let gateway = fed.select_gateway().await?;
-        let gateway_fees = gateway
-            .as_ref()
-            .map(|g| g.fees)
-            .unwrap_or(zero_gateway_fees());
+        let invoice_amt = if accrued_fee_exceeds_threshold {
+            let gateway_fees = gateway
+                .as_ref()
+                .map(|g| g.fees)
+                .unwrap_or(zero_gateway_fees());
 
-        // We want to ensure that any gateway fees is debited from the accrued
-        // outstanding fees. This means that the invoice amount for remitting fees will
-        // actually be less than the accrued outstanding fees.
+            // We want to ensure that any gateway fees is debited from the accrued
+            // outstanding fees. This means that the invoice amount for remitting fees will
+            // actually be less than the accrued outstanding fees.
 
-        // Let's say that the accrued oustanding fees is Q and the desired invoice
-        // amount is X. Gateway fees is made up of two components, (base) and (ppm).
-        // Therefore, the following equation must be satisfied:
-        // X + (gateway fees) = Q
-        //
-        // Expanding (gateway fees), we get:
-        // X + (base) + [(X/M)(ppm)] = Q, where M is the constant for MILLION
-        //
-        // Solving for X, we get:
-        // X[1 + (ppm)/M] = Q - base
-        //
-        // Finally:
-        // X = [(M)(Q - base)]/(M + ppm)
-        //
-        // We keep division as the very last step to ensure minimal loss in precision.
-        // We also perform regular (floor) division to ensure that the invoice is never
-        // overestimated.
-        let invoice_amt_numerator = MILLION
-            * (outstanding_fees
-                .msats
-                .checked_sub(gateway_fees.base_msat as u64)
-                .ok_or(anyhow!("Accrued fee < base gateway fees!"))?);
-        let invoice_amt_denominator = MILLION + gateway_fees.proportional_millionths as u64;
-        let invoice_amt = invoice_amt_numerator / invoice_amt_denominator;
-
-        if invoice_amt == 0 {
-            bail!("Fedi fee less gateway fee would be effectively 0");
-        }
+            // Let's say that the accrued oustanding fees is Q and the desired invoice
+            // amount is X. Gateway fees is made up of two components, (base) and (ppm).
+            // Therefore, the following equation must be satisfied:
+            // X + (gateway fees) = Q
+            //
+            // Expanding (gateway fees), we get:
+            // X + (base) + [(X/M)(ppm)] = Q, where M is the constant for MILLION
+            //
+            // Solving for X, we get:
+            // X[1 + (ppm)/M] = Q - base
+            //
+            // Finally:
+            // X = [(M)(Q - base)]/(M + ppm)
+            //
+            // We keep division as the very last step to ensure minimal loss in precision.
+            // We also perform regular (floor) division to ensure that the invoice is never
+            // overestimated.
+            let invoice_amt_numerator = MILLION
+                * (outstanding_fees
+                    .msats
+                    .checked_sub(gateway_fees.base_msat as u64)
+                    .ok_or(anyhow!("Accrued fee < base gateway fees!"))?);
+            let invoice_amt_denominator = MILLION + gateway_fees.proportional_millionths as u64;
+            invoice_amt_numerator / invoice_amt_denominator
+        } else {
+            0
+        };
 
         let invoice = fed
             .fedi_fee_helper
@@ -427,6 +434,23 @@ impl FediFeeRemittanceService {
                 }),
             )
             .await?;
+
+        let timestamp_key =
+            FediFeesRemittanceTimestampPerTXTypeKey(module.clone(), tx_direction.clone());
+
+        // We request a 0-amount invoice even if the threshold is not met to still have
+        // Fedi Gift data reporting at a reasonable cadence. However we do not
+        // try to pay that invoice. But we do set the last remittance timestamp
+        // in this case.
+        if !accrued_fee_exceeds_threshold {
+            fed.dbtx()
+                .await
+                .insert_entry(&timestamp_key, &fedimint_core::time::now())
+                .await;
+            bail!("Fedi fee less gateway fee would be effectively 0");
+        }
+
+        info!("fedi fee threshold exceeded, remitting");
 
         // If pay_bolt11_invoice() returns successfully, we optimistically zero out
         // oustanding fedi fees. This is ok since as part of pay_bolt11_invoice(), the
@@ -448,8 +472,6 @@ impl FediFeeRemittanceService {
         // We are going to optimistically update the remittance timestamp in the
         // autocommit block below, so we record the current value in case we need to
         // roll it back.
-        let timestamp_key =
-            FediFeesRemittanceTimestampPerTXTypeKey(module.clone(), tx_direction.clone());
         let old_timestamp = fed.dbtx().await.into_nc().get_value(&timestamp_key).await;
         fed.client
             .db()
