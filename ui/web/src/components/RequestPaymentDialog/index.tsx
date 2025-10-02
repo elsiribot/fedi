@@ -3,7 +3,7 @@ import { useRouter } from 'next/router'
 import { useEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 
-import BoltIcon from '@fedi/common/assets/svgs/bolt.svg'
+import ScanLightningIcon from '@fedi/common/assets/svgs/scan-lightning.svg'
 import SwitchLeftIcon from '@fedi/common/assets/svgs/switch-left.svg'
 import SwitchRightIcon from '@fedi/common/assets/svgs/switch-right.svg'
 import { useSyncCurrencyRatesAndCache } from '@fedi/common/hooks/currency'
@@ -44,8 +44,10 @@ export const RequestPaymentDialog: React.FC<Props> = ({
 
     const [isCompleted, setIsCompleted] = useState(false)
     const [requestType, setRequestType] = useState<
-        'lightning' | 'bitcoin' | 'lnurlw' | 'lnurlReceive'
+        'lightning' | 'bitcoin' | 'lnurlw'
     >('lightning')
+
+    const [showLnurlReceive, setShowLnurlReceive] = useState(false)
     const [receivedTransaction, setReceivedTransaction] =
         useState<TransactionListEntry | null>(null)
 
@@ -55,6 +57,7 @@ export const RequestPaymentDialog: React.FC<Props> = ({
         fedimint,
         federationId,
     )
+
     const { supportsLnurl } = useLnurlReceiveCode(fedimint, federationId || '')
 
     const handleSubmit = () => {
@@ -106,55 +109,52 @@ export const RequestPaymentDialog: React.FC<Props> = ({
 
     return (
         <Dialog
-            title={t('feature.receive.bitcoin-request')}
+            title={t('feature.receive.request-money')}
             titleRight={
                 supportsLnurl ? (
-                    <LnurlButton
-                        onClick={() => {
-                            setRequestType('lnurlReceive')
-                        }}>
-                        <Icon icon={BoltIcon} size="sm" />
-                        <Text weight="bold">{t('words.lnurl')}</Text>
-                    </LnurlButton>
+                    <Icon
+                        icon={ScanLightningIcon}
+                        size="sm"
+                        onClick={() => setShowLnurlReceive(!showLnurlReceive)}
+                    />
                 ) : null
             }
             open={open}
             mobileDismiss="back"
             onOpenChange={onOpenChange}>
             <Container ref={containerRef}>
-                {isOnchainSupported &&
-                    !isCompleted &&
-                    requestType !== 'lnurlReceive' && (
-                        <RequestTypeToggle
-                            onClick={() =>
-                                setRequestType(
-                                    requestType === 'lightning'
-                                        ? 'bitcoin'
-                                        : 'lightning',
-                                )
-                            }>
-                            <Text variant="caption" weight="medium">
-                                {t(
-                                    requestType === 'lightning'
-                                        ? 'words.lightning'
-                                        : 'words.onchain',
-                                )}
-                            </Text>
-                            <Icon
-                                size={20}
-                                icon={
-                                    requestType === 'lightning'
-                                        ? SwitchLeftIcon
-                                        : SwitchRightIcon
-                                }
-                            />
-                        </RequestTypeToggle>
-                    )}
+                {isOnchainSupported && !isCompleted && !showLnurlReceive && (
+                    <RequestTypeToggle
+                        onClick={() =>
+                            setRequestType(
+                                requestType === 'lightning'
+                                    ? 'bitcoin'
+                                    : 'lightning',
+                            )
+                        }>
+                        <Text variant="caption" weight="medium">
+                            {t(
+                                requestType === 'lightning'
+                                    ? 'words.lightning'
+                                    : 'words.onchain',
+                            )}
+                        </Text>
+                        <Icon
+                            size={20}
+                            icon={
+                                requestType === 'lightning'
+                                    ? SwitchLeftIcon
+                                    : SwitchRightIcon
+                            }
+                        />
+                    </RequestTypeToggle>
+                )}
 
-                {requestType === 'bitcoin' ? (
-                    <OnchainRequest
-                        address={address}
-                        onSaveNotes={onSaveNotes}
+                {showLnurlReceive ? (
+                    <LnurlReceive
+                        onSubmit={handleSubmit}
+                        onWithdrawPaid={onTransactionReceived}
+                        federationId={federationId}
                     />
                 ) : requestType === 'lightning' ? (
                     <LightningRequest
@@ -169,10 +169,9 @@ export const RequestPaymentDialog: React.FC<Props> = ({
                         lnurlw={lnurlw}
                     />
                 ) : (
-                    <LnurlReceive
-                        onSubmit={handleSubmit}
-                        onWithdrawPaid={onTransactionReceived}
-                        federationId={federationId}
+                    <OnchainRequest
+                        address={address}
+                        onSaveNotes={onSaveNotes}
                     />
                 )}
 
@@ -236,12 +235,4 @@ export const QRContainer = styled('div', {
     flexDirection: 'column',
     width: '100%',
     gap: 16,
-})
-
-const LnurlButton = styled('div', {
-    display: 'flex',
-    flexDirection: 'row',
-    alignItems: 'center',
-    color: theme.colors.orange,
-    cursor: 'pointer',
 })
