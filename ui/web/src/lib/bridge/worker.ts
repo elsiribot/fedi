@@ -179,9 +179,3 @@ export async function getBridgeLogs() {
 
     return response
 }
-
-// Expose bridge API to window for testing in development
-if (process.env.NODE_ENV === 'development' && typeof window !== 'undefined') {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    ;(window as any).fedimint = fedimint
-}
