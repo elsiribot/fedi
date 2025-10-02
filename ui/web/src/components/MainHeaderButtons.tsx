@@ -31,12 +31,12 @@ const MainHeaderButtons: React.FC<Props> = ({ onAddPress }) => {
                     <Icon icon={PlusIcon} size="sm" />
                 </BubbleButton>
             )}
-            <BubbleButton onClick={openOmniScanner}>
-                <Icon icon={ScanIcon} size="sm" />
-            </BubbleButton>
             <Link href={settingsRoute}>
                 <ProfileIcon url={matrixAuth?.avatarUrl} />
             </Link>
+            <BubbleButton onClick={openOmniScanner}>
+                <Icon icon={ScanIcon} size="sm" />
+            </BubbleButton>
         </Container>
     )
 }

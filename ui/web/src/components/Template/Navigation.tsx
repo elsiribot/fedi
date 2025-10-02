@@ -2,12 +2,13 @@ import Link from 'next/link'
 import { useRouter } from 'next/router'
 import React from 'react'
 
-import ModsIcon from '@fedi/common/assets/svgs/apps.svg'
+import AppsFilledIcon from '@fedi/common/assets/svgs/apps-filled.svg'
+import AppsIcon from '@fedi/common/assets/svgs/apps.svg'
 import ChatFilledIcon from '@fedi/common/assets/svgs/chat-filled.svg'
 import ChatIcon from '@fedi/common/assets/svgs/chat.svg'
+import CommunityIcon from '@fedi/common/assets/svgs/community.svg'
 import FediLogo from '@fedi/common/assets/svgs/fedi-logo.svg'
-import HomeFilledIcon from '@fedi/common/assets/svgs/home-filled.svg'
-import HomeIcon from '@fedi/common/assets/svgs/home.svg'
+import WalletFilledIcon from '@fedi/common/assets/svgs/wallet-filled.svg'
 import WalletIcon from '@fedi/common/assets/svgs/wallet.svg'
 import { selectMatrixHasNotifications } from '@fedi/common/redux'
 
@@ -35,8 +36,8 @@ export const Navigation: React.FC = () => {
     const navLinks = [
         {
             path: homeRoute,
-            icon: HomeIcon,
-            activeIcon: HomeFilledIcon,
+            icon: CommunityIcon,
+            activeIcon: CommunityIcon,
             available: true,
             hasNotification: false,
         },
@@ -49,15 +50,15 @@ export const Navigation: React.FC = () => {
         },
         {
             path: modsRoute,
-            icon: ModsIcon,
-            activeIcon: ModsIcon,
+            icon: AppsIcon,
+            activeIcon: AppsFilledIcon,
             available: true,
             hasNotification: false,
         },
         {
             path: federationsRoute,
             icon: WalletIcon,
-            activeIcon: WalletIcon,
+            activeIcon: WalletFilledIcon,
             available: true,
             hasNotification: false,
         },

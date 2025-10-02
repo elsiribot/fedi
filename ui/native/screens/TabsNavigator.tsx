@@ -118,7 +118,7 @@ const TabsNavigator: React.FC<Props> = ({ route }: Props) => {
                             case 'Home':
                                 return (
                                     <SvgImage
-                                        name={focused ? 'HomeFilled' : 'Home'}
+                                        name={'Community'}
                                         {...svgImageProps}
                                     />
                                 )
@@ -132,14 +132,16 @@ const TabsNavigator: React.FC<Props> = ({ route }: Props) => {
                             case 'Mods':
                                 return (
                                     <SvgImage
-                                        name={'Apps'}
+                                        name={focused ? 'AppsFilled' : 'Apps'}
                                         {...svgImageProps}
                                     />
                                 )
                             case 'Federations':
                                 return (
                                     <SvgImage
-                                        name={'Wallet'}
+                                        name={
+                                            focused ? 'WalletFilled' : 'Wallet'
+                                        }
                                         {...svgImageProps}
                                     />
                                 )

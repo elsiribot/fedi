@@ -48,6 +48,7 @@ const MainHeaderButtons: React.FC<Props> = ({ onAddPress, onSearchPress }) => {
                     svgProps={{ size: 16 }}
                 />
             )}
+            <HeaderAvatar testID="AvatarButton" onPress={openSettings} />
             <PressableIcon
                 containerStyle={style.bubbleButton}
                 onPress={openOmniScanner}
@@ -55,7 +56,6 @@ const MainHeaderButtons: React.FC<Props> = ({ onAddPress, onSearchPress }) => {
                 svgName="Scan"
                 svgProps={{ size: 16 }}
             />
-            <HeaderAvatar testID="AvatarButton" onPress={openSettings} />
         </Flex>
     )
 }
