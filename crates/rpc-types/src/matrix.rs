@@ -1,8 +1,10 @@
 use std::collections::HashMap;
+use std::str::FromStr;
 use std::sync::Arc;
 
 use anyhow::{Context, Result};
 use fedimint_core::encoding::{Decodable, Encodable};
+use fedimint_core::invite_code::InviteCode;
 use matrix_sdk::event_cache::RoomPaginationStatus;
 use matrix_sdk::notification_settings::RoomNotificationMode;
 use matrix_sdk::room::RoomMember;
@@ -1022,18 +1024,6 @@ pub enum RpcMatrixPaymentStatus {
     Received,
 }
 
-/// Validates that `text` is a federation invite code without additional
-/// content.
-fn extract_invite_code(text: &str) -> Option<String> {
-    if text.is_empty() {
-        return None;
-    }
-
-    let normalized = text.trim().to_ascii_lowercase();
-    (normalized.starts_with("fed1")).then(|| text.to_owned())
-    // TODO: actually parse invite code here.
-}
-
 #[derive(Clone, Debug, Serialize, Deserialize, TS)]
 #[serde(rename_all = "camelCase")]
 #[ts(export)]
@@ -1183,14 +1173,13 @@ impl From<&RumaMessageType> for RpcMsgLikeKind {
         }
 
         match value {
-            RumaMessageType::Text(content) => {
-                let text_content = RpcTextLikeContent::from(content);
-                if extract_invite_code(&text_content.body).is_some() {
-                    RpcMsgLikeKind::FederationInvite(text_content)
-                } else {
-                    RpcMsgLikeKind::Text(text_content)
-                }
+            RumaMessageType::Text(content)
+                if content.body.starts_with("fed1")
+                    && InviteCode::from_str(&content.body).is_ok() =>
+            {
+                RpcMsgLikeKind::FederationInvite(content.into())
             }
+            RumaMessageType::Text(content) => RpcMsgLikeKind::Text(content.into()),
             RumaMessageType::Notice(content) => {
                 RpcMsgLikeKind::Notice(RpcTextLikeContent::from(content))
             }
@@ -1213,9 +1202,6 @@ impl From<&RumaMessageType> for RpcMsgLikeKind {
             | RumaMessageType::ServerNotice(_)
             | RumaMessageType::VerificationRequest(_) => RpcMsgLikeKind::Unknown,
             msg => match msg.msgtype() {
-                "xyz.fedi.federationInvite" => {
-                    parse_custom_msg(msg, RpcMsgLikeKind::FederationInvite)
-                }
                 "xyz.fedi.multispend" => parse_custom_msg(msg, RpcMsgLikeKind::Multispend),
                 "xyz.fedi.form" => parse_custom_msg(msg, RpcMsgLikeKind::Form),
                 "xyz.fedi.payment" => parse_custom_msg(msg, RpcMsgLikeKind::Payment),
