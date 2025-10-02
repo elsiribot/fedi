@@ -313,10 +313,11 @@ export function useFederationPreview(
 
     const handleCode = useCallback(
         async (code: string, onSuccess?: () => void) => {
-            const codeType = detectInviteCodeType(code)
-            setPreviewCodeType(codeType)
-            setIsFetchingPreview(true)
             try {
+                setIsFetchingPreview(true)
+                const codeType = detectInviteCodeType(code)
+                setPreviewCodeType(codeType)
+
                 if (codeType === 'federation') {
                     const federationPreviewResult = await getFederationPreview(
                         code,
@@ -354,8 +355,9 @@ export function useFederationPreview(
             } catch (err) {
                 log.error('handleCode', err)
                 toast.error(t, err, 'errors.invalid-federation-code')
+            } finally {
+                setIsFetchingPreview(false)
             }
-            setIsFetchingPreview(false)
         },
         [fedimint, federationIds, communityIds, dispatch, toast, t],
     )
