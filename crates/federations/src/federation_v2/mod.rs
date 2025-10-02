@@ -179,6 +179,7 @@ mod spv2_sweeper_service;
 mod stability_pool_sweeper_service;
 
 pub const GUARDIAN_STATUS_TIMEOUT: Duration = Duration::from_secs(10);
+pub const GUARDIAN_STATUS_CACHE_TTL_SECS: u64 = 30;
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct FediConfig {
@@ -242,6 +243,10 @@ pub struct FederationV2 {
     // Used to ensure that multiple calls to list_transactions doesn't trigger multiple
     // subscriptions for the same operation.
     pub lnurl_subbed_op_ids: Mutex<HashSet<OperationId>>,
+    /// Cache for guardian status to prevent spamming servers
+    #[allow(clippy::type_complexity)]
+    pub guardian_status_cache:
+        Mutex<Option<(std::time::SystemTime, Result<Vec<GuardianStatus>, String>)>>,
 }
 
 /// Info about a federation fetching during preview. it is used during joining
@@ -302,6 +307,7 @@ impl FederationV2 {
             spv2_history_service: Default::default(),
             spv2_sweeper_service: Default::default(),
             lnurl_subbed_op_ids: Default::default(),
+            guardian_status_cache: Mutex::new(None),
         });
         if !recovering {
             federation.start_background_tasks().await;
@@ -753,7 +759,7 @@ impl FederationV2 {
         raw_fedimint_balance.saturating_sub(fedi_fee_sum)
     }
 
-    pub async fn guardian_status(&self) -> anyhow::Result<Vec<GuardianStatus>> {
+    pub async fn guardian_status_no_cache(&self) -> anyhow::Result<Vec<GuardianStatus>> {
         let futures =
             self.client
                 .get_peer_urls()
@@ -804,6 +810,40 @@ impl FederationV2 {
                 });
         let guardians_status = futures::future::join_all(futures).await;
         Ok(guardians_status)
+    }
+
+    pub async fn guardian_status(&self) -> anyhow::Result<Vec<GuardianStatus>> {
+        let now = fedimint_core::time::now();
+
+        // Check if we have a valid cached result
+        {
+            let cache = self.guardian_status_cache.lock().await;
+            if let Some((cached_time, cached_result)) = &*cache {
+                let age = now.duration_since(*cached_time).unwrap_or_default();
+                if age.as_secs() < GUARDIAN_STATUS_CACHE_TTL_SECS {
+                    // Return cached result (clone the error or success)
+                    return match cached_result {
+                        Ok(status) => Ok(status.clone()),
+                        Err(e) => Err(anyhow::anyhow!("{}", e)),
+                    };
+                }
+            }
+        }
+
+        // Cache is expired or doesn't exist, fetch new result
+        let result = self.guardian_status_no_cache().await;
+
+        // Cache the result (both success and error cases)
+        {
+            let mut cache = self.guardian_status_cache.lock().await;
+            let cached_result = match &result {
+                Ok(status) => Ok(status.clone()),
+                Err(e) => Err(e.to_string()),
+            };
+            *cache = Some((now, cached_result));
+        }
+
+        result
     }
 
     pub async fn get_outstanding_fedi_fees(&self) -> Amount {

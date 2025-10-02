@@ -186,7 +186,7 @@ pub struct RpcCommunity {
     pub meta: BTreeMap<String, String>,
 }
 
-#[derive(Debug, Serialize, Deserialize, TS)]
+#[derive(Debug, Clone, Serialize, Deserialize, TS)]
 #[serde(rename_all = "camelCase")]
 #[ts(export)]
 pub enum GuardianStatus {
