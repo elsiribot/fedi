@@ -1,5 +1,5 @@
 import { Theme, useTheme } from '@rneui/themed'
-import React from 'react'
+import React, { useState } from 'react'
 import { ActivityIndicator, Image, StyleSheet, View } from 'react-native'
 
 import { LoadedFederation } from '@fedi/common/types'
@@ -22,6 +22,7 @@ export const FederationLogo: React.FC<Props> = ({
     shape = 'square',
 }) => {
     const { theme } = useTheme()
+    const [showFallback, setShowFallback] = useState(false)
 
     const iconUrl = federation?.meta
         ? getFederationIconUrl(federation?.meta)
@@ -35,7 +36,7 @@ export const FederationLogo: React.FC<Props> = ({
     const shapeStyle =
         shape === 'circle' ? style.shapeCircle : style.shapeSquare
 
-    if (!iconUrl) {
+    if (!iconUrl || showFallback) {
         return (
             <View>
                 <SvgImage
@@ -70,6 +71,9 @@ export const FederationLogo: React.FC<Props> = ({
                     <Image
                         style={[style.iconImage, svgProps, shapeStyle]}
                         source={{ uri: iconUrl }}
+                        onError={() => {
+                            setShowFallback(true)
+                        }}
                         resizeMode="cover"
                     />
                 )}

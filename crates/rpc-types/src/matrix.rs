@@ -1022,6 +1022,18 @@ pub enum RpcMatrixPaymentStatus {
     Received,
 }
 
+/// Validates that `text` is a federation invite code without additional
+/// content.
+fn extract_invite_code(text: &str) -> Option<String> {
+    if text.is_empty() {
+        return None;
+    }
+
+    let normalized = text.trim().to_ascii_lowercase();
+    (normalized.starts_with("fed1")).then(|| text.to_owned())
+    // TODO: actually parse invite code here.
+}
+
 #[derive(Clone, Debug, Serialize, Deserialize, TS)]
 #[serde(rename_all = "camelCase")]
 #[ts(export)]
@@ -1124,6 +1136,8 @@ pub enum RpcMsgLikeKind {
     Notice(RpcTextLikeContent),
     #[serde(rename = "m.emote")]
     Emote(RpcTextLikeContent),
+    #[serde(rename = "xyz.fedi.federationInvite")]
+    FederationInvite(RpcTextLikeContent),
     #[serde(rename = "m.file")]
     File(RpcFileMessageContent),
     #[serde(rename = "m.image")]
@@ -1170,7 +1184,12 @@ impl From<&RumaMessageType> for RpcMsgLikeKind {
 
         match value {
             RumaMessageType::Text(content) => {
-                RpcMsgLikeKind::Text(RpcTextLikeContent::from(content))
+                let text_content = RpcTextLikeContent::from(content);
+                if extract_invite_code(&text_content.body).is_some() {
+                    RpcMsgLikeKind::FederationInvite(text_content)
+                } else {
+                    RpcMsgLikeKind::Text(text_content)
+                }
             }
             RumaMessageType::Notice(content) => {
                 RpcMsgLikeKind::Notice(RpcTextLikeContent::from(content))
@@ -1194,6 +1213,9 @@ impl From<&RumaMessageType> for RpcMsgLikeKind {
             | RumaMessageType::ServerNotice(_)
             | RumaMessageType::VerificationRequest(_) => RpcMsgLikeKind::Unknown,
             msg => match msg.msgtype() {
+                "xyz.fedi.federationInvite" => {
+                    parse_custom_msg(msg, RpcMsgLikeKind::FederationInvite)
+                }
                 "xyz.fedi.multispend" => parse_custom_msg(msg, RpcMsgLikeKind::Multispend),
                 "xyz.fedi.form" => parse_custom_msg(msg, RpcMsgLikeKind::Form),
                 "xyz.fedi.payment" => parse_custom_msg(msg, RpcMsgLikeKind::Payment),

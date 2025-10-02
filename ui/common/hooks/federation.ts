@@ -1,5 +1,5 @@
 import { TFunction } from 'i18next'
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 
 import { makeLog } from '@fedi/common/utils/log'
 
@@ -23,6 +23,7 @@ import {
     refreshCommunities,
     checkFederationForAutojoinCommunities,
     refreshFederations,
+    checkFederationPreview,
 } from '../redux'
 import {
     CommunityPreview,
@@ -523,5 +524,55 @@ export function useFederationRating(fedimint: FedimintBridge) {
         federationToRate,
         handleSubmitRating,
         handleDismissRating,
+    }
+}
+
+export function useFederationInviteCode(
+    fedimint: FedimintBridge,
+    inviteCode: string,
+) {
+    const dispatch = useCommonDispatch()
+    const [isJoining, setIsJoining] = useState(false)
+    const [isChecking, setIsChecking] = useState(false)
+    const [isError, setIsError] = useState(false)
+    const checkedRef = useRef(false)
+    const [previewResult, setPreviewResult] = useState<{
+        preview: RpcFederationPreview
+        isMember: boolean
+    } | null>(null)
+
+    const handleJoin = useCallback(async () => {
+        setIsJoining(true)
+        try {
+            await dispatch(
+                joinFederation({
+                    fedimint,
+                    code: inviteCode,
+                }),
+            ).unwrap()
+        } catch (e) {
+            log.error('Error joining federation', e)
+        } finally {
+            setIsJoining(false)
+        }
+    }, [dispatch, fedimint, inviteCode])
+
+    useEffect(() => {
+        if (checkedRef.current) return
+        checkedRef.current = true
+        setIsChecking(true)
+        dispatch(checkFederationPreview({ inviteCode, fedimint }))
+            .unwrap()
+            .then(result => setPreviewResult(result))
+            .catch(() => setIsError(true))
+            .finally(() => setIsChecking(false))
+    }, [inviteCode, dispatch, fedimint])
+
+    return {
+        isJoining,
+        isChecking,
+        isError,
+        previewResult,
+        handleJoin,
     }
 }

@@ -30,6 +30,7 @@ import {
 } from '../types'
 import {
     RpcFederationId,
+    RpcFederationPreview,
     RpcLightningGateway,
     RpcStabilityPoolConfig,
 } from '../types/bindings'
@@ -50,6 +51,8 @@ import {
     coerceCommunity,
     shouldShowSocialRecovery,
     getAutojoinCommunities,
+    getFederationPreview,
+    getPreviewFromLoadedFederation,
 } from '../utils/FederationUtils'
 import type { FedimintBridge } from '../utils/fedimint'
 import { makeLog } from '../utils/log'
@@ -712,6 +715,30 @@ export const processFederationMeta = createAsyncThunk<
     },
 )
 
+// checks if we already have a preview for a federation and if we are a member.
+// if we don't have a preview, we fetch it.
+export const checkFederationPreview = createAsyncThunk<
+    { preview: RpcFederationPreview; isMember: boolean },
+    { fedimint: FedimintBridge; inviteCode: string },
+    { state: CommonState }
+>(
+    'federation/getFederationPreview',
+    async ({ fedimint, inviteCode }, { getState }) => {
+        const joinedFederation = selectLoadedFederationByInviteCode(
+            getState(),
+            inviteCode,
+        )
+        if (joinedFederation) {
+            return {
+                preview: getPreviewFromLoadedFederation(joinedFederation),
+                isMember: true,
+            }
+        }
+        const preview = await getFederationPreview(inviteCode, fedimint)
+        return { preview, isMember: false }
+    },
+)
+
 // this checks all meta in joined federations for communities that should be autojoined
 // and then sets the community as last selected to bring more attention
 // to the user that autojoin happened in the background
@@ -1159,6 +1186,11 @@ export const selectFederation = (s: CommonState, id: string) =>
 
 export const selectLoadedFederation = (s: CommonState, id: string) =>
     selectLoadedFederations(s).find(f => f.id === id)
+
+export const selectLoadedFederationByInviteCode = (
+    s: CommonState,
+    inviteCode: string,
+) => selectLoadedFederations(s).find(f => f.inviteCode === inviteCode)
 
 export const selectLastUsedFederation = createSelector(
     selectLoadedFederations,

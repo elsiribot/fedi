@@ -178,6 +178,7 @@
         "copied-to-clipboard": "Copied to clipboard",
         "copied-transaction-id": "Copied transaction ID",
         "copy-text": "Copy text",
+        "copy-invite-code": "Copy invite",
         "create-my-community": "Create my community",
         "create-my-federation": "Create my federation",
         "display-currency": "Display currency",
@@ -256,6 +257,7 @@
         "yes-block": "Yes, Block",
         "yes-unblock": "Yes, Unblock",
         "you-are-offline": "You are currently in offline mode",
+        "you-are-a-member": "You are a member of {{federationName}}",
         "your-username": "Your username",
         "youre-offline": "You're offline"
     },
@@ -573,6 +575,7 @@
             "how-was-your-experience-with": "How was your experience with {{federation}}?",
             "join-a-federation": "Join a Federation",
             "join-federation-guidance": "Join your favorite federation to access money and more",
+            "federation-joined": "Federation Joined",
             "or-visit-awesome-fedimint": "or Visit Awesome Fedimint"
         },
         "federations": {

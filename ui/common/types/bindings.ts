@@ -893,6 +893,7 @@ export type RpcMsgLikeKind =
   | ({ msgtype: "m.video" } & RpcVideoMessageContent)
   | ({ msgtype: "m.audio" } & RpcAudioMessageContent)
   | ({ msgtype: "m.poll" } & RpcPollResult)
+  | ({ msgtype: "xyz.fedi.federationInvite" } & RpcTextLikeContent)
   | ({ msgtype: "xyz.fedi.payment" } & RpcPaymentMessageContent)
   | ({ msgtype: "xyz.fedi.form" } & RpcFormMessageContent)
   | ({ msgtype: "xyz.fedi.multispend" } & MultispendEvent)

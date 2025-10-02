@@ -577,6 +577,12 @@ export function isPollEvent(
     return event.content.msgtype === 'm.poll'
 }
 
+export function isFederationInviteEvent(
+    event: MatrixEvent,
+): event is MatrixEvent<'xyz.fedi.federationInvite'> {
+    return event.content.msgtype === 'xyz.fedi.federationInvite'
+}
+
 export function isMultispendEvent(
     event: MatrixEvent,
 ): event is MatrixEvent<'xyz.fedi.multispend'> {

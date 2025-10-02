@@ -12,6 +12,7 @@ import {
     isDeletedEvent,
     isEncryptedEvent,
     isFileEvent,
+    isFederationInviteEvent,
     isFormEvent,
     isImageEvent,
     isMultispendEvent,
@@ -29,6 +30,7 @@ import ChatBolt11PaymentEvent from './ChatBolt11PaymentEvent'
 import ChatDeletedEvent from './ChatDeletedEvent'
 import ChatEmbeddedLinkPreview from './ChatEmbeddedLinkPreview'
 import ChatEncryptedEvent from './ChatEncryptedEvent'
+import ChatFederationInviteEvent from './ChatFederationInviteEvent'
 import ChatFileEvent from './ChatFileEvent'
 import ChatFormEvent from './ChatFormEvent'
 import ChatImageEvent from './ChatImageEvent'
@@ -149,6 +151,8 @@ const ChatEvent: React.FC<Props> = ({
                                 <ChatPreviewMediaEvent event={event} />
                             ) : isPollEvent(event) ? (
                                 <ChatPollEvent event={event} />
+                            ) : isFederationInviteEvent(event) ? (
+                                <ChatFederationInviteEvent event={event} />
                             ) : isMultispendEvent(event) ? (
                                 <ChatMultispendEvent event={event} />
                             ) : null}

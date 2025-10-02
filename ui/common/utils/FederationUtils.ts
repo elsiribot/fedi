@@ -608,3 +608,13 @@ export const getGatewaysList = async (
 ): Promise<LightningGateway[]> => {
     return fedimint.listGateways(federationId)
 }
+
+export const getPreviewFromLoadedFederation = (
+    federation: LoadedFederation,
+): RpcFederationPreview => {
+    return {
+        ...federation,
+        name: federation.name,
+        returningMemberStatus: { type: 'returningMember' },
+    }
+}

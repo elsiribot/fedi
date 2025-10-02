@@ -111,6 +111,7 @@ export const RpcMatrixEventKinds = [
     'xyz.fedi.payment',
     'xyz.fedi.form',
     'xyz.fedi.multispend',
+    'xyz.fedi.federationInvite',
     'm.poll',
     // 'm.room.encrypted',
     // 'xyz.fedi.deleted',
@@ -199,6 +200,8 @@ export type MatrixFormEventContent = MatrixEvent<'xyz.fedi.form'>['content']
 
 export type MatrixFormEvent = MatrixEvent<'xyz.fedi.form'>
 export type MatrixPaymentEvent = MatrixEvent<'xyz.fedi.payment'>
+export type MatrixFederationInviteEvent =
+    MatrixEvent<'xyz.fedi.federationInvite'>
 
 export type StateEvent = {
     content: JSONObject
@@ -290,6 +293,7 @@ export const SelectableEventKinds = [
     'm.emote',
     'm.poll',
     'xyz.fedi.payment',
+    'xyz.fedi.federationInvite',
 ] as const satisfies MatrixEventKind[]
 export type SelectableMessageKind = (typeof SelectableEventKinds)[number]
 
