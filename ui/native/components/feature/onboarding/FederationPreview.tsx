@@ -14,12 +14,11 @@ import {
 } from '@fedi/common/utils/FederationUtils'
 
 import Flex from '../../ui/Flex'
-import RotatingSvg from '../../ui/RotatingSvg'
 import { SafeAreaContainer } from '../../ui/SafeArea'
 import ShadowScrollView from '../../ui/ShadowScrollView'
-import { SvgImageSize } from '../../ui/SvgImage'
 import EndedFederationPreview from '../federations/EndedPreview'
 import { FederationLogo } from '../federations/FederationLogo'
+import { HelpTextLoadingAnimation } from './HelpTextLoadingAnimation'
 
 type Props = {
     federation: RpcFederationPreview
@@ -59,11 +58,7 @@ const FederationPreview: React.FC<Props> = ({
     if (isJoining) {
         return (
             <Flex grow center style={s.loadingContainer}>
-                <RotatingSvg
-                    name="FediLogoIcon"
-                    size={SvgImageSize.md}
-                    containerStyle={s.loadingIcon}
-                />
+                <HelpTextLoadingAnimation />
             </Flex>
         )
     }
@@ -214,8 +209,15 @@ const styles = (theme: Theme) =>
             paddingHorizontal: theme.spacing.lg,
             paddingTop: 3,
             paddingBottom: 3,
+            transform: [{ scale: 2 }],
         },
-        loadingIcon: { marginBottom: theme.spacing.md },
+        loadingAnimationContainer: {
+            marginBottom: theme.spacing.md,
+            width: 200,
+            height: 200,
+            alignItems: 'center',
+            justifyContent: 'center',
+        },
         container: { flex: 1, padding: theme.spacing.xl },
         joinPreviewContainer: {
             gap: theme.spacing.lg,
@@ -250,40 +252,10 @@ const styles = (theme: Theme) =>
             letterSpacing: -0.16,
             textAlign: 'left',
         },
-        unsupportedContainer: {
-            maxWidth: 280,
-            paddingTop: theme.spacing.xl,
-        },
-        unsupportedBadge: {
-            paddingHorizontal: theme.spacing.sm,
-            paddingVertical: theme.spacing.xxs,
-            borderRadius: 30,
-            backgroundColor: theme.colors.red,
-        },
-        unsupportedBadgeLabel: { color: theme.colors.white },
         switchWrapper: {
             padding: theme.spacing.lg,
             borderRadius: 12,
             backgroundColor: theme.colors.offWhite,
-        },
-        scrollTopShadow: {
-            top: 0,
-        },
-        scrollBottomShadow: {
-            bottom: 0,
-        },
-        scrollInsetShadow: {
-            position: 'absolute',
-            height: 40,
-            left: 0,
-            right: 0,
-            backgroundColor: 'transparent',
-        },
-        federationInfoContainer: {
-            position: 'relative',
-        },
-        federationInfoScrollView: {
-            paddingVertical: theme.spacing.xl,
         },
     })
 

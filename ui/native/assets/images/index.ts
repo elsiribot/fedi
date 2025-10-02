@@ -51,3 +51,10 @@ export const FediModImages: ImagesMap = {
     wavlake: require('@fedi/common/assets/images/fedimods/wavlake.png'),
     support: require('@fedi/common/assets/images/fedimods/support.png'),
 }
+
+export const FediLoaders: ImageSourcePropType[] = [
+    require('./loader/Fedi-Loading1.gif'),
+    require('./loader/Fedi-Loading2.gif'),
+    require('./loader/Fedi-Loading3.gif'),
+    require('./loader/Fedi-Loading4.gif'),
+]

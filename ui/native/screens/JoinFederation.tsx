@@ -1,8 +1,9 @@
 import { useIsFocused } from '@react-navigation/native'
 import type { NativeStackScreenProps } from '@react-navigation/native-stack'
+import { Theme, useTheme } from '@rneui/themed'
 import React, { useCallback, useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
-import { ActivityIndicator, StyleSheet, View } from 'react-native'
+import { StyleSheet, View } from 'react-native'
 
 import {
     useFederationPreview,
@@ -18,7 +19,9 @@ import {
 } from '../components/feature/omni/OmniInput'
 import CommunityPreview from '../components/feature/onboarding/CommunityPreview'
 import FederationPreview from '../components/feature/onboarding/FederationPreview'
+import { HelpTextLoadingAnimation } from '../components/feature/onboarding/HelpTextLoadingAnimation'
 import { CameraPermissionGate } from '../components/feature/permissions/CameraPermissionGate'
+import Flex from '../components/ui/Flex'
 import { useAppSelector } from '../state/hooks'
 import { ParserDataType } from '../types'
 import type { RootStackParamList } from '../types/navigation'
@@ -28,6 +31,7 @@ const log = makeLog('JoinFederation')
 
 const JoinFederation: React.FC<Props> = ({ navigation, route }: Props) => {
     const { t } = useTranslation()
+    const { theme } = useTheme()
     const invite = route?.params?.invite
     const isFocused = useIsFocused()
     const hasMatrixAuth = useAppSelector(s => !!selectMatrixAuth(s))
@@ -77,9 +81,15 @@ const JoinFederation: React.FC<Props> = ({ navigation, route }: Props) => {
         goToNextScreen,
     ])
 
+    const style = styles(theme)
+
     const renderQrCodeScanner = () => {
         if (isJoining || isFetchingPreview) {
-            return <ActivityIndicator />
+            return (
+                <Flex grow center style={style.loadingContainer}>
+                    <HelpTextLoadingAnimation />
+                </Flex>
+            )
         } else {
             const customActions: OmniInputAction[] =
                 publicFederations.length > 0
@@ -158,15 +168,21 @@ const JoinFederation: React.FC<Props> = ({ navigation, route }: Props) => {
         )
     }
 
-    return <View style={styles().container}>{renderQrCodeScanner()}</View>
+    return <View style={style.container}>{renderQrCodeScanner()}</View>
 }
 
-const styles = () =>
+const styles = (theme: Theme) =>
     StyleSheet.create({
         container: {
             flex: 1,
             alignItems: 'center',
             justifyContent: 'center',
+        },
+        loadingContainer: {
+            paddingHorizontal: theme.spacing.lg,
+            paddingTop: 3,
+            paddingBottom: 3,
+            transform: [{ scale: 2 }],
         },
     })
 
