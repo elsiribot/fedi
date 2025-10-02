@@ -10,13 +10,17 @@ import {
     ignoreUser,
     kickUser,
     selectMatrixAuth,
+    selectMatrixRoomMultispendStatus,
     selectMatrixRoomSelfPowerLevel,
     setMatrixRoomMemberPowerLevel,
     unignoreUser,
 } from '@fedi/common/redux'
 import { MatrixPowerLevel, MatrixRoomMember } from '@fedi/common/types'
 import { makeLog } from '@fedi/common/utils/log'
-import { matrixIdToUsername } from '@fedi/common/utils/matrix'
+import {
+    getMultispendRole,
+    matrixIdToUsername,
+} from '@fedi/common/utils/matrix'
 import SvgImage, { SvgImageName } from '@fedi/native/components/ui/SvgImage'
 import { useAppDispatch, useAppSelector } from '@fedi/native/state/hooks'
 
@@ -60,6 +64,9 @@ const ChatUserActions: React.FC<Props> = ({
     const myPowerLevel = useAppSelector(s =>
         selectMatrixRoomSelfPowerLevel(s, roomId),
     )
+    const multispendStatus = useAppSelector(s =>
+        selectMatrixRoomMultispendStatus(s, roomId),
+    )
     const navigation = useNavigation()
     const dispatch = useAppDispatch()
     const { error, show } = useToast()
@@ -67,6 +74,10 @@ const ChatUserActions: React.FC<Props> = ({
 
     const [isConfirmingBlock, setIsConfirmingBlock] = useState(false)
     const [isBlockingUser, setIsBlockingUser] = useState(false)
+
+    const isMultispendVoter = multispendStatus
+        ? getMultispendRole(multispendStatus, member.id) === 'voter'
+        : false
 
     const handleBlockUser = useCallback(async () => {
         setIsBlockingUser(true)
@@ -339,30 +350,31 @@ const ChatUserActions: React.FC<Props> = ({
                     ))}
                 </Flex>
             )}
-            {/* Only show roles if the user is an admin */}
-            {myPowerLevel >= MatrixPowerLevel.Moderator && (
-                <Flex align="start">
-                    <Text caption style={style.sectionTitle}>
-                        {t('phrases.moderation-tools')}
-                    </Text>
-                    {moderationActions.map(action => (
-                        <ChatAction
-                            key={action.id}
-                            leftIcon={
-                                <SvgImage
-                                    name={action.icon}
-                                    color={theme.colors.red}
-                                />
-                            }
-                            label={action.label}
-                            labelColor={theme.colors.red}
-                            onPress={() => action.onPress()}
-                            disabled={getRoleDisabled(member)}
-                            isLoading={loadingAction === action.id}
-                        />
-                    ))}
-                </Flex>
-            )}
+            {/* Only show roles if the user is an admin and if the selected member is not a multispend voter in the current room */}
+            {myPowerLevel >= MatrixPowerLevel.Moderator &&
+                !isMultispendVoter && (
+                    <Flex align="start">
+                        <Text caption style={style.sectionTitle}>
+                            {t('phrases.moderation-tools')}
+                        </Text>
+                        {moderationActions.map(action => (
+                            <ChatAction
+                                key={action.id}
+                                leftIcon={
+                                    <SvgImage
+                                        name={action.icon}
+                                        color={theme.colors.red}
+                                    />
+                                }
+                                label={action.label}
+                                labelColor={theme.colors.red}
+                                onPress={() => action.onPress()}
+                                disabled={getRoleDisabled(member)}
+                                isLoading={loadingAction === action.id}
+                            />
+                        ))}
+                    </Flex>
+                )}
             <ConfirmBlockOverlay
                 show={isConfirmingBlock}
                 confirming={isBlockingUser}
