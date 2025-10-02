@@ -754,71 +754,54 @@ impl FederationV2 {
     }
 
     pub async fn guardian_status(&self) -> anyhow::Result<Vec<GuardianStatus>> {
-        let api_secret = self.client.api_secret();
-        let peer_clients: Vec<_> = self
-            .client
-            .get_peer_urls()
-            .await
-            .iter() // use iter() instead of into_iter()
-            .map(|(&peer_id, endpoint)| {
-                (
-                    peer_id,
-                    DynGlobalApi::from_endpoints(vec![(peer_id, endpoint.clone())], api_secret),
-                )
-            })
-            .collect();
-
-        let futures = peer_clients
-            .into_iter()
-            .map(|(guardian, client)| async move {
-                let client = match client.await {
-                    Ok(client) => client,
-                    Err(e) => {
-                        return GuardianStatus::Error {
-                            guardian: guardian.to_string(),
-                            error: e.to_string(),
-                        };
-                    }
-                };
-                let start = fedimint_core::time::now();
-                match timeout(
-                    GUARDIAN_STATUS_TIMEOUT,
-                    client.request_current_consensus::<StatusResponse>(
-                        "status".into(),
-                        ApiRequestErased::default(),
-                    ),
-                )
+        let futures =
+            self.client
+                .get_peer_urls()
                 .await
-                {
-                    Ok(Ok(status_response)) => {
-                        // Ensure you log before the match, to capture even partial responses
-                        info!("Raw status response: {:?}", status_response);
-                        GuardianStatus::Online {
-                            guardian: guardian.to_string(),
-                            latency_ms: fedimint_core::time::now()
-                                .duration_since(start)
-                                .unwrap_or_default()
-                                .as_millis()
-                                .try_into()
-                                .unwrap_or(u32::MAX),
+                .into_iter()
+                .map(|(peer_id, guardian)| async move {
+                    let start = fedimint_core::time::now();
+                    match timeout(
+                        GUARDIAN_STATUS_TIMEOUT,
+                        self.client
+                            .api()
+                            .request_single_peer_federation::<StatusResponse>(
+                                "status".into(),
+                                ApiRequestErased::default(),
+                                peer_id,
+                            ),
+                    )
+                    .await
+                    {
+                        Ok(Ok(status_response)) => {
+                            // Ensure you log before the match, to capture even partial responses
+                            info!("Raw status response: {:?}", status_response);
+                            GuardianStatus::Online {
+                                guardian: guardian.to_string(),
+                                latency_ms: fedimint_core::time::now()
+                                    .duration_since(start)
+                                    .unwrap_or_default()
+                                    .as_millis()
+                                    .try_into()
+                                    .unwrap_or(u32::MAX),
+                            }
+                        }
+                        Ok(Err(error)) => {
+                            info!("Error response: {:?}", error);
+                            GuardianStatus::Error {
+                                guardian: guardian.to_string(),
+                                error: error.to_string(),
+                            }
+                        }
+                        Err(elapsed) => {
+                            info!("Timeout elapsed: {:?}", elapsed);
+                            GuardianStatus::Timeout {
+                                guardian: guardian.to_string(),
+                                elapsed: elapsed.to_string(),
+                            }
                         }
                     }
-                    Ok(Err(error)) => {
-                        info!("Error response: {:?}", error);
-                        GuardianStatus::Error {
-                            guardian: guardian.to_string(),
-                            error: error.to_string(),
-                        }
-                    }
-                    Err(elapsed) => {
-                        info!("Timeout elapsed: {:?}", elapsed);
-                        GuardianStatus::Timeout {
-                            guardian: guardian.to_string(),
-                            elapsed: elapsed.to_string(),
-                        }
-                    }
-                }
-            });
+                });
         let guardians_status = futures::future::join_all(futures).await;
         Ok(guardians_status)
     }
