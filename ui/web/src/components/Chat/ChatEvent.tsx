@@ -131,7 +131,7 @@ const AttachmentContent = styled('div', {
 
 const TextContent = styled('div', {
     background: theme.colors.blue,
-    borderRadius: theme.sizes.xxs,
+    borderRadius: theme.spacing.md,
     color: theme.colors.white,
     fontSize: theme.fontSizes.caption,
     fontWeight: theme.fontWeights.medium,
@@ -192,6 +192,23 @@ const TextContent = styled('div', {
             css: {
                 background: theme.colors.extraLightGrey,
                 color: theme.colors.darkGrey,
+            },
+        },
+        // Apply speech bubble style to text messages only
+        {
+            isMe: true,
+            isPayment: false,
+            isForm: false,
+            css: {
+                borderBottomRightRadius: theme.spacing.xs,
+            },
+        },
+        {
+            isMe: false,
+            isPayment: false,
+            isForm: false,
+            css: {
+                borderBottomLeftRadius: theme.spacing.xs,
             },
         },
     ],
