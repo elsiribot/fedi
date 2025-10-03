@@ -1,4 +1,4 @@
-import type { TFunction } from 'i18next'
+import type { ResourceKey, TFunction } from 'i18next'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 
 import {
@@ -41,6 +41,7 @@ import {
     selectRoomTextEvents,
     selectMatrixRoomMembers,
     setChatTimelineSearchQuery,
+    selectChatDrafts,
 } from '../redux'
 import {
     MatrixFormEvent,
@@ -49,6 +50,7 @@ import {
     MatrixRoomMember,
     MatrixUser,
     MentionSelect,
+    MSats,
     SendableMatrixEvent,
 } from '../types'
 import {
@@ -57,6 +59,7 @@ import {
     RpcOperationId,
     RpcTransaction,
 } from '../types/bindings'
+import amountUtils from '../utils/AmountUtils'
 import { formatErrorMessage } from '../utils/format'
 import { makeLog } from '../utils/log'
 import {
@@ -70,6 +73,7 @@ import {
     getLocalizedTextWithFallback,
     stripReplyFromBody,
     isTextEvent,
+    shouldShowUnreadIndicator,
 } from '../utils/matrix'
 import { useAmountFormatter } from './amount'
 import { useFedimint } from './fedimint'
@@ -1251,5 +1255,86 @@ export function useMentionInput(
         detectMentionTrigger,
         insertMention,
         clearMentions,
+    }
+}
+
+export function useMatrixRoomPreview({
+    roomId,
+    t,
+}: {
+    roomId: string
+    t: TFunction
+}) {
+    const room = useCommonSelector(s => selectMatrixRoom(s, roomId))
+    const roomDraft = useCommonSelector(selectChatDrafts)[room?.id || '']
+    const myId = useCommonSelector(selectMatrixAuth)?.userId
+
+    const isPublicBroadcast = room?.isPublic && room.broadcastOnly
+    const isUnread = shouldShowUnreadIndicator(
+        room?.notificationCount,
+        room?.isMarkedUnread,
+    )
+    const isBlocked = Boolean(room?.isBlocked)
+
+    // Whether to display the room preview as a 'notice'
+    // This is usually used to add an italic style to the text
+    const isNotice =
+        room?.preview?.content.msgtype === 'redacted' ||
+        !room?.preview ||
+        isPublicBroadcast ||
+        isUnread ||
+        roomDraft ||
+        isBlocked
+
+    const text = useMemo(() => {
+        if (roomDraft)
+            return t('feature.chat.draft-text', { text: roomDraft.trim() })
+
+        if (!room?.preview) return t('feature.chat.no-messages')
+        // HACK: public rooms don't show a preview message so you have to click into it to paginate backwards
+        // TODO: Replace with proper room previews
+        if (isPublicBroadcast)
+            return t('feature.chat.click-here-for-announcements')
+        if (isBlocked) return t('feature.chat.user-is-blocked')
+
+        switch (room.preview.content.msgtype) {
+            case 'failedToParseCustom':
+                return t('feature.chat.new-message')
+            case 'unknown':
+                return t('feature.chat.new-message')
+            case 'unableToDecrypt':
+                return t('feature.chat.new-message')
+            case 'xyz.fedi.multispend':
+                return t('feature.chat.multispend-preview')
+            case 'redacted':
+                return t('feature.chat.message-deleted')
+            case 'xyz.fedi.payment': {
+                const { amount, senderId, recipientId } = room.preview.content
+
+                let messageKey = 'feature.receive.they-requested-amount-unit'
+
+                if (senderId === myId)
+                    messageKey = 'feature.send.you-sent-amount-unit'
+                else if (senderId && recipientId === myId)
+                    messageKey = 'feature.send.they-sent-amount-unit'
+                else if (recipientId === myId)
+                    messageKey = 'feature.receive.you-requested-amount-unit'
+
+                return t(messageKey as ResourceKey, {
+                    amount: amountUtils.formatSats(
+                        amountUtils.msatToSat(amount as MSats),
+                    ),
+                    unit: t('words.sats').toUpperCase(),
+                })
+            }
+            default:
+                return stripReplyFromBody(room.preview.content.body)
+        }
+    }, [room?.preview, t, roomDraft, myId, isBlocked, isPublicBroadcast])
+
+    return {
+        text,
+        isUnread,
+        isNotice,
     }
 }
