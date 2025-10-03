@@ -73,11 +73,12 @@ export function OnboardingCommunities() {
             value: 'join',
             subText: t('feature.communities.guidance-join'),
         },
-        {
-            label: t('words.create'),
-            value: 'create',
-            subText: t('feature.communities.guidance-discover'),
-        },
+        // TODO: uncomment when community generator v2 is ready
+        // {
+        //     label: t('words.create'),
+        //     value: 'create',
+        //     subText: t('feature.communities.guidance-discover'),
+        // },
     ]
 
     const selectedOption =
@@ -174,11 +175,14 @@ export function OnboardingCommunities() {
                             {selectedOption.subText}
                         </Text>
                     </TitleWrapper>
-                    <Switcher
-                        options={switcherOptions}
-                        onChange={handleOnChange}
-                        selected={activeTab}
-                    />
+                    {/* TODO: remove this check when either Discover or Create tabs are ready */}
+                    {switcherOptions.length > 1 && (
+                        <Switcher
+                            options={switcherOptions}
+                            onChange={handleOnChange}
+                            selected={activeTab}
+                        />
+                    )}
                     <Body>{body}</Body>
                 </Content>
             </Layout.Content>
