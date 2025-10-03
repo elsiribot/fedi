@@ -62,12 +62,10 @@ async function fedimintRpc<Type = void>(
 export const fedimint = new FedimintBridge(fedimintRpc)
 
 export const getAppFlavor = (): RpcAppFlavor['type'] => {
+    if (isDev()) return 'dev'
+
     const origin = self?.location?.host || ''
-    return isDev()
-        ? 'dev'
-        : origin.includes('app.fedi.xyz')
-          ? 'bravo'
-          : 'nightly'
+    return origin.includes('app.fedi.xyz') ? 'bravo' : 'nightly'
 }
 
 let initializePromise: Promise<void> | undefined
@@ -104,7 +102,11 @@ export async function initializeBridge(deviceId: string) {
                 cb(e.data.result)
             }
         }
-        worker.postMessage({ method: 'initialize', data: { deviceId } })
+
+        worker.postMessage({
+            method: 'initialize',
+            data: { deviceId, flavor: getAppFlavor() },
+        })
     })
 
     // After initializing, clear promise so subsequent calls re-initialize.
@@ -178,4 +180,10 @@ export async function getBridgeLogs() {
     }
 
     return response
+}
+
+// Expose bridge API to window for testing in development
+if (process.env.NODE_ENV === 'development' && typeof window !== 'undefined') {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    ;(window as any).fedimint = fedimint
 }
