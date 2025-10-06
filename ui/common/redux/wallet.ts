@@ -17,8 +17,16 @@ import {
     selectFederationStabilityPoolConfig,
     selectReusedEcashFederations,
     selectStabilityPoolFeeSchedule,
+    selectLoadedFederations,
 } from '.'
-import { Federation, MSats, ReceiveEcashResult, Usd, UsdCents } from '../types'
+import {
+    Federation,
+    MSats,
+    ReceiveEcashResult,
+    Sats,
+    Usd,
+    UsdCents,
+} from '../types'
 import {
     FrontendMetadata,
     JSONObject,
@@ -823,6 +831,16 @@ export const selectStableBalancePending = createSelector(
     },
 )
 
+export const selectStableBalancePendingSats = createSelector(
+    (s: CommonState, federationId: Federation['id']) =>
+        selectStableBalancePendingCents(s, federationId),
+    (s: CommonState) => selectBtcUsdExchangeRate(s),
+    (stableBalancePendingCents, btcUsdExchangeRate) => {
+        const stableBalanceDollars = stableBalancePendingCents / 100
+        return amountUtils.fiatToSat(stableBalanceDollars, btcUsdExchangeRate)
+    },
+)
+
 export const selectWithdrawableStableBalanceCents = createSelector(
     (s: CommonState, federationId: Federation['id']) =>
         selectStableBalanceCents(s, federationId),
@@ -973,3 +991,22 @@ export const selectLnurlReceiveCode = (
 ) => {
     return selectFederationWalletState(s, federationId).lnurlReceiveCode
 }
+
+export const selectTotalStableBalanceSats = createSelector(
+    (s: CommonState) => s,
+    (s: CommonState) => selectLoadedFederations(s),
+    (state, federations) => {
+        const totalStableBalanceSats = federations.reduce((acc, federation) => {
+            const stableBalanceSats = selectStableBalanceSats(
+                state,
+                federation.id,
+            )
+            const stableBalancePendingSats = selectStableBalancePendingSats(
+                state,
+                federation.id,
+            )
+            return acc + stableBalanceSats + stableBalancePendingSats
+        }, 0) as Sats
+        return totalStableBalanceSats
+    },
+)

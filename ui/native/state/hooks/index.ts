@@ -118,11 +118,7 @@ export const useMatrixPushNotifications = () => {
     )
 }
 
-// This hook provides a stability pool function
-// to makes sure to regularly refresh the account balance
-export const useStabilityPool = (federationId: Federation['id']) => {
-    const dispatch = useAppDispatch()
-    const navigation = useNavigation<NavigationHook>()
+export const useStableBalances = (federationId: Federation['id']) => {
     const stableBalance = useAppSelector(s =>
         selectStableBalance(s, federationId),
     )
@@ -131,6 +127,27 @@ export const useStabilityPool = (federationId: Federation['id']) => {
     )
     const selectedCurrency = useAppSelector(selectCurrency)
     const currencyLocale = useAppSelector(selectCurrencyLocale)
+
+    const formattedStableBalance = amountUtils.formatFiat(
+        stableBalance,
+        selectedCurrency,
+        { symbolPosition: 'end', locale: currencyLocale },
+    )
+    const formattedStableBalancePending = amountUtils.formatFiat(
+        stableBalancePending,
+        selectedCurrency,
+        { symbolPosition: 'end', locale: currencyLocale },
+    )
+    return { formattedStableBalance, formattedStableBalancePending }
+}
+
+// This hook provides a stability pool function
+// to makes sure to regularly refresh the account balance
+export const useStabilityPool = (federationId: Federation['id']) => {
+    const dispatch = useAppDispatch()
+    const navigation = useNavigation<NavigationHook>()
+    const { formattedStableBalance, formattedStableBalancePending } =
+        useStableBalances(federationId)
 
     const refreshBalance = useCallback(() => {
         dispatch(
@@ -152,17 +169,6 @@ export const useStabilityPool = (federationId: Federation['id']) => {
 
         return unsubscribe
     }, [refreshBalance, navigation])
-
-    const formattedStableBalance = amountUtils.formatFiat(
-        stableBalance,
-        selectedCurrency,
-        { symbolPosition: 'end', locale: currencyLocale },
-    )
-    const formattedStableBalancePending = amountUtils.formatFiat(
-        stableBalancePending,
-        selectedCurrency,
-        { symbolPosition: 'end', locale: currencyLocale },
-    )
 
     return {
         refreshBalance,

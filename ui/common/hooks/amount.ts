@@ -26,6 +26,7 @@ import {
     selectWithdrawableStableBalanceMsats,
     setAmountInputType,
     changeShowFiatTotalBalance,
+    selectTotalStableBalanceSats,
 } from '@fedi/common/redux'
 import {
     FiatFXInfo,
@@ -315,12 +316,19 @@ export function useTotalBalance() {
     const totalBalanceMsats = useCommonSelector(s =>
         selectTotalBalanceMsats(s),
     ) as MSats
+    const totalStableBalanceSats = useCommonSelector(s =>
+        selectTotalStableBalanceSats(s),
+    )
+    const totalStableBalanceMsats = amountUtils.satToMsat(
+        totalStableBalanceSats,
+    )
     const overrideCurrency = useCommonSelector(selectOverrideCurrency)
     const showFiatTotalBalance = useCommonSelector(selectShowFiatTotalBalance)
     const currencyToUse = overrideCurrency ?? SupportedCurrency.USD
     const { makeFormattedAmountsFromMSats } = useAmountFormatter(currencyToUse)
+    const combinedMsats = (totalBalanceMsats + totalStableBalanceMsats) as MSats
     const { formattedBtc, formattedSats, formattedFiat } =
-        makeFormattedAmountsFromMSats(totalBalanceMsats)
+        makeFormattedAmountsFromMSats(combinedMsats)
 
     const changeDisplayCurrency = () => {
         // if the user has an override currency, tapping total balance does nothing
