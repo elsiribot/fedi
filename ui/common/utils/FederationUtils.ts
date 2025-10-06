@@ -155,6 +155,18 @@ export const getMetaField = (
         return metadata[`fedi:default_matrix_rooms`] ?? metadata[field] ?? null
     }
 
+    // HACK: guardians were accidentally told to set the meta key to `fedi:autojoin_communities:`
+    // with a trailing colon so to avoid headaches for existing communities we just parse it
+    // out here as a valid key
+    if (field === 'autojoin_communities') {
+        return (
+            metadata[`fedi:autojoin_communities`] ??
+            metadata[`fedi:autojoin_communities:`] ??
+            metadata[field] ??
+            null
+        )
+    }
+
     // this allows the fedimint-specific meta field `federation_expiry_timestamp` to trigger the expiring federation logic
     if (field === 'popup_end_timestamp') {
         return (
