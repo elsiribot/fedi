@@ -25,7 +25,7 @@ export const STATE_STORAGE_KEY = 'fedi:state'
  */
 export function transformStateToStorage(state: CommonState): LatestStoredState {
     const transformedState: LatestStoredState = {
-        version: 34,
+        version: 35,
         onchainDepositsEnabled: state.environment.onchainDepositsEnabled,
         developerMode: state.environment.developerMode,
         stableBalanceEnabled: state.environment.stableBalanceEnabled,
@@ -62,6 +62,7 @@ export function transformStateToStorage(state: CommonState): LatestStoredState {
         sessionCount: state.environment.sessionCount,
         hasSeenAnalyticsConsentModal:
             state.analytics.hasSeenAnalyticsConsentModal,
+        showFiatTotalBalance: state.currency.showFiatTotalBalance,
     }
 
     return transformedState
@@ -104,6 +105,7 @@ export function hasStorageStateChanged(
         ['currency', 'overrideCurrency'],
         ['currency', 'customFederationCurrencies'],
         ['currency', 'prices'],
+        ['currency', 'showFiatTotalBalance'],
         ['federation', 'recentlyUsedFederationIds'],
         ['federation', 'lastSelectedCommunityId'],
         ['federation', 'authenticatedGuardian'],
@@ -716,6 +718,14 @@ async function migrateStoredState(
             ...migrationState,
             version: 34,
             hasSeenAnalyticsConsentModal: false,
+        }
+    }
+
+    if (migrationState.version === 34) {
+        migrationState = {
+            ...migrationState,
+            version: 35,
+            showFiatTotalBalance: false,
         }
     }
 

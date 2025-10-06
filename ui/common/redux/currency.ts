@@ -81,6 +81,7 @@ export const currencySlice = createSlice({
             state.fiatUsdRates = action.payload.fiatUsdRates
             state.customFederationCurrencies =
                 action.payload.customFederationCurrencies
+            state.showFiatTotalBalance = action.payload.showFiatTotalBalance
         })
     },
 })
