@@ -911,7 +911,7 @@ const MessageInput: React.FC<MessageInputProps> = ({
                                             dispatch(setMessageToEdit(null))
                                             setMessageText('')
                                         }}
-                                        hitSlop={10}
+                                        hitSlop={15}
                                         disabled={inputDisabled}>
                                         <SvgImage
                                             name="Close"
@@ -921,7 +921,7 @@ const MessageInput: React.FC<MessageInputProps> = ({
                                     <Pressable
                                         style={style.saveButton}
                                         onPress={handleEdit}
-                                        hitSlop={10}
+                                        hitSlop={15}
                                         disabled={inputDisabled}>
                                         <SvgImage
                                             name="Check"
@@ -933,7 +933,7 @@ const MessageInput: React.FC<MessageInputProps> = ({
                                 <Pressable
                                     style={style.sendButton}
                                     onPress={handleSend}
-                                    hitSlop={10}
+                                    hitSlop={15}
                                     disabled={
                                         inputDisabled || isSendingMessage
                                     }>
