@@ -13,6 +13,7 @@ use std::str::FromStr;
 use std::time::SystemTime;
 
 use anyhow::{Context, anyhow, ensure};
+use api_types::invoice_generator::FirstCommunityInviteCodeState;
 use fedi_social_client::SocialRecoveryState;
 use fedimint_aead::{LessSafeKey, decrypt};
 use fedimint_bip39::Bip39RootSecretStrategy;
@@ -109,37 +110,6 @@ pub struct AppStateJsonOnboarded {
 
     #[serde(flatten)]
     pub base: AppStateJsonBase,
-}
-
-/// As part of the "Fedi Gift" project, we track the first community that
-/// the user joins (barring the default Fedi community).
-///
-/// For users that are already part of non-default communities, the
-/// following logic applies:
-/// - If they are part of only one non-default community, that becomes their
-///   "first community". Should they leave this community in the future, their
-///   "first community" remains null forever.
-/// - If they are part of multiple non-default communities, their "first
-///   community" remains null forever
-///
-/// For users that are not part of non-default communities, the following
-/// logic applies:
-/// - The first non-default community that they join becomes their "first
-///   community". Should they leave this community in the future, their "first
-///   community" remains null forever.
-///
-/// We see from the above logic that we need a tri-state enum.
-#[derive(Serialize, Deserialize, Clone, PartialEq, Default)]
-pub enum FirstCommunityInviteCodeState {
-    /// the first community has never been set and may be set in
-    /// the future
-    #[default]
-    NeverSet,
-    /// User has a first community
-    Set(String),
-    /// The first community may or may not have been set in the
-    /// past, but can never be set going forward.
-    Unset,
 }
 
 impl DerefMut for AppStateJsonOnboarded {

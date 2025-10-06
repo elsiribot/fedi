@@ -3,6 +3,7 @@ use std::collections::{BTreeMap, HashMap};
 use std::sync::Arc;
 
 use anyhow::{anyhow, bail};
+use api_types::invoice_generator::FirstCommunityInviteCodeState;
 use async_recursion::async_recursion;
 use bitcoin::Network;
 use bitcoin::hex::DisplayHex;
@@ -20,9 +21,7 @@ use runtime::constants::{
     FEDI_FEE_REMITTANCE_MAX_DELAY, FEDI_FEE_SCHEDULE_REFRESH_DELAY, FEDI_GIFT_CHILD_ID,
     FEDI_GIFT_EXCLUDED_COMMUNITIES, MILLION,
 };
-use runtime::storage::state::{
-    FediFeeSchedule, FirstCommunityInviteCodeState, ModuleFediFeeSchedule,
-};
+use runtime::storage::state::{FediFeeSchedule, ModuleFediFeeSchedule};
 use stability_pool_client::common::AccountId;
 use tokio::sync::{Mutex, OwnedMutexGuard, watch};
 use tokio_stream::wrappers::WatchStream;

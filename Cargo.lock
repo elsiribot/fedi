@@ -1756,6 +1756,7 @@ name = "communities"
 version = "0.3.0"
 dependencies = [
  "anyhow",
+ "api-types",
  "bech32",
  "fedimint-core",
  "futures",
@@ -2973,6 +2974,7 @@ name = "federations"
 version = "0.3.0"
 dependencies = [
  "anyhow",
+ "api-types",
  "async-recursion",
  "async-stream",
  "async-trait",
