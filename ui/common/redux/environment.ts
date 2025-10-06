@@ -133,6 +133,9 @@ export const environmentSlice = createSlice({
         setAppFlavor(state, action: PayloadAction<RpcAppFlavor['type']>) {
             state.appFlavor = action.payload
         },
+        clearSessionCount(state) {
+            state.sessionCount = 0
+        },
     },
     extraReducers: builder => {
         builder.addCase(changeLanguage.fulfilled, (state, action) => {
@@ -171,6 +174,7 @@ export const environmentSlice = createSlice({
 /*** Basic actions ***/
 
 export const {
+    clearSessionCount,
     setIsInternetUnreachable,
     setDeveloperMode,
     setFediModDebugMode,

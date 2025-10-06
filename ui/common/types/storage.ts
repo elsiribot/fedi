@@ -318,6 +318,12 @@ export interface StoredStateCheckpoint1 {
     sessionCount: number
 }
 
+export interface StoredStateV34
+    extends Omit<StoredStateCheckpoint1, 'version'> {
+    version: 34
+    hasSeenAnalyticsConsentModal: boolean
+}
+
 /**
  * Consolidated type for older storage versions (0-24).
  * These are grouped together to reduce union type computation that slows down TSC performance.
@@ -367,9 +373,10 @@ export type AnyStoredState =
     | StoredStateV32
     | StoredStateV33
     | StoredStateCheckpoint1
+    | StoredStateV34
 
 /*** Alias for the latest version of stored state ***/
-export type LatestStoredState = StoredStateCheckpoint1
+export type LatestStoredState = StoredStateV34
 
 export interface StorageApi {
     getItem(key: string): Promise<string | null>

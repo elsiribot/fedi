@@ -38,7 +38,9 @@ import {
     setShowFiatTxnAmounts,
     setStableBalanceEnabled,
     selectPaymentFederation,
+    clearSessionCount,
 } from '@fedi/common/redux'
+import { clearAnalyticsState } from '@fedi/common/redux/analytics'
 import { selectCurrency } from '@fedi/common/redux/currency'
 import {
     FediModCacheMode,
@@ -592,6 +594,18 @@ const DeveloperSettings: React.FC<Props> = ({ navigation }) => {
                         toast.show({
                             content:
                                 'Cleared previously auto-joined communities & notices to display!',
+                            status: 'success',
+                        })
+                    }}
+                />
+                <Button
+                    title="Reset opt-in sharing state"
+                    containerStyle={style.buttonContainer}
+                    onPress={() => {
+                        reduxDispatch(clearAnalyticsState())
+                        reduxDispatch(clearSessionCount())
+                        toast.show({
+                            content: 'Cleared analytics opt-in sharing state',
                             status: 'success',
                         })
                     }}

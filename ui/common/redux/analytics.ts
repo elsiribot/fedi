@@ -7,6 +7,8 @@ import { submitAnalyticsConsent as submitAnalyticsConsentApi } from '../utils/an
 import { makeLog } from '../utils/log'
 import { loadFromStorage } from './storage'
 
+const log = makeLog('common/redux/analytics')
+
 /*** Initial State ***/
 
 const initialState = {
@@ -33,22 +35,32 @@ export const analyticsSlice = createSlice({
         setAnalyticsId(state, action: PayloadAction<string>) {
             state.analyticsId = action.payload
         },
+        clearAnalyticsState(state) {
+            state.analyticsId = null
+            state.hasConsentedToAnalytics = null
+            state.hasSeenAnalyticsConsentModal = false
+        },
     },
     extraReducers: builder => {
         builder.addCase(loadFromStorage.fulfilled, (state, action) => {
             const storedId = action.payload?.analyticsId
-            // If the analytics id is null, that means we haven't shown
-            // the analytics consent modal yet.
+            log.info('loading analytics state', {
+                storedId,
+                hasConsentedToAnalytics:
+                    action.payload?.hasConsentedToAnalytics,
+                hasSeenAnalyticsConsentModal:
+                    action.payload?.hasSeenAnalyticsConsentModal,
+            })
+            // If the analytics id is null, generate it here and will now persist to storage
             if (!storedId) {
                 state.analyticsId = uuidv4()
-                state.hasConsentedToAnalytics = null
-                state.hasSeenAnalyticsConsentModal = false
             } else {
                 state.analyticsId = storedId
-                state.hasConsentedToAnalytics =
-                    action.payload?.hasConsentedToAnalytics ?? null
-                state.hasSeenAnalyticsConsentModal = true
             }
+            state.hasConsentedToAnalytics =
+                action.payload?.hasConsentedToAnalytics ?? null
+            state.hasSeenAnalyticsConsentModal =
+                action.payload?.hasSeenAnalyticsConsentModal ?? false
         })
     },
 })
@@ -59,6 +71,7 @@ export const {
     setHasConsentedToAnalytics,
     setHasSeenAnalyticsConsentModal,
     setAnalyticsId,
+    clearAnalyticsState,
 } = analyticsSlice.actions
 
 /*** Async thunk actions ***/
@@ -73,7 +86,6 @@ export const submitAnalyticsConsent = createAsyncThunk<
         const state = getState()
         const analyticsId = state.analytics.analyticsId
         if (!analyticsId) throw new Error('Analytics ID is not set')
-        const log = makeLog('redux/analytics/submitAnalyticsConsent')
 
         dispatch(setHasSeenAnalyticsConsentModal(true))
 

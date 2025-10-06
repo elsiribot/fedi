@@ -3,13 +3,11 @@ import omit from 'lodash/omit'
 
 import { CommonState } from '../redux'
 import { ModVisibility } from '../redux/mod'
-import { Chat } from '../types'
+import { Chat, StoredStateV10, StoredStateV14 } from '../types'
 import {
     AnyStoredState,
     LatestStoredState,
     StorageApi,
-    StoredStateV10,
-    StoredStateV14,
     StoredStateV2,
     StoredStateV3,
     StoredStateV4,
@@ -27,7 +25,7 @@ export const STATE_STORAGE_KEY = 'fedi:state'
  */
 export function transformStateToStorage(state: CommonState): LatestStoredState {
     const transformedState: LatestStoredState = {
-        version: 33,
+        version: 34,
         onchainDepositsEnabled: state.environment.onchainDepositsEnabled,
         developerMode: state.environment.developerMode,
         stableBalanceEnabled: state.environment.stableBalanceEnabled,
@@ -62,6 +60,8 @@ export function transformStateToStorage(state: CommonState): LatestStoredState {
         analyticsId: state.analytics.analyticsId,
         hasConsentedToAnalytics: state.analytics.hasConsentedToAnalytics,
         sessionCount: state.environment.sessionCount,
+        hasSeenAnalyticsConsentModal:
+            state.analytics.hasSeenAnalyticsConsentModal,
     }
 
     return transformedState
@@ -123,6 +123,7 @@ export function hasStorageStateChanged(
         ['support', 'lastShownSurveyTimestamp'],
         ['analytics', 'analyticsId'],
         ['analytics', 'hasConsentedToAnalytics'],
+        ['analytics', 'hasSeenAnalyticsConsentModal'],
     ]
 
     for (const keysToCheck of keysetsToCheck) {
@@ -710,5 +711,16 @@ async function migrateStoredState(
         }
     }
 
+    if (migrationState.version === 33) {
+        migrationState = {
+            ...migrationState,
+            version: 34,
+            hasSeenAnalyticsConsentModal: false,
+        }
+    }
+
+    // Type assertion needed due to TypeScript's union complexity limits.
+    // The flattened StoredStateV34 and OldStoredState consolidation prevent
+    // deep type recursion, but TypeScript still can't track through all migrations.
     return migrationState
 }
