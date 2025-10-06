@@ -271,8 +271,59 @@ export interface StoredStateV33 extends Omit<StoredStateV32, 'version'> {
     sessionCount: number
 }
 
-/*** Union of all past shapes of stored state ***/
-export type AnyStoredState =
+/**
+ * Flattened interface checkpoint to avoid deep type recursion.
+ * Breaking the extends chain prevents TypeScript "excessively deep" errors.
+ * Numbered as Checkpoint 1 since we will probably see this problem again in the future
+ */
+export interface StoredStateCheckpoint1 {
+    version: 33
+    onchainDepositsEnabled: boolean
+    developerMode: boolean
+    stableBalanceEnabled: boolean
+    language: string | null
+    amountInputType?: 'sats' | 'fiat'
+    showFiatTxnAmounts?: boolean
+    deviceId: string | undefined
+    currency: SelectableCurrency | null
+    btcUsdRate: number
+    fiatUsdRates: Record<string, number | undefined>
+    customFederationCurrencies: Record<string, SelectableCurrency>
+    authenticatedGuardian: Guardian | null
+    customFediMods?: Record<Federation['id'], FediMod[] | undefined>
+    nuxSteps: Record<string, boolean | undefined>
+    matrixAuth: null | {
+        userId: string
+        deviceId: string
+    }
+    protectedFeatures: Pick<
+        ProtectedFeatures,
+        'app' | 'changePin' | 'nostrSettings'
+    >
+    customGlobalMods: Record<FediMod['id'], FediMod>
+    modVisibility: Record<FediMod['id'], ModVisibility>
+    chatDrafts: Record<string, string>
+    support: {
+        supportPermissionGranted: boolean
+        zendeskPushNotificationToken: string | null
+    }
+    seenFederationRatings: Array<Federation['id']>
+    lastShownSurveyTimestamp: number | null
+    lastSelectedCommunityId: Community['id'] | null
+    recentlyUsedFederationIds: Array<string>
+    previouslyAutojoinedCommunities: Record<string, number>
+    autojoinNoticesToDisplay: Array<Community['id']>
+    analyticsId: string | null
+    hasConsentedToAnalytics: boolean | null
+    sessionCount: number
+}
+
+/**
+ * Consolidated type for older storage versions (0-24).
+ * These are grouped together to reduce union type computation that slows down TSC performance.
+ * Individual version types above are maintained for documentation and migration logic.
+ */
+type OldStoredState =
     | StoredStateV0
     | StoredStateV1
     | StoredStateV2
@@ -298,6 +349,14 @@ export type AnyStoredState =
     | StoredStateV22
     | StoredStateV23
     | StoredStateV24
+
+/***
+ * Union of all past shapes of stored state.
+ * Uses checkpoint consolidation: older versions (0-24) are grouped together,
+ * while recent versions (25+) remain individual to reduce union complexity.
+ ***/
+export type AnyStoredState =
+    | OldStoredState
     | StoredStateV25
     | StoredStateV26
     | StoredStateV27
@@ -307,9 +366,10 @@ export type AnyStoredState =
     | StoredStateV31
     | StoredStateV32
     | StoredStateV33
+    | StoredStateCheckpoint1
 
 /*** Alias for the latest version of stored state ***/
-export type LatestStoredState = StoredStateV33
+export type LatestStoredState = StoredStateCheckpoint1
 
 export interface StorageApi {
     getItem(key: string): Promise<string | null>
