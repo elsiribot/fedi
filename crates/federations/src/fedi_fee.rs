@@ -203,13 +203,7 @@ impl FediFeeHelper {
             .app_state
             .with_read_lock(|state| {
                 (
-                    match &state.first_comm_invite_code {
-                        FirstCommunityInviteCodeState::Set(invite_code) => {
-                            Some(invite_code.clone())
-                        }
-                        FirstCommunityInviteCodeState::NeverSet
-                        | FirstCommunityInviteCodeState::Unset => None,
-                    },
+                    state.first_comm_invite_code.clone(),
                     state.joined_communities.keys().cloned().collect::<Vec<_>>(),
                 )
             })
@@ -218,9 +212,7 @@ impl FediFeeHelper {
             .into_iter()
             .filter(|code| {
                 // Exclude "first community" if present, and the default fedi community
-                if first_comm_invite_code
-                    .as_ref()
-                    .is_some_and(|first| first == code)
+                if matches!(&first_comm_invite_code, FirstCommunityInviteCodeState::Set(first) if first == code)
                 {
                     return false;
                 }

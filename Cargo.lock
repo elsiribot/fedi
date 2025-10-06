@@ -3069,6 +3069,7 @@ name = "fedi-ffi"
 version = "0.3.0"
 dependencies = [
  "anyhow",
+ "api-types",
  "async-trait",
  "bech32",
  "bip39",
