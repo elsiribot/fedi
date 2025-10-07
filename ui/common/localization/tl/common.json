@@ -1151,7 +1151,6 @@
             "effective-support-info": "impormasyon",
             "enter-ticket-number": "Ilagay ang ticket number na ibinigay ng aming team.",
             "friendly-request": "Mabilis Na Paalala",
-            "give-feedback": "Magbigay ng feedback",
             "how-to-launch": "Kung kailangan mo ng tulong, puwede kang humingi ng tulong sa aming team sa pamamagitan ng pag-click sa button sa ibaba.",
             "invalid-ticket-number": "Maling ticket number sa suporta (hal. #1234)",
             "log-disclaimer": "Huwag gamitin ang form na ito maliban kung sinabi ng Konseho ng Fedi. I-report muna ang concern mo <anchor>dito</anchor>.",
@@ -1159,8 +1158,6 @@
             "permssion-granted": "Gitnaan ng Tulong",
             "privacy-policy": "Patakaran Sa Privacy",
             "support-ticket-number": "Ticket Number mo sa Suporta",
-            "survey-description": "Isang click lang para matulungan kaming umunlad. Pinahahalagahan namin ito.",
-            "survey-title": "Tulungan mo kaming tulungan ka",
             "title": "Tanong kay Fedi",
             "zendesk-initialization-failed": "Hindi makakonekta kay Tanong kay Fedi. Paki-check ang internet connection mo at subukang muli."
         },

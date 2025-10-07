@@ -7,7 +7,6 @@ import {
     selectLastUsedFederation,
     selectNonFeaturedFederations,
 } from '@fedi/common/redux'
-import { selectCanShowSurvey } from '@fedi/common/redux/support'
 
 import { ContentBlock } from '../components/ContentBlock'
 import FeaturedFederation from '../components/FeaturedFederation'
@@ -17,7 +16,6 @@ import MainHeaderButtons from '../components/MainHeaderButtons'
 import { RequestPaymentDialog } from '../components/RequestPaymentDialog'
 import { RequireBackupModal } from '../components/RequireBackupModal'
 import { SendPaymentDialog } from '../components/SendPaymentDialog'
-import SurveyModal from '../components/SurveyModal'
 import { useAppSelector } from '../hooks'
 import { fedimint } from '../lib/bridge'
 import { styled, theme } from '../styles'
@@ -31,7 +29,6 @@ function FederationsPage() {
     // Get federation data
     const federations = useAppSelector(selectNonFeaturedFederations)
     const featuredFederation = useAppSelector(selectLastUsedFederation)
-    const canShowSurvey = useAppSelector(selectCanShowSurvey)
 
     // Get rates from cache
     useEffect(() => {
@@ -69,10 +66,9 @@ function FederationsPage() {
                 </Layout.Content>
             </Layout.Root>
 
+            {/* Modal - Ask user to backup if their balance is above 1000 sats */}
             <RequireBackupModal />
 
-            {/* Modal - Ask user to backup if their balance is above 1000 sats */}
-            {canShowSurvey && <SurveyModal />}
             <RequestPaymentDialog
                 open={router.pathname === '/request'}
                 onOpenChange={() => router.push('/federations')}

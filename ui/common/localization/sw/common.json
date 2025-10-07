@@ -1182,7 +1182,6 @@
             "effective-support-info": "taarifa",
             "enter-ticket-number": "Weka nambari ya tiketi uliyopewa na timu yetu.",
             "friendly-request": "Ujumbe wa Haraka",
-            "give-feedback": "Toa maoni",
             "how-to-launch": "Ukihitaji msaada, unaweza kuomba msaada kutoka kwa timu yetu kwa kubonyeza kitufe kilicho chini.",
             "invalid-ticket-number": "Nambari ya tiketi ya usaidizi si sahihi (mf. #1234)",
             "log-disclaimer": "Usitumie fomu hii isipokuwa kama umeelekezwa na Baraza la Fedi. Tafadhali kwanza ripoti matatizo yoyote kwetu <anchor>hapa</anchor>.",
@@ -1190,8 +1189,6 @@
             "permssion-granted": "Kituo cha Usaidizi",
             "privacy-policy": "Sera ya Faragha",
             "support-ticket-number": "Nambari Yako ya Tiketi ya Usaidizi",
-            "survey-description": "Bonyeza mara mmoja tu ili kutusaidia kuboresha. Tunashukuru.",
-            "survey-title": "Tusaidie kukusaidia",
             "title": "Uliza Fedi",
             "zendesk-initialization-failed": "Haiwezekani kuwasiliana na Uliza Fedi. Tafadhali angalia muunganisho wako wa intaneti na ujaribu tena."
         },

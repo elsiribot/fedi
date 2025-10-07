@@ -24,6 +24,7 @@ import { Icon } from '../components/Icon'
 import { InstallBanner } from '../components/InstallBanner'
 import * as Layout from '../components/Layout'
 import { Modal } from '../components/Modal'
+import SurveyModal from '../components/SurveyModal'
 import { Text } from '../components/Text'
 import {
     useAppSelector,
@@ -135,6 +136,8 @@ function HomePage() {
                     />
                 )}
             </Layout.Root>
+
+            <SurveyModal />
 
             {/* Modal - Show user their display name */}
             <Modal

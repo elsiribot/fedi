@@ -1181,7 +1181,6 @@
             "effective-support-info": "informations",
             "enter-ticket-number": "Entrez le numéro de ticket fourni par notre équipe.",
             "friendly-request": "Une Petite Note",
-            "give-feedback": "Donner un retour d'information",
             "how-to-launch": "Si vous avez besoin d'aide, vous pouvez demander de l'aide à notre équipe en cliquant sur le bouton ci-dessous.",
             "invalid-ticket-number": "Numéro de ticket de support invalide (ex. : #1234)",
             "log-disclaimer": "N’utilisez pas ce formulaire sauf si cela vous a été demandé par le Conseil de Fedi. Veuillez d’abord signaler tout problème <anchor>ici</anchor>.",
@@ -1189,8 +1188,6 @@
             "permssion-granted": "Centre d'Aide",
             "privacy-policy": "Politique de Confidentialité",
             "support-ticket-number": "Votre Numéro de Ticket de Support",
-            "survey-description": "Un seul clic pour nous aider à nous améliorer. Merci.",
-            "survey-title": "Aidez-nous à vous aider",
             "title": "Demandez à Fedi",
             "zendesk-initialization-failed": "Impossible de joindre Demandez à Fedi. Veuillez vérifier votre connexion Internet et réessayer."
         },

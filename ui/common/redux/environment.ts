@@ -9,6 +9,7 @@ import {
     refreshCommunities,
     refreshFederations,
     setShouldMigrateSeed,
+    setSurveyTimestamp,
     startMatrixClient,
 } from '.'
 import {
@@ -241,6 +242,8 @@ export const refreshOnboardingStatus = createAsyncThunk<
                 // navigate to CompleteSocialRecovery (/onboarding/recover/social)
                 break
             case 'init':
+                // Delay the survey form (if any) by one week for a newly-onboarded user
+                dispatch(setSurveyTimestamp(Date.now()))
                 // navigate to splash
                 dispatch(setOnboardingCompleted(false))
                 break
