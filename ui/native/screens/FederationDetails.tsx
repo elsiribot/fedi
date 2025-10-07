@@ -116,7 +116,7 @@ const FederationDetails: React.FC<Props> = ({ route }: Props) => {
                     )}
                     <FederationPopupCountdown federation={federation} />
                     <FederationDetailStats federation={federation} />
-                    <FederationStatus federation={federation} />
+                    <FederationStatus federationId={federationId} />
                 </Flex>
             </Flex>
             <ShadowScrollView
