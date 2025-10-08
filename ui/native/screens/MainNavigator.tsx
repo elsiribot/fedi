@@ -18,6 +18,7 @@ import ConfirmJoinPublicGroupHeader from '../components/feature/chat/ConfirmJoin
 import CreatePollHeader from '../components/feature/chat/CreatePollHeader'
 import DefaultChatHeader from '../components/feature/chat/DefaultChatHeader'
 import CommunityDetailsHeader from '../components/feature/federations/CommunityDetailsHeader'
+import CommunityInviteHeader from '../components/feature/federations/CommunityInviteHeader'
 import FederationDetailsHeader from '../components/feature/federations/FederationDetailsHeader'
 import FederationInviteHeader from '../components/feature/federations/FederationInviteHeader'
 import JoinFederationHeader from '../components/feature/federations/JoinFederationHeader'
@@ -90,6 +91,7 @@ import ChatsListSearch from './ChatsListSearch'
 import ChooseBackupMethod from './ChooseBackupMethod'
 import ChooseRecoveryMethod from './ChooseRecoveryMethod'
 import CommunityDetails from './CommunityDetails'
+import CommunityInvite from './CommunityInvite'
 import CompleteRecoveryAssist from './CompleteRecoveryAssist'
 import CompleteSocialBackup from './CompleteSocialBackup'
 import CompleteSocialRecovery from './CompleteSocialRecovery'
@@ -842,6 +844,13 @@ export const MainNavigator = () => {
                                 component={FederationInvite}
                                 options={() => ({
                                     header: () => <FederationInviteHeader />,
+                                })}
+                            />
+                            <Stack.Screen
+                                name="CommunityInvite"
+                                component={CommunityInvite}
+                                options={() => ({
+                                    header: () => <CommunityInviteHeader />,
                                 })}
                             />
                             {/* Backup & Recovery */}

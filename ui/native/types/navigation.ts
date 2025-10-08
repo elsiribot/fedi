@@ -100,6 +100,7 @@ export type RootStackParamList = {
     }
     CompleteSocialBackup: undefined
     CompleteSocialRecovery: undefined
+    CommunityInvite: { inviteLink: string }
     ConfirmJoinPublicGroup: { groupId: string }
     ConfirmSendEcash: { amount: Sats; notes?: string }
     ConfirmSendChatPayment: {
