@@ -94,7 +94,7 @@ export const ChatConversation: React.FC<Props> = ({
     const drafts = useAppSelector(s => selectChatDrafts(s))
     const selfUserId = auth?.userId || undefined
 
-    const [value, setValue] = useState('')
+    const [value, setValue] = useState(drafts?.[id] ?? '')
     const [isSending, setIsSending] = useState(false)
     const [hasPaginated, setHasPaginated] = useState(false)
     const [isPaginating, setIsPaginating] = useState(false)
@@ -186,11 +186,6 @@ export const ChatConversation: React.FC<Props> = ({
             .catch(() => null)
             .finally(() => setIsPaginating(false))
     }, [onPaginate])
-
-    useEffect(() => {
-        // TODO: make sure to not set `value` when editing a message (when editing is implemented in `web`
-        setValue(drafts?.[id] ?? '')
-    }, [id, drafts])
 
     useDebouncedEffect(
         () => {
