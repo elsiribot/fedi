@@ -1,7 +1,12 @@
+import { waitFor } from '@testing-library/react'
+import format from 'date-fns/format'
 import { t } from 'i18next'
 
 import { theme } from '../../../constants/theme'
-import { useFederationStatus } from '../../../hooks/federation'
+import {
+    useFederationStatus,
+    usePopupFederationInfo,
+} from '../../../hooks/federation'
 import {
     setFederations,
     setIsInternetUnreachable,
@@ -16,6 +21,75 @@ describe('common/hooks/federation', () => {
 
     beforeEach(() => {
         store = setupStore()
+    })
+
+    describe('usePopupFederationInfo', () => {
+        it('should not show popup info if the federation has no popup info in meta', async () => {
+            const { result } = renderHookWithState(
+                () => usePopupFederationInfo(mockFederation1?.meta ?? {}),
+                store,
+            )
+
+            await waitFor(() => {
+                expect(result.current).toBe(null)
+            })
+        })
+
+        it('should correctly display the result of a federation that is ending', async () => {
+            const endDateMs = Date.now() + 1000 * 60 * 60
+            const formattedEndsAtDate = format(endDateMs, 'LLLL do')
+            const endingFederation = { ...mockFederation1 } as LoadedFederation
+            endingFederation.meta = {
+                // Must be in seconds, not milliseconds
+                'fedi:popup_end_timestamp': (endDateMs / 1000).toString(),
+                'fedi:popup_countdown_message': 'federation is ending soon',
+                'fedi:popup_ended_message': 'federation has ended',
+            }
+            store.dispatch(setFederations([endingFederation]))
+            const { result } = renderHookWithState(
+                () => usePopupFederationInfo(endingFederation?.meta ?? {}),
+                store,
+            )
+
+            await waitFor(() => {
+                expect(result.current?.endsInText).toBe('0h 59m 59s')
+                expect(result.current?.endsAtText).toBe(formattedEndsAtDate)
+                expect(result.current?.ended).toBeFalsy()
+                expect(result.current?.endedMessage).toBe(
+                    'federation has ended',
+                )
+                expect(result.current?.countdownMessage).toBe(
+                    'federation is ending soon',
+                )
+            })
+        })
+
+        it('should correctly display the result of a federation that has ended', async () => {
+            const endDateMs = Date.now() - 1000 * 60 * 60
+            const formattedEndsAtDate = format(endDateMs, 'LLLL do')
+            const endedFederation = { ...mockFederation1 } as LoadedFederation
+            endedFederation.meta = {
+                'fedi:popup_end_timestamp': (endDateMs / 1000).toString(),
+                'fedi:popup_countdown_message': 'federation is ending soon',
+                'fedi:popup_ended_message': 'federation has ended',
+            }
+            store.dispatch(setFederations([endedFederation]))
+            const { result } = renderHookWithState(
+                () => usePopupFederationInfo(endedFederation?.meta ?? {}),
+                store,
+            )
+
+            await waitFor(() => {
+                expect(result.current?.endsAtText).toBe(formattedEndsAtDate)
+                expect(result.current?.ended).toBeTruthy()
+                expect(result.current?.endedMessage).toBe(
+                    'federation has ended',
+                )
+                expect(result.current?.countdownMessage).toBe(
+                    'federation is ending soon',
+                )
+            })
+        })
     })
 
     describe('useFederationStatus', () => {
