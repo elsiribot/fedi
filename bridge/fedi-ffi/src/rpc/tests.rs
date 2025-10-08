@@ -2037,7 +2037,7 @@ async fn test_fee_remittance_on_startup(dev_fed: DevFed) -> anyhow::Result<()> {
         .await?;
 
     // Receive ecash, verify no pending or outstanding fees
-    let ecash = cli_generate_ecash(Amount::from_msats(5_000_000)).await?;
+    let ecash = cli_generate_ecash(Amount::from_msats(6_000_000)).await?;
     let ecash_receive_amount = amount_from_ecash(ecash.clone()).await?;
     federation
         .receive_ecash(ecash, FrontendMetadata::default())
@@ -2083,7 +2083,8 @@ async fn test_fee_remittance_on_startup(dev_fed: DevFed) -> anyhow::Result<()> {
     td.shutdown().await?;
 
     // Mock fee remittance endpoint
-    let fedi_fee_invoice = dev_fed.gw_ldk.create_invoice(105_000).await?;
+    // some of amount is gateway fees
+    let fedi_fee_invoice = dev_fed.gw_ldk.create_invoice(102_691).await?;
     let mut mock_fedi_api = MockFediApi::default();
     mock_fedi_api.set_fedi_fee_invoice(fedi_fee_invoice.clone());
     td.with_fedi_api(mock_fedi_api.into());
@@ -2111,7 +2112,8 @@ async fn test_fee_remittance_post_successful_tx(dev_fed: DevFed) -> anyhow::Resu
     }
 
     // Mock fee remittance endpoint
-    let fedi_fee_invoice = dev_fed.gw_ldk.create_invoice(105_000).await?;
+    // some of amount is gateway fees
+    let fedi_fee_invoice = dev_fed.gw_ldk.create_invoice(102_691).await?;
     let mut mock_fedi_api = MockFediApi::default();
     mock_fedi_api.set_fedi_fee_invoice(fedi_fee_invoice.clone());
     let mut td = TestDevice::new();

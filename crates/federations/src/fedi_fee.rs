@@ -2,7 +2,7 @@ use std::cmp::Ordering;
 use std::collections::{BTreeMap, HashMap};
 use std::sync::Arc;
 
-use anyhow::{anyhow, bail};
+use anyhow::{anyhow, bail, ensure};
 use api_types::invoice_generator::FirstCommunityInviteCodeState;
 use async_recursion::async_recursion;
 use bitcoin::Network;
@@ -487,6 +487,10 @@ impl FediFeeRemittanceService {
         if invoice_amt > UNREASONABLE_FEDI_FEE_AMOUNT {
             bail!("likely bug: Fedi fee amount({invoice_amt}) is too high, we refuse to pay");
         }
+        ensure!(
+            invoice_amt == amt_to_request,
+            "invoice amount must be match requested amount"
+        );
         info!("fedi fee threshold exceeded, remitting");
 
         // If pay_bolt11_invoice() returns successfully, we optimistically zero out
