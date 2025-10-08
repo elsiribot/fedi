@@ -51,11 +51,11 @@ use rpc_types::{
     FrontendMetadata, GuardianStatus, NetworkError, RpcAmount, RpcAppFlavor, RpcCommunity,
     RpcEcashInfo, RpcEventId, RpcFederation, RpcFederationId, RpcFederationMaybeLoading,
     RpcFederationPreview, RpcFeeDetails, RpcFiatAmount, RpcGenerateEcashResponse, RpcInvoice,
-    RpcLightningGateway, RpcMediaUploadParams, RpcOperationId, RpcPayAddressResponse,
-    RpcPayInvoiceResponse, RpcPeerId, RpcPrevPayInvoiceResult, RpcPublicKey, RpcRecoveryId,
-    RpcRegisteredDevice, RpcSPv2CachedSyncResponse, RpcSPv2SyncResponse, RpcSignature,
-    RpcSignedLnurlMessage, RpcStabilityPoolAccountInfo, RpcTransaction, RpcTransactionDirection,
-    RpcTransactionListEntry, SocialRecoveryQr,
+    RpcLightningGateway, RpcMediaUploadParams, RpcOperationId, RpcPayInvoiceResponse, RpcPeerId,
+    RpcPrevPayInvoiceResult, RpcPublicKey, RpcRecoveryId, RpcRegisteredDevice,
+    RpcSPv2CachedSyncResponse, RpcSPv2SyncResponse, RpcSignature, RpcSignedLnurlMessage,
+    RpcStabilityPoolAccountInfo, RpcTransaction, RpcTransactionDirection, RpcTransactionListEntry,
+    SocialRecoveryQr,
 };
 use runtime::api::LiveFediApi;
 use runtime::bridge_runtime::Runtime;
@@ -453,12 +453,13 @@ async fn payAddress(
     // TODO: parse this as bitcoin::Amount
     sats: u64,
     frontend_metadata: FrontendMetadata,
-) -> anyhow::Result<RpcPayAddressResponse> {
+) -> anyhow::Result<RpcOperationId> {
     let address = address.trim().parse().context("Invalid Bitcoin Address")?;
     let amount: Amount = Amount::from_sat(sats);
     federation
         .pay_address(address, amount, frontend_metadata)
         .await
+        .map(Into::into)
 }
 
 #[macro_rules_derive(federation_rpc_method!)]

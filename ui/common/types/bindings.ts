@@ -675,7 +675,7 @@ export type RpcMethods = {
   generateAddress: [generateAddress, string];
   recheckPeginAddress: [recheckPeginAddress, null];
   previewPayAddress: [previewPayAddress, RpcFeeDetails];
-  payAddress: [payAddress, RpcPayAddressResponse];
+  payAddress: [payAddress, RpcOperationId];
   calculateMaxGenerateEcash: [calculateMaxGenerateEcash, RpcAmount];
   generateEcash: [generateEcash, RpcGenerateEcashResponse];
   receiveEcash: [receiveEcash, [RpcAmount, RpcOperationId]];
@@ -951,8 +951,8 @@ export type RpcOnchainDepositTransactionData = { txid: string };
 
 export type RpcOnchainWithdrawState =
   | { type: "created" }
-  | { type: "succeeded" }
-  | { type: "failed" };
+  | { type: "succeeded"; txid: string }
+  | { type: "failed"; error: string };
 
 export type RpcOperationFediFeeStatus =
   | { type: "pendingSend"; fedi_fee: RpcAmount }
@@ -1274,7 +1274,6 @@ export type RpcTransaction = {
   | {
       kind: "onchainWithdraw";
       onchain_address: string;
-      onchain_txid: string;
       onchain_fees: RpcAmount;
       onchain_fee_rate: number;
       state: RpcOnchainWithdrawState | null;
@@ -1310,7 +1309,6 @@ export type RpcTransactionKind =
   | {
       kind: "onchainWithdraw";
       onchain_address: string;
-      onchain_txid: string;
       onchain_fees: RpcAmount;
       onchain_fee_rate: number;
       state: RpcOnchainWithdrawState | null;
@@ -1353,7 +1351,6 @@ export type RpcTransactionListEntry = {
   | {
       kind: "onchainWithdraw";
       onchain_address: string;
-      onchain_txid: string;
       onchain_fees: RpcAmount;
       onchain_fee_rate: number;
       state: RpcOnchainWithdrawState | null;

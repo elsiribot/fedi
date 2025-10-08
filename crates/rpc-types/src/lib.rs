@@ -516,7 +516,6 @@ pub enum RpcTransactionKind {
     },
     OnchainWithdraw {
         onchain_address: String,
-        onchain_txid: String,
         onchain_fees: RpcAmount,
         #[ts(type = "number")]
         onchain_fee_rate: u64,
@@ -676,8 +675,10 @@ impl From<WithdrawState> for RpcOnchainWithdrawState {
     fn from(state: WithdrawState) -> Self {
         match state {
             WithdrawState::Created => RpcOnchainWithdrawState::Created,
-            WithdrawState::Succeeded(_) => RpcOnchainWithdrawState::Succeeded,
-            WithdrawState::Failed(_) => RpcOnchainWithdrawState::Failed,
+            WithdrawState::Succeeded(txid) => RpcOnchainWithdrawState::Succeeded {
+                txid: txid.to_string(),
+            },
+            WithdrawState::Failed(error) => RpcOnchainWithdrawState::Failed { error },
         }
     }
 }
@@ -715,8 +716,8 @@ impl RpcOnchainDepositTransactionData {
 #[ts(export)]
 pub enum RpcOnchainWithdrawState {
     Created,
-    Succeeded,
-    Failed,
+    Succeeded { txid: String },
+    Failed { error: String },
 }
 
 impl From<LnReceiveState> for RpcLnReceiveState {
