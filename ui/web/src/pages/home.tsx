@@ -125,6 +125,7 @@ function HomePage() {
                 )}
             </Layout.Root>
 
+            {/* TODO: re-enable survey modal */}
             {/* <SurveyModal /> */}
 
             <DisplayNameModal />
