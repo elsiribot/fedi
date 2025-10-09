@@ -18,7 +18,7 @@ import { FediModTiles } from '../components/FediModTiles'
 import PinnedMessage from '../components/Home/PinnedMessage'
 import { InstallBanner } from '../components/InstallBanner'
 import * as Layout from '../components/Layout'
-import SurveyModal from '../components/SurveyModal'
+// import SurveyModal from '../components/SurveyModal'
 import { Text } from '../components/Text'
 import {
     useAppSelector,
@@ -125,7 +125,7 @@ function HomePage() {
                 )}
             </Layout.Root>
 
-            <SurveyModal />
+            {/* <SurveyModal /> */}
 
             <DisplayNameModal />
             <AnalyticsConsentModal />
