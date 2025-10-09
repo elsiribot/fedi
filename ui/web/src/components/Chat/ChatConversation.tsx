@@ -6,6 +6,7 @@ import SendArrowUpCircleIcon from '@fedi/common/assets/svgs/send-arrow-up-circle
 import WalletIcon from '@fedi/common/assets/svgs/wallet.svg'
 import { useMentionInput } from '@fedi/common/hooks/matrix'
 import { useToast } from '@fedi/common/hooks/toast'
+import { useDebouncedEffect } from '@fedi/common/hooks/util'
 import {
     selectMatrixRoom,
     selectMatrixRoomIsReadOnly,
@@ -14,6 +15,8 @@ import {
     clearChatReplyingToMessage,
     selectMatrixRoomMembers,
     selectMatrixAuth,
+    selectChatDrafts,
+    setChatDraft,
 } from '@fedi/common/redux'
 import {
     ChatType,
@@ -88,9 +91,10 @@ export const ChatConversation: React.FC<Props> = ({
     const isReadOnly = useAppSelector(s => selectMatrixRoomIsReadOnly(s, id))
     const roomMembers = useAppSelector(s => selectMatrixRoomMembers(s, id))
     const auth = useAppSelector(s => selectMatrixAuth(s))
+    const drafts = useAppSelector(s => selectChatDrafts(s))
     const selfUserId = auth?.userId || undefined
 
-    const [value, setValue] = useState('')
+    const [value, setValue] = useState(drafts?.[id] ?? '')
     const [isSending, setIsSending] = useState(false)
     const [hasPaginated, setHasPaginated] = useState(false)
     const [isPaginating, setIsPaginating] = useState(false)
@@ -182,6 +186,15 @@ export const ChatConversation: React.FC<Props> = ({
             .catch(() => null)
             .finally(() => setIsPaginating(false))
     }, [onPaginate])
+
+    useDebouncedEffect(
+        () => {
+            // TODO: make sure to not set draft when editing a message (when editing is implemented in `web`
+            dispatch(setChatDraft({ roomId: id, text: value }))
+        },
+        [value, dispatch, id],
+        500,
+    )
 
     const scrollToMessage = useCallback((eventId: string) => {
         try {

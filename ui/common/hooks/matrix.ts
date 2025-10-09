@@ -1,4 +1,4 @@
-import type { TFunction } from 'i18next'
+import type { ResourceKey, TFunction } from 'i18next'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 
 import {
@@ -41,6 +41,7 @@ import {
     selectRoomTextEvents,
     selectMatrixRoomMembers,
     setChatTimelineSearchQuery,
+    selectChatDrafts,
 } from '../redux'
 import {
     MatrixFormEvent,
@@ -49,6 +50,7 @@ import {
     MatrixRoomMember,
     MatrixUser,
     MentionSelect,
+    MSats,
     SendableMatrixEvent,
 } from '../types'
 import {
@@ -57,6 +59,7 @@ import {
     RpcOperationId,
     RpcTransaction,
 } from '../types/bindings'
+import amountUtils from '../utils/AmountUtils'
 import { formatErrorMessage } from '../utils/format'
 import { makeLog } from '../utils/log'
 import {
@@ -70,6 +73,8 @@ import {
     getLocalizedTextWithFallback,
     stripReplyFromBody,
     isTextEvent,
+    shouldShowUnreadIndicator,
+    getRoomPreviewText,
 } from '../utils/matrix'
 import { useAmountFormatter } from './amount'
 import { useFedimint } from './fedimint'
@@ -1251,5 +1256,69 @@ export function useMentionInput(
         detectMentionTrigger,
         insertMention,
         clearMentions,
+    }
+}
+
+export function useMatrixRoomPreview({
+    roomId,
+    t,
+}: {
+    roomId: string
+    t: TFunction
+}) {
+    const room = useCommonSelector(s => selectMatrixRoom(s, roomId))
+    const roomDraft = useCommonSelector(selectChatDrafts)[room?.id || '']
+    const myId = useCommonSelector(selectMatrixAuth)?.userId
+
+    const isPublicBroadcast = room?.isPublic && room.broadcastOnly
+    const isUnread = shouldShowUnreadIndicator(
+        room?.notificationCount,
+        room?.isMarkedUnread,
+    )
+    const isBlocked = Boolean(room?.isBlocked)
+
+    // Whether to display the room preview as a 'notice'
+    // This is usually used to add an italic style to the text
+    const isNotice =
+        room?.preview?.content.msgtype === 'redacted' ||
+        !room?.preview ||
+        isPublicBroadcast ||
+        isUnread ||
+        roomDraft ||
+        isBlocked
+
+    const text = useMemo(() => {
+        if (!room?.preview) return t('feature.chat.no-messages')
+
+        if (roomDraft)
+            return t('feature.chat.draft-text', { text: roomDraft.trim() })
+
+        if (room.preview.content.msgtype === 'xyz.fedi.payment') {
+            const { amount, senderId, recipientId } = room.preview.content
+
+            let messageKey = 'feature.receive.they-requested-amount-unit'
+
+            if (senderId === myId)
+                messageKey = 'feature.send.you-sent-amount-unit'
+            else if (senderId && recipientId === myId)
+                messageKey = 'feature.send.they-sent-amount-unit'
+            else if (recipientId === myId)
+                messageKey = 'feature.receive.you-requested-amount-unit'
+
+            return t(messageKey as ResourceKey, {
+                amount: amountUtils.formatSats(
+                    amountUtils.msatToSat(amount as MSats),
+                ),
+                unit: t('words.sats').toUpperCase(),
+            })
+        }
+
+        return getRoomPreviewText(room, t)
+    }, [room, t, roomDraft, myId])
+
+    return {
+        text,
+        isUnread,
+        isNotice,
     }
 }
