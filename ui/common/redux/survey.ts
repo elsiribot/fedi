@@ -100,16 +100,12 @@ export const checkSurveyCondition = createAsyncThunk<
 >('support/checkSurveyCondition', async (_, { getState, dispatch }) => {
     log.info('-- Checking survey condition --')
 
-    const lastShownTimestamp = getState().survey.lastShownSurveyTimestamp
-
-    if (lastShownTimestamp === null) {
-        log.info(
-            'Delaying Active Survey for newly-onboarded user for seven days, Aborting',
-        )
-        dispatch(setSurveyTimestamp(Date.now()))
+    if (!getState().environment.onboardingCompleted) {
+        log.info('Onboarding not completed, aborting')
         return
     }
 
+    const lastShownTimestamp = getState().survey.lastShownSurveyTimestamp
     const oneWeekMs = 7 * 24 * 60 * 60 * 1000
     const hasBeenSevenDays =
         lastShownTimestamp && Date.now() - lastShownTimestamp >= oneWeekMs

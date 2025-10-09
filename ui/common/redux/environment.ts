@@ -3,6 +3,7 @@ import type { i18n } from 'i18next'
 
 import {
     checkJoinedFederationsForAutojoinCommunities,
+    checkSurveyCondition,
     CommonState,
     fetchSocialRecovery,
     initializeDeviceRegistration,
@@ -231,7 +232,11 @@ export const refreshOnboardingStatus = createAsyncThunk<
         dispatch(setOnboardingMethod(status.onboarding_method))
         // navigate to home
         dispatch(setOnboardingCompleted(true))
+        // check the survey condition only when onboarding is complete
+        dispatch(checkSurveyCondition())
     } else if (status.type === 'onboarding') {
+        // Delay the survey form (if any) by one week for a newly-onboarded user
+        dispatch(setSurveyTimestamp(Date.now()))
         switch (status.stage.type) {
             case 'deviceIndexSelection': // Transfer device flow
                 await dispatch(initializeDeviceRegistration(fedimint))
@@ -242,8 +247,6 @@ export const refreshOnboardingStatus = createAsyncThunk<
                 // navigate to CompleteSocialRecovery (/onboarding/recover/social)
                 break
             case 'init':
-                // Delay the survey form (if any) by one week for a newly-onboarded user
-                dispatch(setSurveyTimestamp(Date.now()))
                 // navigate to splash
                 dispatch(setOnboardingCompleted(false))
                 break
