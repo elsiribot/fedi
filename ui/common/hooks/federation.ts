@@ -614,6 +614,9 @@ export function useFederationStatus<I>({
     if (popupInfo?.ended) {
         statusWord = t('words.expired')
         statusIconColor = theme.colors.grey
+        if (popupInfo?.endedMessage) {
+            statusMessage = popupInfo?.endedMessage
+        }
     }
 
     if (isInternetUnreachable) {
