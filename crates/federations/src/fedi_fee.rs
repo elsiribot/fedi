@@ -426,18 +426,36 @@ impl FediFeeRemittanceService {
             )
             .await?;
 
-        let timestamp_key =
-            FediFeesRemittanceTimestampPerTXTypeKey(module.clone(), tx_direction.clone());
-
         // We request a 0-amount invoice even if the threshold is not met to still have
         // Fedi Gift data reporting at a reasonable cadence. However we do not
         // try to pay that invoice. But we do set the last remittance timestamp
         // in this case.
         if !accrued_fee_exceeds_threshold {
-            fed.dbtx()
+            fed.client
+                .db()
+                .autocommit(
+                    |dbtx, _| {
+                        Box::pin({
+                            let timestamp_key = FediFeesRemittanceTimestampPerTXTypeKey(
+                                module.clone(),
+                                tx_direction.clone(),
+                            );
+                            async move {
+                                dbtx.insert_entry(&timestamp_key, &fedimint_core::time::now())
+                                    .await;
+                                Ok::<(), anyhow::Error>(())
+                            }
+                        })
+                    },
+                    Some(100),
+                )
                 .await
-                .insert_entry(&timestamp_key, &fedimint_core::time::now())
-                .await;
+                .map_err(|e| match e {
+                    fedimint_core::db::AutocommitError::CommitFailed { last_error, .. } => {
+                        last_error
+                    }
+                    fedimint_core::db::AutocommitError::ClosureError { error, .. } => error,
+                })?;
             bail!("Fedi fee less gateway fee would be effectively 0");
         }
 
@@ -463,6 +481,8 @@ impl FediFeeRemittanceService {
         // We are going to optimistically update the remittance timestamp in the
         // autocommit block below, so we record the current value in case we need to
         // roll it back.
+        let timestamp_key =
+            FediFeesRemittanceTimestampPerTXTypeKey(module.clone(), tx_direction.clone());
         let old_timestamp = fed.dbtx().await.into_nc().get_value(&timestamp_key).await;
         fed.client
             .db()
