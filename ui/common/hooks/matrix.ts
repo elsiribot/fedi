@@ -74,6 +74,7 @@ import {
     stripReplyFromBody,
     isTextEvent,
     shouldShowUnreadIndicator,
+    getRoomPreviewText,
 } from '../utils/matrix'
 import { useAmountFormatter } from './amount'
 import { useFedimint } from './fedimint'
@@ -1287,50 +1288,33 @@ export function useMatrixRoomPreview({
         isBlocked
 
     const text = useMemo(() => {
+        if (!room?.preview) return t('feature.chat.no-messages')
+
         if (roomDraft)
             return t('feature.chat.draft-text', { text: roomDraft.trim() })
 
-        if (!room?.preview) return t('feature.chat.no-messages')
-        // HACK: public rooms don't show a preview message so you have to click into it to paginate backwards
-        // TODO: Replace with proper room previews
-        if (isPublicBroadcast)
-            return t('feature.chat.click-here-for-announcements')
-        if (isBlocked) return t('feature.chat.user-is-blocked')
+        if (room.preview.content.msgtype === 'xyz.fedi.payment') {
+            const { amount, senderId, recipientId } = room.preview.content
 
-        switch (room.preview.content.msgtype) {
-            case 'failedToParseCustom':
-                return t('feature.chat.new-message')
-            case 'unknown':
-                return t('feature.chat.new-message')
-            case 'unableToDecrypt':
-                return t('feature.chat.new-message')
-            case 'xyz.fedi.multispend':
-                return t('feature.chat.multispend-preview')
-            case 'redacted':
-                return t('feature.chat.message-deleted')
-            case 'xyz.fedi.payment': {
-                const { amount, senderId, recipientId } = room.preview.content
+            let messageKey = 'feature.receive.they-requested-amount-unit'
 
-                let messageKey = 'feature.receive.they-requested-amount-unit'
+            if (senderId === myId)
+                messageKey = 'feature.send.you-sent-amount-unit'
+            else if (senderId && recipientId === myId)
+                messageKey = 'feature.send.they-sent-amount-unit'
+            else if (recipientId === myId)
+                messageKey = 'feature.receive.you-requested-amount-unit'
 
-                if (senderId === myId)
-                    messageKey = 'feature.send.you-sent-amount-unit'
-                else if (senderId && recipientId === myId)
-                    messageKey = 'feature.send.they-sent-amount-unit'
-                else if (recipientId === myId)
-                    messageKey = 'feature.receive.you-requested-amount-unit'
-
-                return t(messageKey as ResourceKey, {
-                    amount: amountUtils.formatSats(
-                        amountUtils.msatToSat(amount as MSats),
-                    ),
-                    unit: t('words.sats').toUpperCase(),
-                })
-            }
-            default:
-                return stripReplyFromBody(room.preview.content.body)
+            return t(messageKey as ResourceKey, {
+                amount: amountUtils.formatSats(
+                    amountUtils.msatToSat(amount as MSats),
+                ),
+                unit: t('words.sats').toUpperCase(),
+            })
         }
-    }, [room?.preview, t, roomDraft, myId, isBlocked, isPublicBroadcast])
+
+        return getRoomPreviewText(room, t)
+    }, [room, t, roomDraft, myId])
 
     return {
         text,

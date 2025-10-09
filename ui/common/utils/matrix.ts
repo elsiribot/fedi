@@ -20,6 +20,7 @@ import {
     MSats,
     MatrixEvent,
     MatrixEventContentType,
+    MatrixEventKind,
     MatrixFormEvent,
     MatrixGroupPreview,
     MatrixMentions,
@@ -1417,4 +1418,37 @@ export const splitEveryoneRuns = (
     }
     if (last < text.length) out.push({ type: 'text', text: text.slice(last) })
     return out
+}
+
+// Maps some message types to special preview message
+// local keys
+const PreviewTextMap = {
+    failedToParseCustom: 'feature.chat.new-message',
+    unknown: 'feature.chat.new-message',
+    unableToDecrypt: 'feature.chat.new-message',
+    'xyz.fedi.multispend': 'feature.chat.multispend-preview',
+    redacted: 'feature.chat.message-deleted',
+} as const satisfies Partial<Record<MatrixEventKind, ResourceKey>>
+
+const isKeyOfPreviewTextMap = (
+    event: MatrixEvent,
+): event is MatrixEvent<keyof typeof PreviewTextMap> =>
+    event.content.msgtype in PreviewTextMap
+
+export const getRoomPreviewText = (room: MatrixRoom, t: TFunction) => {
+    if (room.isBlocked) return t('feature.chat.user-is-blocked')
+
+    const preview = room.preview
+
+    // HACK: public rooms don't show a preview message so you have to click into it to paginate backwards
+    // TODO: Replace with proper room previews
+    if (room.isPublic && room.broadcastOnly)
+        return t('feature.chat.click-here-for-announcements')
+
+    if (!preview) return t('feature.chat.no-messages')
+
+    if (isKeyOfPreviewTextMap(preview))
+        return t(PreviewTextMap[preview.content.msgtype])
+
+    return preview.content.body
 }
