@@ -11,6 +11,7 @@ import {
 import { ContentBlock } from '../components/ContentBlock'
 import FeaturedFederation from '../components/FeaturedFederation'
 import FederationTile from '../components/FederationTile'
+import { Column } from '../components/Flex'
 import * as Layout from '../components/Layout'
 import MainHeaderButtons from '../components/MainHeaderButtons'
 import { RequestPaymentDialog } from '../components/RequestPaymentDialog'
@@ -51,7 +52,7 @@ function FederationsPage() {
                     />
                 </Layout.Header>
                 <Layout.Content fullWidth>
-                    <Content>
+                    <Column gap="lg">
                         <FeaturedFederation />
 
                         <FederationsListWrapper>
@@ -62,7 +63,7 @@ function FederationsPage() {
                                 />
                             ))}
                         </FederationsListWrapper>
-                    </Content>
+                    </Column>
                 </Layout.Content>
             </Layout.Root>
 
@@ -80,12 +81,6 @@ function FederationsPage() {
         </ContentBlock>
     )
 }
-
-const Content = styled('div', {
-    display: 'flex',
-    flexDirection: 'column',
-    gap: 20,
-})
 
 const FederationsListWrapper = styled('div', {
     flex: 1,

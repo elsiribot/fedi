@@ -613,7 +613,7 @@ export function useFederationStatus<I>({
 
     if (popupInfo?.ended) {
         statusWord = t('words.expired')
-        statusIconColor = theme.colors.grey
+        statusIconColor = theme.colors.red
         if (popupInfo?.endedMessage) {
             statusMessage = popupInfo?.endedMessage
         }
