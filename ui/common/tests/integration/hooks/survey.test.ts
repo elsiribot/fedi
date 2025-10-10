@@ -305,10 +305,10 @@ describe('useSurveyForm', () => {
 
 const originalFetch = global.fetch
 
-// Mocks the active-survey endpoint's response
+// Mocks the survey endpoint's response
 function mockSurveyResponse(body: string, init: Partial<ResponseInit> = {}) {
     jest.spyOn(global, 'fetch').mockImplementation((url, options) => {
-        if (typeof url === 'string' && url.includes('/api/active-survey')) {
+        if (typeof url === 'string' && url.includes('/api/survey')) {
             return Promise.resolve(
                 new Response(body, {
                     status: 200,

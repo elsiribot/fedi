@@ -124,7 +124,7 @@ export const checkSurveyCondition = createAsyncThunk<
     log.info('Fetching Active Survey...')
 
     try {
-        const url = new URL(`${API_ORIGIN}/api/active-survey`)
+        const url = new URL(`${API_ORIGIN}/api/survey`)
         url.searchParams.set('lang', language)
         const surveyResponse = await fetch(url.toString()).then(res =>
             res.json(),
