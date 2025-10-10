@@ -12,6 +12,7 @@ export const settingsRoute = '/settings'
 export const transactionsRoute = '/transactions'
 export const sendRoute = '/send'
 export const requestRoute = '/request'
+export const ecashRoute = '/ecash'
 
 // Other pages
 export const onboardingRoute = '/onboarding'

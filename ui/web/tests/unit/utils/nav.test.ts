@@ -22,6 +22,13 @@ describe('utils/nav', () => {
                 })
             })
 
+            describe('Welcome page route with a hash param', () => {
+                it('should hide the nav bar', () => {
+                    const result = shouldHideNavigation('/#id=123', false)
+                    expect(result).toBe(true)
+                })
+            })
+
             describe('Home page route', () => {
                 it('should show the nav bar', () => {
                     const result = shouldHideNavigation('/home', false)
@@ -31,7 +38,14 @@ describe('utils/nav', () => {
 
             describe('Scan page route', () => {
                 it('should show the nav bar', () => {
-                    const result = shouldHideNavigation('/home', false)
+                    const result = shouldHideNavigation('/scan', false)
+                    expect(result).toBe(false)
+                })
+            })
+
+            describe('Chat page route', () => {
+                it('should show the nav bar', () => {
+                    const result = shouldHideNavigation('/chat', false)
                     expect(result).toBe(false)
                 })
             })
@@ -43,12 +57,26 @@ describe('utils/nav', () => {
                 })
             })
 
-            describe('SettingsNostr page route', () => {
+            describe('Settings page route', () => {
+                it('should show the nav bar', () => {
+                    const result = shouldHideNavigation('/settings', false)
+                    expect(result).toBe(false)
+                })
+            })
+
+            describe('Settings Nostr page route', () => {
                 it('should show the nav bar', () => {
                     const result = shouldHideNavigation(
                         '/settings/nostr',
                         false,
                     )
+                    expect(result).toBe(false)
+                })
+            })
+
+            describe('Chat page route', () => {
+                it('should show the nav bar', () => {
+                    const result = shouldHideNavigation('/chat', false)
                     expect(result).toBe(false)
                 })
             })
@@ -97,8 +125,8 @@ describe('utils/nav', () => {
 
             describe('Scan page route', () => {
                 it('should show the nav bar', () => {
-                    const result = shouldHideNavigation('/home', true)
-                    expect(result).toBe(false)
+                    const result = shouldHideNavigation('/scan', true)
+                    expect(result).toBe(true)
                 })
             })
 
@@ -109,10 +137,24 @@ describe('utils/nav', () => {
                 })
             })
 
-            describe('SettingsNostr page route', () => {
+            describe('Settings page route', () => {
+                it('should hide the nav bar', () => {
+                    const result = shouldHideNavigation('/settings', true)
+                    expect(result).toBe(true)
+                })
+            })
+
+            describe('Settings Nostr page route', () => {
                 it('should hide the nav bar', () => {
                     const result = shouldHideNavigation('/settings/nostr', true)
                     expect(result).toBe(true)
+                })
+            })
+
+            describe('Chat page route', () => {
+                it('should hide the nav bar', () => {
+                    const result = shouldHideNavigation('/chat', true)
+                    expect(result).toBe(false)
                 })
             })
 

@@ -6,6 +6,7 @@ import {
     scanRoute,
     sendRoute,
     transactionsRoute,
+    ecashRoute,
 } from '../constants/routes'
 
 const DEEP_LINK_PATH = '/link'
@@ -44,6 +45,13 @@ export const getDeepLinkPath = (link: string): string => {
                 return transactionsRoute
             case 'send':
                 return sendRoute
+            case 'ecash': {
+                const tokenId = params.get('id')
+                if (!tokenId) return '/'
+
+                // Only use # so that ecash token isn't sent to server
+                return `${ecashRoute}#id=${tokenId}`
+            }
             default:
                 return '/'
         }

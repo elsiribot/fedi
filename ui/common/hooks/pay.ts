@@ -1,7 +1,12 @@
 import { TFunction } from 'i18next'
 import { useCallback, useEffect, useState } from 'react'
 
+import { Federation } from '@fedi/common/types'
+
 import {
+    joinFederation,
+    receiveEcash,
+    refreshFederations,
     listGateways,
     selectFederation,
     setLastUsedFederationId,
@@ -16,7 +21,7 @@ import {
     ParserDataType,
     Sats,
 } from '../types'
-import { RpcFeeDetails } from '../types/bindings'
+import { RpcEcashInfo, RpcFeeDetails } from '../types/bindings'
 import amountUtils from '../utils/AmountUtils'
 import { shouldShowInviteCode } from '../utils/FederationUtils'
 import {
@@ -387,5 +392,116 @@ export function useSendEcash(fedimint: FedimintBridge, federationId: string) {
         isGeneratingEcash,
         generateEcash,
         reset,
+    }
+}
+
+export function useValidateEcash(fedimint: FedimintBridge) {
+    const [ecashToken, setEcashToken] = useState<string>('')
+    const [loading, setLoading] = useState(false) // used for page loader
+    const [validatedEcash, setValidatedEcash] = useState<RpcEcashInfo | null>(
+        null,
+    )
+    const [isError, setIsError] = useState(false)
+
+    const validateEcashFn = useCallback(
+        async (token: string) => {
+            setEcashToken(token)
+            setIsError(false)
+            setLoading(true)
+
+            try {
+                const validated = await fedimint.validateEcash(
+                    decodeURIComponent(token),
+                )
+                setValidatedEcash(validated)
+            } catch (e) {
+                setIsError(true)
+                log.error('Ecash token could not be validated')
+            } finally {
+                setLoading(false)
+            }
+        },
+        [fedimint],
+    )
+
+    return {
+        validateEcash: validateEcashFn,
+        loading,
+        validated: validatedEcash,
+        ecashToken,
+        isError,
+    }
+}
+
+export function useClaimEcash(fedimint: FedimintBridge) {
+    const dispatch = useCommonDispatch()
+
+    const [loading, setLoading] = useState(false)
+    const [claimed, setEcashClaimed] = useState(false)
+    const [isError, setIsError] = useState(false)
+
+    const claimEcash = useCallback(
+        async (validatedEcash: RpcEcashInfo, ecashToken: string) => {
+            if (!validatedEcash) return
+            let joinedFederation: Federation | null = null
+
+            try {
+                setIsError(false)
+                setLoading(true)
+
+                // User isn't part of federation that ecash was sent from
+                // so join the federation first
+                if ('federation_invite' in validatedEcash) {
+                    joinedFederation = await dispatch(
+                        joinFederation({
+                            fedimint,
+                            code: validatedEcash.federation_invite as string,
+                            recoverFromScratch: false,
+                        }),
+                    ).unwrap()
+
+                    // refresh all federations after joining a new one to keep all metadata fresh
+                    dispatch(refreshFederations(fedimint))
+                }
+
+                const federationId =
+                    'federation_id' in validatedEcash
+                        ? validatedEcash.federation_id
+                        : joinedFederation?.id
+
+                if (!federationId) {
+                    log.error('No federation ID found')
+                    throw new Error()
+                }
+
+                const result = await dispatch(
+                    receiveEcash({
+                        fedimint,
+                        federationId,
+                        ecash: decodeURIComponent(ecashToken),
+                    }),
+                ).unwrap()
+
+                if (result.status === 'failed') {
+                    log.error('ReceiveEcash failed')
+                    throw new Error()
+                }
+
+                setEcashClaimed(true)
+            } catch (e) {
+                setIsError(true)
+                log.error('Ecash could not be claimed', e)
+            } finally {
+                setLoading(false)
+            }
+        },
+        [dispatch, fedimint],
+    )
+
+    return {
+        claimEcash,
+        loading,
+        claimed,
+        isError,
     }
 }

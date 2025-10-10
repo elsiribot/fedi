@@ -4,13 +4,16 @@ export const shouldHideNavigation = (
     pathname: string,
     isSmallDevice: boolean,
 ) => {
-    // strip out any query string params
+    // strip out any query string and hash params
     // could be more robust but is good enough for now
     // only interested in the left side of the split
-    const [path] = pathname.split('?')
+    const [path] = pathname.split(/[?#]/)
 
     // hide nav for welcome page
     if (path === routes.welcomeRoute) return true
+
+    // hide nav for ecash page
+    if (path === routes.ecashRoute) return true
 
     // hide nav for onboarding routes
     if (path.includes(routes.onboardingRoute)) return true

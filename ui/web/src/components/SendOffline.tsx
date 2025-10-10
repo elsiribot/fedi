@@ -97,7 +97,7 @@ export const SendOffline: React.FC<Props> = ({
             <>
                 <QRCode data={qrFrames} />
                 <CopyInput
-                    value={offlinePayment}
+                    value={`${window.location.origin}/link#screen=ecash&id=${encodeURIComponent(offlinePayment)}`}
                     onCopyMessage={t('feature.send.copied-offline-payment')}
                 />
                 <Checkbox

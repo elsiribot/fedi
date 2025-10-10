@@ -569,6 +569,17 @@
             "share-state": "Share app state",
             "show-fcm-token": "Show FCM token"
         },
+        "ecash": {
+            "validate-ecash-error": "Failed to validate ecash",
+            "claim-ecash": "Claim ecash",
+            "claim-ecash-description": "Click on the button below to claim your ecash",
+            "claim-ecash-error": "Failed to claim ecash",
+            "claim-ecash-success-description": "You have successfully claimed your ecash. Click on the button below to view your wallet.",
+            "ecash-claimed": "Ecash claimed",
+            "go-to-wallet": "Go to wallet",
+            "invalid-ecash-token": "Invalid ecash token",
+            "invalid-ecash-token-description": "Your ecash token is invalid and cannot be claimed."
+        },
         "federation": {
             "add-federation": "Add",
             "autojoined-community-notice": "Federation and Community are now separate. <communityLink>Access your community here</communityLink>",
