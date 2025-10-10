@@ -526,6 +526,7 @@
         },
         "communities": {
             "autojoined-community-notice": "Fédération et Communauté sont désormais distinctes. Pour gérer votre argent, rendez-vous <federationLink>dans votre fédération</federationLink>.",
+            "autojoined-community-notice-federation": "Fédération et Communauté sont désormais séparées. <communityLink>Accédez à votre communauté ici</communityLink>",
             "community-details": "Détails de la communauté",
             "community-mods": "Mods de la communauté",
             "community-terms": "Conditions de la communauté",
@@ -560,7 +561,6 @@
         },
         "federation": {
             "add-federation": "Ajouter une communauté",
-            "autojoined-community-notice": "Fédération et Communauté sont désormais séparées. <communityLink>Accédez à votre communauté ici</communityLink>",
             "create-info-1": "Une Fédération est gérée par des personnes de confiance appelées gardiens.",
             "create-info-2": "Les Gardiens travaillent ensemble pour assurer la sécurité de la Fédération.",
             "create-info-3": "Ce travail d'équipe protège votre portefeuille, votre vie privée et maintient la force de votre Fédération.",
@@ -1181,6 +1181,7 @@
             "effective-support-info": "informations",
             "enter-ticket-number": "Entrez le numéro de ticket fourni par notre équipe.",
             "friendly-request": "Une Petite Note",
+            "give-feedback": "Donner un retour d'information",
             "how-to-launch": "Si vous avez besoin d'aide, vous pouvez demander de l'aide à notre équipe en cliquant sur le bouton ci-dessous.",
             "invalid-ticket-number": "Numéro de ticket de support invalide (ex. : #1234)",
             "log-disclaimer": "N’utilisez pas ce formulaire sauf si cela vous a été demandé par le Conseil de Fedi. Veuillez d’abord signaler tout problème <anchor>ici</anchor>.",
@@ -1188,6 +1189,8 @@
             "permssion-granted": "Centre d'Aide",
             "privacy-policy": "Politique de Confidentialité",
             "support-ticket-number": "Votre Numéro de Ticket de Support",
+            "survey-description": "Un seul clic pour nous aider à nous améliorer. Merci.",
+            "survey-title": "Aidez-nous à vous aider",
             "title": "Demandez à Fedi",
             "zendesk-initialization-failed": "Impossible de joindre Demandez à Fedi. Veuillez vérifier votre connexion Internet et réessayer."
         },
