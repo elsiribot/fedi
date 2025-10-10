@@ -516,6 +516,7 @@
         },
         "communities": {
             "autojoined-community-notice": "Federaalka iyo Bulshadu hadda waa kala go'een. Si aad lacagta u maamusho, <federationLink>u tag federaalkaaga</federationLink>.",
+            "autojoined-community-notice-federation": "Federaalka iyo Bulshadu hadda waa kala go'een. <communityLink>ka gal beeshaada halkan</communityLink>",
             "community-terms-and-conditions": "Shuruudaha & Xaaladaha Bulshada",
             "confirm-exit": "Xaqiiji bixidda",
             "create-info-1": "Dadkaaga soo ururi. La wadaag adeegyada Ku xidhnow.",
@@ -543,7 +544,6 @@
         },
         "federation": {
             "add-federation": "Ku dar",
-            "autojoined-community-notice": "Federaalka iyo Bulshadu hadda waa kala go'een. <communityLink>ka gal beeshaada halkan</communityLink>",
             "create-info-1": "Federaalka waxaa maamula dad la aamini karo oo loo yaqaan ilaaliyaha.",
             "create-info-2": "Ilaaliyaasha ayaa wada shaqeeya si ay Federaalka u ilaaliyaan ammaan iyo ammaan.",
             "create-info-3": "Wadashaqeynta kooxeedku waxay ilaalinaysaa boorsadaada, sirtaada, waxayna ka dhigaysaa xiriirkaaga mid adag.",
@@ -1147,6 +1147,7 @@
             "effective-support-info": "xog",
             "enter-ticket-number": "Geli lambarka tigidhka ay kooxdayadu ku siisay.",
             "friendly-request": "Ogeysiis Degdeg Ah",
+            "give-feedback": "Warcelin ka bixi",
             "how-to-launch": "Haddii aad u baahan tahay caawimaad, waad weydiisan kartaa kooxdayada adigoo gujinaya batoonka hoose.",
             "invalid-ticket-number": "Lambarka tigidhka wuu khaldan yahay (tusaale: #1234)",
             "log-disclaimer": "Fadlan ha isticmaalin foomkan ilaa Guddiga Fedi uu kugula taliyay. Marka hore nala wadaag dhibka <anchor>halkan</anchor>.",
@@ -1154,6 +1155,8 @@
             "permssion-granted": "Xarunta Caawinta",
             "privacy-policy": "Siyaasadda Qarsoonnimada",
             "support-ticket-number": "Lambarkaaga Tigidhka ee Taageerada",
+            "survey-description": "Kaliya hal guji si aad nooga caawiso horumarinta. Waanu u mahadcelinaynaa.",
+            "survey-title": "Nagu caawi inaan ku caawinno",
             "title": "Weydii Fedi",
             "zendesk-initialization-failed": "Ma aanan awoodeyn in aan la xiriiro Weydii Fedi. Fadlan hubi internet-kaaga oo mar kale isku day."
         },

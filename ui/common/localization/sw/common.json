@@ -527,6 +527,7 @@
         },
         "communities": {
             "autojoined-community-notice": "Shirikisho na Jumuiya sasa zimetengana. Ili kudhibiti pesa, <federationLink>nenda kwa shirikisho lako</federationLink>.",
+            "autojoined-community-notice-federation": "Shirikisho na Jumuiya sasa zimetengana. <communityLink>Fikia jumuiya yako hapa</communityLink>",
             "community-details": "Maelezo ya Jumuiya",
             "community-mods": "Mods za Jumuiya",
             "community-terms": "Masharti ya Jumuiya",
@@ -561,7 +562,6 @@
         },
         "federation": {
             "add-federation": "Ongeza shirikisho",
-            "autojoined-community-notice": "Shirikisho na Jumuiya sasa zimetengana. <communityLink>Fikia jumuiya yako hapa</communityLink>",
             "create-info-1": "Shirikisho linasimamiwa na watu wanaoaminika wanaoitwa walinzi.",
             "create-info-2": "Walinzi hufanya kazi kwa pamoja ili kuweka Shirikisho likiwa salama na salama.",
             "create-info-3": "Ushirikiano huu unalinda pochi lako, faragha yako, na kuweka Shirikisho lako imara.",
@@ -1182,6 +1182,7 @@
             "effective-support-info": "taarifa",
             "enter-ticket-number": "Weka nambari ya tiketi uliyopewa na timu yetu.",
             "friendly-request": "Ujumbe wa Haraka",
+            "give-feedback": "Toa maoni",
             "how-to-launch": "Ukihitaji msaada, unaweza kuomba msaada kutoka kwa timu yetu kwa kubonyeza kitufe kilicho chini.",
             "invalid-ticket-number": "Nambari ya tiketi ya usaidizi si sahihi (mf. #1234)",
             "log-disclaimer": "Usitumie fomu hii isipokuwa kama umeelekezwa na Baraza la Fedi. Tafadhali kwanza ripoti matatizo yoyote kwetu <anchor>hapa</anchor>.",
@@ -1189,6 +1190,8 @@
             "permssion-granted": "Kituo cha Usaidizi",
             "privacy-policy": "Sera ya Faragha",
             "support-ticket-number": "Nambari Yako ya Tiketi ya Usaidizi",
+            "survey-description": "Bonyeza mara mmoja tu ili kutusaidia kuboresha. Tunashukuru.",
+            "survey-title": "Tusaidie kukusaidia",
             "title": "Uliza Fedi",
             "zendesk-initialization-failed": "Haiwezekani kuwasiliana na Uliza Fedi. Tafadhali angalia muunganisho wako wa intaneti na ujaribu tena."
         },
