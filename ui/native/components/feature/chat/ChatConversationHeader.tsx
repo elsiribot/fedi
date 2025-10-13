@@ -105,7 +105,7 @@ const ChatConversationHeader: React.FC = () => {
                             style={style.memberText}>
                             {isNameEmpty
                                 ? t('feature.chat.no-messages-header')
-                                : name + name + name + name}
+                                : name}
                         </Text>
                         {room?.directUserId && (
                             <Text
