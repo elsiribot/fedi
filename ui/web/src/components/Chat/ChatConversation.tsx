@@ -368,7 +368,7 @@ export const ChatConversation: React.FC<Props> = ({
             <HeaderWrapper back="/chat">
                 <HeaderContent>
                     {avatar}
-                    <Text weight="medium">{name}</Text>
+                    <HeaderText weight="medium">{name}</HeaderText>
                 </HeaderContent>
 
                 {headerActions && (
@@ -522,7 +522,35 @@ const ChatWrapper = styled('div', {
     overflow: 'hidden',
 })
 
-const HeaderWrapper = styled(Layout.Header, {})
+const HeaderWrapper = styled(Layout.Header, {
+    position: 'relative',
+})
+
+const HeaderContent = styled('div', {
+    display: 'flex',
+    flexGrow: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    gap: 8,
+    maxWidth: '70%',
+    margin: 'auto',
+})
+
+const HeaderText = styled(Text, {
+    maxWidth: '80%',
+    textOverflow: 'ellipsis',
+    overflow: 'hidden',
+    whiteSpace: 'nowrap',
+})
+
+const HeaderActions = styled('div', {
+    display: 'flex',
+    alignItems: 'center',
+    gap: 8,
+    paddingRight: 8,
+    position: 'absolute',
+    right: 0,
+})
 
 const ContentWrapper = styled(Layout.Content, {})
 
@@ -558,21 +586,6 @@ const ActionsRow = styled('div', {
     height: 40,
     justifyContent: 'space-between',
     width: '100%',
-})
-
-const HeaderContent = styled('div', {
-    display: 'flex',
-    flexGrow: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    gap: 8,
-})
-
-const HeaderActions = styled('div', {
-    display: 'flex',
-    alignItems: 'center',
-    gap: 8,
-    paddingRight: 8,
 })
 
 const ThumbnailsRow = styled('div', {
