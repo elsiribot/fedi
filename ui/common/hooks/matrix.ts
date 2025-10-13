@@ -42,6 +42,7 @@ import {
     selectMatrixRoomMembers,
     setChatTimelineSearchQuery,
     selectChatDrafts,
+    selectCurrency,
 } from '../redux'
 import {
     MatrixFormEvent,
@@ -464,8 +465,12 @@ export function useMatrixPaymentEvent({
     const isDm = useCommonSelector(
         s => !!selectMatrixRoom(s, event.roomId)?.directUserId,
     )
+    const federationId = event.content.federationId
+    const selectedCurrency = useCommonSelector(s =>
+        selectCurrency(s, federationId),
+    )
     const { makeFormattedAmountsFromMSats, makeFormattedAmountsFromTxn } =
-        useAmountFormatter()
+        useAmountFormatter({ currency: selectedCurrency, federationId })
 
     const [isCanceling, setIsCanceling] = useState(false)
     const [isAccepting, setIsAccepting] = useState(false)

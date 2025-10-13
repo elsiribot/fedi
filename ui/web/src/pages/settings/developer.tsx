@@ -42,7 +42,9 @@ function DeveloperPage() {
     const federationId = paymentFederation?.id
     const federationNodes = paymentFederation?.nodes
 
-    const { makeFormattedAmountsFromMSats } = useAmountFormatter()
+    const { makeFormattedAmountsFromMSats } = useAmountFormatter({
+        federationId,
+    })
 
     /* Logs */
 

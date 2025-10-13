@@ -32,6 +32,8 @@ function FederationsPage() {
     const featuredFederation = useAppSelector(selectLastUsedFederation)
 
     // Get rates from cache
+    // TODO: I don't think this is the right place to call this anymore...
+    // We really just need to sync for a specific federation before a payment is made.
     useEffect(() => {
         syncCurrencyRatesAndCache()
     }, [syncCurrencyRatesAndCache])
