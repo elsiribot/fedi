@@ -95,18 +95,17 @@ const ChatConversationHeader: React.FC = () => {
                 }}>
                 <>
                     {isNameEmpty ? null : avatar}
-                    <Flex row align="center">
+                    <Flex row align="center" style={style.memberTextContainer}>
                         <Text
                             bold
                             numberOfLines={1}
-                            adjustsFontSizeToFit
                             maxFontSizeMultiplier={
                                 theme.multipliers.headerMaxFontMultiplier
                             }
                             style={style.memberText}>
                             {isNameEmpty
                                 ? t('feature.chat.no-messages-header')
-                                : name}
+                                : name + name + name + name}
                         </Text>
                         {room?.directUserId && (
                             <Text
@@ -168,12 +167,19 @@ const styles = (theme: Theme) =>
         },
         memberText: {
             marginLeft: theme.spacing.sm,
+            maxWidth: '60%',
+            overflow: 'hidden',
         },
         memberContainer: {
             padding: theme.spacing.xs,
             flexDirection: 'row',
             alignItems: 'center',
             justifyContent: 'center',
+            maxWidth: '70%',
+        },
+        memberTextContainer: {
+            flex: 1,
+            overflow: 'hidden',
         },
         shortIdText: {
             marginLeft: theme.spacing.xs,
