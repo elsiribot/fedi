@@ -6,7 +6,7 @@ import { Linking, Pressable, StyleSheet } from 'react-native'
 
 import { useLeaveCommunity } from '@fedi/common/hooks/leave'
 import { useToast } from '@fedi/common/hooks/toast'
-import { selectCommunity } from '@fedi/common/redux'
+import { selectCommunity, selectDefaultChats } from '@fedi/common/redux'
 import {
     getFederationTosUrl,
     getFederationWelcomeMessage,
@@ -14,12 +14,14 @@ import {
 
 import { fedimint } from '../bridge'
 import { FederationLogo } from '../components/feature/federations/FederationLogo'
+import DefaultChatTile from '../components/feature/home/DefaultChatTile'
 import CustomOverlay from '../components/ui/CustomOverlay'
-import Flex from '../components/ui/Flex'
+import Flex, { Column, Row } from '../components/ui/Flex'
 import { SafeAreaContainer } from '../components/ui/SafeArea'
 import SvgImage from '../components/ui/SvgImage'
 import { useAppSelector } from '../state/hooks'
 import { reset } from '../state/navigation'
+import { ChatType, MatrixRoom } from '../types'
 import type { RootStackParamList } from '../types/navigation'
 
 export type Props = NativeStackScreenProps<
@@ -40,10 +42,18 @@ const CommunityDetails: React.FC<Props> = ({ route, navigation }: Props) => {
     })
 
     const community = useAppSelector(s => selectCommunity(s, communityId))
+    const chats = useAppSelector(s => selectDefaultChats(s, communityId))
     const toast = useToast()
 
     const handleClose = () => {
         setWantsToLeaveCommunity(false)
+    }
+
+    const handleOpenChat = (chat: MatrixRoom) => {
+        navigation.navigate('ChatRoomConversation', {
+            roomId: chat.id,
+            chatType: chat.directUserId ? ChatType.direct : ChatType.group,
+        })
     }
 
     const onLeave = () => {
@@ -60,8 +70,8 @@ const CommunityDetails: React.FC<Props> = ({ route, navigation }: Props) => {
 
     return (
         <SafeAreaContainer edges="notop">
-            <Flex grow gap="lg" style={style.content}>
-                <Flex row align="center" gap="lg" style={style.headerRow}>
+            <Column grow gap="lg" style={style.content}>
+                <Row align="center" gap="lg" style={style.headerRow}>
                     <FederationLogo federation={community} size={72} />
                     <Text
                         h2
@@ -74,13 +84,28 @@ const CommunityDetails: React.FC<Props> = ({ route, navigation }: Props) => {
                         style={style.title}>
                         {community.name}
                     </Text>
-                </Flex>
+                </Row>
+                {chats.length > 0 && (
+                    <Flex gap="sm" fullWidth>
+                        <Text bold h2>
+                            {t('feature.home.community-news-title')}
+                        </Text>
+                        {chats.map((chat, idx) => (
+                            <DefaultChatTile
+                                key={`chat-tile-${idx}`}
+                                room={chat}
+                                onSelect={handleOpenChat}
+                                federationOrCommunity={community}
+                            />
+                        ))}
+                    </Flex>
+                )}
                 {welcomeMessage && (
                     <Text caption maxFontSizeMultiplier={1.2}>
                         {welcomeMessage}
                     </Text>
                 )}
-            </Flex>
+            </Column>
             <Flex gap="md">
                 {tosUrl && (
                     <Button
