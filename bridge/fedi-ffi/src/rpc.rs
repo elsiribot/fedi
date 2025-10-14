@@ -38,7 +38,7 @@ use multispend::{
     GroupInvitation, GroupInvitationWithKeys, MsEventData, MultispendGroupVoteType,
     MultispendListedEvent, WithdrawRequestWithApprovals, WithdrawalResponseType,
 };
-use nostril::{RpcNostrCommunity, RpcNostrPubkey, RpcNostrSecret};
+use nostril::{RpcNostrPubkey, RpcNostrSecret};
 use rpc_types::error::{ErrorCode, RpcError};
 use rpc_types::event::{Event, EventSink, PanicEvent, SocialRecoveryEvent, TypedEventExt};
 use rpc_types::matrix::{
@@ -779,7 +779,7 @@ async fn nostrCreateCommunity(
 async fn nostrListCommunities(
     bridge: &BridgeFull,
     owner_npub: RpcNostrPubkey,
-) -> anyhow::Result<Vec<RpcNostrCommunity>> {
+) -> anyhow::Result<Vec<RpcCommunity>> {
     bridge
         .nostril
         .list_communities(nostr::key::PublicKey::parse(&owner_npub.hex)?)
@@ -787,7 +787,7 @@ async fn nostrListCommunities(
 }
 
 #[macro_rules_derive(rpc_method!)]
-async fn nostrListOurCommunities(bridge: &BridgeFull) -> anyhow::Result<Vec<RpcNostrCommunity>> {
+async fn nostrListOurCommunities(bridge: &BridgeFull) -> anyhow::Result<Vec<RpcCommunity>> {
     bridge.nostril.list_our_communities().await
 }
 
