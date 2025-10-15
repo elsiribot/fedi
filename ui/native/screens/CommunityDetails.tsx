@@ -16,7 +16,7 @@ import { fedimint } from '../bridge'
 import { FederationLogo } from '../components/feature/federations/FederationLogo'
 import DefaultChatTile from '../components/feature/home/DefaultChatTile'
 import CustomOverlay from '../components/ui/CustomOverlay'
-import Flex, { Column, Row } from '../components/ui/Flex'
+import { Column, Row } from '../components/ui/Flex'
 import { SafeAreaContainer } from '../components/ui/SafeArea'
 import SvgImage from '../components/ui/SvgImage'
 import { useAppSelector } from '../state/hooks'
@@ -86,7 +86,7 @@ const CommunityDetails: React.FC<Props> = ({ route, navigation }: Props) => {
                     </Text>
                 </Row>
                 {chats.length > 0 && (
-                    <Flex gap="sm" fullWidth>
+                    <Column gap="sm" fullWidth>
                         <Text bold h2>
                             {t('feature.home.community-news-title')}
                         </Text>
@@ -95,10 +95,9 @@ const CommunityDetails: React.FC<Props> = ({ route, navigation }: Props) => {
                                 key={`chat-tile-${idx}`}
                                 room={chat}
                                 onSelect={handleOpenChat}
-                                federationOrCommunity={community}
                             />
                         ))}
-                    </Flex>
+                    </Column>
                 )}
                 {welcomeMessage && (
                     <Text caption maxFontSizeMultiplier={1.2}>
@@ -106,7 +105,7 @@ const CommunityDetails: React.FC<Props> = ({ route, navigation }: Props) => {
                     </Text>
                 )}
             </Column>
-            <Flex gap="md">
+            <Column gap="md">
                 {tosUrl && (
                     <Button
                         bubble
@@ -125,29 +124,29 @@ const CommunityDetails: React.FC<Props> = ({ route, navigation }: Props) => {
                     </Button>
                 )}
                 {canLeaveCommunity && (
-                    <Flex center fullWidth>
+                    <Column center fullWidth>
                         <Pressable
                             onPress={() => setWantsToLeaveCommunity(true)}>
                             <Text style={style.leaveCommunityText}>
                                 {t('feature.communities.leave-community')}
                             </Text>
                         </Pressable>
-                    </Flex>
+                    </Column>
                 )}
-            </Flex>
+            </Column>
             <CustomOverlay
                 show={wantsToLeaveCommunity}
                 onBackdropPress={handleClose}
                 contents={{
                     body: (
-                        <Flex gap="lg" align="center">
-                            <Flex center style={style.iconContainer}>
+                        <Column gap="lg" align="center">
+                            <Column center style={style.iconContainer}>
                                 <SvgImage
                                     name="Room"
                                     size={64}
                                     color={theme.colors.red}
                                 />
-                            </Flex>
+                            </Column>
                             <Text h2 medium>
                                 {t('feature.communities.leave-community-title')}
                             </Text>
@@ -156,7 +155,7 @@ const CommunityDetails: React.FC<Props> = ({ route, navigation }: Props) => {
                                     'feature.communities.leave-community-description',
                                 )}
                             </Text>
-                        </Flex>
+                        </Column>
                     ),
                     buttons: [
                         {
