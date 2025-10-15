@@ -102,3 +102,72 @@ pub async fn test_nostr_community_workflow(_dev_fed: DevFed) -> anyhow::Result<(
 
     Ok(())
 }
+
+pub async fn test_nostr_community_preview_join_leave(_dev_fed: DevFed) -> anyhow::Result<()> {
+    // Creator creates community
+    let community_name = "Nostr Test Community".to_string();
+    let community_description = "Initial description".to_string();
+    let community_meta =
+        BTreeMap::from([("description".to_string(), community_description.clone())]);
+
+    let invite_code = {
+        let creator = TestDevice::new();
+        let bridge = creator.bridge_full().await?;
+
+        let create_payload = CommunityJson {
+            name: community_name.clone(),
+            version: 2,
+            meta: community_meta.clone(),
+        };
+        nostrCreateCommunity(bridge, serde_json::to_string(&create_payload)?).await?;
+        nostrListOurCommunities(bridge).await?[0]
+            .invite_code
+            .clone()
+    };
+
+    // Joiner previews, then joins, then leaves
+    let joiner = TestDevice::new();
+    let bridge = joiner.bridge_full().await?;
+
+    let preview = communityPreview(bridge, invite_code.clone()).await?;
+    assert_eq!(preview.invite_code, invite_code);
+    assert_eq!(preview.name, community_name);
+    assert_eq!(preview.meta, community_meta);
+
+    // Calling preview() does not join
+    assert!(bridge.communities.communities.lock().await.is_empty());
+    assert!(bridge
+        .runtime
+        .app_state
+        .with_read_lock(|state| state.joined_communities.clone())
+        .await
+        .is_empty());
+
+    // Calling join() actually joins
+    joinCommunity(bridge, invite_code.clone()).await?;
+    let memory_community = bridge
+        .communities
+        .communities
+        .lock()
+        .await
+        .get(&invite_code)
+        .unwrap()
+        .clone();
+    let app_state_community = bridge
+        .runtime
+        .app_state
+        .with_read_lock(|state| state.joined_communities.clone())
+        .await
+        .get(&invite_code)
+        .unwrap()
+        .clone();
+    assert!(memory_community.meta.read().await.to_owned() == app_state_community.meta);
+
+    // Leave community
+    leaveCommunity(bridge, invite_code).await?;
+
+    // No joined communities
+    assert!(listCommunities(bridge).await?.is_empty());
+
+    Ok(())
+}

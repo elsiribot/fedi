@@ -220,6 +220,7 @@ async fn tests_wrapper_for_bridge() -> anyhow::Result<()> {
         test_list_and_leave_community,
         test_community_meta_bg_refresh,
         nostr_tests::test_nostr_community_workflow,
+        nostr_tests::test_nostr_community_preview_join_leave,
         test_existing_device_identifier_v2_migration,
         test_nip44_encrypt_and_decrypt,
     ];
