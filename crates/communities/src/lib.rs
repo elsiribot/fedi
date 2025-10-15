@@ -10,7 +10,7 @@ use api_types::invoice_generator::FirstCommunityInviteCodeState;
 use fedimint_core::task::TaskGroup;
 use fedimint_core::util::backoff_util::aggressive_backoff;
 use fedimint_core::util::update_merge::UpdateMerge;
-use nostril::Nostril;
+use nostril::{CommunityInviteV2, Nostril};
 use rpc_types::RpcCommunity;
 use rpc_types::error::ErrorCode;
 use rpc_types::event::{Event, EventSink, TypedEventExt};
@@ -54,6 +54,7 @@ impl Communities {
                         runtime.app_state.clone(),
                         runtime.event_sink.clone(),
                         http_client.clone(),
+                        nostril.clone(),
                     ),
                 )
             });
@@ -80,7 +81,7 @@ impl Communities {
     }
 
     pub async fn community_preview(&self, invite_code: &str) -> anyhow::Result<RpcCommunity> {
-        Community::preview(invite_code, self.http_client.clone())
+        Community::preview(invite_code, self.http_client.clone(), self.nostril.clone())
             .await
             .map(|json| RpcCommunity {
                 invite_code: invite_code.to_owned(),
@@ -95,6 +96,7 @@ impl Communities {
             self.app_state.clone(),
             self.event_sink.clone(),
             self.http_client.clone(),
+            self.nostril.clone(),
         )
         .await?;
         let meta = community.meta.read().await.clone();
@@ -230,6 +232,7 @@ pub struct Community {
     app_state: AppState,
     event_sink: EventSink,
     http_client: reqwest::Client,
+    nostril: Arc<Nostril>,
 }
 
 impl Community {
@@ -237,21 +240,33 @@ impl Community {
     pub async fn preview(
         invite_code: &str,
         http_client: reqwest::Client,
+        nostril: Arc<Nostril>,
     ) -> anyhow::Result<CommunityJson> {
-        let community_invite = CommunityInvite::from_str(invite_code)?;
+        // First treat invite code as V2
+        if let Ok(community_invite) = CommunityInviteV2::from_str(invite_code) {
+            fedimint_core::task::timeout(
+                Duration::from_secs(60),
+                fedimint_core::util::retry("fetch community meta", aggressive_backoff(), || {
+                    nostril.fetch_community(&community_invite)
+                }),
+            )
+            .await?
+        } else {
+            let community_invite = CommunityInvite::from_str(invite_code)?;
 
-        // Retry the network request closure with backoff and an overall timeout of one
-        // minute
-        fedimint_core::task::timeout(
-            Duration::from_secs(60),
-            fedimint_core::util::retry("fetch community meta", aggressive_backoff(), || {
-                fetch_community_meta_json(
-                    http_client.clone(),
-                    community_invite.community_meta_url.clone(),
-                )
-            }),
-        )
-        .await?
+            // Retry the network request closure with backoff and an overall timeout of one
+            // minute
+            fedimint_core::task::timeout(
+                Duration::from_secs(60),
+                fedimint_core::util::retry("fetch community meta", aggressive_backoff(), || {
+                    fetch_community_meta_json(
+                        http_client.clone(),
+                        community_invite.community_meta_url.clone(),
+                    )
+                }),
+            )
+            .await?
+        }
     }
 
     /// Decodes the invite code and fetches the community's JSON file. Then
@@ -261,13 +276,18 @@ impl Community {
         app_state: AppState,
         event_sink: EventSink,
         http_client: reqwest::Client,
+        nostril: Arc<Nostril>,
     ) -> anyhow::Result<Self> {
         Ok(Community {
             invite_code: invite_code.to_owned(),
-            meta: RwLock::new(Self::preview(invite_code, http_client.clone()).await?).into(),
+            meta: RwLock::new(
+                Self::preview(invite_code, http_client.clone(), nostril.clone()).await?,
+            )
+            .into(),
             app_state,
             event_sink,
             http_client,
+            nostril,
         })
     }
 
@@ -279,6 +299,7 @@ impl Community {
         app_state: AppState,
         event_sink: EventSink,
         http_client: reqwest::Client,
+        nostril: Arc<Nostril>,
     ) -> Self {
         Community {
             invite_code,
@@ -286,6 +307,7 @@ impl Community {
             app_state,
             event_sink,
             http_client,
+            nostril,
         }
     }
 
@@ -294,7 +316,13 @@ impl Community {
     async fn refresh_meta(&self) {
         let meta = self.meta.read().await.clone();
 
-        match Self::preview(&self.invite_code, self.http_client.clone()).await {
+        match Self::preview(
+            &self.invite_code,
+            self.http_client.clone(),
+            self.nostril.clone(),
+        )
+        .await
+        {
             Ok(new_meta) if new_meta != meta => {
                 *self.meta.write().await = new_meta.clone();
                 let _ = self

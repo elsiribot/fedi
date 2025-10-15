@@ -293,7 +293,7 @@ impl Nostril {
     pub async fn fetch_community(
         &self,
         invite: &CommunityInviteV2,
-    ) -> anyhow::Result<RpcCommunity> {
+    ) -> anyhow::Result<CommunityJson> {
         let Some(client) = &self.client else {
             anyhow::bail!("nostr client feature flag is not enabled");
         };
@@ -314,13 +314,7 @@ impl Nostril {
             bail!("No community event found for the given invite code");
         };
 
-        let community = serde_json::from_str::<CommunityJson>(&first_event.content)?;
-
-        Ok(RpcCommunity {
-            invite_code: invite.to_string(),
-            name: community.name,
-            meta: community.meta,
-        })
+        Ok(serde_json::from_str::<CommunityJson>(&first_event.content)?)
     }
 
     // Given a byte slice UUID representing a community, derives a new nostr keypair
