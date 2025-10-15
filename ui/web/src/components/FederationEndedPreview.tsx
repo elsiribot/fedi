@@ -1,4 +1,5 @@
 import { styled } from '@stitches/react'
+import { Dispatch, SetStateAction, useState } from 'react'
 import { Trans, useTranslation } from 'react-i18next'
 
 import { theme } from '@fedi/common/constants/theme'
@@ -12,10 +13,13 @@ import { Text } from './Text'
 export default function FederationEndedPreview({
     popupInfo,
     federation,
+    setJoinAnyways,
 }: {
     popupInfo: ReturnType<typeof usePopupFederationInfo>
     federation: LoadedFederation | RpcFederationPreview
+    setJoinAnyways: Dispatch<SetStateAction<boolean>>
 }) {
+    const [, setClicks] = useState(0)
     const { t } = useTranslation()
 
     return (
@@ -29,7 +33,19 @@ export default function FederationEndedPreview({
                         t={t}
                         i18nKey="feature.popup.ended-description"
                         values={{ date: popupInfo?.endsAtText }}
-                        components={{ bold: <strong /> }}
+                        components={{
+                            bold: (
+                                <strong
+                                    onClick={() =>
+                                        setClicks(c => {
+                                            if (c >= 21) setJoinAnyways(true)
+
+                                            return c + 1
+                                        })
+                                    }
+                                />
+                            ),
+                        }}
                     />
                 )}
             </Text>
