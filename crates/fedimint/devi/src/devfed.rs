@@ -38,8 +38,8 @@ impl DevFed {
 
         debug!(target: LOG_DEVIMINT, "Peging in client and gateways");
 
-        let gw_pegin_amount = 1_000_000;
-        let client_pegin_amount = 1_000_000;
+        let gw_pegin_amount = 10_000_000;
+        let client_pegin_amount = 10_000_000;
 
         let ((), (), _, synapse, nostr_relay) = tokio::try_join!(
             async {
