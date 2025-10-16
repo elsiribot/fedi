@@ -204,9 +204,6 @@ fedimint-threshold-crypto = { opt-level = 3 }
 # https://github.com/fedimint/fedimint/pull/6578
 tikv-jemalloc-sys = { opt-level = 3 }
 tikv-jemallocator = { opt-level = 3 }
-# old names (delete after switching)
-jemalloc-sys = { opt-level = 3 }
-jemallocator = { opt-level = 3 }
 
 # ios gets its own profile since it crashes on opt-level 0
 [profile.dev-ios]
