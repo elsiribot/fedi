@@ -68,7 +68,7 @@ jobs:
 
             - name: Run integration tests
               timeout-minutes: 30
-              run: nix develop -c ./scripts/ci/tests-integration.sh
+              run: env RUST_LOG=fm=debug nix develop -c ./scripts/ci/tests-integration.sh
 
             - name: Generate JS bundle for React Native
               run: nix develop -c ./scripts/ci/test-metro.sh
