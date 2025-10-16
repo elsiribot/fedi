@@ -9,7 +9,10 @@ export class OnboardingTest extends AppiumTestBase {
         await this.clickElementByKey('FediTestnetJoinButton')
         await this.clickElementByKey('JoinFederationButton')
         await new Promise(resolve => setTimeout(resolve, 5000))
-        await this.clickElementByKey('Explore Now')
+        // await this.clickElementByKey('Explore Now')
+        await this.clickElementByKey('HomeTabButton')
+        await this.clickElementByKey('Continue')
+
         await this.clickElementByKey('Chat')
         await this.clickElementByKey('Explore Now')
         await this.clickElementByKey('Mods')

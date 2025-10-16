@@ -70,6 +70,9 @@ const CommunityMenu = ({ community }: CommunityMenuProps) => {
     return (
         <View style={style.sectionContainer}>
             <ListItem.Accordion
+                testID={community.name
+                    .concat('AccordionButton')
+                    .replaceAll(' ', '')}
                 containerStyle={style.accordionContainer}
                 icon={
                     <SvgImage
