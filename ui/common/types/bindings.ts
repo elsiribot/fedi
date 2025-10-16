@@ -714,6 +714,10 @@ export type RpcMethods = {
   nostrEncrypt04: [nostrEncrypt04, string];
   nostrDecrypt04: [nostrDecrypt04, string];
   nostrRateFederation: [nostrRateFederation, null];
+  nostrCreateCommunity: [nostrCreateCommunity, null];
+  nostrListCommunities: [nostrListCommunities, Array<RpcCommunity>];
+  nostrListOurCommunities: [nostrListOurCommunities, Array<RpcCommunity>];
+  nostrEditCommunity: [nostrEditCommunity, null];
   stabilityPoolAccountInfo: [
     stabilityPoolAccountInfo,
     RpcStabilityPoolAccountInfo,
@@ -888,12 +892,12 @@ export type RpcMsgLikeKind =
   | ({ msgtype: "m.text" } & RpcTextLikeContent)
   | ({ msgtype: "m.notice" } & RpcTextLikeContent)
   | ({ msgtype: "m.emote" } & RpcTextLikeContent)
+  | ({ msgtype: "xyz.fedi.federationInvite" } & RpcTextLikeContent)
   | ({ msgtype: "m.file" } & RpcFileMessageContent)
   | ({ msgtype: "m.image" } & RpcImageMessageContent)
   | ({ msgtype: "m.video" } & RpcVideoMessageContent)
   | ({ msgtype: "m.audio" } & RpcAudioMessageContent)
   | ({ msgtype: "m.poll" } & RpcPollResult)
-  | ({ msgtype: "xyz.fedi.federationInvite" } & RpcTextLikeContent)
   | ({ msgtype: "xyz.fedi.payment" } & RpcPaymentMessageContent)
   | ({ msgtype: "xyz.fedi.form" } & RpcFormMessageContent)
   | ({ msgtype: "xyz.fedi.multispend" } & MultispendEvent)
@@ -1967,13 +1971,24 @@ export type matrixUserDirectorySearch = { searchTerm: string; limit: number };
 
 export type matrixUserProfile = { userId: RpcUserId };
 
+export type nostrCreateCommunity = { communityJsonStr: string };
+
 export type nostrDecrypt = { pubkey: string; ciphertext: string };
 
 export type nostrDecrypt04 = { pubkey: string; ciphertext: string };
 
+export type nostrEditCommunity = {
+  communityHexUuid: string;
+  newCommunityJsonStr: string;
+};
+
 export type nostrEncrypt = { pubkey: string; plaintext: string };
 
 export type nostrEncrypt04 = { pubkey: string; plaintext: string };
+
+export type nostrListCommunities = { ownerNpub: RpcNostrPubkey };
+
+export type nostrListOurCommunities = {};
 
 export type nostrRateFederation = {
   federationId: string;
