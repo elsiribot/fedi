@@ -2033,11 +2033,11 @@ async fn test_fee_remittance_on_startup(dev_fed: DevFed) -> anyhow::Result<()> {
     let mut td = TestDevice::new();
     let bridge = td.bridge_full().await?;
     let federation = td.join_default_fed().await?;
-    setStabilityPoolModuleFediFeeSchedule(bridge, federation.rpc_federation_id(), 210_000, 0)
+    setStabilityPoolModuleFediFeeSchedule(bridge, federation.rpc_federation_id(), 21_000, 0)
         .await?;
 
     // Receive ecash, verify no pending or outstanding fees
-    let ecash = cli_generate_ecash(Amount::from_msats(2_000_000)).await?;
+    let ecash = cli_generate_ecash(Amount::from_msats(5_000_000)).await?;
     let ecash_receive_amount = amount_from_ecash(ecash.clone()).await?;
     federation
         .receive_ecash(ecash, FrontendMetadata::default())
@@ -2048,10 +2048,10 @@ async fn test_fee_remittance_on_startup(dev_fed: DevFed) -> anyhow::Result<()> {
     assert_eq!(Amount::ZERO, federation.get_outstanding_fedi_fees().await);
 
     // Make SP deposit, verify pending fees
-    let amount_to_deposit = Amount::from_msats(1_000_000);
+    let amount_to_deposit = Amount::from_msats(5_000_000);
     stabilityPoolDepositToSeek(federation.clone(), RpcAmount(amount_to_deposit)).await?;
     assert_eq!(
-        Amount::from_msats(210_000),
+        Amount::from_msats(105_000),
         federation.get_pending_fedi_fees().await
     );
     assert_eq!(Amount::ZERO, federation.get_outstanding_fedi_fees().await);
@@ -2072,7 +2072,7 @@ async fn test_fee_remittance_on_startup(dev_fed: DevFed) -> anyhow::Result<()> {
     }
     assert_eq!(Amount::ZERO, federation.get_pending_fedi_fees().await);
     assert_eq!(
-        Amount::from_msats(210_000),
+        Amount::from_msats(105_000),
         federation.get_outstanding_fedi_fees().await
     );
 
@@ -2083,7 +2083,7 @@ async fn test_fee_remittance_on_startup(dev_fed: DevFed) -> anyhow::Result<()> {
     td.shutdown().await?;
 
     // Mock fee remittance endpoint
-    let fedi_fee_invoice = dev_fed.gw_ldk.create_invoice(210_000).await?;
+    let fedi_fee_invoice = dev_fed.gw_ldk.create_invoice(105_000).await?;
     let mut mock_fedi_api = MockFediApi::default();
     mock_fedi_api.set_fedi_fee_invoice(fedi_fee_invoice.clone());
     td.with_fedi_api(mock_fedi_api.into());
@@ -2111,7 +2111,7 @@ async fn test_fee_remittance_post_successful_tx(dev_fed: DevFed) -> anyhow::Resu
     }
 
     // Mock fee remittance endpoint
-    let fedi_fee_invoice = dev_fed.gw_ldk.create_invoice(210_000).await?;
+    let fedi_fee_invoice = dev_fed.gw_ldk.create_invoice(105_000).await?;
     let mut mock_fedi_api = MockFediApi::default();
     mock_fedi_api.set_fedi_fee_invoice(fedi_fee_invoice.clone());
     let mut td = TestDevice::new();
@@ -2120,11 +2120,11 @@ async fn test_fee_remittance_post_successful_tx(dev_fed: DevFed) -> anyhow::Resu
     // Setup bridge, join test federation, set SP send fee ppm
     let bridge = td.bridge_full().await?;
     let federation = td.join_default_fed().await?;
-    setStabilityPoolModuleFediFeeSchedule(bridge, federation.rpc_federation_id(), 210_000, 0)
+    setStabilityPoolModuleFediFeeSchedule(bridge, federation.rpc_federation_id(), 21_000, 0)
         .await?;
 
     // Receive ecash, verify no pending or outstanding fees
-    let ecash = cli_generate_ecash(Amount::from_msats(2_000_000)).await?;
+    let ecash = cli_generate_ecash(Amount::from_msats(10_000_000)).await?;
     let ecash_receive_amount = amount_from_ecash(ecash.clone()).await?;
     federation
         .receive_ecash(ecash, FrontendMetadata::default())
@@ -2135,10 +2135,10 @@ async fn test_fee_remittance_post_successful_tx(dev_fed: DevFed) -> anyhow::Resu
     assert_eq!(Amount::ZERO, federation.get_outstanding_fedi_fees().await);
 
     // Make SP deposit, verify pending fees
-    let amount_to_deposit = Amount::from_msats(1_000_000);
+    let amount_to_deposit = Amount::from_msats(5_000_000);
     stabilityPoolDepositToSeek(federation.clone(), RpcAmount(amount_to_deposit)).await?;
     assert_eq!(
-        Amount::from_msats(210_000),
+        Amount::from_msats(105_000),
         federation.get_pending_fedi_fees().await
     );
     assert_eq!(Amount::ZERO, federation.get_outstanding_fedi_fees().await);

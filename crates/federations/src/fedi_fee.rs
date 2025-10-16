@@ -7,10 +7,10 @@ use api_types::invoice_generator::FirstCommunityInviteCodeState;
 use async_recursion::async_recursion;
 use bitcoin::Network;
 use bitcoin::hex::DisplayHex;
-use fedimint_core::Amount;
 use fedimint_core::config::FederationId;
 use fedimint_core::core::ModuleKind;
 use fedimint_core::db::IDatabaseTransactionOpsCoreTyped;
+use fedimint_core::{Amount, SATS_PER_BITCOIN};
 use fedimint_ln_client::OutgoingLightningPayment;
 use futures::{Stream, StreamExt};
 use lightning_invoice::Bolt11Invoice;
@@ -21,6 +21,7 @@ use runtime::constants::{
     FEDI_FEE_REMITTANCE_MAX_DELAY, FEDI_FEE_SCHEDULE_REFRESH_DELAY, FEDI_GIFT_CHILD_ID,
     FEDI_GIFT_EXCLUDED_COMMUNITIES, MILLION,
 };
+use runtime::features::RuntimeEnvironment;
 use runtime::storage::state::{FediFeeSchedule, ModuleFediFeeSchedule};
 use stability_pool_client::common::AccountId;
 use tokio::sync::{Mutex, OwnedMutexGuard, watch};
@@ -49,6 +50,12 @@ pub enum FediFeeHelperError {
     #[error("Provided module {0} is not known")]
     UnknownModule(ModuleKind),
 }
+
+// unreasonable amount of fee, nobody should pay this much fee
+const UNREASONABLE_FEDI_FEE_AMOUNT: Amount = Amount::from_sats(SATS_PER_BITCOIN / 10);
+// maximum fedi fee ppm that bridge would pay. it is 20x our current fee in
+// prod.
+const FEDI_FEE_MAX_PPM: u64 = 2100 * 20;
 
 impl FediFeeHelper {
     pub fn new(runtime: Arc<Runtime>) -> Self {
@@ -131,7 +138,8 @@ impl FediFeeHelper {
         module: ModuleKind,
         direction: RpcTransactionDirection,
     ) -> anyhow::Result<u64, FediFeeHelperError> {
-        self.runtime
+        let fees_ppm = self
+            .runtime
             .app_state
             .with_read_lock(move |state| {
                 state
@@ -150,7 +158,19 @@ impl FediFeeHelper {
                             })
                     })
             })
-            .await?
+            .await??;
+        if fees_ppm >= FEDI_FEE_MAX_PPM {
+            if matches!(
+                self.runtime.feature_catalog.runtime_env,
+                RuntimeEnvironment::Dev | RuntimeEnvironment::Staging | RuntimeEnvironment::Tests
+            ) {
+                panic!("fedi fee is too high: {fees_ppm}")
+            }
+            error!(%fees_ppm, "fedi fee is too high, capping");
+            Ok(FEDI_FEE_MAX_PPM)
+        } else {
+            Ok(fees_ppm)
+        }
     }
 
     /// Sets the ModuleFediFeeSchedule. If the federation ID is unknown, returns
@@ -371,7 +391,7 @@ impl FediFeeRemittanceService {
         accrued_fee_exceeds_threshold: bool,
     ) -> anyhow::Result<()> {
         let gateway = fed.select_gateway().await?;
-        let invoice_amt = if accrued_fee_exceeds_threshold {
+        let amt_to_request = if accrued_fee_exceeds_threshold {
             let gateway_fees = gateway
                 .as_ref()
                 .map(|g| g.fees)
@@ -398,21 +418,21 @@ impl FediFeeRemittanceService {
             // We keep division as the very last step to ensure minimal loss in precision.
             // We also perform regular (floor) division to ensure that the invoice is never
             // overestimated.
-            let invoice_amt_numerator = MILLION
+            let amt_to_request_numerator = MILLION
                 * (outstanding_fees
                     .msats
                     .checked_sub(gateway_fees.base_msat as u64)
                     .ok_or(anyhow!("Accrued fee < base gateway fees!"))?);
-            let invoice_amt_denominator = MILLION + gateway_fees.proportional_millionths as u64;
-            invoice_amt_numerator / invoice_amt_denominator
+            let amt_to_request_denominator = MILLION + gateway_fees.proportional_millionths as u64;
+            Amount::from_msats(amt_to_request_numerator / amt_to_request_denominator)
         } else {
-            0
+            Amount::ZERO
         };
 
         let invoice = fed
             .fedi_fee_helper
             .fetch_fedi_fee_invoice(
-                Amount::from_msats(invoice_amt),
+                amt_to_request,
                 fed.get_network().ok_or(anyhow!(
                     "Federation recovering during fee remittance, unexpected!"
                 ))?,
@@ -459,6 +479,14 @@ impl FediFeeRemittanceService {
             bail!("Fedi fee less gateway fee would be effectively 0");
         }
 
+        let invoice_amt = Amount::from_msats(
+            invoice
+                .amount_milli_satoshis()
+                .expect("amount must be present"),
+        );
+        if invoice_amt > UNREASONABLE_FEDI_FEE_AMOUNT {
+            bail!("likely bug: Fedi fee amount({invoice_amt}) is too high, we refuse to pay");
+        }
         info!("fedi fee threshold exceeded, remitting");
 
         // If pay_bolt11_invoice() returns successfully, we optimistically zero out
