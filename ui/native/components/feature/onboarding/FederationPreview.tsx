@@ -131,7 +131,9 @@ const FederationPreview: React.FC<Props> = ({
                 </Flex>
 
                 {welcomeMessage && (
-                    <View style={s.roundedCardContainer}>
+                    <View
+                        style={s.roundedCardContainer}
+                        testID="WelcomeMessageContainer">
                         <Trans
                             components={{
                                 bold: (

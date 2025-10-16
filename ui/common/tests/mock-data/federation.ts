@@ -1,5 +1,7 @@
 import { MSats, Federation, Community } from '@fedi/common/types'
 
+import { RpcFederationPreview } from '../../types/bindings'
+
 export const mockFederation1: Federation = {
     status: 'online',
     init_state: 'ready',
@@ -43,4 +45,23 @@ export const mockCommunity: Community = {
     inviteCode: 'test',
     name: 'name',
     meta: {},
+}
+
+const MOCK_FEDERATION_PREVIEW: RpcFederationPreview = {
+    id: '1',
+    name: 'test-federation',
+    inviteCode: 'test',
+    meta: {},
+    returningMemberStatus: {
+        type: 'returningMember',
+    },
+}
+
+export const createMockFederationPreview = (
+    overrides: Partial<RpcFederationPreview> = {},
+): RpcFederationPreview => {
+    return {
+        ...MOCK_FEDERATION_PREVIEW,
+        ...overrides,
+    }
 }
