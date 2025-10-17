@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect } from 'react'
+import React, { useCallback, useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 
 import FediLogoIcon from '@fedi/common/assets/svgs/fedi-logo-icon.svg'
@@ -7,6 +7,7 @@ import {
     useChatPaymentPush,
     useChatPaymentUtils,
 } from '@fedi/common/hooks/chat'
+import { useToast } from '@fedi/common/hooks/toast'
 import { useFeeDisplayUtils } from '@fedi/common/hooks/transactions'
 import { useUpdatingRef } from '@fedi/common/hooks/util'
 import {
@@ -41,6 +42,7 @@ export const ChatPaymentDialog: React.FC<Props> = ({
     open,
     onOpenChange,
 }) => {
+    const [isSending, setIsSending] = useState(false)
     const { t } = useTranslation()
     const onOpenChangeRef = useUpdatingRef(onOpenChange)
     const {
@@ -83,6 +85,7 @@ export const ChatPaymentDialog: React.FC<Props> = ({
         roomId,
         recipientId,
     )
+    const toast = useToast()
 
     useEffect(() => {
         if (open) return
@@ -105,6 +108,22 @@ export const ChatPaymentDialog: React.FC<Props> = ({
             onOpenChangeRef.current(false)
         })
     }, [handleRequestPayment, onOpenChangeRef])
+
+    const handleInitiateSend = useCallback(() => {
+        if (!paymentFederation?.id)
+            return toast.error(t, 'errors.please-join-a-federation')
+        setSubmitType('send')
+        setSubmitAttempts(a => a + 1)
+        if (!canSendAmount) return
+        setIsSending(true)
+    }, [
+        paymentFederation?.id,
+        t,
+        toast,
+        canSendAmount,
+        setSubmitAttempts,
+        setSubmitType,
+    ])
 
     const handleSend = useCallback(async () => {
         setSubmitType('send')
@@ -266,18 +285,14 @@ export const ChatPaymentDialog: React.FC<Props> = ({
                         onClick={handleRequest}>
                         {t('words.request')}
                     </Button>
-                    <Button
-                        onClick={() => {
-                            setSubmitAttempts(a => a + 1)
-                            if (!canSendAmount) return
-                            setSubmitType('send')
-                        }}>
+                    <Button onClick={handleInitiateSend}>
                         {t('words.send')}
                     </Button>
                 </Actions>
             </>
         )
     }, [
+        handleInitiateSend,
         amount,
         handleRequest,
         inputMinMax,
@@ -285,13 +300,10 @@ export const ChatPaymentDialog: React.FC<Props> = ({
         open,
         setAmount,
         setNotes,
-        setSubmitType,
         submitAction,
         submitAttempts,
         submitType,
         t,
-        canSendAmount,
-        setSubmitAttempts,
     ])
 
     return (
@@ -299,11 +311,11 @@ export const ChatPaymentDialog: React.FC<Props> = ({
             open={open}
             onOpenChange={onOpenChange}
             title={
-                submitType === 'send'
+                isSending
                     ? t('feature.multispend.confirm-transaction')
                     : t('feature.chat.request-or-send-money')
             }>
-            {submitType === 'send' ? confirmSendContent() : inputContent()}
+            {isSending ? confirmSendContent() : inputContent()}
         </Dialog>
     )
 }
