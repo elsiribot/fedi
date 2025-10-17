@@ -23,6 +23,7 @@ import { HelpTextLoadingAnimation } from '../components/feature/onboarding/HelpT
 import { CameraPermissionGate } from '../components/feature/permissions/CameraPermissionGate'
 import Flex from '../components/ui/Flex'
 import { useAppSelector } from '../state/hooks'
+import { reset } from '../state/navigation'
 import { ParserDataType } from '../types'
 import type { RootStackParamList } from '../types/navigation'
 
@@ -49,11 +50,32 @@ const JoinFederation: React.FC<Props> = ({ navigation, route }: Props) => {
     } = useFederationPreview(t, fedimint, invite || '')
 
     // // Reset preview when leaving the screen
-    // useEffect(() => {
-    //     return () => {
-    //         setFederationPreview(undefined)
-    //     }
-    // }, [setFederationPreview])
+    useEffect(() => {
+        return () => {
+            if (communityPreview) setCommunityPreview(undefined)
+            else setFederationPreview(undefined)
+            setFederationPreview(undefined)
+        }
+    }, [communityPreview, setCommunityPreview, setFederationPreview])
+
+    const handleReject = useCallback(() => {
+        setIsJoining(false)
+        try {
+            // If the last screen was public federations/communities, reset to it
+            if (navigation.canGoBack()) navigation.goBack()
+            // fall back to the TabsNavigator based on preview type
+            else
+                navigation.dispatch(
+                    reset('TabsNavigator', {
+                        initialRouteName: communityPreview
+                            ? 'Home'
+                            : 'Federations',
+                    }),
+                )
+        } catch (error) {
+            log.error('Error rejecting join', error)
+        }
+    }, [communityPreview, navigation, setIsJoining])
 
     const goToNextScreen = useCallback(() => {
         if (!federationPreview && !communityPreview) return
@@ -131,16 +153,7 @@ const JoinFederation: React.FC<Props> = ({ navigation, route }: Props) => {
                         )
                     handleJoin(goToNextScreen, recoverFromScratch)
                 }}
-                onBack={() => {
-                    setIsJoining(false)
-                    setFederationPreview(undefined)
-                    // navigation.getState()?.routes?.length || 0) > 1
-                    //     ? navigation.goBack()
-                    //     : navigation.reset({
-                    //           index: 0,
-                    //           routes: [{ name: 'TabsNavigator' }],
-                    //       }
-                }}
+                onBack={handleReject}
                 federation={federationPreview}
             />
         )
@@ -153,16 +166,7 @@ const JoinFederation: React.FC<Props> = ({ navigation, route }: Props) => {
                 onJoin={() => {
                     handleJoin(goToNextScreen)
                 }}
-                onBack={() => {
-                    setIsJoining(false)
-                    setCommunityPreview(undefined)
-                    // navigation.getState()?.routes?.length || 0) > 1
-                    //     ? navigation.goBack()
-                    //     : navigation.reset({
-                    //           index: 0,
-                    //           routes: [{ name: 'TabsNavigator' }],
-                    //       }
-                }}
+                onBack={handleReject}
                 community={communityPreview}
             />
         )
