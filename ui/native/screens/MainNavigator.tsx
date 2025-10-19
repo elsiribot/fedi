@@ -1042,7 +1042,7 @@ export const MainNavigator = () => {
                                         <CenteredHeader
                                             backButton
                                             title={t(
-                                                'feature.fedimods.add-a-mod',
+                                                'feature.fedimods.add-a-mini-app',
                                             )}
                                         />
                                     ),

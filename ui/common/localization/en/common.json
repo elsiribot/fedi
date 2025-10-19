@@ -239,6 +239,7 @@
         "reload-app": "Reload application",
         "return-to-home": "Return to home",
         "save-changes": "Save changes",
+        "scan-or-paste": "Scan or paste",
         "select-federation": "Select Federation",
         "select-global-currency": "Select currency",
         "select-local-currency": "Select local currency",
@@ -452,6 +453,7 @@
             "federation-chat": "Federation chat",
             "federation-invite": "Federation invite",
             "federation-news": "Federation News",
+            "find-by-username": "Find by username",
             "file-saved": "File saved",
             "first-entry": "Chat & Pay instantly",
             "first-entry-option-1": "Federation & Community news, group chats, and private messages.",
@@ -638,7 +640,7 @@
             "wallet-balance": "Wallet balance"
         },
         "fedimods": {
-            "add-a-mod": "Add a Mini App",
+            "add-a-mini-app": "Add a mini app",
             "add-mods-homescreen": "Add Mini Apps to your Fedi home screen",
             "cache-clear": "Fedi Mini App Clear Cache",
             "cache-clear-info": "Adds a clear cache button to the Fedi Mini App browser",
@@ -660,6 +662,7 @@
             "first-entry": "Mini Apps = Useful Web Services",
             "first-entry-option-1": "Browse and add personal Mini Apps that power your daily life.",
             "first-entry-option-2": "Only the Mini Apps you choose live here.",
+            "go-to-mini-app-catalog": "Go to mini app catalog",
             "leave-page-confirmation": "Are you sure you want to leave this page? Changes may not be saved",
             "mod-title": "Mini App title",
             "no-mods-available": "No federation Mini Apps available",

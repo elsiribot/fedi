@@ -95,6 +95,7 @@ export { default as LeaveFederation } from '@fedi/common/assets/svgs/leave-feder
 export { default as LeaveRoom } from '@fedi/common/assets/svgs/leave-room.svg'
 export { default as LightningCircle } from '@fedi/common/assets/svgs/lightning-circle.svg'
 export { default as List } from '@fedi/common/assets/svgs/list.svg'
+export { default as ListSearch } from '@fedi/common/assets/svgs/list-search.svg'
 export { default as LockSecurity } from '@fedi/common/assets/svgs/lock-security.svg'
 export { default as LockSquareRounded } from '@fedi/common/assets/svgs/lock-square-rounded.svg'
 export { default as LockUnlocked } from '@fedi/common/assets/svgs/lock-unlocked.svg'

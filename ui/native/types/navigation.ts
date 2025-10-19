@@ -138,7 +138,7 @@ export type RootStackParamList = {
     MultispendTransactions: { roomId: string }
     CreateMultispend: { roomId: string; voters?: string[] }
     AssignMultispendVoters: { roomId: string; voters?: string[] }
-    NewMessage: undefined
+    NewMessage: { initialInputMethod?: 'scan' | 'search' }
     NostrSettings: undefined
     NotificationsPermission:
         | { nextScreen: keyof RootStackParamList }
