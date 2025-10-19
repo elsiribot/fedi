@@ -158,7 +158,8 @@ export type RootStackParamList = {
     ReceiveOffline: { federationId: Federation['id'] }
     RecoveryWords:
         | {
-              nextScreenParams: NavigationArgs
+              nextScreenParams?: NavigationArgs
+              isFromJoin?: boolean
           }
         | undefined
     RecoveryAssistSuccess: undefined
@@ -204,7 +205,6 @@ export type RootStackParamList = {
         federationId: Federation['id']
     }
     StableBalanceIntro: { federationId: Federation['id'] }
-    StartPersonalBackup: undefined
     StartRecoveryAssist: undefined
     StartSocialBackup: { federationId: Federation['id'] }
     SocialBackupCloudUpload: undefined

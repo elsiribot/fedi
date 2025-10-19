@@ -7,7 +7,6 @@ import { useTranslation } from 'react-i18next'
 import { selectSocialRecoveryState } from '@fedi/common/redux'
 
 import ChooseBackupMethodHeader from '../components/feature/backup/ChooseBackupMethodHeader'
-import PersonalBackupHeader from '../components/feature/backup/PersonalBackupHeader'
 import RecoveryWordsHeader from '../components/feature/backup/RecoveryWordsHeader'
 import SocialBackupHeader from '../components/feature/backup/SocialBackupHeader'
 import ChatConversationHeader from '../components/feature/chat/ChatConversationHeader'
@@ -189,7 +188,6 @@ import StabilityHome from './StabilityHome'
 import StabilityWithdraw from './StabilityWithdraw'
 import StabilityWithdrawInitiated from './StabilityWithdrawInitiated'
 import StableBalanceIntro from './StableBalanceIntro'
-import StartPersonalBackup from './StartPersonalBackup'
 import StartRecoveryAssist from './StartRecoveryAssist'
 import StartSocialBackup from './StartSocialBackup'
 import TabsNavigator from './TabsNavigator'
@@ -997,13 +995,6 @@ export const MainNavigator = () => {
                                 options={{ headerShown: false }}
                             />
                             {/* Personal Backup */}
-                            <Stack.Screen
-                                name="StartPersonalBackup"
-                                component={StartPersonalBackup}
-                                options={() => ({
-                                    header: () => <PersonalBackupHeader />,
-                                })}
-                            />
                             <Stack.Screen
                                 name="RecoveryWords"
                                 component={RecoveryWords}

@@ -9,6 +9,7 @@ import {
     useFederationPreview,
     useLatestPublicFederations,
 } from '@fedi/common/hooks/federation'
+import { useNuxStep } from '@fedi/common/hooks/nux'
 import { selectMatrixAuth } from '@fedi/common/redux'
 import { makeLog } from '@fedi/common/utils/log'
 
@@ -48,6 +49,9 @@ const JoinFederation: React.FC<Props> = ({ navigation, route }: Props) => {
         handleCode,
         handleJoin,
     } = useFederationPreview(t, fedimint, invite || '')
+    const [hasPerformedPersonalBackup] = useNuxStep(
+        'hasPerformedPersonalBackup',
+    )
 
     // // Reset preview when leaving the screen
     useEffect(() => {
@@ -79,6 +83,12 @@ const JoinFederation: React.FC<Props> = ({ navigation, route }: Props) => {
 
     const goToNextScreen = useCallback(() => {
         if (!federationPreview && !communityPreview) return
+
+        // Take them to the Personal Backup screen if they haven't backed up before
+        if (!hasPerformedPersonalBackup) {
+            return navigation.navigate('RecoveryWords', { isFromJoin: true })
+        }
+
         if (hasMatrixAuth) {
             navigation.replace('TabsNavigator', {
                 initialRouteName: federationPreview ? 'Federations' : 'Home',
@@ -86,7 +96,13 @@ const JoinFederation: React.FC<Props> = ({ navigation, route }: Props) => {
         } else {
             navigation.replace('EnterDisplayName')
         }
-    }, [federationPreview, communityPreview, hasMatrixAuth, navigation])
+    }, [
+        federationPreview,
+        communityPreview,
+        hasMatrixAuth,
+        hasPerformedPersonalBackup,
+        navigation,
+    ])
 
     // If they came here with route state, paste the code for them
     useEffect(() => {
