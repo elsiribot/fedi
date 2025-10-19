@@ -42,8 +42,8 @@ const Home: React.FC<Props> = () => {
     const { t } = useTranslation()
     const { theme } = useTheme()
     const isFocused = useIsFocused()
-
     const selectedCommunity = useAppSelector(selectLastSelectedCommunity)
+
     const pinnedMessage = getFederationPinnedMessage(
         selectedCommunity?.meta || {},
     )
@@ -152,7 +152,9 @@ const Home: React.FC<Props> = () => {
                 show={showCommunityOverlay}
                 onDismiss={handleCommunityDismiss}
             />
+
             <SurveyOverlay />
+
             <AnalyticsConsentOverlay />
         </View>
     )
