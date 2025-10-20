@@ -498,6 +498,7 @@ export const ChatConversation: React.FC<Props> = ({
                             {inputActions && inputActions}
                         </InputActions>
                         <SendButton
+                            aria-label="send-button"
                             disabled={
                                 (value.trim().length === 0 && !files.length) ||
                                 isSending

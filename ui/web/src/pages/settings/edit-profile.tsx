@@ -179,6 +179,7 @@ const EditProfile = () => {
 
                 <Layout.Actions>
                     <Button
+                        aria-label="save-button"
                         width="full"
                         loading={isLoading}
                         disabled={saveButtonDisabled}

@@ -3,8 +3,7 @@ import { useRouter } from 'next/router'
 import ChevronLeft from '@fedi/common/assets/svgs/chevron-left.svg'
 import CloseIcon from '@fedi/common/assets/svgs/close.svg'
 
-import { useMediaQuery } from '../hooks'
-import { config, keyframes, styled, theme } from '../styles'
+import { keyframes, styled, theme } from '../styles'
 import { Icon } from './Icon'
 import { IconButton } from './IconButton'
 import { ShadowScroller } from './ShadowScroller'
@@ -22,12 +21,11 @@ export function Header({
     centered,
     ...props
 }: React.ComponentProps<typeof HeaderContainer> & Props) {
-    const isSm = useMediaQuery(config.media.sm)
     const router = useRouter()
 
     return (
         <HeaderContainer {...props}>
-            {back && isSm && (
+            {back && (
                 <ButtonWrapper isBack>
                     <IconButton
                         icon={ChevronLeft}
@@ -99,10 +97,7 @@ const HeaderContent = styled('div', {
     gap: 8,
     height: '100%',
     width: '100%',
-
-    '@sm': {
-        padding: '0 16px',
-    },
+    padding: '0 16px',
 
     variants: {
         centered: {
@@ -114,14 +109,9 @@ const HeaderContent = styled('div', {
 })
 
 export const Title = styled('h1', {
-    fontSize: theme.fontSizes.h1,
+    fontSize: theme.fontSizes.h2,
+    fontWeight: theme.fontWeights.medium,
     lineHeight: 1.5,
-    fontWeight: theme.fontWeights.bold,
-
-    '@sm': {
-        fontSize: theme.fontSizes.h2,
-        fontWeight: theme.fontWeights.medium,
-    },
 
     variants: {
         small: {
@@ -132,12 +122,10 @@ export const Title = styled('h1', {
         },
         subheader: {
             true: {
-                '@sm': {
-                    fontSize: theme.fontSizes.body,
-                    fontWeight: theme.fontWeights.bold,
-                    flexGrow: 1,
-                    textAlign: 'center',
-                },
+                fontSize: theme.fontSizes.body,
+                fontWeight: theme.fontWeights.bold,
+                flexGrow: 1,
+                textAlign: 'center',
             },
         },
     },
@@ -149,10 +137,10 @@ const fadeIn = keyframes({
 })
 
 export const Content = styled(ShadowScroller, {
-    flex: 1,
-    width: '100%',
     display: 'flex',
+    flex: 1,
     flexDirection: 'column',
+    width: '100%',
 
     '& > *:first-child': {
         height: '100%',
@@ -165,10 +153,8 @@ export const Content = styled(ShadowScroller, {
         fullWidth: {
             true: {},
             false: {
-                '@sm': {
-                    '& > *:first-child': {
-                        padding: '0 16px 16px',
-                    },
+                '& > *:first-child': {
+                    padding: 20,
                 },
             },
         },
@@ -204,14 +190,7 @@ export const Actions = styled('div', {
     width: '100%',
     paddingTop: 24,
     gap: 16,
-
-    '@sm': {
-        padding: '24px 24px 24px',
-    },
-
-    '@xs': {
-        padding: 16,
-    },
+    padding: '24px 24px 24px',
 
     '@standalone': {
         '.hide-navigation &': {

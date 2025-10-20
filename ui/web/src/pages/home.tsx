@@ -135,10 +135,6 @@ const Content = styled('div', {
     display: 'flex',
     flexDirection: 'column',
     gap: 20,
-
-    '@sm': {
-        marginTop: 12,
-    },
 })
 
 const Section = styled('div', {

@@ -8,8 +8,8 @@ import {
 } from '@fedi/common/redux'
 import { MatrixSyncStatus } from '@fedi/common/types'
 
-import { useAppSelector, useMediaQuery } from '../../hooks'
-import { config, styled, theme } from '../../styles'
+import { useAppSelector } from '../../hooks'
+import { styled, theme } from '../../styles'
 import { shouldHideNavigation } from '../../utils/nav'
 import { ChatOfflineIndicator } from '../Chat/ChatOfflineIndicator'
 import { CommunitySelector } from '../CommunitySelector'
@@ -28,8 +28,7 @@ export const Template: React.FC<Props> = ({ children }) => {
     const syncStatus = useAppSelector(selectMatrixStatus)
     const selectedCommunity = useAppSelector(selectLastSelectedCommunity)
 
-    const isSm = useMediaQuery(config.media.sm)
-    const hideNavigation = shouldHideNavigation(asPath, isSm)
+    const hideNavigation = shouldHideNavigation(asPath)
 
     const shouldShowChatOffline =
         syncStatus === MatrixSyncStatus.syncing && asPath.startsWith('/chat')
@@ -41,8 +40,7 @@ export const Template: React.FC<Props> = ({ children }) => {
     }
 
     return (
-        <Container className={hideNavigation ? 'hide-navigation' : ''}>
-            {!hideNavigation && <Navigation />}
+        <Container>
             <Content>
                 <HeaderArea>
                     {isHome && (
@@ -66,82 +64,29 @@ export const Template: React.FC<Props> = ({ children }) => {
 
                 {shouldShowChatOffline && <ChatOfflineIndicator />}
 
-                <Main centered={hideNavigation}>
-                    <ErrorBoundary fallback={() => <PageError />}>
-                        {children}
-                    </ErrorBoundary>
-                </Main>
+                <ErrorBoundary fallback={() => <PageError />}>
+                    {children}
+                </ErrorBoundary>
+
+                {!hideNavigation && <Navigation />}
             </Content>
         </Container>
     )
 }
 
 const Container = styled('div', {
-    display: 'flex',
-    minHeight: '100vh',
-
-    '@supports (height: 100dvh)': {
-        minHeight: '100dvh',
-    },
-
-    '@supports (min-height: -webkit-fill-available)': {
-        minHeight: '-webkit-fill-available',
-    },
-
-    '@md': {
-        height: '100vh',
-        maxHeight: '100vh',
-        flexDirection: 'column-reverse',
-
-        '@supports (height: 100dvh)': {
-            height: '100dvh',
-            maxHeight: '100dvh',
-        },
-
-        '@supports (height: -webkit-fill-available)': {
-            height: '-webkit-fill-available',
-        },
-    },
-
-    '@standalone': {
-        borderTop: `1px solid ${theme.colors.extraLightGrey}`,
-
-        '@sm': {
-            borderTop: 'none',
-        },
-    },
+    overflow: 'hidden',
+    width: '100%',
 })
 
 const Content = styled('div', {
-    flex: 1,
+    background: theme.colors.white,
     display: 'flex',
     flexDirection: 'column',
-    alignItems: 'center',
+    height: '100dvh',
+    margin: '0 auto',
     minHeight: 0,
-    gap: 16,
-    overflow: 'auto',
-    '--template-padding': '48px',
-
-    '@md': {
-        '--template-padding': '36px',
-    },
-
-    '@sm': {
-        overflow: 'visible',
-        background: theme.colors.white,
-        '--template-padding': '24px',
-        gap: 0,
-    },
-
-    '@xs': {
-        '--template-padding': '16px',
-    },
-
-    // Allows print screen to split across multiple pages
-    '@media print': {
-        display: 'block',
-        overflow: 'visible',
-    },
+    maxWidth: 480,
 })
 
 const HeaderArea = styled('div', {
@@ -149,31 +94,18 @@ const HeaderArea = styled('div', {
     flexDirection: 'column',
     alignItems: 'center',
     width: '100%',
-    padding: '0 var(--template-padding)',
-
-    '@sm': {
-        padding: '0 0',
-    },
+    padding: 0,
 })
 
 const HomeHeader = styled('div', {
-    width: '100%',
-    maxWidth: 600,
     alignItems: 'center',
     display: 'flex',
     flexDirection: 'column',
-    gap: theme.spacing.sm,
-    padding: '8px var(--template-padding)',
-
     fediGradient: 'sky',
-    borderBottomLeftRadius: 16,
-    borderBottomRightRadius: 16,
-
-    '@sm': {
-        width: '100%',
-        padding: '0 16px',
-        gap: theme.spacing.sm,
-    },
+    maxWidth: 600,
+    gap: theme.spacing.sm,
+    padding: '0 16px',
+    width: '100%',
 })
 
 const HeaderRow = styled('div', {
@@ -185,33 +117,4 @@ const HeaderRow = styled('div', {
 
 const CommunitySelectorWrapper = styled('div', {
     padding: '16px 0',
-})
-
-const Main = styled('main', {
-    flex: 1,
-    width: '100%',
-    display: 'flex',
-    flexDirection: 'column',
-    alignItems: 'center',
-    gap: `var(--template-padding)`,
-    padding: '0 var(--template-padding) var(--template-padding)',
-
-    '@sm': {
-        padding: '0',
-        minHeight: 0,
-        background: theme.colors.white,
-    },
-
-    variants: {
-        centered: {
-            true: {
-                paddingTop: 'var(--template-padding)',
-                justifyContent: 'center',
-
-                '@sm': {
-                    padding: 0,
-                },
-            },
-        },
-    },
 })

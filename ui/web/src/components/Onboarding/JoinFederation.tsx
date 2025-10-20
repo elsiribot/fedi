@@ -5,9 +5,8 @@ import { useTranslation } from 'react-i18next'
 import { useFederationPreview } from '@fedi/common/hooks/federation'
 import { makeLog } from '@fedi/common/utils/log'
 
-import { useMediaQuery } from '../../hooks'
 import { fedimint } from '../../lib/bridge'
-import { config, styled } from '../../styles'
+import { styled } from '../../styles'
 import { HoloLoader } from '../HoloLoader'
 import * as Layout from '../Layout'
 import { Redirect } from '../Redirect'
@@ -20,7 +19,6 @@ export const JoinFederation: React.FC = () => {
     const { t } = useTranslation()
     const { push, query } = useRouter()
 
-    const isSm = useMediaQuery(config.media.sm)
     const inviteCode = String(query.invite_code) || ''
 
     const {
@@ -95,11 +93,10 @@ export const JoinFederation: React.FC = () => {
 
     return (
         <Layout.Root>
-            {isSm && (
-                <Layout.Header back>
-                    <Layout.Title subheader>{t('words.welcome')}</Layout.Title>
-                </Layout.Header>
-            )}
+            <Layout.Header back>
+                <Layout.Title subheader>{t('words.welcome')}</Layout.Title>
+            </Layout.Header>
+
             <Layout.Content>{content}</Layout.Content>
         </Layout.Root>
     )
