@@ -225,7 +225,10 @@ const AddFediMod: React.FC = () => {
                                     <Image
                                         source={
                                             imageUrl
-                                                ? { uri: imageUrl }
+                                                ? {
+                                                      uri: imageUrl,
+                                                      cache: 'force-cache',
+                                                  }
                                                 : FediModImages.default
                                         }
                                         style={style.previewIcon}
