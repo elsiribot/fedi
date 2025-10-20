@@ -90,6 +90,7 @@ const FederationsListWrapper = styled('div', {
     display: 'flex',
     flexDirection: 'column',
     gap: theme.spacing.lg,
+    padding: 20,
 
     '@sm': {
         paddingLeft: theme.spacing.lg,

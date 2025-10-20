@@ -33,6 +33,6 @@ const Content = styled('div', {
     flexDirection: 'column',
     gap: 10,
     justifyContent: 'flex-start',
-    padding: '20px 16px 16px',
+    padding: 20,
     textAlign: 'center',
 })
