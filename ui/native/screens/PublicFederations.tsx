@@ -3,14 +3,17 @@ import { Button, Text, Theme, useTheme, Image } from '@rneui/themed'
 import React, { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import {
+    ActivityIndicator,
     BackHandler,
-    Linking,
     ScrollView,
     StyleSheet,
     View,
 } from 'react-native'
 
-import { useLatestPublicFederations } from '@fedi/common/hooks/federation'
+import {
+    useGuardianito,
+    useLatestPublicFederations,
+} from '@fedi/common/hooks/federation'
 import { selectFederationIds } from '@fedi/common/redux'
 import { Images } from '@fedi/native/assets/images'
 
@@ -22,6 +25,7 @@ import { OmniInput } from '../components/feature/omni/OmniInput'
 import Flex from '../components/ui/Flex'
 import { SafeAreaContainer } from '../components/ui/SafeArea'
 import { useAppSelector } from '../state/hooks'
+import { resetToChatsScreen } from '../state/navigation'
 import type { RootStackParamList } from '../types/navigation'
 
 export type Props = NativeStackScreenProps<
@@ -37,6 +41,12 @@ const PublicFederations: React.FC<Props> = ({ navigation, route }) => {
     const publicFederations = useAppSelector(
         s => s.federation.publicFederations,
     )
+    const {
+        myGuardianitoBot,
+        beginBotCreation,
+        isLoading: isLoadingGuardianitoBot,
+        showGoToChatButton,
+    } = useGuardianito(t)
 
     const style = styles(theme)
 
@@ -59,11 +69,11 @@ const PublicFederations: React.FC<Props> = ({ navigation, route }) => {
             value: 'join',
             subText: t('feature.onboarding.description-join'),
         },
-        // {
-        //     label: t('words.create'),
-        //     value: 'create',
-        //     subText: t('feature.onboarding.description-create'),
-        // },
+        {
+            label: t('words.create'),
+            value: 'create',
+            subText: t('feature.onboarding.description-create'),
+        },
     ]
 
     const cameFromSplash = route?.params?.from === 'Splash'
@@ -92,6 +102,10 @@ const PublicFederations: React.FC<Props> = ({ navigation, route }) => {
         },
         { icon: 'Wallet', text: t('feature.federation.create-info-5') },
     ]
+
+    const handleGoToChat = () => {
+        navigation.dispatch(resetToChatsScreen())
+    }
 
     return (
         <SafeAreaContainer edges="bottom">
@@ -222,15 +236,42 @@ const PublicFederations: React.FC<Props> = ({ navigation, route }) => {
                             />
                         </View>
                         <Flex fullWidth style={style.buttonsContainer}>
-                            <Button
-                                fullWidth
-                                title={t('phrases.create-my-federation')}
-                                onPress={() =>
-                                    Linking.openURL(
-                                        'https://support.fedi.xyz/hc/en-us/sections/18214787528082-Federation-Setup',
-                                    )
-                                }
-                            />
+                            {myGuardianitoBot?.bot_room_id ? (
+                                <Button
+                                    fullWidth
+                                    title={t('words.continue')}
+                                    onPress={() =>
+                                        navigation.navigate(
+                                            'ChatRoomConversation',
+                                            {
+                                                roomId: myGuardianitoBot.bot_room_id,
+                                            },
+                                        )
+                                    }
+                                />
+                            ) : showGoToChatButton ? (
+                                <Button
+                                    fullWidth
+                                    title={t('phrases.go-to-chat')}
+                                    onPress={handleGoToChat}
+                                />
+                            ) : isLoadingGuardianitoBot ? (
+                                <Button fullWidth disabled>
+                                    <Text
+                                        caption
+                                        medium
+                                        style={{ marginRight: 8 }}>
+                                        {`${t('phrases.please-wait')}...`}
+                                    </Text>
+                                    <ActivityIndicator />
+                                </Button>
+                            ) : (
+                                <Button
+                                    fullWidth
+                                    title={t('phrases.create-my-federation')}
+                                    onPress={beginBotCreation}
+                                />
+                            )}
                         </Flex>
                     </View>
                 )}

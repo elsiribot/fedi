@@ -26,6 +26,9 @@ import {
     refreshFederations,
     checkFederationPreview,
     selectIsInternetUnreachable,
+    createGuardianitoBot,
+    selectGuardianitoBot,
+    setGuardianitoBot,
 } from '../redux'
 import {
     CommunityPreview,
@@ -51,6 +54,7 @@ import {
     shouldShowSocialRecovery,
 } from '../utils/FederationUtils'
 import { FedimintBridge } from '../utils/fedimint'
+import { useFedimint } from './fedimint'
 import { useCommonDispatch, useCommonSelector } from './redux'
 import { useToast } from './toast'
 
@@ -631,5 +635,58 @@ export function useFederationStatus<I>({
         statusIcon: statusIconMap[status],
         statusIconColor,
         statusWord,
+    }
+}
+
+export function useGuardianito(t: TFunction) {
+    const fedimint = useFedimint()
+    const toast = useToast()
+    const dispatch = useCommonDispatch()
+    const myGuardianitoBot = useCommonSelector(selectGuardianitoBot)
+    const [isLoading, setIsLoading] = useState(false)
+    const [isStillLoading, setIsStillLoading] = useState(false)
+
+    // Track if operation is taking longer than 7 seconds
+    useEffect(() => {
+        if (!isLoading) {
+            setIsStillLoading(false)
+            return
+        }
+
+        const timeout = setTimeout(() => {
+            setIsStillLoading(true)
+            // set an empty guardianito bot to show the "Go to Chat" button
+            // if the user comes back to the Create Federation screen
+            dispatch(setGuardianitoBot({ bot_user_id: '', bot_room_id: '' }))
+        }, 7000)
+
+        return () => clearTimeout(timeout)
+    }, [dispatch, isLoading])
+
+    useEffect(() => {
+        if (!isStillLoading) return
+        toast.show({
+            content: t('feature.federation.create-still-loading'),
+            status: 'info',
+        })
+    }, [isStillLoading, toast, t])
+
+    const beginBotCreation = useCallback(async () => {
+        setIsLoading(true)
+        try {
+            await dispatch(createGuardianitoBot({ fedimint })).unwrap()
+        } catch (error) {
+            log.error('Error creating guardianito bot', error)
+        } finally {
+            setIsLoading(false)
+        }
+    }, [dispatch, fedimint])
+
+    return {
+        beginBotCreation,
+        isLoading,
+        myGuardianitoBot,
+        showGoToChatButton:
+            isStillLoading || myGuardianitoBot?.bot_room_id === '',
     }
 }
