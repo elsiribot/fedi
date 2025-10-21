@@ -33,3 +33,4 @@ export const settingsBackupPersonalRoute = `${settingsRoute}/backup/personal`
 // Chat
 export const chatUserRoute = (id: string) => `${chatRoute}/user/${id}`
 export const chatRoomRoute = (id: string) => `${chatRoute}/room/${id}`
+export const chatNewRoomRoute = `${chatRoute}/new/room`

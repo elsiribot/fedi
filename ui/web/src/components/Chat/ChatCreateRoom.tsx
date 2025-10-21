@@ -31,7 +31,7 @@ export const ChatCreateRoom: React.FC = () => {
 
     return (
         <Container>
-            <Layout.Header back="/chat/new">
+            <Layout.Header back>
                 <Layout.Title subheader>
                     {t('feature.chat.create-a-group')}
                 </Layout.Title>
