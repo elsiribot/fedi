@@ -24,6 +24,7 @@ import {
     LoadedFederation,
     MatrixRoom,
     MSats,
+    PublicCommunity,
     PublicFederation,
     Sats,
     StabilityPoolConfig,
@@ -68,6 +69,7 @@ const log = makeLog('common/redux/federation')
 const initialState = {
     communities: [] as Community[],
     federations: [] as Federation[],
+    publicCommunities: [] as PublicCommunity[],
     publicFederations: [] as PublicFederation[],
     payFromFederationId: null as Federation['id'] | null,
     recentlyUsedFederationIds: [] as Array<Federation['id']>,
@@ -206,6 +208,9 @@ export const federationSlice = createSlice({
             if (hasAnyUpdates) {
                 state.federations = [...updatedFederations, ...newFederations]
             }
+        },
+        setPublicCommunities(state, action: PayloadAction<PublicCommunity[]>) {
+            state.publicCommunities = action.payload
         },
         setPublicFederations(state, action: PayloadAction<PublicFederation[]>) {
             state.publicFederations = action.payload
@@ -474,6 +479,7 @@ export const federationSlice = createSlice({
 export const {
     setCommunities,
     setFederations,
+    setPublicCommunities,
     setPublicFederations,
     upsertCommunity,
     upsertFederation,

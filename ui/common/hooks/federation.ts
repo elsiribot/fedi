@@ -13,6 +13,7 @@ import {
     selectPaymentFederation,
     selectStableBalance,
     selectStableBalanceEnabled,
+    setPublicCommunities,
     setPublicFederations,
     setSeenFederationRating,
     supportsSafeOnchainDeposit,
@@ -42,6 +43,7 @@ import { RpcFederationPreview } from '../types/bindings'
 import dateUtils from '../utils/DateUtils'
 import {
     detectInviteCodeType,
+    fetchPublicCommunities,
     fetchPublicFederations,
     getCommunityPreview,
     getFederationPopupInfo,
@@ -276,6 +278,31 @@ export function usePopupFederationInfo(metadata: FederationMetadata) {
     }
 }
 
+export function useLatestPublicCommunities() {
+    const publicCommunities = useCommonSelector(
+        s => s.federation.publicCommunities,
+    )
+    const dispatch = useCommonDispatch()
+    const [isFetching, setIsFetching] = useState(false)
+
+    const findPublicCommunities = useCallback(async () => {
+        setIsFetching(true)
+        const communities = await fetchPublicCommunities()
+        dispatch(setPublicCommunities(communities))
+        setIsFetching(false)
+    }, [dispatch])
+
+    useEffect(() => {
+        findPublicCommunities()
+    }, [findPublicCommunities])
+
+    return {
+        publicCommunities,
+        findPublicCommunities,
+        isFetchingPublicCommunities: isFetching,
+    }
+}
+
 // Only v2+ federations use secrets derived from single seed
 export function useLatestPublicFederations() {
     const publicFederations = useCommonSelector(
@@ -287,8 +314,8 @@ export function useLatestPublicFederations() {
     const findPublicFederations = useCallback(async () => {
         setIsFetching(true)
         const federations = await fetchPublicFederations()
-        setIsFetching(false)
         dispatch(setPublicFederations(federations))
+        setIsFetching(false)
     }, [dispatch])
 
     useEffect(() => {
