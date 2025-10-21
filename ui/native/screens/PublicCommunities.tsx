@@ -10,10 +10,10 @@ import { Community } from '@fedi/common/types'
 import { Images } from '@fedi/native/assets/images'
 
 import { FederationLogo } from '../components/feature/federations/FederationLogo'
-import { FirstTimeCommunityEntryItem } from '../components/feature/federations/FirstTimeCommunityEntryOverlay'
 import InfoEntryList from '../components/feature/home/InfoEntryList'
 import { Switcher } from '../components/feature/home/Switcher'
 import { OmniInput } from '../components/feature/omni/OmniInput'
+import { FirstTimeOverlayItem } from '../components/feature/onboarding/FirstTimeOverlay'
 import Flex from '../components/ui/Flex'
 import { SafeAreaContainer } from '../components/ui/SafeArea'
 import { useAppSelector } from '../state/hooks'
@@ -64,7 +64,7 @@ const PublicCommunities: React.FC<Props> = ({ navigation }) => {
         switcherOptions.find(opt => opt.value === activeTab) ??
         switcherOptions[0]
 
-    const createInfoItems: FirstTimeCommunityEntryItem[] = [
+    const createInfoItems: FirstTimeOverlayItem[] = [
         { icon: 'Building', text: t('feature.communities.create-info-1') },
         {
             icon: 'Chat',
