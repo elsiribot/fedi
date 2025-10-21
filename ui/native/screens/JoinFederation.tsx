@@ -84,8 +84,8 @@ const JoinFederation: React.FC<Props> = ({ navigation, route }: Props) => {
     const goToNextScreen = useCallback(() => {
         if (!federationPreview && !communityPreview) return
 
-        // Take them to the Personal Backup screen if they haven't backed up before
-        if (!hasPerformedPersonalBackup) {
+        // Take them to the Personal Backup screen if this is a federation preview and they haven't backed up before
+        if (federationPreview && !hasPerformedPersonalBackup) {
             return navigation.navigate('RecoveryWords', { isFromJoin: true })
         }
 
