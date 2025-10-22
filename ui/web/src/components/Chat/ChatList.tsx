@@ -15,7 +15,6 @@ import { styled, theme } from '../../styles'
 import { Dialog } from '../Dialog'
 import { Column, Row } from '../Flex'
 import { Icon } from '../Icon'
-import MainHeaderButtons from '../MainHeaderButtons'
 import { Text } from '../Text'
 import { ChatListItem } from './ChatListItem'
 
@@ -77,13 +76,10 @@ export const ChatList: React.FC = () => {
     return (
         <>
             <Layout.Root>
-                <Layout.Header>
-                    <Layout.Title small>{t('words.chat')}</Layout.Title>
-                    <MainHeaderButtons
-                        onAddPress={() => setShowOverlay(true)}
-                    />
-                </Layout.Header>
-
+                <Layout.PageHeader
+                    title={t('words.chat')}
+                    onAddPress={() => setShowOverlay(true)}
+                />
                 <Layout.Content fullWidth>
                     {rooms.length === 0 ? (
                         <EmptyMessage>
