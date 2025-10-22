@@ -29,6 +29,7 @@ import Flex from '../components/ui/Flex'
 import { SafeScrollArea } from '../components/ui/SafeArea'
 import { ParserDataType } from '../types'
 import { useImeFooterLift } from '../utils/hooks/keyboard'
+import { stripAndDeduplicateWhitespace } from '../utils/strings'
 
 const log = makeLog('AddFediMod')
 
@@ -59,11 +60,14 @@ const AddFediMod: React.FC = () => {
             const validUrl = new URL(
                 /^https?:\/\//i.test(url) ? url : `https://${url}`,
             ).toString()
+
+            const modTitle = stripAndDeduplicateWhitespace(title)
+
             dispatch(
                 addCustomMod({
                     fediMod: {
                         id: `custom-${Date.now()}`,
-                        title,
+                        title: modTitle,
                         url: validUrl,
                         ...(imageUrl ? { imageUrl } : {}),
                     },
