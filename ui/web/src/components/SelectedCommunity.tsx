@@ -47,7 +47,6 @@ const Container = styled('div', {
     alignItems: 'center',
     gap: 16,
     cursor: 'pointer',
-    padding: '2px 0 16px',
 })
 
 const CommunityName = styled('div', {

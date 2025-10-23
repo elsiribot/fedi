@@ -2,13 +2,61 @@ import { useRouter } from 'next/router'
 
 import ChevronLeft from '@fedi/common/assets/svgs/chevron-left.svg'
 import CloseIcon from '@fedi/common/assets/svgs/close.svg'
+import { Community } from '@fedi/common/types'
 
 import { keyframes, styled, theme } from '../styles'
+import { Row } from './Flex'
 import { Icon } from './Icon'
 import { IconButton } from './IconButton'
+import MainHeaderButtons from './MainHeaderButtons'
+import SelectedCommunity from './SelectedCommunity'
 import { ShadowScroller } from './ShadowScroller'
 
-type Props = {
+type PageHeaderProps = {
+    title: string
+    onAddPress?: () => void
+    onShowCommunitiesPress?: () => void
+    selectedCommunity?: Community
+}
+
+export function PageHeader({
+    title,
+    onAddPress,
+    onShowCommunitiesPress,
+    selectedCommunity,
+}: PageHeaderProps) {
+    return (
+        <PageHeaderContainer>
+            <PageHeaderGradient justify="between" align="center">
+                <Title>{title}</Title>
+                <MainHeaderButtons
+                    onShowCommunitiesPress={onShowCommunitiesPress}
+                    onAddPress={onAddPress}
+                />
+            </PageHeaderGradient>
+            {selectedCommunity && (
+                <SelectedCommunityWrapper>
+                    <SelectedCommunity community={selectedCommunity} />
+                </SelectedCommunityWrapper>
+            )}
+        </PageHeaderContainer>
+    )
+}
+
+const PageHeaderContainer = styled('div', {
+    borderBottom: `1px solid ${theme.colors.extraLightGrey}`,
+})
+
+const PageHeaderGradient = styled(Row, {
+    fediGradient: 'sky',
+    padding: '10px 20px',
+})
+
+const SelectedCommunityWrapper = styled('div', {
+    padding: '10px 20px',
+})
+
+type HeaderProps = {
     back?: string | boolean
     showCloseButton?: boolean
     centered?: boolean
@@ -20,7 +68,7 @@ export function Header({
     showCloseButton,
     centered,
     ...props
-}: React.ComponentProps<typeof HeaderContainer> & Props) {
+}: React.ComponentProps<typeof HeaderContainer> & HeaderProps) {
     const router = useRouter()
 
     return (

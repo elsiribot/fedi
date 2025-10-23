@@ -16,6 +16,7 @@ export const ecashRoute = '/ecash'
 
 // Other pages
 export const onboardingRoute = '/onboarding'
+export const onboardingCommunitiesRoute = `${onboardingRoute}/communities`
 export const shareLogsRoute = '/share-logs'
 
 // Sub pages
