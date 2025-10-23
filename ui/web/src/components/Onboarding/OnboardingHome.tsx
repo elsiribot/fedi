@@ -2,6 +2,7 @@ import { useRouter } from 'next/router'
 import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 
+import { selectFederationIds } from '@fedi/common/redux'
 import { ParserDataType } from '@fedi/common/types'
 
 import { Button } from '../../components/Button'
@@ -9,6 +10,8 @@ import * as Layout from '../../components/Layout'
 import PublicFederations from '../../components/PublicFederations'
 import { Switcher } from '../../components/Switcher'
 import { Text } from '../../components/Text'
+import { federationsRoute, homeRoute } from '../../constants/routes'
+import { useAppSelector } from '../../hooks'
 import { keyframes, styled, theme } from '../../styles'
 import { OmniInput } from '../OmniInput'
 
@@ -27,6 +30,8 @@ const getTab = (tab: string): TabValue => {
 export function OnboardingHome() {
     const { t } = useTranslation()
     const { push, query, replace } = useRouter()
+
+    const joinedFederationIds = useAppSelector(selectFederationIds)
 
     const [activeTab, setActiveTab] = useState<TabValue>('discover')
 
@@ -104,7 +109,15 @@ export function OnboardingHome() {
                 </Content>
             </Layout.Content>
             <Layout.Actions>
-                <Button variant="tertiary" onClick={() => push('/home')}>
+                <Button
+                    variant="tertiary"
+                    onClick={() =>
+                        push(
+                            joinedFederationIds.length > 0
+                                ? federationsRoute
+                                : homeRoute,
+                        )
+                    }>
                     {t('phrases.maybe-later')}
                 </Button>
             </Layout.Actions>
