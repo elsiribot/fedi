@@ -1,4 +1,3 @@
-import Clipboard from '@react-native-clipboard/clipboard'
 import type { NativeStackScreenProps } from '@react-navigation/native-stack'
 import { Button, Card, Text, Theme, useTheme } from '@rneui/themed'
 import React, { useEffect, useState } from 'react'
@@ -6,7 +5,6 @@ import { useTranslation } from 'react-i18next'
 import { ImageBackground, ScrollView, StyleSheet, View } from 'react-native'
 
 import { useNuxStep } from '@fedi/common/hooks/nux'
-import { useToast } from '@fedi/common/hooks/toast'
 import {
     selectIsRecoveringBeforePin,
     setIsBackingUpBeforePin,
@@ -48,7 +46,6 @@ const RecoveryWords: React.FC<Props> = ({ navigation, route }: Props) => {
     const { nextScreenParams, isFromJoin } = route.params || {}
     const { t } = useTranslation()
     const { theme } = useTheme()
-    const toast = useToast()
 
     const [seedWords, setSeedWords] = useState<SeedWords>([])
 
@@ -81,14 +78,6 @@ const RecoveryWords: React.FC<Props> = ({ navigation, route }: Props) => {
             .map((s, i) => (
                 <SeedWord key={`sw-l6-${i}`} number={i + 7} word={s} />
             ))
-    }
-
-    const handleCopySeedWords = () => {
-        Clipboard.setString(seedWords.join(' '))
-        toast.show({
-            content: t('phrases.copied-to-clipboard'),
-            status: 'success',
-        })
     }
 
     const handleContinueOrDone = () => {
@@ -174,14 +163,6 @@ const RecoveryWords: React.FC<Props> = ({ navigation, route }: Props) => {
                     </Column>
                 </ScrollView>
                 <Column gap="md" fullWidth style={style.buttons}>
-                    <Button
-                        day
-                        icon={<SvgImage name="Copy" />}
-                        title={t(
-                            'feature.backup.personal-backup-button-secondard-text',
-                        )}
-                        onPress={handleCopySeedWords}
-                    />
                     <Button
                         title={t(
                             'feature.backup.personal-backup-button-primary-text',
