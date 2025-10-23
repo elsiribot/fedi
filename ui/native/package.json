@@ -46,6 +46,7 @@
         "@rneui/base": "^4.0.0-rc.8",
         "@rneui/themed": "^4.0.0-rc.8",
         "base-64": "^1.0.0",
+        "html-entities": "^2.6.0",
         "i18next": "^23.16.5",
         "qrloop": "^1.4.1",
         "react": "18.3.1",
