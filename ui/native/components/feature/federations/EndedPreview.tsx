@@ -5,8 +5,10 @@ import { StyleSheet, View } from 'react-native'
 
 import { usePopupFederationInfo } from '@fedi/common/hooks/federation'
 import { RpcFederationPreview } from '@fedi/common/types/bindings'
+import { isDev } from '@fedi/common/utils/environment'
 
 import { LoadedFederation } from '../../../types'
+import { isNightly } from '../../../utils/device-info'
 import Flex from '../../ui/Flex'
 import { FederationLogo } from './FederationLogo'
 
@@ -49,13 +51,15 @@ export default function FederationEndedPreview({
                                 <Text
                                     caption
                                     bold
-                                    onPress={() =>
-                                        setClicks(c => {
-                                            if (c >= 21) setJoinAnyways(true)
+                                    onPress={() => {
+                                        if (isNightly() || isDev())
+                                            setClicks(c => {
+                                                if (c >= 21)
+                                                    setJoinAnyways(true)
 
-                                            return c + 1
-                                        })
-                                    }
+                                                return c + 1
+                                            })
+                                    }}
                                 />
                             ),
                         }}

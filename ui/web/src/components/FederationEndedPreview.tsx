@@ -7,6 +7,7 @@ import { usePopupFederationInfo } from '@fedi/common/hooks/federation'
 import { LoadedFederation } from '@fedi/common/types'
 import { RpcFederationPreview } from '@fedi/common/types/bindings'
 
+import { isNightly } from '../utils/browserInfo'
 import { FederationAvatar } from './FederationAvatar'
 import { Text } from './Text'
 
@@ -36,13 +37,20 @@ export default function FederationEndedPreview({
                         components={{
                             bold: (
                                 <strong
-                                    onClick={() =>
+                                    onClick={() => {
+                                        if (
+                                            !isNightly() &&
+                                            process.env.NODE_ENV !==
+                                                'development'
+                                        )
+                                            return
+
                                         setClicks(c => {
                                             if (c >= 21) setJoinAnyways(true)
 
                                             return c + 1
                                         })
-                                    }
+                                    }}
                                 />
                             ),
                         }}
