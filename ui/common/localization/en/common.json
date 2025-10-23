@@ -464,6 +464,7 @@
             "go-to-direct-chat": "Go to direct chat",
             "group-chat": "Group chat",
             "group-name": "Group name",
+            "guardianito-help-text": "Type /? for options",
             "invalid-group": "This is not a valid chat group",
             "invalid-member": "This is not a valid chat member",
             "invite-to-group": "Invite to group",
