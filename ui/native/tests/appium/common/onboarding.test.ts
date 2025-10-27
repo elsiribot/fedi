@@ -17,6 +17,7 @@ export class OnboardingTest extends AppiumTestBase {
         await this.clickElementByKey('Explore Now')
         await this.clickElementByKey('FederationsTabButton')
         await this.clickElementByKey('ScanButton')
+        await this.clickElementByKey('FirstTimeOverlayButton')
         if ((await this.elementIsDisplayed('Continue')) === true) {
             await this.clickElementByKey('Continue')
             try {
