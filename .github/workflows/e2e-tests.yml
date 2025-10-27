@@ -66,8 +66,8 @@ jobs:
             - name: Start Metro
               run: nix develop -c ./scripts/ui/start-metro.sh
 
-            - name: Run Android 8 tests
-              run: nix develop -c ./scripts/ci/run-android-tests.sh android-8 "./ui/native/android/app/build/outputs/apk/production/debug/app-production-debug.apk" "Android 7.1"
+            - name: Run Android 7.1 tests
+              run: nix develop -c ./scripts/ci/run-android-tests.sh android-7.1 "./ui/native/android/app/build/outputs/apk/production/debug/app-production-debug.apk" "Android 7.1"
 
             - name: Run Android 14 tests
               run: nix develop -c ./scripts/ci/run-android-tests.sh android-14 "./ui/native/android/app/build/outputs/apk/production/debug/app-production-debug.apk" "Android 14"
