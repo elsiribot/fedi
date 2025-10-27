@@ -42,7 +42,8 @@ export default function FederationGate({
         <>
             {fallbackContent}
             <CustomOverlay
-                show={isJoining}
+                // This should always be shown when the user isn't a member
+                show={true}
                 onBackdropPress={handleBack}
                 contents={{
                     title: t('feature.federations.join-federation'),
