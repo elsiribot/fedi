@@ -281,7 +281,10 @@ export const MainNavigator = () => {
                             ),
                             header: () => (
                                 <CenteredHeader
-                                    title={t('phrases.join-a-federation')}
+                                    backButton={
+                                        route?.params?.from !== 'Splash'
+                                    }
+                                    title={t('feature.onboarding.heading')}
                                 />
                             ),
                         })}
