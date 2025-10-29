@@ -274,5 +274,5 @@ export const generateRandomDisplayName = () => {
     const firstWord = wordListFirst[randomIndexFirst]
     const lastWord = wordListLast[randomIndexLast]
 
-    return `${firstWord[0].toUpperCase()}${firstWord.slice(1)} ${lastWord}`
+    return `${firstWord} ${lastWord}`
 }

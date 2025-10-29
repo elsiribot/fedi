@@ -15,7 +15,7 @@ describe('/screens/EditProfileSettings', () => {
     const context = builder.getContext()
 
     describe('when the display name is set in the input box', () => {
-        it('should consist of two random words, the first word starting with a capital letter', async () => {
+        it('should consist of two random words', async () => {
             await builder.withOnboardingCompleted()
 
             const {
@@ -29,7 +29,6 @@ describe('/screens/EditProfileSettings', () => {
 
             const words = input.props.value.split(' ')
             expect(words.length).toBe(2)
-            expect(/[A-Z]/.test(words[0][0])).toBeTruthy()
         })
     })
 })
