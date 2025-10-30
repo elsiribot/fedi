@@ -29,6 +29,7 @@ import { homeRoute, onboardingJoinRoute } from '../constants/routes'
 import { useAppDispatch, useAppSelector } from '../hooks'
 import { fedimint, initializeBridge } from '../lib/bridge'
 import { getAppFlavor } from '../lib/bridge/worker'
+import AccountDeletionPage from '../pages/account-deletion'
 import { keyframes, styled, theme } from '../styles'
 import { generateDeviceId, isNightly } from '../utils/browserInfo'
 import { isDeepLink, getDeepLinkPath } from '../utils/linking'
@@ -157,6 +158,10 @@ export const FediBridgeInitializer: React.FC<Props> = ({ children }) => {
                 </ErrorMessage>
             </Content>
         )
+    }
+
+    if (asPath.includes('/account-deletion')) {
+        return <AccountDeletionPage />
     }
 
     if (shouldLockDevice) {

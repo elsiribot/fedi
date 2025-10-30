@@ -13,6 +13,7 @@ import { version } from '../../../package.json'
 import { useAppDispatch, useAppSelector } from '../../../state/hooks'
 import Flex from '../../ui/Flex'
 import SvgImage from '../../ui/SvgImage'
+import { RequestAccountDeletion } from './RequestAccountDeletion'
 
 type VersionContainerProps = {
     unlockDevModeCount: number
@@ -86,6 +87,7 @@ export const VersionContainer = ({
                     </Text>
                 </Button>
             </Pressable>
+            <RequestAccountDeletion />
         </Flex>
     )
 }

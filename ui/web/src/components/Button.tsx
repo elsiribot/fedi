@@ -6,7 +6,7 @@ import { CircularLoader } from './CircularLoader'
 import { Icon, IconProps } from './Icon'
 
 interface BaseProps {
-    variant?: 'primary' | 'secondary' | 'tertiary' | 'outline'
+    variant?: 'primary' | 'secondary' | 'tertiary' | 'outline' | 'danger'
     size?: 'md' | 'sm' | 'xs'
     icon?: IconProps['icon']
     width?: 'auto' | 'full'
@@ -173,6 +173,10 @@ const ButtonBase = styled('button', {
                 '&:active': {
                     background: theme.colors.primary10,
                 },
+            },
+            danger: {
+                background: theme.colors.red,
+                color: theme.colors.white,
             },
         },
         size: {
