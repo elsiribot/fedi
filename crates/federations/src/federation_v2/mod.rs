@@ -924,6 +924,9 @@ impl FederationV2 {
         expiry_time: Option<u64>,
         frontend_meta: FrontendMetadata,
     ) -> Result<RpcInvoice> {
+        // some apps have issues paying invoices that are in msats
+        // so round up amount to nearest sat
+        let amount = Amount::from_sats(amount.0.msats.div_ceil(1000));
         let fedi_fee_ppm = self
             .fedi_fee_helper
             .get_fedi_fee_ppm(
@@ -937,7 +940,7 @@ impl FederationV2 {
             .client
             .ln()?
             .create_bolt11_invoice(
-                amount.0,
+                amount,
                 lightning_invoice::Bolt11InvoiceDescription::Direct(
                     lightning_invoice::Description::new(description)?,
                 ),
@@ -949,7 +952,7 @@ impl FederationV2 {
 
         self.write_pending_receive_fedi_fee_ppm(operation_id, fedi_fee_ppm)
             .await?;
-        let _ = self.record_tx_date_fiat_info(operation_id, amount.0).await;
+        let _ = self.record_tx_date_fiat_info(operation_id, amount).await;
         self.subscribe_invoice(operation_id, invoice.clone())
             .await?;
 
