@@ -1167,15 +1167,9 @@
                 "zar": "South African Rand",
                 "zmw": "Zambian Kwacha"
             },
-            "account-deletion": "Account Deletion",
-            "account-deletion-explanation": "To delete your Fedi account, click the button below, then uninstall the app and securely destroy your recovery words.",
-            "account-deletion-success": "Please uninstall the app and destroy your recovery words to complete the process.",
-            "analytics-updated-error": "Failed to update analytics consent",
             "app-settings": "App Settings",
-            "confirm-account-deletion": "Confirm Account Deletion",
-            "must-leave-federations-first": "Before requesting account deletion, you must leave all federations and communities.",
-            "request-account-deletion": "Request Account Deletion",
-            "usage-sharing": "Usage sharing"
+            "usage-sharing": "Usage sharing",
+            "analytics-updated-error": "Failed to update analytics consent"
         },
         "stabilitypool": {
             "amount-may-vary": "Amount may vary",
