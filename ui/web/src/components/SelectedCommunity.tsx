@@ -5,6 +5,7 @@ import ChevronRightIcon from '@fedi/common/assets/svgs/chevron-right.svg'
 import { theme } from '@fedi/common/constants/theme'
 import { Community } from '@fedi/common/types'
 
+import { communityRoute } from '../constants/routes'
 import { styled } from '../styles'
 import { FederationAvatar } from './FederationAvatar'
 import { Icon } from './Icon'
@@ -15,14 +16,10 @@ export type Props = {
 }
 
 const SelectedCommunity: React.FC<Props> = ({ community }) => {
-    const router = useRouter()
-
-    const goToCommunityDetails = () => {
-        router.push(`/community-details/${community.id}`)
-    }
+    const { push } = useRouter()
 
     return (
-        <Container onClick={goToCommunityDetails}>
+        <Container onClick={() => push(communityRoute(community.id))}>
             <FederationAvatar federation={community} size="md" />
             <CommunityName>
                 <Text variant="h2" weight="bold">

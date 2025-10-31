@@ -19,14 +19,14 @@ describe('utils/nav', () => {
         })
 
         describe('Home page route', () => {
-            it('should show the nav bar', () => {
+            it('should not hide the nav bar', () => {
                 const result = shouldHideNavigation('/home')
                 expect(result).toBe(false)
             })
         })
 
         describe('Scan page route', () => {
-            it('should show the nav bar', () => {
+            it('should hide the nav bar', () => {
                 const result = shouldHideNavigation('/scan')
                 expect(result).toBe(true)
             })
@@ -54,7 +54,7 @@ describe('utils/nav', () => {
         })
 
         describe('Chat page route', () => {
-            it('should hide the nav bar', () => {
+            it('should not hide the nav bar', () => {
                 const result = shouldHideNavigation('/chat')
                 expect(result).toBe(false)
             })

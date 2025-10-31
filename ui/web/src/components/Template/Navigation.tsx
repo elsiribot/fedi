@@ -15,7 +15,7 @@ import { selectMatrixHasNotifications } from '@fedi/common/redux'
 import {
     chatRoute,
     homeRoute,
-    modsRoute,
+    miniAppsRoute,
     federationsRoute,
 } from '../../constants/routes'
 import { useAppSelector } from '../../hooks'
@@ -49,7 +49,7 @@ export const Navigation: React.FC = () => {
             hasNotification: hasChatNotifications,
         },
         {
-            path: modsRoute,
+            path: miniAppsRoute,
             icon: AppsIcon,
             activeIcon: AppsFilledIcon,
             available: true,
