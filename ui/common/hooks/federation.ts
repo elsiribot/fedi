@@ -611,6 +611,59 @@ export function useFederationInviteCode(
     }
 }
 
+export function useCommunityInviteCode(
+    fedimint: FedimintBridge,
+    inviteCode: string,
+) {
+    const dispatch = useCommonDispatch()
+    const communityIds = useCommonSelector(selectCommunityIds)
+
+    const [isJoining, setIsJoining] = useState(false)
+    const [isFetching, setIsFetching] = useState(false)
+    const [joined, setJoined] = useState(false)
+    const [preview, setPreview] = useState<CommunityPreview>()
+
+    const handleJoin = async () => {
+        if (!preview) return
+
+        setIsJoining(true)
+        const joinedCommunity = await dispatch(
+            joinCommunity({
+                fedimint,
+                code: preview.inviteCode,
+            }),
+        ).unwrap()
+
+        dispatch(setLastSelectedCommunityId(joinedCommunity.id))
+        dispatch(refreshCommunities(fedimint))
+
+        setIsJoining(false)
+    }
+
+    useEffect(() => {
+        const init = async () => {
+            setIsFetching(true)
+            setJoined(communityIds.includes(inviteCode))
+            const communityPreview = await getCommunityPreview(
+                inviteCode,
+                fedimint,
+            )
+            setPreview(communityPreview)
+            setIsFetching(false)
+        }
+
+        init()
+    }, [communityIds, fedimint, inviteCode])
+
+    return {
+        isJoining,
+        isFetching,
+        joined,
+        handleJoin,
+        preview,
+    }
+}
+
 export function useFederationStatus<I>({
     federationId,
     t,

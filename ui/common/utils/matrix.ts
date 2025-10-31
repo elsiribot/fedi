@@ -583,6 +583,12 @@ export function isFederationInviteEvent(
     return event.content.msgtype === 'xyz.fedi.federationInvite'
 }
 
+export function isCommunityInviteEvent(
+    event: MatrixEvent,
+): event is MatrixEvent<'xyz.fedi.communityInvite'> {
+    return event.content.msgtype === 'xyz.fedi.communityInvite'
+}
+
 export function isMultispendEvent(
     event: MatrixEvent,
 ): event is MatrixEvent<'xyz.fedi.multispend'> {

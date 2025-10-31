@@ -902,6 +902,7 @@ export type RpcMsgLikeKind =
   | ({ msgtype: "m.notice" } & RpcTextLikeContent)
   | ({ msgtype: "m.emote" } & RpcTextLikeContent)
   | ({ msgtype: "xyz.fedi.federationInvite" } & RpcTextLikeContent)
+  | ({ msgtype: "xyz.fedi.communityInvite" } & RpcTextLikeContent)
   | ({ msgtype: "m.file" } & RpcFileMessageContent)
   | ({ msgtype: "m.image" } & RpcImageMessageContent)
   | ({ msgtype: "m.video" } & RpcVideoMessageContent)

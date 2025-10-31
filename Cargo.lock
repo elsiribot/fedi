@@ -8926,6 +8926,7 @@ name = "rpc-types"
 version = "0.3.0"
 dependencies = [
  "anyhow",
+ "bech32",
  "bitcoin",
  "fedi-social-client",
  "fedimint-build",
@@ -8936,6 +8937,7 @@ dependencies = [
  "lightning-invoice",
  "matrix-sdk",
  "matrix-sdk-ui",
+ "nostr-sdk",
  "ring 0.17.14",
  "runtime",
  "serde",

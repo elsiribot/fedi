@@ -10,7 +10,6 @@ use std::time::Duration;
 use anyhow::{anyhow, bail};
 use bech32::{self, Bech32m};
 use bridge::RuntimeExt as _;
-use communities::CommunityInvite;
 use devi::DevFed;
 use devimint::cmd;
 use devimint::util::{FedimintCli, LnCli};
@@ -27,8 +26,8 @@ use fedimint_logging::TracingSetup;
 use nostr::nips::nip44;
 use rpc_types::event::TransactionEvent;
 use rpc_types::{
-    RpcLnReceiveState, RpcOOBReissueState, RpcOnchainDepositState, RpcReturningMemberStatus,
-    RpcSPV2TransferInState, RpcTransactionDirection, RpcTransactionKind,
+    CommunityInvite, RpcLnReceiveState, RpcOOBReissueState, RpcOnchainDepositState,
+    RpcReturningMemberStatus, RpcSPV2TransferInState, RpcTransactionDirection, RpcTransactionKind,
 };
 use runtime::constants::{COMMUNITY_INVITE_CODE_HRP, FEDI_FILE_V0_PATH, MILLION};
 use runtime::db::BridgeDbPrefix;

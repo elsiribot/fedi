@@ -1,6 +1,6 @@
 use std::collections::BTreeMap;
 
-use nostril::CommunityInviteV2;
+use rpc_types::CommunityInviteV2;
 use runtime::storage::state::CommunityJson;
 
 use super::*;

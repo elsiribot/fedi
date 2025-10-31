@@ -1,9 +1,6 @@
-use std::fmt::Display;
-use std::str::FromStr;
 use std::time::Duration;
 
 use anyhow::bail;
-use bech32::Bech32m;
 use fedimint_derive_secret::DerivableSecret;
 use nostr_sdk::secp256k1::{self, Message};
 use nostr_sdk::util::hex;
@@ -11,11 +8,9 @@ use nostr_sdk::{
     Client, EventBuilder, Filter, Keys, Kind, NostrSigner, PublicKey, Tag, TagKind, ToBech32,
 };
 use rand::RngCore;
-use rpc_types::RpcCommunity;
+use rpc_types::{CommunityInviteV2, RpcCommunity};
 use runtime::bridge_runtime::Runtime;
-use runtime::constants::{
-    COMMUNITY_V2_INVITE_CODE_HRP, NOSTR_CHILD_ID, NOSTR_COMMUNITY_CREATION_EVENT_KIND,
-};
+use runtime::constants::{NOSTR_CHILD_ID, NOSTR_COMMUNITY_CREATION_EVENT_KIND};
 use runtime::storage::state::CommunityJson;
 use serde::{Deserialize, Serialize};
 use tracing::warn;
@@ -41,48 +36,6 @@ pub struct RpcNostrSecret {
 pub struct RpcNostrPubkey {
     pub hex: String,
     pub npub: String,
-}
-
-/// A V2 community creation nostr event has a d tag which is a locally generated
-/// 32-byte random UUID, and a p tag which is the creator's root npub. The
-/// author pubkey that publishes/creates the community is different for each
-/// community, and is derived from the user's root nsec/npub pair by using the
-/// UUID that's present in the d tag. A parametrized replaceable event such as
-/// this is uniquely identified by a tuple of (author_pubkey, kind, d-tag).
-///
-/// v2 invite codes are bech32m encoded with the human-readable part
-/// being "fedi:communityV2". The decoded data is actually a json blob that
-/// follows this schema.
-#[derive(Debug, Serialize, Deserialize)]
-pub struct CommunityInviteV2 {
-    pub author_pubkey: nostr_sdk::PublicKey, // type implements deserialize
-    pub community_uuid_hex: String,          // d tag
-}
-
-impl FromStr for CommunityInviteV2 {
-    type Err = anyhow::Error;
-
-    fn from_str(s: &str) -> Result<Self, Self::Err> {
-        let invite_code = s.to_lowercase();
-
-        let (hrp, data) = bech32::decode(&invite_code)?;
-        if hrp != COMMUNITY_V2_INVITE_CODE_HRP {
-            bail!("Unexpected hrp: {hrp}");
-        }
-
-        let decoded_str = String::from_utf8(data)?;
-        Ok(serde_json::from_str(&decoded_str)?)
-    }
-}
-
-impl Display for CommunityInviteV2 {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        let invite_json_str = serde_json::to_string(self).map_err(|_| std::fmt::Error)?;
-        let invite_bytes = invite_json_str.as_bytes();
-        let invite_code = bech32::encode::<Bech32m>(COMMUNITY_V2_INVITE_CODE_HRP, invite_bytes)
-            .map_err(|_| std::fmt::Error)?;
-        write!(f, "{invite_code}")
-    }
 }
 
 impl Nostril {

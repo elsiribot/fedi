@@ -10,15 +10,14 @@ use api_types::invoice_generator::FirstCommunityInviteCodeState;
 use fedimint_core::task::TaskGroup;
 use fedimint_core::util::backoff_util::aggressive_backoff;
 use fedimint_core::util::update_merge::UpdateMerge;
-use nostril::{CommunityInviteV2, Nostril};
-use rpc_types::RpcCommunity;
+use nostril::Nostril;
 use rpc_types::error::ErrorCode;
 use rpc_types::event::{Event, EventSink, TypedEventExt};
+use rpc_types::{CommunityInvite, CommunityInviteV2, RpcCommunity};
 use runtime::bridge_runtime::Runtime;
-use runtime::constants::{COMMUNITY_INVITE_CODE_HRP, FEDI_GIFT_EXCLUDED_COMMUNITIES};
+use runtime::constants::FEDI_GIFT_EXCLUDED_COMMUNITIES;
 use runtime::storage::AppState;
 use runtime::storage::state::{CommunityInfo, CommunityJson};
-use serde::{Deserialize, Serialize};
 use tokio::sync::{Mutex, RwLock};
 use tracing::info;
 
@@ -197,29 +196,6 @@ impl Communities {
 
 /// Community invite codes are bech32m encoded with the human-readable part
 /// being "fedi:community". The decoded data is actually a json blob that
-/// follows this schema.
-#[derive(Debug, Serialize, Deserialize)]
-pub struct CommunityInvite {
-    pub community_meta_url: String,
-}
-
-impl FromStr for CommunityInvite {
-    type Err = anyhow::Error;
-
-    fn from_str(s: &str) -> Result<Self, Self::Err> {
-        let invite_code = s.to_lowercase();
-
-        // TODO shaurya ok to ignore bech32 variant here?
-        let (hrp, data) = bech32::decode(&invite_code)?;
-        if hrp != COMMUNITY_INVITE_CODE_HRP {
-            bail!("Unexpected hrp: {hrp}");
-        }
-
-        let decoded_str = String::from_utf8(data)?;
-        Ok(serde_json::from_str(&decoded_str)?)
-    }
-}
-
 /// We think of a Community as a Federation without a wallet (fedimint-client).
 /// So a Community affords all the functionality that comes from the root seed
 /// such as chat, mods, npub-related features.

@@ -26,10 +26,13 @@ use ts_rs::TS;
 
 use crate::error::RpcError;
 
+pub mod community;
 pub mod error;
 pub mod event;
 pub mod matrix;
 pub mod multispend;
+
+pub use community::{CommunityInvite, CommunityInviteV2};
 
 #[derive(Debug, Serialize, Deserialize, TS)]
 #[serde(rename_all = "camelCase")]
