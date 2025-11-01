@@ -57,14 +57,15 @@ async function workerInit() {
         dbSyncHandle,
     )
 
+    let parsedJson
     try {
-        const parsedJson = JSON.parse(result)
-        if (parsedJson.error !== undefined) {
-            log.error('fedimint_initialize ', parsedJson)
-            throw new Error('Failed to initialize bridge')
-        }
+        parsedJson = JSON.parse(result)
     } catch (err) {
         log.error('Invalid json from fedimint initialize', err)
+    }
+    if (parsedJson.error !== undefined) {
+        log.error('fedimint_initialize ', parsedJson)
+        throw new Error('Failed to initialize bridge')
     }
 
     postMessage({ event: 'initialized' })
