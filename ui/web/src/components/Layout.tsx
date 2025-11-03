@@ -1,10 +1,12 @@
 import { useRouter } from 'next/router'
+import React, { useState } from 'react'
 
 import ChevronLeft from '@fedi/common/assets/svgs/chevron-left.svg'
 import CloseIcon from '@fedi/common/assets/svgs/close.svg'
 import { Community } from '@fedi/common/types'
 
 import { keyframes, styled, theme } from '../styles'
+import { CommunityInviteDialog } from './CommunityInviteDialog'
 import { Row } from './Flex'
 import { Icon } from './Icon'
 import { IconButton } from './IconButton'
@@ -25,21 +27,35 @@ export function PageHeader({
     onShowCommunitiesPress,
     selectedCommunity,
 }: PageHeaderProps) {
+    const [invitingCommunityId, setInvitingCommunityId] = useState('')
+
     return (
-        <PageHeaderContainer>
-            <PageHeaderGradient justify="between" align="center">
-                <Title>{title}</Title>
-                <MainHeaderButtons
-                    onShowCommunitiesPress={onShowCommunitiesPress}
-                    onAddPress={onAddPress}
-                />
-            </PageHeaderGradient>
-            {selectedCommunity && (
-                <SelectedCommunityWrapper>
-                    <SelectedCommunity community={selectedCommunity} />
-                </SelectedCommunityWrapper>
-            )}
-        </PageHeaderContainer>
+        <>
+            <PageHeaderContainer>
+                <PageHeaderGradient justify="between" align="center">
+                    <Title>{title}</Title>
+                    <MainHeaderButtons
+                        onShowCommunitiesPress={onShowCommunitiesPress}
+                        onAddPress={onAddPress}
+                    />
+                </PageHeaderGradient>
+                {selectedCommunity && (
+                    <SelectedCommunityWrapper>
+                        <SelectedCommunity
+                            community={selectedCommunity}
+                            onQrClick={() =>
+                                setInvitingCommunityId(selectedCommunity.id)
+                            }
+                        />
+                    </SelectedCommunityWrapper>
+                )}
+            </PageHeaderContainer>
+            <CommunityInviteDialog
+                open={!!invitingCommunityId}
+                communityId={invitingCommunityId}
+                onClose={() => setInvitingCommunityId('')}
+            />
+        </>
     )
 }
 
@@ -60,6 +76,7 @@ type HeaderProps = {
     back?: string | boolean
     showCloseButton?: boolean
     centered?: boolean
+    rightComponent?: React.ReactElement
 }
 
 export function Header({
@@ -67,6 +84,7 @@ export function Header({
     back,
     showCloseButton,
     centered,
+    rightComponent,
     ...props
 }: React.ComponentProps<typeof HeaderContainer> & HeaderProps) {
     const router = useRouter()
@@ -74,7 +92,7 @@ export function Header({
     return (
         <HeaderContainer {...props}>
             {back && (
-                <ButtonWrapper isBack>
+                <ButtonWrapper>
                     <IconButton
                         icon={ChevronLeft}
                         size="md"
@@ -88,12 +106,16 @@ export function Header({
                     />
                 </ButtonWrapper>
             )}
+
             <HeaderContent centered={centered}>{children}</HeaderContent>
-            {showCloseButton && (
-                <ButtonWrapper isClose>
+
+            <RightComponentWrapper>
+                {showCloseButton ? (
                     <Icon icon={CloseIcon} onClick={() => router.back()} />
-                </ButtonWrapper>
-            )}
+                ) : rightComponent ? (
+                    rightComponent
+                ) : null}
+            </RightComponentWrapper>
         </HeaderContainer>
     )
 }
@@ -118,23 +140,23 @@ export const ButtonWrapper = styled('div', {
     cursor: 'pointer',
     display: 'flex',
     height: '100%',
+    left: 0,
     justifyContent: 'center',
     position: 'absolute',
     top: 0,
     width: 50,
+})
 
-    variants: {
-        isBack: {
-            true: {
-                left: 0,
-            },
-        },
-        isClose: {
-            true: {
-                right: 0,
-            },
-        },
-    },
+export const RightComponentWrapper = styled('div', {
+    alignItems: 'center',
+    cursor: 'pointer',
+    display: 'flex',
+    height: '100%',
+    justifyContent: 'center',
+    position: 'absolute',
+    right: 5,
+    top: 0,
+    width: 50,
 })
 
 const HeaderContent = styled('div', {
