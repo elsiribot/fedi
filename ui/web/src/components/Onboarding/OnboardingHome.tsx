@@ -18,6 +18,7 @@ import {
     chatRoomRoute,
     federationsRoute,
     homeRoute,
+    onboardingJoinRoute,
 } from '../../constants/routes'
 import { useAppSelector } from '../../hooks'
 import { keyframes, styled, theme } from '../../styles'
@@ -74,7 +75,7 @@ export function OnboardingHome() {
     }
 
     const handleNavigation = (code: string) => {
-        push(`/onboarding/join?invite_code=${code}`)
+        push(onboardingJoinRoute(code))
     }
 
     const handleContinue = async () => {

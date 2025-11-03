@@ -9,6 +9,7 @@ import ChatIcon from '@fedi/common/assets/svgs/chat.svg'
 import ToolIcon from '@fedi/common/assets/svgs/tool.svg'
 import { ParserDataType } from '@fedi/common/types'
 
+import { onboardingJoinRoute } from '../../constants/routes'
 import { keyframes, styled, theme } from '../../styles'
 import { Button } from '../Button'
 import { Icon } from '../Icon'
@@ -103,7 +104,7 @@ export function OnboardingCommunities() {
     }
 
     const handleNavigation = (code: string) => {
-        push(`/onboarding/join?invite_code=${code}`)
+        push(onboardingJoinRoute(code))
     }
 
     const handleCreateCommunity = () => {

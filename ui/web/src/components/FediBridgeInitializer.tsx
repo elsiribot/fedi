@@ -211,7 +211,7 @@ export const FediBridgeInitializer: React.FC<Props> = ({ children }) => {
     if (query.invite_code && pathname === '/' && onboardingCompleted) {
         return (
             <Redirect
-                path={`${onboardingJoinRoute}?invite_code=${query.invite_code}`}
+                path={`${onboardingJoinRoute(String(query.invite_code))}`}
             />
         )
     }

@@ -38,7 +38,7 @@ function WelcomePage() {
             await dispatch(refreshOnboardingStatus(fedimint)).unwrap()
 
             if (query.invite_code) {
-                push(`${onboardingJoinRoute}?invite_code=${query.invite_code}`)
+                push(onboardingJoinRoute(String(query.invite_code)))
                 return
             }
 

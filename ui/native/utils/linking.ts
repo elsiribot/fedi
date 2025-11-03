@@ -62,6 +62,7 @@ const deepLinksConfig: NavigationLinkingConfig['config'] = {
                 ChatUserConversation: 'user/:userId',
                 ShareLogs: 'share-logs/:ticketNumber',
                 ClaimEcash: 'ecash/:token',
+                JoinFederation: 'join/:invite',
             },
         },
     },
@@ -117,6 +118,17 @@ export function createNavigationAction(
     const { screen, id } = parsedLink
 
     switch (screen) {
+        case 'join':
+            if (!id) return null
+            return {
+                type: 'navigate',
+                screen: 'MainNavigator',
+                params: {
+                    screen: 'JoinFederation',
+                    params: { invite: id },
+                },
+            }
+
         case 'room':
             if (!id) return null
             return {

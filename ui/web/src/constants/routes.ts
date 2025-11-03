@@ -25,7 +25,8 @@ export const shareLogsRoute = '/share-logs'
 // Sub pages
 
 // Onboarding
-export const onboardingJoinRoute = `${onboardingRoute}/join`
+export const onboardingJoinRoute = (inviteCode: string) =>
+    `${onboardingRoute}/join?invite_code=${inviteCode}`
 
 // Settings
 export const settingsCurrencyRoute = `${settingsRoute}/currency`

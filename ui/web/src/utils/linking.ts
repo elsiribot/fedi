@@ -3,6 +3,7 @@ import {
     chatRoomRoute,
     chatUserRoute,
     homeRoute,
+    onboardingJoinRoute,
     scanRoute,
     sendRoute,
     transactionsRoute,
@@ -25,6 +26,11 @@ export const getDeepLinkPath = (link: string): string => {
         const page = params.get('screen')
 
         switch (page) {
+            case 'join': {
+                const inviteCode = params.get('id')
+                if (!inviteCode) return homeRoute
+                return onboardingJoinRoute(inviteCode)
+            }
             case 'room': {
                 const roomId = params.get('id')
                 if (!roomId) return chatRoute
