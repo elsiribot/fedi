@@ -61,6 +61,7 @@ const deepLinksConfig: NavigationLinkingConfig['config'] = {
                 ChatRoomConversation: { path: 'room/:roomId' },
                 ChatUserConversation: 'user/:userId',
                 ShareLogs: 'share-logs/:ticketNumber',
+                ClaimEcash: 'ecash/:token',
             },
         },
     },
@@ -201,6 +202,15 @@ export function createNavigationAction(
                 type: 'navigate',
                 screen: 'MainNavigator',
                 params: { screen: 'ShareLogs', params: { ticketNumber: id } },
+            }
+
+        case 'ecash':
+            if (!id) return null
+
+            return {
+                type: 'navigate',
+                screen: 'MainNavigator',
+                params: { screen: 'ClaimEcash', params: { token: id } },
             }
 
         default:

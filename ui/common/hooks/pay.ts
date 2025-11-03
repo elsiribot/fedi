@@ -1,19 +1,19 @@
 import { TFunction } from 'i18next'
 import { useCallback, useEffect, useState } from 'react'
 
-import { Federation } from '@fedi/common/types'
-
 import {
     joinFederation,
     receiveEcash,
     refreshFederations,
     listGateways,
     selectFederation,
+    selectLoadedFederation,
     setLastUsedFederationId,
 } from '../redux'
 import {
     AnyParsedData,
     Invoice,
+    Federation,
     MSats,
     ParsedBip21,
     ParsedBitcoinAddress,
@@ -21,9 +21,16 @@ import {
     ParserDataType,
     Sats,
 } from '../types'
-import { RpcEcashInfo, RpcFeeDetails } from '../types/bindings'
+import {
+    RpcEcashInfo,
+    RpcFeeDetails,
+    RpcFederationPreview,
+} from '../types/bindings'
 import amountUtils from '../utils/AmountUtils'
-import { shouldShowInviteCode } from '../utils/FederationUtils'
+import {
+    getFederationPreview,
+    shouldShowInviteCode,
+} from '../utils/FederationUtils'
 import {
     MeltSummary,
     decodeCashuTokens,
@@ -401,7 +408,18 @@ export function useValidateEcash(fedimint: FedimintBridge) {
     const [validatedEcash, setValidatedEcash] = useState<RpcEcashInfo | null>(
         null,
     )
+    const [federationPreview, setFederationPreview] =
+        useState<RpcFederationPreview | null>(null) // TODO: remove this
     const [isError, setIsError] = useState(false)
+
+    // Return federation if they have already joined issuing federation
+    const loadedFederation = useCommonSelector(s => {
+        if (validatedEcash?.federation_type === 'joined') {
+            return selectLoadedFederation(s, validatedEcash.federation_id)
+        }
+
+        return null
+    })
 
     const validateEcashFn = useCallback(
         async (token: string) => {
@@ -414,6 +432,15 @@ export function useValidateEcash(fedimint: FedimintBridge) {
                     decodeURIComponent(token),
                 )
                 setValidatedEcash(validated)
+
+                // If user hasn't already joined this federation then get preview
+                if ('federation_invite' in validated) {
+                    const preview = await getFederationPreview(
+                        validated.federation_invite as string,
+                        fedimint,
+                    )
+                    setFederationPreview(preview)
+                }
             } catch (e) {
                 setIsError(true)
                 log.error('Ecash token could not be validated')
@@ -430,6 +457,7 @@ export function useValidateEcash(fedimint: FedimintBridge) {
         validated: validatedEcash,
         ecashToken,
         isError,
+        federation: loadedFederation || federationPreview,
     }
 }
 

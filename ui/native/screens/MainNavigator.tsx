@@ -35,6 +35,7 @@ import SetPinHeader from '../components/feature/pin/SetPinHeader'
 import SetPinLockScreen from '../components/feature/pin/SetPinLockScreen'
 import UnlockAppLockScreenHeader from '../components/feature/pin/UnlockAppLockScreenHeader'
 import BitcoinRequestHeader from '../components/feature/receive/BitcoinRequestHeader'
+import ClaimEcashHeader from '../components/feature/receive/ClaimEcashHeader'
 import ReceiveBitcoinOfflineHeader from '../components/feature/receive/ReceiveBitcoinOfflineHeader'
 import ReceiveCashuHeader from '../components/feature/receive/ReceiveCashuHeader'
 import RequestMoneyHeader from '../components/feature/receive/RequestMoneyHeader'
@@ -89,6 +90,7 @@ import ChatWallet from './ChatWallet'
 import ChatsListSearch from './ChatsListSearch'
 import ChooseBackupMethod from './ChooseBackupMethod'
 import ChooseRecoveryMethod from './ChooseRecoveryMethod'
+import ClaimEcash from './ClaimEcash'
 import CommunityDetails from './CommunityDetails'
 import CommunityInvite from './CommunityInvite'
 import CompleteRecoveryAssist from './CompleteRecoveryAssist'
@@ -206,6 +208,7 @@ export const MainNavigator = () => {
         s => s.recovery.deviceIndexRequired,
     )
     const shouldLockDevice = useAppSelector(s => s.recovery.shouldLockDevice)
+
     const navigation = useNavigation()
 
     useEffect(() => {
@@ -369,6 +372,12 @@ export const MainNavigator = () => {
                         options={() => ({
                             header: () => <SocialRecoveryHeader cancelButton />,
                         })}
+                    />
+                    {/* Deeplink screen */}
+                    <Stack.Screen
+                        name="ClaimEcash"
+                        component={ClaimEcash}
+                        options={() => ({ header: () => <ClaimEcashHeader /> })}
                     />
                 </Stack.Group>
                 {isAppUnlocked ? (
