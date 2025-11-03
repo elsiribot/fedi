@@ -4,7 +4,6 @@ import { ActivityIndicator } from 'react-native'
 
 import { useFederationMembership } from '@fedi/common/hooks/federation'
 
-import { fedimint } from '../../../bridge'
 import CustomOverlay from '../../ui/CustomOverlay'
 import FederationPreview from '../onboarding/FederationPreview'
 
@@ -30,7 +29,7 @@ export default function FederationGate({
         federationPreview,
         isMember,
         handleJoin,
-    } = useFederationMembership(t, fedimint, federationId, inviteCode)
+    } = useFederationMembership(t, federationId, inviteCode)
 
     const handleBack = () => {
         if (navigation.canGoBack()) navigation.goBack()

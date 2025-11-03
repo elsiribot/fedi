@@ -5,7 +5,6 @@ import { useTranslation } from 'react-i18next'
 import { useFederationPreview } from '@fedi/common/hooks/federation'
 import { makeLog } from '@fedi/common/utils/log'
 
-import { fedimint } from '../../lib/bridge'
 import { styled } from '../../styles'
 import { HoloLoader } from '../HoloLoader'
 import * as Layout from '../Layout'
@@ -31,7 +30,7 @@ export const JoinFederation: React.FC = () => {
         setCommunityPreview,
         handleCode,
         handleJoin,
-    } = useFederationPreview(t, fedimint, inviteCode)
+    } = useFederationPreview(t, inviteCode)
 
     // If they came here with invite code in query string then paste the code for them
     useEffect(() => {

@@ -13,7 +13,6 @@ import { useNuxStep } from '@fedi/common/hooks/nux'
 import { selectMatrixAuth } from '@fedi/common/redux'
 import { makeLog } from '@fedi/common/utils/log'
 
-import { fedimint } from '../bridge'
 import {
     OmniInput,
     OmniInputAction,
@@ -48,7 +47,7 @@ const JoinFederation: React.FC<Props> = ({ navigation, route }: Props) => {
         setCommunityPreview,
         handleCode,
         handleJoin,
-    } = useFederationPreview(t, fedimint, invite || '')
+    } = useFederationPreview(t, invite || '')
     const [hasPerformedPersonalBackup] = useNuxStep(
         'hasPerformedPersonalBackup',
     )

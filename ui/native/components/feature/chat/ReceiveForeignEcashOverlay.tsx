@@ -57,7 +57,7 @@ const ReceiveForeignEcashOverlay: React.FC<Props> = ({
         federationPreview,
         handleCode,
         handleJoin,
-    } = useFederationPreview(t, fedimint, federationInviteCode || '')
+    } = useFederationPreview(t, federationInviteCode || '')
 
     useEffect(() => {
         if (!paymentEvent.content.ecash) return

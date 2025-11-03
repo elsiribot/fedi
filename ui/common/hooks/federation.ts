@@ -329,11 +329,8 @@ export function useLatestPublicFederations() {
     }
 }
 
-export function useFederationPreview(
-    t: TFunction,
-    fedimint: FedimintBridge,
-    invite: string,
-) {
+export function useFederationPreview(t: TFunction, invite: string) {
+    const fedimint = useFedimint()
     const toast = useToast()
     const dispatch = useCommonDispatch()
     const federationIds = useCommonSelector(selectFederationIds)
@@ -492,15 +489,10 @@ export function useFederationPreview(
 
 export function useFederationMembership(
     t: TFunction,
-    fedimint: FedimintBridge,
     federationId: string,
     inviteCode: string,
 ) {
-    const { handleCode, ...rest } = useFederationPreview(
-        t,
-        fedimint,
-        inviteCode,
-    )
+    const { handleCode, ...rest } = useFederationPreview(t, inviteCode)
     const federations = useCommonSelector(selectFederations)
 
     const isMember = federations.some(
