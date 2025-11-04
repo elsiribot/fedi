@@ -2,7 +2,7 @@ import type { NativeStackScreenProps } from '@react-navigation/native-stack'
 import { Button, Text, Theme, useTheme, Image } from '@rneui/themed'
 import React, { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { Linking, ScrollView, StyleSheet, View } from 'react-native'
+import { ScrollView, StyleSheet, View } from 'react-native'
 
 import { useLatestPublicCommunities } from '@fedi/common/hooks/federation'
 import { selectCommunityIds } from '@fedi/common/redux'
@@ -65,11 +65,11 @@ const PublicCommunities: React.FC<Props> = ({ navigation }) => {
     })
 
     // Include when create community is implemented
-    // {
-    //     label: t('words.create'),
-    //     value: 'create',
-    //     subText: t('feature.onboarding.description-create'),
-    // },
+    switcherOptions.push({
+        label: t('words.create'),
+        value: 'create',
+        subText: t('feature.onboarding.description-create'),
+    })
 
     const selectedOption =
         switcherOptions.find(opt => opt.value === activeTab) ??
@@ -221,9 +221,9 @@ const PublicCommunities: React.FC<Props> = ({ navigation }) => {
                                 fullWidth
                                 title={t('phrases.create-my-community')}
                                 onPress={() =>
-                                    Linking.openURL(
-                                        'https://support.fedi.xyz/hc/en-us/sections/18214787528082-Federation-Setup',
-                                    )
+                                    navigation.navigate('FediModBrowser', {
+                                        url: 'https://community-generator.fedi.xyz',
+                                    })
                                 }
                             />
                         </Flex>
