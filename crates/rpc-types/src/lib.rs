@@ -26,13 +26,12 @@ use ts_rs::TS;
 
 use crate::error::RpcError;
 
-pub mod community;
+pub mod communities;
 pub mod error;
 pub mod event;
 pub mod matrix;
 pub mod multispend;
-
-pub use community::{CommunityInvite, CommunityInviteV2};
+pub mod nostril;
 
 #[derive(Debug, Serialize, Deserialize, TS)]
 #[serde(rename_all = "camelCase")]
@@ -177,15 +176,6 @@ pub struct RpcFederationPreview {
     pub meta: BTreeMap<String, String>,
     pub invite_code: String,
     pub returning_member_status: RpcReturningMemberStatus,
-}
-
-#[derive(Debug, Serialize, Deserialize, TS)]
-#[serde(rename_all = "camelCase")]
-#[ts(export)]
-pub struct RpcCommunity {
-    pub invite_code: String,
-    pub name: String,
-    pub meta: BTreeMap<String, String>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, TS)]

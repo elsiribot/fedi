@@ -38,7 +38,7 @@ use multispend::{
     GroupInvitation, GroupInvitationWithKeys, MsEventData, MultispendGroupVoteType,
     MultispendListedEvent, WithdrawRequestWithApprovals, WithdrawalResponseType,
 };
-use nostril::{RpcNostrPubkey, RpcNostrSecret};
+use rpc_types::communities::RpcCommunity;
 use rpc_types::error::{ErrorCode, RpcError};
 use rpc_types::event::{Event, EventSink, PanicEvent, SocialRecoveryEvent, TypedEventExt};
 use rpc_types::matrix::{
@@ -47,11 +47,12 @@ use rpc_types::matrix::{
     RpcRoomMember, RpcRoomNotificationMode, RpcSerializedRoomInfo, RpcSyncIndicator,
     RpcTimelineEventItemId, RpcTimelineItem, RpcUserId,
 };
+use rpc_types::nostril::{RpcNostrPubkey, RpcNostrSecret};
 use rpc_types::{
-    FrontendMetadata, GuardianStatus, NetworkError, RpcAmount, RpcAppFlavor, RpcCommunity,
-    RpcEcashInfo, RpcEventId, RpcFederation, RpcFederationId, RpcFederationMaybeLoading,
-    RpcFederationPreview, RpcFeeDetails, RpcFiatAmount, RpcGenerateEcashResponse, RpcInvoice,
-    RpcLightningGateway, RpcMediaUploadParams, RpcOperationId, RpcPayInvoiceResponse, RpcPeerId,
+    FrontendMetadata, GuardianStatus, NetworkError, RpcAmount, RpcAppFlavor, RpcEcashInfo,
+    RpcEventId, RpcFederation, RpcFederationId, RpcFederationMaybeLoading, RpcFederationPreview,
+    RpcFeeDetails, RpcFiatAmount, RpcGenerateEcashResponse, RpcInvoice, RpcLightningGateway,
+    RpcMediaUploadParams, RpcOperationId, RpcPayInvoiceResponse, RpcPeerId,
     RpcPrevPayInvoiceResult, RpcPublicKey, RpcRecoveryId, RpcRegisteredDevice,
     RpcSPv2CachedSyncResponse, RpcSPv2SyncResponse, RpcSignature, RpcSignedLnurlMessage,
     RpcStabilityPoolAccountInfo, RpcTransaction, RpcTransactionDirection, RpcTransactionListEntry,
@@ -782,10 +783,10 @@ async fn nostrRateFederation(
 async fn nostrCreateCommunity(
     bridge: &BridgeFull,
     community_json_str: String,
-) -> anyhow::Result<()> {
+) -> anyhow::Result<RpcCommunity> {
     bridge
         .nostril
-        .create_community(&serde_json::from_str(&community_json_str)?)
+        .create_community(serde_json::from_str(&community_json_str)?)
         .await
 }
 
@@ -815,7 +816,7 @@ async fn nostrEditCommunity(
         .nostril
         .edit_community(
             &community_hex_uuid,
-            &serde_json::from_str(&new_community_json_str)?,
+            serde_json::from_str(&new_community_json_str)?,
         )
         .await
 }

@@ -8,34 +8,17 @@ use nostr_sdk::{
     Client, EventBuilder, Filter, Keys, Kind, NostrSigner, PublicKey, Tag, TagKind, ToBech32,
 };
 use rand::RngCore;
-use rpc_types::{CommunityInviteV2, RpcCommunity};
+use rpc_types::communities::{CommunityInviteV2, RpcCommunity};
+use rpc_types::nostril::{RpcNostrPubkey, RpcNostrSecret};
 use runtime::bridge_runtime::Runtime;
 use runtime::constants::{NOSTR_CHILD_ID, NOSTR_COMMUNITY_CREATION_EVENT_KIND};
 use runtime::storage::state::CommunityJson;
-use serde::{Deserialize, Serialize};
 use tracing::warn;
-use ts_rs::TS;
 
 pub struct Nostril {
     keys: Keys,
     // none when nostr feature is disabled
     client: Option<Client>,
-}
-
-#[derive(Debug, Serialize, Deserialize, Clone, TS)]
-#[serde(rename_all = "camelCase")]
-#[ts(export)]
-pub struct RpcNostrSecret {
-    pub hex: String,
-    pub nsec: String,
-}
-
-#[derive(Debug, Serialize, Deserialize, Clone, TS)]
-#[serde(rename_all = "camelCase")]
-#[ts(export)]
-pub struct RpcNostrPubkey {
-    pub hex: String,
-    pub npub: String,
 }
 
 impl Nostril {
@@ -77,10 +60,7 @@ impl Nostril {
     }
 
     pub async fn get_pub_key(&self) -> anyhow::Result<RpcNostrPubkey> {
-        Ok(RpcNostrPubkey {
-            hex: self.keys.public_key().to_hex(),
-            npub: self.keys.public_key().to_bech32()?,
-        })
+        Ok(From::from(&self.keys.public_key))
     }
 
     pub async fn sign_nostr_event(&self, event_hash: String) -> anyhow::Result<String> {
@@ -167,7 +147,10 @@ impl Nostril {
     /// Given the JSON blob that represents the new community to be
     /// created, this function will derive the next valid keypair and publish a
     /// new "community creation" event to the relays.
-    pub async fn create_community(&self, community_json: &CommunityJson) -> anyhow::Result<()> {
+    pub async fn create_community(
+        &self,
+        community_json: CommunityJson,
+    ) -> anyhow::Result<RpcCommunity> {
         // For each community that a user creates, we use a new nostr keypair which is
         // derived from the user's root nostr keypair. The derivation uses a random
         // 32-byte UUID. This function returns the derived keypair along with the UUID.
@@ -211,11 +194,10 @@ impl Nostril {
                 let maybe_uuid = event.tags.identifier();
                 match (community_res, maybe_uuid) {
                     (Ok(community), Some(hex_uuid)) => Some(RpcCommunity {
-                        invite_code: CommunityInviteV2 {
+                        community_invite: From::from(&CommunityInviteV2 {
                             author_pubkey: event.pubkey,
                             community_uuid_hex: hex_uuid.to_owned(),
-                        }
-                        .to_string(),
+                        }),
                         name: community.name,
                         meta: community.meta,
                     }),
@@ -236,12 +218,13 @@ impl Nostril {
     pub async fn edit_community(
         &self,
         community_uuid_hex: &str,
-        new_community_json: &CommunityJson,
+        new_community_json: CommunityJson,
     ) -> anyhow::Result<()> {
         let uuid_bytes = hex::decode(community_uuid_hex)?;
         let community_keys = self.community_creation_keys(&uuid_bytes).await?;
         self.sign_and_publish_community(&community_keys, community_uuid_hex, new_community_json)
-            .await
+            .await?;
+        Ok(())
     }
 
     /// Given a v2 community invite, fetches the latest nostr event for the
@@ -299,8 +282,8 @@ impl Nostril {
         &self,
         keys: &Keys,
         uuid_hex: &str,
-        json: &CommunityJson,
-    ) -> anyhow::Result<()> {
+        json: CommunityJson,
+    ) -> anyhow::Result<RpcCommunity> {
         let Some(client) = &self.client else {
             anyhow::bail!("nostr client feature flag is not enabled");
         };
@@ -313,13 +296,20 @@ impl Nostril {
         //   fetched.
         let nostr_event = EventBuilder::new(
             Kind::from_u16(NOSTR_COMMUNITY_CREATION_EVENT_KIND),
-            serde_json::to_string(json)?,
+            serde_json::to_string(&json)?,
         )
         .tag(Tag::identifier(uuid_hex))
         .tag(Tag::public_key(self.keys.public_key))
         .sign_with_keys(keys)?;
         client.send_event(&nostr_event).await?;
 
-        Ok(())
+        Ok(RpcCommunity {
+            community_invite: From::from(&CommunityInviteV2 {
+                author_pubkey: keys.public_key,
+                community_uuid_hex: uuid_hex.to_string(),
+            }),
+            name: json.name,
+            meta: json.meta,
+        })
     }
 }

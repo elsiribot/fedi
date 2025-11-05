@@ -27,7 +27,7 @@ use serde::{Deserialize, Serialize};
 use tracing::warn;
 use ts_rs::TS;
 
-use crate::community::{CommunityInvite, CommunityInviteV2};
+use crate::communities::CommunityInvite;
 use crate::error::{ErrorCode, RpcError};
 use crate::matrix::ruma_events::AnyMessageLikeEvent;
 use crate::multispend::MultispendEvent;
@@ -1184,8 +1184,7 @@ impl From<&RumaMessageType> for RpcMsgLikeKind {
             }
             RumaMessageType::Text(content)
                 if content.body.starts_with("fedi:community")
-                    && (CommunityInvite::from_str(&content.body).is_ok()
-                        || CommunityInviteV2::from_str(&content.body).is_ok()) =>
+                    && CommunityInvite::from_str(&content.body).is_ok() =>
             {
                 RpcMsgLikeKind::CommunityInvite(content.into())
             }

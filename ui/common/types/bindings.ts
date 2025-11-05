@@ -391,10 +391,19 @@ export type RpcBridgeStatus =
   | { type: "offboarding"; reason: BridgeOffboardingReason };
 
 export type RpcCommunity = {
-  inviteCode: string;
+  communityInvite: RpcCommunityInvite;
   name: string;
   meta: { [key in string]?: string };
 };
+
+export type RpcCommunityInvite =
+  | { type: "legacy"; invite_code_str: string; community_meta_url: string }
+  | {
+      type: "nostr";
+      invite_code_str: string;
+      author_pubkey: RpcNostrPubkey;
+      community_uuid_hex: string;
+    };
 
 export type RpcComposerDraft = {
   plainText: string;
@@ -723,7 +732,7 @@ export type RpcMethods = {
   nostrEncrypt04: [nostrEncrypt04, string];
   nostrDecrypt04: [nostrDecrypt04, string];
   nostrRateFederation: [nostrRateFederation, null];
-  nostrCreateCommunity: [nostrCreateCommunity, null];
+  nostrCreateCommunity: [nostrCreateCommunity, RpcCommunity];
   nostrListCommunities: [nostrListCommunities, Array<RpcCommunity>];
   nostrListOurCommunities: [nostrListOurCommunities, Array<RpcCommunity>];
   nostrEditCommunity: [nostrEditCommunity, null];

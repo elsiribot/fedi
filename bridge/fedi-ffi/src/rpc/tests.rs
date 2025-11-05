@@ -8,7 +8,6 @@ use std::thread::available_parallelism;
 use std::time::Duration;
 
 use anyhow::{anyhow, bail};
-use bech32::{self, Bech32m};
 use bridge::RuntimeExt as _;
 use devi::DevFed;
 use devimint::cmd;
@@ -24,12 +23,13 @@ use fedimint_core::util::{retry, BoxFuture};
 use fedimint_core::Amount;
 use fedimint_logging::TracingSetup;
 use nostr::nips::nip44;
+use rpc_types::communities::{CommunityInvite, CommunityInviteV1};
 use rpc_types::event::TransactionEvent;
 use rpc_types::{
-    CommunityInvite, RpcLnReceiveState, RpcOOBReissueState, RpcOnchainDepositState,
-    RpcReturningMemberStatus, RpcSPV2TransferInState, RpcTransactionDirection, RpcTransactionKind,
+    RpcLnReceiveState, RpcOOBReissueState, RpcOnchainDepositState, RpcReturningMemberStatus,
+    RpcSPV2TransferInState, RpcTransactionDirection, RpcTransactionKind,
 };
-use runtime::constants::{COMMUNITY_INVITE_CODE_HRP, FEDI_FILE_V0_PATH, MILLION};
+use runtime::constants::{FEDI_FILE_V0_PATH, MILLION};
 use runtime::db::BridgeDbPrefix;
 use runtime::envs::USE_UPSTREAM_FEDIMINTD_ENV;
 use runtime::storage::BRIDGE_DB_PREFIX;
@@ -1800,12 +1800,9 @@ async fn test_preview_and_join_community(_dev_fed: DevFed) -> anyhow::Result<()>
     let url = server.url();
 
     let invite_path = "/invite-0";
-    let community_invite = CommunityInvite {
+    let community_invite = CommunityInvite::V1(CommunityInviteV1 {
         community_meta_url: format!("{url}{invite_path}"),
-    };
-    let invite_json_str = serde_json::to_string(&community_invite)?;
-    let invite_bytes = invite_json_str.as_bytes();
-    let invite_code = bech32::encode::<Bech32m>(COMMUNITY_INVITE_CODE_HRP, invite_bytes)?;
+    });
 
     let mock = server
         .mock("GET", invite_path)
@@ -1815,7 +1812,7 @@ async fn test_preview_and_join_community(_dev_fed: DevFed) -> anyhow::Result<()>
         .create_async()
         .await;
 
-    communityPreview(bridge, invite_code.clone()).await?;
+    communityPreview(bridge, community_invite.to_string()).await?;
     mock.assert();
 
     // Calling preview() does not join
@@ -1828,13 +1825,13 @@ async fn test_preview_and_join_community(_dev_fed: DevFed) -> anyhow::Result<()>
         .is_empty());
 
     // Calling join() actually joins
-    joinCommunity(bridge, invite_code.clone()).await?;
+    joinCommunity(bridge, community_invite.to_string()).await?;
     let memory_community = bridge
         .communities
         .communities
         .lock()
         .await
-        .get(&invite_code)
+        .get(&community_invite.to_string())
         .unwrap()
         .clone();
     let app_state_community = bridge
@@ -1842,7 +1839,7 @@ async fn test_preview_and_join_community(_dev_fed: DevFed) -> anyhow::Result<()>
         .app_state
         .with_read_lock(|state| state.joined_communities.clone())
         .await
-        .get(&invite_code)
+        .get(&community_invite.to_string())
         .unwrap()
         .clone();
     assert!(memory_community.meta.read().await.to_owned() == app_state_community.meta);
@@ -1858,12 +1855,9 @@ async fn test_list_and_leave_community(_dev_fed: DevFed) -> anyhow::Result<()> {
     let url = server.url();
 
     let invite_path = "/invite-0";
-    let community_invite = CommunityInvite {
+    let community_invite_0 = CommunityInvite::V1(CommunityInviteV1 {
         community_meta_url: format!("{url}{invite_path}"),
-    };
-    let invite_json_str = serde_json::to_string(&community_invite)?;
-    let invite_bytes = invite_json_str.as_bytes();
-    let invite_code_0 = bech32::encode::<Bech32m>(COMMUNITY_INVITE_CODE_HRP, invite_bytes)?;
+    });
 
     server
         .mock("GET", invite_path)
@@ -1874,12 +1868,9 @@ async fn test_list_and_leave_community(_dev_fed: DevFed) -> anyhow::Result<()> {
         .await;
 
     let invite_path = "/invite-1";
-    let community_invite = CommunityInvite {
+    let community_invite_1 = CommunityInvite::V1(CommunityInviteV1 {
         community_meta_url: format!("{url}{invite_path}"),
-    };
-    let invite_json_str = serde_json::to_string(&community_invite)?;
-    let invite_bytes = invite_json_str.as_bytes();
-    let invite_code_1 = bech32::encode::<Bech32m>(COMMUNITY_INVITE_CODE_HRP, invite_bytes)?;
+    });
 
     server
         .mock("GET", invite_path)
@@ -1893,37 +1884,39 @@ async fn test_list_and_leave_community(_dev_fed: DevFed) -> anyhow::Result<()> {
     assert!(listCommunities(bridge).await?.is_empty());
 
     // Leaving throws error
-    assert!(leaveCommunity(bridge, invite_code_0.clone()).await.is_err());
+    assert!(leaveCommunity(bridge, community_invite_0.to_string())
+        .await
+        .is_err());
 
     // Join community 0
-    joinCommunity(bridge, invite_code_0.clone()).await?;
+    joinCommunity(bridge, community_invite_0.to_string()).await?;
 
     // List contains community 0
     assert!(matches!(
             &listCommunities(bridge).await?[..],
-            [RpcCommunity { invite_code, .. }] if *invite_code == invite_code_0));
+            [RpcCommunity { community_invite, .. }] if *community_invite == From::from(&community_invite_0)));
 
     // Join community 1
-    joinCommunity(bridge, invite_code_1.clone()).await?;
+    joinCommunity(bridge, community_invite_1.to_string()).await?;
 
     // List contains community 0 + community 1
     assert!(matches!(
             &listCommunities(bridge).await?[..], [
-                RpcCommunity { invite_code: invite_0, .. },
-                RpcCommunity { invite_code: invite_1, .. }
-            ] if (*invite_0 == invite_code_0 && *invite_1 == invite_code_1) ||
-            (*invite_0 == invite_code_1 && *invite_1 == invite_code_0)));
+                RpcCommunity { community_invite: invite_0, .. },
+                RpcCommunity { community_invite: invite_1, .. }
+            ] if (*invite_0 == From::from(&community_invite_0) && *invite_1 == From::from(&community_invite_1)) ||
+            (*invite_0 == From::from(&community_invite_1) && *invite_1 == From::from(&community_invite_0))));
 
     // Leave community 0
-    leaveCommunity(bridge, invite_code_0.clone()).await?;
+    leaveCommunity(bridge, community_invite_0.to_string()).await?;
 
     // List contains only community 1
     assert!(matches!(
             &listCommunities(bridge).await?[..],
-            [RpcCommunity { invite_code, .. }] if *invite_code == invite_code_1));
+            [RpcCommunity { community_invite, .. }] if *community_invite == From::from(&community_invite_1)));
 
     // Leave community 1
-    leaveCommunity(bridge, invite_code_1).await?;
+    leaveCommunity(bridge, community_invite_1.to_string()).await?;
 
     // No joined communities
     assert!(listCommunities(bridge).await?.is_empty());
@@ -1939,12 +1932,9 @@ async fn test_community_meta_bg_refresh(_dev_fed: DevFed) -> anyhow::Result<()> 
     let url = server.url();
 
     let invite_path = "/invite-0";
-    let community_invite = CommunityInvite {
+    let community_invite = CommunityInvite::V1(CommunityInviteV1 {
         community_meta_url: format!("{url}{invite_path}"),
-    };
-    let invite_json_str = serde_json::to_string(&community_invite)?;
-    let invite_bytes = invite_json_str.as_bytes();
-    let invite_code = bech32::encode::<Bech32m>(COMMUNITY_INVITE_CODE_HRP, invite_bytes)?;
+    });
 
     server
         .mock("GET", invite_path)
@@ -1955,13 +1945,13 @@ async fn test_community_meta_bg_refresh(_dev_fed: DevFed) -> anyhow::Result<()> 
         .await;
 
     // Calling join() actually joins
-    joinCommunity(bridge, invite_code.clone()).await?;
+    joinCommunity(bridge, community_invite.to_string()).await?;
     let memory_community = bridge
         .communities
         .communities
         .lock()
         .await
-        .get(&invite_code)
+        .get(&community_invite.to_string())
         .unwrap()
         .clone();
     let app_state_community = bridge
@@ -1969,7 +1959,7 @@ async fn test_community_meta_bg_refresh(_dev_fed: DevFed) -> anyhow::Result<()> 
         .app_state
         .with_read_lock(|state| state.joined_communities.clone())
         .await
-        .get(&invite_code)
+        .get(&community_invite.to_string())
         .unwrap()
         .clone();
     assert!(memory_community.meta.read().await.to_owned() == app_state_community.meta);
@@ -1994,7 +1984,7 @@ async fn test_community_meta_bg_refresh(_dev_fed: DevFed) -> anyhow::Result<()> 
             .communities
             .lock()
             .await
-            .get(&invite_code)
+            .get(&community_invite.to_string())
             .unwrap()
             .clone();
         let app_state_community = bridge
@@ -2002,7 +1992,7 @@ async fn test_community_meta_bg_refresh(_dev_fed: DevFed) -> anyhow::Result<()> 
             .app_state
             .with_read_lock(|state| state.joined_communities.clone())
             .await
-            .get(&invite_code)
+            .get(&community_invite.to_string())
             .unwrap()
             .clone();
         if memory_community.meta.read().await.to_owned() != app_state_community.meta {

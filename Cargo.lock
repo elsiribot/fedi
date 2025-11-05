@@ -7290,7 +7290,6 @@ dependencies = [
  "serde_json",
  "tokio",
  "tracing",
- "ts-rs",
 ]
 
 [[package]]

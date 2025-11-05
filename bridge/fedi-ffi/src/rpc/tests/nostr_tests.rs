@@ -1,6 +1,6 @@
 use std::collections::BTreeMap;
 
-use rpc_types::CommunityInviteV2;
+use rpc_types::communities::CommunityInviteV2;
 use runtime::storage::state::CommunityJson;
 
 use super::*;
@@ -46,7 +46,8 @@ pub async fn test_nostr_community_workflow(_dev_fed: DevFed) -> anyhow::Result<(
         created_community.meta, initial_meta,
         "community meta mismatch"
     );
-    let created_invite = CommunityInviteV2::from_str(&created_community.invite_code)?;
+    let created_invite =
+        CommunityInviteV2::from_str(&created_community.community_invite.to_string())?;
 
     // Fetch community should also work
     let fetched_community = bridge.nostril.fetch_community(&created_invite).await?;
@@ -120,17 +121,20 @@ pub async fn test_nostr_community_preview_join_leave(_dev_fed: DevFed) -> anyhow
             meta: community_meta.clone(),
         };
         nostrCreateCommunity(bridge, serde_json::to_string(&create_payload)?).await?;
-        nostrListOurCommunities(bridge).await?[0]
-            .invite_code
-            .clone()
+        nostrListOurCommunities(bridge)
+            .await?
+            .into_iter()
+            .next()
+            .expect("must exist")
+            .community_invite
     };
 
     // Joiner previews, then joins, then leaves
     let joiner = TestDevice::new();
     let bridge = joiner.bridge_full().await?;
 
-    let preview = communityPreview(bridge, invite_code.clone()).await?;
-    assert_eq!(preview.invite_code, invite_code);
+    let preview = communityPreview(bridge, invite_code.to_string()).await?;
+    assert_eq!(preview.community_invite, invite_code);
     assert_eq!(preview.name, community_name);
     assert_eq!(preview.meta, community_meta);
 
@@ -144,13 +148,13 @@ pub async fn test_nostr_community_preview_join_leave(_dev_fed: DevFed) -> anyhow
         .is_empty());
 
     // Calling join() actually joins
-    joinCommunity(bridge, invite_code.clone()).await?;
+    joinCommunity(bridge, invite_code.to_string()).await?;
     let memory_community = bridge
         .communities
         .communities
         .lock()
         .await
-        .get(&invite_code)
+        .get(&invite_code.to_string())
         .unwrap()
         .clone();
     let app_state_community = bridge
@@ -158,13 +162,13 @@ pub async fn test_nostr_community_preview_join_leave(_dev_fed: DevFed) -> anyhow
         .app_state
         .with_read_lock(|state| state.joined_communities.clone())
         .await
-        .get(&invite_code)
+        .get(&invite_code.to_string())
         .unwrap()
         .clone();
     assert!(memory_community.meta.read().await.to_owned() == app_state_community.meta);
 
     // Leave community
-    leaveCommunity(bridge, invite_code).await?;
+    leaveCommunity(bridge, invite_code.to_string()).await?;
 
     // No joined communities
     assert!(listCommunities(bridge).await?.is_empty());

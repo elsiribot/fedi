@@ -42,7 +42,11 @@ export const mockFederation2: Federation = {
 
 export const mockCommunity: Community = {
     id: '1',
-    inviteCode: 'test',
+    communityInvite: {
+        type: 'legacy',
+        invite_code_str: 'test',
+        community_meta_url: 'https://test.com',
+    },
     name: 'name',
     meta: {},
 }

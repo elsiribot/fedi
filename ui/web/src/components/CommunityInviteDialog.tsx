@@ -21,7 +21,7 @@ export const CommunityInviteDialog: React.FC<Props> = ({
 
     const community = useAppSelector(s => selectCommunity(s, communityId))
 
-    const inviteCode = community?.inviteCode
+    const inviteCode = community?.communityInvite.invite_code_str
     if (!inviteCode) return null
 
     return (

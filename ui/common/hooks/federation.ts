@@ -424,7 +424,8 @@ export function useFederationPreview(t: TFunction, invite: string) {
                     const joinedCommunity = await dispatch(
                         joinCommunity({
                             fedimint,
-                            code: communityPreview.inviteCode,
+                            code: communityPreview.communityInvite
+                                .invite_code_str,
                         }),
                     ).unwrap()
                     // when joining a new community, always set it to selected
@@ -622,7 +623,7 @@ export function useCommunityInviteCode(
         const joinedCommunity = await dispatch(
             joinCommunity({
                 fedimint,
-                code: preview.inviteCode,
+                code: preview.communityInvite.invite_code_str,
             }),
         ).unwrap()
 

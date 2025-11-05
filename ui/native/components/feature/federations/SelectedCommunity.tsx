@@ -29,7 +29,7 @@ const SelectedCommunity: React.FC<Props> = ({ community }) => {
 
     const goToCommunityInvite = () => {
         navigation.navigate('CommunityInvite', {
-            inviteLink: community.inviteCode,
+            inviteLink: community.communityInvite.invite_code_str,
         })
     }
 

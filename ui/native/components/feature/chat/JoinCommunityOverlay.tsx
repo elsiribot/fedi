@@ -2,13 +2,13 @@ import React from 'react'
 import { useTranslation } from 'react-i18next'
 import { ActivityIndicator } from 'react-native'
 
-import { RpcFederationPreview } from '@fedi/common/types/bindings'
+import { type CommunityPreview as CommunityPreviewType } from '@fedi/common/types'
 
 import CustomOverlay from '../../ui/CustomOverlay'
-import FederationPreview from '../onboarding/FederationPreview'
+import CommunityPreview from '../onboarding/CommunityPreview'
 
 interface Props {
-    preview: RpcFederationPreview | undefined
+    preview: CommunityPreviewType | undefined
     show: boolean
     onDismiss: () => void
     onJoin: () => void
@@ -31,10 +31,10 @@ const JoinCommunityOverlay: React.FC<Props> = ({
             contents={{
                 title: t('phrases.join-community'),
                 body: preview ? (
-                    <FederationPreview
+                    <CommunityPreview
                         onJoin={onJoin}
                         onBack={onDismiss}
-                        federation={preview}
+                        community={preview}
                         isJoining={isJoining}
                     />
                 ) : (
