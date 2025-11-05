@@ -52,6 +52,7 @@ import {
     RpcMentions,
     JSONObject,
     RpcTimelineItemEvent,
+    type RpcUserPowerLevel,
 } from '../types/bindings'
 import { makeLog } from './log'
 import { constructUrl } from './neverthrow'
@@ -1459,4 +1460,20 @@ export const getRoomPreviewText = (room: MatrixRoom, t: TFunction) => {
         return t(PreviewTextMap[preview.content.msgtype])
 
     return preview.content.body
+}
+
+export function isPowerLevelGreaterOrEqual(
+    powerLevel: RpcUserPowerLevel,
+    threshold: RpcUserPowerLevel | number,
+): boolean {
+    if (powerLevel.type === 'infinite') return true
+
+    const thresholdValue =
+        typeof threshold === 'number'
+            ? threshold
+            : threshold.type === 'infinite'
+              ? Number.MAX_SAFE_INTEGER
+              : threshold.value
+
+    return powerLevel.value >= thresholdValue
 }

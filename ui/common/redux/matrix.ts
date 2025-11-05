@@ -96,6 +96,7 @@ import {
     prepareMentionsDataPayload,
     hasMentions,
     isTextEvent,
+    isPowerLevelGreaterOrEqual,
 } from '../utils/matrix'
 import { isBolt11 } from '../utils/parser'
 import { upsertListItem, upsertRecordEntity } from '../utils/redux'
@@ -542,7 +543,10 @@ export const matrixSlice = createSlice({
                 if (member) {
                     state.roomMembers[roomId] = upsertListItem(
                         state.roomMembers[roomId],
-                        { ...member, powerLevel },
+                        {
+                            ...member,
+                            powerLevel: { type: 'int', value: powerLevel },
+                        },
                     )
                 }
             },
@@ -2324,7 +2328,7 @@ export const selectMatrixRoomSelfPowerLevel = createSelector(
     selectMatrixAuth,
     (members, auth) => {
         const member = members.find(m => m.id === auth?.userId)
-        return member?.powerLevel || 0
+        return member?.powerLevel
     },
 )
 
@@ -2333,12 +2337,12 @@ export const selectMatrixRoomIsReadOnly = createSelector(
     selectMatrixRoomSelfPowerLevel,
     (roomPowerLevels, selfPowerLevel) => {
         if (!roomPowerLevels) return false
-        return (
-            getRoomEventPowerLevel(roomPowerLevels, [
-                'm.room.message',
-                'unableToDecrypt',
-            ]) > selfPowerLevel
-        )
+        if (!selfPowerLevel) return true
+        const requiredLevel = getRoomEventPowerLevel(roomPowerLevels, [
+            'm.room.message',
+            'unableToDecrypt',
+        ])
+        return !isPowerLevelGreaterOrEqual(selfPowerLevel, requiredLevel)
     },
 )
 

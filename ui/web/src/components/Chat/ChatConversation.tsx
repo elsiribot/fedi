@@ -24,7 +24,10 @@ import {
     MentionSelect,
     MatrixRoomMember,
 } from '@fedi/common/types'
-import { RpcMatrixMembership } from '@fedi/common/types/bindings'
+import {
+    RpcMatrixMembership,
+    RpcUserPowerLevel,
+} from '@fedi/common/types/bindings'
 import { makeLog } from '@fedi/common/utils/log'
 import {
     makeMatrixEventGroups,
@@ -129,7 +132,7 @@ export const ChatConversation: React.FC<Props> = ({
             id: selfUserId,
             displayName,
             avatarUrl: auth?.avatarUrl,
-            powerLevel: 0,
+            powerLevel: { type: 'int', value: 0 } as RpcUserPowerLevel,
             roomId: id,
             membership: 'join' as RpcMatrixMembership,
             ignored: false,
