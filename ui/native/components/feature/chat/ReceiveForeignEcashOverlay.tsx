@@ -6,7 +6,7 @@ import { ActivityIndicator, Pressable, StyleSheet, View } from 'react-native'
 import { useFederationPreview } from '@fedi/common/hooks/federation'
 import { useMatrixPaymentEvent } from '@fedi/common/hooks/matrix'
 import { useToast } from '@fedi/common/hooks/toast'
-import { validateEcash } from '@fedi/common/redux'
+import { parseEcash } from '@fedi/common/redux'
 import { makeLog } from '@fedi/common/utils/log'
 
 import { fedimint } from '../../../bridge'
@@ -63,20 +63,20 @@ const ReceiveForeignEcashOverlay: React.FC<Props> = ({
         if (!paymentEvent.content.ecash) return
 
         dispatch(
-            validateEcash({
+            parseEcash({
                 fedimint,
                 ecash: paymentEvent.content.ecash,
             }),
         )
             .unwrap()
-            .then(validated => {
-                if (validated.federation_type === 'joined') {
+            .then(parsed => {
+                if (parsed.federation_type === 'joined') {
                     log.error('federation should not be joined')
                     return
                 }
 
                 setInviteCode(
-                    validated.federation_invite || federationInviteCode || '',
+                    parsed.federation_invite || federationInviteCode || '',
                 )
             })
     }, [paymentEvent.content.ecash, federationInviteCode, dispatch])

@@ -200,7 +200,7 @@ async fn tests_wrapper_for_bridge() -> anyhow::Result<()> {
         test_ecash_cancel,
         test_backup_and_recovery,
         test_backup_and_recovery_from_scratch,
-        test_validate_ecash,
+        test_parse_ecash,
         test_social_backup_and_recovery,
         test_stability_pool,
         test_stability_pool_external_transfer_in,
@@ -933,11 +933,11 @@ async fn test_backup_and_recovery_inner(from_scratch: bool) -> anyhow::Result<()
     Ok(())
 }
 
-async fn test_validate_ecash(_dev_fed: DevFed) -> anyhow::Result<()> {
+async fn test_parse_ecash(_dev_fed: DevFed) -> anyhow::Result<()> {
     let td = TestDevice::new();
     let bridge = td.bridge_full().await?;
     let v2_ecash = "AgEEsuFO5gD3AwQBmW/h68gy6W5cgnl93aTdduN1OnnFofSCqjth03Q6CA+fXnKlVXQSIVSLqcHzsbhozAuo2q5jPMsO6XMZZZXaYvZyIdXzCUIuDNhdCHkGJWAgAa9M5zsSPPVWDVeCWgkerg0Z+Xv8IQGMh7rsgpLh77NCSVRKA2i4fBYNwPglSbkGs42Yllmz6HJtgmmtl/tdjcyVSR30Nc2cfkZYTJcEEnRjQAGC8ZX5eLYQB8rCAZiX5/gQX2QtjasZMy+BJ67kJ0klVqsS9G1IVWhea6ILISOd9H1MJElma8aHBiWBaWeGjrCXru8Ns7Lz4J18CbxFdHyWEQ==";
-    validateEcash(&bridge.federations, v2_ecash.into()).await?;
+    parseEcash(&bridge.federations, v2_ecash.into()).await?;
     Ok(())
 }
 

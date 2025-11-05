@@ -495,7 +495,7 @@ async fn receiveEcash(
         .map(|(amt, op)| (RpcAmount(amt), RpcOperationId(op)))
 }
 #[macro_rules_derive(rpc_method!)]
-async fn validateEcash(federations: &Federations, ecash: String) -> anyhow::Result<RpcEcashInfo> {
+async fn parseEcash(federations: &Federations, ecash: String) -> anyhow::Result<RpcEcashInfo> {
     federations.validate_ecash(ecash).await
 }
 
@@ -2263,7 +2263,7 @@ rpc_methods!(RpcMethods {
     calculateMaxGenerateEcash,
     generateEcash,
     receiveEcash,
-    validateEcash,
+    parseEcash,
     cancelEcash,
     // Transactions
     updateCachedFiatFXInfo,
