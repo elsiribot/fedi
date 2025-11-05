@@ -2239,6 +2239,12 @@ impl FederationV2 {
         Ok(())
     }
 
+    pub async fn repair_wallet(&self) -> Result<()> {
+        let mint = self.client.mint()?;
+        mint.try_repair_wallet().await?;
+        Ok(())
+    }
+
     // FIXME: get rid of this method and just access self.secret directly
     /// Get client root secret
     fn root_secret(&self) -> DerivableSecret {

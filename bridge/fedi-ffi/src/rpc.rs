@@ -563,6 +563,11 @@ async fn cancelEcash(
 }
 
 #[macro_rules_derive(federation_rpc_method!)]
+async fn repairWallet(federation: Arc<FederationV2>) -> anyhow::Result<()> {
+    federation.repair_wallet().await
+}
+
+#[macro_rules_derive(federation_rpc_method!)]
 async fn updateTransactionNotes(
     federation: Arc<FederationV2>,
     transaction_id: String,
@@ -2269,6 +2274,7 @@ rpc_methods!(RpcMethods {
     parseEcash,
     parseInviteCode,
     cancelEcash,
+    repairWallet,
     // Transactions
     updateCachedFiatFXInfo,
     listTransactions,

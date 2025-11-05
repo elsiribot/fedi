@@ -712,6 +712,7 @@ export type RpcMethods = {
   parseEcash: [parseEcash, RpcEcashInfo];
   parseInviteCode: [parseInviteCode, RpcParseInviteCodeResult];
   cancelEcash: [cancelEcash, null];
+  repairWallet: [repairWallet, null];
   updateCachedFiatFXInfo: [updateCachedFiatFXInfo, null];
   listTransactions: [
     listTransactions,
@@ -2079,6 +2080,8 @@ export type recheckPeginAddress = {
 };
 
 export type recoveryQr = {};
+
+export type repairWallet = { federationId: RpcFederationId };
 
 export type restoreMnemonic = { mnemonic: Array<string> };
 
