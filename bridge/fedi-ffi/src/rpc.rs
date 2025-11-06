@@ -2,6 +2,7 @@
 use std::collections::BTreeSet;
 use std::panic::PanicHookInfo;
 use std::path::PathBuf;
+use std::str::FromStr;
 use std::sync::atomic::AtomicU64;
 use std::sync::Arc;
 use std::time::{Duration, UNIX_EPOCH};
@@ -21,6 +22,7 @@ use federations::federation_v2::FederationV2;
 use federations::Federations;
 use fedimint_client::db::ChronologicalOperationLogKey;
 use fedimint_core::core::OperationId;
+use fedimint_core::invite_code::InviteCode;
 use fedimint_core::timing::TimeReporter;
 use futures::Future;
 use lightning_invoice::Bolt11Invoice;
@@ -52,8 +54,8 @@ use rpc_types::{
     FrontendMetadata, GuardianStatus, NetworkError, RpcAmount, RpcAppFlavor, RpcEcashInfo,
     RpcEventId, RpcFederation, RpcFederationId, RpcFederationMaybeLoading, RpcFederationPreview,
     RpcFeeDetails, RpcFiatAmount, RpcGenerateEcashResponse, RpcInvoice, RpcLightningGateway,
-    RpcMediaUploadParams, RpcOperationId, RpcPayInvoiceResponse, RpcPeerId,
-    RpcPrevPayInvoiceResult, RpcPublicKey, RpcRecoveryId, RpcRegisteredDevice,
+    RpcMediaUploadParams, RpcOperationId, RpcParseInviteCodeResult, RpcPayInvoiceResponse,
+    RpcPeerId, RpcPrevPayInvoiceResult, RpcPublicKey, RpcRecoveryId, RpcRegisteredDevice,
     RpcSPv2CachedSyncResponse, RpcSPv2SyncResponse, RpcSignature, RpcSignedLnurlMessage,
     RpcStabilityPoolAccountInfo, RpcTransaction, RpcTransactionDirection, RpcTransactionListEntry,
     SocialRecoveryQr,
@@ -497,6 +499,18 @@ async fn receiveEcash(
 #[macro_rules_derive(rpc_method!)]
 async fn parseEcash(federations: &Federations, ecash: String) -> anyhow::Result<RpcEcashInfo> {
     federations.validate_ecash(ecash).await
+}
+
+#[macro_rules_derive(rpc_method!)]
+async fn parseInviteCode(
+    _runtime: Arc<Runtime>,
+    invite_code: String,
+) -> anyhow::Result<RpcParseInviteCodeResult> {
+    let invite = InviteCode::from_str(&invite_code.to_lowercase())?;
+    let federation_id = invite.federation_id().to_string();
+    Ok(RpcParseInviteCodeResult {
+        federation_id: RpcFederationId(federation_id),
+    })
 }
 
 #[macro_rules_derive(rpc_method!)]
@@ -2264,6 +2278,7 @@ rpc_methods!(RpcMethods {
     generateEcash,
     receiveEcash,
     parseEcash,
+    parseInviteCode,
     cancelEcash,
     // Transactions
     updateCachedFiatFXInfo,

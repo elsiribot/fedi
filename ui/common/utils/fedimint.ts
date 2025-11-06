@@ -103,6 +103,10 @@ export class FedimintBridge {
         return this.rpcTyped('federationPreview', { inviteCode })
     }
 
+    async parseInviteCode(inviteCode: string) {
+        return this.rpcTyped('parseInviteCode', { inviteCode })
+    }
+
     async stabilityPoolAverageFeeRate(federationId: string, numCycles: number) {
         return this.rpcTyped('stabilityPoolAverageFeeRate', {
             federationId,

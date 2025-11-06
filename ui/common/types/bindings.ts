@@ -697,6 +697,7 @@ export type RpcMethods = {
   generateEcash: [generateEcash, RpcGenerateEcashResponse];
   receiveEcash: [receiveEcash, [RpcAmount, RpcOperationId]];
   parseEcash: [parseEcash, RpcEcashInfo];
+  parseInviteCode: [parseInviteCode, RpcParseInviteCodeResult];
   cancelEcash: [cancelEcash, null];
   updateCachedFiatFXInfo: [updateCachedFiatFXInfo, null];
   listTransactions: [listTransactions, Array<RpcTransactionListEntry>];
@@ -985,6 +986,8 @@ export type RpcOperationFediFeeStatus =
   | { type: "failedReceive"; fedi_fee_ppm: number };
 
 export type RpcOperationId = string;
+
+export type RpcParseInviteCodeResult = { federationId: RpcFederationId };
 
 export type RpcPayAddressResponse = { txid: string };
 
@@ -2023,6 +2026,10 @@ export type onboardRegisterAsNewDevice = {};
 
 export type onboardTransferExistingDeviceRegistration = { index: number };
 
+export type parseEcash = { ecash: string };
+
+export type parseInviteCode = { inviteCode: string };
+
 export type payAddress = {
   federationId: RpcFederationId;
   address: string;
@@ -2197,7 +2204,5 @@ export type uploadBackupFile = {
   federationId: RpcFederationId;
   videoFilePath: string;
 };
-
-export type parseEcash = { ecash: string };
 
 export type validateRecoveryFile = { path: string };

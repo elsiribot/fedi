@@ -1227,3 +1227,10 @@ pub struct RpcTransferRequestId(#[ts(type = "string")] pub TransferRequestId);
 pub struct RpcPrevPayInvoiceResult {
     pub completed: bool,
 }
+
+#[derive(Debug, Clone, Serialize, Deserialize, TS)]
+#[serde(rename_all = "camelCase")]
+#[ts(export)]
+pub struct RpcParseInviteCodeResult {
+    pub federation_id: RpcFederationId,
+}
