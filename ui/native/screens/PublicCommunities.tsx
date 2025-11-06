@@ -216,33 +216,22 @@ const PublicCommunities: React.FC<Props> = ({ navigation }) => {
                                 theme={theme}
                             />
                         </View>
-                        <Flex fullWidth style={style.buttonsContainer}>
-                            <Button
-                                fullWidth
-                                title={t('phrases.create-my-community')}
-                                onPress={() =>
-                                    navigation.navigate('FediModBrowser', {
-                                        url: 'https://community-generator.fedi.xyz',
-                                    })
-                                }
-                            />
-                        </Flex>
                     </View>
                 )}
             </ScrollView>
 
             <View style={style.footerContainer}>
-                <Button
-                    testID="MaybeLaterButton"
-                    fullWidth
-                    type="clear"
-                    title={
-                        <Text caption medium>
-                            {t('phrases.maybe-later')}
-                        </Text>
-                    }
-                    onPress={() => navigation.navigate('TabsNavigator')}
-                />
+                {activeTab === 'create' && (
+                    <Button
+                        fullWidth
+                        title={t('phrases.create-my-community')}
+                        onPress={() =>
+                            navigation.navigate('FediModBrowser', {
+                                url: 'https://community-generator.fedi.xyz',
+                            })
+                        }
+                    />
+                )}
             </View>
         </SafeAreaContainer>
     )
@@ -260,10 +249,6 @@ const styles = (theme: Theme) =>
             marginBottom: 10,
             paddingLeft: 10,
             paddingRight: 10,
-        },
-        buttonsContainer: {
-            marginBottom: theme.spacing.sm,
-            marginTop: theme.spacing.lg,
         },
         title: {
             textAlign: 'center',
