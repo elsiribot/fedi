@@ -402,48 +402,46 @@ export function useSendEcash(fedimint: FedimintBridge, federationId: string) {
     }
 }
 
-export function useValidateEcash(fedimint: FedimintBridge) {
+export function useParseEcash(fedimint: FedimintBridge) {
     const [ecashToken, setEcashToken] = useState<string>('')
     const [loading, setLoading] = useState(false) // used for page loader
-    const [validatedEcash, setValidatedEcash] = useState<RpcEcashInfo | null>(
-        null,
-    )
+    const [parsedEcash, setParsedEcash] = useState<RpcEcashInfo | null>(null)
     const [federationPreview, setFederationPreview] =
         useState<RpcFederationPreview | null>(null) // TODO: remove this
     const [isError, setIsError] = useState(false)
 
     // Return federation if they have already joined issuing federation
     const loadedFederation = useCommonSelector(s => {
-        if (validatedEcash?.federation_type === 'joined') {
-            return selectLoadedFederation(s, validatedEcash.federation_id)
+        if (parsedEcash?.federation_type === 'joined') {
+            return selectLoadedFederation(s, parsedEcash.federation_id)
         }
 
         return null
     })
 
-    const validateEcashFn = useCallback(
+    const parseEcashFn = useCallback(
         async (token: string) => {
             setEcashToken(token)
             setIsError(false)
             setLoading(true)
 
             try {
-                const validated = await fedimint.validateEcash(
+                const parsed = await fedimint.parseEcash(
                     decodeURIComponent(token),
                 )
-                setValidatedEcash(validated)
+                setParsedEcash(parsed)
 
                 // If user hasn't already joined this federation then get preview
-                if ('federation_invite' in validated) {
+                if ('federation_invite' in parsed) {
                     const preview = await getFederationPreview(
-                        validated.federation_invite as string,
+                        parsed.federation_invite as string,
                         fedimint,
                     )
                     setFederationPreview(preview)
                 }
             } catch (e) {
                 setIsError(true)
-                log.error('Ecash token could not be validated')
+                log.error('Ecash token could not be parsed')
             } finally {
                 setLoading(false)
             }
@@ -452,9 +450,9 @@ export function useValidateEcash(fedimint: FedimintBridge) {
     )
 
     return {
-        validateEcash: validateEcashFn,
+        parseEcash: parseEcashFn,
         loading,
-        validated: validatedEcash,
+        parsed: parsedEcash,
         ecashToken,
         isError,
         federation: loadedFederation || federationPreview,
@@ -469,8 +467,8 @@ export function useClaimEcash(fedimint: FedimintBridge) {
     const [isError, setIsError] = useState(false)
 
     const claimEcash = useCallback(
-        async (validatedEcash: RpcEcashInfo, ecashToken: string) => {
-            if (!validatedEcash) return
+        async (parsedEcash: RpcEcashInfo, ecashToken: string) => {
+            if (!parsedEcash) return
             let joinedFederation: Federation | null = null
 
             try {
@@ -479,11 +477,11 @@ export function useClaimEcash(fedimint: FedimintBridge) {
 
                 // User isn't part of federation that ecash was sent from
                 // so join the federation first
-                if ('federation_invite' in validatedEcash) {
+                if ('federation_invite' in parsedEcash) {
                     joinedFederation = await dispatch(
                         joinFederation({
                             fedimint,
-                            code: validatedEcash.federation_invite as string,
+                            code: parsedEcash.federation_invite as string,
                             recoverFromScratch: false,
                         }),
                     ).unwrap()
@@ -493,8 +491,8 @@ export function useClaimEcash(fedimint: FedimintBridge) {
                 }
 
                 const federationId =
-                    'federation_id' in validatedEcash
-                        ? validatedEcash.federation_id
+                    'federation_id' in parsedEcash
+                        ? parsedEcash.federation_id
                         : joinedFederation?.id
 
                 if (!federationId) {

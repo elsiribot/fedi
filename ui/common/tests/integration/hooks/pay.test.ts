@@ -177,7 +177,7 @@ describe('sending payments', () => {
             })
 
             // Check that the notes are valid by decoding them
-            const decoded = await fedimint.validateEcash(
+            const decoded = await fedimint.parseEcash(
                 result.current.notes || '',
             )
 

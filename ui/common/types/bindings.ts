@@ -696,7 +696,7 @@ export type RpcMethods = {
   calculateMaxGenerateEcash: [calculateMaxGenerateEcash, RpcAmount];
   generateEcash: [generateEcash, RpcGenerateEcashResponse];
   receiveEcash: [receiveEcash, [RpcAmount, RpcOperationId]];
-  validateEcash: [validateEcash, RpcEcashInfo];
+  parseEcash: [parseEcash, RpcEcashInfo];
   cancelEcash: [cancelEcash, null];
   updateCachedFiatFXInfo: [updateCachedFiatFXInfo, null];
   listTransactions: [listTransactions, Array<RpcTransactionListEntry>];
@@ -2198,6 +2198,6 @@ export type uploadBackupFile = {
   videoFilePath: string;
 };
 
-export type validateEcash = { ecash: string };
+export type parseEcash = { ecash: string };
 
 export type validateRecoveryFile = { path: string };

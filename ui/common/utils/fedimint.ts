@@ -444,8 +444,8 @@ export class FedimintBridge {
     }
 
     // Parses ecash, works offline
-    async validateEcash(ecash: string) {
-        return this.rpcTyped('validateEcash', {
+    async parseEcash(ecash: string) {
+        return this.rpcTyped('parseEcash', {
             ecash,
         })
     }

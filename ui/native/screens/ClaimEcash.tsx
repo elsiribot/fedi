@@ -5,7 +5,7 @@ import { useTranslation } from 'react-i18next'
 import { Linking, StyleSheet } from 'react-native'
 import Hyperlink from 'react-native-hyperlink'
 
-import { useValidateEcash, useClaimEcash } from '@fedi/common/hooks/pay'
+import { useParseEcash, useClaimEcash } from '@fedi/common/hooks/pay'
 import { useToast } from '@fedi/common/hooks/toast'
 import { selectOnboardingCompleted } from '@fedi/common/redux'
 import amountUtils from '@fedi/common/utils/AmountUtils'
@@ -42,12 +42,12 @@ const ClaimEcash: React.FC<Props> = ({ navigation, route }) => {
     }, [navigation, onboardingCompleted, token])
 
     const {
-        validateEcash,
+        parseEcash,
         loading: validating,
-        validated: validatedEcash,
+        parsed: parsedEcash,
         ecashToken,
         federation,
-    } = useValidateEcash(fedimint)
+    } = useParseEcash(fedimint)
 
     const {
         claimEcash,
@@ -60,8 +60,8 @@ const ClaimEcash: React.FC<Props> = ({ navigation, route }) => {
     useEffect(() => {
         if (!token) return
 
-        validateEcash(token)
-    }, [token, validateEcash])
+        parseEcash(token)
+    }, [token, parseEcash])
 
     useEffect(() => {
         if (!federation?.meta) return
@@ -88,7 +88,7 @@ const ClaimEcash: React.FC<Props> = ({ navigation, route }) => {
                 <HoloLoader size={60} />
             </Flex>
         )
-    } else if (!validatedEcash) {
+    } else if (!parsedEcash) {
         content = (
             <>
                 <SvgImage name="AlertWarningTriangle" size={48} />
@@ -137,7 +137,7 @@ const ClaimEcash: React.FC<Props> = ({ navigation, route }) => {
             <>
                 <SvgImage name="Cash" size={48} />
                 <Text h2>
-                    {amountUtils.msatToSatString(validatedEcash.amount)} SATS
+                    {amountUtils.msatToSatString(parsedEcash.amount)} SATS
                 </Text>
                 <Text center>{t('feature.ecash.claim-ecash-description')}</Text>
             </>
@@ -150,7 +150,7 @@ const ClaimEcash: React.FC<Props> = ({ navigation, route }) => {
                         <Row style={style.federationWrapper} gap="md">
                             <FederationLogo federation={federation} size={32} />
                             <Column style={style.wrapperText} justify="center">
-                                {validatedEcash?.federation_type ===
+                                {parsedEcash?.federation_type ===
                                 'notJoined' ? (
                                     <Text small style={style.wrapperTextDesc}>
                                         {t(
@@ -175,7 +175,7 @@ const ClaimEcash: React.FC<Props> = ({ navigation, route }) => {
                             </Column>
                         </Row>
 
-                        {validatedEcash?.federation_type === 'notJoined' &&
+                        {parsedEcash?.federation_type === 'notJoined' &&
                             tosUrl && (
                                 <Hyperlink
                                     onPress={() => Linking.openURL(tosUrl)}
@@ -194,7 +194,7 @@ const ClaimEcash: React.FC<Props> = ({ navigation, route }) => {
                     fullWidth
                     loading={claiming}
                     disabled={claiming}
-                    onPress={() => claimEcash(validatedEcash, ecashToken)}>
+                    onPress={() => claimEcash(parsedEcash, ecashToken)}>
                     {t('feature.ecash.claim-ecash')}
                 </Button>
                 <Button

@@ -5,7 +5,7 @@ import { useTranslation } from 'react-i18next'
 import alertIcon from '@fedi/common/assets/svgs/alert-warning-triangle.svg'
 import cashIcon from '@fedi/common/assets/svgs/cash.svg'
 import checkIcon from '@fedi/common/assets/svgs/check.svg'
-import { useClaimEcash, useValidateEcash } from '@fedi/common/hooks/pay'
+import { useClaimEcash, useParseEcash } from '@fedi/common/hooks/pay'
 import { useToast } from '@fedi/common/hooks/toast'
 import amountUtils from '@fedi/common/utils/AmountUtils'
 
@@ -26,11 +26,11 @@ function EcashPage() {
     const toast = useToast()
 
     const {
-        validateEcash,
+        parseEcash,
         loading: validating,
-        validated: validatedEcash,
+        parsed: parsedEcash,
         ecashToken,
-    } = useValidateEcash(fedimint)
+    } = useParseEcash(fedimint)
 
     const {
         claimEcash,
@@ -50,8 +50,8 @@ function EcashPage() {
             return
         }
 
-        validateEcash(hashParams.id)
-    }, [push, validateEcash])
+        parseEcash(hashParams.id)
+    }, [push, parseEcash])
 
     useEffect(() => {
         if (isClaimError) {
@@ -66,7 +66,7 @@ function EcashPage() {
             </LoadingWrapper>
         )
         actions = null
-    } else if (!validatedEcash) {
+    } else if (!parsedEcash) {
         content = (
             <Content>
                 <Icon icon={alertIcon} size="lg" />
@@ -111,7 +111,7 @@ function EcashPage() {
             <Content>
                 <Icon icon={cashIcon} size="lg" />
                 <Text variant="h2" weight="medium">
-                    {amountUtils.msatToSatString(validatedEcash.amount)} SATS
+                    {amountUtils.msatToSatString(parsedEcash.amount)} SATS
                 </Text>
                 <Text variant="body">
                     {t('feature.ecash.claim-ecash-description')}
@@ -123,7 +123,7 @@ function EcashPage() {
             <>
                 <Button
                     width="full"
-                    onClick={() => claimEcash(validatedEcash, ecashToken)}
+                    onClick={() => claimEcash(parsedEcash, ecashToken)}
                     disabled={claiming}
                     loading={claiming}>
                     {t('feature.ecash.claim-ecash')}
