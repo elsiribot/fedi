@@ -44,7 +44,7 @@ const AddFediMod: React.FC = () => {
     const [imageUrl, setImageUrl] = useState('')
     const [isFetching, setIsFetching] = useState(false)
     const [isValidUrl, setIsValidUrl] = useState(false)
-    const [action, setAction] = useState<'scan' | 'enter'>('scan')
+    const [action, setAction] = useState<'scan' | 'enter'>('enter')
 
     const style = styles(theme)
     const scrollRef = useRef<ScrollView>(null)
@@ -103,7 +103,6 @@ const AddFediMod: React.FC = () => {
                     .asyncAndThen(tryFetchUrlMetadata)
                     .match(
                         metadata => {
-                            setTitle(metadata.title)
                             setImageUrl(metadata.icon)
                             setIsFetching(false)
                         },
