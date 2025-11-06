@@ -68,7 +68,7 @@ const DEV_PERMISSIONS: MiniAppPermissionsById = {
 // these are "first party" miniapps pre-authorized with certain default permissions
 export const FIRST_PARTY_PERMISSIONS: MiniAppPermissionsById = {
     'fedi-catalog.vercel.app': ['manageInstalledMiniApps'],
-    'community-tool-two.vercel.app': ['manageCommunities', 'navigation'],
+    'community-generator.fedi.xyz': ['manageCommunities', 'navigation'],
     ...(isDev() ? DEV_PERMISSIONS : {}),
 }
 
