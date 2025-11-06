@@ -534,6 +534,23 @@ export class FedimintBridge {
         })
     }
 
+    async createCommunity(communityJsonStr: string) {
+        return this.rpcTyped('nostrCreateCommunity', {
+            communityJsonStr,
+        })
+    }
+
+    async listCreatedCommunities() {
+        return this.rpcTyped('nostrListOurCommunities', {})
+    }
+
+    async editCommunity(communityHexUuid: string, newCommunityJsonStr: string) {
+        return this.rpcTyped('nostrEditCommunity', {
+            communityHexUuid,
+            newCommunityJsonStr,
+        })
+    }
+
     async listGateways(federationId: string) {
         return this.rpcTyped('listGateways', { federationId })
     }

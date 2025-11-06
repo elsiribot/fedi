@@ -18,6 +18,7 @@ import {
     UnsupportedMethodError,
 } from 'webln'
 
+import { useInjectionsPermissions } from '@fedi/common/hooks/injections'
 import { useToast } from '@fedi/common/hooks/toast'
 import {
     selectCurrency,
@@ -43,6 +44,7 @@ import {
     selectFediModCacheEnabled,
     selectAreAllFederationsRecovering,
 } from '@fedi/common/redux'
+import { selectMiniAppByUrl } from '@fedi/common/redux/mod'
 import {
     AnyParsedData,
     Invoice,
@@ -50,6 +52,7 @@ import {
     ParserDataType,
 } from '@fedi/common/types'
 import { getCurrencyCode } from '@fedi/common/utils/currency'
+import { prepareCreateCommunityPayload } from '@fedi/common/utils/fedimods'
 import { makeLog } from '@fedi/common/utils/log'
 import { isBolt11, parseUserInput } from '@fedi/common/utils/parser'
 import {
@@ -67,6 +70,7 @@ import FediModBrowserHeader from '../components/feature/fedimods/FediModBrowserH
 import { GenerateEcashOverlay } from '../components/feature/fedimods/GenerateEcashoverlay'
 import { MakeInvoiceOverlay } from '../components/feature/fedimods/MakeInvoiceOverlay'
 import { NostrSignOverlay } from '../components/feature/fedimods/NostrSignOverlay'
+import { SelectPublicChatsOverlay } from '../components/feature/fedimods/SelectPublicChats'
 import { SendPaymentOverlay } from '../components/feature/fedimods/SendPaymentOverlay'
 import { RecoveryInProgressOverlay } from '../components/feature/recovery/RecoveryInProgressOverlay'
 import { SafeAreaContainer } from '../components/ui/SafeArea'
@@ -75,6 +79,7 @@ import {
     useOmniLinkInterceptor,
 } from '../state/contexts/OmniLinkContext'
 import { useAppDispatch, useAppSelector } from '../state/hooks'
+import { reset } from '../state/navigation'
 import type { RootStackParamList } from '../types/navigation'
 
 const log = makeLog('FediModBrowser')
@@ -104,6 +109,7 @@ type FediModResponse =
     | SendPaymentResponse
     | SignedNostrEvent
     | string
+    | Array<string>
 type FediModResolver<T> = (value: T | PromiseLike<T>) => void
 
 const FediModBrowser: React.FC<Props> = ({ route }) => {
@@ -118,6 +124,7 @@ const FediModBrowser: React.FC<Props> = ({ route }) => {
     const fediModCacheMode = useAppSelector(selectFediModCacheMode)
     const currency = useAppSelector(selectCurrency)
     const language = useAppSelector(selectLanguage)
+    const currentMiniApp = useAppSelector(s => selectMiniAppByUrl(s, url))
     const toast = useToast()
     const areAllFederationsRecovering = useAppSelector(
         selectAreAllFederationsRecovering,
@@ -136,6 +143,7 @@ const FediModBrowser: React.FC<Props> = ({ route }) => {
     const [browserUrl, setBrowserUrl] = useState<string>(url)
     const [isBrowserLoading, setIsBrowserLoading] = useState(true)
     const [browserLoadProgress, setBrowserLoadProgress] = useState(0)
+    const [isSelectingPublicChats, setIsSelectingPublicChats] = useState(false)
 
     const [showRecoveryInProgress, setShowRecoveryInProgress] =
         useState<boolean>(false)
@@ -169,239 +177,336 @@ const FediModBrowser: React.FC<Props> = ({ route }) => {
     // Intercept any URIs the user tries to navigate to that we can handle inline
     useOmniLinkInterceptor(handleParsedLink)
 
-    // Handle all messages coming from a WebLN-enabled site
-    const onMessage = makeWebViewMessageHandler(webview, {
-        [InjectionMessageType.webln_enable]: async () => {
-            /* no-op */
-            log.info('webln.enable')
-        },
-        [InjectionMessageType.webln_getInfo]: async () => {
-            log.info('webln.getInfo')
-
-            const alias = member?.displayName || ''
-            let pubkey = ''
-            try {
-                if (!paymentFederation?.id)
-                    throw new Error('No available lightning gateways')
-
-                const gateways = await dispatch(
-                    listGateways({
-                        fedimint,
-                        federationId: paymentFederation?.id,
-                    }),
-                ).unwrap()
-                const gateway = gateways.find(g => g.active) || gateways[0]
-
-                if (gateway) {
-                    pubkey = gateway.nodePubKey
-                }
-                return { node: { alias, pubkey } }
-            } catch (err) {
-                log.warn('Failed to list gateways for webln getInfo', err)
-                throw new Error(t('errors.no-lightning-gateways'))
-            }
-        },
-        [InjectionMessageType.webln_makeInvoice]: async data => {
-            log.info('webln.makeInvoice', data)
-            if (areAllFederationsRecovering) {
-                setShowRecoveryInProgress(true)
-                throw Error(t('errors.unknown-error'))
-            }
-
-            if (walletFederations.length === 0) {
-                toast.show({
-                    content: t('errors.please-join-wallet-federation'),
-                    status: 'error',
-                })
-                throw new Error(t('errors.please-join-wallet-federation'))
-            }
-
-            // Wait for user to interact with alert
-            return new Promise((resolve, reject) => {
-                // Save these refs to we can resolve / reject elsewhere
-                overlayRejectRef.current = reject
-                overlayResolveRef.current =
-                    resolve as FediModResolver<FediModResponse>
-
-                // TODO: Consider removing this since seeing a string or number
-                // is not strictly WebLN-compliant but inferring an amount might
-                // be convenient
-                if (typeof data === 'string' || typeof data === 'number') {
-                    dispatch(setRequestInvoiceArgs({ amount: data }))
-                } else {
-                    // Handle WebLN-compliant payload
-                    dispatch(setRequestInvoiceArgs(data as RequestInvoiceArgs))
-                }
-            })
-        },
-        [InjectionMessageType.webln_sendPayment]: async data => {
-            log.info('webln.sendPayment', data)
-            if (areAllFederationsRecovering) {
-                setShowRecoveryInProgress(true)
-                throw Error(t('errors.unknown-error'))
-            }
-
-            if (walletFederations.length === 0) {
-                toast.show({
-                    content: t('errors.please-join-wallet-federation'),
-                    status: 'error',
-                })
-                // Don't duplicate errors we display via toasts
-                throw new Error(t('errors.failed-to-send-payment'))
-            }
-
-            let invoice: Invoice
-            // only do a basic parsing check, decoding happens in the SendPaymentOverlay
-            if (isBolt11(data)) {
-                invoice = {
-                    invoice: data,
-                    // these fake fields will get overwritten when we decode the invoice
-                    paymentHash: '',
-                    amount: 0 as MSats,
-                    fee: null,
-                    description: '',
-                }
-            } else {
-                toast.show({
-                    content: t('phrases.failed-to-decode-invoice'),
-                    status: 'error',
-                })
-                // Don't duplicate errors we display via toasts
-                throw Error(t('errors.failed-to-send-payment'))
-            }
-            // Wait for user to interact with alert
-            return new Promise((resolve, reject) => {
-                overlayRejectRef.current = reject
-                overlayResolveRef.current =
-                    resolve as FediModResolver<FediModResponse>
-                dispatch(setInvoiceToPay(invoice))
-            })
-        },
-        [InjectionMessageType.webln_signMessage]: async () => {
-            log.info('webln.signMessage')
-            throw new UnsupportedMethodError(
-                t('errors.webln-method-not-supported', {
-                    method: 'signMessage',
+    const { validatePermissions } = useInjectionsPermissions({
+        currentMiniApp,
+        onValidationFailed: missingPermissions => {
+            toast.show({
+                content: t('feature.fedimods.missing-mini-app-permissions', {
+                    miniAppName: currentMiniApp?.title,
+                    missingPermissions: missingPermissions.join(', '),
                 }),
-            )
-        },
-        [InjectionMessageType.webln_verifyMessage]: async () => {
-            log.info('webln.verifyMessage')
-            throw new UnsupportedMethodError(
-                t('errors.webln-method-not-supported', {
-                    method: 'verifyMessage',
-                }),
-            )
-        },
-        [InjectionMessageType.webln_keysend]: async () => {
-            log.info('webln.keysend')
-            throw new UnsupportedMethodError(
-                t('errors.webln-method-not-supported', {
-                    method: 'keysend',
-                }),
-            )
-        },
-        [InjectionMessageType.nostr_getPublicKey]: async () => {
-            log.info('nostr.getPublicKey')
-
-            if (!nostrPublic) {
-                throw new Error(t('errors.get-nostr-pubkey-failed'))
-            }
-
-            return nostrPublic.hex
-        },
-        [InjectionMessageType.nostr_signEvent]: async evt => {
-            log.info('nostr.signEvent', evt)
-            // Wait for user to approve signing
-            return new Promise<SignedNostrEvent>((resolve, reject) => {
-                overlayRejectRef.current = reject
-                overlayResolveRef.current =
-                    resolve as FediModResolver<FediModResponse>
-                dispatch(setNostrUnsignedEvent(evt))
             })
-        },
-        [InjectionMessageType.nostr_encrypt]: async ({ pubkey, plaintext }) => {
-            log.info('nostr.encrypt', pubkey, plaintext)
-            const encrypted = await fedimint.nostrEncrypt(pubkey, plaintext)
-            return encrypted
-        },
-        [InjectionMessageType.nostr_decrypt]: async ({
-            pubkey,
-            ciphertext,
-        }) => {
-            log.info('nostr.decrypt', pubkey, ciphertext)
-            const decrypted = await fedimint.nostrDecrypt(pubkey, ciphertext)
-            return decrypted
-        },
-        [InjectionMessageType.nostr_encrypt04]: async ({
-            pubkey,
-            plaintext,
-        }) => {
-            log.info('nostr.encrypt04', pubkey, plaintext)
-            const encrypted = await fedimint.nostrEncrypt04(pubkey, plaintext)
-            return encrypted
-        },
-        [InjectionMessageType.nostr_decrypt04]: async ({
-            pubkey,
-            ciphertext,
-        }) => {
-            log.info('nostr.decrypt04', pubkey, ciphertext)
-            const decrypted = await fedimint.nostrDecrypt04(pubkey, ciphertext)
-            return decrypted
-        },
-        [InjectionMessageType.fedi_generateEcash]: async ecashRequestArgs => {
-            log.info('fedi.generateEcash', ecashRequestArgs)
-
-            // Wait for user to interact with alert
-            return new Promise((resolve, reject) => {
-                // Save these refs so we can resolve / reject elsewhere
-                overlayRejectRef.current = reject
-                overlayResolveRef.current =
-                    resolve as unknown as FediModResolver<FediModResponse>
-
-                dispatch(setEcashRequest(ecashRequestArgs))
-            })
-        },
-        [InjectionMessageType.fedi_receiveEcash]: async ecash => {
-            log.info('fedi.receiveEcash', ecash)
-            if (paymentFederation?.id === undefined) {
-                log.error('fedi.receiveEcash', 'No active federation')
-                throw new Error('No active federation')
-            }
-            try {
-                const res = await fedimint.receiveEcash(
-                    ecash,
-                    paymentFederation.id,
-                )
-                return { msats: res[0] }
-            } catch (err) {
-                log.warn('fedi.receiveEcash', err)
-                throw new Error(t('errors.receive-ecash-failed'))
-            }
-        },
-        [InjectionMessageType.fedi_getAuthenticatedMember]: async () => {
-            log.info('fedi.getAuthenticatedMember')
-
-            if (!member) {
-                throw new Error('No authenticated member')
-            }
-
-            return {
-                id: member.userId,
-                username: member.displayName,
-            }
-        },
-        [InjectionMessageType.fedi_getCurrencyCode]: async () => {
-            log.info('fedi.fedi_getCurrencyCode')
-
-            return getCurrencyCode(currency)
-        },
-        [InjectionMessageType.fedi_getLanguageCode]: async () => {
-            log.info('fedi.fedi_getLanguageCode')
-
-            return language ?? 'en'
         },
     })
+
+    // Handle all messages coming from a WebLN-enabled site
+    const onMessage = makeWebViewMessageHandler(
+        webview,
+        [validatePermissions],
+        {
+            [InjectionMessageType.webln_enable]: async () => {
+                /* no-op */
+                log.info('webln.enable')
+            },
+            [InjectionMessageType.webln_getInfo]: async () => {
+                log.info('webln.getInfo')
+
+                const alias = member?.displayName || ''
+                let pubkey = ''
+                try {
+                    if (!paymentFederation?.id)
+                        throw new Error('No available lightning gateways')
+
+                    const gateways = await dispatch(
+                        listGateways({
+                            fedimint,
+                            federationId: paymentFederation?.id,
+                        }),
+                    ).unwrap()
+                    const gateway = gateways.find(g => g.active) || gateways[0]
+
+                    if (gateway) {
+                        pubkey = gateway.nodePubKey
+                    }
+                    return { node: { alias, pubkey } }
+                } catch (err) {
+                    log.warn('Failed to list gateways for webln getInfo', err)
+                    throw new Error(t('errors.no-lightning-gateways'))
+                }
+            },
+            [InjectionMessageType.webln_makeInvoice]: async data => {
+                log.info('webln.makeInvoice', data)
+                if (areAllFederationsRecovering) {
+                    setShowRecoveryInProgress(true)
+                    throw Error(t('errors.unknown-error'))
+                }
+
+                if (walletFederations.length === 0) {
+                    toast.show({
+                        content: t('errors.please-join-wallet-federation'),
+                        status: 'error',
+                    })
+                    throw new Error(t('errors.please-join-wallet-federation'))
+                }
+
+                // Wait for user to interact with alert
+                return new Promise((resolve, reject) => {
+                    // Save these refs to we can resolve / reject elsewhere
+                    overlayRejectRef.current = reject
+                    overlayResolveRef.current =
+                        resolve as FediModResolver<FediModResponse>
+
+                    // TODO: Consider removing this since seeing a string or number
+                    // is not strictly WebLN-compliant but inferring an amount might
+                    // be convenient
+                    if (typeof data === 'string' || typeof data === 'number') {
+                        dispatch(setRequestInvoiceArgs({ amount: data }))
+                    } else {
+                        // Handle WebLN-compliant payload
+                        dispatch(
+                            setRequestInvoiceArgs(data as RequestInvoiceArgs),
+                        )
+                    }
+                })
+            },
+            [InjectionMessageType.webln_sendPayment]: async data => {
+                log.info('webln.sendPayment', data)
+                if (areAllFederationsRecovering) {
+                    setShowRecoveryInProgress(true)
+                    throw Error(t('errors.unknown-error'))
+                }
+
+                if (walletFederations.length === 0) {
+                    toast.show({
+                        content: t('errors.please-join-wallet-federation'),
+                        status: 'error',
+                    })
+                    // Don't duplicate errors we display via toasts
+                    throw new Error(t('errors.failed-to-send-payment'))
+                }
+
+                let invoice: Invoice
+                // only do a basic parsing check, decoding happens in the SendPaymentOverlay
+                if (isBolt11(data)) {
+                    invoice = {
+                        invoice: data,
+                        // these fake fields will get overwritten when we decode the invoice
+                        paymentHash: '',
+                        amount: 0 as MSats,
+                        fee: null,
+                        description: '',
+                    }
+                } else {
+                    toast.show({
+                        content: t('phrases.failed-to-decode-invoice'),
+                        status: 'error',
+                    })
+                    // Don't duplicate errors we display via toasts
+                    throw Error(t('errors.failed-to-send-payment'))
+                }
+                // Wait for user to interact with alert
+                return new Promise((resolve, reject) => {
+                    overlayRejectRef.current = reject
+                    overlayResolveRef.current =
+                        resolve as FediModResolver<FediModResponse>
+                    dispatch(setInvoiceToPay(invoice))
+                })
+            },
+            [InjectionMessageType.webln_signMessage]: async () => {
+                log.info('webln.signMessage')
+                throw new UnsupportedMethodError(
+                    t('errors.webln-method-not-supported', {
+                        method: 'signMessage',
+                    }),
+                )
+            },
+            [InjectionMessageType.webln_verifyMessage]: async () => {
+                log.info('webln.verifyMessage')
+                throw new UnsupportedMethodError(
+                    t('errors.webln-method-not-supported', {
+                        method: 'verifyMessage',
+                    }),
+                )
+            },
+            [InjectionMessageType.webln_keysend]: async () => {
+                log.info('webln.keysend')
+                throw new UnsupportedMethodError(
+                    t('errors.webln-method-not-supported', {
+                        method: 'keysend',
+                    }),
+                )
+            },
+            [InjectionMessageType.nostr_getPublicKey]: async () => {
+                log.info('nostr.getPublicKey')
+
+                if (!nostrPublic) {
+                    throw new Error(t('errors.get-nostr-pubkey-failed'))
+                }
+
+                return nostrPublic.hex
+            },
+            [InjectionMessageType.nostr_signEvent]: async evt => {
+                log.info('nostr.signEvent', evt)
+                // Wait for user to approve signing
+                return new Promise<SignedNostrEvent>((resolve, reject) => {
+                    overlayRejectRef.current = reject
+                    overlayResolveRef.current =
+                        resolve as FediModResolver<FediModResponse>
+                    dispatch(setNostrUnsignedEvent(evt))
+                })
+            },
+            [InjectionMessageType.nostr_encrypt]: async ({
+                pubkey,
+                plaintext,
+            }) => {
+                log.info('nostr.encrypt', pubkey, plaintext)
+                const encrypted = await fedimint.nostrEncrypt(pubkey, plaintext)
+                return encrypted
+            },
+            [InjectionMessageType.nostr_decrypt]: async ({
+                pubkey,
+                ciphertext,
+            }) => {
+                log.info('nostr.decrypt', pubkey, ciphertext)
+                const decrypted = await fedimint.nostrDecrypt(
+                    pubkey,
+                    ciphertext,
+                )
+                return decrypted
+            },
+            [InjectionMessageType.nostr_encrypt04]: async ({
+                pubkey,
+                plaintext,
+            }) => {
+                log.info('nostr.encrypt04', pubkey, plaintext)
+                const encrypted = await fedimint.nostrEncrypt04(
+                    pubkey,
+                    plaintext,
+                )
+                return encrypted
+            },
+            [InjectionMessageType.nostr_decrypt04]: async ({
+                pubkey,
+                ciphertext,
+            }) => {
+                log.info('nostr.decrypt04', pubkey, ciphertext)
+                const decrypted = await fedimint.nostrDecrypt04(
+                    pubkey,
+                    ciphertext,
+                )
+                return decrypted
+            },
+            [InjectionMessageType.fedi_generateEcash]:
+                async ecashRequestArgs => {
+                    log.info('fedi.generateEcash', ecashRequestArgs)
+
+                    // Wait for user to interact with alert
+                    return new Promise((resolve, reject) => {
+                        // Save these refs so we can resolve / reject elsewhere
+                        overlayRejectRef.current = reject
+                        overlayResolveRef.current =
+                            resolve as unknown as FediModResolver<FediModResponse>
+
+                        dispatch(setEcashRequest(ecashRequestArgs))
+                    })
+                },
+            [InjectionMessageType.fedi_receiveEcash]: async ecash => {
+                log.info('fedi.receiveEcash', ecash)
+                if (paymentFederation?.id === undefined) {
+                    log.error('fedi.receiveEcash', 'No active federation')
+                    throw new Error('No active federation')
+                }
+                try {
+                    const res = await fedimint.receiveEcash(
+                        ecash,
+                        paymentFederation.id,
+                    )
+                    return { msats: res[0] }
+                } catch (err) {
+                    log.warn('fedi.receiveEcash', err)
+                    throw new Error(t('errors.receive-ecash-failed'))
+                }
+            },
+            [InjectionMessageType.fedi_getAuthenticatedMember]: async () => {
+                log.info('fedi.getAuthenticatedMember')
+
+                if (!member) {
+                    throw new Error('No authenticated member')
+                }
+
+                return {
+                    id: member.userId,
+                    username: member.displayName,
+                }
+            },
+            [InjectionMessageType.fedi_getCurrencyCode]: async () => {
+                log.info('fedi.fedi_getCurrencyCode')
+
+                return getCurrencyCode(currency)
+            },
+            [InjectionMessageType.fedi_getLanguageCode]: async () => {
+                log.info('fedi.fedi_getLanguageCode')
+
+                return language ?? 'en'
+            },
+            [InjectionMessageType.fedi_listCreatedCommunities]: async () => {
+                try {
+                    const communities = await fedimint.listCreatedCommunities()
+                    return { communities }
+                } catch (err) {
+                    log.error('fedi.fedi_listCreatedCommunities', err)
+                    throw new Error(
+                        t('errors.failed-to-list-created-communities'),
+                    )
+                }
+            },
+            [InjectionMessageType.fedi_createCommunity]: async community => {
+                log.info('fedi.fedi_createCommunity', community)
+                try {
+                    const communityToCreate =
+                        prepareCreateCommunityPayload(community)
+                    const createdCommunity =
+                        await fedimint.createCommunity(communityToCreate)
+                    const inviteCode =
+                        createdCommunity.communityInvite.invite_code_str
+                    // TODO: consider joining here? or exposing joinCommunity so the miniApp can do it
+                    return { success: true, inviteCode }
+                } catch (err) {
+                    log.error('fedi.fedi_createCommunity', err)
+                    throw new Error(t('errors.failed-to-create-community'))
+                }
+            },
+            [InjectionMessageType.fedi_editCommunity]: async community => {
+                log.info('fedi.fedi_editCommunity', community)
+                try {
+                    const communityToEdit = prepareCreateCommunityPayload(
+                        community.editedCommunity,
+                    )
+                    await fedimint.editCommunity(
+                        community.communityId,
+                        communityToEdit,
+                    )
+                    return { success: true }
+                } catch (err) {
+                    log.error('fedi.fedi_editCommunity', err)
+                    throw new Error(t('errors.failed-to-edit-community'))
+                }
+            },
+            [InjectionMessageType.fedi_selectPublicChats]: async () => {
+                log.info('fedi.fedi_selectPublicChats')
+                return new Promise((resolve, reject) => {
+                    overlayRejectRef.current = reject
+                    overlayResolveRef.current =
+                        resolve as FediModResolver<FediModResponse>
+                    setIsSelectingPublicChats(true)
+                })
+            },
+            [InjectionMessageType.fedi_navigateHome]: async () => {
+                log.info('fedi.fedi_navigateHome')
+                navigation.dispatch(
+                    reset('TabsNavigator', { initialRouteName: 'Home' }),
+                )
+            },
+            [InjectionMessageType.fedi_getInstalledMiniApps]: async () => {
+                log.info('fedi.fedi_getInstalledMiniApps')
+                throw new Error('Not implemented')
+            },
+            [InjectionMessageType.fedi_installMiniApp]: async () => {
+                log.info('fedi.fedi_installMiniApp')
+                throw new Error('Not implemented')
+            },
+        },
+    )
 
     // Decide whether or not to handle links clicked in the webview natively.
     // Links that are passed to this are decided based on the `originWhitelist`
@@ -560,6 +665,12 @@ const FediModBrowser: React.FC<Props> = ({ route }) => {
                 onOpenChange={setConfirmLeaveOpen}
             />
             <AddressBarOverlay setBrowserUrl={setBrowserUrl} />
+            <SelectPublicChatsOverlay
+                onReject={overlayProps.onReject}
+                onAccept={overlayProps.onAccept}
+                open={isSelectingPublicChats}
+                onOpenChange={setIsSelectingPublicChats}
+            />
         </SafeAreaContainer>
     )
 }
