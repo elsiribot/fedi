@@ -79,6 +79,9 @@ export const INJECTION_HANDLERS_PERMISSIONS_MAP: Partial<{
     [InjectionMessageType.fedi_createCommunity]: ['manageCommunities'],
     [InjectionMessageType.fedi_editCommunity]: ['manageCommunities'],
     [InjectionMessageType.fedi_listCreatedCommunities]: ['manageCommunities'],
+    [InjectionMessageType.fedi_joinCommunity]: ['manageCommunities'],
+    [InjectionMessageType.fedi_refreshCommunities]: ['manageCommunities'],
+    [InjectionMessageType.fedi_setSelectedCommunity]: ['manageCommunities'],
     [InjectionMessageType.fedi_selectPublicChats]: ['manageCommunities'],
     [InjectionMessageType.fedi_getInstalledMiniApps]: [
         'manageInstalledMiniApps',

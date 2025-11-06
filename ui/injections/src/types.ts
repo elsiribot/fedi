@@ -41,6 +41,9 @@ export enum InjectionMessageType {
     fedi_listCreatedCommunities = 'fedi_listCreatedCommunities',
     fedi_createCommunity = 'fedi_createCommunity',
     fedi_editCommunity = 'fedi_editCommunity',
+    fedi_joinCommunity = 'fedi_joinCommunity',
+    fedi_setSelectedCommunity = 'fedi_setSelectedCommunity',
+    fedi_refreshCommunities = 'fedi_refreshCommunities',
     fedi_selectPublicChats = 'fedi_selectPublicChats',
     fedi_navigateHome = 'fedi_navigateHome',
     fedi_getInstalledMiniApps = 'fedi_getInstalledMiniApps',
@@ -150,6 +153,22 @@ export type InjectionMessageResponseMap = {
         response:
             | { success: true }
             | { success: false; errors: Record<string, string[] | undefined> }
+    }
+    [InjectionMessageType.fedi_joinCommunity]: {
+        message: string
+        response:
+            | { success: true; community: RpcCommunity }
+            | { success: false; errors: Record<string, string[] | undefined> }
+    }
+    [InjectionMessageType.fedi_setSelectedCommunity]: {
+        message: string
+        response:
+            | { success: true }
+            | { success: false; errors: Record<string, string[] | undefined> }
+    }
+    [InjectionMessageType.fedi_refreshCommunities]: {
+        message: void
+        response: void
     }
     [InjectionMessageType.fedi_selectPublicChats]: {
         message: void

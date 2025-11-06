@@ -43,6 +43,10 @@ import {
     selectFediModCacheMode,
     selectFediModCacheEnabled,
     selectAreAllFederationsRecovering,
+    joinCommunity,
+    setLastSelectedCommunityId,
+    selectCommunities,
+    refreshCommunities,
 } from '@fedi/common/redux'
 import { selectMiniAppByUrl } from '@fedi/common/redux/mod'
 import {
@@ -131,6 +135,7 @@ const FediModBrowser: React.FC<Props> = ({ route }) => {
     )
     const siteInfo = useAppSelector(selectSiteInfo)
     const walletFederations = useAppSelector(selectLoadedFederations)
+    const communities = useAppSelector(selectCommunities)
     const isInternetUnreachable = useAppSelector(selectIsInternetUnreachable)
     const webview = useRef<WebView>() as MutableRefObject<WebView>
     const overlayResolveRef = useRef<
@@ -441,8 +446,9 @@ const FediModBrowser: React.FC<Props> = ({ route }) => {
             },
             [InjectionMessageType.fedi_listCreatedCommunities]: async () => {
                 try {
-                    const communities = await fedimint.listCreatedCommunities()
-                    return { communities }
+                    const createdCommunities =
+                        await fedimint.listCreatedCommunities()
+                    return { communities: createdCommunities }
                 } catch (err) {
                     log.error('fedi.fedi_listCreatedCommunities', err)
                     throw new Error(
@@ -480,6 +486,54 @@ const FediModBrowser: React.FC<Props> = ({ route }) => {
                 } catch (err) {
                     log.error('fedi.fedi_editCommunity', err)
                     throw new Error(t('errors.failed-to-edit-community'))
+                }
+            },
+            [InjectionMessageType.fedi_joinCommunity]: async inviteCode => {
+                log.info('fedi.fedi_joinCommunity', inviteCode)
+                try {
+                    const joinedCommunity = await dispatch(
+                        joinCommunity({ fedimint, code: inviteCode }),
+                    ).unwrap()
+                    return { success: true, community: joinedCommunity }
+                } catch (err) {
+                    log.error('fedi.fedi_joinCommunity', err)
+                    throw new Error(t('errors.failed-to-join-community'))
+                }
+            },
+            [InjectionMessageType.fedi_setSelectedCommunity]: async id => {
+                log.info('fedi.fedi_setSelectedCommunity', id)
+                try {
+                    // make sure the user is joined before changing the last selected community
+                    const joinedCommunity = communities.find(c => c.id === id)
+                    if (joinedCommunity) {
+                        dispatch(setLastSelectedCommunityId(id))
+                        return { success: true }
+                    } else {
+                        return {
+                            success: false,
+                            errors: {
+                                community: [
+                                    t(
+                                        'errors.failed-to-set-selected-community',
+                                    ),
+                                ],
+                            },
+                        }
+                    }
+                } catch (err) {
+                    log.error('fedi.fedi_setSelectedCommunity', err)
+                    throw new Error(
+                        t('errors.failed-to-set-selected-community'),
+                    )
+                }
+            },
+            [InjectionMessageType.fedi_refreshCommunities]: async () => {
+                log.info('fedi.fedi_refreshCommunities')
+                try {
+                    await dispatch(refreshCommunities(fedimint))
+                } catch (err) {
+                    log.error('fedi.fedi_refreshCommunities', err)
+                    throw new Error(t('errors.failed-to-refresh-communities'))
                 }
             },
             [InjectionMessageType.fedi_selectPublicChats]: async () => {

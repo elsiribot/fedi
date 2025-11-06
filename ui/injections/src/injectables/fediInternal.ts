@@ -81,6 +81,37 @@ class InjectionFediProvider {
         )
     }
 
+    async joinCommunity(
+        inviteCode: string,
+    ): Promise<
+        | { success: true; community: RpcCommunity }
+        | { success: false; errors: Record<string, string[] | undefined> }
+    > {
+        return this.sendMessage(
+            InjectionMessageType.fedi_joinCommunity,
+            inviteCode,
+        )
+    }
+
+    async refreshCommunities(): Promise<void> {
+        return this.sendMessage(
+            InjectionMessageType.fedi_refreshCommunities,
+            undefined,
+        )
+    }
+
+    async setSelectedCommunity(
+        communityId: string,
+    ): Promise<
+        | { success: true }
+        | { success: false; errors: Record<string, string[] | undefined> }
+    > {
+        return this.sendMessage(
+            InjectionMessageType.fedi_setSelectedCommunity,
+            communityId,
+        )
+    }
+
     async selectPublicChats(): Promise<Array<string>> {
         return this.sendMessage(
             InjectionMessageType.fedi_selectPublicChats,
