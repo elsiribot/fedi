@@ -1123,7 +1123,6 @@
             "pending-withdrawal-blocking": "Fadlan sug inta lacag bixintu socoto si aad uga baaraandegto ka hor inta aanad samayn wax dhigaal ama lacag bixin dheeraad ah",
             "seconds": "{{seconds}} ilbiriqsi",
             "stable-balance": "Dheelitirnaan Deggan",
-            "stable-balance-beta": "Tani waa sifada beta Fadlan ku raaxayso si xilkasnimo leh qaddar yar oo ka warbixi cillad kasta oo ku jirta Settings.",
             "will-be-deposited": "{{amount}} waxa lagu xarayn doonaa {{expectedWait}",
             "will-be-withdrawn": "{{amount}} waa lala bixi doonaa gudaha {{expectedWait}}",
             "withdraw-to": "Ka noqo",

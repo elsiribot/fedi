@@ -1157,7 +1157,6 @@
             "pending-withdrawal-blocking": "Aguarde que os saques pendentes sejam processados antes de efetuar novos depósitos ou saques",
             "seconds": "{{seconds}} segundos",
             "stable-balance": "Saldo Estável",
-            "stable-balance-beta": "Este é uma funcionalidade em versão beta. Por favor, use com cautela, apenas com pequenas quantias, e reporte quaisquer erros nas Configurações.",
             "will-be-deposited": "{{amount}} vão ser depositados em {{expectedWait}}",
             "will-be-withdrawn": "{{amount}} vão ser saque em {{expectedWait}}",
             "withdraw-to": "Sacar para",

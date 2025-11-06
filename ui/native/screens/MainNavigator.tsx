@@ -59,7 +59,6 @@ import StabilityDepositHeader from '../components/feature/stabilitypool/Stabilit
 import StabilityHistoryHeader from '../components/feature/stabilitypool/StabilityHistoryHeader'
 import StabilityHomeHeader from '../components/feature/stabilitypool/StabilityHomeHeader'
 import StabilityWithdrawHeader from '../components/feature/stabilitypool/StabilityWithdrawHeader'
-import StableBalanceIntroHeader from '../components/feature/stabilitypool/StableBalanceIntroHeader'
 import WithdrawInitiatedHeader from '../components/feature/stabilitypool/WithdrawInitiatedHeader'
 import HelpCentreHeader from '../components/feature/support/HelpCentreHeader'
 import TransactionsHeader from '../components/feature/transaction-history/TransactionsHeader'
@@ -189,7 +188,6 @@ import StabilityHistory from './StabilityHistory'
 import StabilityHome from './StabilityHome'
 import StabilityWithdraw from './StabilityWithdraw'
 import StabilityWithdrawInitiated from './StabilityWithdrawInitiated'
-import StableBalanceIntro from './StableBalanceIntro'
 import StartRecoveryAssist from './StartRecoveryAssist'
 import StartSocialBackup from './StartSocialBackup'
 import TabsNavigator from './TabsNavigator'
@@ -1253,13 +1251,6 @@ export const MainNavigator = () => {
                                 component={StabilityWithdrawInitiated}
                                 options={() => ({
                                     header: () => <WithdrawInitiatedHeader />,
-                                })}
-                            />
-                            <Stack.Screen
-                                name="StableBalanceIntro"
-                                component={StableBalanceIntro}
-                                options={() => ({
-                                    header: () => <StableBalanceIntroHeader />,
                                 })}
                             />
                             {/* Share Logs */}

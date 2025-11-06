@@ -1125,7 +1125,6 @@
             "pending-withdrawal-blocking": "Ihangane utegereze inzira y'amafaranga atarakurwaho mbere y'uko wakora indi mirimo yo kubitsa cyangwa kubikuza",
             "seconds": "{{seconds}} amasegonda",
             "stable-balance": "Impirimbanyi zihamye",
-            "stable-balance-beta": "Nibintu biranga beta. Nyamuneka nyamuneka wishimire hamwe na bike hanyuma utange amakosa yose muri Igenamiterere.",
             "will-be-deposited": "{{amount}} azabikwa muri {{expectedWait}}",
             "will-be-withdrawn": "{{amount}} azabikuzwa muri {{expectedWait}}",
             "withdraw-to": "Bikuza kugeza",

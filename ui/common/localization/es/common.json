@@ -1158,7 +1158,6 @@
             "pending-withdrawal-blocking": "Espera a que se procesen los retiros pendientes antes de realizar más depósitos o retiros.",
             "seconds": "{{seconds}} segundos",
             "stable-balance": "Balance Estable",
-            "stable-balance-beta": "Esta es una función beta. Disfruta de manera responsable con pequeñas cantidades e informa cualquier error en Configuración.",
             "will-be-deposited": "{{amount}} será depositada en {{expectedWait}}",
             "will-be-withdrawn": "{{amount}} será enviada en {{expectedWait}}",
             "withdraw-to": "Retira a",

@@ -1156,7 +1156,6 @@
             "pending-withdrawal-blocking": "Harap tunggu penarikan yang tertunda untuk diproses sebelum melakukan penyetoran atau penarikan lebih lanjut",
             "seconds": "{{seconds}} detik",
             "stable-balance": "Saldo Stabil",
-            "stable-balance-beta": "Ini adalah fitur beta. Silakan nikmati secara bertanggung jawab, gunakan saldo kecil dan laporkan bug apapun di Pengaturan.",
             "will-be-deposited": "{{amount}} akan disetorkan ke {{expectedWait}}",
             "will-be-withdrawn": "{{amount}} akan ditarik pada {{expectedWait}}",
             "withdraw-to": "Tarik ke",

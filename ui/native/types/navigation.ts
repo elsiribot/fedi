@@ -209,7 +209,6 @@ export type RootStackParamList = {
         formattedFiat: string
         federationId: Federation['id']
     }
-    StableBalanceIntro: { federationId: Federation['id'] }
     StartRecoveryAssist: undefined
     StartSocialBackup: { federationId: Federation['id'] }
     SocialBackupCloudUpload: undefined

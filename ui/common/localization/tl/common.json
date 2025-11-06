@@ -1127,7 +1127,6 @@
             "pending-withdrawal-blocking": "Paki-hintay na maproseso ang pag-withdraw bago gumawa ng bagong deposito o pag-withdraw",
             "seconds": "{{seconds}} segundo",
             "stable-balance": "Stable na Balanse",
-            "stable-balance-beta": "BETA feature ito. Para lang sa maliliit na halaga. I-report ang bugs sa Settings.",
             "will-be-deposited": "{{amount}} ay ide-deposito sa loob ng {{expectedWait}}",
             "will-be-withdrawn": "{{amount}} ay i-withdraw sa loob ng {{expectedWait}}",
             "withdraw-to": "I-withdraw sa",

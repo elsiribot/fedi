@@ -1158,7 +1158,6 @@
             "pending-withdrawal-blocking": "Tafadhali subiri uondoaji unaosubiri kushughulikiwa kabla ya kuweka amana au uondoaji zaidi",
             "seconds": "{{seconds}} sekunde",
             "stable-balance": "Stable Balance",
-            "stable-balance-beta": "Hii ni kipengele cha beta. Tafadhali tumia kwa kiasi kidogo na ripoti hitilafu zozote katika Mipangilio.",
             "will-be-deposited": "{{amount}} itawekwa baada ya {{expectedWait}}",
             "will-be-withdrawn": "{{amount}} itatolewa baada ya {{expectedWait}}",
             "withdraw-to": "Toa kwa",

@@ -1157,7 +1157,6 @@
             "pending-withdrawal-blocking": "Veuillez attendre que les retraits en attente soient traités avant d'effectuer d'autres dépôts ou retraits.",
             "seconds": "{{seconds}} secondes",
             "stable-balance": "Solde Stable",
-            "stable-balance-beta": "Il s'agit d'une fonctionnalité bêta. Veuillez l'utiliser de manière responsable avec de petits montants et signaler tout bug dans les paramètres.",
             "will-be-deposited": "{{amount}} sera déposé dans {{expectedWait}}",
             "will-be-withdrawn": "{{amount}} sera retiré dans {{expectedWait}}",
             "withdraw-to": "Retirer à",

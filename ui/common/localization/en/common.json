@@ -1207,7 +1207,6 @@
             "pending-withdrawal-blocking": "Please wait for pending withdrawals to process before making further deposits or withdrawals",
             "seconds": "{{seconds}} seconds",
             "stable-balance": "Stable Balance",
-            "stable-balance-beta": "This is a beta feature. Please enjoy responsibly with small amounts and report any bugs in Settings.",
             "will-be-deposited": "{{amount}} will be deposited in {{expectedWait}}",
             "will-be-withdrawn": "{{amount}} will be withdrawn in {{expectedWait}}",
             "withdraw-to": "Withdraw to",
