@@ -60,15 +60,15 @@ export type MiniAppPermissionsById = Partial<
 // in dev locally running mini-apps have all permissions by default
 // change as needed
 const DEV_PERMISSIONS: MiniAppPermissionsById = {
-    localhost: [...miniAppPermissionTypes],
-    '127.0.0.1': [...miniAppPermissionTypes],
-    '10.0.2.2': [...miniAppPermissionTypes], // host for android emulator
+    'http://localhost': [...miniAppPermissionTypes],
+    'http://127.0.0.1': [...miniAppPermissionTypes],
+    'http://10.0.2.2': [...miniAppPermissionTypes], // host for android emulator
 }
 
 // these are "first party" miniapps pre-authorized with certain default permissions
 export const FIRST_PARTY_PERMISSIONS: MiniAppPermissionsById = {
-    'fedi-catalog.vercel.app': ['manageInstalledMiniApps'],
-    'community-generator.fedi.xyz': ['manageCommunities', 'navigation'],
+    'https://fedi-catalog.vercel.app': ['manageInstalledMiniApps'],
+    'https://community-generator.fedi.xyz': ['manageCommunities', 'navigation'],
     ...(isDev() ? DEV_PERMISSIONS : {}),
 }
 
