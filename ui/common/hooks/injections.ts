@@ -8,7 +8,6 @@ import {
 import { selectMiniAppPermissions } from '../redux/mod'
 import {
     type MiniAppPermissionType,
-    FediMod,
     INJECTION_HANDLERS_PERMISSIONS_MAP,
 } from '../types'
 import { makeLog } from '../utils/log'
@@ -39,18 +38,18 @@ const getMissingInjectionPermissions = (
 }
 
 export const useInjectionsPermissions = ({
-    currentMiniApp,
+    currentMiniAppUrl,
     onValidationFailed,
 }: {
-    currentMiniApp: FediMod | undefined
+    currentMiniAppUrl: string | undefined
     onValidationFailed: (missingPermissions: MiniAppPermissionType[]) => void
 }) => {
     const currentMiniAppPermissions = useCommonSelector(s =>
-        selectMiniAppPermissions(s, currentMiniApp),
+        selectMiniAppPermissions(s, currentMiniAppUrl),
     )
 
     const validatePermissions = async (message: AnyInjectionRequestMessage) => {
-        log.info('validatePermissions ', { currentMiniApp, message })
+        log.info('validatePermissions ', { currentMiniAppUrl, message })
         const { type } = message
 
         const missingPermissions = getMissingInjectionPermissions(

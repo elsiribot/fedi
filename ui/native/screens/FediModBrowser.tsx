@@ -183,7 +183,7 @@ const FediModBrowser: React.FC<Props> = ({ route }) => {
     useOmniLinkInterceptor(handleParsedLink)
 
     const { validatePermissions } = useInjectionsPermissions({
-        currentMiniApp,
+        currentMiniAppUrl: url,
         onValidationFailed: missingPermissions => {
             toast.show({
                 content: t('feature.fedimods.missing-mini-app-permissions', {

@@ -274,11 +274,11 @@ export const selectAllVisibleMods = createSelector(
 
 export const selectMiniAppPermissions = createSelector(
     (s: CommonState) => s.mod.miniAppPermissions,
-    (_: CommonState, miniApp: FediMod | undefined) => miniApp,
-    (miniAppPermissions, miniApp): MiniAppPermissionType[] => {
-        if (!miniApp) return []
-        const miniAppUrl = new URL(miniApp.url)
-        return miniAppPermissions[miniAppUrl.hostname] ?? []
+    (_: CommonState, miniAppUrl: string | undefined) => miniAppUrl,
+    (miniAppPermissions, miniAppUrl): MiniAppPermissionType[] => {
+        if (!miniAppUrl) return []
+        const url = new URL(miniAppUrl)
+        return miniAppPermissions[url.origin] ?? []
     },
 )
 
