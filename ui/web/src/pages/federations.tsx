@@ -70,14 +70,19 @@ function FederationsPage() {
             {/* Modal - Ask user to backup if their balance is above 1000 sats */}
             <RequireBackupModal />
 
-            <RequestPaymentDialog
-                open={router.pathname === '/request'}
-                onOpenChange={() => router.push('/federations')}
-            />
-            <SendPaymentDialog
-                open={router.pathname === '/send'}
-                onOpenChange={() => router.push('/federations')}
-            />
+            {router.pathname === '/request' && (
+                <RequestPaymentDialog
+                    open={true}
+                    onOpenChange={() => router.push('/federations')}
+                />
+            )}
+
+            {router.pathname === '/send' && (
+                <SendPaymentDialog
+                    open={true}
+                    onOpenChange={() => router.push('/federations')}
+                />
+            )}
         </ContentBlock>
     )
 }

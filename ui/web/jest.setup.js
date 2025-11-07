@@ -42,6 +42,7 @@ jest.mock('next/router', () => ({
     useRouter() {
         return {
             pathname: '',
+            asPath: '',
             push: jest.fn(),
             back: jest.fn(),
         }
