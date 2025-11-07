@@ -99,11 +99,11 @@ const PublicFederations: React.FC<Props> = ({ navigation, route }) => {
         { icon: 'User', text: t('feature.onboarding.create-info-1') },
         {
             icon: 'SocialPeople',
-            text: t('feature.onboarding.create-info-2'),
+            text: t('feature.onboarding.create-info-3'),
         },
         {
             icon: 'ShieldHalfFilled',
-            text: t('feature.onboarding.create-info-3'),
+            text: t('feature.onboarding.create-info-5'),
         },
     ]
 
