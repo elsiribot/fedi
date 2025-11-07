@@ -28,7 +28,7 @@ export type CommunityMeta = {
     // Will get stringified before passing to the bridge
     fedimods?: {
         id: string
-        name: string
+        title: string
         url: string
         imageUrl: string
     }[]
