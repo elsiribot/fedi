@@ -68,7 +68,7 @@ const PublicCommunities: React.FC<Props> = ({ navigation }) => {
     switcherOptions.push({
         label: t('words.create'),
         value: 'create',
-        subText: t('feature.onboarding.description-create'),
+        subText: t('feature.onboarding.description-create-community'),
     })
 
     const selectedOption =
