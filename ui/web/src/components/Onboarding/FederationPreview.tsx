@@ -150,7 +150,16 @@ const FederationPreview: React.FC<Props> = ({
                     </Button>
                 )}
             </>
-        ) : null
+        ) : (
+            <Text
+                variant="small"
+                css={{
+                    color: theme.colors.grey,
+                    textAlign: 'center',
+                }}>
+                {t('feature.federations.new-members-disabled')}
+            </Text>
+        )
     }
 
     return (

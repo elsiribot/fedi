@@ -200,6 +200,14 @@ const FederationPreview: React.FC<Props> = ({
                         </Hyperlink>
                     </View>
                 )}
+
+                {showJoinFederation === false && (
+                    <View style={s.guidance}>
+                        <Text small color={theme.colors.darkGrey} center>
+                            {t('feature.federations.new-members-disabled')}
+                        </Text>
+                    </View>
+                )}
             </Flex>
         </SafeAreaContainer>
     )

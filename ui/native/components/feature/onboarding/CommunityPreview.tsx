@@ -159,7 +159,7 @@ const CommunityPreview: React.FC<Props> = ({
             </Flex>
 
             <Flex shrink={false}>
-                {joinButtons}
+                {showJoinFederation && joinButtons}
 
                 {showJoinFederation && tosUrl && (
                     <View style={s.guidance}>
@@ -172,6 +172,14 @@ const CommunityPreview: React.FC<Props> = ({
                                 })}
                             </Text>
                         </Hyperlink>
+                    </View>
+                )}
+
+                {showJoinFederation === false && (
+                    <View style={s.guidance}>
+                        <Text small color={theme.colors.darkGrey} center>
+                            {t('feature.communities.new-members-disabled')}
+                        </Text>
                     </View>
                 )}
             </Flex>
