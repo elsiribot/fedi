@@ -1,6 +1,7 @@
 use std::cmp::Ordering;
 use std::collections::{BTreeMap, HashMap};
 use std::sync::Arc;
+use std::time::Duration;
 
 use anyhow::{anyhow, bail, ensure};
 use api_types::invoice_generator::FirstCommunityInviteCodeState;
@@ -18,8 +19,7 @@ use rpc_types::{LightningSendMetadata, RpcTransactionDirection};
 use runtime::api::TransactionDirection;
 use runtime::bridge_runtime::Runtime;
 use runtime::constants::{
-    FEDI_FEE_REMITTANCE_MAX_DELAY, FEDI_FEE_SCHEDULE_REFRESH_DELAY, FEDI_GIFT_CHILD_ID,
-    FEDI_GIFT_EXCLUDED_COMMUNITIES, MILLION,
+    FEDI_FEE_SCHEDULE_REFRESH_DELAY, FEDI_GIFT_CHILD_ID, FEDI_GIFT_EXCLUDED_COMMUNITIES, MILLION,
 };
 use runtime::features::RuntimeEnvironment;
 use runtime::storage::state::{FediFeeSchedule, ModuleFediFeeSchedule};
@@ -335,8 +335,6 @@ impl FediFeeRemittanceService {
             ))
             .await
             .unwrap_or(Amount::ZERO);
-        // If last_remittance_timestamp has never been set, we don't force set it. We
-        // simply let the next organic threshold-based remittance set it.
         let last_remittance_timestamp = fed
             .dbtx()
             .await
@@ -346,21 +344,58 @@ impl FediFeeRemittanceService {
                 tx_direction.clone(),
             ))
             .await;
+        let max_remittance_delay = Duration::from_secs(
+            fed.runtime
+                .feature_catalog
+                .fedi_fee
+                .remittance_max_delay_secs
+                .into(),
+        );
         let remittance_threshold = fed.fedi_fee_schedule().await.remittance_threshold_msat;
         let (should_remit, accrued_fee_exceeds_threshold) = match (
             outstanding_fees.msats.cmp(&remittance_threshold),
             last_remittance_timestamp,
         ) {
             (Ordering::Equal, _) | (Ordering::Greater, _) => (true, true),
-            (Ordering::Less, Some(last_timestamp))
-                if fedimint_core::time::now()
-                    .duration_since(last_timestamp)
-                    .unwrap_or_default()
-                    > FEDI_FEE_REMITTANCE_MAX_DELAY =>
-            {
-                (true, false)
+            (Ordering::Less, maybe_timestamp) => {
+                if maybe_timestamp.is_some_and(|t| {
+                    fedimint_core::time::now()
+                        .duration_since(t)
+                        .unwrap_or_default()
+                        > max_remittance_delay
+                }) {
+                    (true, false)
+                } else {
+                    // If last remittance timestamp has not been set so far, we set it to "now" to
+                    // start the time-based trigger cycles
+                    if maybe_timestamp.is_none() {
+                        let _ = fed
+                            .client
+                            .db()
+                            .autocommit(
+                                |dbtx, _| {
+                                    Box::pin({
+                                        let timestamp_key = FediFeesRemittanceTimestampPerTXTypeKey(
+                                            module.clone(),
+                                            tx_direction.clone(),
+                                        );
+                                        async move {
+                                            dbtx.insert_entry(
+                                                &timestamp_key,
+                                                &fedimint_core::time::now(),
+                                            )
+                                            .await;
+                                            Ok::<(), anyhow::Error>(())
+                                        }
+                                    })
+                                },
+                                Some(100),
+                            )
+                            .await;
+                    }
+                    (false, false)
+                }
             }
-            _ => (false, false),
         };
         if !should_remit {
             info!("Fedi fee remittance not initiated, threshold not met AND max delay not hit");
