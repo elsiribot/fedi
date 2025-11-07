@@ -3,7 +3,6 @@ use std::time::Duration;
 use anyhow::bail;
 use fedimint_derive_secret::DerivableSecret;
 use nostr_sdk::secp256k1::{self, Message};
-use nostr_sdk::util::hex;
 use nostr_sdk::{
     Client, EventBuilder, Filter, Keys, Kind, NostrSigner, PublicKey, Tag, TagKind, ToBech32,
 };
