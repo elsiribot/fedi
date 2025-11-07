@@ -115,7 +115,7 @@ const FediModSettingsScreen: React.FC<Props> = ({ route }: Props) => {
                 />
             ),
             title: t('feature.fedimods.delete-confirmation', {
-                fediMod: deletingMod?.title,
+                miniAppTitle: deletingMod?.title,
             }),
             buttons: [
                 {

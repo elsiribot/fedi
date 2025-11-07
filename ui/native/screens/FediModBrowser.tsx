@@ -48,9 +48,14 @@ import {
     selectCommunities,
     refreshCommunities,
 } from '@fedi/common/redux'
-import { selectMiniAppByUrl } from '@fedi/common/redux/mod'
+import {
+    addCustomMod,
+    selectConfigurableMods,
+    selectMiniAppByUrl,
+} from '@fedi/common/redux/mod'
 import {
     AnyParsedData,
+    InstallMiniAppRequest,
     Invoice,
     MSats,
     ParserDataType,
@@ -128,6 +133,7 @@ const FediModBrowser: React.FC<Props> = ({ route }) => {
     const fediModCacheMode = useAppSelector(selectFediModCacheMode)
     const currency = useAppSelector(selectCurrency)
     const language = useAppSelector(selectLanguage)
+    const installedMiniApps = useAppSelector(selectConfigurableMods)
     const currentMiniApp = useAppSelector(s => selectMiniAppByUrl(s, url))
     const toast = useToast()
     const areAllFederationsRecovering = useAppSelector(
@@ -553,11 +559,43 @@ const FediModBrowser: React.FC<Props> = ({ route }) => {
             },
             [InjectionMessageType.fedi_getInstalledMiniApps]: async () => {
                 log.info('fedi.fedi_getInstalledMiniApps')
-                throw new Error('Not implemented')
+                return installedMiniApps.map(mod => {
+                    return {
+                        url: mod.url,
+                    }
+                })
             },
-            [InjectionMessageType.fedi_installMiniApp]: async () => {
-                log.info('fedi.fedi_installMiniApp')
-                throw new Error('Not implemented')
+            [InjectionMessageType.fedi_installMiniApp]: async (
+                miniAppToInstall: InstallMiniAppRequest,
+            ) => {
+                log.info('fedi.fedi_installMiniApp', miniAppToInstall)
+                try {
+                    await dispatch(
+                        addCustomMod({
+                            fediMod: {
+                                id: miniAppToInstall.id,
+                                title: miniAppToInstall.title,
+                                url: miniAppToInstall.url,
+                                imageUrl: miniAppToInstall.imageUrl,
+                            },
+                        }),
+                    )
+
+                    toast.show({
+                        content: t('feature.fedimods.add-mini-app-success', {
+                            miniAppName: miniAppToInstall.title,
+                        }),
+                        status: 'success',
+                    })
+                } catch (err) {
+                    log.warn('failed to install fedi mod', err)
+                    toast.show({
+                        content: t('feature.fedimods.add-mini-app-failure', {
+                            miniAppName: miniAppToInstall.title,
+                        }),
+                        status: 'error',
+                    })
+                }
             },
         },
     )
