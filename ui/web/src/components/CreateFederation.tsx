@@ -48,11 +48,11 @@ export default function CreateFederation() {
         },
         {
             icon: UsersIcon,
-            text: t('feature.onboarding.create-info-2'),
+            text: t('feature.onboarding.create-info-3'),
         },
         {
             icon: ShieldHalfFilledIcon,
-            text: t('feature.onboarding.create-info-3'),
+            text: t('feature.onboarding.create-info-5'),
         },
     ]
 
