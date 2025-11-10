@@ -35,7 +35,6 @@ import SetPinHeader from '../components/feature/pin/SetPinHeader'
 import SetPinLockScreen from '../components/feature/pin/SetPinLockScreen'
 import UnlockAppLockScreenHeader from '../components/feature/pin/UnlockAppLockScreenHeader'
 import BitcoinRequestHeader from '../components/feature/receive/BitcoinRequestHeader'
-import ClaimEcashHeader from '../components/feature/receive/ClaimEcashHeader'
 import ReceiveBitcoinOfflineHeader from '../components/feature/receive/ReceiveBitcoinOfflineHeader'
 import ReceiveCashuHeader from '../components/feature/receive/ReceiveCashuHeader'
 import RequestMoneyHeader from '../components/feature/receive/RequestMoneyHeader'
@@ -375,7 +374,14 @@ export const MainNavigator = () => {
                     <Stack.Screen
                         name="ClaimEcash"
                         component={ClaimEcash}
-                        options={() => ({ header: () => <ClaimEcashHeader /> })}
+                        options={() => ({
+                            header: () => (
+                                <CenteredHeader
+                                    backButton
+                                    title={t('feature.ecash.claim-ecash')}
+                                />
+                            ),
+                        })}
                     />
                 </Stack.Group>
                 {isAppUnlocked ? (

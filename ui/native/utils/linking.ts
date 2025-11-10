@@ -32,6 +32,11 @@ type NavigationProp = Pick<
     'navigate'
 >
 
+type RouteItem = {
+    name: keyof RootStackParamList
+    params?: RootStackParamList[keyof RootStackParamList]
+}
+
 const log = makeLog('utils/linking')
 
 /**
@@ -56,8 +61,6 @@ const deepLinksConfig: NavigationLinkingConfig['config'] = {
                         Federations: 'federations',
                     },
                 },
-                Send: 'send',
-                Transactions: 'transactions',
                 ChatRoomConversation: { path: 'room/:roomId' },
                 ChatUserConversation: 'user/:userId',
                 ShareLogs: 'share-logs/:ticketNumber',
@@ -190,24 +193,6 @@ export function createNavigationAction(
                 },
             }
 
-        case 'send':
-            return {
-                type: 'navigate',
-                screen: 'MainNavigator',
-                params: {
-                    screen: 'Send',
-                },
-            }
-
-        case 'transactions':
-            return {
-                type: 'navigate',
-                screen: 'MainNavigator',
-                params: {
-                    screen: 'Transactions',
-                },
-            }
-
         case 'share-logs':
             if (!id) return null
             return {
@@ -223,6 +208,79 @@ export function createNavigationAction(
                 type: 'navigate',
                 screen: 'MainNavigator',
                 params: { screen: 'ClaimEcash', params: { token: id } },
+            }
+
+        default:
+            return null
+    }
+}
+
+// This is a temporary function until I get chance to refactor deep linking logic
+export const getRouteItemFromUrl = (url: string): RouteItem | null => {
+    const parsedLink = parseDeepLink(url, validScreens)
+
+    if (!parsedLink) return null
+
+    const { screen, id } = parsedLink
+
+    switch (screen) {
+        case 'join':
+            if (!id) return null
+            return {
+                name: 'JoinFederation',
+                params: { invite: id },
+            }
+
+        case 'room':
+            if (!id) return null
+            return {
+                name: 'ChatRoomConversation',
+                params: { roomId: id },
+            }
+
+        case 'user':
+            if (!id) return null
+            return {
+                name: 'ChatUserConversation',
+                params: { userId: id },
+            }
+
+        case 'home':
+            return {
+                name: 'TabsNavigator',
+                params: { initialRouteName: 'Home' },
+            }
+
+        case 'chat':
+            return {
+                name: 'TabsNavigator',
+                params: { initialRouteName: 'Chat' },
+            }
+
+        case 'scan':
+            return {
+                name: 'OmniScanner',
+            }
+
+        case 'federations':
+            return {
+                name: 'TabsNavigator',
+                params: { initialRouteName: 'Federations' },
+            }
+
+        case 'share-logs':
+            if (!id) return null
+            return {
+                name: 'ShareLogs',
+                params: { ticketNumber: id },
+            }
+
+        case 'ecash':
+            if (!id) return null
+
+            return {
+                name: 'ClaimEcash',
+                params: { token: id },
             }
 
         default:

@@ -53,6 +53,7 @@ const initialState = {
     onboardingMethod: null as OnboardingMethod | null,
     appFlavor: undefined as RpcAppFlavor['type'] | undefined,
     sessionCount: 0,
+    redirectTo: null as string | null,
 }
 
 export type EnvironmentState = typeof initialState
@@ -138,6 +139,9 @@ export const environmentSlice = createSlice({
         clearSessionCount(state) {
             state.sessionCount = 0
         },
+        setRedirectTo(state, actions: PayloadAction<string>) {
+            state.redirectTo = actions.payload
+        },
     },
     extraReducers: builder => {
         builder.addCase(changeLanguage.fulfilled, (state, action) => {
@@ -197,6 +201,7 @@ export const {
     setOnboardingCompleted,
     setOnboardingMethod,
     setAppFlavor,
+    setRedirectTo,
 } = environmentSlice.actions
 
 /*** Async thunk actions ***/
@@ -426,3 +431,5 @@ export const selectOnboardingMethod = (s: CommonState) =>
     s.environment.onboardingMethod
 
 export const selectAppFlavor = (s: CommonState) => s.environment.appFlavor
+
+export const selectRedirectTo = (s: CommonState) => s.environment.redirectTo

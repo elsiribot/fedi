@@ -68,7 +68,7 @@ export type RootStackParamList = {
     ChatSettings: { title?: string }
     ChatRoomMembers: { roomId: string; displayMultispendRoles?: boolean }
     ChatRoomInvite: { roomId: string }
-    ChatUserConversation: { userId: string; displayName: string }
+    ChatUserConversation: { userId: string; displayName?: string }
     ChatVideoViewer: { uri: string }
     ChatWallet: { recipientId: string }
     ChooseBackupMethod: undefined
@@ -189,11 +189,7 @@ export type RootStackParamList = {
     ShareLogs: { ticketNumber: string } | undefined
     OmniScanner: undefined
     FediModBrowser: { url: string }
-    Splash:
-        | ({ screen: keyof RootStackParamList } & Partial<
-              Record<string, string>
-          >)
-        | undefined
+    Splash: undefined
     StabilityConfirmDeposit: { amount: Sats; federationId: Federation['id'] }
     StabilityConfirmWithdraw: {
         amountSats: Sats

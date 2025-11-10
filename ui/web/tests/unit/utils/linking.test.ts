@@ -29,10 +29,9 @@ describe('utils/linking', () => {
             expect(getDeepLinkPath('/link#screen=home')).toBe('/home')
             expect(getDeepLinkPath('/link#screen=chat')).toBe('/chat')
             expect(getDeepLinkPath('/link#screen=scan')).toBe('/scan')
-            expect(getDeepLinkPath('/link#screen=transactions')).toBe(
-                '/transactions',
+            expect(getDeepLinkPath('/link#screen=federations')).toBe(
+                '/federations',
             )
-            expect(getDeepLinkPath('/link#screen=send')).toBe('/send')
             expect(getDeepLinkPath('/link#screen=user&id=123')).toBe(
                 '/chat/user/123',
             )

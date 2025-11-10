@@ -2,12 +2,11 @@ import {
     chatRoute,
     chatRoomRoute,
     chatUserRoute,
+    ecashRoute,
+    federationsRoute,
     homeRoute,
     onboardingJoinRoute,
     scanRoute,
-    sendRoute,
-    transactionsRoute,
-    ecashRoute,
 } from '../constants/routes'
 
 const DEEP_LINK_PATH = '/link'
@@ -45,12 +44,10 @@ export const getDeepLinkPath = (link: string): string => {
                 return homeRoute
             case 'chat':
                 return chatRoute
+            case 'federations':
+                return federationsRoute
             case 'scan':
                 return scanRoute
-            case 'transactions':
-                return transactionsRoute
-            case 'send':
-                return sendRoute
             case 'ecash': {
                 const tokenId = params.get('id')
                 if (!tokenId) return '/'
