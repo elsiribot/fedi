@@ -178,6 +178,7 @@ const ClaimEcash: React.FC<Props> = ({ navigation, route }) => {
                 )}
 
                 <Button
+                    testID="claim-ecash-button"
                     fullWidth
                     loading={claiming}
                     disabled={claiming}

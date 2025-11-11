@@ -122,6 +122,7 @@ function EcashPage() {
         actions = (
             <>
                 <Button
+                    aria-label={t('feature.ecash.claim-ecash')}
                     width="full"
                     onClick={() => claimEcash(parsedEcash, ecashToken)}
                     disabled={claiming}
