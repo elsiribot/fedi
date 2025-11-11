@@ -12,9 +12,9 @@ export class OnboardingTest extends AppiumTestBase {
         await this.clickElementByKey('ContinueButton')
         await this.clickElementByKey('Continue')
         await this.clickElementByKey('ChatTabButton')
-        await this.clickElementByKey('Explore Now')
+        await this.clickElementByKey('FirstTimeOverlayButton')
         await this.clickElementByKey('ModsTabButton')
-        await this.clickElementByKey('Explore Now')
+        await this.clickElementByKey('FirstTimeOverlayButton')
         await this.clickElementByKey('FederationsTabButton')
         await this.clickElementByKey('ScanButton')
         await this.clickElementByKey('FirstTimeOverlayButton')
@@ -28,7 +28,7 @@ export class OnboardingTest extends AppiumTestBase {
         }
         await this.clickElementByKey('HeaderBackButton')
         await this.clickElementByKey('HomeTabButton')
-        await this.clickElementByKey('Explore Now')
+        await this.clickElementByKey('FirstTimeOverlayButton')
         await this.clickElementByKey('AvatarButton')
         await this.waitForElementDisplayed('UserQrContainer')
         // TODO: copy the fedi user address and validate it
@@ -94,12 +94,8 @@ export class OnboardingTest extends AppiumTestBase {
         // TODO: validate backup here
         // TODO: test pin access
         // TODO: test nostr details
-        await this.scrollToElement(
-            'FediGlobalCommunity(Nightly)AccordionButton',
-        )
-        await this.clickElementByKey(
-            'FediGlobalCommunity(Nightly)AccordionButton',
-        )
+        await this.scrollToElement('FediGlobal(Nightly)CommAccordionButton')
+        await this.clickElementByKey('FediGlobal(Nightly)CommAccordionButton')
         await this.scrollToElement('Community Mini Apps')
         await this.clickElementByKey('Community Mini Apps')
         await this.clickElementByKey('BitrefillVisibilityToggleButton')

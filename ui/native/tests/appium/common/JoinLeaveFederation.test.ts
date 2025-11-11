@@ -48,17 +48,17 @@ export class JoinLeaveFederation extends AppiumTestBase {
         // await this.clickOnText('Fedi Testnet', 0, true)
         // await this.waitForElementDisplayed('FediTestnetDetailsButton') <-- these elements are no longer there
         await this.clickElementByKey('AvatarButton')
-        await this.scrollToElement('BitcoinPrinciplesAccordionButton')
-        await this.clickElementByKey('BitcoinPrinciplesAccordionButton')
+        await this.scrollToElement('BitcoinPrinciplesFedAccordionButton')
+        await this.clickElementByKey('BitcoinPrinciplesFedAccordionButton')
         await this.scrollToElement('Leave Federation')
         await this.clickElementByKey('Leave Federation')
         await this.dismissAlert('No')
-        await this.scrollToElement('BitcoinPrinciplesAccordionButton', {
+        await this.scrollToElement('BitcoinPrinciplesFedAccordionButton', {
             scrollDirection: 'up',
         })
         if (
             (await this.elementIsDisplayed(
-                'BitcoinPrinciplesAccordionButton',
+                'BitcoinPrinciplesFedAccordionButton',
             )) === false
         ) {
             throw new Error(
@@ -70,7 +70,7 @@ export class JoinLeaveFederation extends AppiumTestBase {
         await this.acceptAlert('Yes')
         if (
             (await this.elementIsDisplayed(
-                'BitcoinPrinciplesAccordionButton',
+                'BitcoinPrinciplesFedAccordionButton',
             )) === true
         ) {
             throw new Error(
@@ -124,16 +124,16 @@ export class JoinLeaveFederation extends AppiumTestBase {
         //     'HeaderCloseButton',
         // )
         await this.clickElementByKey('AvatarButton')
-        await this.scrollToElement('E-CashClubAccordionButton')
-        await this.clickElementByKey('E-CashClubAccordionButton')
+        await this.scrollToElement('E-CashClubFedAccordionButton')
+        await this.clickElementByKey('E-CashClubFedAccordionButton')
         await this.scrollToElement('Leave Federation')
         await this.clickElementByKey('Leave Federation')
         await this.dismissAlert('No')
-        await this.scrollToElement('E-CashClubAccordionButton', {
+        await this.scrollToElement('E-CashClubFedAccordionButton', {
             scrollDirection: 'up',
         })
         if (
-            (await this.elementIsDisplayed('E-CashClubAccordionButton')) ===
+            (await this.elementIsDisplayed('E-CashClubFedAccordionButton')) ===
             false
         ) {
             throw new Error(
@@ -143,7 +143,7 @@ export class JoinLeaveFederation extends AppiumTestBase {
         await this.clickElementByKey('Leave Federation')
         await this.acceptAlert('Yes')
         if (
-            (await this.elementIsDisplayed('E-CashClubAccordionButton')) ===
+            (await this.elementIsDisplayed('E-CashClubFedAccordionButton')) ===
             true
         ) {
             throw new Error(
@@ -165,7 +165,11 @@ export class JoinLeaveFederation extends AppiumTestBase {
         await this.clickElementByKey('RecoverFromScratchSwitch')
         await this.clickElementByKey('JoinFederationButton')
         await this.waitForElementDisplayed('PlusButton')
-        if ((await this.scrollToElement('E-CashClubDetailsButton')) === null) {
+        if (
+            (await this.scrollToElement('E-CashClubDetailsButton', {
+                scrollDirection: 'up',
+            })) === null
+        ) {
             throw new Error(
                 `Failed - E-Cash Club Federation is not present in the Federations drawer after re-joining`,
             )
