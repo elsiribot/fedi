@@ -274,3 +274,18 @@ impl FeatureCatalog {
         }
     }
 }
+
+/// error! on prod and panic! on nightly
+#[macro_export]
+macro_rules! nightly_panic {
+    ($runtime:expr, $($tt:tt)*) => {
+        if matches!(
+            $runtime.feature_catalog.runtime_env,
+            ::runtime::features::RuntimeEnvironment::Staging | ::runtime::features::RuntimeEnvironment::Dev | ::runtime::features::RuntimeEnvironment::Tests
+        ) {
+            panic!($($tt)*);
+        } else {
+            tracing::error!($($tt)*);
+        }
+    };
+}
