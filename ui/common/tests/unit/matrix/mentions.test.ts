@@ -348,6 +348,7 @@ describe.skip('skip mentions', () => {
             sendState: { kind: 'sent', event_id: 'e1' },
             localEcho: false,
             inReply: null,
+            mentions: null,
         } satisfies Partial<MatrixEvent>
 
         it('extracts userId from matrix.to anchor', () => {
