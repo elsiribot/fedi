@@ -129,8 +129,9 @@ tokio = "1"
 ts-rs = "11"
 tracing = "0.1.37"
 tracing-subscriber = { version = "0.3.16", features = ["env-filter"] }
-matrix-sdk = { git = "https://github.com/fedibtc/matrix-rust-sdk", tag = "fedi/matrix-sdk-ffi/20251007-3", default-features = false }
-matrix-sdk-ui = { git = "https://github.com/fedibtc/matrix-rust-sdk", tag = "fedi/matrix-sdk-ffi/20251007-3", default-features = false }
+matrix-sdk-base = { git = "https://github.com/fedibtc/matrix-rust-sdk", tag = "fedi/matrix-sdk-ffi/20251104", default-features = false }
+matrix-sdk = { git = "https://github.com/fedibtc/matrix-rust-sdk", tag = "fedi/matrix-sdk-ffi/20251104", default-features = false }
+matrix-sdk-ui = { git = "https://github.com/fedibtc/matrix-rust-sdk", tag = "fedi/matrix-sdk-ffi/20251104", default-features = false }
 
 fedimint_threshold_crypto = { version = "0.2.1", package = "fedimint-threshold-crypto" }
 

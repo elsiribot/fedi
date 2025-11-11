@@ -81,6 +81,7 @@ impl RpcComposerDraft {
                     event_id: event_id.parse()?,
                 },
             },
+            attachments: Vec::new(),
         })
     }
 }
