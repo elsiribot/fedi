@@ -66,8 +66,11 @@ const DEV_PERMISSIONS: MiniAppPermissionsById = {
 }
 
 const NIGHTLY_PERMISSIONS: MiniAppPermissionsById = {
-    'fedi-catalog-staging.vercel.app': ['manageInstalledMiniApps'],
-    'community-tool-two.vercel.app': ['manageCommunities', 'navigation'],
+    'https://fedi-catalog-staging.vercel.app': ['manageInstalledMiniApps'],
+    'https://community-tool-two.vercel.app': [
+        'manageCommunities',
+        'navigation',
+    ],
 }
 
 // these are "first party" miniapps pre-authorized with certain default permissions
