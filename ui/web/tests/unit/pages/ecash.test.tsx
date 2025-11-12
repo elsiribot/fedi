@@ -35,7 +35,6 @@ jest.mock('@fedi/common/hooks/pay', () => ({
     }),
 }))
 
-// TOOD: unskip and refactor this to the federations.tsx / FederationsPage
 describe('/pages/ecash', () => {
     const user = userEvent.setup()
     let store: ReturnType<typeof setupStore>
@@ -51,7 +50,7 @@ describe('/pages/ecash', () => {
     })
 
     describe('when the page loads', () => {
-        it('should call validateEcash function with id from hash params', async () => {
+        it('should call parseEcash function with id from hash params', async () => {
             renderWithProviders(<EcashPage />, {
                 store,
             })
@@ -68,6 +67,16 @@ describe('/pages/ecash', () => {
 
             await waitFor(() => {
                 expect(screen.getByText('10 SATS')).toBeInTheDocument()
+            })
+        })
+
+        it('should show name of federation wallet that the ecash will be added to', async () => {
+            renderWithProviders(<EcashPage />, {
+                store,
+            })
+
+            await waitFor(() => {
+                expect(screen.getByText(/test-federation/i)).toBeInTheDocument()
             })
         })
     })
