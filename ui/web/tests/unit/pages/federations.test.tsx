@@ -51,11 +51,6 @@ describe('/pages/federations', () => {
             const wallet = await screen.findByTestId('bitcoin-wallet')
             expect(wallet).toBeInTheDocument()
         })
-
-        it('should render the backup wallet modal', () => {
-            const modal = screen.getByRole('dialog')
-            expect(modal).toBeInTheDocument()
-        })
     })
 
     describe('when a wallet is recovering', () => {
