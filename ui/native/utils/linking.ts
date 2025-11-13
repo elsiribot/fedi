@@ -66,6 +66,7 @@ const deepLinksConfig: NavigationLinkingConfig['config'] = {
                 ShareLogs: 'share-logs/:ticketNumber',
                 ClaimEcash: 'ecash/:token',
                 JoinFederation: 'join/:invite',
+                FediModBrowser: 'browser/:url',
             },
         },
     },
@@ -208,6 +209,21 @@ export function createNavigationAction(
                 type: 'navigate',
                 screen: 'MainNavigator',
                 params: { screen: 'ClaimEcash', params: { token: id } },
+            }
+
+        // id param will arrive in the form "example.com"
+        case 'browser':
+            if (!id) return null
+
+            return {
+                type: 'navigate',
+                screen: 'MainNavigator',
+                params: {
+                    screen: 'FediModBrowser',
+                    // http(s):// was stripped out in universalToFedi common util function
+                    // so restore here
+                    params: { url: `https://${id}` },
+                },
             }
 
         default:
