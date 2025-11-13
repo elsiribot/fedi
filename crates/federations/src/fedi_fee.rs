@@ -4,11 +4,8 @@ use std::sync::Arc;
 use std::time::Duration;
 
 use anyhow::{anyhow, bail, ensure};
-use api_types::invoice_generator::FirstCommunityInviteCodeState;
 use async_recursion::async_recursion;
 use bitcoin::Network;
-use bitcoin::hex::DisplayHex;
-use fedimint_core::config::FederationId;
 use fedimint_core::core::ModuleKind;
 use fedimint_core::db::IDatabaseTransactionOpsCoreTyped;
 use fedimint_core::{Amount, SATS_PER_BITCOIN};
@@ -18,20 +15,18 @@ use lightning_invoice::Bolt11Invoice;
 use rpc_types::{LightningSendMetadata, RpcTransactionDirection};
 use runtime::api::TransactionDirection;
 use runtime::bridge_runtime::Runtime;
-use runtime::constants::{
-    FEDI_FEE_SCHEDULE_REFRESH_DELAY, FEDI_GIFT_CHILD_ID, FEDI_GIFT_EXCLUDED_COMMUNITIES, MILLION,
-};
+use runtime::constants::{FEDI_FEE_SCHEDULE_REFRESH_DELAY, MILLION};
 use runtime::nightly_panic;
 use runtime::storage::state::{FediFeeSchedule, ModuleFediFeeSchedule};
-use stability_pool_client::common::AccountId;
+use stability_pool_client::common::FiatAmount;
 use tokio::sync::{Mutex, OwnedMutexGuard, watch};
 use tokio_stream::wrappers::WatchStream;
 use tracing::{error, info, instrument};
 
 use crate::federation_v2::client::ClientExt;
 use crate::federation_v2::db::{
-    FediFeesRemittanceTimestampPerTXTypeKey, OutstandingFediFeesPerTXTypeKey,
-    OutstandingFediFeesPerTXTypeKeyPrefix,
+    FediFeesRemittanceTimestampPerTXTypeKey, LastFediFeesRemittanceSPv2BalanceKey,
+    OutstandingFediFeesPerTXTypeKey, OutstandingFediFeesPerTXTypeKeyPrefix,
 };
 use crate::federation_v2::{FederationV2, zero_gateway_fees};
 
@@ -201,43 +196,13 @@ impl FediFeeHelper {
         network: Network,
         module: ModuleKind,
         tx_direction: RpcTransactionDirection,
-        federation_id: FederationId,
-        spv2_account_id: Option<AccountId>,
+        spv2_balance_delta_cents: Option<i64>,
     ) -> anyhow::Result<Bolt11Invoice> {
-        let stable_user_id = self
+        let first_comm_invite_code = self
             .runtime
             .app_state
-            .root_secret()
-            .await
-            .child_key(FEDI_GIFT_CHILD_ID)
-            .to_random_bytes::<32>()
-            .to_lower_hex_string();
-        let (first_comm_invite_code, all_comm_invite_codes) = self
-            .runtime
-            .app_state
-            .with_read_lock(|state| {
-                (
-                    state.first_comm_invite_code.clone(),
-                    state.joined_communities.keys().cloned().collect::<Vec<_>>(),
-                )
-            })
+            .with_read_lock(|state| state.first_comm_invite_code.clone())
             .await;
-        let other_comm_invite_codes = all_comm_invite_codes
-            .into_iter()
-            .filter(|code| {
-                // Exclude "first community" if present, and the default fedi community
-                if matches!(&first_comm_invite_code, FirstCommunityInviteCodeState::Set(first) if first == code)
-                {
-                    return false;
-                }
-
-                if FEDI_GIFT_EXCLUDED_COMMUNITIES.contains(&code.as_str()) {
-                    return false;
-                }
-
-                true
-            })
-            .collect();
         self.runtime
             .fedi_api
             .fetch_fedi_fee_invoice(
@@ -248,11 +213,8 @@ impl FediFeeHelper {
                     RpcTransactionDirection::Receive => TransactionDirection::Receive,
                     RpcTransactionDirection::Send => TransactionDirection::Send,
                 },
-                stable_user_id,
-                spv2_account_id,
-                federation_id,
+                spv2_balance_delta_cents,
                 first_comm_invite_code,
-                other_comm_invite_codes,
             )
             .await
     }
@@ -421,6 +383,7 @@ impl FediFeeRemittanceService {
     ) -> anyhow::Result<()> {
         let gateway = fed.select_gateway().await?;
         let amt_to_request = if accrued_fee_exceeds_threshold {
+            info!("Accrued fee exceeds threshold");
             let gateway_fees = gateway
                 .as_ref()
                 .map(|g| g.fees)
@@ -455,7 +418,41 @@ impl FediFeeRemittanceService {
             let amt_to_request_denominator = MILLION + gateway_fees.proportional_millionths as u64;
             Amount::from_msats(amt_to_request_numerator / amt_to_request_denominator)
         } else {
+            info!("Accrued fee below threshold, will request 0-amount invoice");
             Amount::ZERO
+        };
+
+        let (current_spv2_balance, spv2_balance_delta_cents) = if let Ok(spv2_account_info) =
+            fed.spv2_account_info().await
+        {
+            match FiatAmount::from_btc_amount(
+                spv2_account_info.value.staged_balance + spv2_account_info.value.locked_balance,
+                spv2_account_info.value.current_cycle.start_price,
+            ) {
+                Ok(current_bal) => {
+                    let prev_bal = fed
+                        .dbtx()
+                        .await
+                        .get_value(&LastFediFeesRemittanceSPv2BalanceKey)
+                        .await
+                        .unwrap_or_default();
+                    (
+                        Some(current_bal),
+                        i64::try_from(i128::from(current_bal.0) - i128::from(prev_bal.0))
+                            .inspect_err(|e| {
+                                error!(%e, ?current_bal, ?prev_bal, "Failed to calculate delta");
+                            })
+                            .ok(),
+                    )
+                }
+                Err(e) => {
+                    error!(%e, "SPv2 account info exists but couldn't convert to cents, this shouldn't happen!");
+                    (None, None)
+                }
+            }
+        } else {
+            info!("SPV2 account info returned error, likely module absent");
+            (None, None)
         };
 
         let invoice = fed
@@ -467,44 +464,50 @@ impl FediFeeRemittanceService {
                 ))?,
                 module.clone(),
                 tx_direction.clone(),
-                fed.federation_id(),
-                fed.client.spv2().ok().map(|spv2| {
-                    spv2.our_account(stability_pool_client::common::AccountType::Seeker)
-                        .id()
-                }),
+                spv2_balance_delta_cents,
             )
             .await?;
 
-        // We request a 0-amount invoice even if the threshold is not met to still have
-        // Fedi Gift data reporting at a reasonable cadence. However we do not
-        // try to pay that invoice. But we do set the last remittance timestamp
-        // in this case.
-        if !accrued_fee_exceeds_threshold {
-            fed.client
-                .db()
-                .autocommit(
-                    |dbtx, _| {
-                        Box::pin({
-                            let timestamp_key = FediFeesRemittanceTimestampPerTXTypeKey(
-                                module.clone(),
-                                tx_direction.clone(),
-                            );
-                            async move {
-                                dbtx.insert_entry(&timestamp_key, &fedimint_core::time::now())
-                                    .await;
-                                Ok::<(), anyhow::Error>(())
+        // Having successfully generated an invoice (even if 0-amount), we
+        // update the last remittance timestamp and spv2 balance. This is
+        // because these two fields are primarily for Fedi gift data reporting,
+        // and if the invoice was requested successfully, then data was reported
+        // successfully.
+        fed.client
+            .db()
+            .autocommit(
+                |dbtx, _| {
+                    Box::pin({
+                        let timestamp_key = FediFeesRemittanceTimestampPerTXTypeKey(
+                            module.clone(),
+                            tx_direction.clone(),
+                        );
+                        async move {
+                            dbtx.insert_entry(&timestamp_key, &fedimint_core::time::now())
+                                .await;
+                            if let Some(current_bal) = current_spv2_balance {
+                                dbtx.insert_entry(
+                                    &LastFediFeesRemittanceSPv2BalanceKey,
+                                    &current_bal,
+                                )
+                                .await;
                             }
-                        })
-                    },
-                    Some(100),
-                )
-                .await
-                .map_err(|e| match e {
-                    fedimint_core::db::AutocommitError::CommitFailed { last_error, .. } => {
-                        last_error
-                    }
-                    fedimint_core::db::AutocommitError::ClosureError { error, .. } => error,
-                })?;
+                            Ok::<(), anyhow::Error>(())
+                        }
+                    })
+                },
+                Some(100),
+            )
+            .await
+            .map_err(|e| match e {
+                fedimint_core::db::AutocommitError::CommitFailed { last_error, .. } => last_error,
+                fedimint_core::db::AutocommitError::ClosureError { error, .. } => error,
+            })?;
+
+        if !accrued_fee_exceeds_threshold {
+            // We request a 0-amount invoice even if the threshold is not met to still have
+            // Fedi Gift data reporting at a reasonable cadence. However we do not
+            // try to pay that invoice.
             bail!("Fedi fee less gateway fee would be effectively 0");
         }
 
@@ -539,12 +542,6 @@ impl FediFeeRemittanceService {
             .pay_bolt11_invoice(gateway, invoice.to_owned(), extra_meta.clone())
             .await?;
 
-        // We are going to optimistically update the remittance timestamp in the
-        // autocommit block below, so we record the current value in case we need to
-        // roll it back.
-        let timestamp_key =
-            FediFeesRemittanceTimestampPerTXTypeKey(module.clone(), tx_direction.clone());
-        let old_timestamp = fed.dbtx().await.into_nc().get_value(&timestamp_key).await;
         fed.client
             .db()
             .autocommit(
@@ -552,10 +549,6 @@ impl FediFeeRemittanceService {
                     Box::pin({
                         let outstanding_key =
                             OutstandingFediFeesPerTXTypeKey(module.clone(), tx_direction.clone());
-                        let timestamp_key = FediFeesRemittanceTimestampPerTXTypeKey(
-                            module.clone(),
-                            tx_direction.clone(),
-                        );
                         async move {
                             let current_outstanding_fees = dbtx
                                 .get_value(&outstanding_key)
@@ -564,8 +557,6 @@ impl FediFeeRemittanceService {
                             let new_outstanding_fees =
                                 current_outstanding_fees.saturating_sub(outstanding_fees);
                             dbtx.insert_entry(&outstanding_key, &new_outstanding_fees)
-                                .await;
-                            dbtx.insert_entry(&timestamp_key, &fedimint_core::time::now())
                                 .await;
                             Ok::<(), anyhow::Error>(())
                         }
@@ -582,7 +573,6 @@ impl FediFeeRemittanceService {
         let mutex = OwnedMutexGuard::mutex(&guard).clone();
         drop(guard);
         // If payment fails, un-zero the oustanding fee before returning the error.
-        // Also roll back remittance timestamp update.
         if let Err(e) = fed.subscribe_to_ln_pay(payment_type, extra_meta).await {
             let _guard = mutex.lock().await;
             fed.client
@@ -591,10 +581,6 @@ impl FediFeeRemittanceService {
                     |dbtx, _| {
                         Box::pin({
                             let outstanding_key = OutstandingFediFeesPerTXTypeKey(
-                                module.clone(),
-                                tx_direction.clone(),
-                            );
-                            let timestamp_key = FediFeesRemittanceTimestampPerTXTypeKey(
                                 module.clone(),
                                 tx_direction.clone(),
                             );
@@ -607,11 +593,6 @@ impl FediFeeRemittanceService {
                                     current_outstanding_fees + outstanding_fees;
                                 dbtx.insert_entry(&outstanding_key, &new_outstanding_fees)
                                     .await;
-                                if let Some(timestamp) = old_timestamp {
-                                    dbtx.insert_entry(&timestamp_key, &timestamp).await;
-                                } else {
-                                    dbtx.remove_entry(&timestamp_key).await;
-                                }
                                 Ok::<(), anyhow::Error>(())
                             }
                         })
