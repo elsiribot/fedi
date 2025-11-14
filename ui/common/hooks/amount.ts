@@ -935,6 +935,15 @@ export function useMinMaxSendAmount(
             minimumAmount = amountUtils.msatToSat(cashuMeltSummary.totalAmount)
         } else if (invoiceAmount) {
             minimumAmount = amountUtils.msatToSat(invoiceAmount)
+
+            if (invoice.fee) {
+                const totalFees = (invoice.fee.federationFee +
+                    invoice.fee.networkFee +
+                    invoice.fee.fediFee) as MSats
+                maximumAmount = amountUtils.msatToSat(
+                    (balance - totalFees) as MSats,
+                ) as Sats
+            }
         } else {
             if (minSendable) {
                 minimumAmount = amountUtils.msatToSat(minSendable)
@@ -961,6 +970,7 @@ export function useMinMaxSendAmount(
         minSendable,
         maxSendable,
         maxAmountOnchain,
+        invoice,
         btcAddress,
     ])
 }
