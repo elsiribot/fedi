@@ -30,10 +30,6 @@ const DefaultChatTile = ({
             </BubbleView>
         )
 
-    const subtitle = room.broadcastOnly
-        ? t('words.announcements')
-        : t('feature.chat.group-chat')
-
     return (
         <View style={style.card}>
             <Pressable
@@ -47,14 +43,6 @@ const DefaultChatTile = ({
                 <Flex grow basis={false}>
                     <Text style={style.title} numberOfLines={1} bold>
                         {room.name || DEFAULT_GROUP_NAME}
-                    </Text>
-                    <Text
-                        small
-                        style={style.subtitle}
-                        numberOfLines={1}
-                        adjustsFontSizeToFit
-                        medium>
-                        {subtitle}
                     </Text>
                 </Flex>
                 <SvgImage name="ChevronRight" color={theme.colors.grey} />
