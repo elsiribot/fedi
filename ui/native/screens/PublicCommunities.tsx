@@ -213,7 +213,7 @@ const PublicCommunities: React.FC<Props> = ({ navigation }) => {
                                 <Image
                                     source={Images.CommunityCreate}
                                     style={style.fullWidthImage}
-                                    resizeMode="cover"
+                                    resizeMode="contain"
                                 />
                             </View>
                             <InfoEntryList
