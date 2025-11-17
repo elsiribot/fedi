@@ -1325,5 +1325,6 @@ export function useMatrixRoomPreview({
         text,
         isUnread,
         isNotice,
+        isPublicBroadcast,
     }
 }
