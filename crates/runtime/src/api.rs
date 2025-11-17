@@ -105,6 +105,7 @@ pub trait IFediApi: MaybeSend + MaybeSync + 'static {
         network: Network,
         module: ModuleKind,
         tx_direction: TransactionDirection,
+        accrued_fee_delta: Amount,
         spv2_balance_delta_cents: Option<i64>,
         first_comm_invite_code: FirstCommunityInviteCodeState,
     ) -> anyhow::Result<Bolt11Invoice>;
@@ -215,6 +216,7 @@ impl IFediApi for LiveFediApi {
         network: Network,
         module: ModuleKind,
         tx_direction: TransactionDirection,
+        accrued_fee_delta: Amount,
         spv2_balance_delta_cents: Option<i64>,
         first_comm_invite_code: FirstCommunityInviteCodeState,
     ) -> anyhow::Result<Bolt11Invoice> {
@@ -230,6 +232,7 @@ impl IFediApi for LiveFediApi {
                     amount_msat: amount.msats,
                     module: module.to_string(),
                     tx_direction,
+                    accrued_fee_delta_msat: accrued_fee_delta.msats,
                     spv2_balance_delta_cents,
                     first_comm_invite_code,
                 })

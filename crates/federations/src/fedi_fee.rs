@@ -26,7 +26,8 @@ use tracing::{error, info, instrument};
 use crate::federation_v2::client::ClientExt;
 use crate::federation_v2::db::{
     FediFeesRemittanceTimestampPerTXTypeKey, LastFediFeesRemittanceSPv2BalanceKey,
-    OutstandingFediFeesPerTXTypeKey, OutstandingFediFeesPerTXTypeKeyPrefix,
+    LastFediFeesRemittanceTotalAccruedFeesKey, OutstandingFediFeesPerTXTypeKey,
+    OutstandingFediFeesPerTXTypeKeyPrefix, TotalAccruedFediFeesPerTXTypeKey,
 };
 use crate::federation_v2::{FederationV2, zero_gateway_fees};
 
@@ -196,6 +197,7 @@ impl FediFeeHelper {
         network: Network,
         module: ModuleKind,
         tx_direction: RpcTransactionDirection,
+        accrued_fee_delta: Amount,
         spv2_balance_delta_cents: Option<i64>,
     ) -> anyhow::Result<Bolt11Invoice> {
         let first_comm_invite_code = self
@@ -213,6 +215,7 @@ impl FediFeeHelper {
                     RpcTransactionDirection::Receive => TransactionDirection::Receive,
                     RpcTransactionDirection::Send => TransactionDirection::Send,
                 },
+                accrued_fee_delta,
                 spv2_balance_delta_cents,
                 first_comm_invite_code,
             )
@@ -226,6 +229,14 @@ type ModuleTXDirectionLockMap = BTreeMap<(ModuleKind, RpcTransactionDirection), 
 pub struct FediFeeRemittanceService {
     // held while remit the fees
     locks_map: Arc<Mutex<ModuleTXDirectionLockMap>>,
+
+    // Lock held while reading the last remittance spv2 balance, calculating the delta against
+    // current spv2 balance, and writing the current spv2 balance as "last remittance spv2
+    // balance". We need an additional mutex for this purpose since the spv2 balance delta is
+    // scoped to the federation, and not to a (module, tx_direction) pair. So thi mutex ensures
+    // that concurrent tasks for different (module, tx_direction) pairs don't accidentally send up
+    // the same spv2_balance_delta.
+    spv2_balance_delta_lock: Arc<Mutex<()>>,
 }
 
 impl FediFeeRemittanceService {
@@ -234,22 +245,42 @@ impl FediFeeRemittanceService {
     pub fn init(fed: &FederationV2) -> Self {
         let service = Self {
             locks_map: Default::default(),
+            spv2_balance_delta_lock: Default::default(),
         };
 
         let service2 = service.clone();
         fed.spawn_cancellable("init_fee_remittance_service", move |fed| async move {
-            let tx_types = fed
+            let outstanding_fee_entries = fed
                 .dbtx()
                 .await
+                .into_nc()
                 .find_by_prefix(&OutstandingFediFeesPerTXTypeKeyPrefix)
                 .await
-                .map(|(key, _)| (key.0, key.1))
                 .collect::<Vec<_>>()
                 .await;
 
-            for (module, tx_direction) in tx_types {
+            for (key, val) in outstanding_fee_entries.iter() {
+                // If total accrued key is missing for any TX kind, initialize it to
+                // current oustanding key
+                let total_accrued_key =
+                    TotalAccruedFediFeesPerTXTypeKey(key.0.clone(), key.1.clone());
+                if fed
+                    .dbtx()
+                    .await
+                    .into_nc()
+                    .get_value(&total_accrued_key)
+                    .await
+                    .is_none()
+                {
+                    let mut insert_tx = fed.dbtx().await;
+                    insert_tx.insert_entry(&total_accrued_key, val).await;
+                    insert_tx.commit_tx().await;
+                }
+            }
+
+            for (key, _) in outstanding_fee_entries {
                 service2
-                    .remit_fedi_fee_if_threshold_met(&fed, module, tx_direction)
+                    .remit_fedi_fee_if_threshold_met(&fed, key.0, key.1)
                     .await;
             }
         });
@@ -357,10 +388,12 @@ impl FediFeeRemittanceService {
             info!("Fedi fee remittance not initiated, threshold not met AND max delay not hit");
             return;
         }
+        let spv2_balance_delta_lock = self.spv2_balance_delta_lock.clone();
         fed.spawn_cancellable("remit_fedi_fee", move |fed2| async move {
             let _ = Self::remit_fedi_fee(
                 guard,
                 &fed2,
+                spv2_balance_delta_lock,
                 outstanding_fees,
                 module,
                 tx_direction,
@@ -376,6 +409,7 @@ impl FediFeeRemittanceService {
     async fn remit_fedi_fee(
         guard: OwnedMutexGuard<()>,
         fed: &FederationV2,
+        spv2_balance_delta_lock: Arc<Mutex<()>>,
         outstanding_fees: Amount,
         module: ModuleKind,
         tx_direction: RpcTransactionDirection,
@@ -422,6 +456,8 @@ impl FediFeeRemittanceService {
             Amount::ZERO
         };
 
+        // Acquire spv2_balance_delta_lock here before reading
+        let spv2_balance_delta_guard = spv2_balance_delta_lock.lock().await;
         let (current_spv2_balance, spv2_balance_delta_cents) = if let Ok(spv2_account_info) =
             fed.spv2_account_info().await
         {
@@ -455,6 +491,28 @@ impl FediFeeRemittanceService {
             (None, None)
         };
 
+        let current_total_accrued_fee = fed
+            .dbtx()
+            .await
+            .into_nc()
+            .get_value(&TotalAccruedFediFeesPerTXTypeKey(
+                module.clone(),
+                tx_direction.clone(),
+            ))
+            .await
+            .unwrap_or(Amount::ZERO);
+        let accrued_fee_delta = current_total_accrued_fee.saturating_sub(
+            fed.dbtx()
+                .await
+                .into_nc()
+                .get_value(&LastFediFeesRemittanceTotalAccruedFeesKey(
+                    module.clone(),
+                    tx_direction.clone(),
+                ))
+                .await
+                .unwrap_or(Amount::ZERO),
+        );
+
         let invoice = fed
             .fedi_fee_helper
             .fetch_fedi_fee_invoice(
@@ -464,6 +522,7 @@ impl FediFeeRemittanceService {
                 ))?,
                 module.clone(),
                 tx_direction.clone(),
+                accrued_fee_delta,
                 spv2_balance_delta_cents,
             )
             .await?;
@@ -482,6 +541,10 @@ impl FediFeeRemittanceService {
                             module.clone(),
                             tx_direction.clone(),
                         );
+                        let last_accrued_fee_key = LastFediFeesRemittanceTotalAccruedFeesKey(
+                            module.clone(),
+                            tx_direction.clone(),
+                        );
                         async move {
                             dbtx.insert_entry(&timestamp_key, &fedimint_core::time::now())
                                 .await;
@@ -492,6 +555,8 @@ impl FediFeeRemittanceService {
                                 )
                                 .await;
                             }
+                            dbtx.insert_entry(&last_accrued_fee_key, &current_total_accrued_fee)
+                                .await;
                             Ok::<(), anyhow::Error>(())
                         }
                     })
@@ -503,6 +568,9 @@ impl FediFeeRemittanceService {
                 fedimint_core::db::AutocommitError::CommitFailed { last_error, .. } => last_error,
                 fedimint_core::db::AutocommitError::ClosureError { error, .. } => error,
             })?;
+
+        // Release spv2_balance_delta_lock here after (potentially) writing
+        drop(spv2_balance_delta_guard);
 
         if !accrued_fee_exceeds_threshold {
             // We request a 0-amount invoice even if the threshold is not met to still have

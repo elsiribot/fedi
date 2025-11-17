@@ -247,6 +247,7 @@ impl IFediApi for MockFediApi {
         _network: Network,
         _module: ModuleKind,
         _tx_direction: TransactionDirection,
+        _accrued_fee_delta: Amount,
         _spv2_balance_delta_cents: Option<i64>,
         _first_comm_invite_code: FirstCommunityInviteCodeState,
     ) -> anyhow::Result<Bolt11Invoice> {

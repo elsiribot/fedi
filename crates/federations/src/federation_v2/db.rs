@@ -76,6 +76,15 @@ pub enum BridgeDbPrefix {
     // time, we send up the delta since last time.
     LastFediFeesRemittanceSPv2Balance = 0xc4,
 
+    // Opposed to the Oustanding fedi fee which increases between remissions, and is cleared out
+    // to 0 upon remission, the total accrued fedi fee only ever goes up.
+    TotalAccruedFediFeesPerTXType = 0xc5,
+
+    // For the Fedi gift project (iteration #1), we ask for a 0-invoice amount when the
+    // outstanding fee is below the threshold. However, we would still like to tell the server
+    // about the additional accrued fee since last time so that TX volume can be approximated.
+    LastFediFeesRemittanceTotalAccruedFees = 0xc6,
+
     // Do not use anything after this key (inclusive)
     // see https://github.com/fedimint/fedimint/pull/4445
     #[allow(dead_code)]
@@ -216,6 +225,15 @@ impl_db_lookup!(
 );
 
 #[derive(Debug, Decodable, Encodable)]
+pub struct TotalAccruedFediFeesPerTXTypeKey(pub ModuleKind, pub RpcTransactionDirection);
+
+impl_db_record!(
+    key = TotalAccruedFediFeesPerTXTypeKey,
+    value = Amount,
+    db_prefix = BridgeDbPrefix::TotalAccruedFediFeesPerTXType,
+);
+
+#[derive(Debug, Decodable, Encodable)]
 pub struct FediFeesRemittanceTimestampPerTXTypeKey(pub ModuleKind, pub RpcTransactionDirection);
 
 impl_db_record!(
@@ -231,6 +249,15 @@ impl_db_record!(
     key = LastFediFeesRemittanceSPv2BalanceKey,
     value = FiatAmount,
     db_prefix = BridgeDbPrefix::LastFediFeesRemittanceSPv2Balance,
+);
+
+#[derive(Debug, Decodable, Encodable)]
+pub struct LastFediFeesRemittanceTotalAccruedFeesKey(pub ModuleKind, pub RpcTransactionDirection);
+
+impl_db_record!(
+    key = LastFediFeesRemittanceTotalAccruedFeesKey,
+    value = Amount,
+    db_prefix = BridgeDbPrefix::LastFediFeesRemittanceTotalAccruedFees,
 );
 
 #[derive(Debug, Decodable, Encodable)]
