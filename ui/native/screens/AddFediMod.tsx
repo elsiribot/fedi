@@ -19,6 +19,7 @@ import { addCustomMod } from '@fedi/common/redux/mod'
 import { tryFetchUrlMetadata } from '@fedi/common/utils/fedimods'
 import { makeLog } from '@fedi/common/utils/log'
 import { constructUrl } from '@fedi/common/utils/neverthrow'
+import { stripAndDeduplicateWhitespace } from '@fedi/common/utils/strings'
 
 import { FediModImages } from '../assets/images'
 import {
@@ -29,7 +30,6 @@ import Flex from '../components/ui/Flex'
 import { SafeScrollArea } from '../components/ui/SafeArea'
 import { ParserDataType } from '../types'
 import { useImeFooterLift } from '../utils/hooks/keyboard'
-import { stripAndDeduplicateWhitespace } from '../utils/strings'
 
 const log = makeLog('AddFediMod')
 
