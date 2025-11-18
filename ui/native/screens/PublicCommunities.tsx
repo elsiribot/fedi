@@ -81,7 +81,7 @@ const PublicCommunities: React.FC<Props> = ({ navigation }) => {
         switcherOptions[0]
 
     const createInfoItems: FirstTimeOverlayItem[] = [
-        { icon: 'Building', text: t('feature.communities.create-info-1') },
+        { icon: 'Community', text: t('feature.communities.create-info-1') },
         {
             icon: 'Chat',
             text: t('feature.communities.create-info-2'),
