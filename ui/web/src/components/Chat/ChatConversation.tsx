@@ -58,11 +58,11 @@ interface Props {
     name: string
     events: MatrixEvent[]
     isPublic?: boolean
+    /* whether this is the first message in the chat */
+    isNewChat?: boolean
     headerActions?: React.ReactNode
     onWalletClick?(): void
     onPaginate?: () => Promise<void>
-
-    inputActions?: React.ReactNode
     onSendMessage(
         message: string,
         files: File[],
@@ -76,9 +76,9 @@ export const ChatConversation: React.FC<Props> = ({
     name,
     events,
     headerActions,
-    inputActions,
     onSendMessage,
     isPublic,
+    isNewChat,
     onWalletClick,
     onPaginate,
 }) => {
@@ -479,7 +479,7 @@ export const ChatConversation: React.FC<Props> = ({
                 {!isReadOnly && (
                     <ActionsRow>
                         <InputActions>
-                            {type === ChatType.direct && (
+                            {type === ChatType.direct && !isNewChat && (
                                 <Icon
                                     aria-label="wallet-icon"
                                     icon={WalletIcon}
@@ -487,7 +487,7 @@ export const ChatConversation: React.FC<Props> = ({
                                     onClick={onWalletClick}
                                 />
                             )}
-                            {!isPublic && (
+                            {!isPublic && !isNewChat && (
                                 <Icon
                                     aria-label="plus-icon"
                                     icon={PlusIcon}
@@ -495,7 +495,6 @@ export const ChatConversation: React.FC<Props> = ({
                                     onClick={handleOnMediaClick}
                                 />
                             )}
-                            {inputActions && inputActions}
                         </InputActions>
                         <SendButton
                             aria-label="send-button"
