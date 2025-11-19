@@ -235,7 +235,7 @@ export const SendPaymentDialog: React.FC<Props> = ({ open, onOpenChange }) => {
             <Dialog
                 title={t(
                     isSendingOffline
-                        ? 'feature.send.send-bitcoin-offline'
+                        ? 'feature.send.send-ecash'
                         : 'feature.send.send-bitcoin',
                 )}
                 description={balanceDisplay}

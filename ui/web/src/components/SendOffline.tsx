@@ -2,6 +2,9 @@ import { dataToFrames } from 'qrloop'
 import React, { useCallback, useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 
+import CopyIcon from '@fedi/common/assets/svgs/copy.svg'
+import ShareIcon from '@fedi/common/assets/svgs/share.svg'
+import { WEB_APP_URL } from '@fedi/common/constants/api'
 import { useMinMaxSendAmount } from '@fedi/common/hooks/amount'
 import { useSendEcash } from '@fedi/common/hooks/pay'
 import { useToast } from '@fedi/common/hooks/toast'
@@ -14,7 +17,7 @@ import { styled, theme } from '../styles'
 import { AmountInput } from './AmountInput'
 import { Button } from './Button'
 import { Checkbox } from './Checkbox'
-import { CopyInput } from './CopyInput'
+import { Row } from './Flex'
 import { QRCode } from './QRCode'
 import { Text } from './Text'
 
@@ -83,6 +86,43 @@ export const SendOffline: React.FC<Props> = ({
         generateEcash,
     ])
 
+    const handleCopy = async () => {
+        if (!navigator.clipboard) return
+
+        try {
+            const value = encodeURIComponent(offlinePayment as string)
+            await navigator.clipboard.writeText(value)
+
+            toast.show({
+                status: 'success',
+                content: t('phrases.copied-ecash-token'),
+            })
+        } catch (err) {
+            // no-op
+        }
+    }
+
+    const handleShare = async () => {
+        if (!('share' in navigator)) {
+            toast.show({
+                status: 'error',
+                content: t('feature.ecash.share-not-available'),
+            })
+            return
+        }
+
+        try {
+            const value = encodeURIComponent(offlinePayment as string)
+
+            await navigator.share({
+                title: t('feature.ecash.share-ecash-deeplink'),
+                text: `${WEB_APP_URL}/link#screen=ecash&id=${value}`,
+            })
+        } catch (err) {
+            // no-op
+        }
+    }
+
     useEffect(() => {
         if (!federationId) return
 
@@ -96,10 +136,22 @@ export const SendOffline: React.FC<Props> = ({
         return (
             <>
                 <QRCode data={qrFrames} />
-                <CopyInput
-                    value={`${window.location.origin}/link#screen=ecash&id=${encodeURIComponent(offlinePayment)}`}
-                    onCopyMessage={t('feature.send.copied-offline-payment')}
-                />
+                <Row gap="md">
+                    <Button
+                        width="full"
+                        variant="secondary"
+                        icon={CopyIcon}
+                        onClick={handleCopy}>
+                        Copy
+                    </Button>
+                    <Button
+                        width="full"
+                        variant="secondary"
+                        icon={ShareIcon}
+                        onClick={handleShare}>
+                        Share
+                    </Button>
+                </Row>
                 <Checkbox
                     label={t('feature.send.i-have-sent-payment')}
                     checked={hasConfirmedPayment}

@@ -8,6 +8,7 @@ import { useTranslation } from 'react-i18next'
 import { Alert, Pressable, StyleSheet, useWindowDimensions } from 'react-native'
 import Share from 'react-native-share'
 
+import { WEB_APP_URL } from '@fedi/common/constants/api'
 import { useAmountFormatter } from '@fedi/common/hooks/amount'
 import { useToast } from '@fedi/common/hooks/toast'
 import {
@@ -70,8 +71,10 @@ const SendOfflineQr: React.FC<Props> = ({ navigation, route }: Props) => {
     }
 
     const handleShare = () => {
-        Share.open({ message: ecash }).catch(e => {
-            log.error('Failed to share ecash token', e)
+        const message = `${WEB_APP_URL}/link#screen=ecash&id=${ecash}`
+
+        Share.open({ message }).catch(e => {
+            log.error('Failed to share ecash deeplink', e)
         })
     }
 
