@@ -73,11 +73,9 @@ const ChatPreviewConversation: React.FC<Props> = ({ id, preview }: Props) => {
     }, [id, dispatch, isRefreshing])
 
     useEffect(() => {
-        if (isFocused) {
-            handleRefresh()
-            const timer = setInterval(handleRefresh, 15000)
-            return () => clearInterval(timer)
-        }
+        const timer = setInterval(() => isFocused && handleRefresh(), 15000)
+
+        return () => clearInterval(timer)
     }, [isFocused, handleRefresh])
 
     const style = styles(theme)
