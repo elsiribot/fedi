@@ -75,7 +75,7 @@ const FederationMenu = ({ federation }: FederationMenuProps) => {
         <View style={style.sectionContainer}>
             <ListItem.Accordion
                 testID={federation.name
-                    .concat('AccordionButton')
+                    .concat('FedAccordionButton')
                     .replaceAll(' ', '')}
                 containerStyle={style.accordionContainer}
                 accessible={true}
