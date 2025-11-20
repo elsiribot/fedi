@@ -1,8 +1,9 @@
+import { useNavigation } from '@react-navigation/native'
 import type { NativeStackScreenProps } from '@react-navigation/native-stack'
 import { Button, Text, Theme, useTheme, Image } from '@rneui/themed'
-import React, { useEffect, useState } from 'react'
+import React, { useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { ScrollView, StyleSheet, View } from 'react-native'
+import { ActivityIndicator, ScrollView, StyleSheet, View } from 'react-native'
 
 import { useLatestPublicCommunities } from '@fedi/common/hooks/federation'
 import { selectCommunityIds } from '@fedi/common/redux'
@@ -14,67 +15,56 @@ import InfoEntryList from '../components/feature/home/InfoEntryList'
 import { Switcher } from '../components/feature/home/Switcher'
 import { OmniInput } from '../components/feature/omni/OmniInput'
 import { FirstTimeOverlayItem } from '../components/feature/onboarding/FirstTimeOverlay'
-import Flex from '../components/ui/Flex'
+import { Column, Row } from '../components/ui/Flex'
 import { SafeAreaContainer } from '../components/ui/SafeArea'
 import {
     COMMUNITY_TOOL_URL_STAGING,
     COMMUNITY_TOOL_URL_PROD,
 } from '../constants'
 import { useAppSelector } from '../state/hooks'
+import { PublicCommunity } from '../types'
 import type { RootStackParamList } from '../types/navigation'
 
 export type Props = NativeStackScreenProps<
     RootStackParamList,
     'PublicCommunities'
 >
+type Tab = 'discover' | 'join' | 'create'
+
 const PublicCommunities: React.FC<Props> = ({ navigation }) => {
     const { t } = useTranslation()
     const { theme } = useTheme()
 
     const { isFetchingPublicCommunities } = useLatestPublicCommunities()
-    const joinedCommunityIds = useAppSelector(selectCommunityIds)
     const publicCommunities = useAppSelector(
         s => s.federation.publicCommunities,
     )
 
     const style = styles(theme)
 
-    type Tab = 'discover' | 'join' | 'create'
-
-    const [activeTab, setActiveTab] = useState<Tab | null>(null)
-
-    useEffect(() => {
-        if (isFetchingPublicCommunities && publicCommunities.length === 0)
-            return
-        setActiveTab(publicCommunities.length > 0 ? 'discover' : 'join')
-    }, [isFetchingPublicCommunities, publicCommunities])
+    const [activeTab, setActiveTab] = useState<Tab>('discover')
 
     const switcherOptions: Array<{
         label: string
         value: Tab
         subText: string
-    }> = []
-
-    if (publicCommunities.length > 0) {
-        switcherOptions.push({
+    }> = [
+        {
             label: t('words.discover'),
             value: 'discover',
             subText: t('feature.communities.guidance-discover'),
-        })
-    }
-
-    switcherOptions.push({
-        label: t('words.join'),
-        value: 'join',
-        subText: t('feature.communities.guidance-join'),
-    })
-
-    // Include when create community is implemented
-    switcherOptions.push({
-        label: t('words.create'),
-        value: 'create',
-        subText: t('feature.onboarding.description-create-community'),
-    })
+        },
+        {
+            label: t('words.join'),
+            value: 'join',
+            subText: t('feature.communities.guidance-join'),
+        },
+        {
+            label: t('words.create'),
+            value: 'create',
+            subText: t('feature.onboarding.description-create-community'),
+        },
+    ]
 
     const selectedOption =
         switcherOptions.find(opt => opt.value === activeTab) ??
@@ -93,7 +83,7 @@ const PublicCommunities: React.FC<Props> = ({ navigation }) => {
 
     return (
         <SafeAreaContainer edges="bottom">
-            <Flex
+            <Column
                 align="center"
                 justify="evenly"
                 gap="sm"
@@ -113,7 +103,7 @@ const PublicCommunities: React.FC<Props> = ({ navigation }) => {
                     }}>
                     {selectedOption.subText}
                 </Text>
-            </Flex>
+            </Column>
 
             {/* Only show the switcher if there's more than one option */}
             {switcherOptions.length > 1 && (
@@ -130,67 +120,23 @@ const PublicCommunities: React.FC<Props> = ({ navigation }) => {
                 contentContainerStyle={style.scrollContainer}
                 overScrollMode="auto">
                 {activeTab === 'discover' && (
-                    <Flex
+                    <Column
                         grow
                         gap="sm"
                         fullWidth
                         style={style.discoverContainer}>
-                        {publicCommunities.map(c => {
-                            const hasJoined = joinedCommunityIds.includes(c.id)
-                            return (
-                                <Flex
-                                    row
-                                    align="center"
-                                    gap="md"
-                                    key={c.id}
-                                    style={style.tileContainer}>
-                                    <FederationLogo federation={c} size={40} />
-                                    <Flex grow gap="xs" basis={false}>
-                                        <Text numberOfLines={1} medium>
-                                            {c.name}
-                                        </Text>
-                                        <Text
-                                            style={style.previewMessage}
-                                            numberOfLines={2}
-                                            caption
-                                            medium>
-                                            {c.meta.preview_message}
-                                        </Text>
-                                    </Flex>
-                                    <Button
-                                        testID={c.name
-                                            .concat('JoinButton')
-                                            .replaceAll(' ', '')}
-                                        size="sm"
-                                        disabled={hasJoined}
-                                        onPress={() =>
-                                            navigation.navigate(
-                                                'JoinFederation',
-                                                {
-                                                    invite: c.meta.invite_code,
-                                                },
-                                            )
-                                        }
-                                        title={
-                                            <Text
-                                                small
-                                                style={[
-                                                    style.joinButtonText,
-                                                    hasJoined && {
-                                                        color: theme.colors
-                                                            .night,
-                                                    },
-                                                ]}>
-                                                {hasJoined
-                                                    ? t('words.joined')
-                                                    : t('words.join')}
-                                            </Text>
-                                        }
-                                    />
-                                </Flex>
-                            )
-                        })}
-                    </Flex>
+                        {isFetchingPublicCommunities ? (
+                            <ActivityIndicator />
+                        ) : publicCommunities.length === 0 ? (
+                            <Text center color={theme.colors.darkGrey} caption>
+                                {t('feature.communities.no-public-communities')}
+                            </Text>
+                        ) : (
+                            publicCommunities.map(c => (
+                                <PublicCommunityItem key={c.id} community={c} />
+                            ))
+                        )}
+                    </Column>
                 )}
 
                 {activeTab === 'join' && (
@@ -242,6 +188,57 @@ const PublicCommunities: React.FC<Props> = ({ navigation }) => {
                 )}
             </View>
         </SafeAreaContainer>
+    )
+}
+
+function PublicCommunityItem({ community }: { community: PublicCommunity }) {
+    const joinedCommunityIds = useAppSelector(selectCommunityIds)
+    const navigation = useNavigation()
+
+    const { theme } = useTheme()
+    const { t } = useTranslation()
+
+    const style = styles(theme)
+    const hasJoined = joinedCommunityIds.includes(community.id)
+
+    return (
+        <Row align="center" gap="md" style={style.tileContainer}>
+            <FederationLogo federation={community} size={40} />
+            <Column grow gap="xs" basis={false}>
+                <Text numberOfLines={1} medium>
+                    {community.name}
+                </Text>
+                <Text
+                    style={style.previewMessage}
+                    numberOfLines={2}
+                    caption
+                    medium>
+                    {community.meta.preview_message}
+                </Text>
+            </Column>
+            <Button
+                testID={community.name.concat('JoinButton').replaceAll(' ', '')}
+                size="sm"
+                disabled={hasJoined}
+                onPress={() =>
+                    navigation.navigate('JoinFederation', {
+                        invite: community.meta.invite_code,
+                    })
+                }
+                title={
+                    <Text
+                        small
+                        style={[
+                            style.joinButtonText,
+                            hasJoined && {
+                                color: theme.colors.night,
+                            },
+                        ]}>
+                        {hasJoined ? t('words.joined') : t('words.join')}
+                    </Text>
+                }
+            />
+        </Row>
     )
 }
 

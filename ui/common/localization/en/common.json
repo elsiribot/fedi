@@ -582,6 +582,7 @@
             "guidance-discover": "Start a place for connection, conversation, and shared services.",
             "guidance-join": "Scan or paste the invite code to unlock access to a community.",
             "new-members-disabled": "You cannot join this community.",
+            "no-public-communities": "No public communities found",
             "leave-community": "Leave Community",
             "leave-community-title": "Leave community?",
             "leave-community-description": "Are you sure you want to leave this community? You can rejoin at a later date.",
