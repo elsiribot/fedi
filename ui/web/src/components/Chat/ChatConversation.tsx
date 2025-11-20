@@ -60,7 +60,7 @@ interface Props {
     isPublic?: boolean
     /* whether this is the first message in the chat */
     isNewChat?: boolean
-    headerActions?: React.ReactNode
+    headerActions?: React.ReactElement
     onWalletClick?(): void
     onPaginate?: () => Promise<void>
     onSendMessage(
@@ -365,15 +365,11 @@ export const ChatConversation: React.FC<Props> = ({
 
     return (
         <ChatWrapper ref={chatWrapperRef} style={{ height: height ?? '100%' }}>
-            <HeaderWrapper back="/chat">
+            <HeaderWrapper back="/chat" rightComponent={headerActions}>
                 <HeaderContent>
                     {avatar}
                     <HeaderText weight="medium">{name}</HeaderText>
                 </HeaderContent>
-
-                {headerActions && (
-                    <HeaderActions>{headerActions}</HeaderActions>
-                )}
             </HeaderWrapper>
             <ContentWrapper>
                 <MessagesWrapper
@@ -541,15 +537,6 @@ const HeaderText = styled(Text, {
     textOverflow: 'ellipsis',
     overflow: 'hidden',
     whiteSpace: 'nowrap',
-})
-
-const HeaderActions = styled('div', {
-    display: 'flex',
-    alignItems: 'center',
-    gap: 8,
-    paddingRight: 8,
-    position: 'absolute',
-    right: 0,
 })
 
 const ContentWrapper = styled(Layout.Content, {})

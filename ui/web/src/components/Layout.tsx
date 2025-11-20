@@ -94,31 +94,33 @@ export function Header({
 
     return (
         <HeaderContainer {...props}>
-            {back && (
-                <ButtonWrapper>
-                    <IconButton
-                        icon={ChevronLeft}
-                        size="md"
-                        onClick={
-                            // provide string to specify next route on back
-                            // or provide boolean to call router history back
-                            typeof back === 'string'
-                                ? () => router.push(back)
-                                : () => router.back()
-                        }
-                    />
-                </ButtonWrapper>
-            )}
+            <Row fullWidth align="center">
+                {back && (
+                    <BackButtonWrapper>
+                        <IconButton
+                            icon={ChevronLeft}
+                            size="md"
+                            onClick={
+                                // provide string to specify next route on back
+                                // or provide boolean to call router history back
+                                typeof back === 'string'
+                                    ? () => router.push(back)
+                                    : () => router.back()
+                            }
+                        />
+                    </BackButtonWrapper>
+                )}
 
-            <HeaderContent centered={centered}>{children}</HeaderContent>
+                <HeaderContent centered={centered}>{children}</HeaderContent>
 
-            <RightComponentWrapper>
-                {showCloseButton ? (
-                    <Icon icon={CloseIcon} onClick={() => router.back()} />
-                ) : rightComponent ? (
-                    rightComponent
-                ) : null}
-            </RightComponentWrapper>
+                <RightComponentWrapper>
+                    {showCloseButton ? (
+                        <Icon icon={CloseIcon} onClick={() => router.back()} />
+                    ) : rightComponent ? (
+                        rightComponent
+                    ) : null}
+                </RightComponentWrapper>
+            </Row>
         </HeaderContainer>
     )
 }
@@ -138,28 +140,24 @@ export const HeaderContainer = styled('div', {
     width: '100%',
 })
 
-export const ButtonWrapper = styled('div', {
+export const BackButtonWrapper = styled('div', {
     alignItems: 'center',
     cursor: 'pointer',
     display: 'flex',
-    height: '100%',
-    left: 0,
+    left: theme.spacing.sm,
     justifyContent: 'center',
     position: 'absolute',
-    top: 0,
-    width: 50,
+    width: 30,
 })
 
 export const RightComponentWrapper = styled('div', {
     alignItems: 'center',
     cursor: 'pointer',
     display: 'flex',
-    height: '100%',
     justifyContent: 'center',
     position: 'absolute',
-    right: 5,
-    top: 0,
-    width: 50,
+    right: theme.spacing.sm,
+    width: 30,
 })
 
 const HeaderContent = styled('div', {
