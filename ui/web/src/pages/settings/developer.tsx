@@ -5,6 +5,7 @@ import { useAmountFormatter } from '@fedi/common/hooks/amount'
 import { useToast } from '@fedi/common/hooks/toast'
 import {
     changeAuthenticatedGuardian,
+    resetNuxSteps,
     resetSurveyCompletions,
     selectPaymentFederation,
     setSurveyTimestamp,
@@ -204,6 +205,15 @@ function DeveloperPage() {
                                     </Button>
                                 </>
                             )}
+                        </Setting>
+                        <Setting>
+                            <Text>NUX</Text>
+                            <Button
+                                onClick={() => {
+                                    dispatch(resetNuxSteps())
+                                }}>
+                                Reset new user experience
+                            </Button>
                         </Setting>
                         <Setting>
                             <Text>Survey Tool</Text>

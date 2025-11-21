@@ -240,7 +240,7 @@ export const refreshOnboardingStatus = createAsyncThunk<
         // check the survey condition only when onboarding is complete
         dispatch(checkSurveyCondition())
     } else if (status.type === 'onboarding') {
-        // Delay the survey form (if any) by one week for a newly-onboarded user
+        // Delay the survey form by one week for a newly-onboarded user
         dispatch(setSurveyTimestamp(Date.now()))
         switch (status.stage.type) {
             case 'deviceIndexSelection': // Transfer device flow
