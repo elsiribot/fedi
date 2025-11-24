@@ -277,6 +277,19 @@ export const OmniConfirmation = <T extends AnyParsedData>({
                         onGoBack()
                     },
                 }
+            case ParserDataType.DeepLink:
+                return {
+                    contents: {
+                        icon: 'Globe',
+                        url: parsedData.data.url,
+                        title: t('feature.omni.confirm-deeplink-url'),
+                    },
+                    continueOnPress: () => {
+                        Linking.openURL(parsedData.data.url)
+                        onSuccess(parsedData)
+                        onGoBack()
+                    },
+                }
             case ParserDataType.Bolt12:
                 return {
                     contents: {

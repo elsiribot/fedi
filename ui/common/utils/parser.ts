@@ -12,6 +12,7 @@ import {
     ParsedBolt12,
     ParsedCashuEcash,
     ParsedCommunityInvite,
+    ParsedDeepLink,
     ParsedFederationInvite,
     ParsedFediChatRoom,
     ParsedFediChatUser,
@@ -28,7 +29,7 @@ import {
 } from '../types/parser'
 import { validateCashuTokens } from './cashu'
 import { FedimintBridge } from './fedimint'
-import { isUniversalLink, universalToFedi } from './linking'
+import { isUniversalLink } from './linking'
 import { makeLog } from './log'
 import { decodeFediMatrixRoomUri, decodeFediMatrixUserUri } from './matrix'
 import { isValidInternetIdentifier } from './validation'
@@ -66,21 +67,15 @@ export const LEGACY_CODE_TYPES = [
 
 async function parseFediUniversalLink(
     raw: string,
-    fedimint: FedimintBridge,
-): Promise<
-    | ParsedLegacyFediChatGroup
-    | ParsedLegacyFediChatMember
-    | ParsedFediChatUser
-    | ParsedFediChatRoom
-    | undefined
-> {
-    if (!isUniversalLink(raw)) return
+): Promise<ParsedDeepLink | undefined> {
+    if (isUniversalLink(raw)) {
+        return {
+            type: ParserDataType.DeepLink,
+            data: { url: raw },
+        }
+    }
 
-    const deep = universalToFedi(raw) // → fedi://user/... or ''
-    if (!deep) return
-
-    // Re-use the existing Fedi-URI parser
-    return parseFediUri(deep, fedimint)
+    return
 }
 
 /**
@@ -117,6 +112,10 @@ async function parseFediUniversalLink(
                 log.debug('Running offline parser: parseCashuEcash')
                 return parseCashuEcash(raw)
             },
+            async () => {
+                log.debug('Running offline parser: parseFediUniversalLink')
+                return parseFediUniversalLink(raw)
+            },
         ]
 
         // Online parsers (require internet access)
@@ -128,10 +127,6 @@ async function parseFediUniversalLink(
             async () => {
                 log.debug('Running online parser: parseBolt12')
                 return Promise.resolve(parseBolt12(raw))
-            },
-            async () => {
-                log.debug('Running online parser: parseFediUniversalLink')
-                return parseFediUniversalLink(raw, fedimint)
             },
             async () => {
                 log.debug('Running online parser: parseLnurl')

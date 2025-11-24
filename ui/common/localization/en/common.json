@@ -831,6 +831,7 @@
             "camera-permission-request": "Allow camera access to scan.",
             "confirm-cashu-token": "This is a Cashu token, do you want to redeem it over Lightning?",
             "confirm-community-invite": "This is a community invitation, do you want to join?",
+            "confirm-deeplink-url": "This is a Fedi deeplink, do you want to open it?",
             "confirm-ecash-token": "This is an ecash token, do you want to redeem it?",
             "confirm-federation-invite": "This is a federation invitation, do you want to join?",
             "confirm-fedi-chat": "This is a chat link for {{username}}, do you want to go there?",

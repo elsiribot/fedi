@@ -11,6 +11,7 @@ export enum ParserDataType {
     BitcoinAddress = 'bitcoin:address',
     Bip21 = 'bitcoin:bip21',
     CashuEcash = 'cashu:ecash',
+    DeepLink = 'deeplink',
     FedimintEcash = 'fedimint:ecash',
     FedimintInvite = 'fedimint:invite',
     LegacyFediChatMember = 'fedi:member', // TODO: remove after matrixification
@@ -115,6 +116,11 @@ export type ParsedCashuEcash = ParsedData<
     }
 >
 
+export type ParsedDeepLink = ParsedData<
+    ParserDataType.DeepLink,
+    { url: string }
+>
+
 export type ParsedFederationInvite = ParsedData<
     ParserDataType.FedimintInvite,
     {
@@ -165,6 +171,7 @@ export type AnyParsedData =
     | ParsedBitcoinAddress
     | ParsedBip21
     | ParsedCashuEcash
+    | ParsedDeepLink
     | ParsedFedimintEcash
     | ParsedFederationInvite
     | ParsedCommunityInvite
