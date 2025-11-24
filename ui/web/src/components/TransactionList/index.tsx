@@ -53,6 +53,7 @@ const TransactionsList: React.FC<TransactionsListProps> = ({
                 notes: makeTxnNotesText(txn),
             })}
             makeDetailProps={txn => ({
+                txn,
                 title: makeTxnDetailTitleText(t, txn),
                 items: makeTxnDetailItems(txn),
                 amount: makeTxnAmountText(txn),

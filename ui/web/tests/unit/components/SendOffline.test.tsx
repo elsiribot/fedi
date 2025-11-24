@@ -74,7 +74,7 @@ describe('SendOffline', () => {
                     },
                     environment: {
                         ...state.environment,
-                        showFiatTxnAmounts: true,
+                        transactionDisplayType: 'fiat',
                         amountInputType: 'fiat',
                     },
                 },
@@ -110,7 +110,7 @@ describe('SendOffline', () => {
                     },
                     environment: {
                         ...state.environment,
-                        showFiatTxnAmounts: true,
+                        transactionDisplayType: 'fiat',
                         amountInputType: 'sats',
                     },
                 },
@@ -150,7 +150,7 @@ describe('SendOffline', () => {
                     },
                     environment: {
                         ...state.environment,
-                        showFiatTxnAmounts: true,
+                        transactionDisplayType: 'fiat',
                         amountInputType: 'sats',
                     },
                     federation: {
@@ -201,7 +201,7 @@ describe('SendOffline', () => {
                     },
                     environment: {
                         ...state.environment,
-                        showFiatTxnAmounts: true,
+                        transactionDisplayType: 'fiat',
                         amountInputType: 'sats',
                     },
                     federation: {

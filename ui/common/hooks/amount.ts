@@ -17,7 +17,7 @@ import {
     selectMultispendBalance,
     selectOverrideCurrency,
     selectPaymentFederation,
-    selectShowFiatTxnAmounts,
+    selectTransactionDisplayType,
     selectStabilityPoolAvailableLiquidity,
     selectStableBalanceSats,
     selectShowFiatTotalBalance,
@@ -28,11 +28,7 @@ import {
     changeShowFiatTotalBalance,
     selectTotalStableBalanceSats,
 } from '@fedi/common/redux'
-import {
-    FiatFXInfo,
-    RpcRoomId,
-    RpcTransaction,
-} from '@fedi/common/types/bindings'
+import { FiatFXInfo, RpcRoomId } from '@fedi/common/types/bindings'
 
 import {
     Btc,
@@ -48,6 +44,7 @@ import {
     Sats,
     SelectableCurrency,
     SupportedCurrency,
+    TransactionListEntry,
     UsdCents,
 } from '../types'
 import amountUtils from '../utils/AmountUtils'
@@ -190,7 +187,9 @@ export const useAmountFormatter = (options?: {
     const { currency, federationId } = options ?? {}
     const { convertSatsToFormattedUsd, convertSatsToFormattedFiat } =
         useBtcFiatPrice(currency, federationId)
-    const showFiatTxnAmounts = useCommonSelector(selectShowFiatTxnAmounts)
+    const transactionDisplayType = useCommonSelector(
+        selectTransactionDisplayType,
+    )
 
     const makeFormattedAmountsFromSats = useCallback(
         (
@@ -221,18 +220,20 @@ export const useAmountFormatter = (options?: {
                 formattedSats,
                 formattedBtc,
                 formattedUsd,
-                formattedPrimaryAmount: showFiatTxnAmounts
-                    ? formattedFiat
-                    : formattedSats,
-                formattedSecondaryAmount: showFiatTxnAmounts
-                    ? formattedSats
-                    : formattedFiat,
+                formattedPrimaryAmount:
+                    transactionDisplayType === 'fiat'
+                        ? formattedFiat
+                        : formattedSats,
+                formattedSecondaryAmount:
+                    transactionDisplayType === 'fiat'
+                        ? formattedSats
+                        : formattedFiat,
             }
         },
         [
             convertSatsToFormattedFiat,
             convertSatsToFormattedUsd,
-            showFiatTxnAmounts,
+            transactionDisplayType,
         ],
     )
 
@@ -249,7 +250,7 @@ export const useAmountFormatter = (options?: {
 
     const makeFormattedAmountsFromTxn = useCallback(
         (
-            txn: RpcTransaction,
+            txn: TransactionListEntry,
             symbolPosition: AmountSymbolPosition = 'end',
         ): FormattedAmounts => {
             if (txn.txDateFiatInfo) {
@@ -279,12 +280,14 @@ export const useAmountFormatter = (options?: {
                     formattedFiat,
                     formattedSats,
                     formattedUsd,
-                    formattedPrimaryAmount: showFiatTxnAmounts
-                        ? formattedFiat
-                        : formattedSats,
-                    formattedSecondaryAmount: showFiatTxnAmounts
-                        ? formattedSats
-                        : formattedFiat,
+                    formattedPrimaryAmount:
+                        transactionDisplayType === 'fiat'
+                            ? formattedFiat
+                            : formattedSats,
+                    formattedSecondaryAmount:
+                        transactionDisplayType === 'fiat'
+                            ? formattedSats
+                            : formattedFiat,
                 }
             } else {
                 log.debug(
@@ -301,7 +304,7 @@ export const useAmountFormatter = (options?: {
             convertSatsToFormattedFiat,
             convertSatsToFormattedUsd,
             makeFormattedAmountsFromMSats,
-            showFiatTxnAmounts,
+            transactionDisplayType,
         ],
     )
 
@@ -748,7 +751,7 @@ export function useAmountInput(
             handleChangeFiat,
             handleChangeSats,
             currency,
-            currency,
+            currencyLocale,
         ],
     )
 

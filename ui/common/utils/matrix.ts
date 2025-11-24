@@ -40,6 +40,7 @@ import {
     ReplyMessageData,
     RpcMatrixEventKind,
     RpcMatrixEventKinds,
+    TransactionListEntry,
 } from '../types'
 import {
     GroupInvitation,
@@ -55,6 +56,7 @@ import {
 import { makeLog } from './log'
 import { constructUrl } from './neverthrow'
 import { isBolt11 } from './parser'
+import { coerceTxn } from './wallet'
 
 const log = makeLog('common/utils/matrix')
 
@@ -311,7 +313,7 @@ export const makeMatrixPaymentText = ({
     paymentRecipient: MatrixUser | null | undefined
     transaction: RpcTransaction | null | undefined
     makeFormattedAmountsFromMSats: (amt: MSats) => FormattedAmounts
-    makeFormattedAmountsFromTxn: (txn: RpcTransaction) => FormattedAmounts
+    makeFormattedAmountsFromTxn: (txn: TransactionListEntry) => FormattedAmounts
 }): string => {
     const {
         sender: eventSenderId,
@@ -324,7 +326,7 @@ export const makeMatrixPaymentText = ({
     } = event
 
     const { formattedPrimaryAmount, formattedSecondaryAmount } = transaction
-        ? makeFormattedAmountsFromTxn(transaction)
+        ? makeFormattedAmountsFromTxn(coerceTxn(transaction))
         : makeFormattedAmountsFromMSats(amount as MSats)
 
     const previewStringParams = {

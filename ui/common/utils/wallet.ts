@@ -26,6 +26,7 @@ import {
     RpcLockedSeek,
     SPv2WithdrawalEvent,
     FiatFXInfo,
+    RpcTransaction,
 } from '../types/bindings'
 import { StabilityPoolState } from '../types/wallet'
 import amountUtils from './AmountUtils'
@@ -184,7 +185,7 @@ export const makeTxnDetailTitleText = (
 
 export const makeTxnAmountText = (
     txn: TransactionListEntry,
-    showFiatTxnAmounts: boolean,
+    txnDisplay: 'sats' | 'fiat',
     // we use the opposite signs on the stabilitypool txn list
     flipSign: boolean,
     includeCurrency: boolean,
@@ -217,7 +218,7 @@ export const makeTxnAmountText = (
     let currency = preferredCurrency
 
     // If fiat amounts should be shown and historical info is present, use it:
-    if (showFiatTxnAmounts && txn.txDateFiatInfo) {
+    if (txnDisplay === 'fiat' && txn.txDateFiatInfo) {
         const sats = amountUtils.msatToSat(txn.amount)
         // Use the historical exchange rate from txDateFiatInfo:
         formattedAmount = convertSatsToFormattedFiat(
@@ -234,7 +235,7 @@ export const makeTxnAmountText = (
         )
         formattedAmount = formattedPrimaryAmount
 
-        if (showFiatTxnAmounts) {
+        if (txnDisplay === 'fiat') {
             if (
                 txn.kind === 'spWithdraw' &&
                 txn.state &&
@@ -854,14 +855,12 @@ export const makeTxnDetailItems = (
     t: TFunction,
     txn: TransactionListEntry,
     currency: SelectableCurrency | undefined = SupportedCurrency.USD,
-    showFiatTxnAmounts: boolean,
+    txnDisplay: 'sats' | 'fiat',
     makeFormattedAmountsFromMSats: (amt: MSats) => FormattedAmounts,
     convertCentsToFormattedFiat: (amt: UsdCents) => string,
 ) => {
     const items: DetailItem[] = []
-    const { formattedFiat, formattedSats } = makeFormattedAmountsFromMSats(
-        txn.amount,
-    )
+    const { formattedFiat } = makeFormattedAmountsFromMSats(txn.amount)
 
     const txnTypeText = makeTxnTypeText(txn, t)
 
@@ -892,7 +891,7 @@ export const makeTxnDetailItems = (
         })
         // TODO: remove these once we refactor to use txn.txDateFiatInfo instead
         // Show additional item for historical deposit/withdrawal value if SATS-first setting is on
-        if (showFiatTxnAmounts === false && txn.state) {
+        if (txnDisplay === 'sats' && txn.state) {
             if ('estimated_withdrawal_cents' in txn.state) {
                 const estimatedWithdrawalCents = Number(
                     txn.state.estimated_withdrawal_cents,
@@ -994,14 +993,6 @@ export const makeTxnDetailItems = (
             value: t('feature.stabilitypool.currency-balance', {
                 currency: getCurrencyCode(currency),
             }),
-        })
-    }
-
-    // Hide BTC Equivalent item when amount is zero or SATS-first setting is on
-    if (txn.amount !== 0 && showFiatTxnAmounts) {
-        items.push({
-            label: t('phrases.bitcoin-equivalent'),
-            value: formattedSats,
         })
     }
 
@@ -1586,5 +1577,13 @@ export const coerceLegacyAccountInfo = (
         idleBalance: accountInfo.idleBalance,
         // Cents
         pendingUnlockRequest: pendingUnlockRequestCents,
+    }
+}
+
+// temporary type helper until RpcTransaction and RpcTransactionListEntry are reconciled bridge-side
+export const coerceTxn = (txn: RpcTransaction): TransactionListEntry => {
+    return {
+        ...txn,
+        createdAt: txn.outcomeTime || 0,
     }
 }

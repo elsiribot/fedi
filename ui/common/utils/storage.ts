@@ -25,13 +25,13 @@ export const STATE_STORAGE_KEY = 'fedi:state'
  */
 export function transformStateToStorage(state: CommonState): LatestStoredState {
     const transformedState: LatestStoredState = {
-        version: 36,
+        version: 37,
         onchainDepositsEnabled: state.environment.onchainDepositsEnabled,
         developerMode: state.environment.developerMode,
         stableBalanceEnabled: state.environment.stableBalanceEnabled,
         language: state.environment.language,
         amountInputType: state.environment.amountInputType,
-        showFiatTxnAmounts: state.environment.showFiatTxnAmounts,
+        transactionDisplayType: state.environment.transactionDisplayType,
         deviceId: state.environment.deviceId,
         currency: state.currency.overrideCurrency,
         btcUsdRate: state.currency.btcUsdRate,
@@ -100,7 +100,7 @@ export function hasStorageStateChanged(
         ['environment', 'onchainDepositsEnabled'],
         ['environment', 'developerMode'],
         ['environment', 'stableBalanceEnabled'],
-        ['environment', 'showFiatTxnAmounts'],
+        ['environment', 'transactionDisplayType'],
         ['environment', 'deviceId'],
         ['environment', 'sessionCount'],
         ['currency', 'overrideCurrency'],
@@ -737,6 +737,15 @@ async function migrateStoredState(
             version: 36,
             surveyCompletions: {},
             lastShownSurveyTimestamp: -1,
+        }
+    }
+
+    if (migrationState.version === 36) {
+        migrationState = {
+            ...migrationState,
+            version: 37,
+            transactionDisplayType:
+                migrationState.showFiatTxnAmounts === false ? 'sats' : 'fiat',
         }
     }
 

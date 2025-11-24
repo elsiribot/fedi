@@ -25,7 +25,7 @@ import {
     selectFederationStabilityPoolConfig,
     selectMatrixRoomMembers,
     selectMatrixRoomMultispendStatus,
-    selectShowFiatTxnAmounts,
+    selectTransactionDisplayType,
     selectStabilityPoolAverageFeeRate,
     selectStabilityPoolFeeSchedule,
 } from '../redux'
@@ -113,14 +113,17 @@ export function useTxnDisplayUtils(
     )
     const { convertCentsToFormattedFiat, convertSatsToFormattedFiat } =
         useBtcFiatPrice(selectedCurrency, federationId)
-    const showFiatTxnAmounts = useCommonSelector(selectShowFiatTxnAmounts)
+    const transactionDisplayType = useCommonSelector(
+        selectTransactionDisplayType,
+    )
     const { makeFormattedAmountsFromMSats } = useAmountFormatter({
         currency: selectedCurrency,
         federationId,
     })
-    const preferredCurrency = showFiatTxnAmounts
-        ? selectedCurrency
-        : t('words.sats').toUpperCase()
+    const preferredCurrency =
+        transactionDisplayType === 'fiat'
+            ? selectedCurrency
+            : t('words.sats').toUpperCase()
 
     const getShowAskFedi = useCallback(
         (txn: TransactionListEntry): boolean => shouldShowAskFedi(txn),
@@ -129,10 +132,10 @@ export function useTxnDisplayUtils(
 
     const getCurrencyText = useCallback(
         (txn: TransactionListEntry): string =>
-            showFiatTxnAmounts && txn.txDateFiatInfo
+            transactionDisplayType === 'fiat' && txn.txDateFiatInfo
                 ? txn.txDateFiatInfo.fiatCode
                 : preferredCurrency,
-        [preferredCurrency, showFiatTxnAmounts],
+        [preferredCurrency, transactionDisplayType],
     )
 
     const makeTxnFeeDetailItems = useCallback(
@@ -148,7 +151,7 @@ export function useTxnDisplayUtils(
                 t,
                 txn,
                 selectedCurrency,
-                showFiatTxnAmounts,
+                transactionDisplayType,
                 makeFormattedAmountsFromMSats,
                 convertCentsToFormattedFiat,
             )
@@ -157,7 +160,7 @@ export function useTxnDisplayUtils(
             convertCentsToFormattedFiat,
             makeFormattedAmountsFromMSats,
             selectedCurrency,
-            showFiatTxnAmounts,
+            transactionDisplayType,
             t,
         ],
     )
@@ -166,7 +169,7 @@ export function useTxnDisplayUtils(
         (txn: TransactionListEntry, includeCurrency = false) => {
             return makeTxnAmountTextUtil(
                 txn,
-                showFiatTxnAmounts,
+                transactionDisplayType,
                 isStabilityPool,
                 includeCurrency,
                 preferredCurrency,
@@ -181,7 +184,7 @@ export function useTxnDisplayUtils(
             isStabilityPool,
             makeFormattedAmountsFromMSats,
             preferredCurrency,
-            showFiatTxnAmounts,
+            transactionDisplayType,
         ],
     )
 
@@ -259,10 +262,13 @@ export function useTxnDisplayUtils(
 export function useMultispendTxnDisplayUtils(t: TFunction, roomId: RpcRoomId) {
     const { convertCentsToFormattedFiat } = useBtcFiatPrice()
     const selectedCurrency = useCommonSelector(selectCurrency)
-    const showFiatTxnAmounts = useCommonSelector(selectShowFiatTxnAmounts)
-    const preferredCurrency = showFiatTxnAmounts
-        ? selectedCurrency
-        : t('words.sats').toUpperCase()
+    const transactionDisplayType = useCommonSelector(
+        selectTransactionDisplayType,
+    )
+    const preferredCurrency =
+        transactionDisplayType === 'fiat'
+            ? selectedCurrency
+            : t('words.sats').toUpperCase()
 
     const multispendStatus = useCommonSelector(s =>
         selectMatrixRoomMultispendStatus(s, roomId),

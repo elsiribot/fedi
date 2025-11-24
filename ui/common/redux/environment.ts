@@ -41,7 +41,7 @@ const initialState = {
     stableBalanceEnabled: false,
     language: null as string | null,
     amountInputType: undefined as 'sats' | 'fiat' | undefined,
-    showFiatTxnAmounts: true,
+    transactionDisplayType: 'fiat' as 'fiat' | 'sats',
     deviceId: undefined as string | undefined,
     nostrNpub: undefined as RpcNostrPubkey | undefined,
     nostrNsec: undefined as RpcNostrSecret | undefined,
@@ -94,9 +94,6 @@ export const environmentSlice = createSlice({
         setStableBalanceEnabled(state, action: PayloadAction<boolean>) {
             state.stableBalanceEnabled = action.payload
         },
-        setShowFiatTxnAmounts(state, action: PayloadAction<boolean>) {
-            state.showFiatTxnAmounts = action.payload
-        },
         setDeviceId(state, action: PayloadAction<string>) {
             state.deviceId = action.payload
         },
@@ -142,6 +139,12 @@ export const environmentSlice = createSlice({
         setRedirectTo(state, actions: PayloadAction<string>) {
             state.redirectTo = actions.payload
         },
+        setTransactionDisplayType(
+            state,
+            action: PayloadAction<'sats' | 'fiat'>,
+        ) {
+            state.transactionDisplayType = action.payload
+        },
     },
     extraReducers: builder => {
         builder.addCase(changeLanguage.fulfilled, (state, action) => {
@@ -164,8 +167,9 @@ export const environmentSlice = createSlice({
             if (action.payload.developerMode) {
                 state.developerMode = action.payload.developerMode
             }
-            if (action.payload.showFiatTxnAmounts !== undefined) {
-                state.showFiatTxnAmounts = action.payload.showFiatTxnAmounts
+            if (action.payload.transactionDisplayType) {
+                state.transactionDisplayType =
+                    action.payload.transactionDisplayType
             }
             if (action.payload.deviceId !== undefined) {
                 state.deviceId = action.payload.deviceId
@@ -190,7 +194,7 @@ export const {
     setAmountInputType,
     setOnchainDepositsEnabled,
     setStableBalanceEnabled,
-    setShowFiatTxnAmounts,
+    setTransactionDisplayType,
     setDeviceId,
     setNostrNpub,
     setNostrNsec,
@@ -397,8 +401,8 @@ export const selectAmountInputType = (s: CommonState) =>
 export const selectStableBalanceEnabled = (s: CommonState) =>
     s.environment.stableBalanceEnabled
 
-export const selectShowFiatTxnAmounts = (s: CommonState) =>
-    s.environment.showFiatTxnAmounts
+export const selectTransactionDisplayType = (s: CommonState) =>
+    s.environment.transactionDisplayType
 
 export const selectDeviceId = (s: CommonState) => s.environment.deviceId
 
