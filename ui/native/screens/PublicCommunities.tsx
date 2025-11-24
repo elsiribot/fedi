@@ -3,7 +3,7 @@ import type { NativeStackScreenProps } from '@react-navigation/native-stack'
 import { Button, Text, Theme, useTheme, Image } from '@rneui/themed'
 import React, { useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { ActivityIndicator, ScrollView, StyleSheet, View } from 'react-native'
+import { ScrollView, StyleSheet, View } from 'react-native'
 
 import { useLatestPublicCommunities } from '@fedi/common/hooks/federation'
 import { selectCommunityIds } from '@fedi/common/redux'
@@ -42,22 +42,26 @@ const PublicCommunities: React.FC<Props> = ({ navigation }) => {
 
     const style = styles(theme)
 
-    const [activeTab, setActiveTab] = useState<Tab>('discover')
+    const [activeTab, setActiveTab] = useState<Tab>('join')
 
     const switcherOptions: Array<{
         label: string
         value: Tab
         subText: string
+        loading?: boolean
+        disabled?: boolean
     }> = [
-        {
-            label: t('words.discover'),
-            value: 'discover',
-            subText: t('feature.communities.guidance-discover'),
-        },
         {
             label: t('words.join'),
             value: 'join',
             subText: t('feature.communities.guidance-join'),
+        },
+        {
+            label: t('words.discover'),
+            value: 'discover',
+            subText: t('feature.communities.guidance-discover'),
+            loading: isFetchingPublicCommunities,
+            disabled: publicCommunities.length === 0,
         },
         {
             label: t('words.create'),
@@ -125,17 +129,9 @@ const PublicCommunities: React.FC<Props> = ({ navigation }) => {
                         gap="sm"
                         fullWidth
                         style={style.discoverContainer}>
-                        {isFetchingPublicCommunities ? (
-                            <ActivityIndicator />
-                        ) : publicCommunities.length === 0 ? (
-                            <Text center color={theme.colors.darkGrey} caption>
-                                {t('feature.communities.no-public-communities')}
-                            </Text>
-                        ) : (
-                            publicCommunities.map(c => (
-                                <PublicCommunityItem key={c.id} community={c} />
-                            ))
-                        )}
+                        {publicCommunities.map(c => (
+                            <PublicCommunityItem key={c.id} community={c} />
+                        ))}
                     </Column>
                 )}
 

@@ -1,12 +1,19 @@
 import { useTheme, Theme } from '@rneui/themed'
 import React from 'react'
-import { TouchableOpacity, StyleSheet, Text } from 'react-native'
+import {
+    TouchableOpacity,
+    StyleSheet,
+    Text,
+    ActivityIndicator,
+} from 'react-native'
 
-import Flex from '../../ui/Flex'
+import { Row } from '../../ui/Flex'
 
 export interface Option<T extends string> {
     label: string
     value: T
+    disabled?: boolean
+    loading?: boolean
 }
 
 interface Props<T extends string> {
@@ -24,7 +31,7 @@ export function Switcher<T extends string>({
     const style = styles(theme)
 
     return (
-        <Flex row fullWidth style={style.container}>
+        <Row fullWidth style={style.container}>
             {options.map(option => {
                 const isSelected = selected === option.value
                 return (
@@ -36,13 +43,17 @@ export function Switcher<T extends string>({
                             isSelected
                                 ? style.itemSelected
                                 : style.itemUnselected,
+                            (option.disabled || option.loading) &&
+                                style.itemDisabled,
                         ]}
-                        onPress={() => onChange(option.value)}>
+                        onPress={() => onChange(option.value)}
+                        disabled={option.disabled}>
                         <Text style={style.itemText}>{option.label}</Text>
+                        {option.loading && <ActivityIndicator size={12} />}
                     </TouchableOpacity>
                 )
             })}
-        </Flex>
+        </Row>
     )
 }
 
@@ -56,10 +67,12 @@ const styles = (theme: Theme) =>
         },
         item: {
             flex: 1,
+            flexDirection: 'row',
+            alignItems: 'center',
+            gap: theme.spacing.xs,
             borderWidth: 2,
             borderRadius: 20,
             justifyContent: 'center',
-            alignItems: 'center',
             borderColor: theme.colors.extraLightGrey,
         },
         itemSelected: {
@@ -67,6 +80,9 @@ const styles = (theme: Theme) =>
         },
         itemUnselected: {
             backgroundColor: theme.colors.extraLightGrey,
+        },
+        itemDisabled: {
+            opacity: 0.5,
         },
         itemText: {
             fontSize: 14,
