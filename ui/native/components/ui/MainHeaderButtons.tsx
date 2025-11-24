@@ -9,7 +9,7 @@ import { Row } from './Flex'
 import { PressableIcon } from './PressableIcon'
 
 type Props = {
-    onAddPress: () => void
+    onAddPress?: () => void
     onSearchPress?: () => void
     onShowCommunitiesPress?: () => void
 }

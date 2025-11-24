@@ -219,15 +219,11 @@ export const refreshOnboardingStatus = createAsyncThunk<
 
     // Extract and store the onboarding method if user is onboarded
     if (status.type === 'onboarded') {
-        // generate a random display name after matrix client is resolved
-        // but only if matrix_setup
-        await dispatch(startMatrixClient({ fedimint }))
+        // note: starting the matrix client does not block onboarding
+        dispatch(startMatrixClient({ fedimint }))
         // we need to await the feature flags before refreshing communities
         await dispatch(getBridgeInfo(fedimint))
 
-        // wait until after the matrix client is started to refresh federations & communities
-        // because the latest metadata may include new default chats that require
-        // matrix to fetch the room previews
         await Promise.all([
             dispatch(refreshFederations(fedimint)).unwrap(),
             dispatch(refreshCommunities(fedimint)).unwrap(),
