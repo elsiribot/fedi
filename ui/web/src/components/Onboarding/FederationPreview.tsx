@@ -66,7 +66,7 @@ const FederationPreview: React.FC<Props> = ({
         )
     } else {
         content = (
-            <Content>
+            <Content data-testid="federation-preview">
                 <AvatarWrapper>
                     <FederationAvatar
                         federation={{
@@ -77,11 +77,14 @@ const FederationPreview: React.FC<Props> = ({
                         size="lg"
                     />
                 </AvatarWrapper>
-                <Text variant="h2" weight="medium">
+                <Text
+                    variant="h2"
+                    weight="medium"
+                    data-testid="federation-preview-name">
                     {federation.name}
                 </Text>
                 {welcomeMessage && (
-                    <CustomWelcomeMessage>
+                    <CustomWelcomeMessage data-testid="federation-preview-welcome-message">
                         <Trans components={{ bold: <strong /> }}>
                             {welcomeMessage}
                         </Trans>

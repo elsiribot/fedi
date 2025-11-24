@@ -222,6 +222,7 @@ jest.mock('@rneui/themed', () => ({
     Button: jest.requireActual('@rneui/themed').Button,
     Input: jest.requireActual('@rneui/themed').Input,
     Text: jest.requireActual('@rneui/themed').Text,
+    Image: jest.requireActual('@rneui/themed').Image,
     Overlay: jest.requireActual('@rneui/themed').Overlay,
     Switch: jest.requireActual('@rneui/themed').Switch,
     useTheme: () => ({
@@ -248,6 +249,7 @@ export const mockRoute = {}
 jest.mock('@react-navigation/native', () => ({
     useNavigation: jest.fn(() => mockNavigation),
     useRoute: jest.fn(() => mockRoute),
+    useIsFocused: jest.fn(() => true),
 }))
 
 // mock i18n provider that uses a real i18n instance for testing
@@ -358,4 +360,16 @@ jest.mock('@react-navigation/elements', () => ({
 jest.mock('@react-native-clipboard/clipboard', () => ({
     getString: jest.fn(),
     setString: jest.fn(),
+}))
+
+jest.mock('react-native-vision-camera', () => ({
+    Camera: jest.requireActual('react-native').View,
+    useCodeScanner: jest.fn(() => ({
+        scan: jest.fn(),
+    })),
+    useCameraDevice: jest.fn(() => ({
+        id: 'back',
+        name: 'Back Camera',
+        position: 'back',
+    })),
 }))
