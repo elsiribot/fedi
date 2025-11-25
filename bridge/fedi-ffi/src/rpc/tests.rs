@@ -554,13 +554,18 @@ async fn test_ecash_with_fedi_fees(
 async fn wait_for_ecash_reissue(federation: &FederationV2) -> Result<(), anyhow::Error> {
     devimint::util::poll("waiting for ecash reissue", || async {
         let txns = federation.list_transactions(usize::MAX, None).await;
-        let RpcTransactionKind::OobReceive { state: Some(state) } = txns
-            .first()
+        let Ok(RpcTransactionListEntry {
+            transaction:
+                RpcTransaction {
+                    kind: RpcTransactionKind::OobReceive { state: Some(state) },
+                    ..
+                },
+            ..
+        }) = txns
+            .into_iter()
+            .next()
             .context("transaction not found")
             .map_err(ControlFlow::Continue)?
-            .transaction
-            .kind
-            .clone()
         else {
             return Err(ControlFlow::Continue(anyhow!(
                 "oob state must be present on ecash reissue"
@@ -654,13 +659,17 @@ async fn test_on_chain_with_fedi_fees(
     bitcoin_cli_send_to_address(&address, "0.1").await?;
 
     assert!(matches!(
-        listTransactions(federation.clone(), None, None).await?[0]
-            .transaction
-            .kind,
-        RpcTransactionKind::OnchainDeposit {
-            state: Some(RpcOnchainDepositState::WaitingForTransaction),
+        listTransactions(federation.clone(), None, None).await?[0],
+        Ok(RpcTransactionListEntry {
+            transaction: RpcTransaction {
+                kind: RpcTransactionKind::OnchainDeposit {
+                    state: Some(RpcOnchainDepositState::WaitingForTransaction),
+                    ..
+                },
+                ..
+            },
             ..
-        }
+        })
     ));
     // check for event of type transaction that has onchain_state of
     // DepositState::Claimed
@@ -691,13 +700,17 @@ async fn test_on_chain_with_fedi_fees(
         .await;
     }
     assert!(matches!(
-        listTransactions(federation.clone(), None, None).await?[0]
-            .transaction
-            .kind,
-        RpcTransactionKind::OnchainDeposit {
-            state: Some(RpcOnchainDepositState::Claimed(_)),
+        listTransactions(federation.clone(), None, None).await?[0],
+        Ok(RpcTransactionListEntry {
+            transaction: RpcTransaction {
+                kind: RpcTransactionKind::OnchainDeposit {
+                    state: Some(RpcOnchainDepositState::Claimed(_)),
+                    ..
+                },
+                ..
+            },
             ..
-        }
+        })
     ),);
 
     let btc_amount = Amount::from_sats(10_000_000);
@@ -742,13 +755,17 @@ async fn test_on_chain_with_fedi_fees_with_restart(
     let federation = wait_for_federation_loading(bridge, &federation_id.to_string()).await?;
 
     assert!(matches!(
-        listTransactions(federation.clone(), None, None).await?[0]
-            .transaction
-            .kind,
-        RpcTransactionKind::OnchainDeposit {
-            state: Some(RpcOnchainDepositState::WaitingForTransaction),
+        listTransactions(federation.clone(), None, None).await?[0],
+        Ok(RpcTransactionListEntry {
+            transaction: RpcTransaction {
+                kind: RpcTransactionKind::OnchainDeposit {
+                    state: Some(RpcOnchainDepositState::WaitingForTransaction),
+                    ..
+                },
+                ..
+            },
             ..
-        }
+        })
     ));
     // check for event of type transaction that has onchain_state of
     // DepositState::Claimed
@@ -779,13 +796,17 @@ async fn test_on_chain_with_fedi_fees_with_restart(
         .await;
     }
     assert!(matches!(
-        listTransactions(federation.clone(), None, None).await?[0]
-            .transaction
-            .kind,
-        RpcTransactionKind::OnchainDeposit {
-            state: Some(RpcOnchainDepositState::Claimed(_)),
+        listTransactions(federation.clone(), None, None).await?[0],
+        Ok(RpcTransactionListEntry {
+            transaction: RpcTransaction {
+                kind: RpcTransactionKind::OnchainDeposit {
+                    state: Some(RpcOnchainDepositState::Claimed(_)),
+                    ..
+                },
+                ..
+            },
             ..
-        }
+        })
     ),);
 
     let btc_amount = Amount::from_sats(10_000_000);
@@ -1336,18 +1357,30 @@ async fn test_spv2_with_fedi_fees(
     let transactions = listTransactions(federation.clone(), None, None).await?;
     let last_tx = transactions.first().expect("must exist");
     assert!(matches!(
-        last_tx.transaction.kind,
-        RpcTransactionKind::SPV2Withdrawal {
-            state: rpc_types::RpcSPV2WithdrawalState::CompletedWithdrawal { .. }
-        }
+        last_tx,
+        Ok(RpcTransactionListEntry {
+            transaction: RpcTransaction {
+                kind: RpcTransactionKind::SPV2Withdrawal {
+                    state: rpc_types::RpcSPV2WithdrawalState::CompletedWithdrawal { .. }
+                },
+                ..
+            },
+            ..
+        })
     ));
 
     let second_last_tx = transactions.get(1).expect("must exist");
     assert!(matches!(
-        second_last_tx.transaction.kind,
-        RpcTransactionKind::SPV2Deposit {
-            state: rpc_types::RpcSPV2DepositState::PendingDeposit { .. }
-        }
+        second_last_tx,
+        Ok(RpcTransactionListEntry {
+            transaction: RpcTransaction {
+                kind: RpcTransactionKind::SPV2Deposit {
+                    state: rpc_types::RpcSPV2DepositState::PendingDeposit { .. }
+                },
+                ..
+            },
+            ..
+        })
     ));
 
     assert_eq!(
@@ -1395,10 +1428,16 @@ async fn test_spv2_with_fedi_fees(
         let transactions = listTransactions(federation.clone(), None, None).await?;
         let third_last_tx = transactions.get(2).expect("must exist");
         if matches!(
-            third_last_tx.transaction.kind,
-            RpcTransactionKind::SPV2Deposit {
-                state: rpc_types::RpcSPV2DepositState::CompletedDeposit { .. }
-            }
+            third_last_tx,
+            Ok(RpcTransactionListEntry {
+                transaction: RpcTransaction {
+                    kind: RpcTransactionKind::SPV2Deposit {
+                        state: rpc_types::RpcSPV2DepositState::CompletedDeposit { .. }
+                    },
+                    ..
+                },
+                ..
+            })
         ) {
             break;
         }
@@ -2478,22 +2517,36 @@ async fn test_stability_pool_external_transfer_in(_dev_fed: DevFed) -> anyhow::R
         .iter()
         .find(|tx| {
             matches!(
-                tx.transaction.kind,
-                RpcTransactionKind::SPV2TransferIn { .. }
+                tx,
+                Ok(RpcTransactionListEntry {
+                    transaction: RpcTransaction {
+                        kind: RpcTransactionKind::SPV2TransferIn { .. },
+                        ..
+                    },
+                    ..
+                })
             )
         })
         .expect("Should find transfer-in transaction in receiver's history");
 
     // Verify the transaction details
-    match &transfer_in_tx.transaction.kind {
-        RpcTransactionKind::SPV2TransferIn {
-            state:
-                RpcSPV2TransferInState::CompletedTransfer {
-                    amount,
-                    fiat_amount,
+    match &transfer_in_tx {
+        Ok(RpcTransactionListEntry {
+            transaction:
+                RpcTransaction {
+                    kind:
+                        RpcTransactionKind::SPV2TransferIn {
+                            state:
+                                RpcSPV2TransferInState::CompletedTransfer {
+                                    amount,
+                                    fiat_amount,
+                                    ..
+                                },
+                        },
                     ..
                 },
-        } => {
+            ..
+        }) => {
             // The amount should match what was transferred
             assert!(amount.0.msats > 0, "Transfer amount should be positive");
             assert_eq!(

@@ -713,7 +713,10 @@ export type RpcMethods = {
   parseInviteCode: [parseInviteCode, RpcParseInviteCodeResult];
   cancelEcash: [cancelEcash, null];
   updateCachedFiatFXInfo: [updateCachedFiatFXInfo, null];
-  listTransactions: [listTransactions, Array<RpcTransactionListEntry>];
+  listTransactions: [
+    listTransactions,
+    Array<{ Ok: RpcTransactionListEntry } | { Err: string }>,
+  ];
   getTransaction: [getTransaction, RpcTransaction];
   updateTransactionNotes: [updateTransactionNotes, null];
   backupNow: [backupNow, null];

@@ -72,11 +72,15 @@ function DeveloperPage() {
             const transactions = await fedimint.listTransactions(
                 paymentFederation.id,
             )
+            const refinedTransactions = transactions
+                .filter(entry => 'Ok' in entry)
+                .map(entry => entry.Ok)
+
             // To download a CSV, create a fake link and click it
             const hiddenElement = document.createElement('a')
             hiddenElement.href = makeBase64CSVUri(
                 makeTransactionHistoryCSV(
-                    transactions,
+                    refinedTransactions,
                     makeFormattedAmountsFromMSats,
                     t,
                 ),

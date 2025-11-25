@@ -2415,13 +2415,16 @@ impl FederationV2 {
         Ok(())
     }
 
-    pub async fn get_deposit_outcome(&self, operation_id: OperationId) -> Option<DepositStateV2> {
+    pub async fn get_deposit_outcome(
+        &self,
+        operation_id: OperationId,
+    ) -> anyhow::Result<Option<DepositStateV2>> {
         // Return our cached outcome if we find it
         if let Some(outcome) = self
             .get_operation_state::<DepositStateV2>(&operation_id)
-            .await
+            .await?
         {
-            return Some(outcome);
+            return Ok(Some(outcome));
         }
 
         let Ok(wallet) = self.client.wallet() else {
@@ -2429,10 +2432,10 @@ impl FederationV2 {
         };
 
         match wallet.subscribe_deposit(operation_id).await {
-            Err(_) => None,
-            Ok(UpdateStreamOrOutcome::Outcome(outcome)) => Some(outcome),
+            Err(e) => Err(e),
+            Ok(UpdateStreamOrOutcome::Outcome(outcome)) => Ok(Some(outcome)),
             // first item of this stream doesn't block: WaitingForTransaction
-            Ok(UpdateStreamOrOutcome::UpdateStream(mut stream)) => stream.next().await,
+            Ok(UpdateStreamOrOutcome::UpdateStream(mut stream)) => Ok(stream.next().await),
         }
     }
 
@@ -2441,27 +2444,27 @@ impl FederationV2 {
         operation_id: OperationId,
         log_entry: OperationLogEntry,
         subscribe_fn: F,
-    ) -> Option<O>
+    ) -> anyhow::Result<Option<O>>
     where
         O: Clone + DeserializeOwned + 'static,
         F: Fn(OperationId) -> Fut,
         Fut: Future<Output = anyhow::Result<UpdateStreamOrOutcome<O>>>,
     {
-        let outcome = log_entry.outcome::<O>();
+        let outcome = log_entry.try_outcome::<O>()?;
 
         // Return client's cached outcome if we find it
         if let Some(outcome) = outcome {
-            return Some(outcome);
+            return Ok(Some(outcome));
         }
         // Return our cached outcome if we find it
-        if let Some(outcome) = self.get_operation_state::<O>(&operation_id).await {
-            return Some(outcome);
+        if let Some(outcome) = self.get_operation_state::<O>(&operation_id).await? {
+            return Ok(Some(outcome));
         }
 
         match subscribe_fn(operation_id).await {
-            Ok(UpdateStreamOrOutcome::Outcome(outcome)) => Some(outcome),
-            Ok(UpdateStreamOrOutcome::UpdateStream(mut stream)) => stream.next().await,
-            Err(_) => None,
+            Ok(UpdateStreamOrOutcome::Outcome(outcome)) => Ok(Some(outcome)),
+            Ok(UpdateStreamOrOutcome::UpdateStream(mut stream)) => Ok(stream.next().await),
+            Err(e) => Err(e),
         }
     }
 
@@ -2470,7 +2473,7 @@ impl FederationV2 {
         &self,
         limit: usize,
         start_after: Option<ChronologicalOperationLogKey>,
-    ) -> Vec<RpcTransactionListEntry> {
+    ) -> Vec<Result<RpcTransactionListEntry, String>> {
         let futures = self
             .client
             .operation_log()
@@ -2478,12 +2481,18 @@ impl FederationV2 {
             .await
             .into_iter()
             .map(|(op_key, entry)| async move {
-                Some(RpcTransactionListEntry {
-                    created_at: to_unix_time(op_key.creation_time).expect("unix time should exist"),
-                    transaction: self
-                        .get_transaction_inner(op_key.operation_id, entry)
-                        .await?,
-                })
+                let Ok(created_at) = to_unix_time(op_key.creation_time) else {
+                    return None;
+                };
+
+                match self.get_transaction_inner(op_key.operation_id, entry).await {
+                    Ok(Some(transaction)) => Some(Ok(RpcTransactionListEntry {
+                        created_at,
+                        transaction,
+                    })),
+                    Ok(None) => None,
+                    Err(e) => Some(Err(e.to_string())),
+                }
             });
         futures::future::join_all(futures)
             .await
@@ -2502,16 +2511,25 @@ impl FederationV2 {
             .get_operation(operation_id)
             .await
             .context("transaction not found")?;
-        self.get_transaction_inner(operation_id, entry)
+
+        match self
+            .get_transaction_inner(operation_id, entry)
             .await
             .context("internal transaction")
+        {
+            Ok(maybe_tx) => match maybe_tx {
+                Some(tx) => Ok(tx),
+                None => bail!("Tx not found {:?}", operation_id),
+            },
+            Err(e) => Err(e),
+        }
     }
 
     async fn get_transaction_inner(
         &self,
         operation_id: OperationId,
         entry: OperationLogEntry,
-    ) -> Option<RpcTransaction> {
+    ) -> anyhow::Result<Option<RpcTransaction>> {
         let meta = entry.meta::<serde_json::Value>();
         let module = entry.operation_module_kind().to_owned();
         timeout_log_only(
@@ -2534,7 +2552,7 @@ impl FederationV2 {
         &self,
         operation_id: OperationId,
         mut entry: OperationLogEntry,
-    ) -> Option<RpcTransaction> {
+    ) -> anyhow::Result<Option<RpcTransaction>> {
         let notes = self
             .dbtx()
             .await
@@ -2564,7 +2582,7 @@ impl FederationV2 {
         let (transaction_amount, transaction_kind, frontend_metadata);
         match entry.operation_module_kind() {
             LIGHTNING_OPERATION_TYPE => {
-                let lightning_meta: LightningOperationMeta = entry.meta();
+                let lightning_meta: LightningOperationMeta = entry.try_meta()?;
                 match lightning_meta.variant {
                     LightningOperationMetaVariant::Pay(LightningOperationMetaPay {
                         invoice,
@@ -2582,7 +2600,7 @@ impl FederationV2 {
 
                         // Exclude fee remittance transactions from TX list
                         if extra_meta.is_fedi_fee_remittance {
-                            return None;
+                            return Ok(None);
                         }
 
                         transaction_amount = RpcAmount(Amount {
@@ -2593,7 +2611,7 @@ impl FederationV2 {
                         frontend_metadata = extra_meta.frontend_metadata;
                         let state = if is_internal_payment {
                             if entry
-                                .outcome::<serde_json::Value>()
+                                .outcome::<serde_json::Value>() // Not calling try_outcome since type here is serde_json::Value
                                 .is_some_and(internal_pay_is_bad_state)
                             {
                                 // HACK: our code accidentally subscribed using wrong function in
@@ -2607,7 +2625,7 @@ impl FederationV2 {
                                     self.client.ln()?.subscribe_internal_pay(op_id).await
                                 },
                             )
-                            .await
+                            .await?
                             .map(|internal_pay_state| {
                                 match internal_pay_state {
                                     InternalPayState::Funding => LnPayState::Created,
@@ -2636,7 +2654,7 @@ impl FederationV2 {
                                 operation_id,
                                 entry,
                                 |op_id| async move { self.client.ln()?.subscribe_ln_pay(op_id).await }
-                            ).await
+                            ).await?
                         };
                         transaction_kind = RpcTransactionKind::LnPay {
                             ln_invoice: invoice.to_string(),
@@ -2662,7 +2680,7 @@ impl FederationV2 {
                                         self.client.ln()?.subscribe_ln_receive(op_id).await
                                     },
                                 )
-                                .await
+                                .await?
                                 .map(Into::into),
                         };
                     }
@@ -2674,7 +2692,7 @@ impl FederationV2 {
                                     .subscribe_ln_recurring_receive(op_id)
                                     .await
                             })
-                            .await;
+                            .await?;
                         // If the state is "Created" or "WaitingForPayment", we need to subscribe in
                         // the background so that we can send an update to the front-end when the
                         // state advances.
@@ -2748,7 +2766,7 @@ impl FederationV2 {
                         .get_client_operation_outcome(operation_id, entry, |op_id| async move {
                             self.client.sp()?.subscribe_withdraw(op_id).await
                         })
-                        .await;
+                        .await?;
 
                     frontend_metadata = None;
                     transaction_amount = match outcome {
@@ -2804,7 +2822,7 @@ impl FederationV2 {
                         .get_client_operation_outcome(operation_id, entry, |op_id| async move {
                             self.client.spv2()?.subscribe_deposit_operation(op_id).await
                         })
-                        .await;
+                        .await?;
                     transaction_kind = match outcome {
                         Some(
                             StabilityPoolDepositOperationState::TxRejected(e)
@@ -2860,7 +2878,7 @@ impl FederationV2 {
                         .get_client_operation_outcome(operation_id, entry, |op_id| async move {
                             self.client.spv2()?.subscribe_withdraw(op_id).await
                         })
-                        .await;
+                        .await?;
                     transaction_kind = match outcome {
                         Some(
                             StabilityPoolWithdrawalOperationState::UnlockTxRejected(e)
@@ -2962,16 +2980,15 @@ impl FederationV2 {
                             }
                         } else {
                             let details = signed_request.details();
-                            error!(?details, "Unexpected transfer in TX history");
-                            return None;
+                            bail!("Unexpected transfer in TX history {:?}", details);
                         }
                     } else {
-                        return None;
+                        return Ok(None);
                     }
                 }
                 StabilityPoolMeta::WithdrawIdleBalance { .. } => {
                     // TXs to sweep idle balance shouldn't log in history
-                    return None;
+                    return Ok(None);
                 }
                 StabilityPoolMeta::ExternalTransferIn { txid } => {
                     frontend_metadata = None;
@@ -3007,7 +3024,7 @@ impl FederationV2 {
                                     frontend_metadata: None,
                                 });
                         if extra_meta.internal {
-                            return None;
+                            return Ok(None);
                         }
                         transaction_amount = RpcAmount(mint_meta.amount);
                         frontend_metadata = extra_meta.frontend_metadata;
@@ -3023,7 +3040,7 @@ impl FederationV2 {
                                             .await
                                     },
                                 )
-                                .await
+                                .await?
                                 .map(ReissueExternalNotesState::into),
                         };
                     }
@@ -3037,7 +3054,7 @@ impl FederationV2 {
                                     frontend_metadata: None,
                                 });
                         if extra_meta.internal {
-                            return None;
+                            return Ok(None);
                         }
                         transaction_amount =
                             RpcAmount(requested_amount + Amount::from_msats(fedi_fee_msats));
@@ -3051,7 +3068,7 @@ impl FederationV2 {
                                         self.client.mint()?.subscribe_spend_notes(op_id).await
                                     },
                                 )
-                                .await
+                                .await?
                                 .map(SpendOOBState::into),
                         };
                     }
@@ -3064,7 +3081,7 @@ impl FederationV2 {
                     .into();
                 match wallet_meta.variant {
                     WalletOperationMetaVariant::Deposit { address, .. } => {
-                        let outcome = self.get_deposit_outcome(operation_id).await;
+                        let outcome = self.get_deposit_outcome(operation_id).await?;
                         transaction_amount = match outcome {
                             Some(
                                 DepositStateV2::WaitingForConfirmation { btc_deposited, .. }
@@ -3104,7 +3121,7 @@ impl FederationV2 {
                                     .subscribe_withdraw_updates(op_id)
                                     .await
                             })
-                            .await;
+                            .await?;
 
                         transaction_kind = RpcTransactionKind::OnchainWithdraw {
                             onchain_address: address.assume_checked().to_string(),
@@ -3113,18 +3130,18 @@ impl FederationV2 {
                             state: outcome.map(Into::into),
                         };
                     }
-                    WalletOperationMetaVariant::RbfWithdraw { .. } => return None,
+                    WalletOperationMetaVariant::RbfWithdraw { .. } => return Ok(None),
                 }
             }
             _ => {
-                panic!(
+                bail!(
                     "Found unimplemented for module with operation type = {}",
                     entry.operation_module_kind()
                 );
             }
         }
         let frontend_metadata = frontend_metadata.unwrap_or_default();
-        Some(RpcTransaction {
+        Ok(Some(RpcTransaction {
             id: operation_id.fmt_full().to_string(),
             amount: transaction_amount,
             fedi_fee_status,
@@ -3133,7 +3150,7 @@ impl FederationV2 {
             frontend_metadata,
             kind: transaction_kind,
             outcome_time: outcome_time.and_then(|x| to_unix_time(x).ok()),
-        })
+        }))
     }
 
     pub async fn update_transaction_notes(
@@ -3166,19 +3183,17 @@ impl FederationV2 {
             .insert(operation_id, Box::new(state));
     }
 
-    async fn get_operation_state<T>(&self, operation_id: &OperationId) -> Option<T>
+    async fn get_operation_state<T>(&self, operation_id: &OperationId) -> anyhow::Result<Option<T>>
     where
         T: Clone + 'static,
     {
-        Some(
-            self.operation_states
-                .lock()
-                .await
-                .get(operation_id)?
-                .downcast_ref::<T>()
-                .expect("incorrect type to get_operation_state")
-                .clone(),
-        )
+        match self.operation_states.lock().await.get(operation_id) {
+            Some(state) => match state.downcast_ref::<T>() {
+                Some(state) => Ok(Some(state.clone())),
+                None => bail!("Incorrect type for {:?}", operation_id),
+            },
+            None => Ok(None),
+        }
     }
 
     /// Returns the latest cached sync response representing the seeker's last

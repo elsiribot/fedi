@@ -540,7 +540,7 @@ async fn listTransactions(
     federation: Arc<FederationV2>,
     start_time: Option<u32>,
     limit: Option<u32>,
-) -> anyhow::Result<Vec<RpcTransactionListEntry>> {
+) -> anyhow::Result<Vec<Result<RpcTransactionListEntry, String>>> {
     let txs = federation
         .list_transactions(
             limit.map_or(usize::MAX, |l| l as usize),

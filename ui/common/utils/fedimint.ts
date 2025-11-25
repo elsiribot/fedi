@@ -22,7 +22,6 @@ import {
     RpcStabilityPoolAccountInfo,
     RpcTimelineEventItemId,
     RpcTransaction,
-    RpcTransactionListEntry,
 } from '../types/bindings'
 import { BridgeError } from '../utils/errors'
 import { MatrixChatClient } from './MatrixChatClient'
@@ -227,14 +226,11 @@ export class FedimintBridge {
         startTime?: number,
         limit?: number,
     ) {
-        return this.rpcTyped<'listTransactions', RpcTransactionListEntry[]>(
-            'listTransactions',
-            {
-                federationId,
-                startTime: startTime || null,
-                limit: limit || null,
-            },
-        )
+        return this.rpcTyped('listTransactions', {
+            federationId,
+            startTime: startTime || null,
+            limit: limit || null,
+        })
     }
 
     async getTransaction(
