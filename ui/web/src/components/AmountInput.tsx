@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useRef } from 'react'
+import React, { useEffect, useRef } from 'react'
 import { Trans, useTranslation } from 'react-i18next'
 
 import arrowLeftIcon from '@fedi/common/assets/svgs/arrow-left.svg'
@@ -7,8 +7,7 @@ import { useAmountInput } from '@fedi/common/hooks/amount'
 import { Federation, Sats } from '@fedi/common/types'
 import amountUtils from '@fedi/common/utils/AmountUtils'
 
-import { useMediaQuery } from '../hooks'
-import { config, keyframes, styled, theme } from '../styles'
+import { keyframes, styled, theme } from '../styles'
 import { Icon } from './Icon'
 import { Text } from './Text'
 
@@ -56,7 +55,7 @@ export const AmountInput: React.FC<Props> = ({
         maximumAmount,
         federationId,
     )
-    const isSmall = useMediaQuery(config.media.sm)
+
     const errorElRef = useRef<HTMLDivElement | null>(null)
     const amountInputContainerElRef = useRef<HTMLDivElement | null>(null)
 
@@ -140,15 +139,6 @@ export const AmountInput: React.FC<Props> = ({
     const activeWrapProps = {
         active: true,
         readOnly,
-        autoFocus,
-        onClick: useCallback(
-            (ev: React.MouseEvent) => {
-                if (!isSmall) {
-                    ev.currentTarget.querySelector('input')?.focus()
-                }
-            },
-            [isSmall],
-        ),
     }
     const activeInputProps = {
         autoFocus,
@@ -159,16 +149,10 @@ export const AmountInput: React.FC<Props> = ({
         readOnly,
         role: readOnly ? undefined : 'button',
         tabIndex: readOnly ? undefined : 0,
-        onClick: useCallback(
-            (ev: React.MouseEvent) => {
-                if (readOnly) return
-                setIsFiat(!isFiat)
-                if (!isSmall) {
-                    ev.currentTarget.querySelector('input')?.focus()
-                }
-            },
-            [readOnly, setIsFiat, isSmall, isFiat],
-        ),
+        onClick: () => {
+            if (readOnly) return
+            setIsFiat(!isFiat)
+        },
     }
     const inactiveInputProps = {
         autoFocus: false,
@@ -196,6 +180,7 @@ export const AmountInput: React.FC<Props> = ({
                                 onChange={ev =>
                                     handleChangeSats(ev.currentTarget.value)
                                 }
+                                readOnly
                                 data-testid="amount-input-sats"
                             />
                             <div>{satsValue}</div>
@@ -210,7 +195,7 @@ export const AmountInput: React.FC<Props> = ({
                                 {...(isFiat
                                     ? activeInputProps
                                     : inactiveInputProps)}
-                                readOnly={!isFiat || readOnly}
+                                readOnly
                                 value={fiatValue}
                                 inputMode="decimal"
                                 onChange={ev =>
@@ -432,20 +417,12 @@ const SnugInput = styled('div', {
 })
 
 const NumpadContainer = styled('div', {
-    display: 'none',
     width: '100%',
     maxWidth: 400,
-
-    '@sm': {
-        display: 'grid',
-        gridTemplateColumns: 'repeat(3, 1fr)',
-        gridTemplateRows: 'repeat(4, 1fr)',
-        gap: 8,
-    },
-
-    '@media (max-height: 640px)': {
-        display: 'none',
-    },
+    display: 'grid',
+    gridTemplateColumns: 'repeat(3, 1fr)',
+    gridTemplateRows: 'repeat(4, 1fr)',
+    gap: 8,
 })
 
 const NumpadButton = styled('button', {

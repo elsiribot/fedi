@@ -81,13 +81,14 @@ describe('SendOffline', () => {
             },
         )
 
+        const num3 = screen.getByText('3')
+        const num4 = screen.getByText('4')
+
         const fiatInput = screen.getByTestId('amount-input-fiat')
         const satsInput = screen.getByTestId('amount-input-sats')
 
-        expect(satsInput).toBeInTheDocument()
-        expect(fiatInput).toBeInTheDocument()
-
-        await user.type(fiatInput, '34')
+        await user.click(num3)
+        await user.click(num4)
 
         expect(fiatInput).toHaveValue('34')
         expect(satsInput).toHaveValue('34,000')
@@ -120,10 +121,13 @@ describe('SendOffline', () => {
         const fiatInput = screen.getByTestId('amount-input-fiat')
         const satsInput = screen.getByTestId('amount-input-sats')
 
-        expect(satsInput).toBeInTheDocument()
-        expect(fiatInput).toBeInTheDocument()
+        const num3 = screen.getByText('3')
+        const num4 = screen.getByText('4')
 
-        await user.type(satsInput, '3444')
+        await user.click(num3)
+        await user.click(num4)
+        await user.click(num4)
+        await user.click(num4)
 
         expect(fiatInput).toHaveValue('3.44')
         expect(satsInput).toHaveValue('3,444')
