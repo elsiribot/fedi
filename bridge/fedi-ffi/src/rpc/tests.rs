@@ -1,4 +1,4 @@
-use std::collections::HashMap;
+use std::collections::{BTreeMap, HashMap};
 use std::ops::ControlFlow;
 use std::panic;
 use std::path::Path;
@@ -8,6 +8,7 @@ use std::thread::available_parallelism;
 use std::time::Duration;
 
 use anyhow::{anyhow, bail};
+use api_types::invoice_generator::FirstCommunityInviteCodeState;
 use bridge::RuntimeExt as _;
 use devi::DevFed;
 use devimint::cmd;
@@ -29,9 +30,10 @@ use rpc_types::{
     RpcLnReceiveState, RpcOOBReissueState, RpcOnchainDepositState, RpcReturningMemberStatus,
     RpcSPV2TransferInState, RpcTransactionDirection, RpcTransactionKind,
 };
-use runtime::constants::{FEDI_FILE_V0_PATH, MILLION};
+use runtime::constants::{COMMUNITY_V1_TO_V2_MIGRATION_KEY, FEDI_FILE_V0_PATH, MILLION};
 use runtime::db::BridgeDbPrefix;
 use runtime::envs::USE_UPSTREAM_FEDIMINTD_ENV;
+use runtime::storage::state::CommunityJson;
 use runtime::storage::BRIDGE_DB_PREFIX;
 use tokio::sync::Semaphore;
 use tokio::task::JoinSet;
@@ -218,6 +220,7 @@ async fn tests_wrapper_for_bridge() -> anyhow::Result<()> {
         test_preview_and_join_community,
         test_list_and_leave_community,
         test_community_meta_bg_refresh,
+        test_community_v2_migration,
         nostr_tests::test_nostr_community_workflow,
         nostr_tests::test_nostr_community_preview_join_leave,
         test_existing_device_identifier_v2_migration,
@@ -2049,6 +2052,124 @@ async fn test_community_meta_bg_refresh(_dev_fed: DevFed) -> anyhow::Result<()> 
         );
         break;
     }
+
+    Ok(())
+}
+
+async fn test_community_v2_migration(_dev_fed: DevFed) -> anyhow::Result<()> {
+    let td = TestDevice::new();
+    let bridge = td.bridge_full().await?;
+
+    // Initially our FirstCommunityInviteCodeState should be "NeverSet"
+    assert!(
+        bridge
+            .runtime
+            .app_state
+            .with_read_lock(|state| state.first_comm_invite_code.clone())
+            .await
+            == FirstCommunityInviteCodeState::NeverSet
+    );
+
+    let mut server = mockito::Server::new_async().await;
+    let url = server.url();
+
+    let invite_path = "/invite-0";
+    let community_invite = CommunityInvite::V1(CommunityInviteV1 {
+        community_meta_url: format!("{url}{invite_path}"),
+    });
+
+    server
+        .mock("GET", invite_path)
+        .with_status(200)
+        .with_header("content-type", "application/json")
+        .with_body(COMMUNITY_JSON_0)
+        .create_async()
+        .await;
+
+    // Calling join() actually joins
+    joinCommunity(bridge, community_invite.to_string()).await?;
+    let communities = listCommunities(bridge).await?;
+    assert!(communities.len() == 1);
+    assert!(communities[0].community_invite.to_string() == community_invite.to_string());
+
+    // Now our FirstCommunityInviteCodeState should be "Set" with the v1 invite code
+    assert!(
+        bridge
+            .runtime
+            .app_state
+            .with_read_lock(|state| state.first_comm_invite_code.clone())
+            .await
+            == FirstCommunityInviteCodeState::Set(community_invite.to_string())
+    );
+
+    // Have another test device create a v2 nostr community and obtain its invite
+    // code
+    let v2_name = "Nostr Test Community".to_string();
+    let v2_description = "Initial description".to_string();
+    let v2_meta = BTreeMap::from([("description".to_string(), v2_description.clone())]);
+    let migrate_to_v2_invite_code = {
+        let td2 = TestDevice::new();
+        let bridge2 = td2.bridge_full().await?;
+
+        // Let's create a simple v2 community
+        let create_payload = CommunityJson {
+            name: v2_name.clone(),
+            version: 2,
+            meta: v2_meta.clone(),
+        };
+        nostrCreateCommunity(bridge2, serde_json::to_string(&create_payload)?)
+            .await?
+            .community_invite
+            .to_string()
+    };
+
+    // Update v1 community JSON with v2 migration invite code
+    let updated_community_json_0_str = {
+        let mut community_json_0 = serde_json::from_str::<CommunityJson>(COMMUNITY_JSON_0)?;
+        community_json_0.meta.insert(
+            COMMUNITY_V1_TO_V2_MIGRATION_KEY.to_owned(),
+            migrate_to_v2_invite_code.clone(),
+        );
+        serde_json::to_string(&community_json_0)?
+    };
+    server
+        .mock("GET", invite_path)
+        .with_status(200)
+        .with_header("content-type", "application/json")
+        .with_body(updated_community_json_0_str)
+        .create_async()
+        .await;
+    bridge.on_app_foreground();
+
+    loop {
+        // Wait until migration event emitted
+        if td
+            .event_sink()
+            .num_events_of_type("communityMigratedToV2".into())
+            == 1
+        {
+            break;
+        }
+
+        fedimint_core::task::sleep(Duration::from_millis(100)).await;
+    }
+
+    // Now there should be only one community which is the v2 community
+    let communities = listCommunities(bridge).await?;
+    assert!(communities.len() == 1);
+    assert!(communities[0].community_invite.to_string() == migrate_to_v2_invite_code);
+    assert!(communities[0].meta == v2_meta);
+
+    // Our FirstCommunityInviteCodeState should be "Set" with the v2 invite code
+    // since this was a migration
+    assert!(
+        bridge
+            .runtime
+            .app_state
+            .with_read_lock(|state| state.first_comm_invite_code.clone())
+            .await
+            == FirstCommunityInviteCodeState::Set(migrate_to_v2_invite_code)
+    );
 
     Ok(())
 }
