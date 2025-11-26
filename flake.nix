@@ -449,9 +449,9 @@
             ls -alh $out/bin
             $out/bin/xcodebuild -version
             # Check if we have the xcodebuild version that we want
-            if [ -z "$($out/bin/xcodebuild -version | grep '16.')" ] && [ -z "$($out/bin/xcodebuild -version | grep '26.0')" ]
+            if [ -z "$($out/bin/xcodebuild -version | grep '16.')" ] && [ -z "$($out/bin/xcodebuild -version | grep '26.')" ]
             then
-                echo "xcodebuild version: either v15.0.1 or v16.0+ is required"
+                echo "xcodebuild version: either v16.0+ or v26.0+ is required"
                 echo "run: \`just install-xcode\` to install Xcode.app from the CLI"
                 exit 1
             fi
