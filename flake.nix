@@ -373,7 +373,6 @@
                 pkgs.sccache
                 pkgs.ripgrep
                 pkgs.lsof
-                pkgs.cmake
                 pkgs.rust-bindgen
 
                 pkgs.android-tools
