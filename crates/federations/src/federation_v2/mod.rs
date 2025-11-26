@@ -48,9 +48,7 @@ use fedimint_client::secret::RootSecretStrategy;
 use fedimint_client::{Client, ClientBuilder, ClientHandle};
 use fedimint_core::config::{ClientConfig, FederationId};
 use fedimint_core::core::{ModuleKind, OperationId};
-use fedimint_core::db::{
-    Committable, Database, DatabaseTransaction, IDatabaseTransactionOpsCoreTyped,
-};
+use fedimint_core::db::{Committable, DatabaseTransaction, IDatabaseTransactionOpsCoreTyped};
 use fedimint_core::encoding::Encodable;
 use fedimint_core::invite_code::InviteCode;
 use fedimint_core::module::registry::ModuleDecoderRegistry;
@@ -262,8 +260,8 @@ pub struct FederationPrefetchedInfo {
 
 impl FederationV2 {
     /// Instantiate Federation from FediConfig
-    async fn build_client_builder(db: Database) -> anyhow::Result<ClientBuilder> {
-        let mut client_builder = fedimint_client::Client::builder(db).await?;
+    async fn build_client_builder() -> anyhow::Result<ClientBuilder> {
+        let mut client_builder = fedimint_client::Client::builder().await?;
         client_builder.with_meta_service(MetaService::new(MetaModuleMetaSourceWithFallback::new(
             LegacyMetaSourceWithExternalUrl::default(),
         )));
@@ -274,6 +272,9 @@ impl FederationV2 {
         client_builder.with_module(StabilityPoolClientInit);
         client_builder.with_module(stability_pool_client_old::StabilityPoolClientInit);
         client_builder.with_primary_module_kind(fedimint_mint_client::KIND);
+        let client_builder = client_builder
+            .with_iroh_enable_dht(false)
+            .with_iroh_enable_next(false);
         Ok(client_builder)
     }
 
@@ -465,7 +466,7 @@ impl FederationV2 {
                 .global_db
                 .with_prefix(prefix.consensus_encode_to_vec()),
         };
-        let client_builder = Self::build_client_builder(federation_db.clone()).await?;
+        let client_builder = Self::build_client_builder().await?;
         let config = Client::get_config_from_db(&federation_db)
             .await
             .context("config not found in database")?;
@@ -475,13 +476,16 @@ impl FederationV2 {
             info!("started federation loading");
             let _g = TimeReporter::new("federation loading").level(Level::INFO);
             client_builder
-                .open(fedimint_client::RootSecret::Custom(
-                    Self::client_root_secret_from_root_mnemonic(
-                        &root_mnemonic,
-                        &federation_id,
-                        device_index,
+                .open(
+                    federation_db.clone(),
+                    fedimint_client::RootSecret::Custom(
+                        Self::client_root_secret_from_root_mnemonic(
+                            &root_mnemonic,
+                            &federation_id,
+                            device_index,
+                        ),
                     ),
-                ))
+                )
                 .await?
         };
         let auxiliary_secret =
@@ -576,7 +580,7 @@ impl FederationV2 {
         dbtx.insert_entry(&InviteCodeKey, &invite_code_string).await;
         dbtx.commit_tx().await;
 
-        let client_builder = Self::build_client_builder(federation_db.clone()).await?;
+        let client_builder = Self::build_client_builder().await?;
         let federation_id = info.federation_id;
         let client_secret =
             fedimint_client::RootSecret::Custom(Self::client_root_secret_from_root_mnemonic(
@@ -589,11 +593,13 @@ impl FederationV2 {
         // restore from scratch is not used because it takes too much time.
         // FIXME: api secret
         let client_preview = client_builder
-            .preview_with_existing_config(info.client_config.clone(), None)
+            .preview_with_existing_config(info.client_config.clone(), None, None)
             .await?;
         let client = if recover_from_scratch {
             info!("recovering from scratch");
-            client_preview.recover(client_secret, None).await?
+            client_preview
+                .recover(federation_db.clone(), client_secret, None)
+                .await?
         } else if let Some(client_backup) = info.backup {
             // Ensure that rejoin attempt after nonce reuse check failure can never enter
             // this branch
@@ -613,12 +619,14 @@ impl FederationV2 {
             }
             info!("backup found {:?}", client_backup);
             client_preview
-                .recover(client_secret, Some(client_backup))
+                .recover(federation_db.clone(), client_secret, Some(client_backup))
                 .await?
         } else {
             info!("backup not found");
             // FIXME: api secret
-            client_preview.join(client_secret).await?
+            client_preview
+                .join(federation_db.clone(), client_secret)
+                .await?
         };
         let network = client.wallet().ok().map(|wallet| wallet.get_network());
         let this = Self::new(
@@ -4632,7 +4640,9 @@ pub async fn download_from_invite_code(
     invite_code: &InviteCode,
 ) -> anyhow::Result<(ClientConfig, DynGlobalApi)> {
     let connector = Connector::Tcp;
-    connector.download_from_invite_code(invite_code).await
+    connector
+        .download_from_invite_code(invite_code, false, false)
+        .await
 }
 
 impl FederationPrefetchedInfo {
@@ -4647,8 +4657,13 @@ impl FederationPrefetchedInfo {
         if should_override_localhost {
             override_localhost_invite_code(&mut invite_code);
         }
-        let api_single_guardian =
-            DynGlobalApi::from_endpoints(invite_code.peers(), &invite_code.api_secret()).await?;
+        let api_single_guardian = DynGlobalApi::from_endpoints(
+            invite_code.peers(),
+            &invite_code.api_secret(),
+            false,
+            false,
+        )
+        .await?;
         let federation_id = invite_code.federation_id();
         let client_root_sercet = {
             // We do an additional derivation using `DerivableSecret::federation_key` since

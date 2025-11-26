@@ -12,6 +12,7 @@ use matrix_sdk::ruma::api::client::user_directory::search_users::v3 as search_us
 use matrix_sdk::ruma::events::poll::start::PollKind;
 use matrix_sdk::ruma::events::room::MediaSource;
 use matrix_sdk::ruma::events::room::member::MembershipState;
+use matrix_sdk::ruma::events::room::power_levels::UserPowerLevel;
 use matrix_sdk::ruma::events::{AnyTimelineEvent, Mentions};
 use matrix_sdk::ruma::serde::Raw;
 use matrix_sdk::ruma::{MilliSecondsSinceUnixEpoch, events as ruma_events};
@@ -80,6 +81,7 @@ impl RpcComposerDraft {
                     event_id: event_id.parse()?,
                 },
             },
+            attachments: Vec::new(),
         })
     }
 }
@@ -177,7 +179,7 @@ pub struct RpcTimelineItemEvent {
 impl From<&EventSendState> for RpcTimelineEventSendState {
     fn from(state: &EventSendState) -> Self {
         match state {
-            EventSendState::NotSentYet => RpcTimelineEventSendState::NotSentYet,
+            EventSendState::NotSentYet { .. } => RpcTimelineEventSendState::NotSentYet,
             EventSendState::SendingFailed {
                 error,
                 is_recoverable,
@@ -547,6 +549,14 @@ pub enum RpcSyncIndicator {
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize, ts_rs::TS)]
+#[serde(rename_all = "camelCase", tag = "type", content = "value")]
+#[ts(export)]
+pub enum RpcUserPowerLevel {
+    Infinite,
+    Int(#[ts(type = "number")] i64),
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize, ts_rs::TS)]
 #[serde(rename_all = "camelCase")]
 #[ts(export)]
 pub struct RpcRoomMember {
@@ -554,8 +564,7 @@ pub struct RpcRoomMember {
     pub display_name: Option<String>,
     pub avatar_url: Option<String>,
     pub ignored: bool,
-    #[ts(type = "number")]
-    pub power_level: i64,
+    pub power_level: RpcUserPowerLevel,
     pub membership: RpcMatrixMembership,
 }
 
@@ -574,7 +583,11 @@ impl From<RoomMember> for RpcRoomMember {
             user_id: RpcUserId(member.user_id().into()),
             avatar_url: member.avatar_url().map(|uri| uri.to_string()),
             display_name: member.display_name().map(|s| s.to_string()),
-            power_level: member.power_level(),
+            power_level: match member.power_level() {
+                UserPowerLevel::Int(n) => RpcUserPowerLevel::Int(n.into()),
+                UserPowerLevel::Infinite => RpcUserPowerLevel::Infinite,
+                _ => panic!("item added to non exhaustive power level"),
+            },
             ignored: member.is_ignored(),
             membership,
         }
@@ -1239,6 +1252,7 @@ impl From<&MsgLikeKind> for RpcMsgLikeKind {
             MsgLikeKind::Redacted => RpcMsgLikeKind::Redacted,
             MsgLikeKind::Sticker(_) => RpcMsgLikeKind::Unknown,
             MsgLikeKind::UnableToDecrypt(_) => RpcMsgLikeKind::UnableToDecrypt,
+            MsgLikeKind::Other(_) => RpcMsgLikeKind::Unknown,
         }
     }
 }

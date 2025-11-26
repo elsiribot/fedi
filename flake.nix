@@ -9,7 +9,7 @@
     nixpkgs-unstable.url = "github:NixOS/nixpkgs/nixos-unstable";
     flake-utils.url = "github:numtide/flake-utils";
     fedimint-pkgs = {
-      url = "github:fedibtc/fedimint?ref=v0.8.0-fedi2";
+      url = "github:fedibtc/fedimint?ref=v0.9.0-fedi3";
     };
 
     fenix = {
@@ -228,15 +228,14 @@
             ];
 
             args = {
-              nativeBuildInputs =
-                [
-                  pkgs.wasm-bindgen-cli_0_2_100
-                  pkgs.geckodriver
-                  pkgs.wasm-pack
-                ]
-                ++ lib.optionals (!pkgs.stdenv.isDarwin) [
-                  pkgs.firefox
-                ];
+              nativeBuildInputs = [
+                pkgs.wasm-bindgen-cli_0_2_100
+                pkgs.geckodriver
+                pkgs.wasm-pack
+              ]
+              ++ lib.optionals (!pkgs.stdenv.isDarwin) [
+                pkgs.firefox
+              ];
             };
           }
           // lib.optionalAttrs stdenv.isDarwin {
@@ -362,6 +361,7 @@
                 pkgs.ruby
                 pkgs.perl
                 pkgs.pkg-config
+                pkgs.cmake
                 pkgs.mprocs
                 pkgs.bitcoind
                 pkgs.electrs
@@ -373,6 +373,8 @@
                 pkgs.sccache
                 pkgs.ripgrep
                 pkgs.lsof
+                pkgs.cmake
+                pkgs.rust-bindgen
 
                 pkgs.android-tools
                 androidSdk
@@ -492,7 +494,8 @@
             buildInputs = [
               # https://github.com/NixOS/nixpkgs/blob/b69aa4d1669d38591e2386c097fa6b449bcb46db/doc/stdenv/platform-notes.chapter.md?plain=1#L33
               # pkgs.apple-sdk_15
-            ] ++ prev.buildInputs;
+            ]
+            ++ prev.buildInputs;
             nativeBuildInputs =
               lib.optionals stdenv.isDarwin [
                 pkgs.bundler
@@ -503,57 +506,55 @@
                 pkgs.fs-dir-cache
               ]
               ++ prev.nativeBuildInputs;
-            shellHook =
-              prev.shellHook
-              + ''
-                # CocoaPods requires the terminal to be using UTF-8 encoding.
-                export LC_ALL=en_US.UTF-8
-                export LANG=en_US.UTF-8
+            shellHook = prev.shellHook + ''
+              # CocoaPods requires the terminal to be using UTF-8 encoding.
+              export LC_ALL=en_US.UTF-8
+              export LANG=en_US.UTF-8
 
-                # https://github.com/NixOS/nixpkgs/blob/f426a494337f326b99f14dcc20ea1b2dc4b3904f/pkgs/development/mobile/xcodeenv/build-app.nix#L122
-                export LD=/usr/bin/clang
-                export LD_FOR_TARGET=/usr/bin/clang
+              # https://github.com/NixOS/nixpkgs/blob/f426a494337f326b99f14dcc20ea1b2dc4b3904f/pkgs/development/mobile/xcodeenv/build-app.nix#L122
+              export LD=/usr/bin/clang
+              export LD_FOR_TARGET=/usr/bin/clang
 
-                # overwrite what stdenv from nixpkgs 24.11 seems to set
-                export DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer/
+              # overwrite what stdenv from nixpkgs 24.11 seems to set
+              export DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer/
 
-                # Detect Xcode version and configure accordingly
-                XCODE_VERSION=$(xcodebuild -version 2>/dev/null | head -1 | awk '{print $2}')
-                XCODE_MAJOR=$(cut -d. -f1 <<< "$XCODE_VERSION")
+              # Detect Xcode version and configure accordingly
+              XCODE_VERSION=$(xcodebuild -version 2>/dev/null | head -1 | awk '{print $2}')
+              XCODE_MAJOR=$(cut -d. -f1 <<< "$XCODE_VERSION")
 
-                if [ "$XCODE_MAJOR" -ge 26 ] 2>/dev/null; then
-                  # for Xcode 26.0+
-                  export MACOSX_DEPLOYMENT_TARGET="26.0"
-                  export IPHONEOS_DEPLOYMENT_TARGET="26.0"
-                  export BINDGEN_EXTRA_CLANG_ARGS="--target=arm64-apple-ios18.0-simulator -isysroot $(xcrun --sdk iphonesimulator --show-sdk-path 2>/dev/null)"
-                else
-                  # for Xcode <26.0
-                  export MACOSX_DEPLOYMENT_TARGET="18.0"
-                  export IPHONEOS_DEPLOYMENT_TARGET="18.0"
-                  # SDKROOT doesn't seem to be needed for the bridge to build on Xcode 26.0+
-                  export SDKROOT=/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk
-                fi
+              if [ "$XCODE_MAJOR" -ge 26 ] 2>/dev/null; then
+                # for Xcode 26.0+
+                export MACOSX_DEPLOYMENT_TARGET="26.0"
+                export IPHONEOS_DEPLOYMENT_TARGET="26.0"
+                export BINDGEN_EXTRA_CLANG_ARGS="--target=arm64-apple-ios18.0-simulator -isysroot $(xcrun --sdk iphonesimulator --show-sdk-path 2>/dev/null)"
+              else
+                # for Xcode <26.0
+                export MACOSX_DEPLOYMENT_TARGET="18.0"
+                export IPHONEOS_DEPLOYMENT_TARGET="18.0"
+                # SDKROOT doesn't seem to be needed for the bridge to build on Xcode 26.0+
+                export SDKROOT=/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk
+              fi
 
-                # TODO: should we just switch the approach we use in flakebox for Darwin?
-                unset CC_aarch64_apple_ios
-                unset CC_aarch64_apple_darwin
-                unset CC_aarch64_apple_ios_sim
-                unset CC_x86_64_apple_ios
-                unset CC_x86_64_apple_ios_sim
-                unset CC_x86_64_apple_darwin
-                unset CXX_aarch64_apple_ios
-                unset CXX_aarch64_apple_darwin
-                unset CXX_aarch64_apple_ios_sim
-                unset CXX_x86_64_apple_ios
-                unset CXX_x86_64_apple_ios_sim
-                unset CXX_x86_64_apple_darwin
-                unset LD_aarch64_apple_ios
-                unset LD_aarch64_apple_darwin
-                unset LD_aarch64_apple_ios_sim
-                unset LD_x86_64_apple_ios
-                unset LD_x86_64_apple_ios_sim
-                unset LD_x86_64_apple_darwin
-              '';
+              # TODO: should we just switch the approach we use in flakebox for Darwin?
+              unset CC_aarch64_apple_ios
+              unset CC_aarch64_apple_darwin
+              unset CC_aarch64_apple_ios_sim
+              unset CC_x86_64_apple_ios
+              unset CC_x86_64_apple_ios_sim
+              unset CC_x86_64_apple_darwin
+              unset CXX_aarch64_apple_ios
+              unset CXX_aarch64_apple_darwin
+              unset CXX_aarch64_apple_ios_sim
+              unset CXX_x86_64_apple_ios
+              unset CXX_x86_64_apple_ios_sim
+              unset CXX_x86_64_apple_darwin
+              unset LD_aarch64_apple_ios
+              unset LD_aarch64_apple_darwin
+              unset LD_aarch64_apple_ios_sim
+              unset LD_x86_64_apple_ios
+              unset LD_x86_64_apple_ios_sim
+              unset LD_x86_64_apple_darwin
+            '';
           });
           # tool for managing pwa deployment
           vercel = crossDevShell.overrideAttrs (prev: {

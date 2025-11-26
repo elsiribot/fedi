@@ -106,6 +106,7 @@ erased-serde = "0.4"
 futures = "0.3"
 getrandom = "0.3.1"
 hex = { version = "0.4.2" }
+imbl = "6"
 impl-tools = "0.10.0"
 itertools = "0.14"
 nostr = { version = "0.44", default-features = false, features = [
@@ -128,34 +129,35 @@ tokio = "1"
 ts-rs = "11"
 tracing = "0.1.37"
 tracing-subscriber = { version = "0.3.16", features = ["env-filter"] }
-matrix-sdk = { git = "https://github.com/fedibtc/matrix-rust-sdk", tag = "v0.13.0-fedi7", default-features = false }
-matrix-sdk-ui = { git = "https://github.com/fedibtc/matrix-rust-sdk", tag = "v0.13.0-fedi7", default-features = false }
+matrix-sdk-base = { git = "https://github.com/fedibtc/matrix-rust-sdk", tag = "fedi/matrix-sdk-ffi/20251104", default-features = false }
+matrix-sdk = { git = "https://github.com/fedibtc/matrix-rust-sdk", tag = "fedi/matrix-sdk-ffi/20251104", default-features = false }
+matrix-sdk-ui = { git = "https://github.com/fedibtc/matrix-rust-sdk", tag = "fedi/matrix-sdk-ffi/20251104", default-features = false }
 
 fedimint_threshold_crypto = { version = "0.2.1", package = "fedimint-threshold-crypto" }
 
-fedimintd = { git = "https://github.com/fedibtc/fedimint", tag = "v0.8.0-fedi18" }
-fedimint-cli = { git = "https://github.com/fedibtc/fedimint", tag = "v0.8.0-fedi18" }
-fedimint-build = { git = "https://github.com/fedibtc/fedimint", tag = "v0.8.0-fedi18" }
-fedimint-core = { git = "https://github.com/fedibtc/fedimint", tag = "v0.8.0-fedi18" }
-fedimint-server = { git = "https://github.com/fedibtc/fedimint", tag = "v0.8.0-fedi18" }
-fedimint-server-core = { git = "https://github.com/fedibtc/fedimint", tag = "v0.8.0-fedi18" }
-fedimint-client = { git = "https://github.com/fedibtc/fedimint", tag = "v0.8.0-fedi18" }
-fedimint-client-module = { git = "https://github.com/fedibtc/fedimint", tag = "v0.8.0-fedi18" }
-fedimint-tbs = { git = "https://github.com/fedibtc/fedimint", tag = "v0.8.0-fedi18" }
-fedimint-api-client = { git = "https://github.com/fedibtc/fedimint", tag = "v0.8.0-fedi18" }
-fedimint-derive-secret = { git = "https://github.com/fedibtc/fedimint", tag = "v0.8.0-fedi18" }
-fedimint-mint-client = { git = "https://github.com/fedibtc/fedimint", tag = "v0.8.0-fedi18" }
-fedimint-wallet-client = { git = "https://github.com/fedibtc/fedimint", tag = "v0.8.0-fedi18" }
-fedimint-ln-client = { git = "https://github.com/fedibtc/fedimint", tag = "v0.8.0-fedi18" }
-fedimint-ln-common = { git = "https://github.com/fedibtc/fedimint", tag = "v0.8.0-fedi18" }
-fedimint-meta-client = { git = "https://github.com/fedibtc/fedimint", tag = "v0.8.0-fedi18" }
-fedimint-aead = { git = "https://github.com/fedibtc/fedimint", tag = "v0.8.0-fedi18" }
-fedimint-rocksdb = { git = "https://github.com/fedibtc/fedimint", tag = "v0.8.0-fedi18" }
-fedimint-bip39 = { git = "https://github.com/fedibtc/fedimint", tag = "v0.8.0-fedi18" }
-fedimint-logging = { git = "https://github.com/fedibtc/fedimint", tag = "v0.8.0-fedi18" }
-fedimint-portalloc = { git = "https://github.com/fedibtc/fedimint", tag = "v0.8.0-fedi18" }
-devimint = { git = "https://github.com/fedibtc/fedimint", tag = "v0.8.0-fedi18" }
-ln-gateway = { git = "https://github.com/fedibtc/fedimint", tag = "v0.8.0-fedi18" }
+fedimintd = { git = "https://github.com/fedibtc/fedimint", tag = "v0.9.0-fedi5" }
+fedimint-cli = { git = "https://github.com/fedibtc/fedimint", tag = "v0.9.0-fedi5" }
+fedimint-build = { git = "https://github.com/fedibtc/fedimint", tag = "v0.9.0-fedi5" }
+fedimint-core = { git = "https://github.com/fedibtc/fedimint", tag = "v0.9.0-fedi5" }
+fedimint-server = { git = "https://github.com/fedibtc/fedimint", tag = "v0.9.0-fedi5" }
+fedimint-server-core = { git = "https://github.com/fedibtc/fedimint", tag = "v0.9.0-fedi5" }
+fedimint-client = { git = "https://github.com/fedibtc/fedimint", tag = "v0.9.0-fedi5" }
+fedimint-client-module = { git = "https://github.com/fedibtc/fedimint", tag = "v0.9.0-fedi5" }
+fedimint-tbs = { git = "https://github.com/fedibtc/fedimint", tag = "v0.9.0-fedi5" }
+fedimint-api-client = { git = "https://github.com/fedibtc/fedimint", tag = "v0.9.0-fedi5" }
+fedimint-derive-secret = { git = "https://github.com/fedibtc/fedimint", tag = "v0.9.0-fedi5" }
+fedimint-mint-client = { git = "https://github.com/fedibtc/fedimint", tag = "v0.9.0-fedi5" }
+fedimint-wallet-client = { git = "https://github.com/fedibtc/fedimint", tag = "v0.9.0-fedi5" }
+fedimint-ln-client = { git = "https://github.com/fedibtc/fedimint", tag = "v0.9.0-fedi5" }
+fedimint-ln-common = { git = "https://github.com/fedibtc/fedimint", tag = "v0.9.0-fedi5" }
+fedimint-meta-client = { git = "https://github.com/fedibtc/fedimint", tag = "v0.9.0-fedi5" }
+fedimint-aead = { git = "https://github.com/fedibtc/fedimint", tag = "v0.9.0-fedi5" }
+fedimint-rocksdb = { git = "https://github.com/fedibtc/fedimint", tag = "v0.9.0-fedi5" }
+fedimint-bip39 = { git = "https://github.com/fedibtc/fedimint", tag = "v0.9.0-fedi5" }
+fedimint-logging = { git = "https://github.com/fedibtc/fedimint", tag = "v0.9.0-fedi5" }
+fedimint-portalloc = { git = "https://github.com/fedibtc/fedimint", tag = "v0.9.0-fedi5" }
+devimint = { git = "https://github.com/fedibtc/fedimint", tag = "v0.9.0-fedi5" }
+ln-gateway = { git = "https://github.com/fedibtc/fedimint", tag = "v0.9.0-fedi5" }
 
 
 # Uncomment these to use local fedimint v2
@@ -231,6 +233,8 @@ debug = false
 [patch.crates-io]
 # https://github.com/mozilla/uniffi-rs/issues/1938
 uniffi = { git = "https://github.com/mozilla/uniffi-rs", rev = "f5fc9d7e9aa08889aedc45dd81ae9b4d3ec4cbe8" }
-iroh = { git = "https://github.com/elsirion/iroh", branch = "v0.35.0-no-holepunch" }
-iroh-base = { git = "https://github.com/elsirion/iroh", branch = "v0.35.0-no-holepunch" }
-iroh-relay = { git = "https://github.com/elsirion/iroh", branch = "v0.35.0-no-holepunch" }
+iroh = { git = "https://github.com/fedibtc/iroh", branch = "ma/0.35.0-no-holepunch" }
+iroh-base = { git = "https://github.com/fedibtc/iroh", branch = "ma/0.35.0-no-holepunch" }
+iroh-relay = { git = "https://github.com/fedibtc/iroh", branch = "ma/0.35.0-no-holepunch" }
+# matrix sdk needs fork of indexed_db_futures
+indexed_db_futures = { git = "https://github.com/matrix-org/rust-indexed-db", rev = "201caac274e38756c6e523ba7cf84ffb625b7c48" }
