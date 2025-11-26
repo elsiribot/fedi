@@ -129,9 +129,9 @@ tokio = "1"
 ts-rs = "11"
 tracing = "0.1.37"
 tracing-subscriber = { version = "0.3.16", features = ["env-filter"] }
-matrix-sdk-base = { git = "https://github.com/fedibtc/matrix-rust-sdk", tag = "fedi/matrix-sdk-ffi/20251104", default-features = false }
-matrix-sdk = { git = "https://github.com/fedibtc/matrix-rust-sdk", tag = "fedi/matrix-sdk-ffi/20251104", default-features = false }
-matrix-sdk-ui = { git = "https://github.com/fedibtc/matrix-rust-sdk", tag = "fedi/matrix-sdk-ffi/20251104", default-features = false }
+matrix-sdk-base = { git = "https://github.com/fedibtc/matrix-rust-sdk", tag = "fedi/matrix-sdk-ffi/20251118-3", default-features = false }
+matrix-sdk = { git = "https://github.com/fedibtc/matrix-rust-sdk", tag = "fedi/matrix-sdk-ffi/20251118-3", default-features = false }
+matrix-sdk-ui = { git = "https://github.com/fedibtc/matrix-rust-sdk", tag = "fedi/matrix-sdk-ffi/20251118-3", default-features = false }
 
 fedimint_threshold_crypto = { version = "0.2.1", package = "fedimint-threshold-crypto" }
 
@@ -237,4 +237,4 @@ iroh = { git = "https://github.com/fedibtc/iroh", branch = "ma/0.35.0-no-holepun
 iroh-base = { git = "https://github.com/fedibtc/iroh", branch = "ma/0.35.0-no-holepunch" }
 iroh-relay = { git = "https://github.com/fedibtc/iroh", branch = "ma/0.35.0-no-holepunch" }
 # matrix sdk needs fork of indexed_db_futures
-indexed_db_futures = { git = "https://github.com/matrix-org/rust-indexed-db", rev = "201caac274e38756c6e523ba7cf84ffb625b7c48" }
+indexed_db_futures = { git = "https://github.com/fedibtc/rust-indexed-db", tag = "0.6.4-fedi1" }
