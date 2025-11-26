@@ -38,7 +38,9 @@ type ErrorResponse = {
 
 const log = makeLog('useIFrameListener')
 
-export function useIFrameListener(ref: React.RefObject<HTMLIFrameElement>) {
+export function useIFrameListener(
+    ref: React.RefObject<HTMLIFrameElement | null>,
+) {
     const dispatch = useAppDispatch()
 
     const nostrPublic = useAppSelector(selectNostrNpub)

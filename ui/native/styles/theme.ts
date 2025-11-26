@@ -1,11 +1,8 @@
 import { DefaultTheme as NavigationDefaultTheme } from '@react-navigation/native'
 import { ButtonProps, createTheme, lightColors } from '@rneui/themed'
 import { Dimensions, ViewStyle } from 'react-native'
-import LinearGradient from 'react-native-linear-gradient'
 
 import { theme as fediTheme } from '@fedi/common/constants/theme'
-
-import { BubbleGradient } from '../components/ui/BubbleView'
 
 const dimensions = Dimensions.get('window')
 
@@ -174,41 +171,24 @@ const theme = createTheme({
                           color: theme.colors?.primary,
                       }
                     : {}),
+
+                ...(props.night || shouldShowDefaultButtonBackground(props)
+                    ? {
+                          experimental_backgroundImage: `linear-gradient(180deg, ${fediTheme.nightLinearGradient.join(', ')})`,
+                      }
+                    : {}),
+
+                ...(props.bubble
+                    ? {
+                          experimental_backgroundImage: `linear-gradient(to bottom, ${fediTheme.dayLinearGradient.join(', ')})`,
+                      }
+                    : {}),
+                ...(props.day
+                    ? {
+                          experimental_backgroundImage: `linear-gradient(to bottom, ${fediTheme.dayLinearGradient.join(', ')})`,
+                      }
+                    : {}),
             },
-            ...(props.night || shouldShowDefaultButtonBackground(props)
-                ? {
-                      ViewComponent: LinearGradient,
-                      linearGradientProps: {
-                          locations: [0, 1],
-                          colors: fediTheme.nightLinearGradient,
-                          useAngle: true,
-                          angle: 180,
-                      },
-                  }
-                : {}),
-            ...(props.bubble
-                ? {
-                      // Fixes a typescript error due to BubbleView being a
-                      // FC instead of a Class component
-                      ViewComponent:
-                          BubbleGradient as unknown as typeof LinearGradient,
-                      linearGradientProps: {
-                          colors: fediTheme.dayLinearGradient,
-                          start: { x: 0, y: 0 },
-                          end: { x: 0, y: 1 },
-                      },
-                  }
-                : {}),
-            ...(props.day
-                ? {
-                      ViewComponent: LinearGradient,
-                      linearGradientProps: {
-                          colors: fediTheme.dayLinearGradient,
-                          start: { x: 0, y: 0 },
-                          end: { x: 0, y: 1 },
-                      },
-                  }
-                : {}),
         }),
         Text: props => ({
             // Don't allow titles to get insane font size multipliers

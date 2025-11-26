@@ -11,7 +11,6 @@ import {
     View,
 } from 'react-native'
 import Hyperlink from 'react-native-hyperlink'
-import LinearGradient from 'react-native-linear-gradient'
 
 import { type CommunityPreview as CommunityPreviewType } from '@fedi/common/types'
 import {
@@ -118,10 +117,7 @@ const CommunityPreview: React.FC<Props> = ({
         <SafeAreaContainer edges="notop" style={s.joinPreviewContainer}>
             <Flex grow shrink style={s.federationInfoContainer}>
                 {showTopShadow && (
-                    <LinearGradient
-                        style={[s.scrollInsetShadow, s.scrollTopShadow]}
-                        colors={['rgba(0,0,0,0.05)', 'rgba(0,0,0,0)']}
-                    />
+                    <View style={[s.scrollInsetShadow, s.scrollTopShadow]} />
                 )}
                 <ScrollView
                     contentContainerStyle={s.federationInfoScrollView}
@@ -151,10 +147,7 @@ const CommunityPreview: React.FC<Props> = ({
                     </View>
                 </ScrollView>
                 {showBottomShadow && (
-                    <LinearGradient
-                        style={[s.scrollInsetShadow, s.scrollBottomShadow]}
-                        colors={['rgba(0,0,0,0)', 'rgba(0,0,0,0.05)']}
-                    />
+                    <View style={[s.scrollInsetShadow, s.scrollBottomShadow]} />
                 )}
             </Flex>
 
@@ -247,9 +240,13 @@ const styles = (theme: Theme) =>
         },
         scrollTopShadow: {
             top: 0,
+            experimental_backgroundImage:
+                'linear-gradient(to bottom, rgba(0,0,0,0.05), rgba(0,0,0,0))',
         },
         scrollBottomShadow: {
             bottom: 0,
+            experimental_backgroundImage:
+                'linear-gradient(to bottom, rgba(0,0,0,0), rgba(0,0,0,0.05))',
         },
         scrollInsetShadow: {
             position: 'absolute',

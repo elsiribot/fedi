@@ -35,6 +35,23 @@ jest.mock('js-lnurl', () => ({
     getParams: jest.fn(() => Promise.resolve({})),
 }))
 
+jest.mock('react-native-mmkv', () => {
+    const mockMMKV = {
+        set: jest.fn(),
+        getString: jest.fn(),
+        getNumber: jest.fn(),
+        getBoolean: jest.fn(),
+        contains: jest.fn(),
+        delete: jest.fn(),
+        getAllKeys: jest.fn(() => []),
+        clearAll: jest.fn(),
+        trim: jest.fn(),
+    }
+    return {
+        MMKV: jest.fn(() => mockMMKV),
+    }
+})
+
 // Mock native SVGs to return mock functions for every key
 jest.mock('@fedi/native/assets/images/svgs', () => {
     const actual = jest.requireActual('@fedi/native/assets/images/svgs')
@@ -257,14 +274,6 @@ export const I18nProvider = ({ children }: any) => {
     const React = jest.requireActual('react')
     return React.createElement(I18nextProvider, { i18n }, children)
 }
-
-jest.mock('react-native-linear-gradient', () => ({
-    __esModule: true,
-    default: ({ children }: any) => {
-        const React = jest.requireActual('react')
-        return React.createElement(React.Fragment, null, children)
-    },
-}))
 
 jest.mock('react-native-quick-base64', () => ({
     QuickBase64: {

@@ -3,7 +3,6 @@ import { Theme, useTheme } from '@rneui/themed'
 import React from 'react'
 import { useTranslation } from 'react-i18next'
 import { Pressable, StyleSheet } from 'react-native'
-import { LinearGradientProps } from 'react-native-linear-gradient'
 
 import { theme as fediTheme } from '@fedi/common/constants/theme'
 import { useIsStabilityPoolEnabledByFederation } from '@fedi/common/hooks/federation'
@@ -66,11 +65,6 @@ const StabilityWallet: React.FC<Props> = ({
     )
 
     const style = styles(theme)
-    const gradientProps: LinearGradientProps = {
-        colors: [...fediTheme.dayLinearGradient],
-        start: { x: 0, y: 0 },
-        end: { x: 0, y: 1 },
-    }
 
     const handleDeposit = () => {
         if (stabilityPoolDisabledByFederation) {
@@ -134,7 +128,7 @@ const StabilityWallet: React.FC<Props> = ({
     return (
         <Pressable onPress={handlePress}>
             <BubbleCard
-                linearGradientProps={gradientProps}
+                gradientColors={[...fediTheme.dayLinearGradient]}
                 containerStyle={style.card}>
                 <Pressable style={style.header} onPress={handleHeaderPress}>
                     {/* Icon, title, and chevron grouped together */}

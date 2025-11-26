@@ -114,7 +114,7 @@ const Router = () => {
     }, [])
 
     const toast = useToast()
-    const routeRef = useRef<string>()
+    const routeRef = useRef<string | undefined>(undefined)
 
     // Logs changes in navigation state for debugging
     const handleStateChange = useCallback(() => {

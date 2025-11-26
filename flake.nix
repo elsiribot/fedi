@@ -166,6 +166,7 @@
             platforms-android-35
             emulator
             ndk-26-1-10909125
+            ndk-27-1-12297006
             cmake-3-22-1
             tools
             system-images-android-25-google-apis-x86-64
