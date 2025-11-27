@@ -12,7 +12,7 @@ import {
     COMMUNITY_TOOL_URL_STAGING,
 } from '@fedi/common/constants/fedimods'
 import { ParserDataType } from '@fedi/common/types'
-import { isDev } from '@fedi/common/utils/environment'
+import { isDev, isNightly } from '@fedi/common/utils/environment'
 
 import { onboardingJoinRoute } from '../../constants/routes'
 import { keyframes, styled, theme } from '../../styles'
@@ -192,7 +192,7 @@ export function OnboardingCommunities() {
             {showBrowser && (
                 <FediBrowser
                     url={
-                        isDev()
+                        isDev() || isNightly() // localhost or fedi-ashen
                             ? COMMUNITY_TOOL_URL_STAGING
                             : COMMUNITY_TOOL_URL_PROD
                     }
