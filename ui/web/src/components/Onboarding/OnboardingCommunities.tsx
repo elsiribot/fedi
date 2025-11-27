@@ -1,4 +1,3 @@
-/* eslint-disable no-console */
 import Image from 'next/image'
 import { useRouter } from 'next/router'
 import { useEffect, useState } from 'react'
@@ -118,7 +117,6 @@ export function OnboardingCommunities() {
     let actions: React.ReactElement | null = null
 
     const showStagingUrl = isDev() || isNightly()
-    console.log('HIT', isDev(), isNightly(), showStagingUrl)
 
     if (activeTab === 'join') {
         body = (
