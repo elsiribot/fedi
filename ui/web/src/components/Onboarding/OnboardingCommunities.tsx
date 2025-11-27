@@ -1,3 +1,4 @@
+/* eslint-disable no-console */
 import Image from 'next/image'
 import { useRouter } from 'next/router'
 import { useEffect, useState } from 'react'
@@ -116,6 +117,9 @@ export function OnboardingCommunities() {
     let body: React.ReactElement
     let actions: React.ReactElement | null = null
 
+    const showStagingUrl = isDev() || isNightly()
+    console.log('HIT', isDev(), isNightly(), showStagingUrl)
+
     if (activeTab === 'join') {
         body = (
             <OmniInputWrapper>
@@ -192,7 +196,7 @@ export function OnboardingCommunities() {
             {showBrowser && (
                 <FediBrowser
                     url={
-                        isDev() || isNightly() // localhost or fedi-ashen
+                        showStagingUrl
                             ? COMMUNITY_TOOL_URL_STAGING
                             : COMMUNITY_TOOL_URL_PROD
                     }
