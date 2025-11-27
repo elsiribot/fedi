@@ -68,6 +68,7 @@ const NIGHTLY_PERMISSIONS: MiniAppPermissionsById = {
 // change as needed
 const DEV_PERMISSIONS: MiniAppPermissionsById = {
     'http://localhost': [...miniAppPermissionTypes],
+    'http://localhost:3022': [...miniAppPermissionTypes],
     'http://127.0.0.1': [...miniAppPermissionTypes],
     'http://10.0.2.2:3022': [...miniAppPermissionTypes], // host for android emulator
     // so devs can use staging version of 1st party miniapps if they want

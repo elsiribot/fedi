@@ -110,6 +110,7 @@ export const Dialog: React.FC<Props> = ({
         title,
         description,
         disableClose,
+        hideCloseButton,
         mobileDismissBack,
         isSm,
         titleLeft,
