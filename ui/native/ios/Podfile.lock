@@ -1431,6 +1431,8 @@ PODS:
   - react-native-pure-jwt (3.0.3):
     - JWT (= 3.0.0-beta.12)
     - React
+  - react-native-quick-base64 (2.2.2):
+    - React-Core
   - react-native-quick-crypto (0.7.17):
     - DoubleConversion
     - glog
@@ -2460,6 +2462,7 @@ DEPENDENCIES:
   - react-native-mmkv (from `../../node_modules/react-native-mmkv`)
   - "react-native-netinfo (from `../../node_modules/@react-native-community/netinfo`)"
   - react-native-pure-jwt (from `../../node_modules/react-native-pure-jwt`)
+  - react-native-quick-base64 (from `../../node_modules/react-native-quick-base64`)
   - react-native-quick-crypto (from `../../node_modules/react-native-quick-crypto`)
   - react-native-safe-area-context (from `../../node_modules/react-native-safe-area-context`)
   - react-native-splash-screen (from `../../node_modules/react-native-splash-screen`)
@@ -2639,6 +2642,8 @@ EXTERNAL SOURCES:
     :path: "../../node_modules/@react-native-community/netinfo"
   react-native-pure-jwt:
     :path: "../../node_modules/react-native-pure-jwt"
+  react-native-quick-base64:
+    :path: "../../node_modules/react-native-quick-base64"
   react-native-quick-crypto:
     :path: "../../node_modules/react-native-quick-crypto"
   react-native-safe-area-context:
@@ -2812,6 +2817,7 @@ SPEC CHECKSUMS:
   react-native-mmkv: 56529b171eec4456a3c475bbc6c9187c3e98618e
   react-native-netinfo: f0a9899081c185db1de5bb2fdc1c88c202a059ac
   react-native-pure-jwt: 0d332f378799316e6e7a79a7e262a246d907cdfb
+  react-native-quick-base64: d87272898345e0fc3c3afb8e5dff335d51214f3e
   react-native-quick-crypto: 9418a50d82613b425f665b40d1ac1c795766e404
   react-native-safe-area-context: 63e27bb3aeb2c0ef652f8913d731573932080ff9
   react-native-splash-screen: 4312f786b13a81b5169ef346d76d33bc0c6dc457
