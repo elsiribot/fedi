@@ -17,6 +17,7 @@ import { styled, theme } from '../styles'
 import { AmountInput } from './AmountInput'
 import { Button } from './Button'
 import { Checkbox } from './Checkbox'
+import { FederationWalletSelector } from './FederationWalletSelector'
 import { Row } from './Flex'
 import { QRCode } from './QRCode'
 import { Text } from './Text'
@@ -166,6 +167,7 @@ export const SendOffline: React.FC<Props> = ({
         return (
             <>
                 <AmountContainer>
+                    <FederationWalletSelector />
                     <AmountInput
                         amount={amount}
                         federationId={federationId}
@@ -198,6 +200,9 @@ const AmountContainer = styled('div', {
     display: 'flex',
     flexDirection: 'column',
     padding: '32px 0',
+    justifyContent: 'center',
+    alignItems: 'center',
+    width: '100%',
 })
 
 const HelpText = styled('div', {
