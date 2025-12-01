@@ -57,7 +57,7 @@ export type RootStackParamList = {
     BitcoinRequest: { invoice: string; federationId?: Federation['id'] }
     BugReportSuccess: undefined
     CameraPermission: { nextScreen: keyof RootStackParamList } | undefined
-    ChatImageViewer: { uri: string }
+    ChatImageViewer: { uri: string; downloadable?: boolean }
     ChatsListSearch: { initialQuery?: string }
     ChatConversationSearch: { roomId: string; initialQuery?: string }
     ChatRoomConversation: {
