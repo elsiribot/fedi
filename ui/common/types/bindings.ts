@@ -40,6 +40,15 @@ export type BridgeOffboardingReason =
  */
 export type CommunityMetadataUpdatedEvent = { newCommunity: RpcCommunity };
 
+/**
+ * Notify front-end that a particular v1 community has been migrated to the
+ * specified v2 community
+ */
+export type CommunityMigratedToV2Event = {
+  v1InviteCode: string;
+  v2Community: RpcCommunity;
+};
+
 export type CreateRoomRequest = JSONObject;
 
 /**
@@ -106,7 +115,8 @@ export type Event =
       stabilityPoolUnfilledDepositSwept: StabilityPoolUnfilledDepositSweptEvent;
     }
   | { communityMetadataUpdated: CommunityMetadataUpdatedEvent }
-  | { nonceReuseCheckFailed: NonceReuseCheckFailedEvent };
+  | { nonceReuseCheckFailed: NonceReuseCheckFailedEvent }
+  | { communityMigratedToV2: CommunityMigratedToV2Event };
 
 /**
  * We represent the catalog of all the features for a given runtime as a
@@ -1183,12 +1193,13 @@ export type RpcSignature = string;
 
 export type RpcSignedLnurlMessage = { signature: string; pubkey: RpcPublicKey };
 
-export type RpcSpv2ParsedPaymentAddress = {
-  /**
-   * do we know about the federation
-   */
-  federation_id: RpcFederationId | null;
-};
+export type RpcSpv2ParsedPaymentAddress =
+  | { type: "Joined"; federation_id: RpcFederationId; account_id: RpcAccountId }
+  | {
+      type: "NotJoined";
+      federation_invite: string | null;
+      account_id: RpcAccountId;
+    };
 
 export type RpcStabilityPoolAccountInfo = {
   idleBalance: RpcAmount;
@@ -2146,7 +2157,10 @@ export type spv2DepositToSeek = {
 
 export type spv2NextCycleStartTime = { federationId: RpcFederationId };
 
-export type spv2OurPaymentAddress = { federationId: RpcFederationId };
+export type spv2OurPaymentAddress = {
+  federationId: RpcFederationId;
+  includeInvite: boolean;
+};
 
 export type spv2ParsePaymentAddress = { address: string };
 
@@ -2156,7 +2170,8 @@ export type spv2SubscribeAccountInfo = {
 };
 
 export type spv2Transfer = {
-  paymentAddress: string;
+  federationId: RpcFederationId;
+  accountId: RpcAccountId;
   amount: RpcFiatAmount;
   frontendMeta: FrontendMetadata;
 };

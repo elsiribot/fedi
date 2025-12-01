@@ -2602,13 +2602,15 @@ async fn test_stability_pool_external_transfer_in(_dev_fed: DevFed) -> anyhow::R
         fedimint_core::task::sleep_in_test("spv2 deposit", Duration::from_millis(100)).await;
     }
 
-    let receiver_payment_address = spv2OurPaymentAddress(federation_receiver.clone()).await?;
+    let receiver_payment_address = spv2OurPaymentAddress(federation_receiver.clone(), false).await?;
+    let parsed = spv2ParsePaymentAddress(&bridge_sender.federations, receiver_payment_address).await?;
+    let account_id = parsed.account_id;
 
     // Sender transfers to receiver (external transfer from receiver's perspective)
     let transfer_amount = RpcFiatAmount(10_00);
     spv2Transfer(
-        &bridge_sender.federations,
-        receiver_payment_address,
+        federation_sender.clone(),
+        account_id,
         transfer_amount,
         FrontendMetadata::default(),
     )
