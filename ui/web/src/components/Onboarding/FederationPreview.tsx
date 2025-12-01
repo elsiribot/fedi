@@ -34,6 +34,7 @@ const FederationPreview: React.FC<Props> = ({
 
     const showJoinFederation = shouldShowJoinFederation(federation.meta)
     const [recoverFromScratch, setRecoverFromScratch] = useState(false)
+    const [joinAnyways, setJoinAnyways] = useState(false)
     const tosUrl = getFederationTosUrl(federation.meta)
     const welcomeMessage = getFederationWelcomeMessage(federation.meta)
     const popupInfo = usePopupFederationInfo(federation.meta)
@@ -53,6 +54,7 @@ const FederationPreview: React.FC<Props> = ({
                 <FederationEndedPreview
                     popupInfo={popupInfo}
                     federation={federation}
+                    setJoinAnyways={setJoinAnyways}
                 />
             </Content>
         )
@@ -62,6 +64,11 @@ const FederationPreview: React.FC<Props> = ({
                 <Button width="full" onClick={onBack}>
                     {t('phrases.go-back')}
                 </Button>
+                {joinAnyways && (
+                    <Button width="full" onClick={handleJoin}>
+                        {t('feature.federations.join-anyways')}
+                    </Button>
+                )}
             </>
         )
     } else {
