@@ -57,3 +57,13 @@ allprojects {
         }
     }
 }
+
+// Enforce NDK version globally across all subprojects to prevent packages
+// from trying to install their own NDK versions in the read-only Nix store
+subprojects { subproject ->
+    subproject.plugins.withId('com.android.library') {
+        subproject.android {
+            ndkVersion rootProject.ext.ndkVersion
+        }
+    }
+}
