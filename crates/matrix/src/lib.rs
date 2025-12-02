@@ -186,6 +186,15 @@ impl Matrix {
                     fedimint_core::task::sleep(Duration::from_millis(500)).await;
                 }
             });
+
+        let this = self.clone();
+        // manual spawn is needed because stop is async
+        self.runtime
+            .task_group
+            .spawn("matrix::stop_sync_on_shutdown", move |handle| async move {
+                handle.make_shutdown_rx().await;
+                this.sync_service.stop().await;
+            });
     }
 
     pub fn start_background_tasks(self: &Arc<Self>, encryption_passphrase: String) {
