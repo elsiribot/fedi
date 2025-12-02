@@ -321,7 +321,9 @@ export function useCreatedCommunities(communityId?: string) {
     const canEditCommunity = useMemo(() => {
         if (!communityId) return false
         return createdCommunities.some(
-            c => c.communityInvite.invite_code_str === communityId,
+            c =>
+                c.communityInvite.invite_code_str === communityId &&
+                c.communityInvite.type === 'nostr',
         )
     }, [createdCommunities, communityId])
 
