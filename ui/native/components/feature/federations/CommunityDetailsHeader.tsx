@@ -3,15 +3,10 @@ import { Text } from '@rneui/themed'
 import React from 'react'
 import { useTranslation } from 'react-i18next'
 
-import {
-    COMMUNITY_TOOL_URL,
-    COMMUNITY_TOOL_URL_PROD,
-    COMMUNITY_TOOL_URL_STAGING,
-} from '@fedi/common/constants/fedimods'
+import { COMMUNITY_TOOL_URL } from '@fedi/common/constants/fedimods'
 import { useCreatedCommunities } from '@fedi/common/hooks/federation'
 import { openMiniAppSession, selectCommunity } from '@fedi/common/redux'
 import { shouldShowInviteCode } from '@fedi/common/utils/FederationUtils'
-import { isDev, isNightly } from '@fedi/common/utils/environment'
 
 import { useAppDispatch, useAppSelector } from '../../../state/hooks'
 import { NavigationHook, RootStackParamList } from '../../../types/navigation'
@@ -32,34 +27,23 @@ const CommunityDetailsHeader: React.FC = () => {
     const { communityId } = route.params
     const community = useAppSelector(s => selectCommunity(s, communityId))
     const showInviteCode = shouldShowInviteCode(community?.meta || {})
-    const { canEditCommunity } = useCreatedCommunities(communityId)
+    const { canEditCommunity, editCommunityUrl } =
+        useCreatedCommunities(communityId)
 
     const handleEditCommunity = () => {
-        if (!community || community.communityInvite.type === 'legacy') return
+        if (!editCommunityUrl) return
 
-        const communityToolUrl =
-            isNightly() || isDev()
-                ? COMMUNITY_TOOL_URL_STAGING
-                : COMMUNITY_TOOL_URL_PROD
-
-        const url = new URL(communityToolUrl)
-
-        url.searchParams.set(
-            'editing',
-            community.communityInvite.community_uuid_hex,
-        )
-
-        const urlString = url.toString()
+        const url = editCommunityUrl.toString()
 
         dispatch(
             openMiniAppSession({
                 miniAppId: COMMUNITY_TOOL_URL,
-                url: urlString,
+                url,
             }),
         )
 
         navigation.navigate('FediModBrowser', {
-            url: urlString,
+            url,
         })
     }
 

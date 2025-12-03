@@ -3,6 +3,10 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 
 import { makeLog } from '@fedi/common/utils/log'
 
+import {
+    COMMUNITY_TOOL_URL_PROD,
+    COMMUNITY_TOOL_URL_STAGING,
+} from '../constants/fedimods'
 import { theme } from '../constants/theme'
 import {
     joinFederation,
@@ -30,6 +34,7 @@ import {
     createGuardianitoBot,
     selectGuardianitoBot,
     setGuardianitoBot,
+    selectCommunity,
 } from '../redux'
 import {
     CommunityPreview,
@@ -55,6 +60,7 @@ import {
     shouldShowOfflineWallet,
     shouldShowSocialRecovery,
 } from '../utils/FederationUtils'
+import { isDev, isNightly } from '../utils/environment'
 import { useFedimint } from './fedimint'
 import { useCommonDispatch, useCommonSelector } from './redux'
 import { useToast } from './toast'
@@ -305,6 +311,9 @@ export function useCreatedCommunities(communityId?: string) {
     const [createdCommunities, setCreatedCommunities] = useState<
         RpcCommunity[]
     >([])
+    const community = useCommonSelector(s =>
+        selectCommunity(s, communityId ?? ''),
+    )
 
     useEffect(() => {
         fedimint
@@ -327,7 +336,24 @@ export function useCreatedCommunities(communityId?: string) {
         )
     }, [createdCommunities, communityId])
 
-    return { createdCommunities, canEditCommunity }
+    const editCommunityUrl = useMemo(() => {
+        if (!community || community.communityInvite.type === 'legacy') return
+
+        const communityToolUrl =
+            isNightly() || isDev()
+                ? COMMUNITY_TOOL_URL_STAGING
+                : COMMUNITY_TOOL_URL_PROD
+        const url = new URL(communityToolUrl)
+
+        url.searchParams.set(
+            'editing',
+            community.communityInvite.community_uuid_hex,
+        )
+
+        return url
+    }, [community])
+
+    return { createdCommunities, canEditCommunity, editCommunityUrl }
 }
 
 // Only v2+ federations use secrets derived from single seed
