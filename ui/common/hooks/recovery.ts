@@ -213,5 +213,8 @@ export function useRecoveryProgress(federationId: Federation['id']) {
 
     return {
         progress,
+        formattedPercent: progress
+            ? `${Math.floor(progress * 100)}%`
+            : undefined,
     }
 }
