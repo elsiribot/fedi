@@ -618,7 +618,7 @@ const FediModBrowser: React.FC<Props> = ({ route }) => {
             req.url,
             fedimint,
             t,
-            paymentFederation?.id,
+            paymentFederation?.id || '',
             isInternetUnreachable,
         )
             .then(parsed => {
