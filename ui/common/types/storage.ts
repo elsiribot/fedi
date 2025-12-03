@@ -344,6 +344,11 @@ export interface StoredStateV37
     transactionDisplayType: 'sats' | 'fiat'
 }
 
+export interface StoredStateV38 extends Omit<StoredStateV37, 'version'> {
+    version: 38
+    newMods: FediMod['id'][]
+}
+
 /**
  * Consolidated type for older storage versions (0-24).
  * These are grouped together to reduce union type computation that slows down TSC performance.
@@ -397,9 +402,10 @@ export type AnyStoredState =
     | StoredStateV35
     | StoredStateV36
     | StoredStateV37
+    | StoredStateV38
 
 /*** Alias for the latest version of stored state ***/
-export type LatestStoredState = StoredStateV37
+export type LatestStoredState = StoredStateV38
 
 export interface StorageApi {
     getItem(key: string): Promise<string | null>
