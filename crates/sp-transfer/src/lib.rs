@@ -10,8 +10,8 @@
 //!   │                                 │                                │
 //!   │  1. PendingTransferStart        │                                │
 //!   │  (amount, federation_id, nonce) │                                │
-//!   │────────────────────────────────>│                                │
-//!   │                                 │───────────────────────────────>│
+//!   │────────────────────────────────>│───────────────────────────────>│
+//!   │                                 │                                │
 //!   │                                 │                                │
 //!   │                                 │     2. AnnounceAccount         │
 //!   │                                 │     (account_id, federation_id)│
@@ -31,14 +31,15 @@
 //!
 //! 1. Send PendingTransferStart
 //!  - Insert `TransferEvent { pending_transfer_id }` → `{ amount,
-//!    federation_id, room_id, sent_by }`
-//!  - Insert `PendingSenderTransferEvent { pending_transfer_id }` → `{ nonce }`
+//!    federation_id, room_id, sent_by, nonce }`
+//!  - Insert `SenderAwaitingAccountAnnounceEvent { pending_transfer_id }` →
+//!    `()`
 //!
 //! 2. Receive AnnounceAccount
 //!  - Insert `KnownReceiverAccountId { room_id, federation_id }` → `account_id`
 //!
 //! 3. Submit SPv2 transfer
-//!  - Remove `PendingSenderTransferEvent { pending_transfer_id }`
+//!  - Remove `SenderAwaitingAccountAnnounceEvent { pending_transfer_id }`
 //!  - On tx accepted: Insert `PendingCompletionNotification { room_id,
 //!    pending_transfer_id, ... }`
 //!
@@ -61,15 +62,15 @@
 //!
 //! ## Background Services
 //!
-//! - TransferCompleter (sender): Monitors `PendingSenderTransferEvent` entries
-//!   and submits SPv2 transfers once the receiver's account ID is known via
-//!   `KnownReceiverAccountId`.
+//! - TransferSubmitter (sender): Monitors `SenderAwaitingAccountAnnounceEvent`
+//!   entries and submits SPv2 transfers once the receiver's account ID is known
+//!   via `KnownReceiverAccountId`.
 //!
 //! - AccountIdResponder (receiver): Monitors `PendingReceiverAccountIdEvent`
 //!   entries and sends `AnnounceAccount` once the user has joined both the room
 //!   and the federation.
 //!
-//! - CompletionNotificationService (sender): Processes
+//! - TransferCompleteNotifier (sender): Processes
 //!   `PendingCompletionNotification` queue and sends `TransferSentHint`
 //!   messages after SPv2 transfer is accepted.
 //!

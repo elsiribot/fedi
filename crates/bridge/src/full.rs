@@ -14,7 +14,7 @@ use runtime::bridge_runtime::Runtime;
 use runtime::storage::state::{DeviceIdentifier, ModuleFediFeeSchedule};
 use serde::Serialize;
 use sp_transfer::services::SptServices;
-use sp_transfer::services::completion_notification_service::SptCompletionNotificationService;
+use sp_transfer::services::transfer_complete_notifier::SptTransferCompleteNotifier;
 use tracing::error;
 use ts_rs::TS;
 
@@ -101,8 +101,8 @@ impl BridgeFull {
 
         // Load communities and federations services
         let communities = Communities::init(runtime.clone(), nostril.clone()).await;
-        let spt_completion = Arc::new(SptCompletionNotificationService::new(runtime.clone()));
-        let spt_notifications = Arc::new(SptNotificationsProvider(spt_completion.clone()));
+        let spt_notifier = Arc::new(SptTransferCompleteNotifier::new(runtime.clone()));
+        let spt_notifications = Arc::new(SptNotificationsProvider(spt_notifier.clone()));
         let federations = Arc::new(Federations::new(
             runtime.clone(),
             multispend_notifications,
@@ -112,7 +112,7 @@ impl BridgeFull {
         federations.load_joined_federations_in_background().await;
 
         let spt_provider = Arc::new(SptFederationProviderWrapper(federations.clone()));
-        let sp_transfers_services = SptServices::new(runtime.clone(), spt_provider, spt_completion);
+        let sp_transfers_services = SptServices::new(runtime.clone(), spt_provider, spt_notifier);
 
         let nostr_pubkey = nostril.get_pub_key().await.unwrap().npub;
 
@@ -167,10 +167,10 @@ impl BridgeFull {
         let sp_transfers_services = self.sp_transfers_services.clone();
         let matrix = self.matrix.clone();
         self.runtime.task_group.spawn_cancellable(
-            "sp_transfers::CompletionNotificationService",
+            "sp_transfers::TransferCompleteNotifier",
             async move {
                 sp_transfers_services
-                    .completion_notification
+                    .transfer_complete_notifier
                     .run_continuously(matrix.wait_spt().await)
                     .await
             },
@@ -191,9 +191,9 @@ impl BridgeFull {
         let sp_transfers_services = self.sp_transfers_services.clone();
         self.runtime
             .task_group
-            .spawn_cancellable("sp_transfers::TransferCompleter", async move {
+            .spawn_cancellable("sp_transfers::TransferSubmitter", async move {
                 sp_transfers_services
-                    .transfer_completer
+                    .transfer_submitter
                     .run_continuously()
                     .await;
             });

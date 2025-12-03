@@ -181,6 +181,7 @@ pub trait SptNotifications: MaybeSend + MaybeSync {
         amount: FiatAmount,
         txid: TransactionId,
     );
+    async fn add_spt_failed_notification(&self, room: RpcRoomId, pending_transfer_id: RpcEventId);
 }
 
 mod backup_service;
@@ -258,7 +259,7 @@ pub struct FederationV2 {
     #[allow(clippy::type_complexity)]
     pub guardian_status_cache:
         Mutex<Option<(std::time::SystemTime, Result<Vec<GuardianStatus>, String>)>>,
-    pub sp_transfers_services: Arc<dyn SptNotifications>,
+    pub spt_notifications: Arc<dyn SptNotifications>,
 }
 
 /// Info about a federation fetching during preview. it is used during joining
@@ -299,7 +300,7 @@ impl FederationV2 {
         auxiliary_secret: DerivableSecret,
         fedi_fee_helper: Arc<FediFeeHelper>,
         multispend_services: Arc<dyn MultispendNotifications>,
-        sp_transfers_services: Arc<dyn SptNotifications>,
+        spt_notifications: Arc<dyn SptNotifications>,
         device_registration_service: Arc<DeviceRegistrationService>,
     ) -> Arc<Self> {
         let recovering = client.has_pending_recoveries();
@@ -320,7 +321,7 @@ impl FederationV2 {
             this_weak: weak.clone(),
             guard,
             multispend_services,
-            sp_transfers_services,
+            spt_notifications,
             spv2_sync_service: Default::default(),
             spv2_history_service: Default::default(),
             spv2_sweeper_service: Default::default(),
@@ -470,7 +471,7 @@ impl FederationV2 {
         guard: FederationLockGuard,
         fedi_fee_helper: Arc<FediFeeHelper>,
         multispend_services: Arc<dyn MultispendNotifications>,
-        sp_transfers_services: Arc<dyn SptNotifications>,
+        spt_notifications: Arc<dyn SptNotifications>,
         device_registration_service: Arc<DeviceRegistrationService>,
     ) -> anyhow::Result<Arc<Self>> {
         let root_mnemonic = runtime.app_state.root_mnemonic().await;
@@ -517,7 +518,7 @@ impl FederationV2 {
             auxiliary_secret,
             fedi_fee_helper,
             multispend_services,
-            sp_transfers_services,
+            spt_notifications,
             device_registration_service,
         )
         .await)
@@ -571,7 +572,7 @@ impl FederationV2 {
         recover_from_scratch: bool,
         fedi_fee_helper: Arc<FediFeeHelper>,
         multispend_services: Arc<dyn MultispendNotifications>,
-        sp_transfers_services: Arc<dyn SptNotifications>,
+        spt_notifications: Arc<dyn SptNotifications>,
         device_registration_service: Arc<DeviceRegistrationService>,
     ) -> Result<Arc<Self>> {
         let db_prefix = runtime
@@ -655,7 +656,7 @@ impl FederationV2 {
             auxiliary_secret,
             fedi_fee_helper,
             multispend_services,
-            sp_transfers_services,
+            spt_notifications,
             device_registration_service,
         )
         .await;
@@ -3602,7 +3603,7 @@ impl FederationV2 {
                                 room,
                                 pending_transfer_id,
                             }) => {
-                                self.sp_transfers_services
+                                self.spt_notifications
                                     .add_spt_completion_notification(
                                         room,
                                         pending_transfer_id,
@@ -3626,9 +3627,16 @@ impl FederationV2 {
                                     )
                                     .await;
                             }
+                            Ok(SPv2TransferMetadata::MatrixSpTransfer {
+                                room,
+                                pending_transfer_id,
+                            }) => {
+                                self.spt_notifications
+                                    .add_spt_failed_notification(room, pending_transfer_id)
+                                    .await;
+                            }
                             Ok(
-                                SPv2TransferMetadata::MatrixSpTransfer { .. }
-                                | SPv2TransferMetadata::StableBalance { .. }
+                                SPv2TransferMetadata::StableBalance { .. }
                                 | SPv2TransferMetadata::MultispendDeposit { .. },
                             )
                             | Err(_) => {}

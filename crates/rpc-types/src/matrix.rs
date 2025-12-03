@@ -1281,5 +1281,5 @@ impl From<&'_ Mentions> for RpcMentions {
 pub fn room_is_joined(client: &matrix_sdk::Client, room_id: &RoomId) -> bool {
     client
         .get_room(room_id)
-        .map_or(false, |r| matches!(r.state(), RoomState::Joined))
+        .is_some_and(|r| matches!(r.state(), RoomState::Joined))
 }

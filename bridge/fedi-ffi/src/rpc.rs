@@ -51,7 +51,6 @@ use rpc_types::matrix::{
 };
 use rpc_types::nostril::{RpcNostrPubkey, RpcNostrSecret};
 use rpc_types::sp_transfer::{RpcAccountId, RpcSpTransferState};
-use rpc_types::sp_transfer::RpcSpTransferState;
 use rpc_types::{
     FrontendMetadata, GuardianStatus, NetworkError, RpcAmount, RpcAppFlavor, RpcEcashInfo,
     RpcEventId, RpcFederation, RpcFederationId, RpcFederationMaybeLoading, RpcFederationPreview,

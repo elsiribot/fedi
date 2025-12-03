@@ -2,6 +2,8 @@ use std::sync::Arc;
 
 use anyhow::Context as _;
 use fedimint_core::db::{DatabaseTransaction, IDatabaseTransactionOpsCoreTyped as _};
+use fedimint_core::util::backoff_util::background_backoff;
+use fedimint_core::util::retry;
 use futures::StreamExt as _;
 use rpc_types::RpcEventId;
 use rpc_types::matrix::room_is_joined;
@@ -39,14 +41,21 @@ impl SptAccountIdResponder {
 
     pub async fn run_continuously(&self, sp_transfers_matrix: &SpTransfersMatrix) {
         loop {
-            self.run_once(sp_transfers_matrix).await;
+            retry(
+                "send sp_transfers account announcements",
+                background_backoff(),
+                || async { self.run_once(sp_transfers_matrix).await },
+            )
+            .await
+            .expect("never fail");
             self.notify.notified().await;
         }
     }
 
-    async fn run_once(&self, sp_transfers_matrix: &SpTransfersMatrix) {
+    async fn run_once(&self, sp_transfers_matrix: &SpTransfersMatrix) -> anyhow::Result<()> {
         let spt_db = self.runtime.sp_transfers_db();
         let mut dbtx = spt_db.begin_transaction().await;
+        let mut did_fail = false;
         let items = dbtx
             .find_by_prefix(&PendingReceiverAccountIdEventKeyPrefix)
             .await
@@ -59,15 +68,23 @@ impl SptAccountIdResponder {
             _,
         ) in items
         {
-            self.process_pending_item(
-                &mut dbtx.to_ref_nc(),
-                &pending_transfer_id,
-                sp_transfers_matrix,
-            )
-            .await
-            .ok();
+            if self
+                .process_pending_item(
+                    &mut dbtx.to_ref_nc(),
+                    &pending_transfer_id,
+                    sp_transfers_matrix,
+                )
+                .await
+                .is_err()
+            {
+                did_fail = true;
+            }
         }
         dbtx.commit_tx().await;
+        if did_fail {
+            anyhow::bail!("something failed, retrying")
+        }
+        Ok(())
     }
 
     #[instrument(skip_all, fields(pending_transfer_id = %pending_transfer_id.0), err)]
@@ -82,7 +99,7 @@ impl SptAccountIdResponder {
                 pending_transfer_id: pending_transfer_id.clone(),
             })
             .await
-            .context("pending without transfer details")?;
+            .context("pending without transfer details, db corrupt")?;
 
         // already done
         if resolve_status_db(dbtx, pending_transfer_id, &transfer).await

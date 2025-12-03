@@ -97,7 +97,7 @@ impl FederationStateMachine {
         recover_from_scratch: bool,
         fedi_fee_helper: &Arc<FediFeeHelper>,
         multispend_services: Arc<dyn MultispendNotifications>,
-        sp_transfers_services: Arc<dyn SptNotifications>,
+        spt_notifications: Arc<dyn SptNotifications>,
         device_registration_service: Arc<DeviceRegistrationService>,
     ) -> Result<Arc<FederationV2>> {
         let mut wstate = self.state.write().await;
@@ -119,7 +119,7 @@ impl FederationStateMachine {
             recover_from_scratch,
             fedi_fee_helper.clone(),
             multispend_services,
-            sp_transfers_services,
+            spt_notifications,
             device_registration_service.clone(),
         )
         .await?;
@@ -144,7 +144,7 @@ impl FederationStateMachine {
         locker: &FederationsLocker,
         fedi_fee_helper: &Arc<FediFeeHelper>,
         multispend_services: Arc<dyn MultispendNotifications>,
-        sp_transfers_services: Arc<dyn SptNotifications>,
+        spt_notifications: Arc<dyn SptNotifications>,
         device_registration_service: Arc<DeviceRegistrationService>,
     ) {
         let mut wstate = self.state.write().await;
@@ -158,7 +158,7 @@ impl FederationStateMachine {
                 federation_info,
                 fedi_fee_helper,
                 multispend_services,
-                sp_transfers_services,
+                spt_notifications,
                 device_registration_service.clone(),
                 guard,
             )
@@ -196,7 +196,7 @@ impl FederationStateMachine {
         federation_info: FederationInfo,
         fedi_fee_helper: &Arc<FediFeeHelper>,
         multispend_services: Arc<dyn MultispendNotifications>,
-        sp_transfers_services: Arc<dyn SptNotifications>,
+        spt_notifications: Arc<dyn SptNotifications>,
         device_registration_service: Arc<DeviceRegistrationService>,
         guard: FederationLockGuard,
     ) -> anyhow::Result<Arc<FederationV2>> {
@@ -206,7 +206,7 @@ impl FederationStateMachine {
             guard,
             fedi_fee_helper.clone(),
             multispend_services,
-            sp_transfers_services,
+            spt_notifications,
             device_registration_service,
         )
         .await
@@ -262,7 +262,7 @@ impl FederationStateMachine {
             client,
             guard,
             multispend_services,
-            sp_transfers_services,
+            spt_notifications,
             ..
         } = wait_for_unique(federation_arc).await;
         client.shutdown().await;
@@ -280,7 +280,7 @@ impl FederationStateMachine {
             guard,
             fedi_fee_helper,
             multispend_services,
-            sp_transfers_services,
+            spt_notifications,
             device_registration_service,
         )
         .await;

@@ -27,6 +27,9 @@ pub enum RpcSpTransferEvent {
         pending_transfer_id: RpcEventId,
         transaction_id: RpcTransactionId,
     },
+    TransferFailed {
+        pending_transfer_id: RpcEventId,
+    },
     AnnounceAccount {
         account_id: RpcAccountId,
         federation_id: RpcFederationId,
@@ -39,7 +42,10 @@ pub enum RpcSpTransferEvent {
 pub enum RpcSpTransferStatus {
     Pending,
     SentHint,
+    /// TODO: this state is not reachable right now, we need to check with
+    /// federation to reach this
     Complete,
+    Failed,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, TS, PartialEq, Eq)]

@@ -75,7 +75,9 @@ impl fmt::Display for Spv2PaymentAddress {
             Spv2PaymentAddressComponent::FederationIdPrefix(self.federation_id_prefix),
         ];
         if let Some(invite) = &self.federation_invite {
-            components.push(Spv2PaymentAddressComponent::FederationInvite(invite.clone()));
+            components.push(Spv2PaymentAddressComponent::FederationInvite(
+                invite.clone(),
+            ));
         }
         let data = components.consensus_encode_to_vec();
         let data = bech32::encode::<Bech32m>(HRP, &data).map_err(|_| fmt::Error)?;

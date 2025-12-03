@@ -203,6 +203,7 @@ async fn tests_wrapper_for_bridge() -> anyhow::Result<()> {
         multispend_tests::test_multispend_group_acceptance,
         multispend_tests::test_multispend_group_rejection,
         sp_transfer_tests::test_end_to_end,
+        sp_transfer_tests::test_receiver_joins_federation_later,
         // TODO: re-enable
         // test_lightning_send_and_receive,
         test_ecash,
@@ -2600,8 +2601,10 @@ async fn test_stability_pool_external_transfer_in(_dev_fed: DevFed) -> anyhow::R
         fedimint_core::task::sleep_in_test("spv2 deposit", Duration::from_millis(100)).await;
     }
 
-    let receiver_payment_address = spv2OurPaymentAddress(federation_receiver.clone(), false).await?;
-    let parsed = spv2ParsePaymentAddress(&bridge_sender.federations, receiver_payment_address).await?;
+    let receiver_payment_address =
+        spv2OurPaymentAddress(federation_receiver.clone(), false).await?;
+    let parsed =
+        spv2ParsePaymentAddress(&bridge_sender.federations, receiver_payment_address).await?;
     let account_id = parsed.account_id;
 
     // Sender transfers to receiver (external transfer from receiver's perspective)

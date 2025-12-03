@@ -4,7 +4,6 @@ use anyhow::{Context as _, bail};
 use async_stream::stream;
 use fedimint_core::db::{DatabaseTransaction, IDatabaseTransactionOpsCoreTyped};
 use fedimint_core::module::serde_json;
-use futures::FutureExt;
 use futures::stream::Stream;
 use matrix_sdk::Client;
 use matrix_sdk::deserialized_responses::TimelineEvent;
@@ -21,8 +20,9 @@ use tokio::sync::Notify;
 
 use crate::SP_TRANSFER_MSGTYPE;
 use crate::db::{
-    KnownReceiverAccountIdKey, PendingReceiverAccountIdEventKey, PendingSenderTransferEventKey,
-    PendingSenderTransferEventValue, TransferEventKey, TransferEventValue, TransferSentHintKey,
+    KnownReceiverAccountIdKey, PendingReceiverAccountIdEventKey,
+    SenderAwaitingAccountAnnounceEventKey, TransferEventKey, TransferEventValue, TransferFailedKey,
+    TransferSentHintKey,
 };
 use crate::services::SptServices;
 
@@ -43,7 +43,7 @@ impl SpTransfersMatrix {
         }
     }
 
-    pub async fn send_spt_event(
+    pub(crate) async fn send_spt_event(
         &self,
         room_id: &RoomId,
         event: RpcSpTransferEvent,
@@ -75,7 +75,7 @@ impl SpTransfersMatrix {
         self.client.event_cache().add_event_handler(
             move |room_id: &RoomId, event: &TimelineEvent| {
                 let this = this.clone();
-                async move {
+                Box::pin(async move {
                     let Some(this) = this.upgrade() else { return };
 
                     let Ok(AnySyncTimelineEvent::MessageLike(
@@ -100,27 +100,31 @@ impl SpTransfersMatrix {
                     let value = serde_json::Value::Object(data);
 
                     // Try to parse SP Transfers event
-                    if let Ok(event) = serde_json::from_value::<RpcSpTransferEvent>(value) {
-                        this.handle_event(
-                            &mut dbtx.to_ref_nc(),
-                            &room_id,
-                            &event_id,
-                            is_sender,
-                            sender_user.clone(),
-                            event,
-                        )
-                        .await;
+                    match serde_json::from_value::<RpcSpTransferEvent>(value) {
+                        Ok(event) => {
+                            this.handle_event(
+                                &mut dbtx.to_ref_nc(),
+                                room_id,
+                                &event_id,
+                                is_sender,
+                                sender_user.clone(),
+                                event,
+                            )
+                            .await;
+                        }
+                        Err(e) => {
+                            tracing::warn!(%e, "failed to parse sp_transfers event");
+                        }
                     }
 
                     dbtx.commit_tx().await;
 
                     // Trigger services after commit so they can see the new data
-                    this.services.transfer_completer.trigger();
+                    this.services.transfer_submitter.trigger();
                     this.services.account_id_responder.trigger();
                     // Notify observers about state changes
                     this.event_notify.notify_waiters();
-                }
-                .boxed()
+                })
             },
         );
     }
@@ -156,12 +160,11 @@ impl SpTransfersMatrix {
             let mut last_value: Option<RpcSpTransferState> = None;
             loop {
                 let notify = this.event_notify.notified();
-                if let Some(state) = crate::db::resolve_transfer_state(this.runtime.clone(), &pending_transfer_id).await {
-                    if last_value.as_ref() != Some(&state) {
+                if let Some(state) = crate::db::resolve_transfer_state(this.runtime.clone(), &pending_transfer_id).await
+                    && last_value.as_ref() != Some(&state) {
                         last_value = Some(state.clone());
                         yield state;
                     }
-                }
                 notify.await;
             }
         }
@@ -193,15 +196,16 @@ impl SpTransfersMatrix {
                         room_id: RpcRoomId(room_id.to_string()),
                         sent_by: sender_user,
                         federation_invite,
+                        nonce,
                     },
                 )
                 .await;
                 if is_sender {
                     dbtx.insert_entry(
-                        &PendingSenderTransferEventKey {
+                        &SenderAwaitingAccountAnnounceEventKey {
                             pending_transfer_id: event_id.clone(),
                         },
-                        &PendingSenderTransferEventValue { nonce },
+                        &(),
                     )
                     .await;
                 } else {
@@ -223,6 +227,17 @@ impl SpTransfersMatrix {
                         pending_transfer_id,
                     },
                     &transaction_id,
+                )
+                .await;
+            }
+            RpcSpTransferEvent::TransferFailed {
+                pending_transfer_id,
+            } => {
+                dbtx.insert_entry(
+                    &TransferFailedKey {
+                        pending_transfer_id,
+                    },
+                    &(),
                 )
                 .await;
             }
