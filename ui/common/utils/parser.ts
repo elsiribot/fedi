@@ -578,14 +578,18 @@ async function parseFediUri(
     try {
         const id = decodeFediMatrixUserUri(raw)
         // Fetch profile info for displayName
-        const { displayname } = await fedimint.matrixUserProfile({ userId: id })
+        const { data } = await fedimint.matrixUserProfile({ userId: id })
 
-        // TODO: narrow return type of matrixUserProfile RPC and remove this check
-        if (typeof displayname !== 'string') throw new Error()
+        if (data !== null && typeof data === 'object' && !Array.isArray(data)) {
+            const { displayname: displayName } = data
 
-        return {
-            type: ParserDataType.FediChatUser,
-            data: { id, displayName: displayname },
+            // TODO: narrow return type of matrixUserProfile RPC and remove this check
+            if (typeof displayName !== 'string') throw new Error()
+
+            return {
+                type: ParserDataType.FediChatUser,
+                data: { id, displayName },
+            }
         }
     } catch {
         // no-op

@@ -385,7 +385,8 @@ describe('parseUserInput', () => {
             throw Error('Failed to parse')
         },
         matrixUserProfile: async ({ userId }: { userId: string }) => {
-            if (userId === '@user:example.com') return { displayname: 'user' }
+            if (userId === '@user:example.com')
+                return { data: { displayname: 'user' } }
         },
     } as unknown as FedimintBridge
 
