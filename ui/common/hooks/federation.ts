@@ -712,6 +712,7 @@ export function useFederationStatus<I>({
         statusWord = t('words.online')
         statusMessage = t('feature.federations.connection-status-online')
     } else if (status === 'unstable') {
+        statusIconColor = theme.colors.lightOrange
         statusWord = t('words.unstable')
         statusMessage = t('feature.federations.connection-status-unstable')
     }
