@@ -400,7 +400,7 @@ describe('fedimods', () => {
     describe('isMiniAppNew', () => {
         it('should return true if mod is within threshold', () => {
             // arrange
-            const withinThreshold = NEW_MOD_EXPIRATION_THRESHOLD_MS - 1
+            const withinThreshold = NEW_MOD_EXPIRATION_THRESHOLD_MS - 1000
             const mod = newTestFediMod({
                 dateAdded: Date.now() - withinThreshold,
             })
