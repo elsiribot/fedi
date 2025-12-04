@@ -32,6 +32,9 @@ pub mod event;
 pub mod matrix;
 pub mod multispend;
 pub mod nostril;
+pub mod sp_transfer;
+
+pub use communities::{CommunityInvite, CommunityInviteV2};
 
 #[derive(Debug, Serialize, Deserialize, TS)]
 #[serde(rename_all = "camelCase")]
@@ -945,6 +948,11 @@ pub enum SPv2TransferMetadata {
     MultispendWithdrawal {
         room: RpcRoomId,
         request_id: RpcEventId,
+    },
+    /// Matrix SP transfer person-to-person transfer
+    MatrixSpTransfer {
+        room: RpcRoomId,
+        pending_transfer_id: RpcEventId,
     },
 }
 

@@ -171,6 +171,19 @@ pub trait MultispendNotifications: MaybeSend + MaybeSync {
     );
 }
 
+#[apply(async_trait_maybe_send!)]
+pub trait SptNotifications: MaybeSend + MaybeSync {
+    async fn add_spt_completion_notification(
+        &self,
+        room: RpcRoomId,
+        pending_transfer_id: RpcEventId,
+        federation_id: String,
+        amount: FiatAmount,
+        txid: TransactionId,
+    );
+    async fn add_spt_failed_notification(&self, room: RpcRoomId, pending_transfer_id: RpcEventId);
+}
+
 mod backup_service;
 mod ln_gateway_service;
 pub mod spv2_pay_address;
@@ -246,6 +259,7 @@ pub struct FederationV2 {
     #[allow(clippy::type_complexity)]
     pub guardian_status_cache:
         Mutex<Option<(std::time::SystemTime, Result<Vec<GuardianStatus>, String>)>>,
+    pub spt_notifications: Arc<dyn SptNotifications>,
 }
 
 /// Info about a federation fetching during preview. it is used during joining
@@ -278,6 +292,7 @@ impl FederationV2 {
         Ok(client_builder)
     }
 
+    #[allow(clippy::too_many_arguments)]
     pub async fn new(
         runtime: Arc<Runtime>,
         client: ClientHandle,
@@ -285,6 +300,7 @@ impl FederationV2 {
         auxiliary_secret: DerivableSecret,
         fedi_fee_helper: Arc<FediFeeHelper>,
         multispend_services: Arc<dyn MultispendNotifications>,
+        spt_notifications: Arc<dyn SptNotifications>,
         device_registration_service: Arc<DeviceRegistrationService>,
     ) -> Arc<Self> {
         let recovering = client.has_pending_recoveries();
@@ -305,6 +321,7 @@ impl FederationV2 {
             this_weak: weak.clone(),
             guard,
             multispend_services,
+            spt_notifications,
             spv2_sync_service: Default::default(),
             spv2_history_service: Default::default(),
             spv2_sweeper_service: Default::default(),
@@ -454,6 +471,7 @@ impl FederationV2 {
         guard: FederationLockGuard,
         fedi_fee_helper: Arc<FediFeeHelper>,
         multispend_services: Arc<dyn MultispendNotifications>,
+        spt_notifications: Arc<dyn SptNotifications>,
         device_registration_service: Arc<DeviceRegistrationService>,
     ) -> anyhow::Result<Arc<Self>> {
         let root_mnemonic = runtime.app_state.root_mnemonic().await;
@@ -500,6 +518,7 @@ impl FederationV2 {
             auxiliary_secret,
             fedi_fee_helper,
             multispend_services,
+            spt_notifications,
             device_registration_service,
         )
         .await)
@@ -553,6 +572,7 @@ impl FederationV2 {
         recover_from_scratch: bool,
         fedi_fee_helper: Arc<FediFeeHelper>,
         multispend_services: Arc<dyn MultispendNotifications>,
+        spt_notifications: Arc<dyn SptNotifications>,
         device_registration_service: Arc<DeviceRegistrationService>,
     ) -> Result<Arc<Self>> {
         let db_prefix = runtime
@@ -636,6 +656,7 @@ impl FederationV2 {
             auxiliary_secret,
             fedi_fee_helper,
             multispend_services,
+            spt_notifications,
             device_registration_service,
         )
         .await;
@@ -3478,22 +3499,9 @@ impl FederationV2 {
         meta: SPv2TransferMetadata,
     ) -> Result<OperationId> {
         ensure!(to_account.acc_type() == AccountType::Seeker);
-        let spv2 = self.client.spv2()?;
-
-        let request = TransferRequest::new(
-            rand::thread_rng().r#gen(),
-            spv2.our_account(AccountType::Seeker),
-            amount,
-            to_account,
-            vec![],
-            u64::MAX,
-            None,
-        )?;
-        let signature = spv2.sign_transfer_request(&request);
-        let mut signatures = BTreeMap::new();
-        signatures.insert(0, signature);
-        self.spv2_transfer(SignedTransferRequest::new(request, signatures)?, meta)
-            .await
+        let request =
+            self.spv2_build_signed_transfer_request_with_nonce(rand::random(), to_account, amount)?;
+        self.spv2_transfer(request, meta).await
     }
 
     /// Submit the given [`SignedTransferRequest`] for processing. Like
@@ -3520,6 +3528,29 @@ impl FederationV2 {
         let operation_id = spv2.transfer(signed_request, meta).await?;
         self.subscribe_to_operation(operation_id).await?;
         Ok(operation_id)
+    }
+
+    /// Build a SignedTransferRequest using an explicit nonce for idempotency.
+    pub fn spv2_build_signed_transfer_request_with_nonce(
+        &self,
+        nonce: u64,
+        to_account: AccountId,
+        amount: FiatAmount,
+    ) -> anyhow::Result<SignedTransferRequest> {
+        let spv2 = self.client.spv2()?;
+        let request = TransferRequest::new(
+            nonce,
+            spv2.our_account(AccountType::Seeker),
+            amount,
+            to_account,
+            vec![],
+            u64::MAX,
+            None,
+        )?;
+        let signature = spv2.sign_transfer_request(&request);
+        let mut signatures = BTreeMap::new();
+        signatures.insert(0, signature);
+        SignedTransferRequest::new(request, signatures)
     }
 
     async fn subscribe_spv2_transfer(
@@ -3568,6 +3599,20 @@ impl FederationV2 {
                                     )
                                     .await;
                             }
+                            Ok(SPv2TransferMetadata::MatrixSpTransfer {
+                                room,
+                                pending_transfer_id,
+                            }) => {
+                                self.spt_notifications
+                                    .add_spt_completion_notification(
+                                        room,
+                                        pending_transfer_id,
+                                        self.federation_id().to_string(),
+                                        signed_request.details().amount(),
+                                        txid,
+                                    )
+                                    .await;
+                            }
                             Ok(SPv2TransferMetadata::StableBalance { .. }) | Err(_) => {}
                         }
                     }
@@ -3580,6 +3625,14 @@ impl FederationV2 {
                                         request_id,
                                         error.to_string(),
                                     )
+                                    .await;
+                            }
+                            Ok(SPv2TransferMetadata::MatrixSpTransfer {
+                                room,
+                                pending_transfer_id,
+                            }) => {
+                                self.spt_notifications
+                                    .add_spt_failed_notification(room, pending_transfer_id)
                                     .await;
                             }
                             Ok(

@@ -40,6 +40,15 @@ export type BridgeOffboardingReason =
  */
 export type CommunityMetadataUpdatedEvent = { newCommunity: RpcCommunity };
 
+/**
+ * Notify front-end that a particular v1 community has been migrated to the
+ * specified v2 community
+ */
+export type CommunityMigratedToV2Event = {
+  v1InviteCode: string;
+  v2Community: RpcCommunity;
+};
+
 export type CreateRoomRequest = JSONObject;
 
 /**
@@ -106,7 +115,8 @@ export type Event =
       stabilityPoolUnfilledDepositSwept: StabilityPoolUnfilledDepositSweptEvent;
     }
   | { communityMetadataUpdated: CommunityMetadataUpdatedEvent }
-  | { nonceReuseCheckFailed: NonceReuseCheckFailedEvent };
+  | { nonceReuseCheckFailed: NonceReuseCheckFailedEvent }
+  | { communityMigratedToV2: CommunityMigratedToV2Event };
 
 /**
  * We represent the catalog of all the features for a given runtime as a
@@ -361,6 +371,8 @@ export type RecoveryProgressEvent = {
    */
   total: number;
 };
+
+export type RpcAccountId = string;
 
 export type RpcAmount = MSats;
 
@@ -870,6 +882,8 @@ export type RpcMethods = {
   matrixSaveComposerDraft: [matrixSaveComposerDraft, null];
   matrixLoadComposerDraft: [matrixLoadComposerDraft, RpcComposerDraft | null];
   matrixClearComposerDraft: [matrixClearComposerDraft, null];
+  matrixSpTransferSend: [matrixSpTransferSend, RpcEventId];
+  matrixSpTransferObserveState: [matrixSpTransferObserveState, null];
   matrixSubscribeMultispendGroup: [matrixSubscribeMultispendGroup, null];
   matrixSubscribeMultispendAccountInfo: [
     matrixSubscribeMultispendAccountInfo,
@@ -1183,12 +1197,44 @@ export type RpcSignature = string;
 
 export type RpcSignedLnurlMessage = { signature: string; pubkey: RpcPublicKey };
 
-export type RpcSpv2ParsedPaymentAddress = {
-  /**
-   * do we know about the federation
-   */
-  federation_id: RpcFederationId | null;
+export type RpcSpTransferEvent =
+  | {
+      kind: "pendingTransferStart";
+      amount: RpcFiatAmount;
+      federationId: RpcFederationId;
+      federationInvite: string | null;
+    }
+  | {
+      kind: "transferSentHint";
+      pendingTransferId: RpcEventId;
+      transactionId: RpcTransactionId;
+    }
+  | {
+      kind: "announceAccount";
+      accountId: RpcAccountId;
+      federationId: RpcFederationId;
+    };
+
+export type RpcSpTransferState = {
+  federationId: RpcFederationId;
+  amount: RpcFiatAmount;
+  status: RpcSpTransferStatus;
+  inviteCode: string | null;
 };
+
+export type RpcSpTransferStatus =
+  | { status: "pending" }
+  | { status: "sentHint" }
+  | { status: "complete" };
+
+export type RpcSpv2ParsedPaymentAddress = {
+  accountId: RpcAccountId;
+  federation: RpcSpv2PaymentAddressFederation;
+};
+
+export type RpcSpv2PaymentAddressFederation =
+  | { type: "joined"; federationId: RpcFederationId }
+  | { type: "notJoined"; federationInvite: string | null };
 
 export type RpcStabilityPoolAccountInfo = {
   idleBalance: RpcAmount;
@@ -1544,6 +1590,14 @@ export type StabilityPoolWithdrawalState =
 export type TransactionEvent = {
   federationId: RpcFederationId;
   transaction: RpcTransaction;
+};
+
+export type TransferEventValue = {
+  amount: RpcFiatAmount;
+  federationId: RpcFederationId;
+  roomId: RpcRoomId;
+  sentBy: RpcUserId;
+  federationInvite: string | null;
 };
 
 export type UserProfile = JSONObject;
@@ -1971,6 +2025,18 @@ export type matrixSetDisplayName = { displayName: string };
 
 export type matrixSetPusher = { pusher: RpcPusher };
 
+export type matrixSpTransferObserveState = {
+  streamId: RpcStreamId<RpcSpTransferState>;
+  pendingPaymentId: RpcEventId;
+};
+
+export type matrixSpTransferSend = {
+  roomId: RpcRoomId;
+  amount: RpcFiatAmount;
+  federationId: RpcFederationId;
+  federationInvite: string | null;
+};
+
 export type matrixStartPoll = {
   roomId: RpcRoomId;
   question: string;
@@ -2146,7 +2212,10 @@ export type spv2DepositToSeek = {
 
 export type spv2NextCycleStartTime = { federationId: RpcFederationId };
 
-export type spv2OurPaymentAddress = { federationId: RpcFederationId };
+export type spv2OurPaymentAddress = {
+  federationId: RpcFederationId;
+  includeInvite: boolean;
+};
 
 export type spv2ParsePaymentAddress = { address: string };
 
@@ -2156,7 +2225,8 @@ export type spv2SubscribeAccountInfo = {
 };
 
 export type spv2Transfer = {
-  paymentAddress: string;
+  federationId: RpcFederationId;
+  accountId: RpcAccountId;
   amount: RpcFiatAmount;
   frontendMeta: FrontendMetadata;
 };

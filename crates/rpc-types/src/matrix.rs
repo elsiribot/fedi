@@ -15,7 +15,7 @@ use matrix_sdk::ruma::events::room::member::MembershipState;
 use matrix_sdk::ruma::events::room::power_levels::UserPowerLevel;
 use matrix_sdk::ruma::events::{AnyTimelineEvent, Mentions};
 use matrix_sdk::ruma::serde::Raw;
-use matrix_sdk::ruma::{MilliSecondsSinceUnixEpoch, events as ruma_events};
+use matrix_sdk::ruma::{MilliSecondsSinceUnixEpoch, RoomId, events as ruma_events};
 use matrix_sdk::{ComposerDraft, ComposerDraftType, RoomDisplayName, RoomState};
 use matrix_sdk_ui::room_list_service::SyncIndicator;
 use matrix_sdk_ui::timeline::{
@@ -1276,4 +1276,10 @@ impl From<&'_ Mentions> for RpcMentions {
                 .collect(),
         }
     }
+}
+
+pub fn room_is_joined(client: &matrix_sdk::Client, room_id: &RoomId) -> bool {
+    client
+        .get_room(room_id)
+        .is_some_and(|r| matches!(r.state(), RoomState::Joined))
 }

@@ -8,6 +8,7 @@ members = [
   "crates/federations",
   "crates/matrix",
   "crates/multispend",
+  "crates/sp-transfer",
   "crates/bug-report",
   "crates/communities",
   "crates/debug-tools",
@@ -95,6 +96,7 @@ stability-pool-tests = { path = "crates/modules/stability-pool/tests" }
 remote-server = { path = "crates/remote-server" }
 rpc-types = { path = "crates/rpc-types" }
 runtime = { path = "crates/runtime" }
+sp-transfer = { path = "crates/sp-transfer" }
 
 anyhow = "1"
 async-stream = "0.3.5"

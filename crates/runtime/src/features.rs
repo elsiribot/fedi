@@ -90,7 +90,15 @@ pub struct FeatureCatalog {
 
     /// Configuration regarding the remittance of Fedi fee
     pub fedi_fee: FediFeeConfig,
+
+    /// SP Transfers Matrix feature flag.
+    /// When enabled, allows stability pool transfers via Matrix messaging.
+    pub sp_transfers_matrix: Option<SpTransfersMatrixFeatureConfig>,
 }
+
+#[derive(Debug, Clone, TS, Serialize)]
+#[ts(export)]
+pub struct SpTransfersMatrixFeatureConfig {}
 
 #[derive(Debug, Clone, TS, Serialize)]
 #[ts(export)]
@@ -179,6 +187,7 @@ impl FeatureCatalog {
             fedi_fee: FediFeeConfig {
                 remittance_max_delay_secs: 300, // 5 minutes for testing
             },
+            sp_transfers_matrix: Some(SpTransfersMatrixFeatureConfig {}),
         }
     }
 
@@ -214,6 +223,7 @@ impl FeatureCatalog {
             fedi_fee: FediFeeConfig {
                 remittance_max_delay_secs: 300, // 5 minutes for testing
             },
+            sp_transfers_matrix: Some(SpTransfersMatrixFeatureConfig {}),
         }
     }
 
@@ -241,6 +251,7 @@ impl FeatureCatalog {
             fedi_fee: FediFeeConfig {
                 remittance_max_delay_secs: 300, // 5 minutes for testing
             },
+            sp_transfers_matrix: Some(SpTransfersMatrixFeatureConfig {}),
         }
     }
 
@@ -271,6 +282,7 @@ impl FeatureCatalog {
             fedi_fee: FediFeeConfig {
                 remittance_max_delay_secs: 3 * 24 * 60 * 60, // 3 days for prod
             },
+            sp_transfers_matrix: None,
         }
     }
 }

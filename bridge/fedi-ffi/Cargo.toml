@@ -28,6 +28,7 @@ fedimint-derive-secret = { workspace = true }
 fedimint-logging = { workspace = true }
 fedimint-bip39 = { workspace = true }
 multispend = { path = "../../crates/multispend" }
+sp-transfer = { path = "../../crates/sp-transfer" }
 
 anyhow = { workspace = true }
 bip39 = { version = "2.0.0", features = ["rand"] }
