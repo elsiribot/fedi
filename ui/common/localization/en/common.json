@@ -1194,8 +1194,14 @@
                 "zmw": "Zambian Kwacha"
             },
             "app-settings": "App Settings",
+            "federation-settings": "Federation Settings",
             "usage-sharing": "Usage sharing",
-            "analytics-updated-error": "Failed to update analytics consent"
+            "analytics-updated-error": "Failed to update analytics consent",
+            "repair-wallet": "Repair Wallet",
+            "repair-wallet-description": "Do not use this tool unless directed by the Fedi Council.",
+            "repair-wallet-confirmation": "Are you sure you want to repair your wallet? ONLY do this if directed by the Fedi Council.",
+            "repair-wallet-success": "Wallet repair initiated.",
+            "repair-wallet-error": "Failed to initiate wallet repair."
         },
         "stabilitypool": {
             "amount-may-vary": "Amount may vary",

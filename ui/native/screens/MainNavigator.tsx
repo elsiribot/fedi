@@ -117,6 +117,7 @@ import FederationCurrency from './FederationCurrency'
 import FederationDetails from './FederationDetails'
 import FederationGreeting from './FederationGreeting'
 import FederationInvite from './FederationInvite'
+import FederationSettings from './FederationSettings'
 import FediModBrowser from './FediModBrowser'
 import FediModSettings from './FediModSettings'
 import GlobalCurrency from './GlobalCurrency'
@@ -1169,6 +1170,20 @@ export const MainNavigator = () => {
                                             backButton
                                             title={t(
                                                 'feature.settings.app-settings',
+                                            )}
+                                        />
+                                    ),
+                                })}
+                            />
+                            <Stack.Screen
+                                name="FederationSettings"
+                                component={FederationSettings}
+                                options={() => ({
+                                    header: () => (
+                                        <CenteredHeader
+                                            backButton
+                                            title={t(
+                                                'feature.settings.federation-settings',
                                             )}
                                         />
                                     ),

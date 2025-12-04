@@ -126,6 +126,10 @@ export type RootStackParamList = {
     Eula: undefined
     CommunityDetails: { communityId: Community['id'] }
     FederationDetails: { federationId: Federation['id'] }
+    FederationSettings: {
+        federationId: Federation['id']
+        federationName: string
+    }
     FederationModSettings: { type?: string; federationId: Federation['id'] }
     FederationInvite: { inviteLink: string }
     FederationGreeting: undefined

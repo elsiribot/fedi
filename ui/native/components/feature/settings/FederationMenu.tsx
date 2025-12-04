@@ -157,6 +157,16 @@ const FederationMenu = ({ federation }: FederationMenuProps) => {
                         disabled={!!isExporting}
                     />
                     <SettingsItem
+                        icon="Settings"
+                        label={t('feature.settings.federation-settings')}
+                        onPress={() =>
+                            navigation.navigate('FederationSettings', {
+                                federationId: federation.id,
+                                federationName: federation.name,
+                            })
+                        }
+                    />
+                    <SettingsItem
                         icon="LeaveFederation"
                         label={t('feature.federations.leave-federation')}
                         onPress={handleLeavePressed}

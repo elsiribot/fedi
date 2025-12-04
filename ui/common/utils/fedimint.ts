@@ -287,6 +287,10 @@ export class FedimintBridge {
         return this.rpcTyped('leaveFederation', { federationId })
     }
 
+    async repairWallet(federationId: string) {
+        return this.rpcTyped('repairWallet', { federationId })
+    }
+
     async fedimintVersion() {
         return this.rpcTyped('fedimintVersion', {})
     }
