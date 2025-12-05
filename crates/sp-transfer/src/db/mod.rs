@@ -7,7 +7,6 @@ use rpc_types::matrix::{RpcRoomId, RpcUserId};
 use rpc_types::sp_transfer::{RpcSpTransferState, RpcSpTransferStatus};
 use rpc_types::{RpcEventId, RpcFederationId, RpcFiatAmount, RpcTransactionId};
 use runtime::bridge_runtime::Runtime;
-use ts_rs::TS;
 
 pub mod receiver;
 pub mod sender;
@@ -33,9 +32,7 @@ enum SpTransfersDbPrefix {
     TransferFailed = 0x07,
 }
 
-#[derive(Debug, Clone, Encodable, Decodable, TS, serde::Serialize, serde::Deserialize)]
-#[serde(rename_all = "camelCase")]
-#[ts(export)]
+#[derive(Debug, Clone, Encodable, Decodable)]
 pub struct TransferEventValue {
     pub amount: RpcFiatAmount,
     pub federation_id: RpcFederationId,
