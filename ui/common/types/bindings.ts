@@ -1145,6 +1145,7 @@ export type RpcSPV2TransferInState =
       from_account_id: string;
       amount: RpcAmount;
       fiat_amount: number;
+      kind: SpV2TransferInKind;
     }
   | { type: "dataNotInCache" };
 
@@ -1154,6 +1155,7 @@ export type RpcSPV2TransferOutState =
       to_account_id: string;
       amount: RpcAmount;
       fiat_amount: number;
+      kind: SpV2TransferOutKind;
     }
   | { type: "dataNotInCache" };
 
@@ -1563,6 +1565,10 @@ export type SpTransferUiFeatureConfig = { mode: SpTransferUiMode };
 export type SpTransferUiMode = "QrCode" | "Chat";
 
 export type SpTransfersMatrixFeatureConfig = Record<string, never>;
+
+export type SpV2TransferInKind = "multispend" | "unknown";
+
+export type SpV2TransferOutKind = "multispend" | "matrixSpTransfer" | "unknown";
 
 export type StabilityPoolDepositEvent = {
   federationId: RpcFederationId;

@@ -98,7 +98,7 @@ use rpc_types::{
     RpcSPV2DepositState, RpcSPV2TransferInState, RpcSPV2TransferOutState, RpcSPV2WithdrawalState,
     RpcSPWithdrawState, RpcSPv2CachedSyncResponse, RpcTransaction, RpcTransactionDirection,
     RpcTransactionKind, RpcTransactionListEntry, SPv2DepositMetadata, SPv2TransferMetadata,
-    SPv2WithdrawMetadata,
+    SPv2WithdrawMetadata, SpV2TransferInKind, SpV2TransferOutKind,
 };
 use runtime::bridge_runtime::Runtime;
 use runtime::constants::{
@@ -108,6 +108,7 @@ use runtime::constants::{
     WALLET_OPERATION_TYPE,
 };
 use runtime::db::FederationPendingRejoinFromScratchKey;
+use runtime::nightly_panic;
 use runtime::storage::state::{DatabaseInfo, FederationInfo, FediFeeSchedule};
 use runtime::utils::{display_currency, timeout_log_only, to_unix_time};
 use serde::de::DeserializeOwned;
@@ -2961,22 +2962,42 @@ impl FederationV2 {
                     extra_meta,
                     ..
                 } => {
-                    frontend_metadata =
-                        match serde_json::from_value::<SPv2TransferMetadata>(extra_meta) {
-                            Ok(
-                                SPv2TransferMetadata::StableBalance { frontend_metadata }
-                                | SPv2TransferMetadata::MultispendDeposit {
-                                    frontend_metadata, ..
-                                },
-                            ) => frontend_metadata,
-                            _ => None,
-                        };
+                    let transfer_meta =
+                        serde_json::from_value::<SPv2TransferMetadata>(extra_meta).ok();
+                    frontend_metadata = match &transfer_meta {
+                        Some(
+                            SPv2TransferMetadata::StableBalance { frontend_metadata }
+                            | SPv2TransferMetadata::MultispendDeposit {
+                                frontend_metadata, ..
+                            },
+                        ) => frontend_metadata.clone(),
+                        _ => None,
+                    };
                     // We must either be the sender or the recipient of the
                     // transfer, otherwise we can ignore it for our own personal
                     // operation history
                     if let Some(account) = self.spv2_our_seeker_account() {
                         if account.id() == signed_request.details().from().id() {
                             // Case 1: we were the sender
+                            let transfer_out_kind = match &transfer_meta {
+                                Some(SPv2TransferMetadata::MultispendDeposit { .. }) => {
+                                    SpV2TransferOutKind::Multispend
+                                }
+                                Some(SPv2TransferMetadata::MatrixSpTransfer { .. }) => {
+                                    SpV2TransferOutKind::MatrixSpTransfer
+                                }
+                                Some(SPv2TransferMetadata::StableBalance { .. }) => {
+                                    SpV2TransferOutKind::SpTransferUi
+                                }
+                                other => {
+                                    nightly_panic!(
+                                        self.runtime,
+                                        "unexpected transfer out meta: {:?}",
+                                        other
+                                    );
+                                    SpV2TransferOutKind::Unknown
+                                }
+                            };
                             transaction_kind = RpcTransactionKind::SPV2TransferOut {
                                 state: if let Some(item) =
                                     self.spv2_user_op_history_item(txid).await
@@ -2986,6 +3007,7 @@ impl FederationV2 {
                                         to_account_id: signed_request.details().to().to_string(),
                                         amount: RpcAmount(item.amount),
                                         fiat_amount: item.fiat_amount.0,
+                                        kind: transfer_out_kind,
                                     }
                                 } else {
                                     transaction_amount = RpcAmount(Amount::ZERO);
@@ -2994,6 +3016,19 @@ impl FederationV2 {
                             }
                         } else if account.id() == *signed_request.details().to() {
                             // Case 2: we were the recipient
+                            let transfer_in_kind = match &transfer_meta {
+                                Some(SPv2TransferMetadata::MultispendWithdrawal { .. }) => {
+                                    SpV2TransferInKind::Multispend
+                                }
+                                other => {
+                                    nightly_panic!(
+                                        self.runtime,
+                                        "unexpected transfer in meta: {:?}",
+                                        other
+                                    );
+                                    SpV2TransferInKind::Unknown
+                                }
+                            };
                             transaction_kind = RpcTransactionKind::SPV2TransferIn {
                                 state: if let Some(item) =
                                     self.spv2_user_op_history_item(txid).await
@@ -3007,6 +3042,7 @@ impl FederationV2 {
                                             .to_string(),
                                         amount: RpcAmount(item.amount),
                                         fiat_amount: item.fiat_amount.0,
+                                        kind: transfer_in_kind,
                                     }
                                 } else {
                                     transaction_amount = RpcAmount(Amount::ZERO);
@@ -3040,6 +3076,7 @@ impl FederationV2 {
                                 from_account_id: from.to_string(),
                                 amount: RpcAmount(amount),
                                 fiat_amount: fiat_amount.0,
+                                kind: SpV2TransferInKind::Unknown,
                             }
                         } else {
                             transaction_amount = RpcAmount(Amount::ZERO);
