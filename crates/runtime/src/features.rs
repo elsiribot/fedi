@@ -94,11 +94,27 @@ pub struct FeatureCatalog {
     /// SP Transfers Matrix feature flag.
     /// When enabled, allows stability pool transfers via Matrix messaging.
     pub sp_transfers_matrix: Option<SpTransfersMatrixFeatureConfig>,
+
+    /// SP Transfer UI feature flag.
+    pub sp_transfer_ui: Option<SpTransferUiFeatureConfig>,
 }
 
 #[derive(Debug, Clone, TS, Serialize)]
 #[ts(export)]
 pub struct SpTransfersMatrixFeatureConfig {}
+
+#[derive(Debug, Clone, TS, Serialize)]
+#[ts(export)]
+pub enum SpTransferUiMode {
+    QrCode,
+    Chat,
+}
+
+#[derive(Debug, Clone, TS, Serialize)]
+#[ts(export)]
+pub struct SpTransferUiFeatureConfig {
+    pub mode: SpTransferUiMode,
+}
 
 #[derive(Debug, Clone, TS, Serialize)]
 #[ts(export)]
@@ -188,6 +204,9 @@ impl FeatureCatalog {
                 remittance_max_delay_secs: 300, // 5 minutes for testing
             },
             sp_transfers_matrix: Some(SpTransfersMatrixFeatureConfig {}),
+            sp_transfer_ui: Some(SpTransferUiFeatureConfig {
+                mode: SpTransferUiMode::Chat,
+            }),
         }
     }
 
@@ -224,6 +243,9 @@ impl FeatureCatalog {
                 remittance_max_delay_secs: 300, // 5 minutes for testing
             },
             sp_transfers_matrix: Some(SpTransfersMatrixFeatureConfig {}),
+            sp_transfer_ui: Some(SpTransferUiFeatureConfig {
+                mode: SpTransferUiMode::Chat,
+            }),
         }
     }
 
@@ -252,6 +274,9 @@ impl FeatureCatalog {
                 remittance_max_delay_secs: 300, // 5 minutes for testing
             },
             sp_transfers_matrix: Some(SpTransfersMatrixFeatureConfig {}),
+            sp_transfer_ui: Some(SpTransferUiFeatureConfig {
+                mode: SpTransferUiMode::Chat,
+            }),
         }
     }
 
@@ -283,6 +308,7 @@ impl FeatureCatalog {
                 remittance_max_delay_secs: 3 * 24 * 60 * 60, // 3 days for prod
             },
             sp_transfers_matrix: None,
+            sp_transfer_ui: None,
         }
     }
 }
