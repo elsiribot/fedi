@@ -181,6 +181,10 @@ export type FeatureCatalog = {
    * When enabled, allows stability pool transfers via Matrix messaging.
    */
   sp_transfers_matrix: SpTransfersMatrixFeatureConfig | null;
+  /**
+   * SP Transfer UI feature flag.
+   */
+  sp_transfer_ui: SpTransferUiFeatureConfig | null;
 };
 
 export type FediFeeConfig = {
@@ -1553,6 +1557,10 @@ export type SocialRecoveryEvent = {
 };
 
 export type SocialRecoveryQr = { recoveryId: RpcRecoveryId };
+
+export type SpTransferUiFeatureConfig = { mode: SpTransferUiMode };
+
+export type SpTransferUiMode = "QrCode" | "Chat";
 
 export type SpTransfersMatrixFeatureConfig = Record<string, never>;
 
