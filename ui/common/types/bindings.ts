@@ -1601,15 +1601,6 @@ export type TransactionEvent = {
   transaction: RpcTransaction;
 };
 
-export type TransferEventValue = {
-  amount: RpcFiatAmount;
-  federationId: RpcFederationId;
-  roomId: RpcRoomId;
-  sentBy: RpcUserId;
-  federationInvite: string | null;
-  nonce: bigint;
-};
-
 export type UserProfile = JSONObject;
 
 export type VectorDiff<T> =
