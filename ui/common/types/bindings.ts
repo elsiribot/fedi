@@ -176,6 +176,11 @@ export type FeatureCatalog = {
    * Configuration regarding the remittance of Fedi fee
    */
   fedi_fee: FediFeeConfig;
+  /**
+   * SP Transfers Matrix feature flag.
+   * When enabled, allows stability pool transfers via Matrix messaging.
+   */
+  sp_transfers_matrix: SpTransfersMatrixFeatureConfig | null;
 };
 
 export type FediFeeConfig = {
@@ -1209,6 +1214,7 @@ export type RpcSpTransferEvent =
       pendingTransferId: RpcEventId;
       transactionId: RpcTransactionId;
     }
+  | { kind: "transferFailed"; pendingTransferId: RpcEventId }
   | {
       kind: "announceAccount";
       accountId: RpcAccountId;
@@ -1225,7 +1231,8 @@ export type RpcSpTransferState = {
 export type RpcSpTransferStatus =
   | { status: "pending" }
   | { status: "sentHint" }
-  | { status: "complete" };
+  | { status: "complete" }
+  | { status: "failed" };
 
 export type RpcSpv2ParsedPaymentAddress = {
   accountId: RpcAccountId;
@@ -1547,6 +1554,8 @@ export type SocialRecoveryEvent = {
 
 export type SocialRecoveryQr = { recoveryId: RpcRecoveryId };
 
+export type SpTransfersMatrixFeatureConfig = Record<string, never>;
+
 export type StabilityPoolDepositEvent = {
   federationId: RpcFederationId;
   operationId: RpcOperationId;
@@ -1598,6 +1607,7 @@ export type TransferEventValue = {
   roomId: RpcRoomId;
   sentBy: RpcUserId;
   federationInvite: string | null;
+  nonce: bigint;
 };
 
 export type UserProfile = JSONObject;
