@@ -197,6 +197,7 @@ async fn tests_wrapper_for_bridge() -> anyhow::Result<()> {
         test_join_concurrent,
         matrix::test_matrix_login,
         matrix::test_matrix_dms,
+        matrix::test_matrix_recovery,
         matrix::test_matrix_create_room,
         matrix::test_send_and_download_attachment,
         multispend_tests::test_multispend_minimal,
