@@ -19,6 +19,7 @@ import {
     UsdCents,
     Federation,
     Community,
+    Spv2ParsedPaymentAddress,
 } from '@fedi/common/types'
 import { RpcFederationPreview } from '@fedi/common/types/bindings'
 
@@ -202,16 +203,25 @@ export type RootStackParamList = {
     ReceiveStabilityQr: { federationId: Federation['id'] }
     Splash: undefined
     StabilityConfirmDeposit: { amount: Sats; federationId: Federation['id'] }
+    StabilityConfirmTransfer: {
+        amount: UsdCents
+        federationId: Federation['id']
+        recipient: Spv2ParsedPaymentAddress
+        notes?: string
+    }
     StabilityConfirmWithdraw: {
         amountSats: Sats
         amountCents: UsdCents
         federationId: Federation['id']
     }
     StabilityDeposit: { federationId: Federation['id'] }
-    StabilityDepositInitiated: { amount: Sats; federationId: Federation['id'] }
     StabilityHistory: { federationId: Federation['id'] }
     StabilityHome: { federationId: Federation['id'] }
     StabilityWithdraw: { federationId: Federation['id'] }
+    StabilityTransfer: {
+        recipient?: Spv2ParsedPaymentAddress
+        federationId: Federation['id']
+    }
     StabilityWithdrawInitiated: {
         formattedFiat: string
         federationId: Federation['id']

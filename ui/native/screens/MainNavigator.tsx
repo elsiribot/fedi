@@ -56,6 +56,7 @@ import ConfirmWithdrawHeader from '../components/feature/stabilitypool/ConfirmWi
 import StabilityDepositHeader from '../components/feature/stabilitypool/StabilityDepositHeader'
 import StabilityHistoryHeader from '../components/feature/stabilitypool/StabilityHistoryHeader'
 import StabilityHomeHeader from '../components/feature/stabilitypool/StabilityHomeHeader'
+import StabilityTransferHeader from '../components/feature/stabilitypool/StabilityTransferHeader'
 import StabilityWithdrawHeader from '../components/feature/stabilitypool/StabilityWithdrawHeader'
 import WithdrawInitiatedHeader from '../components/feature/stabilitypool/WithdrawInitiatedHeader'
 import HelpCentreHeader from '../components/feature/support/HelpCentreHeader'
@@ -182,10 +183,12 @@ import SocialRecoveryQrModal from './SocialRecoveryQrModal'
 import SocialRecoverySuccess from './SocialRecoverySuccess'
 import Splash from './Splash'
 import StabilityConfirmDeposit from './StabilityConfirmDeposit'
+import StabilityConfirmTransfer from './StabilityConfirmTransfer'
 import StabilityConfirmWithdraw from './StabilityConfirmWithdraw'
 import StabilityDeposit from './StabilityDeposit'
 import StabilityHistory from './StabilityHistory'
 import StabilityHome from './StabilityHome'
+import StabilityTransfer from './StabilityTransfer'
 import StabilityWithdraw from './StabilityWithdraw'
 import StabilityWithdrawInitiated from './StabilityWithdrawInitiated'
 import StartRecoveryAssist from './StartRecoveryAssist'
@@ -1249,6 +1252,27 @@ export const MainNavigator = () => {
                                 component={StabilityWithdraw}
                                 options={() => ({
                                     header: () => <StabilityWithdrawHeader />,
+                                })}
+                            />
+                            <Stack.Screen
+                                name="StabilityTransfer"
+                                component={StabilityTransfer}
+                                options={() => ({
+                                    header: () => <StabilityTransferHeader />,
+                                })}
+                            />
+                            <Stack.Screen
+                                name="StabilityConfirmTransfer"
+                                component={StabilityConfirmTransfer}
+                                options={() => ({
+                                    header: () => (
+                                        <CenteredHeader
+                                            backButton
+                                            title={t(
+                                                'feature.stabilitypool.confirm-transfer',
+                                            )}
+                                        />
+                                    ),
                                 })}
                             />
                             <Stack.Screen

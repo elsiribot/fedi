@@ -185,8 +185,12 @@ export const useAmountFormatter = (options?: {
     federationId?: Federation['id']
 }) => {
     const { currency, federationId } = options ?? {}
-    const { convertSatsToFormattedUsd, convertSatsToFormattedFiat } =
-        useBtcFiatPrice(currency, federationId)
+    const {
+        convertSatsToFormattedUsd,
+        convertSatsToFormattedFiat,
+        convertCentsToFormattedFiat,
+    } = useBtcFiatPrice(currency, federationId)
+    const currencyLocale = useCommonSelector(selectCurrencyLocale)
     const transactionDisplayType = useCommonSelector(
         selectTransactionDisplayType,
     )
@@ -235,6 +239,38 @@ export const useAmountFormatter = (options?: {
             convertSatsToFormattedUsd,
             transactionDisplayType,
         ],
+    )
+
+    const makeFormattedAmountsFromCents = useCallback(
+        (
+            amount: UsdCents,
+            symbolPosition: AmountSymbolPosition = 'end',
+        ): FormattedAmounts => {
+            const formattedFiat = convertCentsToFormattedFiat(
+                amount,
+                symbolPosition,
+            )
+            const formattedUsd = amountUtils.formatFiat(
+                amount,
+                SupportedCurrency.USD,
+                { symbolPosition, locale: currencyLocale },
+            )
+            return {
+                formattedFiat,
+                formattedSats: '',
+                formattedBtc: '',
+                formattedUsd,
+                formattedPrimaryAmount:
+                    transactionDisplayType === 'fiat'
+                        ? formattedFiat
+                        : formattedUsd,
+                formattedSecondaryAmount:
+                    transactionDisplayType === 'fiat'
+                        ? formattedUsd
+                        : formattedFiat,
+            }
+        },
+        [convertCentsToFormattedFiat, currencyLocale, transactionDisplayType],
     )
 
     const makeFormattedAmountsFromMSats = useCallback(
@@ -312,6 +348,7 @@ export const useAmountFormatter = (options?: {
         makeFormattedAmountsFromMSats,
         makeFormattedAmountsFromSats,
         makeFormattedAmountsFromTxn,
+        makeFormattedAmountsFromCents,
     }
 }
 

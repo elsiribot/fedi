@@ -33,6 +33,8 @@ import {
     JSONObject,
     RpcAmount,
     RpcEcashInfo,
+    RpcEventId,
+    RpcSpv2ParsedPaymentAddress,
     SPv2WithdrawalEvent,
     StabilityPoolDepositEvent,
     StabilityPoolWithdrawalEvent,
@@ -614,6 +616,32 @@ export const decreaseStableBalanceV2 = createAsyncThunk<
             federationId,
             withdrawAll,
         )
+    },
+)
+
+export const parseSpPaymentAddress = createAsyncThunk<
+    RpcSpv2ParsedPaymentAddress,
+    { fedimint: FedimintBridge; spPaymentAddress: string },
+    { state: CommonState }
+>('wallet/parseSpPaymentAddress', async ({ fedimint, spPaymentAddress }) => {
+    const parsed = await fedimint.spv2ParsePaymentAddress(spPaymentAddress)
+    return parsed
+})
+
+export const transferStableBalance = createAsyncThunk<
+    Promise<RpcEventId>,
+    {
+        fedimint: FedimintBridge
+        amount: UsdCents
+        accountId: string
+        federationId: Federation['id']
+        notes?: string
+    },
+    { state: CommonState }
+>(
+    'wallet/transferStableBalance',
+    async ({ fedimint, amount, accountId, federationId, notes }) => {
+        return fedimint.spv2Transfer(amount, accountId, federationId, notes)
     },
 )
 

@@ -1,4 +1,4 @@
-import { RpcEcashInfo } from './bindings'
+import { RpcEcashInfo, RpcSpv2ParsedPaymentAddress } from './bindings'
 import { Invoice } from './fedimint'
 import { Btc, MSats } from './units'
 
@@ -19,6 +19,7 @@ export enum ParserDataType {
     CommunityInvite = 'fedi:community',
     FediChatUser = 'fedi:user',
     FediChatRoom = 'fedi:room',
+    StabilityAddress = 'fedi:spaddress',
     Website = 'website',
     Unknown = 'unknown',
     OfflineError = 'offlineError',
@@ -116,6 +117,11 @@ export type ParsedCashuEcash = ParsedData<
     }
 >
 
+export type ParsedStabilityAddress = ParsedData<
+    ParserDataType.StabilityAddress,
+    RpcSpv2ParsedPaymentAddress & { address: string }
+>
+
 export type ParsedDeepLink = ParsedData<
     ParserDataType.DeepLink,
     { url: string }
@@ -171,6 +177,7 @@ export type AnyParsedData =
     | ParsedBitcoinAddress
     | ParsedBip21
     | ParsedCashuEcash
+    | ParsedStabilityAddress
     | ParsedDeepLink
     | ParsedFedimintEcash
     | ParsedFederationInvite

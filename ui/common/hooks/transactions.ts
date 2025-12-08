@@ -544,9 +544,10 @@ export function useFeeDisplayUtils(t: TFunction, federationId: string) {
     const stabilityPoolAverageFeeRate = useCommonSelector(s =>
         selectStabilityPoolAverageFeeRate(s, federationId),
     )
-    const { makeFormattedAmountsFromMSats } = useAmountFormatter({
-        federationId,
-    })
+    const { makeFormattedAmountsFromMSats, makeFormattedAmountsFromCents } =
+        useAmountFormatter({
+            federationId,
+        })
     const stabilityConfig = useCommonSelector(s =>
         selectFederationStabilityPoolConfig(s, federationId),
     )
@@ -677,7 +678,7 @@ export function useFeeDisplayUtils(t: TFunction, federationId: string) {
         }
     }
 
-    const makeStabilityPoolFeeContent = (amount: Sats) => {
+    const makeSPDepositFeeContent = (amount: Sats) => {
         const amountMsats = amountUtils.satToMsat(amount)
         let fediFee: MSats = 0 as MSats
         let federationFee: MSats = 0 as MSats
@@ -742,6 +743,35 @@ export function useFeeDisplayUtils(t: TFunction, federationId: string) {
         }
     }
 
+    const makeSPTransferFeeContent = () => {
+        // TODO: Implement real fees
+        const fediFee: UsdCents = 0 as UsdCents
+        const federationFee: UsdCents = 0 as UsdCents
+        const totalFees: UsdCents = (fediFee + federationFee) as UsdCents
+        const { formattedPrimaryAmount: formattedFediFee } =
+            makeFormattedAmountsFromCents(fediFee)
+        const { formattedPrimaryAmount: formattedFederationFee } =
+            makeFormattedAmountsFromCents(federationFee)
+        const { formattedPrimaryAmount: formattedTotalFee } =
+            makeFormattedAmountsFromCents(totalFees)
+
+        const spTransferFeeItems: FeeItem[] = [
+            {
+                label: t('phrases.fedi-fee'),
+                formattedAmount: `${formattedFediFee}`,
+            },
+            {
+                label: t('phrases.federation-fee'),
+                formattedAmount: `${formattedFederationFee}`,
+            },
+        ]
+
+        return {
+            feeItemsBreakdown: spTransferFeeItems,
+            formattedTotalFee: `${formattedTotalFee}`,
+        }
+    }
+
     const feeBreakdownTitle = t('phrases.fee-details')
     const ecashFeesGuidanceText = t('feature.fees.guidance-ecash')
 
@@ -751,6 +781,7 @@ export function useFeeDisplayUtils(t: TFunction, federationId: string) {
         makeEcashFeeContent,
         makeLightningFeeContent,
         makeOnchainFeeContent,
-        makeStabilityPoolFeeContent,
+        makeSPDepositFeeContent,
+        makeSPTransferFeeContent,
     }
 }

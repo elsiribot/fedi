@@ -22,6 +22,7 @@ import {
     ParsedLnurlAuth,
     ParsedLnurlPay,
     ParsedLnurlWithdraw,
+    ParsedStabilityAddress,
     ParsedUnknownData,
     ParsedWebsite,
     ParserDataType,
@@ -96,6 +97,10 @@ const offlineParsers: Parser[] = [
     {
         name: 'parseCashuEcash',
         handler: raw => parseCashuEcash(raw),
+    },
+    {
+        name: 'parseStabilityAddress',
+        handler: (raw, fedimint) => parseStabilityAddress(raw, fedimint),
     },
     {
         name: 'parseFediUniversalLink',
@@ -664,6 +669,22 @@ async function parseFedimintEcash(
         return {
             type: ParserDataType.FedimintEcash,
             data: { token: raw, parsed: ecash },
+        }
+    } catch {
+        // no-op
+    }
+}
+
+async function parseStabilityAddress(
+    raw: string,
+    fedimint: FedimintBridge,
+): Promise<ParsedStabilityAddress | undefined> {
+    try {
+        const data = await fedimint.spv2ParsePaymentAddress(raw)
+        return {
+            type: ParserDataType.StabilityAddress,
+            // Include the raw payment request for the confirmation screen.
+            data: { ...data, address: raw },
         }
     } catch {
         // no-op

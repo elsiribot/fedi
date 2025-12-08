@@ -11,6 +11,7 @@ import { useToast } from '@fedi/common/hooks/toast'
 import {
     selectFederationBalance,
     selectMaxStableBalanceSats,
+    selectShouldShowStablePaymentAddress,
     selectStableBalance,
     selectStableBalancePending,
     selectStableBalanceSats,
@@ -45,6 +46,10 @@ const StabilityWallet: React.FC<Props> = ({
     const toast = useToast()
 
     useMonitorStabilityPool(fedimint, federation.id)
+
+    const shouldShowStablePaymentAddress = useAppSelector(
+        selectShouldShowStablePaymentAddress,
+    )
 
     const stabilityPoolDisabledByFederation =
         !useIsStabilityPoolEnabledByFederation(federation.id)
@@ -100,6 +105,12 @@ const StabilityWallet: React.FC<Props> = ({
             toast.show({
                 content: t('feature.stabilitypool.pending-withdrawal-blocking'),
                 status: 'error',
+            })
+        } else if (shouldShowStablePaymentAddress) {
+            // use new transfer flow is feature flag is on
+            dispatch(setPayFromFederationId(federation.id))
+            navigation.navigate('StabilityTransfer', {
+                federationId: federation.id,
             })
         } else {
             dispatch(setPayFromFederationId(federation.id))

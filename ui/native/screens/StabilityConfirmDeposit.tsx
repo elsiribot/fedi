@@ -50,8 +50,10 @@ const StabilityConfirmDeposit: React.FC<Props> = ({ route, navigation }) => {
     })
     const { formattedFiat, formattedSats, formattedUsd } =
         makeFormattedAmountsFromSats(amount)
-    const { feeBreakdownTitle, makeStabilityPoolFeeContent } =
-        useFeeDisplayUtils(t, federationId)
+    const { feeBreakdownTitle, makeSPDepositFeeContent } = useFeeDisplayUtils(
+        t,
+        federationId,
+    )
     const stabilityPoolAverageFeeRate = useAppSelector(s =>
         selectStabilityPoolAverageFeeRate(s, federationId),
     )
@@ -87,8 +89,9 @@ const StabilityConfirmDeposit: React.FC<Props> = ({ route, navigation }) => {
 
     const style = styles(theme)
 
+    // TODO: refactor this to use the shared SendPreviewDetails component
     const renderDetails = () => {
-        const feeContent = makeStabilityPoolFeeContent(amount)
+        const feeContent = makeSPDepositFeeContent(amount)
         const { formattedTotalFee, feeItemsBreakdown } = feeContent
 
         return (
