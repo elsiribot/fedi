@@ -204,7 +204,22 @@ export const useSpv2OurPaymentAddress = (
             setOurPaymentAddress(null)
             return
         }
-        fedimint.spv2OurPaymentAddress(federationId).then(setOurPaymentAddress)
+        fedimint
+            .spv2OurPaymentAddress(federationId)
+            .then(paymentAddress => {
+                log.info('SPv2 our payment address', { paymentAddress })
+                setOurPaymentAddress(paymentAddress)
+            })
+            .then(() => {
+                log.info('Starting SPv2 fast sync')
+                fedimint.spv2StartFastSync(federationId)
+            })
+            .catch(error => {
+                log.error('SPv2  payment address failure', {
+                    federationId,
+                    error,
+                })
+            })
     }, [fedimint, federationId, shouldShowStablePaymentAddress])
     return ourPaymentAddress
 }

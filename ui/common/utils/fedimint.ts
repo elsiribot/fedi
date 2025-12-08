@@ -155,6 +155,10 @@ export class FedimintBridge {
         })
     }
 
+    async spv2StartFastSync(federationId: string) {
+        return this.rpcTyped('spv2StartFastSync', { federationId })
+    }
+
     async spv2OurPaymentAddress(federationId: string) {
         return this.rpcTyped('spv2OurPaymentAddress', {
             federationId,
