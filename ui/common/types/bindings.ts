@@ -798,6 +798,7 @@ export type RpcMethods = {
     RpcSpv2ParsedPaymentAddress,
   ];
   spv2Transfer: [spv2Transfer, RpcOperationId];
+  spv2StartFastSync: [spv2StartFastSync, null];
   getSensitiveLog: [getSensitiveLog, boolean];
   setSensitiveLog: [setSensitiveLog, null];
   internalMarkBridgeExport: [internalMarkBridgeExport, null];
@@ -2233,6 +2234,8 @@ export type spv2OurPaymentAddress = {
 };
 
 export type spv2ParsePaymentAddress = { address: string };
+
+export type spv2StartFastSync = { federationId: RpcFederationId };
 
 export type spv2SubscribeAccountInfo = {
   federationId: RpcFederationId;

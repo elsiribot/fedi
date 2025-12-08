@@ -1061,6 +1061,11 @@ async fn spv2Transfer(
         .map(Into::into)
 }
 
+#[macro_rules_derive(federation_rpc_method!)]
+async fn spv2StartFastSync(federation: Arc<FederationV2>) -> anyhow::Result<()> {
+    federation.spv2_start_fast_sync()
+}
+
 #[macro_rules_derive(rpc_method!)]
 async fn getSensitiveLog(runtime: Arc<Runtime>) -> anyhow::Result<bool> {
     Ok(runtime.sensitive_log().await)
@@ -2408,6 +2413,7 @@ rpc_methods!(RpcMethods {
     spv2OurPaymentAddress,
     spv2ParsePaymentAddress,
     spv2Transfer,
+    spv2StartFastSync,
     // Developer
     getSensitiveLog,
     setSensitiveLog,

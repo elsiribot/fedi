@@ -3301,6 +3301,15 @@ impl FederationV2 {
             .filter_map(|sync| async { sync.map(|sync| sync.into()) }))
     }
 
+    pub fn spv2_start_fast_sync(&self) -> Result<()> {
+        self.client.spv2()?;
+        let Some(sync_service) = self.spv2_sync_service.get() else {
+            bail!("Unexpected: sync service must have been initialized");
+        };
+        sync_service.start_fast_syncing();
+        Ok(())
+    }
+
     /// Returns the start time of the next cycle by adding cycle duration to the
     /// start time of the last known cycle as recorded in the cached sync
     /// response.
