@@ -1255,6 +1255,7 @@
             "seconds": "{{seconds}} seconds",
             "select-receiver": "Select receiver",
             "stable-balance": "Stable Balance",
+            "transfer-amount": "Transfer amount",
             "usd-amount": "USD amount",
             "what-is-stable-balance": "What is Stable Balance?",
             "will-be-deposited": "{{amount}} will be deposited in {{expectedWait}}",
