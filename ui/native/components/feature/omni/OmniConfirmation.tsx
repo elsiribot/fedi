@@ -51,9 +51,15 @@ export const OmniConfirmation = <T extends AnyParsedData>({
     const areAllFederationsRecovering = useAppSelector(
         selectAreAllFederationsRecovering,
     )
-    const shouldShowStablePaymentAddress = useAppSelector(
-        selectShouldShowStablePaymentAddress,
-    )
+    const shouldShowStablePaymentAddress = useAppSelector(state => {
+        if (parsedData.type !== ParserDataType.StabilityAddress) return false
+        return selectShouldShowStablePaymentAddress(
+            state,
+            parsedData.data.federation.type === 'joined'
+                ? parsedData.data.federation.federationId
+                : undefined,
+        )
+    })
 
     // OmniConfirmation can be rendered ourside of StackNavigator, so `replace`
     // is not always available, so fall back to navigate. Cast as NavigationHook

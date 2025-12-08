@@ -47,8 +47,8 @@ const StabilityWallet: React.FC<Props> = ({
 
     useMonitorStabilityPool(fedimint, federation.id)
 
-    const shouldShowStablePaymentAddress = useAppSelector(
-        selectShouldShowStablePaymentAddress,
+    const shouldShowStablePaymentAddress = useAppSelector(s =>
+        selectShouldShowStablePaymentAddress(s, federation.id),
     )
 
     const stabilityPoolDisabledByFederation =
@@ -144,7 +144,7 @@ const StabilityWallet: React.FC<Props> = ({
                 <Pressable style={style.header} onPress={handleHeaderPress}>
                     {/* Icon, title, and chevron grouped together */}
                     <Row align="center" gap="sm" shrink style={style.leftGroup}>
-                        <StabilityWalletTitle federation={federation} />
+                        <StabilityWalletTitle federationId={federation.id} />
                     </Row>
                     {/* Balance on the right */}
                     <StabilityWalletBalance federationId={federation.id} />
@@ -155,7 +155,10 @@ const StabilityWallet: React.FC<Props> = ({
                     federation={federation}
                     incoming={{
                         onPress: handleDeposit,
-                        disabled: balance === 0,
+                        // if stable payment address is available, we don't need to disable based on ecash balance since the user can receive stable balance directly from others via transfers
+                        disabled: shouldShowStablePaymentAddress
+                            ? false
+                            : balance === 0,
                     }}
                     outgoing={{
                         onPress: handleWithdraw,

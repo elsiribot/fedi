@@ -21,8 +21,8 @@ const StabilityDepositHeader: React.FC = () => {
     const navigation = useNavigation<NavigationHook>()
     const route = useRoute<StabilityDepositRouteProp>()
     const { federationId } = route.params
-    const shouldShowStablePaymentAddress = useAppSelector(
-        selectShouldShowStablePaymentAddress,
+    const shouldShowStablePaymentAddress = useAppSelector(s =>
+        selectShouldShowStablePaymentAddress(s, federationId),
     )
 
     return (

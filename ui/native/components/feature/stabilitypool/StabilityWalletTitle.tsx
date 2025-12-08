@@ -4,8 +4,8 @@ import React from 'react'
 import { useTranslation } from 'react-i18next'
 import { StyleSheet } from 'react-native'
 
-import { selectStabilityPoolVersion } from '@fedi/common/redux'
-import { LoadedFederation, SupportedCurrency } from '@fedi/common/types'
+import { selectCurrency, selectStabilityPoolVersion } from '@fedi/common/redux'
+import { Federation } from '@fedi/common/types'
 import { isDev } from '@fedi/common/utils/environment'
 
 import { useAppSelector } from '../../../state/hooks'
@@ -13,19 +13,19 @@ import { Row } from '../../ui/Flex'
 import SvgImage, { SvgImageSize } from '../../ui/SvgImage'
 
 type Props = {
-    federation?: LoadedFederation
+    federationId?: Federation['id']
     bold?: boolean
     bolder?: boolean
-    showUsd?: boolean
+    showCurrency?: boolean
     small?: boolean
 }
 
 const StabilityWalletTitle: React.FC<Props> = ({
-    federation,
+    federationId,
     bold = false,
     bolder = false,
     small = false,
-    showUsd = true,
+    showCurrency = true,
 }) => {
     const { t } = useTranslation()
     const { theme } = useTheme()
@@ -33,7 +33,10 @@ const StabilityWalletTitle: React.FC<Props> = ({
     const style = styles(theme)
 
     const version = useAppSelector(s =>
-        federation ? selectStabilityPoolVersion(s, federation.id) : undefined,
+        federationId ? selectStabilityPoolVersion(s, federationId) : undefined,
+    )
+    const selectedCurrency = useAppSelector(s =>
+        selectCurrency(s, federationId),
     )
 
     return (
@@ -53,7 +56,7 @@ const StabilityWalletTitle: React.FC<Props> = ({
                     adjustsFontSizeToFit
                     minimumFontScale={0.5}
                     numberOfLines={1}>
-                    {`${showUsd ? `${toUpper(SupportedCurrency.USD)} ` : ''}${t(
+                    {`${showCurrency ? `${toUpper(selectedCurrency)} ` : ''}${t(
                         'feature.stabilitypool.stable-balance',
                         // Helpful for dev testing to easily distinguish spv1 from spv2 federations
                     )}${isDev() && version ? (version === 1 ? ' (SPV1)' : ' (SPV2)') : ''}`}

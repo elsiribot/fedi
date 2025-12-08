@@ -2,14 +2,12 @@ import type { NativeStackScreenProps } from '@react-navigation/native-stack'
 import React from 'react'
 
 import { useSpv2OurPaymentAddress } from '@fedi/common/hooks/stabilitypool'
-import { selectLoadedFederation } from '@fedi/common/redux'
 
 import { fedimint } from '../bridge'
 import ReceiveQr from '../components/feature/receive/ReceiveQr'
 import StabilityWalletTitle from '../components/feature/stabilitypool/StabilityWalletTitle'
 import { Column } from '../components/ui/Flex'
 import { SafeScrollArea } from '../components/ui/SafeArea'
-import { useAppSelector } from '../state/hooks'
 import type { RootStackParamList } from '../types/navigation'
 
 export type Props = NativeStackScreenProps<
@@ -19,9 +17,6 @@ export type Props = NativeStackScreenProps<
 
 const ReceiveStabilityQr: React.FC<Props> = ({ route }) => {
     const { federationId = '' } = route.params
-    const federation = useAppSelector(s =>
-        selectLoadedFederation(s, federationId),
-    )
 
     const ourPaymentAddress = useSpv2OurPaymentAddress(fedimint, federationId)
 
@@ -32,9 +27,9 @@ const ReceiveStabilityQr: React.FC<Props> = ({ route }) => {
                     <ReceiveQr
                         title={
                             <StabilityWalletTitle
-                                federation={federation}
+                                federationId={federationId}
                                 bolder
-                                showUsd={false}
+                                showCurrency={false}
                             />
                         }
                         uri={{

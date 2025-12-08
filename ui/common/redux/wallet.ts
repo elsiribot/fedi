@@ -1022,11 +1022,15 @@ export const selectLnurlReceiveCode = (
 }
 
 export const selectShouldShowStablePaymentAddress = createSelector(
-    (s: CommonState) => selectFeatureFlags(s),
-    featureFlags => {
-        if (!featureFlags) return false
+    (s: CommonState, _federationId?: Federation['id']) => selectFeatureFlags(s),
+    (s: CommonState, federationId?: Federation['id']) =>
+        federationId ? selectStabilityPoolVersion(s, federationId) : undefined,
+    (_s: CommonState, federationId?: Federation['id']) => federationId,
+    (featureFlags, stabilityPoolVersion, federationId) => {
+        if (!featureFlags || !federationId) return false
         const hasSpTransferUiConfig = featureFlags.sp_transfer_ui !== null
-        return hasSpTransferUiConfig
+        const hasRequiredVersion = stabilityPoolVersion === 2
+        return hasSpTransferUiConfig && hasRequiredVersion
     },
 )
 

@@ -192,28 +192,19 @@ export const useSpv2OurPaymentAddress = (
     fedimint: FedimintBridge,
     federationId: Federation['id'],
 ) => {
-    const stabilityVersion = useCommonSelector(s =>
-        selectStabilityPoolVersion(s, federationId),
-    )
-    const shouldShowStablePaymentAddress = useCommonSelector(
-        selectShouldShowStablePaymentAddress,
+    const shouldShowStablePaymentAddress = useCommonSelector(s =>
+        selectShouldShowStablePaymentAddress(s, federationId),
     )
     const [ourPaymentAddress, setOurPaymentAddress] = useState<string | null>(
         null,
     )
 
     useEffect(() => {
-        const isSpv2Federation = stabilityVersion === 2
-        if (!isSpv2Federation || !shouldShowStablePaymentAddress) {
+        if (!shouldShowStablePaymentAddress) {
             setOurPaymentAddress(null)
             return
         }
         fedimint.spv2OurPaymentAddress(federationId).then(setOurPaymentAddress)
-    }, [
-        fedimint,
-        federationId,
-        stabilityVersion,
-        shouldShowStablePaymentAddress,
-    ])
+    }, [fedimint, federationId, shouldShowStablePaymentAddress])
     return ourPaymentAddress
 }

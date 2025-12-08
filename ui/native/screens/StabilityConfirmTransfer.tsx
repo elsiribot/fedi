@@ -43,7 +43,10 @@ const StabilityConfirmTransfer: React.FC<Props> = ({ route, navigation }) => {
     const { formattedTotalFee, feeItemsBreakdown } = makeSPTransferFeeContent()
     const toast = useToast()
     const [processingTransfer, setProcessingTransfer] = useState<boolean>(false)
-    const { convertCentsToFormattedFiat } = useBtcFiatPrice()
+    const { convertCentsToFormattedFiat } = useBtcFiatPrice(
+        undefined,
+        federationId,
+    )
 
     const formattedFiat = convertCentsToFormattedFiat(amount, 'end')
 
@@ -84,7 +87,7 @@ const StabilityConfirmTransfer: React.FC<Props> = ({ route, navigation }) => {
             edges={{ left: 'additive', right: 'additive', bottom: 'maximum' }}>
             <StabilityBalanceTile federationId={federationId} />
             <Column align="center" style={style.amountContainer}>
-                <StabilityWalletTitle bolder />
+                <StabilityWalletTitle bolder federationId={federationId} />
                 <SendAmounts
                     showBalance={false}
                     formattedPrimaryAmount={formattedFiat}
@@ -96,7 +99,13 @@ const StabilityConfirmTransfer: React.FC<Props> = ({ route, navigation }) => {
                 onSend={handleSubmit}
                 isLoading={processingTransfer}
                 sendButtonText={t('words.transfer')}
-                senderText={<StabilityWalletTitle small bold />}
+                senderText={
+                    <StabilityWalletTitle
+                        small
+                        bold
+                        federationId={federationId}
+                    />
+                }
                 receiverText={
                     'address' in recipient ? (
                         <View style={style.sendFrom}>
