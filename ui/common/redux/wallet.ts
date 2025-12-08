@@ -18,6 +18,7 @@ import {
     selectReusedEcashFederations,
     selectStabilityPoolFeeSchedule,
     selectLoadedFederations,
+    selectFeatureFlags,
 } from '.'
 import {
     Federation,
@@ -991,6 +992,15 @@ export const selectLnurlReceiveCode = (
 ) => {
     return selectFederationWalletState(s, federationId).lnurlReceiveCode
 }
+
+export const selectShouldShowStablePaymentAddress = createSelector(
+    (s: CommonState) => selectFeatureFlags(s),
+    featureFlags => {
+        if (!featureFlags) return false
+        const hasSpTransferUiConfig = featureFlags.sp_transfer_ui !== null
+        return hasSpTransferUiConfig
+    },
+)
 
 export const selectTotalStableBalanceSats = createSelector(
     (s: CommonState) => s,

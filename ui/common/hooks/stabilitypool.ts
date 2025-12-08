@@ -1,10 +1,11 @@
-import { useEffect, useRef } from 'react'
+import { useEffect, useRef, useState } from 'react'
 
 import {
     refreshStabilityPool,
     selectStabilityPoolState,
     selectStableBalancePending,
     selectStabilityPoolVersion,
+    selectShouldShowStablePaymentAddress,
     setStabilityPoolState,
 } from '../redux'
 import { Federation } from '../types'
@@ -185,4 +186,34 @@ export async function useMonitorStabilityPool(
         federationId,
         fedimint,
     ])
+}
+
+export const useSpv2OurPaymentAddress = (
+    fedimint: FedimintBridge,
+    federationId: Federation['id'],
+) => {
+    const stabilityVersion = useCommonSelector(s =>
+        selectStabilityPoolVersion(s, federationId),
+    )
+    const shouldShowStablePaymentAddress = useCommonSelector(
+        selectShouldShowStablePaymentAddress,
+    )
+    const [ourPaymentAddress, setOurPaymentAddress] = useState<string | null>(
+        null,
+    )
+
+    useEffect(() => {
+        const isSpv2Federation = stabilityVersion === 2
+        if (!isSpv2Federation || !shouldShowStablePaymentAddress) {
+            setOurPaymentAddress(null)
+            return
+        }
+        fedimint.spv2OurPaymentAddress(federationId).then(setOurPaymentAddress)
+    }, [
+        fedimint,
+        federationId,
+        stabilityVersion,
+        shouldShowStablePaymentAddress,
+    ])
+    return ourPaymentAddress
 }

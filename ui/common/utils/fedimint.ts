@@ -155,6 +155,37 @@ export class FedimintBridge {
         })
     }
 
+    async spv2OurPaymentAddress(federationId: string) {
+        return this.rpcTyped('spv2OurPaymentAddress', {
+            federationId,
+            includeInvite: true,
+        })
+    }
+
+    async spv2ParsePaymentAddress(spPaymentAddress: string) {
+        return this.rpcTyped('spv2ParsePaymentAddress', {
+            address: spPaymentAddress,
+        })
+    }
+
+    async spv2Transfer(
+        amount: UsdCents,
+        accountId: string,
+        federationId: string,
+        notes?: string,
+    ) {
+        return this.rpcTyped('spv2Transfer', {
+            amount,
+            accountId,
+            federationId,
+            frontendMeta: {
+                initialNotes: notes || null,
+                recipientMatrixId: null,
+                senderMatrixId: null,
+            },
+        })
+    }
+
     async spv2AccountInfo(federationId: string) {
         return this.rpcTyped('spv2AccountInfo', { federationId })
     }

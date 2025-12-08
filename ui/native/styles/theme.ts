@@ -198,9 +198,13 @@ const theme = createTheme({
                     : themeDefaults.multipliers.defaultMaxFontMultiplier,
             style: {
                 ...themeDefaults.styles?.text,
-                // Use fontFamily for bolding effects because the fontWeight
-                // value only has 2 distinct variants in AlbertSans-Regular
-                // whereas the design calls for a 3rd distinct variant (medium)
+                // Use fontFamily & fontWeight for bolding effects
+                ...(props.bolder
+                    ? {
+                          fontFamily: 'AlbertSans-ExtraBold',
+                          fontWeight: fediTheme.fontWeights.bolder,
+                      }
+                    : {}),
                 ...(props.bold
                     ? {
                           fontFamily: 'AlbertSans-Bold',
@@ -227,6 +231,12 @@ const theme = createTheme({
                 fontSize: 32,
                 fontWeight: fediTheme.fontWeights.normal,
                 fontFamily: 'AlbertSans-Regular',
+                ...(props.bolder
+                    ? {
+                          fontFamily: 'AlbertSans-ExtraBold',
+                          fontWeight: fediTheme.fontWeights.bolder,
+                      }
+                    : {}),
                 ...(props.bold
                     ? {
                           fontFamily: 'AlbertSans-Bold',
@@ -244,6 +254,12 @@ const theme = createTheme({
                 fontSize: 24,
                 fontWeight: fediTheme.fontWeights.normal,
                 fontFamily: 'AlbertSans-Regular',
+                ...(props.bolder
+                    ? {
+                          fontFamily: 'AlbertSans-ExtraBold',
+                          fontWeight: fediTheme.fontWeights.bolder,
+                      }
+                    : {}),
                 ...(props.bold
                     ? {
                           fontFamily: 'AlbertSans-Bold',

@@ -189,10 +189,17 @@ export type RootStackParamList = {
     SendOfflineQr: { ecash: string; amount: MSats }
     SendOnChainAmount: { parsedData: ParsedBip21 | ParsedBitcoinAddress }
     SendSuccess: { amount: MSats; unit: string }
+    SendSuccessShield: {
+        title: string
+        formattedAmount: string
+        description: string
+        federationId?: Federation['id']
+    }
     Settings: undefined
     ShareLogs: { ticketNumber: string } | undefined
     OmniScanner: undefined
     FediModBrowser: { url: string }
+    ReceiveStabilityQr: { federationId: Federation['id'] }
     Splash: undefined
     StabilityConfirmDeposit: { amount: Sats; federationId: Federation['id'] }
     StabilityConfirmWithdraw: {

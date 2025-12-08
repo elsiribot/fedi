@@ -53,7 +53,6 @@ import SendHeader from '../components/feature/send/SendHeader'
 import SettingsHeader from '../components/feature/settings/SettingsHeader'
 import ConfirmDepositHeader from '../components/feature/stabilitypool/ConfirmDepositHeader'
 import ConfirmWithdrawHeader from '../components/feature/stabilitypool/ConfirmWithdrawHeader'
-import DepositInitiatedHeader from '../components/feature/stabilitypool/DepositInitiatedHeader'
 import StabilityDepositHeader from '../components/feature/stabilitypool/StabilityDepositHeader'
 import StabilityHistoryHeader from '../components/feature/stabilitypool/StabilityHistoryHeader'
 import StabilityHomeHeader from '../components/feature/stabilitypool/StabilityHomeHeader'
@@ -148,6 +147,7 @@ import PublicFederations from './PublicFederations'
 import Receive from './Receive'
 import ReceiveLightning from './ReceiveLightning'
 import ReceiveLnurl from './ReceiveLnurl'
+import ReceiveStabilityQr from './ReceiveStabilityQr'
 import ReceiveSuccess from './ReceiveSuccess'
 import RecordBackupVideo from './RecordBackupVideo'
 import RecoverFromNonceReuse from './RecoverFromNonceReuse'
@@ -170,6 +170,7 @@ import SendOfflineAmount from './SendOfflineAmount'
 import SendOfflineQr from './SendOfflineQr'
 import SendOnChainAmount from './SendOnChainAmount'
 import SendSuccess from './SendSuccess'
+import SendSuccessShield from './SendSuccessShield'
 import SetPin from './SetPin'
 import Settings from './Settings'
 import ShareLogs from './ShareLogs'
@@ -183,7 +184,6 @@ import Splash from './Splash'
 import StabilityConfirmDeposit from './StabilityConfirmDeposit'
 import StabilityConfirmWithdraw from './StabilityConfirmWithdraw'
 import StabilityDeposit from './StabilityDeposit'
-import StabilityDepositInitiated from './StabilityDepositInitiated'
 import StabilityHistory from './StabilityHistory'
 import StabilityHome from './StabilityHome'
 import StabilityWithdraw from './StabilityWithdraw'
@@ -746,6 +746,11 @@ export const MainNavigator = () => {
                                 options={{ headerShown: false }}
                             />
                             <Stack.Screen
+                                name="SendSuccessShield"
+                                component={SendSuccessShield}
+                                options={{ headerShown: false }}
+                            />
+                            <Stack.Screen
                                 name="EcashSendCancelled"
                                 component={EcashSendCancelled}
                                 options={{ headerShown: false }}
@@ -1247,6 +1252,20 @@ export const MainNavigator = () => {
                                 })}
                             />
                             <Stack.Screen
+                                name="ReceiveStabilityQr"
+                                component={ReceiveStabilityQr}
+                                options={() => ({
+                                    header: () => (
+                                        <CenteredHeader
+                                            title={t(
+                                                'feature.stabilitypool.receive-stable-balance',
+                                            )}
+                                            backButton
+                                        />
+                                    ),
+                                })}
+                            />
+                            <Stack.Screen
                                 name="StabilityConfirmDeposit"
                                 component={StabilityConfirmDeposit}
                                 options={() => ({
@@ -1258,13 +1277,6 @@ export const MainNavigator = () => {
                                 component={StabilityConfirmWithdraw}
                                 options={() => ({
                                     header: () => <ConfirmWithdrawHeader />,
-                                })}
-                            />
-                            <Stack.Screen
-                                name="StabilityDepositInitiated"
-                                component={StabilityDepositInitiated}
-                                options={() => ({
-                                    header: () => <DepositInitiatedHeader />,
                                 })}
                             />
                             <Stack.Screen
