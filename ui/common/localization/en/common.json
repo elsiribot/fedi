@@ -665,7 +665,7 @@
             "wallet-balance": "Wallet balance"
         },
         "fedimods": {
-            "add-a-mini-app": "Add a mini app",
+            "add-a-mini-app": "Add a Mini App",
             "add-from-catalog": "Add from Catalog",
             "add-mini-app-failure": "Failed to add {{miniAppName}} to your Mini-Apps.",
             "add-mini-app-success": "{{miniAppName}} has been added to your Mini-Apps!",

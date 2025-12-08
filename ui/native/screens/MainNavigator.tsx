@@ -21,6 +21,7 @@ import CommunityInviteHeader from '../components/feature/federations/CommunityIn
 import FederationDetailsHeader from '../components/feature/federations/FederationDetailsHeader'
 import FederationInviteHeader from '../components/feature/federations/FederationInviteHeader'
 import JoinFederationHeader from '../components/feature/federations/JoinFederationHeader'
+import AddFediModHeader from '../components/feature/fedimods/AddFediModHeader'
 import NostrSettingsHeader from '../components/feature/fedimods/NostrSettingsHeader'
 import EulaHeader from '../components/feature/onboarding/EulaHeader'
 import NewMemberAvatarImageHeader from '../components/feature/onboarding/NewMemberAvatarImageHeader'
@@ -1063,14 +1064,7 @@ export const MainNavigator = () => {
                                 name="AddFediMod"
                                 component={AddFediMod}
                                 options={() => ({
-                                    header: () => (
-                                        <CenteredHeader
-                                            backButton
-                                            title={t(
-                                                'feature.fedimods.add-a-mini-app',
-                                            )}
-                                        />
-                                    ),
+                                    header: () => <AddFediModHeader />,
                                 })}
                             />
                             <Stack.Screen

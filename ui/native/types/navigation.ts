@@ -54,7 +54,7 @@ export type TabsNavigatorParamList = {
 }
 export type RootStackParamList = {
     AppSettings: undefined
-    AddFediMod: undefined
+    AddFediMod: { inputMethod: 'enter' | 'scan' }
     BitcoinRequest: { invoice: string; federationId?: Federation['id'] }
     BugReportSuccess: undefined
     CameraPermission: { nextScreen: keyof RootStackParamList } | undefined

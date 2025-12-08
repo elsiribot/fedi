@@ -246,7 +246,11 @@ const Mods: React.FC = () => {
             ) : (
                 <Flex center grow gap="md">
                     <Pressable
-                        onPress={() => navigation.navigate('AddFediMod')}>
+                        onPress={() =>
+                            navigation.navigate('AddFediMod', {
+                                inputMethod: 'enter',
+                            })
+                        }>
                         <SvgImage name="NewModIcon" size={48} />
                     </Pressable>
                     <Text>{t('feature.fedimods.add-mods-homescreen')}</Text>
