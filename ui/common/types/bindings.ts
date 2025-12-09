@@ -1048,7 +1048,7 @@ export type RpcPaymentMessageContent = {
   inviteCode?: string;
 };
 
-export type RpcPeerId = number;
+export type RpcPeerId = string;
 
 export type RpcPollKind = "undisclosed" | "disclosed";
 
