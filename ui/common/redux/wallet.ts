@@ -1049,6 +1049,8 @@ export const selectTotalStableBalanceSats = createSelector(
             )
             return acc + stableBalanceSats + stableBalancePendingSats
         }, 0) as Sats
-        return totalStableBalanceSats
+        return Number.isNaN(totalStableBalanceSats)
+            ? (0 as Sats)
+            : totalStableBalanceSats
     },
 )
