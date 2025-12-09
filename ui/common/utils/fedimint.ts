@@ -654,7 +654,7 @@ export class FedimintBridge {
     ) {
         return this.rpcTyped('approveSocialRecoveryRequest', {
             recoveryId,
-            peerId,
+            peerId: String(peerId),
             password,
             federationId,
         })
@@ -668,7 +668,7 @@ export class FedimintBridge {
         return this.rpcTyped('socialRecoveryDownloadVerificationDoc', {
             federationId,
             recoveryId,
-            peerId,
+            peerId: String(peerId),
         })
     }
 
