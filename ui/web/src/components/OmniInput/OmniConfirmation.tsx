@@ -144,6 +144,15 @@ export const OmniConfirmation: React.FC<Props> = ({
                             `/onboarding/join?invite_code=${parsedData.data.invite}`,
                         ),
                 }
+            case ParserDataType.CommunityInvite:
+                return {
+                    icon: FederationIcon,
+                    text: t('feature.omni.confirm-community-invite'),
+                    continueOnClick: () =>
+                        router.push(
+                            `/onboarding/join?invite_code=${parsedData.data.invite}`,
+                        ),
+                }
             case ParserDataType.CashuEcash:
                 return {
                     icon: BoltIcon,
