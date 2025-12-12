@@ -98,12 +98,17 @@ export const federationSlice = createSlice({
         setCommunities(state, action: PayloadAction<Community[]>) {
             let hasAnyUpdates = false
 
-            const updatedCommunities = state.communities.map(
-                existingCommunity => {
+            const updatedCommunities = state.communities.reduce<Community[]>(
+                (acc, existingCommunity) => {
                     const communityToUpsert = action.payload.find(
                         f => f.id === existingCommunity.id,
                     )
-                    if (!communityToUpsert) return existingCommunity
+                    // Skip communities not in payload (they've been removed)
+                    if (!communityToUpsert) {
+                        hasAnyUpdates = true
+                        return acc
+                    }
+
                     const updatedCommunity: Community = {
                         ...existingCommunity,
                         ...communityToUpsert,
@@ -125,8 +130,10 @@ export const federationSlice = createSlice({
                     )
                     if (hasUpdates) hasAnyUpdates = true
 
-                    return hasUpdates ? updatedCommunity : existingCommunity
+                    acc.push(hasUpdates ? updatedCommunity : existingCommunity)
+                    return acc
                 },
+                [],
             )
 
             // Add new communities that don't exist in the current state

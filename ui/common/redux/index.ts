@@ -28,8 +28,10 @@ import {
     joinFederation,
     processCommunityMeta,
     processFederationMeta,
+    refreshCommunities,
     refreshFederations,
     refreshGuardianStatuses,
+    setLastSelectedCommunityId,
     tryRejoinFederationsPendingScratchRejoin,
     updateFederationBalance,
     upsertCommunity,
@@ -117,7 +119,7 @@ export type RootState = ReturnType<typeof rootReducer>
  * Sets up any initial redux behavior that is consistent across all platforms.
  */
 export function initializeCommonStore({
-    store: { dispatch },
+    store: { dispatch, getState },
     fedimint,
     storage,
     i18n,
@@ -198,6 +200,28 @@ export function initializeCommonStore({
             const community: Community = coerceCommunity(event.newCommunity)
             dispatch(upsertCommunity(community))
             dispatch(processCommunityMeta({ fedimint, community }))
+        },
+    )
+
+    // Handle V1 to V2 community migration
+    const unsubscribeCommunityMigration = fedimint.addListener(
+        'communityMigratedToV2',
+        async event => {
+            // Refresh communities to get the updated list with v1 replaced by v2
+            await dispatch(refreshCommunities(fedimint))
+
+            // Only update lastSelectedCommunityId if it was pointing to the migrated v1 community
+            // This prevents unexpected behavior if the user switched to a different community
+            // before the migration event fired
+            const state = getState()
+            if (
+                state.federation.lastSelectedCommunityId === event.v1InviteCode
+            ) {
+                const newCommunity: Community = coerceCommunity(
+                    event.v2Community,
+                )
+                dispatch(setLastSelectedCommunityId(newCommunity.id))
+            }
         },
     )
 
@@ -308,6 +332,7 @@ export function initializeCommonStore({
         unsubscribeFederation()
         unsubscribeNonceReuseCheckFailed()
         unsubscribeCommunities()
+        unsubscribeCommunityMigration()
         unsubscribeBalance()
         unsubscribeTransaction()
         unsubscribeRecovery()
