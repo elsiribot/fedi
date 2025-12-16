@@ -41,9 +41,6 @@ pub enum RpcSpTransferEvent {
 #[ts(export)]
 pub enum RpcSpTransferStatus {
     Pending,
-    SentHint,
-    /// TODO: this state is not reachable right now, we need to check with
-    /// federation to reach this
     Complete,
     Failed,
 }
