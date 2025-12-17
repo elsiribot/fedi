@@ -1018,7 +1018,7 @@ async fn test_social_backup_and_recovery(_dev_fed: DevFed) -> anyhow::Result<()>
     info!("initial mnemnoic {:?}", &initial_words);
 
     // Upload backup
-    let video_file_path = get_fixture_dir().join("backup.fedi");
+    let video_file_path = get_fixture_dir().join("verification_doc.txt"); // should be video in practice
     let video_file_contents = tokio::fs::read(&video_file_path).await?;
     let recovery_file_path =
         uploadBackupFile(original_bridge, federation_id.clone(), video_file_path).await?;
