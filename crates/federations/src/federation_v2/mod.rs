@@ -2420,12 +2420,13 @@ impl FederationV2 {
         &self,
         recovery_id: &RecoveryId,
         peer_id: PeerId,
+        guardian_password: String,
     ) -> Result<Option<Vec<u8>>> {
         tracing::info!("downloading verification doc {}", recovery_id);
         // FIXME: maybe shouldn't download from only one peer?
         let verification_client = self.social_verification(peer_id).await?;
         let verification_doc = verification_client
-            .download_verification_doc(*recovery_id)
+            .download_verification_doc(*recovery_id, guardian_password)
             .await?;
         if let Some(verification_doc) = verification_doc {
             tracing::info!("downloaded verification doc");
@@ -2441,12 +2442,12 @@ impl FederationV2 {
         &self,
         recovery_id: &RecoveryId,
         peer_id: PeerId,
-        password: &str,
+        guardian_password: String,
     ) -> Result<()> {
-        tracing::info!("approve social recovery {} {}", peer_id, password);
+        tracing::info!("approve social recovery {}", peer_id);
         let verification_client = self.social_verification(peer_id).await?;
         verification_client
-            .approve_recovery(*recovery_id, password)
+            .approve_recovery(*recovery_id, guardian_password)
             .await?;
         Ok(())
     }

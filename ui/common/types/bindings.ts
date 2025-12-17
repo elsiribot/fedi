@@ -1725,7 +1725,7 @@ export type approveSocialRecoveryRequest = {
   federationId: RpcFederationId;
   recoveryId: RpcRecoveryId;
   peerId: RpcPeerId;
-  password: string;
+  guardianPassword: string;
 };
 
 export type backupNow = { federationId: RpcFederationId };
@@ -2209,6 +2209,7 @@ export type socialRecoveryDownloadVerificationDoc = {
   federationId: RpcFederationId;
   recoveryId: RpcRecoveryId;
   peerId: RpcPeerId;
+  guardianPassword: string;
 };
 
 export type spv2AccountInfo = { federationId: RpcFederationId };

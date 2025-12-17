@@ -1046,11 +1046,13 @@ async fn test_social_backup_and_recovery(_dev_fed: DevFed) -> anyhow::Result<()>
     let recovery_id = qr.recovery_id;
 
     // Guardian downloads verification document
+    let password = "pass";
     let verification_doc_path = socialRecoveryDownloadVerificationDoc(
         guardian_bridge,
         federation_id.clone(),
         recovery_id,
         RpcPeerId(fedimint_core::PeerId::from(1)),
+        password.into(),
     )
     .await?
     .unwrap();
@@ -1060,7 +1062,6 @@ async fn test_social_backup_and_recovery(_dev_fed: DevFed) -> anyhow::Result<()>
 
     // 3 guardians approves
     for i in 0..3 {
-        let password = "p";
         approveSocialRecoveryRequest(
             guardian_bridge,
             federation_id.clone(),
