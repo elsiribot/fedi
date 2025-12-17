@@ -26,12 +26,11 @@ import { environmentSlice } from './environment'
 import {
     federationSlice,
     joinFederation,
+    migrateCommunityV1ToV2,
     processCommunityMeta,
     processFederationMeta,
-    refreshCommunities,
     refreshFederations,
     refreshGuardianStatuses,
-    setLastSelectedCommunityId,
     tryRejoinFederationsPendingScratchRejoin,
     updateFederationBalance,
     upsertCommunity,
@@ -119,7 +118,7 @@ export type RootState = ReturnType<typeof rootReducer>
  * Sets up any initial redux behavior that is consistent across all platforms.
  */
 export function initializeCommonStore({
-    store: { dispatch, getState },
+    store: { dispatch },
     fedimint,
     storage,
     i18n,
@@ -206,22 +205,27 @@ export function initializeCommonStore({
     // Handle V1 to V2 community migration
     const unsubscribeCommunityMigration = fedimint.addListener(
         'communityMigratedToV2',
-        async event => {
-            // Refresh communities to get the updated list with v1 replaced by v2
-            await dispatch(refreshCommunities(fedimint))
+        event => {
+            const v2Community: Community = coerceCommunity(event.v2Community)
 
-            // Only update lastSelectedCommunityId if it was pointing to the migrated v1 community
-            // This prevents unexpected behavior if the user switched to a different community
-            // before the migration event fired
-            const state = getState()
-            if (
-                state.federation.lastSelectedCommunityId === event.v1InviteCode
-            ) {
-                const newCommunity: Community = coerceCommunity(
-                    event.v2Community,
-                )
-                dispatch(setLastSelectedCommunityId(newCommunity.id))
-            }
+            log.info(
+                `communityMigratedToV2 event received: migrating from v1 "${event.v1InviteCode}" to v2 "${v2Community.id}" (${v2Community.name})`,
+            )
+
+            // we don't have a guarantee that listCommunities will be called before the event is fired so
+            // we need to handle both scenarios:
+            // 1. listCommunities returned first - v1 exists in state, will be replaced with v2
+            // 2. event fired first - state may be empty, but v2 will be added correctly
+            // this also updates lastSelectedCommunityId if it was pointing to v1
+            dispatch(
+                migrateCommunityV1ToV2({
+                    v1InviteCode: event.v1InviteCode,
+                    v2Community,
+                }),
+            )
+
+            // process meta here since we can't rely on refreshCommunities processing the new community meta
+            dispatch(processCommunityMeta({ fedimint, community: v2Community }))
         },
     )
 
