@@ -1237,7 +1237,6 @@ export type RpcSpTransferState = {
 
 export type RpcSpTransferStatus =
   | { status: "pending" }
-  | { status: "sentHint" }
   | { status: "complete" }
   | { status: "failed" };
 
