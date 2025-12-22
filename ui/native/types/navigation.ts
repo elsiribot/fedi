@@ -140,6 +140,7 @@ export type RootStackParamList = {
     Initializing: undefined
     JoinFederation: { invite?: string }
     LanguageSettings: undefined
+    MiniAppPermissionSettings: undefined
     MultispendIntro: { roomId: string }
     MultispendTransactions: { roomId: string }
     CreateMultispend: { roomId: string; voters?: string[] }

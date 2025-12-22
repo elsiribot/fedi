@@ -7,6 +7,7 @@ import {
     ParsedLnurlWithdraw,
     Invoice,
     EcashRequest,
+    MiniAppPermissionType,
 } from '@fedi/common/types'
 import { UnsignedNostrEvent } from '@fedi/injections/src/injectables/nostr/types'
 
@@ -29,6 +30,7 @@ const initialState = {
     nostrUnsignedEvent: null as UnsignedNostrEvent | null,
     ecashRequest: null as EcashRequest | null,
     addressOverlayOpen: false,
+    requestedPermission: null as MiniAppPermissionType | null,
 }
 
 export type BrowserState = typeof initialState
@@ -64,6 +66,9 @@ export const browserSlice = createSlice({
         setEcashRequest(state, action) {
             state.ecashRequest = action.payload
         },
+        setRequestedPermission(state, action) {
+            state.requestedPermission = action.payload
+        },
         resetBrowserOverlayState(state) {
             state.requestInvoiceArgs = null
             state.invoiceToPay = null
@@ -72,6 +77,7 @@ export const browserSlice = createSlice({
             state.lnurlAuthRequest = null
             state.nostrUnsignedEvent = null
             state.ecashRequest = null
+            state.requestedPermission = null
         },
     },
 })
@@ -85,6 +91,7 @@ export const {
     setLnurlAuthRequest,
     setNostrUnsignedEvent,
     setEcashRequest,
+    setRequestedPermission,
     resetBrowserOverlayState,
     setAddressOverlayOpen,
 } = browserSlice.actions
@@ -118,3 +125,5 @@ export const selectNostrUnsignedEvent = (s: CommonState) =>
 export const selectEcashRequest = (s: CommonState) => s.browser.ecashRequest
 export const selectAddressOverlayOpen = (s: CommonState) =>
     s.browser.addressOverlayOpen
+export const selectRequestedPermission = (s: CommonState) =>
+    s.browser.requestedPermission

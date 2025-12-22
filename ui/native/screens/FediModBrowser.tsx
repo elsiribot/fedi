@@ -47,12 +47,9 @@ import {
     setLastSelectedCommunityId,
     selectCommunities,
     refreshCommunities,
+    selectRequestedPermission,
 } from '@fedi/common/redux'
-import {
-    addCustomMod,
-    selectConfigurableMods,
-    selectMiniAppByUrl,
-} from '@fedi/common/redux/mod'
+import { addCustomMod, selectConfigurableMods } from '@fedi/common/redux/mod'
 import {
     AnyParsedData,
     InstallMiniAppRequest,
@@ -82,6 +79,7 @@ import { NostrSignOverlay } from '../components/feature/fedimods/NostrSignOverla
 import { SelectPublicChatsOverlay } from '../components/feature/fedimods/SelectPublicChats'
 import { SendPaymentOverlay } from '../components/feature/fedimods/SendPaymentOverlay'
 import { RecoveryInProgressOverlay } from '../components/feature/recovery/RecoveryInProgressOverlay'
+import RequestPermissionOverlay from '../components/ui/RequestPermissionOverlay'
 import { SafeAreaContainer } from '../components/ui/SafeArea'
 import {
     useOmniLinkContext,
@@ -119,6 +117,7 @@ type FediModResponse =
     | SignedNostrEvent
     | string
     | Array<string>
+    | boolean
 type FediModResolver<T> = (value: T | PromiseLike<T>) => void
 
 const FediModBrowser: React.FC<Props> = ({ route }) => {
@@ -134,7 +133,7 @@ const FediModBrowser: React.FC<Props> = ({ route }) => {
     const currency = useAppSelector(selectCurrency)
     const language = useAppSelector(selectLanguage)
     const installedMiniApps = useAppSelector(selectConfigurableMods)
-    const currentMiniApp = useAppSelector(s => selectMiniAppByUrl(s, url))
+    const requestedPermission = useAppSelector(selectRequestedPermission)
     const toast = useToast()
     const areAllFederationsRecovering = useAppSelector(
         selectAreAllFederationsRecovering,
@@ -190,17 +189,30 @@ const FediModBrowser: React.FC<Props> = ({ route }) => {
     // Intercept any URIs the user tries to navigate to that we can handle inline
     useOmniLinkInterceptor(handleParsedLink)
 
-    const { validatePermissions } = useInjectionsPermissions({
-        currentMiniAppUrl: url,
-        onValidationFailed: missingPermissions => {
-            toast.show({
-                content: t('feature.fedimods.missing-mini-app-permissions', {
-                    miniAppName: currentMiniApp?.title,
-                    missingPermissions: missingPermissions.join(', '),
-                }),
-            })
-        },
-    })
+    const { validatePermissions, handlePermissionResponse } =
+        useInjectionsPermissions({
+            currentMiniAppUrl: url,
+            // use the overlay refs to prompt the user for permission
+            // resolves on allow, rejects on deny
+            onPermissionNeeded: async (): Promise<void> => {
+                return new Promise<void>((resolve, reject) => {
+                    overlayResolveRef.current =
+                        resolve as unknown as FediModResolver<FediModResponse>
+                    overlayRejectRef.current = reject
+                })
+            },
+            onPermissionDenied: (permission, miniAppName) => {
+                toast.show({
+                    content: t(
+                        'feature.fedimods.missing-mini-app-permissions',
+                        {
+                            miniAppName,
+                            missingPermissions: permission,
+                        },
+                    ),
+                })
+            },
+        })
 
     // Handle all messages coming from a WebLN-enabled site
     const onMessage = makeWebViewMessageHandler(
@@ -776,6 +788,14 @@ const FediModBrowser: React.FC<Props> = ({ route }) => {
                 onAccept={overlayProps.onAccept}
                 open={isSelectingPublicChats}
                 onOpenChange={setIsSelectingPublicChats}
+            />
+
+            <RequestPermissionOverlay
+                requestingMiniAppUrl={url}
+                requestedPermission={requestedPermission}
+                handlePermissionResponse={handlePermissionResponse}
+                onAccept={overlayProps.onAccept}
+                onReject={overlayProps.onReject}
             />
         </SafeAreaContainer>
     )

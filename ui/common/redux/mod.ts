@@ -6,8 +6,9 @@ import { CommonState, federationSlice, selectGlobalCommunityMetadata } from '.'
 import {
     FediMod,
     FIRST_PARTY_PERMISSIONS,
-    MiniAppPermissionsById,
+    MiniAppPermissionsByUrlOrigin,
     MiniAppPermissionType,
+    RememberedPermissionsMap,
 } from '../types'
 import { getCommunityFediMods } from '../utils/FederationUtils'
 import { deduplicate, isModNew } from '../utils/fedimods'
@@ -34,7 +35,7 @@ const initialState = {
     modVisibility: {} as Record<FediMod['id'], ModVisibility>,
     miniAppPermissions: {
         ...FIRST_PARTY_PERMISSIONS,
-    } as MiniAppPermissionsById,
+    } as MiniAppPermissionsByUrlOrigin,
     newMods: [] as FediMod['id'][],
 }
 
@@ -68,6 +69,75 @@ export const modSlice = createSlice({
                 fediMod.id,
             )
             state.newMods = [...state.newMods, fediMod.id]
+        },
+        allowMiniAppPermissions(
+            state,
+            action: PayloadAction<{
+                miniAppUrl: FediMod['url']
+                permissions: MiniAppPermissionType[]
+            }>,
+        ) {
+            const { miniAppUrl, permissions } = action.payload
+
+            const url = new URL(miniAppUrl)
+            const currentPermissions =
+                state.miniAppPermissions[url.origin] || {}
+            const updatedPermissions = {
+                ...currentPermissions,
+            }
+
+            for (const permission of permissions) {
+                updatedPermissions[permission] = true
+            }
+
+            state.miniAppPermissions[url.origin] = updatedPermissions
+        },
+        clearMiniAppPermissions(
+            state,
+            action: PayloadAction<{
+                miniAppUrl: FediMod['url']
+                permissions: MiniAppPermissionType[]
+            }>,
+        ) {
+            const { miniAppUrl, permissions } = action.payload
+
+            const url = new URL(miniAppUrl)
+            const currentPermissions =
+                state.miniAppPermissions[url.origin] || {}
+            const updatedPermissions = {
+                ...currentPermissions,
+            }
+
+            for (const permission of permissions) {
+                delete updatedPermissions[permission]
+            }
+
+            state.miniAppPermissions[url.origin] = updatedPermissions
+        },
+        denyMiniAppPermissions(
+            state,
+            action: PayloadAction<{
+                miniAppUrl: FediMod['url']
+                permissions: MiniAppPermissionType[]
+            }>,
+        ) {
+            const { miniAppUrl, permissions } = action.payload
+
+            const url = new URL(miniAppUrl)
+            const currentPermissions =
+                state.miniAppPermissions[url.origin] || {}
+            const updatedPermissions = {
+                ...currentPermissions,
+            }
+
+            for (const permission of permissions) {
+                updatedPermissions[permission] = false
+            }
+
+            state.miniAppPermissions[url.origin] = updatedPermissions
+        },
+        clearAllMiniAppPermissions(state) {
+            state.miniAppPermissions = {}
         },
         removeCustomMod(
             state,
@@ -150,6 +220,10 @@ export const modSlice = createSlice({
             state.customGlobalMods = action.payload.customGlobalMods || {}
             state.modVisibility = action.payload.modVisibility || {}
             state.newMods = action.payload.newMods || []
+            state.miniAppPermissions = {
+                ...FIRST_PARTY_PERMISSIONS,
+                ...(action.payload.miniAppPermissions || {}),
+            }
         })
         builder.addCase(
             // When a federation's mods are updated, we need to
@@ -178,6 +252,10 @@ export const modSlice = createSlice({
 
 export const {
     addCustomMod,
+    allowMiniAppPermissions,
+    clearMiniAppPermissions,
+    denyMiniAppPermissions,
+    clearAllMiniAppPermissions,
     removeCustomMod,
     setModVisibility,
     updateLastSeenModDate,
@@ -298,13 +376,20 @@ export const selectAllVisibleMods = createSelector(
         deduplicate([...global, ...custom]),
 )
 
+export const selectAllMiniAppPermissions = (s: CommonState) =>
+    s.mod.miniAppPermissions
+
 export const selectMiniAppPermissions = createSelector(
     (s: CommonState) => s.mod.miniAppPermissions,
     (_: CommonState, miniAppUrl: string | undefined) => miniAppUrl,
-    (miniAppPermissions, miniAppUrl): MiniAppPermissionType[] => {
-        if (!miniAppUrl) return []
+    (miniAppPermissions, miniAppUrl): RememberedPermissionsMap => {
+        if (!miniAppUrl) {
+            return {}
+        }
+
         const url = new URL(miniAppUrl)
-        return miniAppPermissions[url.origin] ?? []
+        const permissionsMap = miniAppPermissions[url.origin] ?? {}
+        return permissionsMap
     },
 )
 
