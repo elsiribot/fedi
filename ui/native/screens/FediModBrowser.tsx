@@ -191,7 +191,7 @@ const FediModBrowser: React.FC<Props> = ({ route }) => {
 
     const { validatePermissions, handlePermissionResponse } =
         useInjectionsPermissions({
-            currentMiniAppUrl: url,
+            currentMiniAppUrl: browserUrl,
             // use the overlay refs to prompt the user for permission
             // resolves on allow, rejects on deny
             onPermissionNeeded: async (): Promise<void> => {
