@@ -523,6 +523,7 @@
             "public-group-notice": "This is a public group. Members and messages are publicly viewable.",
             "public-group-warning": "All messages and members in a public group are viewable by anyone. Proceed with caution.",
             "remove-user": "Remove user from group",
+            "replying-to": "Replying to {{name}}",
             "removed-member": "Removed Member",
             "saved-to-movies": "Saved to Movies",
             "saved-to-photo-library": "Saved to your Photos",

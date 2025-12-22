@@ -45,6 +45,7 @@ import {
     selectCurrency,
 } from '../redux'
 import {
+    MatrixEvent,
     MatrixFormEvent,
     MatrixPaymentEvent,
     MatrixRoom,
@@ -65,6 +66,7 @@ import { formatErrorMessage } from '../utils/format'
 import { makeLog } from '../utils/log'
 import {
     decodeFediMatrixUserUri,
+    getEventBodyPreview,
     getReplyData,
     isValidMatrixUserId,
     makeMatrixPaymentText,
@@ -1329,4 +1331,25 @@ export function useMatrixRoomPreview({
         isNotice,
         isPublicBroadcast,
     }
+}
+
+/**
+ * Hook for extracting reply information from a MatrixEvent.
+ * Returns the sender's display name and a preview of the message body.
+ */
+export function useReplies(
+    repliedEvent: MatrixEvent,
+    roomMembers: MatrixRoomMember[],
+) {
+    const senderName = useMemo(() => {
+        const member = roomMembers.find(m => m.id === repliedEvent.sender)
+        return member?.displayName || matrixIdToUsername(repliedEvent.sender)
+    }, [roomMembers, repliedEvent.sender])
+
+    const bodySnippet = useMemo(
+        () => getEventBodyPreview(repliedEvent),
+        [repliedEvent],
+    )
+
+    return { senderName, bodySnippet }
 }
