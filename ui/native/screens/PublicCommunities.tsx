@@ -48,8 +48,6 @@ const PublicCommunities: React.FC<Props> = ({ navigation }) => {
         label: string
         value: Tab
         subText: string
-        loading?: boolean
-        disabled?: boolean
     }> = [
         {
             label: t('words.join'),
@@ -57,18 +55,19 @@ const PublicCommunities: React.FC<Props> = ({ navigation }) => {
             subText: t('feature.communities.guidance-join'),
         },
         {
-            label: t('words.discover'),
-            value: 'discover',
-            subText: t('feature.communities.guidance-discover'),
-            loading: isFetchingPublicCommunities,
-            disabled: publicCommunities.length === 0,
-        },
-        {
             label: t('words.create'),
             value: 'create',
             subText: t('feature.onboarding.description-create-community'),
         },
     ]
+
+    if (publicCommunities.length > 0 && !isFetchingPublicCommunities) {
+        switcherOptions.push({
+            label: t('words.discover'),
+            value: 'discover',
+            subText: t('feature.communities.guidance-discover'),
+        })
+    }
 
     const selectedOption =
         switcherOptions.find(opt => opt.value === activeTab) ??
