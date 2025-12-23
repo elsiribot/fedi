@@ -48,7 +48,7 @@ const ChatWallet: React.FC<Props> = ({ navigation, route }: Props) => {
         inputMinMax,
         canSendAmount,
         handleRequestPayment,
-    } = useChatPaymentUtils(t, fedimint, existingRoom?.id, recipientId)
+    } = useChatPaymentUtils(t, existingRoom?.id, recipientId)
 
     const [notes, setNotes] = useState('')
 

@@ -43,6 +43,7 @@ import { formatErrorMessage } from '../utils/format'
 import { lnurlPay } from '../utils/lnurl'
 import { makeLog } from '../utils/log'
 import { useSendForm } from './amount'
+import { useFedimint } from './fedimint'
 import { useCommonDispatch, useCommonSelector } from './redux'
 
 const log = makeLog('common/hooks/pay')
@@ -131,7 +132,6 @@ export function useOmniPaymentState(
         lnurlPayment,
         cashuMeltSummary,
         t,
-        fedimint,
     })
 
     useEffect(() => {
@@ -344,7 +344,8 @@ export function useOmniPaymentState(
     }
 }
 
-export function useSendEcash(fedimint: FedimintBridge, federationId: string) {
+export function useSendEcash(federationId: string) {
+    const fedimint = useFedimint()
     const federation = useCommonSelector(s => selectFederation(s, federationId))
     const dispatch = useCommonDispatch()
 

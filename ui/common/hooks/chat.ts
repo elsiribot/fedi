@@ -172,15 +172,18 @@ export const useChatPaymentPush = (
 
 export const useChatPaymentUtils = (
     t: TFunction,
-    fedimint: FedimintBridge,
     roomId: string | undefined,
     recipientId: string,
 ) => {
+    const fedimint = useFedimint()
     const toast = useToast()
     const dispatch = useCommonDispatch()
     const paymentFederation = useCommonSelector(selectPaymentFederation)
     const federationId = paymentFederation?.id
-    const sendMinMax = useMinMaxSendAmount({ fedimint, federationId })
+    const sendMinMax = useMinMaxSendAmount({
+        ecashRequest: {},
+        federationId,
+    })
     const requestMinMax = useMinMaxRequestAmount({
         ecashRequest: {},
         federationId,

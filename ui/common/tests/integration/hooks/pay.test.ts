@@ -161,7 +161,7 @@ describe('sending payments', () => {
 
             const federationId = selectLastUsedFederationId(store.getState())
             const { result } = renderHookWithBridge(
-                () => useSendEcash(fedimint, federationId || ''),
+                () => useSendEcash(federationId || ''),
                 store,
                 fedimint,
             )
