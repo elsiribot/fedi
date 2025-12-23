@@ -31,16 +31,6 @@ const shouldShowDefaultButtonBackground = (props: ButtonProps) => {
     return defaultBackground
 }
 
-// In React Native, lineHeight is an absolute unit (in pixels)
-// Unlike web, it does not support relative multipliers
-// https://reactnative.dev/docs/text-style-props#lineheight
-function makeLineHeightMultiplier(
-    key: keyof typeof fediTheme.fontSizes,
-    multiplier: number,
-) {
-    return fediTheme.fontSizes[key] * multiplier
-}
-
 export const themeDefaults = {
     colors,
     multipliers: {
@@ -101,7 +91,6 @@ export const themeDefaults = {
             fontSize: fediTheme.fontSizes.body,
             fontWeight: fediTheme.fontWeights.normal,
             fontFamily: 'AlbertSans-Regular',
-            lineHeight: makeLineHeightMultiplier('body', 1.25),
         },
         avatarText: {
             color: colors.white,
@@ -231,29 +220,15 @@ const theme = createTheme({
                 // These props match the design spec and fontSize should rarely
                 // be anything different than these specific values
                 ...(props.caption
-                    ? {
-                          fontSize: fediTheme.fontSizes.caption,
-                          lineHeight: makeLineHeightMultiplier('caption', 1.25),
-                      }
+                    ? { fontSize: fediTheme.fontSizes.caption }
                     : {}),
-                ...(props.small
-                    ? {
-                          fontSize: fediTheme.fontSizes.small,
-                          lineHeight: makeLineHeightMultiplier('small', 1.25),
-                      }
-                    : {}),
-                ...(props.tiny
-                    ? {
-                          fontSize: fediTheme.fontSizes.tiny,
-                          lineHeight: makeLineHeightMultiplier('tiny', 1.25),
-                      }
-                    : {}),
+                ...(props.small ? { fontSize: fediTheme.fontSizes.small } : {}),
+                ...(props.tiny ? { fontSize: fediTheme.fontSizes.tiny } : {}),
                 ...(props.color ? { color: props.color } : {}),
                 ...(props.center ? { textAlign: 'center' } : {}),
             },
             h1Style: {
-                fontSize: fediTheme.fontSizes.h1,
-                lineHeight: makeLineHeightMultiplier('h1', 1.5),
+                fontSize: 32,
                 fontWeight: fediTheme.fontWeights.normal,
                 fontFamily: 'AlbertSans-Regular',
                 ...(props.bolder
@@ -276,8 +251,7 @@ const theme = createTheme({
                     : {}),
             },
             h2Style: {
-                fontSize: fediTheme.fontSizes.h2,
-                lineHeight: makeLineHeightMultiplier('h2', 1.5),
+                fontSize: 24,
                 fontWeight: fediTheme.fontWeights.normal,
                 fontFamily: 'AlbertSans-Regular',
                 ...(props.bolder
