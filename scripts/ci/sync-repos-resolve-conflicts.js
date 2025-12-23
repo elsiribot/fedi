@@ -86,7 +86,10 @@ async function syncRepos({ github, context, core }) {
 
     // Create a new branch
     const shortSha = SOURCE_COMMIT_SHA.substring(0, 7);
-    const branchName = `release-${shortSha}`;
+    let branchName;
+    process.env.CI
+      ? (branchName = "nightly")
+      : (branchName = `release-${shortSha}`);
     console.log(`Creating new branch: ${branchName}`);
     await exec.exec("git", ["-C", "target_repo", "checkout", "-b", branchName]);
 
