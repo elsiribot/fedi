@@ -104,6 +104,7 @@
         "private": "Private",
         "public": "Public",
         "question": "Question",
+        "rearrange": "Rearrange",
         "reason": "Reason",
         "receive": "Receive",
         "received": "Received",

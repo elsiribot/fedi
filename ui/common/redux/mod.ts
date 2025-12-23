@@ -37,6 +37,7 @@ const initialState = {
         ...FIRST_PARTY_PERMISSIONS,
     } as MiniAppPermissionsByUrlOrigin,
     newMods: [] as FediMod['id'][],
+    miniAppOrder: [] as FediMod['url'][],
 }
 
 export type ModState = typeof initialState
@@ -69,6 +70,7 @@ export const modSlice = createSlice({
                 fediMod.id,
             )
             state.newMods = [...state.newMods, fediMod.id]
+            state.miniAppOrder = [fediMod.url, ...state.miniAppOrder]
         },
         allowMiniAppPermissions(
             state,
@@ -165,6 +167,10 @@ export const modSlice = createSlice({
                     },
                 }
             }
+
+            if (state.miniAppOrder.includes(modId)) {
+                state.miniAppOrder = [...without(state.miniAppOrder, modId)]
+            }
         },
         updateLastSeenModDate(
             state,
@@ -174,6 +180,15 @@ export const modSlice = createSlice({
         ) {
             const { modId } = action.payload
             state.newMods = [...without(state.newMods, modId)]
+        },
+        setMiniAppOrder(
+            state,
+            action: PayloadAction<{
+                miniAppOrder: FediMod['id'][]
+            }>,
+        ) {
+            const { miniAppOrder } = action.payload
+            state.miniAppOrder = [...miniAppOrder]
         },
         setModVisibility(
             state,
@@ -211,6 +226,13 @@ export const modSlice = createSlice({
             }
 
             state.modVisibility[modId] = newVisibility
+
+            if (isHidden || isHiddenCommunity) {
+                state.miniAppOrder = [
+                    ...without(state.miniAppOrder, modId),
+                    modId,
+                ]
+            }
         },
     },
     extraReducers: builder => {
@@ -224,6 +246,7 @@ export const modSlice = createSlice({
                 ...FIRST_PARTY_PERMISSIONS,
                 ...(action.payload.miniAppPermissions || {}),
             }
+            state.miniAppOrder = action.payload.miniAppOrder || []
         })
         builder.addCase(
             // When a federation's mods are updated, we need to
@@ -257,6 +280,7 @@ export const {
     denyMiniAppPermissions,
     clearAllMiniAppPermissions,
     removeCustomMod,
+    setMiniAppOrder,
     setModVisibility,
     updateLastSeenModDate,
 } = modSlice.actions
@@ -355,6 +379,8 @@ export const selectVisibleCommunityMods = createSelector(
         })
     },
 )
+
+export const selectMiniAppOrder = (s: CommonState) => s.mod.miniAppOrder
 
 export const selectModsVisibility = (s: CommonState) => s.mod.modVisibility
 export const selectModVisibility = (s: CommonState, id: string) =>

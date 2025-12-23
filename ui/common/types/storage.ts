@@ -355,6 +355,11 @@ export interface StoredStateV39 extends Omit<StoredStateV38, 'version'> {
     miniAppPermissions: { [miniAppUrlOrigin: string]: RememberedPermissionsMap }
 }
 
+export interface StoredStateV40 extends Omit<StoredStateV39, 'version'> {
+    version: 40
+    miniAppOrder: FediMod['id'][]
+}
+
 /**
  * Consolidated type for older storage versions (0-24).
  * These are grouped together to reduce union type computation that slows down TSC performance.
@@ -410,9 +415,10 @@ export type AnyStoredState =
     | StoredStateV37
     | StoredStateV38
     | StoredStateV39
+    | StoredStateV40
 
 /*** Alias for the latest version of stored state ***/
-export type LatestStoredState = StoredStateV39
+export type LatestStoredState = StoredStateV40
 
 export interface StorageApi {
     getItem(key: string): Promise<string | null>
