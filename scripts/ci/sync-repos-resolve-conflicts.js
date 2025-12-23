@@ -14,7 +14,7 @@ async function syncRepos({ github, context, core }) {
   }
 
   const sourceRepo = "fedibtc/fedi";
-  const targetRepo = "fedixyz/fedi";
+  const targetRepo = "fedixyz/fedi-test-sync-repos";
 
   console.log(`Starting sync process for commit ${SOURCE_COMMIT_SHA}`);
 
