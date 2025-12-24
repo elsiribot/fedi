@@ -14,7 +14,6 @@ members = [
   "crates/debug-tools",
   "crates/device-registration",
   "crates/env",
-  "crates/fedimint-cursed-redb",
   "crates/fedimint/devi",
   "crates/fedimint/fedimint-cli",
   "crates/fedimint/fedimintd",
@@ -83,7 +82,6 @@ fedi-ffi = { path = "bridge/fedi-ffi" }
 fedi-social-client = { path = "crates/modules/fedi-social/client" }
 fedi-social-common = { path = "crates/modules/fedi-social/common" }
 fedi-social-server = { path = "crates/modules/fedi-social/server" }
-fedimint-cursed-redb = { path = "crates/fedimint-cursed-redb" }
 nostril = { path = "crates/nostril" }
 stability-pool-client-old = { path = "crates/modules/stability-pool-old/client" }
 stability-pool-common-old = { path = "crates/modules/stability-pool-old/common" }
@@ -158,6 +156,7 @@ fedimint-rocksdb = { git = "https://github.com/fedibtc/fedimint", tag = "v0.9.0-
 fedimint-bip39 = { git = "https://github.com/fedibtc/fedimint", tag = "v0.9.0-fedi5" }
 fedimint-logging = { git = "https://github.com/fedibtc/fedimint", tag = "v0.9.0-fedi5" }
 fedimint-portalloc = { git = "https://github.com/fedibtc/fedimint", tag = "v0.9.0-fedi5" }
+fedimint-cursed-redb = { git = "https://github.com/fedibtc/fedimint", tag = "v0.9.0-fedi5" }
 devimint = { git = "https://github.com/fedibtc/fedimint", tag = "v0.9.0-fedi5" }
 ln-gateway = { git = "https://github.com/fedibtc/fedimint", tag = "v0.9.0-fedi5" }
 
