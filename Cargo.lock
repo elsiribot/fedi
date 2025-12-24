@@ -3121,6 +3121,7 @@ dependencies = [
  "nostr",
  "nostril",
  "rand 0.8.5",
+ "redb-storage",
  "reqwest",
  "ring",
  "rolling-file",
@@ -8885,6 +8886,18 @@ dependencies = [
 ]
 
 [[package]]
+name = "redb-storage"
+version = "0.3.0"
+dependencies = [
+ "anyhow",
+ "async-trait",
+ "fedimint-core",
+ "fedimint-cursed-redb",
+ "runtime",
+ "tokio",
+]
+
+[[package]]
 name = "redox_syscall"
 version = "0.5.18"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -8974,6 +8987,7 @@ dependencies = [
  "fedimint-logging",
  "futures",
  "listenfd",
+ "redb-storage",
  "rpc-types",
  "runtime",
  "serde",
