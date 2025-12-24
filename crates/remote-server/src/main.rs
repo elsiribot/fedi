@@ -88,6 +88,7 @@ async fn main() -> Result<()> {
 
     let dev_fed = if cli.with_devfed {
         let dev_fed = devi::DevFed::new_with_setup(4).await?;
+        info!("Dev federation invite code: {}", dev_fed.fed.invite_code()?);
         Some(Arc::new(dev_fed))
     } else {
         None
