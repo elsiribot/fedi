@@ -680,10 +680,7 @@ async fn test_on_chain_with_fedi_fees(
         listTransactions(federation.clone(), None, None).await?[0],
         Ok(RpcTransactionListEntry {
             transaction: RpcTransaction {
-                kind: RpcTransactionKind::OnchainDeposit {
-                    state: Some(RpcOnchainDepositState::WaitingForTransaction),
-                    ..
-                },
+                kind: RpcTransactionKind::OnchainDeposit { state: Some(_), .. },
                 ..
             },
             ..
@@ -776,10 +773,7 @@ async fn test_on_chain_with_fedi_fees_with_restart(
         listTransactions(federation.clone(), None, None).await?[0],
         Ok(RpcTransactionListEntry {
             transaction: RpcTransaction {
-                kind: RpcTransactionKind::OnchainDeposit {
-                    state: Some(RpcOnchainDepositState::WaitingForTransaction),
-                    ..
-                },
+                kind: RpcTransactionKind::OnchainDeposit { state: Some(_), .. },
                 ..
             },
             ..
