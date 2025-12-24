@@ -1455,6 +1455,7 @@ const PreviewTextMap = {
     unknown: 'feature.chat.new-message',
     unableToDecrypt: 'feature.chat.new-message',
     'xyz.fedi.multispend': 'feature.chat.multispend-preview',
+    spTransfer: 'feature.chat.sp-transfer-preview',
     redacted: 'feature.chat.message-deleted',
 } as const satisfies Partial<Record<MatrixEventKind, ResourceKey>>
 

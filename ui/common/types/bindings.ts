@@ -961,6 +961,7 @@ export type RpcMsgLikeKind =
   | ({ msgtype: "xyz.fedi.payment" } & RpcPaymentMessageContent)
   | ({ msgtype: "xyz.fedi.form" } & RpcFormMessageContent)
   | ({ msgtype: "xyz.fedi.multispend" } & MultispendEvent)
+  | ({ msgtype: "spTransfer" } & SpTransferVirtualEvent)
   | { msgtype: "failedToParseCustom"; msg_type: string; error: string }
   | { msgtype: "unknown" }
   | { msgtype: "redacted" }
@@ -1208,25 +1209,6 @@ export type RpcSerializedRoomInfo = {
 export type RpcSignature = string;
 
 export type RpcSignedLnurlMessage = { signature: string; pubkey: RpcPublicKey };
-
-export type RpcSpTransferEvent =
-  | {
-      kind: "pendingTransferStart";
-      amount: RpcFiatAmount;
-      federationId: RpcFederationId;
-      federationInvite: string | null;
-    }
-  | {
-      kind: "transferSentHint";
-      pendingTransferId: RpcEventId;
-      transactionId: RpcTransactionId;
-    }
-  | { kind: "transferFailed"; pendingTransferId: RpcEventId }
-  | {
-      kind: "announceAccount";
-      accountId: RpcAccountId;
-      federationId: RpcFederationId;
-    };
 
 export type RpcSpTransferState = {
   federationId: RpcFederationId;
@@ -1564,11 +1546,17 @@ export type SpTransferUiFeatureConfig = { mode: SpTransferUiMode };
 
 export type SpTransferUiMode = "QrCode" | "Chat";
 
+export type SpTransferVirtualEvent = { shouldRender: boolean };
+
 export type SpTransfersMatrixFeatureConfig = Record<string, never>;
 
 export type SpV2TransferInKind = "multispend" | "unknown";
 
-export type SpV2TransferOutKind = "multispend" | "matrixSpTransfer" | "unknown";
+export type SpV2TransferOutKind =
+  | "multispend"
+  | "matrixSpTransfer"
+  | "spTransferUi"
+  | "unknown";
 
 export type StabilityPoolDepositEvent = {
   federationId: RpcFederationId;
