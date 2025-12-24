@@ -9,6 +9,7 @@ use std::time::Duration;
 
 use anyhow::{anyhow, bail};
 use api_types::invoice_generator::FirstCommunityInviteCodeState;
+use assert_matches::assert_matches;
 use bridge::RuntimeExt as _;
 use devi::DevFed;
 use devimint::cmd;
@@ -675,7 +676,7 @@ async fn test_on_chain_with_fedi_fees(
     let address = generateAddress(federation.clone(), FrontendMetadata::default()).await?;
     bitcoin_cli_send_to_address(&address, "0.1").await?;
 
-    assert!(matches!(
+    assert_matches!(
         listTransactions(federation.clone(), None, None).await?[0],
         Ok(RpcTransactionListEntry {
             transaction: RpcTransaction {
@@ -687,7 +688,7 @@ async fn test_on_chain_with_fedi_fees(
             },
             ..
         })
-    ));
+    );
     // check for event of type transaction that has onchain_state of
     // DepositState::Claimed
     'check: loop {
@@ -716,7 +717,7 @@ async fn test_on_chain_with_fedi_fees(
         )
         .await;
     }
-    assert!(matches!(
+    assert_matches!(
         listTransactions(federation.clone(), None, None).await?[0],
         Ok(RpcTransactionListEntry {
             transaction: RpcTransaction {
@@ -728,7 +729,7 @@ async fn test_on_chain_with_fedi_fees(
             },
             ..
         })
-    ),);
+    );
 
     let btc_amount = Amount::from_sats(10_000_000);
     let pegin_fees = federation.client.wallet()?.get_fee_consensus().peg_in_abs;
@@ -771,7 +772,7 @@ async fn test_on_chain_with_fedi_fees_with_restart(
     let bridge = td.bridge_full().await?;
     let federation = wait_for_federation_loading(bridge, &federation_id.to_string()).await?;
 
-    assert!(matches!(
+    assert_matches!(
         listTransactions(federation.clone(), None, None).await?[0],
         Ok(RpcTransactionListEntry {
             transaction: RpcTransaction {
@@ -783,7 +784,7 @@ async fn test_on_chain_with_fedi_fees_with_restart(
             },
             ..
         })
-    ));
+    );
     // check for event of type transaction that has onchain_state of
     // DepositState::Claimed
     'check: loop {
@@ -812,7 +813,7 @@ async fn test_on_chain_with_fedi_fees_with_restart(
         )
         .await;
     }
-    assert!(matches!(
+    assert_matches!(
         listTransactions(federation.clone(), None, None).await?[0],
         Ok(RpcTransactionListEntry {
             transaction: RpcTransaction {
@@ -824,7 +825,7 @@ async fn test_on_chain_with_fedi_fees_with_restart(
             },
             ..
         })
-    ),);
+    );
 
     let btc_amount = Amount::from_sats(10_000_000);
     let pegin_fees = federation.client.wallet()?.get_fee_consensus().peg_in_abs;
@@ -1374,7 +1375,7 @@ async fn test_spv2_with_fedi_fees(
     // chronological order
     let transactions = listTransactions(federation.clone(), None, None).await?;
     let last_tx = transactions.first().expect("must exist");
-    assert!(matches!(
+    assert_matches!(
         last_tx,
         Ok(RpcTransactionListEntry {
             transaction: RpcTransaction {
@@ -1385,10 +1386,10 @@ async fn test_spv2_with_fedi_fees(
             },
             ..
         })
-    ));
+    );
 
     let second_last_tx = transactions.get(1).expect("must exist");
-    assert!(matches!(
+    assert_matches!(
         second_last_tx,
         Ok(RpcTransactionListEntry {
             transaction: RpcTransaction {
@@ -1399,7 +1400,7 @@ async fn test_spv2_with_fedi_fees(
             },
             ..
         })
-    ));
+    );
 
     assert_eq!(
         (receive_amount
@@ -1512,12 +1513,12 @@ async fn test_federation_preview(_dev_fed: DevFed) -> anyhow::Result<()> {
     let invite_code = std::env::var("FM_INVITE_CODE").unwrap();
     let mut td = TestDevice::new();
     let bridge = td.bridge_full().await?;
-    assert!(matches!(
+    assert_matches!(
         federationPreview(&bridge.federations, invite_code.clone())
             .await?
             .returning_member_status,
         RpcReturningMemberStatus::NewMember
-    ));
+    );
 
     // join
     let fedimint_federation = joinFederation(bridge, invite_code.clone(), false).await?;
@@ -1550,12 +1551,12 @@ async fn test_federation_preview(_dev_fed: DevFed) -> anyhow::Result<()> {
     onboardTransferExistingDeviceRegistration(bridge.try_get()?, 0).await?;
     let bridge = td2.bridge_full().await?;
 
-    assert!(matches!(
+    assert_matches!(
         federationPreview(&bridge.federations, invite_code.clone())
             .await?
             .returning_member_status,
         RpcReturningMemberStatus::ReturningMember
-    ));
+    );
 
     Ok(())
 }
@@ -1948,28 +1949,28 @@ async fn test_list_and_leave_community(_dev_fed: DevFed) -> anyhow::Result<()> {
     joinCommunity(bridge, community_invite_0.to_string()).await?;
 
     // List contains community 0
-    assert!(matches!(
+    assert_matches!(
             &listCommunities(bridge).await?[..],
-            [RpcCommunity { community_invite, .. }] if *community_invite == From::from(&community_invite_0)));
+            [RpcCommunity { community_invite, .. }] if *community_invite == From::from(&community_invite_0));
 
     // Join community 1
     joinCommunity(bridge, community_invite_1.to_string()).await?;
 
     // List contains community 0 + community 1
-    assert!(matches!(
+    assert_matches!(
             &listCommunities(bridge).await?[..], [
                 RpcCommunity { community_invite: invite_0, .. },
                 RpcCommunity { community_invite: invite_1, .. }
             ] if (*invite_0 == From::from(&community_invite_0) && *invite_1 == From::from(&community_invite_1)) ||
-            (*invite_0 == From::from(&community_invite_1) && *invite_1 == From::from(&community_invite_0))));
+            (*invite_0 == From::from(&community_invite_1) && *invite_1 == From::from(&community_invite_0)));
 
     // Leave community 0
     leaveCommunity(bridge, community_invite_0.to_string()).await?;
 
     // List contains only community 1
-    assert!(matches!(
+    assert_matches!(
             &listCommunities(bridge).await?[..],
-            [RpcCommunity { community_invite, .. }] if *community_invite == From::from(&community_invite_1)));
+            [RpcCommunity { community_invite, .. }] if *community_invite == From::from(&community_invite_1));
 
     // Leave community 1
     leaveCommunity(bridge, community_invite_1.to_string()).await?;

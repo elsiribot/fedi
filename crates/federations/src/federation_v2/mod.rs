@@ -222,6 +222,14 @@ pub fn invite_code_from_client_confing(config: &ClientConfig) -> InviteCode {
     )
 }
 
+impl std::fmt::Debug for FederationV2 {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("Federation")
+            .field("id", &self.client.federation_id())
+            .finish()
+    }
+}
+
 /// Federation is a wrapper of "client ng" to assist with handling RPC commands
 pub struct FederationV2 {
     pub runtime: Arc<Runtime>,

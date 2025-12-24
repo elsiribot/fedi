@@ -95,6 +95,7 @@ uniffi = { version = "0.25.3", features = ["build"] }
 fedimint-build = { workspace = true }
 
 [dev-dependencies]
+assert_matches = { workspace = true }
 tempfile = "3.17.1"
 mockito = "1.4.0"
 clap = { workspace = true }
