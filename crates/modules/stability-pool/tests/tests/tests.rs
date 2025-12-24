@@ -1,6 +1,5 @@
 use std::env;
-use std::fmt::Write;
-use std::path::{Path, PathBuf};
+use std::path::PathBuf;
 use std::sync::Arc;
 use std::time::Duration;
 
@@ -8,23 +7,24 @@ use anyhow::bail;
 use assert_matches::assert_matches;
 use devimint::external::Bitcoind;
 use devimint::federation::Federation;
-use devimint::util::{Command, ProcessManager};
-use devimint::{DevFed, cmd, dev_fed, vars};
+use devimint::util::Command;
+use devimint::{DevFed, cmd, dev_fed};
 use fedimint_core::Amount;
 use fedimint_core::module::serde_json;
 use fedimint_core::secp256k1::schnorr;
-use fedimint_core::task::TaskGroup;
-use fedimint_core::util::write_overwrite_async;
 use stability_pool_common::{
     Account, AccountId, AccountType, ActiveDeposits, FeeRate, FiatAmount, FiatOrAll, Provide, Seek,
     SignedTransferRequest, SyncResponse, TransferRequest,
 };
-use tokio::fs;
-use tracing::{debug, info};
+use tracing::info;
 
 #[tokio::test(flavor = "multi_thread")]
 async fn flaky_starter_test() -> anyhow::Result<()> {
-    let (process_mgr, _) = setup().await?;
+    let fed_size = std::env::var("FM_FED_SIZE")
+        .ok()
+        .and_then(|s| s.parse().ok())
+        .unwrap_or(4);
+    let (process_mgr, _) = devi::DevFed::process_setup(fed_size).await?;
 
     let (seeker_peg_in_sats, provider_peg_in_sats) = (10_000u64, 15_000u64);
     let (seeker_peg_in_msats, provider_peg_in_msats) =
@@ -984,42 +984,4 @@ impl ForkedClient {
 pub struct AccountInfo {
     sync_response: SyncResponse,
     active_deposits: ActiveDeposits,
-}
-
-async fn setup() -> anyhow::Result<(ProcessManager, TaskGroup)> {
-    let offline_nodes = 0;
-    let globals = vars::Global::new(
-        Path::new(&env::var("FM_TEST_DIR")?),
-        1,
-        env::var("FM_FED_SIZE")?.parse::<usize>()?,
-        offline_nodes,
-        None,
-    )
-    .await?;
-    let log_file = fs::OpenOptions::new()
-        .write(true)
-        .create(true)
-        .append(true)
-        .open(globals.FM_LOGS_DIR.join("devimint.log"))
-        .await?
-        .into_std()
-        .await;
-
-    fedimint_logging::TracingSetup::default()
-        .with_file(Some(log_file))
-        .init()?;
-
-    let mut env_string = String::new();
-    for (var, value) in globals.vars() {
-        debug!(var, value, "Env variable set");
-        writeln!(env_string, r#"export {var}="{value}""#)?; // hope that value doesn't contain a "
-        // TODO: Audit that the environment access only happens in single-threaded code.
-        unsafe { std::env::set_var(var, value) };
-    }
-    write_overwrite_async(globals.FM_TEST_DIR.join("env"), env_string).await?;
-    info!("Test setup in {:?}", globals.FM_DATA_DIR);
-    let process_mgr = ProcessManager::new(globals);
-    let task_group = TaskGroup::new();
-    task_group.install_kill_handler();
-    Ok((process_mgr, task_group))
 }
