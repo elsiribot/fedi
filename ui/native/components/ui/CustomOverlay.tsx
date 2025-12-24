@@ -1,3 +1,4 @@
+import { useIsFocused } from '@react-navigation/native'
 import { Button, Overlay, Text, Theme, useTheme } from '@rneui/themed'
 import React, { useEffect, useState } from 'react'
 import {
@@ -13,6 +14,7 @@ import Animated, {
     useAnimatedStyle,
     withTiming,
     Easing,
+    runOnJS,
 } from 'react-native-reanimated'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 
@@ -57,6 +59,8 @@ const CustomOverlay: React.FC<CustomOverlayProps> = ({
 }) => {
     const { theme } = useTheme()
     const insets = useSafeAreaInsets()
+    const [waitingForExitAnimation, setWaitingForExitAnimation] =
+        useState(false)
     const [overlayHeight, setOverlayHeight] = useState(0)
     const animatedOpacity = useSharedValue<number>(0)
     const animatedTranslateY = useSharedValue<number>(0)
@@ -94,10 +98,18 @@ const CustomOverlay: React.FC<CustomOverlayProps> = ({
                 duration: 150,
                 easing: Easing.in(Easing.quad),
             })
-            animatedTranslateY.value = withTiming(overlayHeight, {
-                duration: 150,
-                easing: Easing.in(Easing.quad),
-            })
+            animatedTranslateY.value = withTiming(
+                overlayHeight,
+                {
+                    duration: 150,
+                    easing: Easing.in(Easing.quad),
+                },
+                // completion callback:
+                () => {
+                    // we must update state on the JS thread since animations happen on UI thread
+                    runOnJS(setWaitingForExitAnimation)(false)
+                },
+            )
         }
         // no need to include sharedValues as dependencies
         // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -164,10 +176,20 @@ const CustomOverlay: React.FC<CustomOverlayProps> = ({
         })
     }
 
+    // this makes sure we keep showing the overlay until exit animation is complete
+    const handleBackdropPress = () => {
+        setWaitingForExitAnimation(true)
+        onBackdropPress?.()
+    }
+    // we must make sure the screen the overlay is rendering on has focus before
+    // showing the overlay otherwise the user will get stuck on an undismissable overlay
+    const isFocused = useIsFocused()
+    const shouldShowOverlay = isFocused && (show || waitingForExitAnimation)
+
     return (
         <Overlay
-            isVisible={show}
-            onBackdropPress={onBackdropPress}
+            isVisible={shouldShowOverlay}
+            onBackdropPress={handleBackdropPress}
             overlayStyle={style.overlayContainer}>
             <Animated.View
                 onLayout={handleOverlayLayout}
