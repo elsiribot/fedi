@@ -37,7 +37,7 @@ use runtime::storage::state::CommunityJson;
 use runtime::storage::BRIDGE_DB_PREFIX;
 use tokio::sync::Semaphore;
 use tokio::task::JoinSet;
-use tracing::info;
+use tracing::{info, warn};
 
 mod matrix;
 mod multispend_tests;
@@ -268,14 +268,19 @@ async fn tests_wrapper_for_bridge() -> anyhow::Result<()> {
 
     while let Some(res) = tests_set.join_next_with_id().await {
         match res {
-            Err(e) => match e.try_into_panic() {
-                Ok(reason) => panic::resume_unwind(reason),
-                Err(e) => {
-                    bail!("test {} failed: {:?}", &tests_names[&e.id()], e);
-                }
-            },
+            Err(e) => {
+                warn!("test {} failed: {}", &tests_names[&e.id()], e);
+                // goal: cancel background tasks before returning and ending tokio runtime
+                // so devfed only gets dropped while tokio runtime is alive
+                tests_set.shutdown().await;
+                bail!("test {} failed: {}", &tests_names[&e.id()], e);
+            }
             Ok((id, Err(e))) => {
-                bail!("test {} failed: {:?}", &tests_names[&id], e);
+                warn!("test {} failed: {}", &tests_names[&id], e);
+                // goal: cancel background tasks before returning and ending tokio runtime
+                // so devfed only gets dropped while tokio runtime is alive
+                tests_set.shutdown().await;
+                bail!("test {} failed: {}", &tests_names[&id], e);
             }
             Ok((id, Ok(_))) => {
                 info!("test {} OK", &tests_names[&id]);
