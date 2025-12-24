@@ -10327,6 +10327,7 @@ version = "0.3.0"
 dependencies = [
  "anyhow",
  "assert_matches",
+ "devi",
  "devimint",
  "fedimint-core",
  "fedimint-logging",
@@ -10341,6 +10342,7 @@ version = "0.3.0"
 dependencies = [
  "anyhow",
  "assert_matches",
+ "devi",
  "devimint",
  "fedimint-core",
  "fedimint-logging",

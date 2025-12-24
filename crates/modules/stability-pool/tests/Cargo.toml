@@ -11,6 +11,7 @@ path = "tests/tests.rs"
 
 [dependencies]
 anyhow = "1.0.66"
+devi = { workspace = true }
 devimint = { workspace = true }
 fedimint-core = { workspace = true }
 fedimint-logging = { workspace = true }
