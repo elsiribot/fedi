@@ -907,6 +907,19 @@ async fn test_backup_and_recovery_inner(from_scratch: bool) -> anyhow::Result<()
         expected_fedi_fee =
             Amount::from_msats((fedi_fee_ppm * sp_amount_to_deposit.msats).div_ceil(MILLION));
         stabilityPoolDepositToSeek(federation.clone(), RpcAmount(sp_amount_to_deposit)).await?;
+        loop {
+            // Wait until deposit operation succeeds
+            // Initiated -> TxAccepted -> Success
+            if td
+                .event_sink()
+                .num_events_of_type("stabilityPoolDeposit".into())
+                == 3
+            {
+                break;
+            }
+
+            fedimint_core::task::sleep(Duration::from_millis(10)).await;
+        }
 
         ecash_balance_before = federation.get_balance().await;
 
