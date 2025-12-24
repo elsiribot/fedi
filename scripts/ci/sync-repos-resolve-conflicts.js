@@ -58,6 +58,31 @@ async function syncRepos({ github, context, core }) {
       "target_repo",
     ]);
 
+    // Pick or create a branch
+    const shortSha = SOURCE_COMMIT_SHA.substring(0, 7);
+    let branchName;
+    process.env.CI
+      ? (branchName = "nightly")
+      : (branchName = `release-${shortSha}`);
+    console.log(`Creating new branch: ${branchName}`);
+    try {
+      console.log("Trying to sync to an existing branch");
+      await exec.exec("git", ["-C", "target_repo", "checkout", branchName]);
+    } catch {
+      console.warn(
+        "Likely failed because the branch is not there yet, and we're syncing de novo"
+      );
+      await exec.exec("git", [
+        "-C",
+        "target_repo",
+        "checkout",
+        "-b",
+        branchName,
+      ]);
+    }
+
+    await exec.exec("git", ["-C", "target_repo", "checkout", branchName]);
+
     // Copy all files from source to target (excluding .git directory)
     console.log("Copying files from source to target");
     await exec.exec("rsync", [
@@ -83,15 +108,6 @@ async function syncRepos({ github, context, core }) {
       "user.email",
       "ci@fedi.xyz",
     ]);
-
-    // Create a new branch
-    const shortSha = SOURCE_COMMIT_SHA.substring(0, 7);
-    let branchName;
-    process.env.CI
-      ? (branchName = "nightly")
-      : (branchName = `release-${shortSha}`);
-    console.log(`Creating new branch: ${branchName}`);
-    await exec.exec("git", ["-C", "target_repo", "checkout", "-b", branchName]);
 
     // Add all changes
     console.log("Adding all changes");
