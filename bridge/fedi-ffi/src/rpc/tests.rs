@@ -1013,6 +1013,19 @@ async fn test_social_backup_and_recovery(_dev_fed: DevFed) -> anyhow::Result<()>
         Amount::from_msats((fedi_fee_ppm * amount_to_deposit.msats).div_ceil(MILLION));
     stabilityPoolDepositToSeek(federation.clone(), RpcAmount(amount_to_deposit)).await?;
 
+    loop {
+        // Wait until deposit operation succeeds
+        // Initiated -> TxAccepted -> Success
+        if td1
+            .event_sink()
+            .num_events_of_type("stabilityPoolDeposit".into())
+            == 3
+        {
+            break;
+        }
+
+        fedimint_core::task::sleep(Duration::from_millis(10)).await;
+    }
     let ecash_balance_before = federation.get_balance().await;
 
     // set username and do a backup
