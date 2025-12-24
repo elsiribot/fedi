@@ -29,6 +29,7 @@ members = [
   "crates/modules/stability-pool/server",
   "crates/modules/stability-pool/tests",
   "crates/nostril",
+  "crates/redb-storage",
   "crates/remote-server",
   "crates/rpc-types",
   "crates/runtime",
@@ -92,6 +93,7 @@ stability-pool-client = { path = "crates/modules/stability-pool/client" }
 stability-pool-common = { path = "crates/modules/stability-pool/common" }
 stability-pool-server = { path = "crates/modules/stability-pool/server" }
 stability-pool-tests = { path = "crates/modules/stability-pool/tests" }
+redb-storage = { path = "crates/redb-storage" }
 remote-server = { path = "crates/remote-server" }
 rpc-types = { path = "crates/rpc-types" }
 runtime = { path = "crates/runtime" }

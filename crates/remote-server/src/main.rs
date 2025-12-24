@@ -16,10 +16,10 @@ use clap::Parser;
 use devimint::cli::exec_user_command;
 use devimint::cmd;
 use devimint::util::FedimintCli;
-use fediffi::ffi::PathBasedStorage;
 use fediffi::rpc::{fedimint_initialize_async, fedimint_rpc_async};
 use fedimint_logging::TracingSetup;
 use listenfd::ListenFd;
+use redb_storage::PathBasedRedbStorage;
 use rpc_types::RpcInitOpts;
 use rpc_types::error::RpcError;
 use runtime::event::IEventSink;
@@ -187,7 +187,7 @@ async fn handle_init(
     let data_dir = state.data_dir.join(&device_id);
     std::fs::create_dir_all(&data_dir)?;
     let bridge = fedimint_initialize_async(
-        Arc::new(PathBasedStorage::new(data_dir).await?),
+        Arc::new(PathBasedRedbStorage::new(data_dir).await?),
         event_sink,
         opts.device_identifier,
         opts.app_flavor,
