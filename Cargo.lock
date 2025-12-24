@@ -2983,6 +2983,7 @@ version = "0.3.0"
 dependencies = [
  "anyhow",
  "api-types",
+ "assert_matches",
  "async-recursion",
  "async-stream",
  "async-trait",
@@ -3079,6 +3080,7 @@ version = "0.3.0"
 dependencies = [
  "anyhow",
  "api-types",
+ "assert_matches",
  "async-trait",
  "base64 0.22.1",
  "bech32",
@@ -7081,6 +7083,7 @@ name = "multispend"
 version = "0.1.0"
 dependencies = [
  "anyhow",
+ "assert_matches",
  "async-stream",
  "async-trait",
  "bitcoin",
@@ -10323,6 +10326,7 @@ name = "stability-pool-tests"
 version = "0.3.0"
 dependencies = [
  "anyhow",
+ "assert_matches",
  "devimint",
  "fedimint-core",
  "fedimint-logging",
@@ -10336,6 +10340,7 @@ name = "stability-pool-tests-old"
 version = "0.3.0"
 dependencies = [
  "anyhow",
+ "assert_matches",
  "devimint",
  "fedimint-core",
  "fedimint-logging",

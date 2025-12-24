@@ -5,6 +5,7 @@ use std::sync::Arc;
 use std::time::Duration;
 
 use anyhow::anyhow;
+use assert_matches::assert_matches;
 use devimint::external::Bitcoind;
 use devimint::federation::Federation;
 use devimint::util::{Command, ProcessManager};
@@ -354,13 +355,12 @@ async fn seeker_tests_isolated(seeker: Arc<ForkedClient>) -> anyhow::Result<()> 
         new_sp_account_info.total_unlocked_balance(),
         initial_unlocked_sp_balance + first_deposit_amount
     );
-    assert!(matches!(
-        new_sp_account_info.staged_seeks.as_slice(),
-        [StagedSeek {
+    assert_matches!(
+        new_sp_account_info.staged_seeks.as_slice(), [StagedSeek {
             sequence: 0,
             amount
         }] if *amount == first_deposit_amount
-    ));
+    );
 
     // Deposit-to-seek again
     let second_deposit_amount = 250_000;
@@ -378,16 +378,15 @@ async fn seeker_tests_isolated(seeker: Arc<ForkedClient>) -> anyhow::Result<()> 
         new_sp_account_info.total_unlocked_balance(),
         initial_unlocked_sp_balance + first_deposit_amount + second_deposit_amount
     );
-    assert!(matches!(
-        new_sp_account_info.staged_seeks.as_slice(),
-        [StagedSeek {
+    assert_matches!(
+        new_sp_account_info.staged_seeks.as_slice(), [StagedSeek {
             sequence: 0,
             amount: amount1
         }, StagedSeek  {
             sequence: 1,
             amount: amount2
         }] if *amount1 == first_deposit_amount && *amount2 == second_deposit_amount
-    ));
+    );
 
     // Try to provide, expect error
     assert!(seeker.deposit_to_provide(500_000, 100).await.is_err());
@@ -411,16 +410,15 @@ async fn seeker_tests_isolated(seeker: Arc<ForkedClient>) -> anyhow::Result<()> 
         initial_unlocked_sp_balance + first_deposit_amount + second_deposit_amount
             - first_withdraw_amount
     );
-    assert!(matches!(
-        new_sp_account_info.staged_seeks.as_slice(),
-        [StagedSeek {
+    assert_matches!(
+        new_sp_account_info.staged_seeks.as_slice(), [StagedSeek {
             sequence: 0,
             amount: amount1
         }, StagedSeek  {
             sequence: 1,
             amount: amount2
         }] if *amount1 == first_deposit_amount && *amount2 == second_deposit_amount - first_withdraw_amount
-    ));
+    );
 
     // Withdraw more than 2nd staged seek, verify 2nd staged seek removed
     // Verify ecash balance
@@ -443,13 +441,12 @@ async fn seeker_tests_isolated(seeker: Arc<ForkedClient>) -> anyhow::Result<()> 
             - first_withdraw_amount
             - second_withdraw_amount
     );
-    assert!(matches!(
-        new_sp_account_info.staged_seeks.as_slice(),
-        [StagedSeek {
+    assert_matches!(
+        new_sp_account_info.staged_seeks.as_slice(), [StagedSeek {
             sequence: 0,
             amount: amount1
         }] if *amount1 == remaining_first_deposit
-    ));
+    );
 
     // Withdraw any remaining unlocked balance
     seeker
@@ -487,14 +484,13 @@ async fn provider_tests_isolated(provider: Arc<ForkedClient>) -> anyhow::Result<
         new_sp_account_info.total_unlocked_balance(),
         initial_unlocked_sp_balance + first_deposit_amount
     );
-    assert!(matches!(
-        new_sp_account_info.staged_provides.as_slice(),
-        [StagedProvide {
+    assert_matches!(
+        new_sp_account_info.staged_provides.as_slice(), [StagedProvide {
             sequence: 0,
             amount,
             min_fee_rate: 10
         }] if *amount == first_deposit_amount
-    ));
+    );
 
     // Deposit-to-provide again
     let second_deposit_amount = 250_000;
@@ -514,9 +510,8 @@ async fn provider_tests_isolated(provider: Arc<ForkedClient>) -> anyhow::Result<
         new_sp_account_info.total_unlocked_balance(),
         initial_unlocked_sp_balance + first_deposit_amount + second_deposit_amount
     );
-    assert!(matches!(
-        new_sp_account_info.staged_provides.as_slice(),
-        [StagedProvide {
+    assert_matches!(
+        new_sp_account_info.staged_provides.as_slice(), [StagedProvide {
             sequence: 0,
             amount: amount1,
             min_fee_rate: 10,
@@ -525,7 +520,7 @@ async fn provider_tests_isolated(provider: Arc<ForkedClient>) -> anyhow::Result<
             amount: amount2,
             min_fee_rate: 20,
         }] if *amount1 == first_deposit_amount && *amount2 == second_deposit_amount
-    ));
+    );
 
     // Try to seek, expect error
     assert!(provider.deposit_to_seek(500_000).await.is_err());
@@ -549,9 +544,8 @@ async fn provider_tests_isolated(provider: Arc<ForkedClient>) -> anyhow::Result<
         initial_unlocked_sp_balance + first_deposit_amount + second_deposit_amount
             - first_withdraw_amount
     );
-    assert!(matches!(
-        new_sp_account_info.staged_provides.as_slice(),
-        [StagedProvide {
+    assert_matches!(
+        new_sp_account_info.staged_provides.as_slice(), [StagedProvide {
             sequence: 0,
             amount: amount1,
             min_fee_rate: 10,
@@ -560,7 +554,7 @@ async fn provider_tests_isolated(provider: Arc<ForkedClient>) -> anyhow::Result<
             amount: amount2,
             min_fee_rate: 20,
         }] if *amount1 == first_deposit_amount && *amount2 == second_deposit_amount - first_withdraw_amount
-    ));
+    );
 
     // Withdraw more than 2nd staged provide, verify 2nd staged provide removed
     // Verify ecash balance
@@ -583,14 +577,13 @@ async fn provider_tests_isolated(provider: Arc<ForkedClient>) -> anyhow::Result<
             - first_withdraw_amount
             - second_withdraw_amount
     );
-    assert!(matches!(
-        new_sp_account_info.staged_provides.as_slice(),
-        [StagedProvide {
+    assert_matches!(
+        new_sp_account_info.staged_provides.as_slice(), [StagedProvide {
             sequence: 0,
             amount: amount1,
             min_fee_rate: 10,
         }] if *amount1 == remaining_first_deposit
-    ));
+    );
 
     // Withdraw any remaining unlocked balance
     provider
