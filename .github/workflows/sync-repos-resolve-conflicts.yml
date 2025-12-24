@@ -1,0 +1,23 @@
+name: Public Repo - Sync Or Resolve Conflicts
+on:
+    workflow_dispatch:
+
+jobs:
+    sync-repos:
+        runs-on: [self-hosted, linux]
+        steps:
+            - name: Checkout script in repo
+              uses: actions/checkout@v4
+
+            - name: Sync or resolve conflicts between public and private Repositories
+              uses: actions/github-script@v7
+              id: sync-repos
+              env:
+                  DOWNLOAD_TOKEN: ${{ secrets.DOWNLOAD_APK_ACCESS_TOKEN }}
+                  PUBLISH_TOKEN: ${{ secrets.PUBLISH_APK_ACCESS_TOKEN }}
+                  SOURCE_COMMIT_SHA: ${{ github.sha }}
+              with:
+                  result-encoding: string
+                  script: |
+                      const script = require('./scripts/ci/sync-repos-resolve-conflicts.js')
+                      await script(syncRepos)
