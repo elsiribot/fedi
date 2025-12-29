@@ -1,3 +1,4 @@
+import { useHeaderHeight } from '@react-navigation/elements'
 import type { NativeStackScreenProps } from '@react-navigation/native-stack'
 import { Text, Theme, useTheme } from '@rneui/themed'
 import React, { useCallback } from 'react'
@@ -9,6 +10,7 @@ import {
     StyleSheet,
 } from 'react-native'
 import { ScrollView } from 'react-native-gesture-handler'
+import { useSafeAreaInsets } from 'react-native-safe-area-context'
 
 import { ErrorBoundary } from '@fedi/common/components/ErrorBoundary'
 import { useChatsListSearch } from '@fedi/common/hooks/matrix'
@@ -29,8 +31,15 @@ const ChatsListSearch: React.FC<Props> = ({ navigation, route }: Props) => {
     const { t } = useTranslation()
     const { theme } = useTheme()
     const { initialQuery } = route.params
-
     const { query, filteredChatsList } = useChatsListSearch(initialQuery)
+
+    const insets = useSafeAreaInsets()
+    const headerHeight = useHeaderHeight()
+
+    const headerOffset = Math.max(
+        0,
+        headerHeight - insets.top + theme.spacing.xl,
+    )
 
     const handleOpenChat = useCallback(
         (chat: MatrixRoom) => {
@@ -65,7 +74,8 @@ const ChatsListSearch: React.FC<Props> = ({ navigation, route }: Props) => {
             )}
             <KeyboardAvoidingView
                 behavior="padding"
-                style={style.resultsContainer}>
+                style={style.resultsContainer}
+                keyboardVerticalOffset={headerOffset}>
                 {filteredChatsList.length === 0 ? (
                     <Column
                         align="center"
