@@ -6,7 +6,7 @@ import { useTranslation } from 'react-i18next'
 import { useSyncCurrencyRatesAndCache } from '@fedi/common/hooks/currency'
 
 import { OmniInput } from '../components/feature/omni/OmniInput'
-import Flex from '../components/ui/Flex'
+import { Column } from '../components/ui/Flex'
 import { ParserDataType } from '../types'
 import { NavigationHook, RootStackParamList } from '../types/navigation'
 
@@ -24,7 +24,7 @@ const Receive: React.FC<Props> = ({ route }) => {
         }, [syncCurrencyRatesAndCache, federationId]),
     )
     return (
-        <Flex grow fullWidth>
+        <Column grow fullWidth>
             <OmniInput
                 expectedInputTypes={[
                     ParserDataType.LnurlWithdraw,
@@ -68,7 +68,7 @@ const Receive: React.FC<Props> = ({ route }) => {
                     },
                 ]}
             />
-        </Flex>
+        </Column>
     )
 }
 
