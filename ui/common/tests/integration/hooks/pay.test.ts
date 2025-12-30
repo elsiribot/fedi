@@ -1,15 +1,26 @@
 import { act, waitFor } from '@testing-library/react'
 import i18next from 'i18next'
 
-import { useOmniPaymentState, useSendEcash } from '../../../hooks/pay'
-import { selectLastUsedFederationId } from '../../../redux'
 import {
+    useOmniPaymentState,
+    useParseEcash,
+    useSendEcash,
+} from '../../../hooks/pay'
+import {
+    leaveFederation,
+    selectLastUsedFederation,
+    selectLastUsedFederationId,
+    upsertFederation,
+} from '../../../redux'
+import {
+    LoadedFederation,
     MSats,
     ParsedBitcoinAddress,
     ParsedBolt11,
     ParsedLnurlPay,
     Sats,
 } from '../../../types'
+import { RpcFederationPreview } from '../../../types/bindings'
 import amountUtils from '../../../utils/AmountUtils'
 import { parseUserInput } from '../../../utils/parser'
 import { createIntegrationTestBuilder } from '../../utils/remote-bridge-setup'
@@ -188,6 +199,108 @@ describe('sending payments', () => {
                 store.getState(),
             )
             expect(lastUsedFederationId).toEqual(federationId)
+        })
+    })
+
+    describe('useParseEcash', () => {
+        it('should successfully parse an ecash token', async () => {
+            await builder.withEcashReceived(10000)
+
+            const {
+                store,
+                bridge: { fedimint },
+            } = context
+
+            const federationId = selectLastUsedFederationId(store.getState())
+
+            const { result } = renderHookWithBridge(
+                () => useSendEcash(federationId || ''),
+                store,
+                fedimint,
+            )
+
+            await act(() => result.current.generateEcash(2 as Sats))
+            await waitFor(() => expect(result.current.notes).toBeTruthy())
+
+            const { result: parseEcashResult } = renderHookWithBridge(
+                () => useParseEcash(),
+                store,
+                fedimint,
+            )
+
+            await act(() =>
+                parseEcashResult.current.parseEcash(
+                    result.current.notes as string,
+                ),
+            )
+
+            await waitFor(() => {
+                expect(parseEcashResult.current.parsed).toBeTruthy()
+                expect(parseEcashResult.current.ecashToken).toBeTruthy()
+                expect(parseEcashResult.current.loading).toBeFalsy()
+            })
+        })
+
+        it('should get the federation preview if the ecash token includes an invite code', async () => {
+            await builder.withEcashReceived(10000)
+
+            const {
+                store,
+                bridge: { fedimint },
+            } = context
+
+            const federation = selectLastUsedFederation(
+                store.getState(),
+            ) as LoadedFederation
+
+            const { result } = renderHookWithBridge(
+                () => useSendEcash(federation.id || ''),
+                store,
+                fedimint,
+            )
+
+            // Manually force the federation to include invite codes in generated ecash tokens
+            act(() =>
+                store.dispatch(
+                    upsertFederation({
+                        ...federation,
+                        meta: {
+                            ...federation.meta,
+                            invite_codes_disabled: 'false',
+                        },
+                    }),
+                ),
+            )
+
+            await act(() => result.current.generateEcash(2 as Sats))
+            await waitFor(() => expect(result.current.notes).toBeTruthy())
+
+            // Leave the federation to force useParseEcash to fetch a federation preview
+            await act(() =>
+                store.dispatch(
+                    leaveFederation({ fedimint, federationId: federation.id }),
+                ),
+            )
+
+            const { result: parseEcashResult } = renderHookWithBridge(
+                () => useParseEcash(),
+                store,
+                fedimint,
+            )
+
+            await act(() =>
+                parseEcashResult.current.parseEcash(
+                    result.current.notes as string,
+                ),
+            )
+
+            await waitFor(() => {
+                expect(
+                    'returningMemberStatus' in
+                        (parseEcashResult.current
+                            .federation as RpcFederationPreview),
+                ).toBeTruthy()
+            })
         })
     })
 })
