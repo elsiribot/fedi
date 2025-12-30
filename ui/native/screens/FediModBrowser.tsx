@@ -747,7 +747,16 @@ const FediModBrowser: React.FC<Props> = ({ route }) => {
                     }
                 }}
                 onNavigationStateChange={e => {
+                    log.info(
+                        `${browserUrl} changed navigation state to ${e.url}`,
+                    )
                     setBrowserUrl(e.url)
+                }}
+                onOpenWindow={e => {
+                    log.info(
+                        `${browserUrl} opening new window with URL ${e.nativeEvent.targetUrl}`,
+                    )
+                    Linking.openURL(e.nativeEvent.targetUrl)
                 }}
                 onShouldStartLoadWithRequest={onShouldStartLoadWithRequest}
                 style={{ width: '100%', height: '100%', flex: 1 }}
