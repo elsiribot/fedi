@@ -30,7 +30,7 @@ describe('sending payments', () => {
 
             const federationId = selectLastUsedFederationId(store.getState())
             const { result } = renderHookWithBridge(
-                () => useOmniPaymentState(fedimint, federationId, i18next.t),
+                () => useOmniPaymentState(federationId, i18next.t),
                 store,
                 fedimint,
             )
@@ -76,7 +76,7 @@ describe('sending payments', () => {
 
             const federationId = selectLastUsedFederationId(store.getState())
             const { result } = renderHookWithBridge(
-                () => useOmniPaymentState(fedimint, federationId, i18next.t),
+                () => useOmniPaymentState(federationId, i18next.t),
                 store,
                 fedimint,
             )
@@ -117,7 +117,7 @@ describe('sending payments', () => {
 
             const federationId = selectLastUsedFederationId(store.getState())
             const { result } = renderHookWithBridge(
-                () => useOmniPaymentState(fedimint, federationId, i18next.t),
+                () => useOmniPaymentState(federationId, i18next.t),
                 store,
                 fedimint,
             )
