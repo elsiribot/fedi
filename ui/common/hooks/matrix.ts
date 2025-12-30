@@ -43,7 +43,6 @@ import {
     setChatTimelineSearchQuery,
     selectChatDrafts,
     selectCurrency,
-    cancelEcash,
 } from '../redux'
 import {
     MatrixEvent,
@@ -707,26 +706,6 @@ export function useMatrixPaymentEvent({
             )
         }
     }, [dispatch, event, fedimint, isBolt11])
-
-    // Automatically try to cancel ecash send if recipient cancels
-    useEffect(() => {
-        if (
-            isSentByMe &&
-            paymentStatus === 'rejected' &&
-            typeof event.content.ecash === 'string' &&
-            transaction?.kind === 'oobSend' &&
-            transaction.state?.type === 'created'
-        ) {
-            dispatch(cancelEcash({ fedimint, ecash: event.content.ecash }))
-        }
-    }, [
-        isSentByMe,
-        paymentStatus,
-        transaction,
-        dispatch,
-        fedimint,
-        event.content.ecash,
-    ])
 
     return {
         messageText,
