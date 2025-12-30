@@ -148,12 +148,8 @@ export const ChatConversation: React.FC<Props> = ({
         id,
     ])
 
-    const {
-        mentionSuggestions,
-        shouldShowSuggestions,
-        detectMentionTrigger,
-        insertMention: insertMentionFromHook,
-    } = useMentionInput(membersForMentions, cursor)
+    const { mentionSuggestions, shouldShowSuggestions, insertMention } =
+        useMentionInput(membersForMentions, messageText, cursor)
 
     const showMentionSuggestions =
         mentionEnabled && !isReadOnly && shouldShowSuggestions
@@ -278,27 +274,8 @@ export const ChatConversation: React.FC<Props> = ({
         [handleSend],
     )
 
-    const handleInputChange = (ev: React.ChangeEvent<HTMLTextAreaElement>) => {
-        const v = ev.currentTarget.value
-        setMessageText(v)
-        const c = ev.currentTarget.selectionStart ?? v.length
-        setCursor(c)
-        if (mentionEnabled) detectMentionTrigger(v, c)
-    }
-
-    const handleInputSelect: React.ReactEventHandler<
-        HTMLTextAreaElement
-    > = ev => {
-        const c = ev.currentTarget.selectionStart ?? messageText.length
-        setCursor(c)
-        if (mentionEnabled) detectMentionTrigger(messageText, c)
-    }
-
-    const insertMention = (item: MentionSelect) => {
-        const { newText, newCursorPosition } = insertMentionFromHook(
-            item,
-            messageText,
-        )
+    const handleSelectMention = (item: MentionSelect) => {
+        const { newText, newCursorPosition } = insertMention(item, messageText)
         setMessageText(newText)
         setCursor(newCursorPosition)
         requestAnimationFrame(() => {
@@ -383,10 +360,10 @@ export const ChatConversation: React.FC<Props> = ({
                     <Input
                         ref={inputRef}
                         value={messageText}
-                        onSelect={handleInputSelect}
-                        onChange={handleInputChange}
-                        onKeyUp={handleInputSelect}
-                        onClick={handleInputSelect}
+                        onSelect={ev =>
+                            setCursor(ev.currentTarget.selectionStart)
+                        }
+                        onChange={ev => setMessageText(ev.currentTarget.value)}
                         placeholder={t(
                             isReadOnly
                                 ? 'feature.chat.broadcast-only-notice'
@@ -414,7 +391,7 @@ export const ChatConversation: React.FC<Props> = ({
                         <ChatMentionSuggestions
                             visible={showMentionSuggestions}
                             suggestions={mentionSuggestions}
-                            onSelect={insertMention}
+                            onSelect={handleSelectMention}
                         />
                     </MentionOverlay>
                 )}

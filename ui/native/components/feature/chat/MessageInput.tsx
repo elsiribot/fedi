@@ -12,16 +12,12 @@ import {
     StyleSheet,
     TextInput,
     TextInputContentSizeChangeEventData,
-    TextInputSelectionChangeEventData,
     View,
     Dimensions,
 } from 'react-native'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 
-import {
-    GUARDIANITO_BOT_DISPLAY_NAME,
-    ROOM_MENTION,
-} from '@fedi/common/constants/matrix'
+import { GUARDIANITO_BOT_DISPLAY_NAME } from '@fedi/common/constants/matrix'
 import { theme as fediTheme } from '@fedi/common/constants/theme'
 import { useMessageInputState } from '@fedi/common/hooks/chat'
 import { useMentionInput } from '@fedi/common/hooks/matrix'
@@ -72,8 +68,6 @@ type MessageInputProps = {
 }
 
 const SUGGESTIONS_MIN_HEIGHT = 120
-const CARET_LOCK_MS = 450
-const CARET_LOCK_MS_EMOJI = 900
 
 const MessageInput: React.FC<MessageInputProps> = ({
     onMessageSubmitted,
@@ -113,13 +107,10 @@ const MessageInput: React.FC<MessageInputProps> = ({
     const { isVisible: kbVisible, height: kbHeight } = useKeyboard()
     const [isFocused, setIsFocused] = useState(false)
     const [isSendingMessage, setIsSendingMessage] = useState(false)
-
-    // caret tracking (works around late selection events on older Androids)
-    const lastCaretRef = useRef(0)
-    const lastValueRef = useRef(messageText)
-    const ignoreSelUntilRef = useRef(0)
-
-    const [selectionStart, setSelectionStart] = useState(0)
+    const [selection, setSelection] = useState<{ start: number; end: number }>({
+        start: 0,
+        end: 0,
+    })
     const directUserId = useMemo(
         () => existingRoom?.directUserId ?? null,
         [existingRoom],
@@ -128,7 +119,6 @@ const MessageInput: React.FC<MessageInputProps> = ({
         () => !(!!directUserId || (!existingRoom && !isPublic)),
         [directUserId, existingRoom, isPublic],
     )
-    const [forceHideSuggestions, setForceHideSuggestions] = useState(false)
 
     // Build candidates for the mention hook, injecting "self" if missing so we can self-mention by display name.
     const membersForMentions: MatrixRoomMember[] = useMemo(() => {
@@ -151,8 +141,8 @@ const MessageInput: React.FC<MessageInputProps> = ({
         return [...list, selfAsMember]
     }, [mentionEnabled, roomMembers, selfUserId, auth?.displayName, id])
 
-    const { mentionSuggestions, shouldShowSuggestions, detectMentionTrigger } =
-        useMentionInput(membersForMentions, selectionStart)
+    const { mentionSuggestions, shouldShowSuggestions, insertMention } =
+        useMentionInput(membersForMentions, messageText, selection.start)
 
     const MIN_INPUT_H = theme.sizes.minMessageInputHeight
     const [inputHeight, setInputHeight] = useState<number>(MIN_INPUT_H)
@@ -293,116 +283,19 @@ const MessageInput: React.FC<MessageInputProps> = ({
         onHeightChanged(event.nativeEvent.layout.height)
     }
 
-    const handleSelectionChange = useCallback(
-        (e: NativeSyntheticEvent<TextInputSelectionChangeEventData>) => {
-            const sel = e.nativeEvent.selection
-            const s = Math.max(sel.start, sel.end)
-            // During lock, snap back immediately on backward selection regressions.
-            if (
-                Date.now() < ignoreSelUntilRef.current &&
-                s < lastCaretRef.current
-            ) {
-                inputRef.current?.setNativeProps?.({
-                    selection: {
-                        start: lastCaretRef.current,
-                        end: lastCaretRef.current,
-                    },
-                })
-                return
-            }
-            setSelectionStart(s)
-            lastCaretRef.current = s
-            if (mentionEnabled) {
-                detectMentionTrigger(messageText, s)
-            }
-        },
-        [detectMentionTrigger, messageText, mentionEnabled],
-    )
-
-    const onChangeText = useCallback(
-        (value: string) => {
-            // compute a robust caret guess based on last confirmed caret and length delta.
-            const prev = lastValueRef.current
-            const delta = value.length - prev.length
-            const guess = Math.max(
-                0,
-                Math.min(lastCaretRef.current + delta, value.length),
-            )
-            setMessageText(value)
-            lastValueRef.current = value
-            if (mentionEnabled) {
-                detectMentionTrigger(value, guess === 0 ? value.length : guess)
-            }
-        },
-        [detectMentionTrigger, mentionEnabled, setMessageText],
-    )
-
-    const insertMention = useCallback(
+    const handleSelectMention = useCallback(
         (item: MentionSelect) => {
-            const text = messageText
-            const cursor = selectionStart
-
-            const label =
-                item.id === '@room'
-                    ? `@${ROOM_MENTION}`
-                    : `@${(item.displayName || matrixIdToUsername(item.id)).trim()}`
-            const insertion = `${label} `
-
-            // fix for Android 9 and under 'caret doesn't move to end of line' Git Issue 8843
-            // target the token immediately before the caret
-            const left = text.slice(0, cursor)
-            // matches an @-mention immediately before the cursor: start/space + '@' + the current handle fragment, anchored to the end.
-            const match = left.match(/(^|\s)@([^\s\r\n]*)$/)
-            const start = match
-                ? cursor - ((match[2]?.length ?? 0) + 1)
-                : cursor
-
-            const before = text.slice(0, start)
-            const after = text.slice(cursor)
-            const newText = before + insertion + after
-            const nextCursor = before.length + insertion.length
-
+            const { newText, newCursorPosition } = insertMention(
+                item,
+                messageText,
+            )
             setMessageText(newText)
-            lastValueRef.current = newText
-            setSelectionStart(nextCursor)
-            lastCaretRef.current = nextCursor
-
-            // ZWJ or VS, any pictographic emoji, skin-tone modifiers, or regional indicators
-            const EMOJIISH_RE =
-                /(?:\u200D|\uFE0F|\p{Extended_Pictographic}|\p{Emoji_Modifier}|\p{Regional_Indicator})/u
-
-            const emojiish = EMOJIISH_RE.test(insertion)
-            ignoreSelUntilRef.current =
-                Date.now() + (emojiish ? CARET_LOCK_MS_EMOJI : CARET_LOCK_MS)
-
-            setForceHideSuggestions(true)
-            // send a "no active token" signal — most hooks treat a negative index as "clear"
-            detectMentionTrigger(newText, -1)
-
-            requestAnimationFrame(() => {
-                inputRef.current?.setNativeProps?.({
-                    selection: { start: nextCursor, end: nextCursor },
-                })
-                lastCaretRef.current = nextCursor
-                setForceHideSuggestions(false)
+            setSelection({
+                start: newCursorPosition,
+                end: newCursorPosition,
             })
-            // Some keyboards apply emoji presentation in a second pass.
-            // Re-assert the caret a couple of times if emoji was present.
-            if (emojiish) {
-                ;[48, 160].forEach(ms =>
-                    setTimeout(() => {
-                        inputRef.current?.setNativeProps?.({
-                            selection: {
-                                start: lastCaretRef.current,
-                                end: lastCaretRef.current,
-                            },
-                        })
-                    }, ms),
-                )
-            }
-            //end of bugfix
         },
-        [messageText, selectionStart, detectMentionTrigger, setMessageText],
+        [messageText, insertMention, setMessageText],
     )
 
     const showMentionSuggestions =
@@ -454,12 +347,12 @@ const MessageInput: React.FC<MessageInputProps> = ({
 
             {/* input row */}
             <View style={style.inputContainer}>
-                {showMentionSuggestions && !forceHideSuggestions && (
+                {showMentionSuggestions && (
                     <View pointerEvents="auto" style={style.mentionOverlay}>
                         <ChatMentionSuggestions
                             visible
                             suggestions={mentionSuggestions}
-                            onSelect={insertMention}
+                            onSelect={handleSelectMention}
                             maxHeight={suggestionsMaxHeight}
                             topSpacer={suggestionsTopSpacer}
                         />
@@ -474,8 +367,15 @@ const MessageInput: React.FC<MessageInputProps> = ({
                     <Input
                         disableFullscreenUI
                         textBreakStrategy="simple"
-                        onChangeText={onChangeText}
-                        onSelectionChange={handleSelectionChange}
+                        onChangeText={value => setMessageText(value)}
+                        // this prop is used to manipulate the cursor position
+                        selection={selection}
+                        // we need to make sure the selection prop stays
+                        // in sync when we get a selection change event
+                        // from the keyboard
+                        onSelectionChange={e =>
+                            setSelection(e.nativeEvent.selection)
+                        }
                         value={messageText}
                         ref={(ref: TextInput | null) => {
                             inputRef.current = ref
@@ -496,16 +396,6 @@ const MessageInput: React.FC<MessageInputProps> = ({
                         blurOnSubmit={false}
                         onFocus={() => {
                             setIsFocused(true)
-                            // for caret tracking: ensure detector/caret are sane when Android hasn't delivered a selection yet
-                            const pos = Math.min(
-                                lastCaretRef.current ||
-                                    selectionStart ||
-                                    messageText.length,
-                                messageText.length,
-                            )
-                            lastCaretRef.current = pos
-                            if (mentionEnabled)
-                                detectMentionTrigger(messageText, pos)
                         }}
                         onBlur={() => setIsFocused(false)}
                         disabled={inputDisabled}
