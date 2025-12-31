@@ -57,6 +57,7 @@ export { default as DeviceAndroid } from '@fedi/common/assets/svgs/device-androi
 export { default as DeviceBrowser } from '@fedi/common/assets/svgs/device-browser.svg'
 export { default as DeviceIos } from '@fedi/common/assets/svgs/device-ios.svg'
 export { default as DollarCircle } from '@fedi/common/assets/svgs/dollar-circle.svg'
+export { default as DotsMore } from '@fedi/common/assets/svgs/dots-more.svg'
 export { default as Download } from '@fedi/common/assets/svgs/download.svg'
 export { default as Edit } from '@fedi/common/assets/svgs/edit.svg'
 export { default as EditPaper } from '@fedi/common/assets/svgs/edit-paper.svg'

@@ -5,9 +5,9 @@ import React, { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { ScrollView, StyleSheet, View } from 'react-native'
 
+import { COMMUNITY_TOOL_URL } from '@fedi/common/constants/fedimods'
 import { useLatestPublicCommunities } from '@fedi/common/hooks/federation'
-import { selectCommunityIds } from '@fedi/common/redux'
-import { isDev, isNightly } from '@fedi/common/utils/environment'
+import { openMiniAppSession, selectCommunityIds } from '@fedi/common/redux'
 import { Images } from '@fedi/native/assets/images'
 
 import { FederationLogo } from '../components/feature/federations/FederationLogo'
@@ -17,11 +17,7 @@ import { OmniInput } from '../components/feature/omni/OmniInput'
 import { FirstTimeOverlayItem } from '../components/feature/onboarding/FirstTimeOverlay'
 import { Column, Row } from '../components/ui/Flex'
 import { SafeAreaContainer } from '../components/ui/SafeArea'
-import {
-    COMMUNITY_TOOL_URL_STAGING,
-    COMMUNITY_TOOL_URL_PROD,
-} from '../constants'
-import { useAppSelector } from '../state/hooks'
+import { useAppDispatch, useAppSelector } from '../state/hooks'
 import { PublicCommunity } from '../types'
 import type { RootStackParamList } from '../types/navigation'
 
@@ -34,6 +30,7 @@ type Tab = 'discover' | 'join' | 'create'
 const PublicCommunities: React.FC<Props> = ({ navigation }) => {
     const { t } = useTranslation()
     const { theme } = useTheme()
+    const dispatch = useAppDispatch()
 
     const { isFetchingPublicCommunities } = useLatestPublicCommunities()
     const publicCommunities = useAppSelector(
@@ -171,14 +168,15 @@ const PublicCommunities: React.FC<Props> = ({ navigation }) => {
                     <Button
                         fullWidth
                         title={t('phrases.create-my-community')}
-                        onPress={() =>
-                            navigation.navigate('FediModBrowser', {
-                                url:
-                                    isNightly() || isDev()
-                                        ? COMMUNITY_TOOL_URL_STAGING
-                                        : COMMUNITY_TOOL_URL_PROD,
-                            })
-                        }
+                        onPress={() => {
+                            dispatch(
+                                openMiniAppSession({
+                                    miniAppId: COMMUNITY_TOOL_URL,
+                                    url: COMMUNITY_TOOL_URL,
+                                }),
+                            )
+                            navigation.navigate('FediModBrowser')
+                        }}
                     />
                 )}
             </View>

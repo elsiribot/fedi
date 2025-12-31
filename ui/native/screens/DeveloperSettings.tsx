@@ -18,6 +18,7 @@ import { useIsStabilityPoolSupported } from '@fedi/common/hooks/federation'
 import { useToast } from '@fedi/common/hooks/toast'
 import {
     changeAuthenticatedGuardian,
+    clearAllMiniAppSessions,
     clearAutojoinedCommunitiesAndNotices,
     listGateways,
     refreshStabilityPool,
@@ -573,6 +574,17 @@ const DeveloperSettings: React.FC<Props> = ({ navigation }) => {
                         reduxDispatch(clearAllMiniAppPermissions())
                         toast.show({
                             content: 'Cleared all miniapp permissions',
+                            status: 'success',
+                        })
+                    }}
+                />
+                <Button
+                    title="Clear all miniapp history"
+                    containerStyle={style.buttonContainer}
+                    onPress={() => {
+                        reduxDispatch(clearAllMiniAppSessions())
+                        toast.show({
+                            content: 'Cleared all miniapp history',
                             status: 'success',
                         })
                     }}

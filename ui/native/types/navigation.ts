@@ -199,7 +199,7 @@ export type RootStackParamList = {
     Settings: undefined
     ShareLogs: { ticketNumber: string } | undefined
     OmniScanner: undefined
-    FediModBrowser: { url: string }
+    FediModBrowser: { url?: string } | undefined
     ReceiveStabilityQr: { federationId: Federation['id'] }
     Splash: undefined
     StabilityConfirmDeposit: { amount: Sats; federationId: Federation['id'] }

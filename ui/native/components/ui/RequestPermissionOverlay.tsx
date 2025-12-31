@@ -3,6 +3,7 @@ import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Image, Pressable, StyleSheet, View } from 'react-native'
 
+import { selectCurrentUrl } from '@fedi/common/redux'
 import { selectMiniAppByUrl } from '@fedi/common/redux/mod'
 import { MiniAppPermissionType } from '@fedi/common/types'
 
@@ -13,7 +14,6 @@ import { Column, Row } from './Flex'
 import SvgImage from './SvgImage'
 
 type RequestPermissionOverlayProps = {
-    requestingMiniAppUrl: string | undefined
     requestedPermission: MiniAppPermissionType | null
     handlePermissionResponse: (
         didAllow: boolean,
@@ -25,7 +25,6 @@ type RequestPermissionOverlayProps = {
 
 const RequestPermissionOverlay = (props: RequestPermissionOverlayProps) => {
     const {
-        requestingMiniAppUrl,
         requestedPermission,
         handlePermissionResponse,
         onAccept,
@@ -33,8 +32,9 @@ const RequestPermissionOverlay = (props: RequestPermissionOverlayProps) => {
     } = props
 
     const { t } = useTranslation()
+    const currentUrl = useAppSelector(selectCurrentUrl)
     const currentMiniApp = useAppSelector(s =>
-        selectMiniAppByUrl(s, requestingMiniAppUrl ?? ''),
+        selectMiniAppByUrl(s, currentUrl ?? ''),
     )
     const [shouldRememberChoice, setShouldRememberChoice] =
         useState<boolean>(false)
@@ -58,9 +58,9 @@ const RequestPermissionOverlay = (props: RequestPermissionOverlayProps) => {
         onReject(new Error(`Permission denied: ${requestedPermission}`))
     }
 
-    if (!requestingMiniAppUrl || !permissionInfo) return null
+    if (!currentUrl || !permissionInfo) return null
 
-    const title = currentMiniApp?.title || requestingMiniAppUrl
+    const title = currentMiniApp?.title || currentUrl
     const imageUrl = currentMiniApp?.imageUrl || ''
 
     const permissionConfirmationContent: CustomOverlayContents = {

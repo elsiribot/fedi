@@ -1,6 +1,7 @@
 import { AnyInjectionRequestMessage } from '@fedi/injections/src'
 
 import {
+    selectCurrentUrl,
     selectRequestedPermission,
     setRequestedPermission,
 } from '../redux/browser'
@@ -22,11 +23,9 @@ import { useCommonDispatch, useCommonSelector } from './redux'
 const log = makeLog('common/hooks/injections')
 
 export const useInjectionsPermissions = ({
-    currentMiniAppUrl,
     onPermissionNeeded,
     onPermissionDenied,
 }: {
-    currentMiniAppUrl: string | undefined
     onPermissionNeeded: () => Promise<void>
     onPermissionDenied: (
         permission: MiniAppPermissionType,
@@ -34,6 +33,7 @@ export const useInjectionsPermissions = ({
     ) => void
 }) => {
     const dispatch = useCommonDispatch()
+    const currentMiniAppUrl = useCommonSelector(s => selectCurrentUrl(s) || '')
     const currentMiniApp = useCommonSelector(s =>
         selectMiniAppByUrl(s, currentMiniAppUrl ?? ''),
     )

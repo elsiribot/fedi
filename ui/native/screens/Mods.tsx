@@ -11,7 +11,7 @@ import {
 } from 'react-native'
 
 import { useNuxStep } from '@fedi/common/hooks/nux'
-import { selectOnboardingMethod } from '@fedi/common/redux'
+import { openMiniAppSession, selectOnboardingMethod } from '@fedi/common/redux'
 import {
     removeCustomMod,
     selectAllVisibleMods,
@@ -82,6 +82,12 @@ const Mods: React.FC = () => {
         if (isFediDeeplinkType(fediMod.url)) {
             openURL(fediMod.url)
         } else {
+            dispatch(
+                openMiniAppSession({
+                    miniAppId: fediMod.id,
+                    url: fediMod.url,
+                }),
+            )
             await handleFediModNavigation(fediMod, navigation)
         }
     }
