@@ -64,7 +64,7 @@ const ModsHeader: React.FC = () => {
                 onBackdropPress={() => setOptionsOverlayOpen(false)}
                 contents={{
                     body: (
-                        <Column gap="lg">
+                        <Column>
                             <HeaderOverlayOption
                                 onPress={handleGoToMiniAppCatalog}
                                 text={t('feature.fedimods.add-from-catalog')}
