@@ -54,4 +54,4 @@ jobs:
           OVERRIDE_SOURCE_BRANCH: ${{ inputs.source_branch }}
           OVERRIDE_START_COMMIT: ${{ inputs.start_commit }}
           DRY_RUN: ${{ inputs.dry_run }}
-        run: nix develop -c bash ./scripts/ci/relay-commits.sh
+        run: nix develop -c ./scripts/ci/relay-commits.sh

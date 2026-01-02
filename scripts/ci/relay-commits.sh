@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 #
 # relay-commits.sh
 # Relays commits from a private repository to a public repository with author filtering.
