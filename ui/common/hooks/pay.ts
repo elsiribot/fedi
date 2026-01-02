@@ -38,7 +38,6 @@ import {
     getMeltQuotes,
     type MeltResult,
 } from '../utils/cashu'
-import { FedimintBridge } from '../utils/fedimint'
 import { formatErrorMessage } from '../utils/format'
 import { lnurlPay } from '../utils/lnurl'
 import { makeLog } from '../utils/log'
@@ -103,11 +102,11 @@ interface OmniPaymentState {
  * amounts to pay.
  */
 export function useOmniPaymentState(
-    fedimint: FedimintBridge,
     federationId: string | undefined,
     t: TFunction,
 ): OmniPaymentState {
     const dispatch = useCommonDispatch()
+    const fedimint = useFedimint()
     const [isLoading, setIsLoading] = useState<boolean>(false)
     const [error, setError] = useState<string | null>(null)
     const [feeDetails, setFeeDetails] = useState<RpcFeeDetails>()
@@ -403,13 +402,15 @@ export function useSendEcash(federationId: string) {
     }
 }
 
-export function useParseEcash(fedimint: FedimintBridge) {
+export function useParseEcash() {
     const [ecashToken, setEcashToken] = useState<string>('')
     const [loading, setLoading] = useState(false) // used for page loader
     const [parsedEcash, setParsedEcash] = useState<RpcEcashInfo | null>(null)
     const [federationPreview, setFederationPreview] =
         useState<RpcFederationPreview | null>(null)
     const [isError, setIsError] = useState(false)
+
+    const fedimint = useFedimint()
 
     // Return federation if they have already joined issuing federation
     const loadedFederation = useCommonSelector(s => {
@@ -460,8 +461,9 @@ export function useParseEcash(fedimint: FedimintBridge) {
     }
 }
 
-export function useClaimEcash(fedimint: FedimintBridge) {
+export function useClaimEcash() {
     const dispatch = useCommonDispatch()
+    const fedimint = useFedimint()
 
     const [loading, setLoading] = useState(false)
     const [claimed, setEcashClaimed] = useState(false)

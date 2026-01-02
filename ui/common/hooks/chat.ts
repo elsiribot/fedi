@@ -19,7 +19,6 @@ import {
     setMessageToEdit,
 } from '../redux'
 import { getDisplayNameValidator, parseData } from '../utils/chat'
-import { FedimintBridge } from '../utils/fedimint'
 import { makeLog } from '../utils/log'
 import { useMinMaxRequestAmount, useMinMaxSendAmount } from './amount'
 import { useFedimint } from './fedimint'
@@ -129,12 +128,12 @@ export function usePublishNotificationToken(
 
 export const useChatPaymentPush = (
     t: TFunction,
-    fedimint: FedimintBridge,
     roomId: string,
     recipientId: string,
 ) => {
     const toast = useToast()
     const dispatch = useCommonDispatch()
+    const fedimint = useFedimint()
     const payFromFederation = useCommonSelector(selectPaymentFederation)
     const federationId = payFromFederation?.id || ''
     const [isProcessing, setIsProcessing] = useState<boolean>(false)

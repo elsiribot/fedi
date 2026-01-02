@@ -12,7 +12,6 @@ import {
     selectPaymentFederation,
 } from '@fedi/common/redux'
 
-import { fedimint } from '../bridge'
 import FederationWalletSelector from '../components/feature/send/FederationWalletSelector'
 import { AmountScreen } from '../components/ui/AmountScreen'
 import Flex from '../components/ui/Flex'
@@ -29,7 +28,7 @@ const ChatWallet: React.FC<Props> = ({ navigation, route }: Props) => {
         selectMatrixDirectMessageRoom(s, recipientId),
     )
     const paymentFederation = useAppSelector(selectPaymentFederation)
-    const syncCurrencyRatesAndCache = useSyncCurrencyRatesAndCache(fedimint)
+    const syncCurrencyRatesAndCache = useSyncCurrencyRatesAndCache()
 
     useFocusEffect(
         useCallback(() => {
