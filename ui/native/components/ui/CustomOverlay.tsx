@@ -139,7 +139,6 @@ const CustomOverlay: React.FC<CustomOverlayProps> = ({
                     containerStyle={style.buttonContainer}
                     title={button.text}
                     titleProps={{
-                        numberOfLines: 1,
                         adjustsFontSizeToFit: true,
                         maxFontSizeMultiplier: 1.4,
                     }}
