@@ -5,7 +5,7 @@ import { useCommonSelector } from '../redux'
 import { useAmountFormatter } from './useAmountFormatter'
 
 /**
- * Provides state for rendering a balance amount in fiat and sats.
+ * Returns a set of balances (sats, fiat, formatted) for a given federation.
  */
 export function useBalance(federationId: string) {
     const balance = useCommonSelector(s =>
