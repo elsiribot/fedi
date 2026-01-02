@@ -7,14 +7,27 @@ async function removeDirectory(dir) {
 }
 
 async function syncRepos({ github, context, core }) {
-  const { DOWNLOAD_TOKEN, PUBLISH_TOKEN, SOURCE_COMMIT_SHA } = process.env;
+  const {
+    DOWNLOAD_TOKEN,
+    PUBLISH_TOKEN,
+    SOURCE_COMMIT_SHA,
+    PUBLIC_FEDI_ORG,
+    PUBLIC_FEDI_REPO,
+    PUBLIC_FEDI_BRANCH = "master",
+  } = process.env;
 
-  if (!DOWNLOAD_TOKEN || !PUBLISH_TOKEN || !SOURCE_COMMIT_SHA) {
+  if (
+    !DOWNLOAD_TOKEN ||
+    !PUBLISH_TOKEN ||
+    !SOURCE_COMMIT_SHA ||
+    !PUBLIC_FEDI_ORG ||
+    !PUBLIC_FEDI_REPO
+  ) {
     throw new Error("Missing required environment variables");
   }
 
   const sourceRepo = "fedibtc/fedi";
-  const targetRepo = "fedixyz/fedi-test-sync-repos";
+  const targetRepo = `${PUBLIC_FEDI_ORG}/${PUBLIC_FEDI_REPO}`;
 
   console.log(`Starting sync process for commit ${SOURCE_COMMIT_SHA}`);
 
@@ -62,7 +75,7 @@ async function syncRepos({ github, context, core }) {
     const shortSha = SOURCE_COMMIT_SHA.substring(0, 7);
     let branchName;
     process.env.CI
-      ? (branchName = "nightly")
+      ? (branchName = PUBLIC_FEDI_BRANCH)
       : (branchName = `release-${shortSha}`);
     console.log(`Creating new branch: ${branchName}`);
     try {

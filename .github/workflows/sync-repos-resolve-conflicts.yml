@@ -8,16 +8,15 @@ jobs:
         steps:
             - name: Checkout script in repo
               uses: actions/checkout@v4
-
-            - name: Sync or resolve conflicts between public and private Repositories
-              uses: actions/github-script@v7
+            - name: Install required node modules
+              run: nix develop -c npm install @actions/exec @octokit/rest
+            - name: Sync or resolve conflicts between public and private repositories
               id: sync-repos
               env:
                   DOWNLOAD_TOKEN: ${{ secrets.DOWNLOAD_APK_ACCESS_TOKEN }}
                   PUBLISH_TOKEN: ${{ secrets.PUBLISH_APK_ACCESS_TOKEN }}
                   SOURCE_COMMIT_SHA: ${{ github.sha }}
-              with:
-                  result-encoding: string
-                  script: |
-                      const script = require('./scripts/ci/sync-repos-resolve-conflicts.js')
-                      await script(syncRepos)
+                  PUBLIC_FEDI_ORG: ${{ vars.PUBLIC_FEDI_ORG }}
+                  PUBLIC_FEDI_REPO: ${{ vars.PUBLIC_FEDI_REPO }}
+                  PUBLIC_FEDI_BRANCH: ${{ vars.PUBLIC_FEDI_BRANCH }}
+              run: nix develop -c node ./scripts/ci/sync-repos-resolve-conflicts.js
