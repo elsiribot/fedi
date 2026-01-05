@@ -5,11 +5,7 @@
  * Supports Web & Native
  */
 const isReactNativeDevMode = () => {
-    try {
-        return Boolean(eval('__DEV__')) || false
-    } catch {
-        return false
-    }
+    return typeof __DEV__ !== 'undefined' && __DEV__ === true
 }
 
 export const isDev = () => {
