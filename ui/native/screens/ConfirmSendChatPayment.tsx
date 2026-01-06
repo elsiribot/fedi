@@ -42,9 +42,8 @@ const ConfirmSendChatPayment: React.FC<Props> = ({ route, navigation }) => {
     const paymentFederation = useAppSelector(selectPaymentFederation)
     const { feeBreakdownTitle, ecashFeesGuidanceText, makeEcashFeeContent } =
         useFeeDisplayUtils(t, paymentFederation?.id || '')
-    const { formattedTotalFee, feeItemsBreakdown } = makeEcashFeeContent(
-        amountUtils.satToMsat(amount),
-    )
+    const { formattedTotalFee, feeItemsBreakdown, formattedTotalAmount } =
+        makeEcashFeeContent(amountUtils.satToMsat(amount))
     const { formattedBalanceText } = useBalance(t, paymentFederation?.id || '')
     const selectedCurrency = useCommonSelector(s =>
         selectCurrency(s, paymentFederation?.id),
@@ -78,36 +77,16 @@ const ConfirmSendChatPayment: React.FC<Props> = ({ route, navigation }) => {
 
     return (
         <SafeAreaContainer style={style.container} edges="notop">
-<<<<<<< HEAD
-            <FederationWalletSelector />
-            <SendAmounts
-                balanceDisplay={formattedBalanceText}
-                formattedPrimaryAmount={formattedPrimaryAmount}
-                formattedSecondaryAmount={formattedSecondaryAmount}
-            />
-            <SendPreviewDetails
-                onPressFees={() => setShowFeeBreakdown(true)}
-                formattedTotalFee={formattedTotalFee}
-                onSend={onSend}
-                isLoading={isProcessing}
-                senderText={
-                    paymentFederation && (
-                        <View style={style.sendFrom}>
-                            <FederationLogo
-                                federation={paymentFederation}
-                                size={16}
-                            />
-=======
             <Column style={style.content} fullWidth align="center" grow>
-                <Row center gap="xs">
-                    <SvgImage name="FediLogoIcon" size={16} />
-                    <Text bold caption>
-                        {t('words.ecash')}
-                    </Text>
-                </Row>
                 <Column style={style.amountContainer} align="center" fullWidth>
+                    <Row center gap="xs">
+                        <SvgImage name="FediLogoIcon" size={16} />
+                        <Text bold caption>
+                            {t('words.ecash')}
+                        </Text>
+                    </Row>
                     <SendAmounts
-                        balanceDisplay={balanceDisplay}
+                        balanceDisplay={formattedBalanceText}
                         formattedPrimaryAmount={formattedPrimaryAmount}
                         formattedSecondaryAmount={formattedSecondaryAmount}
                     />
@@ -122,8 +101,6 @@ const ConfirmSendChatPayment: React.FC<Props> = ({ route, navigation }) => {
                                 <Text caption bold>
                                     {t('feature.send.send-to')}
                                 </Text>
->>>>>>> ff6615e75 (feat: update confirm chat payment screen to match designs)
-
                                 <Row align="center" gap="sm">
                                     <ChatAvatar
                                         user={{
