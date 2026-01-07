@@ -4,7 +4,6 @@ import { useTranslation } from 'react-i18next'
 import { StyleSheet } from 'react-native'
 
 import { useRecoveryProgress } from '@fedi/common/hooks/recovery'
-import { selectIsFederationRecovering } from '@fedi/common/redux'
 import { selectStableBalancePending } from '@fedi/common/redux/wallet'
 import { Federation } from '@fedi/common/types'
 
@@ -27,10 +26,7 @@ const Balance: React.FC<Props> = ({ federationId }) => {
         stableBalancePending > 0
             ? '+' + formattedStableBalancePending
             : formattedStableBalancePending
-    const recoveryInProgress = useAppSelector(s =>
-        selectIsFederationRecovering(s, federationId),
-    )
-    const { progress } = useRecoveryProgress(federationId)
+    const { progress, recoveryInProgress } = useRecoveryProgress(federationId)
 
     if (recoveryInProgress) return <HoloProgressCircle progress={progress} />
 

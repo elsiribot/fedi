@@ -4,10 +4,8 @@ import { StyleSheet } from 'react-native'
 
 import { useBalance } from '@fedi/common/hooks/amount'
 import { useRecoveryProgress } from '@fedi/common/hooks/recovery'
-import { selectIsFederationRecovering } from '@fedi/common/redux'
 import { Federation } from '@fedi/common/types'
 
-import { useAppSelector } from '../../../state/hooks'
 import { Column, Row } from '../../ui/Flex'
 import HoloProgressCircle from '../../ui/HoloProgressCircle'
 
@@ -18,10 +16,7 @@ type Props = {
 const Balance: React.FC<Props> = ({ federationId }) => {
     const { formattedBalanceSats, formattedBalanceFiat } =
         useBalance(federationId)
-    const recoveryInProgress = useAppSelector(s =>
-        selectIsFederationRecovering(s, federationId),
-    )
-    const { progress } = useRecoveryProgress(federationId)
+    const { progress, recoveryInProgress } = useRecoveryProgress(federationId)
 
     if (recoveryInProgress) return <HoloProgressCircle progress={progress} />
 
