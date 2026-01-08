@@ -42,7 +42,7 @@ const ConfirmSendChatPayment: React.FC<Props> = ({ route, navigation }) => {
     const { formattedTotalFee, feeItemsBreakdown } = makeEcashFeeContent(
         amountUtils.satToMsat(amount),
     )
-    const { formattedBalance } = useBalance(paymentFederation?.id || '')
+    const { formattedBalanceText } = useBalance(t, paymentFederation?.id || '')
     const selectedCurrency = useCommonSelector(s =>
         selectCurrency(s, paymentFederation?.id),
     )
@@ -77,7 +77,7 @@ const ConfirmSendChatPayment: React.FC<Props> = ({ route, navigation }) => {
         <SafeAreaContainer style={style.container} edges="notop">
             <FederationWalletSelector />
             <SendAmounts
-                balanceDisplay={`${t('words.balance')}: ${formattedBalance}`}
+                balanceDisplay={formattedBalanceText}
                 formattedPrimaryAmount={formattedPrimaryAmount}
                 formattedSecondaryAmount={formattedSecondaryAmount}
             />

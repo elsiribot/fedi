@@ -51,6 +51,7 @@ Returns a set of balances (sats, fiat, formatted) for a given federation
     formattedBalanceFiat: "0.01 USD",
     formattedBalanceSats: "10 SATS",
     formattedBalance: "0.01 USD (10 SATS)",
+    formattedBalanceText: "Balance: 0.01 USD (10 SATS)",
 }
 ```
 

@@ -1,3 +1,6 @@
+import { act } from '@testing-library/react'
+import i18next from 'i18next'
+
 import { createIntegrationTestBuilder } from '@fedi/common/tests/utils/remote-bridge-setup'
 import { renderHookWithBridge } from '@fedi/common/tests/utils/render'
 
@@ -12,22 +15,23 @@ describe('useBalance hook', () => {
     const context = builder.getContext()
 
     it('should return the balance for a given federation', async () => {
-        await builder.withFederationJoined()
         await builder.withEcashReceived(10000)
 
         const { store, bridge } = context
 
-        store.dispatch({
-            type: fetchCurrencyPrices.fulfilled.type,
-            payload: {
-                btcUsdRate: 100000,
-                fiatUsdRates: {},
-            },
+        act(() => {
+            store.dispatch({
+                type: fetchCurrencyPrices.fulfilled.type,
+                payload: {
+                    btcUsdRate: 100000,
+                    fiatUsdRates: {},
+                },
+            })
         })
 
         const federation = selectLastUsedFederation(store.getState())
         const { result } = renderHookWithBridge(
-            () => useBalance(federation?.id ?? ''),
+            () => useBalance(i18next.t, federation?.id ?? ''),
             store,
             bridge.fedimint,
         )
@@ -36,5 +40,8 @@ describe('useBalance hook', () => {
         expect(result.current.formattedBalanceFiat).toBe('0.01 USD')
         expect(result.current.formattedBalanceSats).toBe('10 SATS')
         expect(result.current.formattedBalance).toBe('0.01 USD (10 SATS)')
+        expect(result.current.formattedBalanceText).toBe(
+            `${i18next.t('words.balance')}: 0.01 USD (10 SATS)`,
+        )
     })
 })

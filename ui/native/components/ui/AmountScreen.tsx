@@ -34,7 +34,7 @@ export const AmountScreen: React.FC<Props> = ({
     const federationId = amountInputProps?.federationId || ''
     const { t } = useTranslation()
     const { theme } = useTheme()
-    const { formattedBalance } = useBalance(federationId)
+    const { formattedBalanceText } = useBalance(t, federationId)
 
     const style = styles(theme)
 
@@ -55,7 +55,7 @@ export const AmountScreen: React.FC<Props> = ({
                             style={style.balance}
                             numberOfLines={1}
                             adjustsFontSizeToFit>
-                            {`${t('words.balance')}: ${formattedBalance}`}
+                            {formattedBalanceText}
                         </Text>
                     )}
                 </View>

@@ -1,3 +1,5 @@
+import { TFunction } from 'i18next'
+
 import { selectCurrency, selectFederationBalance } from '../../redux'
 import { MSats } from '../../types'
 import amountUtils from '../../utils/AmountUtils'
@@ -7,7 +9,7 @@ import { useAmountFormatter } from './useAmountFormatter'
 /**
  * Returns a set of balances (sats, fiat, formatted) for a given federation.
  */
-export function useBalance(federationId: string) {
+export function useBalance(t: TFunction, federationId: string) {
     const balance = useCommonSelector(s =>
         selectFederationBalance(s, federationId),
     ) as MSats
@@ -26,10 +28,13 @@ export function useBalance(federationId: string) {
         formattedSecondaryAmount,
     } = makeFormattedAmountsFromMSats(balance)
 
+    const formattedBalance = `${formattedPrimaryAmount} (${formattedSecondaryAmount})`
+
     return {
         satsBalance: amountUtils.msatToSat(balance),
         formattedBalanceFiat: formattedFiat,
         formattedBalanceSats: formattedSats,
-        formattedBalance: `${formattedPrimaryAmount} (${formattedSecondaryAmount})`,
+        formattedBalance,
+        formattedBalanceText: `${t('words.balance')}: ${formattedBalance}`,
     }
 }

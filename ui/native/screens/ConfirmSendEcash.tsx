@@ -35,7 +35,7 @@ const ConfirmSendEcash: React.FC<Props> = ({ route, navigation }) => {
     const { amount, notes = null } = route.params
     const [showFeeBreakdown, setShowFeeBreakdown] = useState<boolean>(false)
     const paymentFederation = useAppSelector(selectPaymentFederation)
-    const { formattedBalance } = useBalance(paymentFederation?.id || '')
+    const { formattedBalanceText } = useBalance(t, paymentFederation?.id || '')
     const { feeBreakdownTitle, ecashFeesGuidanceText, makeEcashFeeContent } =
         useFeeDisplayUtils(t, paymentFederation?.id || '')
     const { formattedTotalFee, feeItemsBreakdown } = makeEcashFeeContent(
@@ -94,7 +94,7 @@ const ConfirmSendEcash: React.FC<Props> = ({ route, navigation }) => {
         <SafeAreaContainer style={style.container} edges="notop">
             <FederationWalletSelector />
             <SendAmounts
-                balanceDisplay={`${t('words.balance')}: ${formattedBalance}`}
+                balanceDisplay={formattedBalanceText}
                 formattedPrimaryAmount={formattedPrimaryAmount}
                 formattedSecondaryAmount={formattedSecondaryAmount}
             />
