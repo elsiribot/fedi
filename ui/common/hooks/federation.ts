@@ -3,10 +3,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 
 import { makeLog } from '@fedi/common/utils/log'
 
-import {
-    COMMUNITY_TOOL_URL_PROD,
-    COMMUNITY_TOOL_URL_STAGING,
-} from '../constants/fedimods'
+import { COMMUNITY_TOOL_URL } from '../constants/fedimods'
 import { theme } from '../constants/theme'
 import {
     joinFederation,
@@ -60,7 +57,6 @@ import {
     shouldShowOfflineWallet,
     shouldShowSocialRecovery,
 } from '../utils/FederationUtils'
-import { isDev, isNightly } from '../utils/environment'
 import { useFedimint } from './fedimint'
 import { useCommonDispatch, useCommonSelector } from './redux'
 import { useToast } from './toast'
@@ -339,11 +335,7 @@ export function useCreatedCommunities(communityId?: string) {
     const editCommunityUrl = useMemo(() => {
         if (!community || community.communityInvite.type === 'legacy') return
 
-        const communityToolUrl =
-            isNightly() || isDev()
-                ? COMMUNITY_TOOL_URL_STAGING
-                : COMMUNITY_TOOL_URL_PROD
-        const url = new URL(communityToolUrl)
+        const url = new URL(COMMUNITY_TOOL_URL)
 
         url.searchParams.set(
             'editing',
