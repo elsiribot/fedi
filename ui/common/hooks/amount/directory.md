@@ -43,7 +43,7 @@ console.log(`You have ${formattedPrimaryAmount} (${formattedSecondaryAmount})`)
 
 ## `useBalance`
 
-Returns a set of balances (sats, fiat, formatted) for a given federation
+Returns the balance for a given federation in Sats and various formatted values consisting of Sats and/or Fiat
 
 ```js
 {
