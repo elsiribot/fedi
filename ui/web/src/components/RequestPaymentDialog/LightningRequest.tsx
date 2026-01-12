@@ -7,13 +7,11 @@ import { useToast } from '@fedi/common/hooks/toast'
 import { Sats, TransactionListEntry } from '@fedi/common/types'
 
 import { NoteInput, QRContainer } from '.'
-import { Dialog } from '.././Dialog'
 import { AmountInput } from '../AmountInput'
 import { Button } from '../Button'
 import { CopyInput } from '../CopyInput'
 import { Column } from '../Flex'
 import { QRCode } from '../QRCode'
-import LnurlReceive from './LnurlReceive'
 
 export default function LightningRequest({
     onSubmit,
@@ -42,7 +40,6 @@ export default function LightningRequest({
         })
 
     const [submitAttempts, setSubmitAttempts] = useState(0)
-    const [open, setOpen] = useState(false)
 
     const handleSubmit = async () => {
         setSubmitAttempts(attempts => attempts + 1)
@@ -103,14 +100,6 @@ export default function LightningRequest({
                     </Button>
                 </Column>
             )}
-
-            <Dialog title={t('words.lnurl')} open={open} onOpenChange={setOpen}>
-                <LnurlReceive
-                    onSubmit={handleSubmit}
-                    onWithdrawPaid={onInvoicePaid}
-                    federationId={federationId || ''}
-                />
-            </Dialog>
         </>
     )
 }
