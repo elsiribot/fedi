@@ -12,7 +12,6 @@ import { AmountInput } from '../AmountInput'
 import { Button } from '../Button'
 import { CopyInput } from '../CopyInput'
 import { Column } from '../Flex'
-import { HorizontalLine } from '../HorizontalLine'
 import { QRCode } from '../QRCode'
 import LnurlReceive from './LnurlReceive'
 
@@ -20,12 +19,10 @@ export default function LightningRequest({
     onSubmit,
     onInvoicePaid,
     federationId,
-    onLnurlClick,
 }: {
     onSubmit: () => void
     onInvoicePaid: (txn: TransactionListEntry) => void
     federationId?: string
-    onLnurlClick?: () => void
 }) {
     const { t } = useTranslation()
     const toast = useToast()
@@ -104,16 +101,6 @@ export default function LightningRequest({
                             amount,
                         })}
                     </Button>
-                    {!!onLnurlClick && (
-                        <>
-                            <HorizontalLine text={t('words.or')} />
-                            <Button
-                                variant="secondary"
-                                onClick={() => setOpen(true)}>
-                                {t('phrases.reusable-payment-code')}
-                            </Button>
-                        </>
-                    )}
                 </Column>
             )}
 
