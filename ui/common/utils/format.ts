@@ -63,10 +63,6 @@ export const formatBridgeError = (
         }
     }
 
-    if (error.includes('Failed to connect to peer')) {
-        return t('errors.network-connection-failed')
-    }
-
     return error
 }
 
