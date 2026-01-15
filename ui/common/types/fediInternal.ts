@@ -153,4 +153,5 @@ export const INJECTION_HANDLERS_PERMISSIONS_MAP: Partial<{
     ],
     [InjectionMessageType.fedi_installMiniApp]: ['manageInstalledMiniApps'],
     [InjectionMessageType.fedi_navigateHome]: ['navigation'],
+    [InjectionMessageType.fedi_previewMatrixRoom]: ['manageCommunities'],
 }

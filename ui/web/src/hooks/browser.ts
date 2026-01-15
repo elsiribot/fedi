@@ -324,6 +324,10 @@ export function useIFrameListener(
                     break
                 }
                 case InjectionMessageType.fedi_previewMatrixRoom: {
+                    if (!hasPermission(ev.origin, ['manageCommunities'])) {
+                        return sendError(event, 'InvalidPermissions')
+                    }
+
                     const room = chats.find(
                         chat => chat.isPublic && chat.id === payload,
                     )
