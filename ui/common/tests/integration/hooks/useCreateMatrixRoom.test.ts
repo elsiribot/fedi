@@ -148,7 +148,7 @@ describe('useCreateMatrixRoom', () => {
         )
 
         // 29 characters + 1 trailing space = 30 characters total
-        act(() => result.current.setGroupName('Long title test group with 3 '))
+        act(() => result.current.setGroupName('a'.repeat(29) + ' '))
 
         expect(result.current.errorMessage).toEqual(
             i18next.t('errors.group-name-too-long'),
