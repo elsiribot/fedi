@@ -4,6 +4,8 @@ import { RequestInvoiceArgs } from 'webln'
 import { InjectionMessageType } from '@fedi/injections/src'
 
 import {
+    CATALOG_URL_PROD,
+    CATALOG_URL_STAGING,
     COMMUNITY_TOOL_URL_PROD,
     COMMUNITY_TOOL_URL_STAGING,
 } from '../constants/fedimods'
@@ -98,10 +100,7 @@ export const MiniAppPermissionInfoLookup: Record<
 }
 
 const NIGHTLY_PERMISSIONS: MiniAppPermissionsByUrlOrigin = {
-    'https://fedi-catalog-staging.vercel.app': {
-        manageInstalledMiniApps: true,
-    },
-    'http://localhost:3023': {
+    [CATALOG_URL_STAGING]: {
         manageInstalledMiniApps: true,
     },
     [COMMUNITY_TOOL_URL_STAGING]: {
@@ -130,7 +129,7 @@ const DEV_PERMISSIONS: MiniAppPermissionsByUrlOrigin = {
 
 // these are "first party" miniapps pre-authorized with certain default permissions
 export const FIRST_PARTY_PERMISSIONS: MiniAppPermissionsByUrlOrigin = {
-    'https://fedi-catalog.vercel.app': {
+    [CATALOG_URL_PROD]: {
         manageInstalledMiniApps: true,
     },
     [COMMUNITY_TOOL_URL_PROD]: {
