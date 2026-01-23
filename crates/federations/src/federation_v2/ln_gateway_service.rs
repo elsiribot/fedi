@@ -2,6 +2,7 @@ use std::collections::HashSet;
 use std::str::FromStr;
 use std::time::Duration;
 
+use anyhow::Context as _;
 use bitcoin::secp256k1::{self, PublicKey};
 use fedimint_client::Client;
 use fedimint_core::db::{AutocommitError, IDatabaseTransactionOpsCoreTyped};
@@ -12,7 +13,7 @@ use tracing::warn;
 
 use super::FederationV2;
 use super::client::ClientExt;
-use super::db::LastActiveGatewayKey;
+use super::db::{GatewayOverrideKey, LastUsedGatewayKey};
 
 pub const META_VETTED_GATEWAYS_KEY: &str = "vetted_gateways";
 
@@ -35,7 +36,7 @@ impl LnGatewayService {
         Self {}
     }
 
-    pub async fn set_active_gateway(
+    async fn set_last_used_gateway(
         &self,
         client: &Client,
         gw_id: &secp256k1::PublicKey,
@@ -45,7 +46,7 @@ impl LnGatewayService {
             .autocommit(
                 |dbtx, _| {
                     Box::pin(async {
-                        dbtx.insert_entry(&LastActiveGatewayKey, gw_id).await;
+                        dbtx.insert_entry(&LastUsedGatewayKey, gw_id).await;
                         Ok(())
                     })
                 },
@@ -58,9 +59,41 @@ impl LnGatewayService {
             })
     }
 
-    pub async fn get_active_gateway(&self, client: &Client) -> Option<secp256k1::PublicKey> {
+    async fn get_last_used_gateway(&self, client: &Client) -> Option<secp256k1::PublicKey> {
         let mut dbtx = client.db().begin_transaction_nc().await;
-        dbtx.get_value(&LastActiveGatewayKey).await
+        dbtx.get_value(&LastUsedGatewayKey).await
+    }
+
+    pub async fn set_gateway_override(
+        &self,
+        client: &Client,
+        gw_id: Option<&secp256k1::PublicKey>,
+    ) -> anyhow::Result<()> {
+        client
+            .db()
+            .autocommit(
+                |dbtx, _| {
+                    Box::pin(async {
+                        if let Some(gw_id) = gw_id {
+                            dbtx.insert_entry(&GatewayOverrideKey, gw_id).await;
+                        } else {
+                            dbtx.remove_entry(&GatewayOverrideKey).await;
+                        }
+                        Ok(())
+                    })
+                },
+                None,
+            )
+            .await
+            .map_err(|e| match e {
+                AutocommitError::CommitFailed { last_error, .. } => last_error,
+                AutocommitError::ClosureError { error, .. } => error,
+            })
+    }
+
+    pub async fn get_gateway_override(&self, client: &Client) -> Option<secp256k1::PublicKey> {
+        let mut dbtx = client.db().begin_transaction_nc().await;
+        dbtx.get_value(&GatewayOverrideKey).await
     }
 
     async fn maybe_filter_vetted_gateways(
@@ -114,7 +147,8 @@ impl LnGatewayService {
         client: &Client,
     ) -> anyhow::Result<Option<LightningGateway>> {
         let ln = client.ln()?;
-        let last_active_gateway_id = self.get_active_gateway(client).await;
+        let gateway_override = self.get_gateway_override(client).await;
+        let last_used_gateway_id = self.get_last_used_gateway(client).await;
         let mut gws = Self::selectable_gateways(client, ln.list_gateways().await).await;
 
         // this should be rare, the background service should keep the gateways updated.
@@ -125,18 +159,28 @@ impl LnGatewayService {
             gws = Self::selectable_gateways(client, ln.list_gateways().await).await;
         }
 
-        if let Some(gw) = gws
-            .iter()
-            .find(|g| Some(g.info.gateway_id) == last_active_gateway_id)
-        {
-            Ok(Some(gw.info.clone()))
-        } else {
-            // select a new random gateway
-            let Some(gw) = gws.choose(&mut thread_rng()) else {
-                return Ok(None);
-            };
-            self.set_active_gateway(client, &gw.info.gateway_id).await?;
-            Ok(Some(gw.info.clone()))
+        // If override is set, it must be available or we error out
+        if let Some(override_id) = gateway_override {
+            let gw = gws
+                .iter()
+                .find(|g| g.info.gateway_id == override_id)
+                .context("gateway override is set but gateway is unavailable")?;
+            return Ok(Some(gw.info.clone()));
         }
+
+        // Try last used gateway, fall back to random if unavailable
+        if let Some(gw) =
+            last_used_gateway_id.and_then(|id| gws.iter().find(|g| g.info.gateway_id == id))
+        {
+            return Ok(Some(gw.info.clone()));
+        }
+
+        // Select a new random gateway
+        let Some(gw) = gws.choose(&mut thread_rng()) else {
+            return Ok(None);
+        };
+        self.set_last_used_gateway(client, &gw.info.gateway_id)
+            .await?;
+        Ok(Some(gw.info.clone()))
     }
 }
