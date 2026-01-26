@@ -347,6 +347,7 @@ export const makeTxnStatusText = (
                     case 'completeDeposit':
                     case 'completedDeposit':
                         return t('words.deposit')
+                    // TODO+TEST: Cover test cases for failedDeposit and dataNotInCache
                     default:
                         return t('words.deposit')
                 }
@@ -381,6 +382,7 @@ export const makeTxnStatusText = (
                         return t('words.pending')
                     case 'canceled':
                         return t('words.expired')
+                    // TODO+TEST: Figure out which 'bug' this is in reference to + remove?
                     case 'created': // Remove this once bug is fixed
                     case 'claimed':
                         return t('words.received')
@@ -413,6 +415,7 @@ export const makeTxnStatusText = (
                     case 'dataNotInCache':
                     case 'pendingWithdrawal':
                         return t('words.pending')
+                    // TODO+TEST: Cover test cases for failedWithdrawal
                     default:
                         return t('words.withdrawal')
                 }
@@ -428,12 +431,15 @@ export const makeTxnStatusText = (
                     default:
                         return ''
                 }
+                // TODO+TEST: Cover test cases for other multispend transactions
             } else if (txn.kind === 'sPV2TransferIn' && isMultispendTxn(txn)) {
                 return t('words.withdrawal')
             } else {
+                // TODO+TEST: We should probably not fall back to a success state
                 return t('words.received')
             }
         default:
+            // TODO+TEST: we should probably not fall back to an empty string
             return ''
     }
 }
