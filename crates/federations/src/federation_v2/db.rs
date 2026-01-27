@@ -23,6 +23,7 @@ pub enum BridgeDbPrefix {
     TransactionNote = 0xb7,
     OutstandingFediFees = 0xb8,
     OperationFediFeeStatus = 0xb9,
+    #[deprecated]
     LastUsedGateway = 0xba,
 
     // Index of the stability pool cycle during which the last deposit was made. We track this so
@@ -155,15 +156,6 @@ impl_db_record!(
     key = PendingFediFeesKey,
     value = Amount,
     db_prefix = BridgeDbPrefix::PendingFediFees,
-);
-
-#[derive(Debug, Decodable, Encodable)]
-pub struct LastUsedGatewayKey;
-
-impl_db_record!(
-    key = LastUsedGatewayKey,
-    value = secp256k1::PublicKey,
-    db_prefix = BridgeDbPrefix::LastUsedGateway,
 );
 
 #[derive(Debug, Decodable, Encodable)]

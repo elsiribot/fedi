@@ -7,18 +7,19 @@ use bitcoin::secp256k1::{self, PublicKey};
 use fedimint_client::Client;
 use fedimint_core::db::{AutocommitError, IDatabaseTransactionOpsCoreTyped};
 use fedimint_ln_common::{LightningGateway, LightningGatewayAnnouncement};
-use rand::seq::SliceRandom;
-use rand::thread_rng;
+use tokio::sync::Mutex;
 use tracing::warn;
 
 use super::FederationV2;
 use super::client::ClientExt;
-use super::db::{GatewayOverrideKey, LastUsedGatewayKey};
+use super::db::GatewayOverrideKey;
 
 pub const META_VETTED_GATEWAYS_KEY: &str = "vetted_gateways";
 
-#[derive(Debug, Clone)]
-pub struct LnGatewayService {}
+#[derive(Debug)]
+pub struct LnGatewayService {
+    last_gateway: Mutex<Option<secp256k1::PublicKey>>,
+}
 
 /// Duration to fetch updates before gateways are about to expire
 const ABOUT_TO_EXPIRE_DURATION: Duration = Duration::from_secs(30);
@@ -33,35 +34,9 @@ impl LnGatewayService {
                 .await
             }
         });
-        Self {}
-    }
-
-    async fn set_last_used_gateway(
-        &self,
-        client: &Client,
-        gw_id: &secp256k1::PublicKey,
-    ) -> anyhow::Result<()> {
-        client
-            .db()
-            .autocommit(
-                |dbtx, _| {
-                    Box::pin(async {
-                        dbtx.insert_entry(&LastUsedGatewayKey, gw_id).await;
-                        Ok(())
-                    })
-                },
-                None,
-            )
-            .await
-            .map_err(|e| match e {
-                AutocommitError::CommitFailed { last_error, .. } => anyhow::anyhow!(last_error),
-                AutocommitError::ClosureError { error, .. } => error,
-            })
-    }
-
-    async fn get_last_used_gateway(&self, client: &Client) -> Option<secp256k1::PublicKey> {
-        let mut dbtx = client.db().begin_transaction_nc().await;
-        dbtx.get_value(&LastUsedGatewayKey).await
+        Self {
+            last_gateway: Mutex::new(None),
+        }
     }
 
     pub async fn set_gateway_override(
@@ -86,7 +61,7 @@ impl LnGatewayService {
             )
             .await
             .map_err(|e| match e {
-                AutocommitError::CommitFailed { last_error, .. } => last_error,
+                AutocommitError::CommitFailed { last_error, .. } => anyhow::anyhow!(last_error),
                 AutocommitError::ClosureError { error, .. } => error,
             })
     }
@@ -148,7 +123,6 @@ impl LnGatewayService {
     ) -> anyhow::Result<Option<LightningGateway>> {
         let ln = client.ln()?;
         let gateway_override = self.get_gateway_override(client).await;
-        let last_used_gateway_id = self.get_last_used_gateway(client).await;
         let mut gws = Self::selectable_gateways(client, ln.list_gateways().await).await;
 
         // this should be rare, the background service should keep the gateways updated.
@@ -168,19 +142,28 @@ impl LnGatewayService {
             return Ok(Some(gw.info.clone()));
         }
 
-        // Try last used gateway, fall back to random if unavailable
-        if let Some(gw) =
-            last_used_gateway_id.and_then(|id| gws.iter().find(|g| g.info.gateway_id == id))
-        {
-            return Ok(Some(gw.info.clone()));
+        if gws.is_empty() {
+            return Ok(None);
         }
 
-        // Select a new random gateway
-        let Some(gw) = gws.choose(&mut thread_rng()) else {
-            return Ok(None);
+        // Round-robin gateway selection:
+        // Gateways are sorted by ID for a stable ordering. We track the last
+        // selected gateway ID in memory and pick the first gateway whose ID is
+        // strictly greater than it. When we reach the end (no ID is greater),
+        // we wrap around to index 0. This naturally handles gateways being
+        // added or removed: if the last gateway disappears, we still advance
+        // to the next one in sorted order rather than getting stuck.
+        gws.sort_by_key(|g| g.info.gateway_id);
+        let mut last = self.last_gateway.lock().await;
+        let idx = match *last {
+            Some(prev) => gws
+                .iter()
+                .position(|g| g.info.gateway_id > prev)
+                .unwrap_or(0),
+            None => 0,
         };
-        self.set_last_used_gateway(client, &gw.info.gateway_id)
-            .await?;
-        Ok(Some(gw.info.clone()))
+        let chosen = &gws[idx];
+        *last = Some(chosen.info.gateway_id);
+        Ok(Some(chosen.info.clone()))
     }
 }
