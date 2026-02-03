@@ -1391,7 +1391,11 @@ export type RpcTransaction = {
   | { kind: "spDeposit"; state: RpcSPDepositState }
   | { kind: "spWithdraw"; state: RpcSPWithdrawState | null }
   | { kind: "sPV2Deposit"; state: RpcSPV2DepositState }
-  | { kind: "sPV2Withdrawal"; state: RpcSPV2WithdrawalState }
+  | {
+      kind: "sPV2Withdrawal";
+      state: RpcSPV2WithdrawalState;
+      sweeper_initiated: boolean;
+    }
   | { kind: "sPV2TransferOut"; state: RpcSPV2TransferOutState }
   | { kind: "sPV2TransferIn"; state: RpcSPV2TransferInState }
 );
@@ -1426,7 +1430,11 @@ export type RpcTransactionKind =
   | { kind: "spDeposit"; state: RpcSPDepositState }
   | { kind: "spWithdraw"; state: RpcSPWithdrawState | null }
   | { kind: "sPV2Deposit"; state: RpcSPV2DepositState }
-  | { kind: "sPV2Withdrawal"; state: RpcSPV2WithdrawalState }
+  | {
+      kind: "sPV2Withdrawal";
+      state: RpcSPV2WithdrawalState;
+      sweeper_initiated: boolean;
+    }
   | { kind: "sPV2TransferOut"; state: RpcSPV2TransferOutState }
   | { kind: "sPV2TransferIn"; state: RpcSPV2TransferInState };
 
@@ -1468,7 +1476,11 @@ export type RpcTransactionListEntry = {
   | { kind: "spDeposit"; state: RpcSPDepositState }
   | { kind: "spWithdraw"; state: RpcSPWithdrawState | null }
   | { kind: "sPV2Deposit"; state: RpcSPV2DepositState }
-  | { kind: "sPV2Withdrawal"; state: RpcSPV2WithdrawalState }
+  | {
+      kind: "sPV2Withdrawal";
+      state: RpcSPV2WithdrawalState;
+      sweeper_initiated: boolean;
+    }
   | { kind: "sPV2TransferOut"; state: RpcSPV2TransferOutState }
   | { kind: "sPV2TransferIn"; state: RpcSPV2TransferInState }
 );
