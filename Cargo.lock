@@ -2529,6 +2529,7 @@ dependencies = [
  "fedimint-logging",
  "fedimint-portalloc",
  "rand 0.8.5",
+ "runtime",
  "tempfile",
  "tokio",
  "tracing",

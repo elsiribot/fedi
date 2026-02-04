@@ -1,5 +1,6 @@
 use std::path::PathBuf;
 
+use devimint::cmd;
 use devimint::devfed::DevJitFed;
 use devimint::envs::FM_INVITE_CODE_ENV;
 use devimint::external::{Bitcoind, Esplora, Lnd};
@@ -12,6 +13,7 @@ use fedimint_core::task::TaskGroup;
 use fedimint_logging::LOG_DEVIMINT;
 use rand::Rng;
 use rand::distributions::Alphanumeric;
+use runtime::envs::USE_UPSTREAM_FEDIMINTD_ENV;
 use tracing::{debug, info, trace};
 
 use crate::{NostrRelay, Synapse};
@@ -39,23 +41,39 @@ impl DevFed {
         debug!(target: LOG_DEVIMINT, "Peging in client and gateways");
 
         let gw_pegin_amount = 10_000_000;
-        let client_pegin_amount = 10_000_000;
+        let seed_spv2_liquidity = std::env::var(USE_UPSTREAM_FEDIMINTD_ENV).is_err();
+        let spv2_liquidity_amount_sats = 5_000_000;
+        let client_pegin_amount = 10_000_000 + spv2_liquidity_amount_sats;
 
         let ((), (), _, synapse, nostr_relay) = tokio::try_join!(
             async {
-                let (address, operation_id) =
-                    dev_fed.internal_client().await?.get_deposit_addr().await?;
+                let client = dev_fed.internal_client().await?;
+                let (address, operation_id) = client.get_deposit_addr().await?;
                 dev_fed
                     .bitcoind()
                     .await?
                     .send_to(address, client_pegin_amount)
                     .await?;
                 dev_fed.bitcoind().await?.mine_blocks_no_wait(11).await?;
-                dev_fed
-                    .internal_client()
-                    .await?
-                    .await_deposit(&operation_id)
-                    .await
+                client.await_deposit(&operation_id).await?;
+
+                if seed_spv2_liquidity {
+                    // Deposit to SPV2 stability pool as liquidity provider
+                    debug!(target: LOG_DEVIMINT, "Depositing to SPV2 stability pool liquidity");
+                    let spv2_min_fee_rate = 1000;
+                    cmd!(
+                        client,
+                        "module",
+                        "multi_sig_stability_pool",
+                        "deposit-to-provide",
+                        spv2_liquidity_amount_sats * 1000,
+                        spv2_min_fee_rate
+                    )
+                    .run()
+                    .await?;
+                    info!(target: LOG_DEVIMINT, "SPV2 liquidity deposit complete");
+                }
+                Ok(())
             },
             async {
                 let gw_ldk = dev_fed.gw_ldk_connected().await?.clone();
