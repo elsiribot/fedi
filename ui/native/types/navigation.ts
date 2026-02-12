@@ -55,7 +55,11 @@ export type TabsNavigatorParamList = {
 export type RootStackParamList = {
     AppSettings: undefined
     AddFediMod: { inputMethod: 'enter' | 'scan' }
-    BitcoinRequest: { invoice: string; federationId?: Federation['id'] }
+    LightningRequestQr: {
+        invoice: string
+        federationId?: Federation['id']
+        memo?: string
+    }
     BugReportSuccess: undefined
     CameraPermission: { nextScreen: keyof RootStackParamList } | undefined
     ChatImageViewer: { uri: string; downloadable?: boolean }

@@ -34,7 +34,6 @@ import ResetPinStartHeader from '../components/feature/pin/ResetPinStartHeader'
 import SetPinHeader from '../components/feature/pin/SetPinHeader'
 import SetPinLockScreen from '../components/feature/pin/SetPinLockScreen'
 import UnlockAppLockScreenHeader from '../components/feature/pin/UnlockAppLockScreenHeader'
-import BitcoinRequestHeader from '../components/feature/receive/BitcoinRequestHeader'
 import ReceiveBitcoinOfflineHeader from '../components/feature/receive/ReceiveBitcoinOfflineHeader'
 import ReceiveCashuHeader from '../components/feature/receive/ReceiveCashuHeader'
 import RequestMoneyHeader from '../components/feature/receive/RequestMoneyHeader'
@@ -73,7 +72,6 @@ import { useIsFeatureUnlocked } from '../utils/hooks/security'
 import AddFediMod from './AddFediMod'
 import AppSettings from './AppSettings'
 import AssignMultispendVoters from './AssignMultispendVoters'
-import BitcoinRequest from './BitcoinRequest'
 import BugReportSuccess from './BugReportSuccess'
 import ChatConversationSearch from './ChatConversationSearch'
 import ChatImageViewer from './ChatImageViewer'
@@ -123,6 +121,7 @@ import HelpCentre from './HelpCentre'
 import Initializing from './Initializing'
 import JoinFederation from './JoinFederation'
 import LanguageSettings from './LanguageSettings'
+import LightningRequestQr from './LightningRequestQr'
 import LocateSocialRecovery from './LocateSocialRecovery'
 import LockScreen from './LockScreen'
 import LockedDevice from './LockedDevice'
@@ -797,10 +796,10 @@ export const MainNavigator = () => {
                                 })}
                             />
                             <Stack.Screen
-                                name="BitcoinRequest"
-                                component={BitcoinRequest}
+                                name="LightningRequestQr"
+                                component={LightningRequestQr}
                                 options={() => ({
-                                    header: () => <BitcoinRequestHeader />,
+                                    header: () => <RequestMoneyHeader />,
                                 })}
                             />
                             <Stack.Screen
