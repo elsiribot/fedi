@@ -144,7 +144,7 @@ import PinAccess from './PinAccess'
 import PublicCommunities from './PublicCommunities'
 import PublicFederations from './PublicFederations'
 import Receive from './Receive'
-import ReceiveLightning from './ReceiveLightning'
+import ReceiveBitcoin from './ReceiveBitcoin'
 import ReceiveSuccess from './ReceiveSuccess'
 import RecordBackupVideo from './RecordBackupVideo'
 import RecoverFromNonceReuse from './RecoverFromNonceReuse'
@@ -804,8 +804,8 @@ export const MainNavigator = () => {
                                 })}
                             />
                             <Stack.Screen
-                                name="ReceiveLightning"
-                                component={ReceiveLightning}
+                                name="ReceiveBitcoin"
+                                component={ReceiveBitcoin}
                                 options={() => ({
                                     header: () => <RequestMoneyHeader />,
                                 })}
