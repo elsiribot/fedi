@@ -145,7 +145,6 @@ import PublicCommunities from './PublicCommunities'
 import PublicFederations from './PublicFederations'
 import Receive from './Receive'
 import ReceiveLightning from './ReceiveLightning'
-import ReceiveStabilityQr from './ReceiveStabilityQr'
 import ReceiveSuccess from './ReceiveSuccess'
 import RecordBackupVideo from './RecordBackupVideo'
 import RecoverFromNonceReuse from './RecoverFromNonceReuse'
@@ -1236,20 +1235,6 @@ export const MainNavigator = () => {
                                             title={t(
                                                 'feature.stabilitypool.confirm-transfer',
                                             )}
-                                        />
-                                    ),
-                                })}
-                            />
-                            <Stack.Screen
-                                name="ReceiveStabilityQr"
-                                component={ReceiveStabilityQr}
-                                options={() => ({
-                                    header: () => (
-                                        <CenteredHeader
-                                            title={t(
-                                                'feature.stabilitypool.receive-stable-balance',
-                                            )}
-                                            backButton
                                         />
                                     ),
                                 })}
