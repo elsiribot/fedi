@@ -158,7 +158,6 @@ const StabilityTransfer: React.FC<Props> = ({ route }: Props) => {
                             fullString: ourPaymentAddress,
                             body: ourPaymentAddress,
                         }}
-                        federationId={federationId}
                     />
                 ) : null}
             </SafeAreaContainer>
