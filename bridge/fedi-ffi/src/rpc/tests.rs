@@ -1425,9 +1425,9 @@ async fn test_spv2_with_fedi_fees(
     let RpcSPv2CachedSyncResponse { sync_response, .. } =
         spv2AccountInfo(federation.clone()).await?;
     assert_eq!(sync_response.idle_balance.0, Amount::ZERO);
-    assert_eq!(sync_response.staged_balance.0, Amount::ZERO);
-    assert_eq!(sync_response.locked_balance.0, Amount::ZERO);
-    assert!(sync_response.pending_unlock_request.is_none());
+    assert_eq!(sync_response.staged.btc.0, Amount::ZERO);
+    assert_eq!(sync_response.locked.btc.0, Amount::ZERO);
+    assert!(sync_response.pending_unlock.is_none());
 
     // Receive some ecash first
     let initial_balance = Amount::from_msats(500_000);
@@ -1470,9 +1470,9 @@ async fn test_spv2_with_fedi_fees(
     let RpcSPv2CachedSyncResponse { sync_response, .. } =
         spv2AccountInfo(federation.clone()).await?;
     assert_eq!(sync_response.idle_balance.0, Amount::ZERO);
-    assert_eq!(sync_response.staged_balance.0, amount_to_deposit);
-    assert!(sync_response.pending_unlock_request.is_none());
-    assert_eq!(sync_response.locked_balance.0, Amount::ZERO);
+    assert_eq!(sync_response.staged.btc.0, amount_to_deposit);
+    assert!(sync_response.pending_unlock.is_none());
+    assert_eq!(sync_response.locked.btc.0, Amount::ZERO);
 
     // Withdraw and verify account info
     let amount_to_withdraw = Amount::from_msats(200_000);
@@ -1550,11 +1550,11 @@ async fn test_spv2_with_fedi_fees(
         spv2AccountInfo(federation.clone()).await?;
     assert_eq!(sync_response.idle_balance.0, Amount::ZERO);
     assert_eq!(
-        sync_response.staged_balance.0.msats,
+        sync_response.staged.btc.0.msats,
         amount_to_deposit.msats - amount_to_withdraw.msats
     );
-    assert!(sync_response.pending_unlock_request.is_none());
-    assert_eq!(sync_response.locked_balance.0, Amount::ZERO);
+    assert!(sync_response.pending_unlock.is_none());
+    assert_eq!(sync_response.locked.btc.0, Amount::ZERO);
 
     // Let's withdraw the remaining amount
     federation
