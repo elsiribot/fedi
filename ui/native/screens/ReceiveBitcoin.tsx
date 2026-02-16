@@ -10,7 +10,7 @@ import { selectIsInternetUnreachable } from '@fedi/common/redux'
 
 import InternetUnreachableBanner from '../components/feature/environment/InternetUnreachableBanner'
 import LnurlReceiveQr from '../components/feature/receive/LnurlReceiveQr'
-import ReceiveOnchainQr from '../components/feature/receive/ReceiveOnchainQr'
+import OnchainReceiveQr from '../components/feature/receive/OnchainReceiveQr'
 import RequestLightningAmount from '../components/feature/receive/RequestLightningAmount'
 import { SafeAreaContainer } from '../components/ui/SafeArea'
 import { Switcher } from '../components/ui/Switcher'
@@ -83,7 +83,7 @@ const ReceiveBitcoin: React.FC<Props> = ({ route }: Props) => {
                     )}
                 </View>
                 {activeTab === BitcoinOrLightning.bitcoin && (
-                    <ReceiveOnchainQr
+                    <OnchainReceiveQr
                         generatedOnchainAddress={generatedOnchainAddress}
                         setGeneratedOnchainAddress={setGeneratedOnchainAddress}
                         federationId={federationId}

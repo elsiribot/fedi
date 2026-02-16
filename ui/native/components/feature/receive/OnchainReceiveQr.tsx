@@ -19,7 +19,7 @@ import PaymentType from '../send/PaymentType'
 import OnchainDepositInfo from './OnchainDepositInfo'
 import ReceiveQr from './ReceiveQr'
 
-export default function ReceiveOnchainQr({
+export default function OnchainReceiveQr({
     federationId,
     generatedOnchainAddress,
     setGeneratedOnchainAddress,
