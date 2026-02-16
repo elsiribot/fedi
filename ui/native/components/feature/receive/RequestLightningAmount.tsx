@@ -1,4 +1,5 @@
 import { useNavigation } from '@react-navigation/native'
+import { useTheme } from '@rneui/themed'
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Keyboard } from 'react-native'
@@ -12,6 +13,7 @@ import amountUtils from '@fedi/common/utils/AmountUtils'
 import { reset } from '../../../state/navigation'
 import { useRecheckInternet } from '../../../utils/hooks/environment'
 import { AmountScreen } from '../../ui/AmountScreen'
+import { Column } from '../../ui/Flex'
 import PaymentType from '../send/PaymentType'
 
 export default function RequestLightningAmount({
@@ -25,6 +27,7 @@ export default function RequestLightningAmount({
     const navigation = useNavigation()
     const toast = useToast()
 
+    const { theme } = useTheme()
     const {
         inputAmount: amount,
         setInputAmount: setAmount,
@@ -35,7 +38,6 @@ export default function RequestLightningAmount({
         maximumAmount,
     } = useRequestForm({ federationId })
     const { t } = useTranslation()
-
     const { isInvoiceLoading, makeLightningRequest } = useMakeLightningRequest({
         federationId,
         onInvoicePaid(tx) {
@@ -83,34 +85,36 @@ export default function RequestLightningAmount({
     }
 
     return (
-        <AmountScreen
-            showBalance={true}
-            federationId={federationId}
-            amount={amount}
-            onChangeAmount={onChangeAmount}
-            minimumAmount={minimumAmount}
-            maximumAmount={maximumAmount}
-            submitAttempts={submitAttempts}
-            isSubmitting={isInvoiceLoading}
-            readOnly={Boolean(exactAmount)}
-            verb={t('words.request')}
-            preHeader={<PaymentType type="lightning" />}
-            buttons={[
-                {
-                    title: `${t('words.request')}${
-                        amount ? ` ${amountUtils.formatSats(amount)} ` : ' '
-                    }${t('words.sats').toUpperCase()}`,
-                    onPress: handleSubmit,
-                    disabled: isInvoiceLoading,
-                    loading: isInvoiceLoading,
-                    containerStyle: {
-                        width: '100%',
+        <Column grow style={{ paddingHorizontal: theme.spacing.xl }}>
+            <AmountScreen
+                showBalance={true}
+                federationId={federationId}
+                amount={amount}
+                onChangeAmount={onChangeAmount}
+                minimumAmount={minimumAmount}
+                maximumAmount={maximumAmount}
+                submitAttempts={submitAttempts}
+                isSubmitting={isInvoiceLoading}
+                readOnly={Boolean(exactAmount)}
+                verb={t('words.request')}
+                preHeader={<PaymentType type="lightning" />}
+                buttons={[
+                    {
+                        title: `${t('words.request')}${
+                            amount ? ` ${amountUtils.formatSats(amount)} ` : ' '
+                        }${t('words.sats').toUpperCase()}`,
+                        onPress: handleSubmit,
+                        disabled: isInvoiceLoading,
+                        loading: isInvoiceLoading,
+                        containerStyle: {
+                            width: '100%',
+                        },
                     },
-                },
-            ]}
-            isIndependent={false}
-            notes={memo}
-            setNotes={setMemo}
-        />
+                ]}
+                isIndependent={false}
+                notes={memo}
+                setNotes={setMemo}
+            />
+        </Column>
     )
 }

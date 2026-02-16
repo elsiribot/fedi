@@ -70,10 +70,14 @@ const ReceiveBitcoin: React.FC<Props> = ({ route }: Props) => {
         <>
             {isOffline && <InternetUnreachableBanner />}
             <SafeAreaContainer
-                edges="notop"
+                edges="bottom"
                 padding="xl"
                 style={{ gap: theme.spacing.xl }}>
-                <View style={{ marginTop: theme.spacing.lg }}>
+                <View
+                    style={{
+                        marginTop: theme.spacing.lg,
+                        paddingHorizontal: theme.spacing.xl,
+                    }}>
                     {(isOnchainSupported || supportsLnurl) && (
                         <Switcher<BitcoinOrLightning>
                             options={switcherOptions}

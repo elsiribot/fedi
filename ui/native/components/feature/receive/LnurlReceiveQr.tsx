@@ -33,13 +33,15 @@ export default function LnurlReceiveQr({
 
     return (
         <Column grow gap="xl">
-            <Column style={style.reusableNotice}>
-                <Text color={theme.colors.primary} medium center caption>
-                    ℹ️ {t('feature.receive.lnurl-receive-notice-1')}
-                </Text>
-                <Text color={theme.colors.darkGrey} center small>
-                    {t('feature.receive.lnurl-receive-notice-2')}
-                </Text>
+            <Column style={style.noticeContainer}>
+                <Column style={style.reusableNotice}>
+                    <Text color={theme.colors.primary} medium center caption>
+                        ℹ️ {t('feature.receive.lnurl-receive-notice-1')}
+                    </Text>
+                    <Text color={theme.colors.darkGrey} center small>
+                        {t('feature.receive.lnurl-receive-notice-2')}
+                    </Text>
+                </Column>
             </Column>
             <ReceiveQr uri={uri} isLoading={isLoading || !lnurlReceiveCode}>
                 <Row fullWidth align="center" justify="between">
@@ -65,6 +67,9 @@ export default function LnurlReceiveQr({
 
 const styles = (theme: Theme) =>
     StyleSheet.create({
+        noticeContainer: {
+            paddingHorizontal: theme.spacing.xl,
+        },
         reusableNotice: {
             backgroundColor: theme.colors.offWhite100,
             padding: theme.spacing.md,

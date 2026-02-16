@@ -93,7 +93,12 @@ const ReceiveQr: React.FC<ReceiveQrProps> = ({
                 </Column>
                 {children}
             </ScrollView>
-            <Row align="center" justify="between" gap="lg" fullWidth>
+            <Row
+                align="center"
+                justify="between"
+                gap="lg"
+                fullWidth
+                style={style.buttons}>
                 <Button
                     title={t('words.share')}
                     onPress={openShareDialog}
@@ -113,6 +118,10 @@ const styles = (theme: Theme) =>
     StyleSheet.create({
         contentScrollContainer: {
             gap: theme.spacing.lg,
+            paddingHorizontal: theme.spacing.xl,
+        },
+        buttons: {
+            paddingHorizontal: theme.spacing.xl,
         },
         contentScroll: {
             flex: 1,

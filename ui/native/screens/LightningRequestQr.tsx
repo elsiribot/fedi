@@ -90,7 +90,7 @@ const LightningRequestQr: React.FC<Props> = ({ route, navigation }: Props) => {
     const style = styles(theme)
 
     return (
-        <SafeAreaContainer edges="notop" padding="xl" style={style.container}>
+        <SafeAreaContainer edges="bottom" padding="xl" style={style.container}>
             <Column align="center" style={style.amounts}>
                 <PaymentType type="lightning" />
                 <SendAmounts
