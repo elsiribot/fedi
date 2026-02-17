@@ -1,9 +1,12 @@
+use std::time::{Duration, SystemTime};
+
 use fedimint_core::db::{DatabaseTransaction, IDatabaseTransactionOpsCoreTyped as _};
 use fedimint_core::encoding::{Decodable, Encodable};
 use fedimint_core::impl_db_record;
 use rpc_types::matrix::RpcUserId;
 use rpc_types::sp_transfer::SpMatrixTransferId;
 use rpc_types::{RpcFederationId, RpcFiatAmount, RpcTransactionId};
+use runtime::bridge_runtime::Runtime;
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum SpTransferStatus {
@@ -11,6 +14,7 @@ pub enum SpTransferStatus {
     SentHint { transaction_id: RpcTransactionId },
     Failed,
     FederationInviteDenied,
+    Expired,
 }
 
 pub mod receiver;
@@ -46,6 +50,7 @@ pub struct TransferEventValue {
     pub sent_by: RpcUserId,
     pub federation_invite: Option<String>,
     pub nonce: u64,
+    pub created_at: SystemTime,
 }
 
 #[derive(Debug, Clone, Encodable, Decodable)]
@@ -87,7 +92,17 @@ impl_db_record!(
 pub(crate) async fn resolve_status_db(
     dbtx: &mut DatabaseTransaction<'_>,
     transfer_id: &SpMatrixTransferId,
+    transfer: &TransferEventValue,
+    runtime: &Runtime,
 ) -> SpTransferStatus {
+    let transfer_expiry = Duration::from_secs(
+        runtime
+            .feature_catalog
+            .sp_transfers_matrix
+            .as_ref()
+            .expect("sp_transfers_matrix feature must be enabled")
+            .transfer_expiry_secs as u64,
+    );
     if dbtx
         .get_value(&TransferFailedKey(transfer_id.clone()))
         .await
@@ -105,6 +120,12 @@ pub(crate) async fn resolve_status_db(
         .is_some()
     {
         SpTransferStatus::FederationInviteDenied
+    } else if fedimint_core::time::now()
+        .duration_since(transfer.created_at)
+        .unwrap_or_default()
+        >= transfer_expiry
+    {
+        SpTransferStatus::Expired
     } else {
         SpTransferStatus::Pending
     }

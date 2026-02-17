@@ -121,7 +121,8 @@ pub async fn test_end_to_end(_dev_fed: DevFed) -> anyhow::Result<()> {
             RpcSpTransferStatus::Pending => continue,
             RpcSpTransferStatus::Complete
             | RpcSpTransferStatus::Failed
-            | RpcSpTransferStatus::FederationInviteDenied => break state,
+            | RpcSpTransferStatus::FederationInviteDenied
+            | RpcSpTransferStatus::Expired => break state,
         }
     };
 
@@ -253,7 +254,8 @@ pub async fn test_receiver_joins_federation_later(_dev_fed: DevFed) -> anyhow::R
             RpcSpTransferStatus::Pending => continue,
             RpcSpTransferStatus::Complete
             | RpcSpTransferStatus::Failed
-            | RpcSpTransferStatus::FederationInviteDenied => break state,
+            | RpcSpTransferStatus::FederationInviteDenied
+            | RpcSpTransferStatus::Expired => break state,
         }
     };
 
