@@ -1,6 +1,6 @@
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs'
 import type { NativeStackScreenProps } from '@react-navigation/native-stack'
-import { Theme, useTheme } from '@rneui/themed'
+import { Text, Theme, useTheme } from '@rneui/themed'
 import React, { MutableRefObject, useEffect, useRef } from 'react'
 import { useTranslation } from 'react-i18next'
 import {
@@ -26,6 +26,7 @@ import { HomeNavigationTab } from '@fedi/common/types/linking'
 import ChatHeader from '../components/feature/chat/ChatHeader'
 import FederationsHeader from '../components/feature/federations/FederationsHeader'
 import HomeHeader from '../components/feature/home/HomeHeader'
+import GradientView from '../components/ui/GradientView'
 import SvgImage, {
     SvgImageSize,
     getIconSizeMultiplier,
@@ -240,6 +241,36 @@ const TabsNavigator: React.FC<Props> = ({ route }: Props) => {
                     })}
                 />
                 <Tab.Screen
+                    name="Scan"
+                    options={({ navigation }) => ({
+                        tabBarTestID: 'ScanTabButtonn',
+                        tabBarButton: () => (
+                            <Pressable
+                                onPress={() =>
+                                    navigation.navigate('OmniScanner')
+                                }
+                                style={({ pressed }) => [
+                                    style.scanTab,
+                                    pressed && style.tabBarButtonPressed,
+                                ]}>
+                                <GradientView
+                                    variant="black"
+                                    style={style.scanButton}>
+                                    <SvgImage
+                                        name="Scan"
+                                        color={theme.colors.white}
+                                        size={24}
+                                    />
+                                </GradientView>
+                                <Text style={style.tabBarLabel}>
+                                    {t('phrases.scan-slash-paste')}
+                                </Text>
+                            </Pressable>
+                        ),
+                    })}>
+                    {() => null}
+                </Tab.Screen>
+                <Tab.Screen
                     name="Mods"
                     component={Mods}
                     options={() => ({
@@ -288,10 +319,29 @@ const styles = (theme: Theme, insets: EdgeInsets, fontScale: number) => {
             elevation: 24,
             shadowOpacity: 1,
         },
+        scanTab: {
+            flexDirection: 'column',
+            alignItems: 'center',
+            justifyContent: 'flex-end',
+            height: tabBarHeight,
+            paddingHorizontal: theme.spacing.md,
+            borderRadius: theme.borders.defaultRadius,
+            position: 'relative',
+        },
+        scanButton: {
+            position: 'absolute',
+            top: -24,
+            height: 48,
+            width: 48,
+            borderRadius: 1024,
+            flexDirection: 'row',
+            alignItems: 'center',
+            justifyContent: 'center',
+        },
         tabBarIconContainer: {},
         tabBarBadge: {
             backgroundColor: theme.colors.red,
-            top: 21,
+            top: 10,
             left: 4,
             borderWidth: 2,
             borderColor: theme.colors.secondary,
