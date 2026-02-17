@@ -208,7 +208,11 @@ const TabsNavigator: React.FC<Props> = ({ route }: Props) => {
                                 return null
                         }
                     },
-                    tabBarShowLabel: false,
+                    tabBarShowLabel: true,
+                    tabBarLabelStyle: {
+                        ...style.tabBarLabel,
+                        ...theme.components.Text.style,
+                    },
                     tabBarActiveTintColor: theme.colors.primary,
                     tabBarInactiveTintColor: theme.colors.primaryLight,
                     tabBarStyle: style.tabBar,
@@ -297,6 +301,10 @@ const styles = (theme: Theme, insets: EdgeInsets, fontScale: number) => {
             borderRadius: 6,
         },
         tabBarItem: {},
+        tabBarLabel: {
+            fontSize: fediTheme.fontSizes.small,
+            paddingBottom: theme.spacing.md,
+        },
         disabledIcon: {
             opacity: 0.2,
             backgroundColor: theme.colors.grey,
