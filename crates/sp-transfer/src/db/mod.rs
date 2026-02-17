@@ -10,6 +10,7 @@ pub enum SpTransferStatus {
     Pending,
     SentHint { transaction_id: RpcTransactionId },
     Failed,
+    FederationInviteDenied,
 }
 
 pub mod receiver;
@@ -34,6 +35,8 @@ enum SpTransfersDbPrefix {
     PendingCompletionNotification = 0x06,
     /// (pending_transfer_id) => ()
     TransferFailed = 0x07,
+    /// (pending_transfer_id) => ()
+    FederationInviteDenied = 0x08,
 }
 
 #[derive(Debug, Clone, Encodable, Decodable)]
@@ -72,6 +75,15 @@ impl_db_record!(
     db_prefix = SpTransfersDbPrefix::TransferFailed,
 );
 
+#[derive(Debug, Clone, Encodable, Decodable)]
+pub struct FederationInviteDeniedKey(pub SpMatrixTransferId);
+
+impl_db_record!(
+    key = FederationInviteDeniedKey,
+    value = (),
+    db_prefix = SpTransfersDbPrefix::FederationInviteDenied,
+);
+
 pub(crate) async fn resolve_status_db(
     dbtx: &mut DatabaseTransaction<'_>,
     transfer_id: &SpMatrixTransferId,
@@ -87,6 +99,12 @@ pub(crate) async fn resolve_status_db(
         .await
     {
         SpTransferStatus::SentHint { transaction_id }
+    } else if dbtx
+        .get_value(&FederationInviteDeniedKey(transfer_id.clone()))
+        .await
+        .is_some()
+    {
+        SpTransferStatus::FederationInviteDenied
     } else {
         SpTransferStatus::Pending
     }
