@@ -262,7 +262,12 @@ const TabsNavigator: React.FC<Props> = ({ route }: Props) => {
                                         size={24}
                                     />
                                 </GradientView>
-                                <Text style={style.tabBarLabel}>
+                                <Text
+                                    medium
+                                    style={[
+                                        style.tabBarLabel,
+                                        style.scanLabel,
+                                    ]}>
                                     {t('phrases.scan-slash-paste')}
                                 </Text>
                             </Pressable>
@@ -354,6 +359,10 @@ const styles = (theme: Theme, insets: EdgeInsets, fontScale: number) => {
         tabBarLabel: {
             fontSize: fediTheme.fontSizes.small,
             paddingBottom: theme.spacing.md,
+        },
+        scanLabel: {
+            paddingBottom: 13.5,
+            color: theme.colors.darkGrey,
         },
         disabledIcon: {
             opacity: 0.2,
