@@ -16,7 +16,7 @@ import { ContentBlock } from '../components/ContentBlock'
 import * as Layout from '../components/Layout'
 import { Redirect } from '../components/Redirect'
 import { Text } from '../components/Text'
-import { homeRoute, onboardingRoute } from '../constants/routes'
+import { federationsRoute, homeRoute } from '../constants/routes'
 import { useAppDispatch, useAppSelector } from '../hooks'
 import { fedimint } from '../lib/bridge'
 import { styled, theme } from '../styles'
@@ -57,7 +57,7 @@ function WelcomePage() {
                 return
             }
 
-            push(onboardingRoute)
+            push(federationsRoute)
         } catch (err) {
             log.error('handleOnContinue', err)
             toast.error(t, err, 'errors.unknown-error')
