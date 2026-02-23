@@ -38,6 +38,7 @@ const MainHeaderButtons: React.FC<Props> = ({
                     hitSlop={5}
                     svgName="HamburgerIcon"
                     svgProps={{ size: 24 }}
+                    testID="MainHeaderButtons__HamburgerIcon"
                 />
             )}
             {onSearchPress && (
