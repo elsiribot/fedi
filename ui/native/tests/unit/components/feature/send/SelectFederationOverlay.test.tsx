@@ -13,7 +13,7 @@ import { renderWithProviders } from '@fedi/native/tests/utils/render'
 
 import SelectFederationOverlay from '../../../../../components/feature/send/SelectFederationOverlay'
 
-describe('FederationsHeader', () => {
+describe('SelectFederationOverlay', () => {
     let store: ReturnType<typeof setupStore>
     let user: ReturnType<typeof userEvent.setup>
 
