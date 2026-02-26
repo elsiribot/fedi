@@ -44,8 +44,13 @@ impl DevFed {
         let seed_spv2_liquidity = std::env::var(USE_UPSTREAM_FEDIMINTD_ENV).is_err();
         let spv2_liquidity_amount_sats = 5_000_000;
         let client_pegin_amount = 10_000_000 + spv2_liquidity_amount_sats;
+        let fixed_meta_json = serde_json::json!({
+            "stability_pool_disabled": "false",
+            "multispend_disabled": "false",
+        })
+        .to_string();
 
-        let ((), (), _, synapse, nostr_relay) = tokio::try_join!(
+        let ((), (), _, synapse, nostr_relay, ()) = tokio::try_join!(
             async {
                 let client = dev_fed.internal_client().await?;
                 let (address, operation_id) = client.get_deposit_addr().await?;
@@ -107,6 +112,29 @@ impl DevFed {
             },
             Synapse::start(&process_mgr),
             NostrRelay::start(&process_mgr),
+            async {
+                let client = dev_fed.internal_client().await?;
+                for peer in 0..fed_size {
+                    cmd!(
+                        client,
+                        "--our-id",
+                        peer,
+                        "--password",
+                        "pass",
+                        "module",
+                        "meta",
+                        "submit",
+                        &fixed_meta_json,
+                    )
+                    .run()
+                    .await?;
+                }
+                info!(
+                    target: LOG_DEVIMINT,
+                    "Submitted fixed default currency and exchange-rate federation metadata"
+                );
+                Ok(())
+            },
         )?;
 
         info!(target: LOG_DEVIMINT, "Pegins completed");

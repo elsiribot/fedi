@@ -12,6 +12,7 @@ fedimint-logging = { workspace = true }
 fedimint-portalloc = { workspace = true }
 runtime = { workspace = true }
 rand = { workspace = true }
+serde_json = { workspace = true }
 tempfile = { workspace = true }
 tokio = { workspace = true, features = ["full"] }
 tracing = { workspace = true }
