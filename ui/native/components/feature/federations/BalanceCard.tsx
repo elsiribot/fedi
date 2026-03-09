@@ -4,7 +4,7 @@ import { useTranslation } from 'react-i18next'
 import { Pressable, StyleSheet } from 'react-native'
 
 import { useBalance } from '@fedi/common/hooks/amount'
-import { selectCurrency } from '@fedi/common/redux'
+import { selectCurrency, selectPaymentType } from '@fedi/common/redux'
 import { getCurrencyCode } from '@fedi/common/utils/currency'
 
 import { useAppSelector, useStabilityPool } from '../../../state/hooks'
@@ -14,10 +14,8 @@ import SvgImage, { SvgImageName } from '../../ui/SvgImage'
 
 export default function WalletBalanceCard({
     federationId,
-    balanceType,
 }: {
     federationId: string
-    balanceType: 'bitcoin' | 'stable-balance'
 }) {
     const { t } = useTranslation()
     const { theme } = useTheme()
@@ -29,13 +27,14 @@ export default function WalletBalanceCard({
         useStabilityPool(federationId)
 
     const navigation = useNavigation()
+    const paymentType = useAppSelector(selectPaymentType)
     const selectedCurrency = useAppSelector(s =>
         selectCurrency(s, federationId),
     )
 
     const onPressTransactions = () => {
         navigation.navigate(
-            balanceType === 'bitcoin' ? 'Transactions' : 'StabilityHistory',
+            paymentType === 'bitcoin' ? 'Transactions' : 'StabilityHistory',
             { federationId },
         )
     }
@@ -46,7 +45,7 @@ export default function WalletBalanceCard({
     let primaryAmount = formattedBalanceFiat
     let secondaryAmount = formattedBalanceSats
 
-    if (balanceType === 'stable-balance') {
+    if (paymentType === 'stable-balance') {
         iconName = 'UsdCircleFilled'
         iconColor = theme.colors.moneyGreen
         headerTitle = getCurrencyCode(selectedCurrency)

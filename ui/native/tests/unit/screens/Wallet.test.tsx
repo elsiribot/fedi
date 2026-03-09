@@ -3,7 +3,7 @@ import { act, screen, userEvent } from '@testing-library/react-native'
 import {
     setFederations,
     setIsInternetUnreachable,
-    setLastUsedFederationId,
+    setSelectedFederationId,
     setupStore,
 } from '@fedi/common/redux'
 import {
@@ -83,7 +83,7 @@ describe('Wallet screen', () => {
     describe('federation joined', () => {
         it('should display the active federation name, wallet, balance, and wallet buttons', () => {
             store.dispatch(setFederations([mockFederation1, mockFederation2]))
-            store.dispatch(setLastUsedFederationId(mockFederation2.id))
+            store.dispatch(setSelectedFederationId(mockFederation2.id))
             renderWithProviders(
                 <Wallet
                     route={{
@@ -110,7 +110,7 @@ describe('Wallet screen', () => {
 
         it('pressing the federation header should navigate to federation details screen', async () => {
             store.dispatch(setFederations([mockFederation1]))
-            store.dispatch(setLastUsedFederationId(mockFederation1.id))
+            store.dispatch(setSelectedFederationId(mockFederation1.id))
             renderWithProviders(
                 <Wallet
                     route={{
@@ -137,7 +137,7 @@ describe('Wallet screen', () => {
 
         it('pressing the transaction history button should navigate to transactions screen', async () => {
             store.dispatch(setFederations([mockFederation1]))
-            store.dispatch(setLastUsedFederationId(mockFederation1.id))
+            store.dispatch(setSelectedFederationId(mockFederation1.id))
             renderWithProviders(
                 <Wallet
                     route={{
@@ -167,7 +167,7 @@ describe('Wallet screen', () => {
             act(() => store.dispatch(setFederations([mockFederationWithSPV1])))
             act(() =>
                 store.dispatch(
-                    setLastUsedFederationId(mockFederationWithSPV1.id),
+                    setSelectedFederationId(mockFederationWithSPV1.id),
                 ),
             )
             renderWithProviders(
@@ -190,7 +190,7 @@ describe('Wallet screen', () => {
 
         it('should navigate to the respective screen when the send and receive buttons are pressed', async () => {
             store.dispatch(setFederations([mockFederation1]))
-            store.dispatch(setLastUsedFederationId(mockFederation1.id))
+            store.dispatch(setSelectedFederationId(mockFederation1.id))
             renderWithProviders(
                 <Wallet
                     route={{
@@ -231,7 +231,7 @@ describe('Wallet screen', () => {
 
         it('should navigate to the respective screen when the move/transfer buttons are pressed', async () => {
             store.dispatch(setFederations([mockFederationWithSPV2]))
-            store.dispatch(setLastUsedFederationId(mockFederationWithSPV2.id))
+            store.dispatch(setSelectedFederationId(mockFederationWithSPV2.id))
             renderWithProviders(
                 <Wallet
                     route={{
