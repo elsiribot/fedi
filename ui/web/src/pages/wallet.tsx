@@ -21,12 +21,12 @@ import {
 import { Button } from '../components/Button'
 import { ContentBlock } from '../components/ContentBlock'
 import FederationStatusAvatar from '../components/FederationStatusAvatar'
-import FederationsOverlay from '../components/FederationsOverlay'
 import { Column, Row } from '../components/Flex'
 import { HoloLoader } from '../components/HoloLoader'
 import { Icon } from '../components/Icon'
 import { IconButton } from '../components/IconButton'
 import * as Layout from '../components/Layout'
+import SelectWalletOverlay from '../components/SelectWalletOverlay'
 import { Text } from '../components/Text'
 import {
     federationRoute,
@@ -204,7 +204,7 @@ function WalletPage() {
                 />
                 <Layout.Content fullWidth>{content}</Layout.Content>
             </Layout.Root>
-            <FederationsOverlay open={open} onOpenChange={setOpen} />
+            <SelectWalletOverlay open={open} onOpenChange={setOpen} />
         </ContentBlock>
     )
 }
