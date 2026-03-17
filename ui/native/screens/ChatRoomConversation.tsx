@@ -12,6 +12,7 @@ import {
     addPreviewMedia,
     selectGroupPreview,
     selectMatrixRoom,
+    selectShouldShowJoinOnChatPreview,
     sendMatrixMessage,
 } from '@fedi/common/redux'
 import { ChatType, InputAttachment, InputMedia } from '@fedi/common/types'
@@ -53,6 +54,9 @@ const ChatRoomConversation: React.FC<Props> = ({
     const [isSending, setIsSending] = useState(false)
     const room = useAppSelector(s => selectMatrixRoom(s, roomId))
     const groupPreview = useAppSelector(s => selectGroupPreview(s, roomId))
+    const shouldShowJoinButton = useAppSelector(s =>
+        selectShouldShowJoinOnChatPreview(s, roomId),
+    )
     const toast = useToast()
     const { shouldShowHeader } = useMultispendDisplayUtils(t, roomId)
     const [replyBarHeight, setReplyBarHeight] = useState(0)
@@ -193,11 +197,13 @@ const ChatRoomConversation: React.FC<Props> = ({
                             id={roomId}
                             preview={groupPreview}
                         />
-                        <Button
-                            onPress={handleJoinPressed}
-                            style={style.joinGroupButton}>
-                            {t('feature.chat.join-group')}
-                        </Button>
+                        {shouldShowJoinButton && (
+                            <Button
+                                onPress={handleJoinPressed}
+                                style={style.joinGroupButton}>
+                                {t('feature.chat.join-group')}
+                            </Button>
+                        )}
                     </Column>
                 </SafeAreaContainer>
             )
