@@ -177,15 +177,13 @@ const SearchableRoomsList: React.FC<SearchableRoomsListProps> = ({
     )
 }
 
-export const ChatList: React.FC = () => {
+interface ChatListProps {
+    isSearchMode: boolean
+}
+
+export const ChatList: React.FC<ChatListProps> = ({ isSearchMode }) => {
     const { t } = useTranslation()
     const router = useRouter()
-
-    const [chatType] = Array.isArray(router.query.path)
-        ? [router.query.path[0]]
-        : []
-
-    const isSearchMode = chatType === 'search'
 
     const { query, setQuery, clearSearch, filteredChatsList } =
         useChatsListSearch()
