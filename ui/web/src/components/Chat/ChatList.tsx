@@ -20,7 +20,6 @@ import { Dialog } from '../Dialog'
 import { Column, Row } from '../Flex'
 import { Icon } from '../Icon'
 import { Input } from '../Input'
-import MainHeaderButtons from '../MainHeaderButtons'
 import { Text } from '../Text'
 import { ChatListItem } from './ChatListItem'
 
@@ -60,28 +59,6 @@ const SearchHeader: React.FC<SearchHeaderProps> = ({
                 autoFocus
             />
         </SearchInputRow>
-    )
-}
-
-interface DefaultHeaderProps {
-    onAddPress: () => void
-    onSearchPress: () => void
-}
-
-const DefaultHeader: React.FC<DefaultHeaderProps> = ({
-    onAddPress,
-    onSearchPress,
-}) => {
-    const { t } = useTranslation()
-
-    return (
-        <>
-            <Layout.Title small>{t('words.chat')}</Layout.Title>
-            <MainHeaderButtons
-                onAddPress={onAddPress}
-                onSearchPress={onSearchPress}
-            />
-        </>
     )
 }
 
@@ -221,20 +198,21 @@ export const ChatList: React.FC<ChatListProps> = ({ isSearchMode }) => {
     return (
         <>
             <Layout.Root>
-                <Layout.Header back={isSearchMode ? '/chat' : undefined}>
-                    {isSearchMode ? (
+                {isSearchMode ? (
+                    <Layout.Header back={'/chat'}>
                         <SearchHeader
                             query={query}
                             onQueryChange={setQuery}
                             onClearSearch={clearSearch}
                         />
-                    ) : (
-                        <DefaultHeader
-                            onAddPress={() => setShowOverlay(true)}
-                            onSearchPress={goToSearch}
-                        />
-                    )}
-                </Layout.Header>
+                    </Layout.Header>
+                ) : (
+                    <Layout.PageHeader
+                        title={t('words.chat')}
+                        onAddPress={() => setShowOverlay(true)}
+                        onSearchPress={goToSearch}
+                    />
+                )}
 
                 <Layout.Content fullWidth>
                     <SearchableRoomsList
