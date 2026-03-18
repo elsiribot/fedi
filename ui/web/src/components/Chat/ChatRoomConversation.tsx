@@ -23,6 +23,7 @@ import { fedimint, writeBridgeFile } from '../../lib/bridge'
 import { styled } from '../../styles'
 import { getMediaDimensions } from '../../utils/media'
 import { Button } from '../Button'
+import { Row } from '../Flex'
 import { HoloLoader } from '../HoloLoader'
 import { Icon } from '../Icon'
 import { Text } from '../Text'
@@ -183,7 +184,7 @@ export const ChatRoomConversation: React.FC<Props> = ({ roomId }) => {
                 onSendMessage={handleSend}
                 onWalletClick={() => setIsPaymentOpen(true)}
                 headerActions={
-                    <>
+                    <Row gap="sm" align="center">
                         <Icon
                             icon={SearchIcon}
                             size={26}
@@ -196,7 +197,7 @@ export const ChatRoomConversation: React.FC<Props> = ({ roomId }) => {
                                 onClick={() => setIsSettingsOpen(true)}
                             />
                         )}
-                    </>
+                    </Row>
                 }
                 onPaginate={handlePaginate}
             />
