@@ -191,7 +191,7 @@ const ChatRoomConversation: React.FC<Props> = ({
     if (!room) {
         if (groupPreview) {
             return (
-                <SafeAreaContainer edges={['bottom']}>
+                <SafeAreaContainer edges="bottom">
                     <Column grow basis={false}>
                         <ChatPreviewConversation
                             id={roomId}
@@ -218,7 +218,7 @@ const ChatRoomConversation: React.FC<Props> = ({
 
     return (
         <SafeAreaContainer
-            edges={['bottom']}
+            edges="bottom"
             style={{ paddingBottom: extraPadAndroid35 }}>
             <Column grow basis={false}>
                 {content}
