@@ -200,7 +200,7 @@ const ChatRoomConversation: React.FC<Props> = ({
                         {shouldShowJoinButton && (
                             <Button
                                 onPress={handleJoinPressed}
-                                style={style.joinGroupButton}>
+                                containerStyle={style.joinGroupButton}>
                                 {t('feature.chat.join-group')}
                             </Button>
                         )}
