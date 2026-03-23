@@ -86,6 +86,7 @@ const initialState = {
     // A list of community IDs that were autojoined where a dismissable notice should be displayed to the user
     autojoinNoticesToDisplay: [] as Array<Community['id']>,
     guardianitoBot: null as GuardianitoBot | null,
+    selectedFederationId: null as Federation['id'] | null,
 }
 
 export type FederationState = typeof initialState
@@ -425,6 +426,9 @@ export const federationSlice = createSlice({
                 state.lastSelectedCommunityId = v2Community.id
             }
         },
+        setSelectedFederationId(state, action: PayloadAction<string>) {
+            state.selectedFederationId = action.payload
+        },
     },
     extraReducers: builder => {
         builder.addCase(leaveFederation.fulfilled, (state, action) => {
@@ -502,6 +506,8 @@ export const federationSlice = createSlice({
                 action.payload.previouslyAutojoinedCommunities || {}
             state.autojoinNoticesToDisplay =
                 action.payload.autojoinNoticesToDisplay || []
+            state.selectedFederationId =
+                action.payload.selectedFederationId || null
         })
 
         builder.addCase(
@@ -549,6 +555,7 @@ export const {
     removeAutojoinNoticeToDisplay,
     setGuardianitoBot,
     migrateCommunityV1ToV2,
+    setSelectedFederationId,
 } = federationSlice.actions
 
 /*** Async thunk actions */
@@ -984,6 +991,7 @@ export const joinFederation = createAsyncThunk<
 
         dispatch(setLastUsedFederationId(joinedFederation.id))
         dispatch(setPayFromFederationId(joinedFederation.id))
+        dispatch(setSelectedFederationId(joinedFederation.id))
         return joinedFederation
     },
 )
@@ -1755,3 +1763,16 @@ export const selectAutojoinNoticeInfo = createSelector(
 
 export const selectGuardianitoBot = (s: CommonState) =>
     s.federation.guardianitoBot
+
+export const selectSelectedFederationId = (s: CommonState) =>
+    s.federation.selectedFederationId
+
+export const selectSelectedFederation = createSelector(
+    selectSelectedFederationId,
+    selectLoadedFederations,
+    (selectedFederationId, loadedFederations) => {
+        return (
+            loadedFederations.find(f => f.id === selectedFederationId) ?? null
+        )
+    },
+)
