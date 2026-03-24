@@ -21,7 +21,7 @@ import {
 } from '../../../state/hooks'
 import { LoadedFederation } from '../../../types'
 import CustomOverlay from '../../ui/CustomOverlay'
-import { Column, Row } from '../../ui/Flex'
+import { Column } from '../../ui/Flex'
 import { Pressable } from '../../ui/Pressable'
 import { PressableIcon } from '../../ui/PressableIcon'
 import SvgImage from '../../ui/SvgImage'
@@ -77,8 +77,10 @@ function WalletListItem({
     federation: LoadedFederation
     onDismiss: () => void
 }) {
+    const { theme } = useTheme()
     const navigation = useNavigation()
     const dispatch = useAppDispatch()
+    const style = styles(theme)
     const supportsStabilityPool = useIsStabilityPoolEnabledByFederation(
         federation.id,
     )
@@ -107,7 +109,9 @@ function WalletListItem({
 
     return (
         <Column gap="sm" testID={`SelectWalletListItem-${federation.id}`}>
-            <Row align="center" gap="md">
+            <Pressable
+                onPress={handleSelectBitcoin}
+                containerStyle={style.walletHeader}>
                 <FederationStatusAvatar federation={federation} size={40} />
                 <Text style={{ flexGrow: 1 }} numberOfLines={2} bold>
                     {federation.name}
@@ -115,7 +119,7 @@ function WalletListItem({
                 {shouldShowInvite && (
                     <PressableIcon svgName="Qr" onPress={handlePressQr} />
                 )}
-            </Row>
+            </Pressable>
             <BalanceItem
                 type="bitcoin"
                 federation={federation}
@@ -205,6 +209,10 @@ const styles = (theme: Theme) =>
             borderRadius: 16,
             borderWidth: 1,
             borderColor: theme.colors.extraLightGrey,
+        },
+        walletHeader: {
+            alignContent: 'center',
+            gap: theme.spacing.md,
         },
         body: {
             padding: theme.spacing.sm,
