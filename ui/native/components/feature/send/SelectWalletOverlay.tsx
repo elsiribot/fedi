@@ -7,7 +7,7 @@ import { useBalance } from '@fedi/common/hooks/amount'
 import { useIsStabilityPoolEnabledByFederation } from '@fedi/common/hooks/federation'
 import {
     selectCurrency,
-    selectLoadedFederations,
+    selectLoadedFederationsByRecency,
     selectShouldShowInviteCode,
     setPaymentType,
     setSelectedFederationId,
@@ -36,7 +36,7 @@ export default function SelectWalletOverlay({
     const { t } = useTranslation()
     const { theme } = useTheme()
 
-    const loadedFederations = useAppSelector(selectLoadedFederations)
+    const loadedFederations = useAppSelector(selectLoadedFederationsByRecency)
     const style = styles(theme)
 
     return (

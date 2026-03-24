@@ -1145,6 +1145,24 @@ export const selectRecentlyUsedFederationIds = (s: CommonState) =>
 export const selectLastUsedFederationId = (s: CommonState) =>
     selectRecentlyUsedFederationIds(s)[0] ?? null
 
+// as users make payments with federations, the id gets added to recentlyUsedFederationIds
+// this allows us to respect the order of loadedFederations and show the most recently used federations first
+export const selectLoadedFederationsByRecency = createSelector(
+    selectRecentlyUsedFederationIds,
+    selectLoadedFederations,
+    (recentlyUsedFederationIds, federations) => {
+        return [...federations].sort((a, b) => {
+            const recentIndexA = recentlyUsedFederationIds.indexOf(a.id)
+            const recentIndexB = recentlyUsedFederationIds.indexOf(b.id)
+            const compareA =
+                recentIndexA === -1 ? federations.length : recentIndexA
+            const compareB =
+                recentIndexB === -1 ? federations.length : recentIndexB
+            return compareA - compareB
+        })
+    },
+)
+
 // non-featured federations are just loaded federations excluding the last used federation
 export const selectNonFeaturedFederations = createSelector(
     selectLastUsedFederationId,
