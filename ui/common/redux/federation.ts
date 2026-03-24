@@ -990,7 +990,6 @@ export const joinFederation = createAsyncThunk<
         if (!joinedFederation) throw new Error('errors.unknown-error')
 
         dispatch(setLastUsedFederationId(joinedFederation.id))
-        dispatch(setPayFromFederationId(joinedFederation.id))
         dispatch(setSelectedFederationId(joinedFederation.id))
         return joinedFederation
     },
