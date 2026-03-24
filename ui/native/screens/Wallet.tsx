@@ -3,7 +3,7 @@ import { useNavigation } from '@react-navigation/native'
 import { Button, Text, useTheme, type Theme } from '@rneui/themed'
 import React, { useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
-import { Pressable, ScrollView, StyleSheet } from 'react-native'
+import { ScrollView, StyleSheet } from 'react-native'
 
 import {
     useIsStabilityPoolEnabledByFederation,
@@ -34,6 +34,7 @@ import WalletBalanceCard from '../components/feature/federations/BalanceCard'
 import FederationStatusAvatar from '../components/feature/federations/FederationStatusAvatar'
 import { Column, Row } from '../components/ui/Flex'
 import HoloLoader from '../components/ui/HoloLoader'
+import { Pressable } from '../components/ui/Pressable'
 import SvgImage, { SvgImageSize } from '../components/ui/SvgImage'
 import { Switcher } from '../components/ui/Switcher'
 import { useAppDispatch, useAppSelector } from '../state/hooks'
@@ -336,7 +337,7 @@ function SelectedWalletHeader({
 
     return (
         <Pressable
-            style={style.paymentFederationHeader}
+            containerStyle={style.paymentFederationHeader}
             onPress={goToFederationDetails}
             testID={federation.name.concat('DetailsButton').replaceAll(' ', '')}
             // hitSlop is intentionally set to 8 to expand the hit area

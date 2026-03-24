@@ -1,7 +1,7 @@
 import { useNavigation } from '@react-navigation/native'
 import { Text, Theme, useTheme } from '@rneui/themed'
 import { useTranslation } from 'react-i18next'
-import { Pressable, ScrollView, StyleSheet } from 'react-native'
+import { ScrollView, StyleSheet } from 'react-native'
 
 import { useBalance } from '@fedi/common/hooks/amount'
 import { useIsStabilityPoolEnabledByFederation } from '@fedi/common/hooks/federation'
@@ -22,6 +22,7 @@ import {
 import { LoadedFederation } from '../../../types'
 import CustomOverlay from '../../ui/CustomOverlay'
 import { Column, Row } from '../../ui/Flex'
+import { Pressable } from '../../ui/Pressable'
 import { PressableIcon } from '../../ui/PressableIcon'
 import SvgImage from '../../ui/SvgImage'
 import FederationStatusAvatar from '../federations/FederationStatusAvatar'
@@ -155,7 +156,7 @@ function BalanceItem({
     if (type === 'stable-balance') {
         return (
             <Pressable
-                style={style.balanceItem}
+                containerStyle={style.balanceItem}
                 onPress={onPress}
                 testID={`StableBalanceButton-${federation.id}`}>
                 <SvgImage
@@ -175,7 +176,7 @@ function BalanceItem({
 
     return (
         <Pressable
-            style={style.balanceItem}
+            containerStyle={style.balanceItem}
             onPress={onPress}
             testID={`BitcoinButton-${federation.id}`}>
             <SvgImage name="BitcoinCircle" color={theme.colors.orange} />
