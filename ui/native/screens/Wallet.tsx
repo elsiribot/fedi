@@ -1,7 +1,7 @@
 import type { BottomTabScreenProps } from '@react-navigation/bottom-tabs'
 import { useNavigation } from '@react-navigation/native'
 import { Button, Text, useTheme, type Theme } from '@rneui/themed'
-import React, { useEffect, useState } from 'react'
+import React, { useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Pressable, ScrollView, StyleSheet } from 'react-native'
 
@@ -16,15 +16,17 @@ import {
     selectFederationBalance,
     selectIsFederationRecovering,
     selectIsInternetUnreachable,
-    selectLastUsedFederation,
+    setSelectedFederationId,
     selectLoadedFederations,
     selectMaxStableBalanceSats,
+    selectPaymentType,
     selectReceivesDisabled,
+    selectSelectedFederation,
     selectShouldShowStablePaymentAddress,
     selectStabilityPoolVersion,
     selectStableBalancePending,
     selectStableBalanceSats,
-    setSuggestedPaymentFederation,
+    setPaymentType,
 } from '@fedi/common/redux'
 import { getCurrencyCode } from '@fedi/common/utils/currency'
 
@@ -47,16 +49,13 @@ export type Props = BottomTabScreenProps<
     'Wallet'
 >
 
-type Tab = 'bitcoin' | 'stable-balance'
-
 const Wallet: React.FC<Props> = ({ navigation }) => {
-    const [tab, setTab] = useState<Tab>('bitcoin')
-
     const { theme } = useTheme()
     const { t } = useTranslation()
 
-    const federation = useAppSelector(selectLastUsedFederation)
+    const federation = useAppSelector(selectSelectedFederation)
     const federationId = federation?.id ?? ''
+    const paymentType = useAppSelector(selectPaymentType)
     const loadedFederations = useAppSelector(selectLoadedFederations)
     const recoveryInProgress = useAppSelector(s =>
         selectIsFederationRecovering(s, federationId),
@@ -165,8 +164,15 @@ const Wallet: React.FC<Props> = ({ navigation }) => {
 
     useEffect(() => {
         if (loadedFederations.length > 0 && !federation)
-            dispatch(setSuggestedPaymentFederation())
-    }, [federation, loadedFederations.length, dispatch])
+            dispatch(setSelectedFederationId(loadedFederations[0].id))
+    }, [federation, loadedFederations, dispatch])
+
+    // If the current federation doesn't support stability pool, switch to bitcoin
+    useEffect(() => {
+        if (stabilityPoolDisabledByFederation) {
+            dispatch(setPaymentType('bitcoin'))
+        }
+    }, [dispatch, stabilityPoolDisabledByFederation])
 
     if (loadedFederations.length === 0) {
         return (
@@ -215,7 +221,7 @@ const Wallet: React.FC<Props> = ({ navigation }) => {
             <Column gap="lg" fullWidth grow>
                 <SelectedWalletHeader federation={federation} />
                 {stabilityPoolDisabledByFederation ? null : (
-                    <Switcher<Tab>
+                    <Switcher<'bitcoin' | 'stable-balance'>
                         options={[
                             {
                                 label: t('words.bitcoin'),
@@ -226,16 +232,13 @@ const Wallet: React.FC<Props> = ({ navigation }) => {
                                 value: 'stable-balance',
                             },
                         ]}
-                        onChange={setTab}
-                        selected={tab}
+                        onChange={type => dispatch(setPaymentType(type))}
+                        selected={paymentType}
                     />
                 )}
-                <WalletBalanceCard
-                    federationId={federationId}
-                    balanceType={tab}
-                />
+                <WalletBalanceCard federationId={federationId} />
                 <Row fullWidth gap="md" justify="between">
-                    {tab === 'bitcoin' ? (
+                    {paymentType === 'bitcoin' ? (
                         <>
                             <Button
                                 title={t('words.receive')}
