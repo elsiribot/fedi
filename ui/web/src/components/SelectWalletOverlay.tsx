@@ -7,7 +7,7 @@ import ChevronRightIcon from '@fedi/common/assets/svgs/chevron-right.svg'
 import { theme } from '@fedi/common/constants/theme'
 import { useBalance } from '@fedi/common/hooks/amount'
 import {
-    selectLoadedFederations,
+    selectLoadedFederationsByRecency,
     setPaymentType,
     setSelectedFederationId,
 } from '@fedi/common/redux'
@@ -29,7 +29,7 @@ export default function SelectWalletOverlay({
 }) {
     const { t } = useTranslation()
 
-    const loadedFederations = useAppSelector(selectLoadedFederations)
+    const loadedFederations = useAppSelector(selectLoadedFederationsByRecency)
 
     return (
         <Dialog
