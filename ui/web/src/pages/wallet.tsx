@@ -115,7 +115,8 @@ function WalletPage() {
                     <Icon icon={ChevronRight} color={theme.colors.darkGrey} />
                 </PaymentFederationHeader>
                 <BalanceCard>
-                    <Row justify="between" align="center">
+                    <BalanceHeader
+                        onClick={() => router.push(transactionsRoute)}>
                         <Row gap="sm" align="center">
                             <Icon
                                 icon={BitcoinCircle}
@@ -124,12 +125,8 @@ function WalletPage() {
                             <Text weight="bold">{t('words.bitcoin')}</Text>
                         </Row>
 
-                        <IconButton
-                            icon={TxnHistory}
-                            onClick={() => router.push(transactionsRoute)}
-                            size="md"
-                        />
-                    </Row>
+                        <Icon icon={TxnHistory} size="sm" />
+                    </BalanceHeader>
                     <Column center gap="xs" grow>
                         {recoveryInProgress ? (
                             <Column center gap="xs">
@@ -218,6 +215,12 @@ const BalanceCard = styled('div', {
     padding: theme.spacing.md,
     border: `1px solid ${theme.colors.extraLightGrey}`,
     borderRadius: 16,
+})
+
+const BalanceHeader = styled('button', {
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'space-between',
 })
 
 const PaymentFederationHeader = styled('button', {
