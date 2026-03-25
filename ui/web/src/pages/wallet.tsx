@@ -6,6 +6,7 @@ import ArrowDown from '@fedi/common/assets/svgs/arrow-down.svg'
 import ArrowUp from '@fedi/common/assets/svgs/arrow-up.svg'
 import BitcoinCircle from '@fedi/common/assets/svgs/bitcoin-circle.svg'
 import ChevronRight from '@fedi/common/assets/svgs/chevron-right.svg'
+import HelpIcon from '@fedi/common/assets/svgs/help.svg'
 import TxnHistory from '@fedi/common/assets/svgs/txn-history.svg'
 import { theme } from '@fedi/common/constants/theme'
 import { useBalance } from '@fedi/common/hooks/amount'
@@ -28,6 +29,7 @@ import { IconButton } from '../components/IconButton'
 import * as Layout from '../components/Layout'
 import SelectWalletOverlay from '../components/SelectWalletOverlay'
 import { Text } from '../components/Text'
+import { TourTip } from '../components/TourTip'
 import {
     federationRoute,
     onboardingRoute,
@@ -42,6 +44,7 @@ function WalletPage() {
     const { t } = useTranslation()
 
     const [open, setOpen] = useState(false)
+    const [tooltipOpen, setTooltipOpen] = useState(false)
 
     const federation = useAppSelector(selectSelectedFederation)
     const federationId = federation?.id ?? ''
@@ -112,6 +115,25 @@ function WalletPage() {
                         css={{ flexGrow: 1, textAlign: 'left' }}>
                         {federation.name}
                     </Text>
+                    <TourTip
+                        open={tooltipOpen}
+                        onOpenChange={setTooltipOpen}
+                        side="bottom"
+                        content={
+                            <Text variant="caption">
+                                {t('feature.wallet.wallet-provider-guidance')}
+                            </Text>
+                        }>
+                        <IconButton
+                            icon={HelpIcon}
+                            size="md"
+                            style={{ color: theme.colors.darkGrey }}
+                            onClick={e => {
+                                e.stopPropagation()
+                                setTooltipOpen(true)
+                            }}
+                        />
+                    </TourTip>
                     <Icon icon={ChevronRight} color={theme.colors.darkGrey} />
                 </PaymentFederationHeader>
                 <BalanceCard>
@@ -178,6 +200,7 @@ function WalletPage() {
         )
     }, [
         t,
+        tooltipOpen,
         loadedFederations,
         router,
         federation,
