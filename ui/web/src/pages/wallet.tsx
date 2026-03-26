@@ -10,11 +10,10 @@ import HelpIcon from '@fedi/common/assets/svgs/help.svg'
 import TxnHistory from '@fedi/common/assets/svgs/txn-history.svg'
 import { theme } from '@fedi/common/constants/theme'
 import { useBalance } from '@fedi/common/hooks/amount'
-import { usePopupFederationInfo } from '@fedi/common/hooks/federation'
 import { useRecoveryProgress } from '@fedi/common/hooks/recovery'
+import { useWalletButtons } from '@fedi/common/hooks/wallet'
 import {
     selectLoadedFederations,
-    selectReceivesDisabled,
     selectSelectedFederation,
     setSelectedFederationId,
 } from '@fedi/common/redux'
@@ -51,15 +50,14 @@ function WalletPage() {
     const loadedFederations = useAppSelector(selectLoadedFederations)
     const { recoveryInProgress, formattedPercent } =
         useRecoveryProgress(federationId)
-    const receivesDisabled = useAppSelector(s =>
-        selectReceivesDisabled(s, federationId),
+    const { receiveDisabled, sendDisabled, disabledMessage } = useWalletButtons(
+        t,
+        federationId,
     )
-
     const { formattedBalanceSats, formattedBalanceFiat } = useBalance(
         t,
         federationId,
     )
-    const popupInfo = usePopupFederationInfo(federation?.meta ?? {})
     const dispatch = useAppDispatch()
     const router = useRouter()
 
@@ -67,19 +65,6 @@ function WalletPage() {
         if (loadedFederations.length > 0 && !federation)
             dispatch(setSelectedFederationId(loadedFederations[0].id))
     }, [federation, loadedFederations, dispatch])
-
-    const receiveDisabled =
-        popupInfo?.ended || receivesDisabled || recoveryInProgress
-    const sendDisabled = popupInfo?.ended || recoveryInProgress
-
-    const disabledMessage = useMemo(() => {
-        if (recoveryInProgress)
-            return t('feature.recovery.recovery-in-progress-wallet')
-
-        if (receivesDisabled) return t('errors.receives-have-been-disabled')
-
-        return null
-    }, [recoveryInProgress, receivesDisabled, t])
 
     const content = useMemo(() => {
         if (loadedFederations.length === 0) {

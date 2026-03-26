@@ -18,12 +18,11 @@ import {
     mockFederationWithSPV2,
 } from '@fedi/common/tests/mock-data/federation'
 import { createMockFedimintBridge } from '@fedi/common/tests/utils/fedimint'
-import { MSats, UsdCents } from '@fedi/common/types'
 
 import i18n from '../../../localization/i18n'
 import Wallet from '../../../screens/Wallet'
 import { resetToJoinFederation } from '../../../state/navigation'
-import { LoadedFederation } from '../../../types'
+import { LoadedFederation, MSats, UsdCents } from '../../../types'
 import { mockNavigation } from '../../setup/jest.setup.mocks'
 import { renderWithBridge, renderWithProviders } from '../../utils/render'
 
