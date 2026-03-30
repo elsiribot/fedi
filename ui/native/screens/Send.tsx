@@ -31,21 +31,27 @@ import { SafeAreaContainer } from '../components/ui/SafeArea'
 import SvgImage from '../components/ui/SvgImage'
 import { Switcher } from '../components/ui/Switcher'
 import { useAppSelector } from '../state/hooks'
-import {
-    ParsedBip21,
-    ParsedBitcoinAddress,
-    ParsedBolt11,
-    ParsedFediChatUser,
-    ParsedLnurlPay,
-    ParserDataType,
-    Sats,
-} from '../types'
+import { AnyParsedData, ParserDataType, Sats } from '../types'
 import type { RootStackParamList } from '../types/navigation'
 import { useSyncCurrencyRatesOnFocus } from '../utils/hooks/currency'
 
 export type Props = NativeStackScreenProps<RootStackParamList, 'Send'>
 
 type Tab = 'lightning' | 'onchain' | 'ecash'
+
+// Expected input types for the Send screen
+const expectedSendTypes = [
+    ParserDataType.Bolt11,
+    ParserDataType.LnurlPay,
+    ParserDataType.FediChatUser,
+    ParserDataType.Bip21,
+    ParserDataType.BitcoinAddress,
+] as const
+
+type ExpectedSendType = Extract<
+    AnyParsedData,
+    { type: (typeof expectedSendTypes)[number] }
+>
 
 const Send: React.FC<Props> = ({ navigation, route }: Props) => {
     const { federationId = '' } = route.params
@@ -83,14 +89,7 @@ const Send: React.FC<Props> = ({ navigation, route }: Props) => {
     }, [maximumAmount, minimumAmount, navigation, offlineAmount, offlineNotes])
 
     const onExpectedInput = useCallback(
-        (
-            parsedData:
-                | ParsedLnurlPay
-                | ParsedFediChatUser
-                | ParsedBip21
-                | ParsedBitcoinAddress
-                | ParsedBolt11,
-        ) => {
+        (parsedData: ExpectedSendType) => {
             if (parsedData.type === ParserDataType.FediChatUser) {
                 navigation.navigate('ChatWallet', {
                     recipientId: parsedData.data.id,
@@ -123,11 +122,8 @@ const Send: React.FC<Props> = ({ navigation, route }: Props) => {
                     isInternetUnreachable,
                 )
 
-                if (
-                    parsedData.type === ParserDataType.BitcoinAddress ||
-                    parsedData.type === ParserDataType.LnurlPay
-                ) {
-                    onExpectedInput(parsedData)
+                if (expectedSendTypes.find(type => type === parsedData.type)) {
+                    onExpectedInput(parsedData as ExpectedSendType)
                 } else if (parsedData.type === ParserDataType.Unknown) {
                     toast.error(t, parsedData.data.message)
                 }
@@ -246,13 +242,7 @@ const Send: React.FC<Props> = ({ navigation, route }: Props) => {
 
         return (
             <OmniInput
-                expectedInputTypes={[
-                    ParserDataType.Bolt11,
-                    ParserDataType.LnurlPay,
-                    ParserDataType.FediChatUser,
-                    ParserDataType.Bip21,
-                    ParserDataType.BitcoinAddress,
-                ]}
+                expectedInputTypes={expectedSendTypes}
                 onExpectedInput={onExpectedInput}
                 onUnexpectedSuccess={() => null}
             />
