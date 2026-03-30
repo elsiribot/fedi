@@ -23,6 +23,7 @@ import { useAppSelector } from '../../../state/hooks'
 import { Column } from '../../ui/Flex'
 import { OrDivider } from '../../ui/OrDivider'
 import { OmniConfirmation } from './OmniConfirmation'
+import { OmniMemberSearch } from './OmniMemberSearch'
 import { OmniQrScanner } from './OmniQrScanner'
 
 export interface OmniInputAction {
@@ -57,6 +58,9 @@ export function OmniInput<
     const fedimint = useFedimint()
     const toast = useToast()
     const [showActivityIndicator, setShowActivityIndicator] = useState(false)
+    const [inputMethod] = useState<'scan' | 'search'>(
+        props.initialInputMethod || 'scan',
+    )
     const [isParsing, setIsParsing] = useState(false)
     const [unexpectedData, setUnexpectedData] = useState<AnyParsedData>()
     const [invalidData, setInvalidData] = useState<
@@ -65,8 +69,19 @@ export function OmniInput<
     const emptyString = ''
     const [omniError, setOmniError] = useState(emptyString)
     const isParsingRef = useUpdatingRef(isParsing)
-    const { customActions, onUnexpectedSuccess, pasteLabel } = props
+    const {
+        expectedInputTypes,
+        customActions,
+        onUnexpectedSuccess,
+        pasteLabel,
+    } = props
 
+    const canLnurlPay = expectedInputTypes.includes(
+        ParserDataType.LnurlPay as T,
+    )
+    const canLnurlWithdraw = expectedInputTypes.includes(
+        ParserDataType.LnurlWithdraw as T,
+    )
     const isInternetUnreachable = useAppSelector(selectIsInternetUnreachable)
     const style = styles()
 
@@ -252,11 +267,21 @@ export function OmniInput<
                     />
                 </Pressable>
             )}
-            <OmniQrScanner
-                onInput={parseInput}
-                actions={actions}
-                isProcessing={Boolean(isParsing || unexpectedData)}
-            />
+            {inputMethod === 'scan' && (
+                <OmniQrScanner
+                    onInput={parseInput}
+                    actions={actions}
+                    isProcessing={Boolean(isParsing || unexpectedData)}
+                />
+            )}
+            {inputMethod === 'search' && (
+                <OmniMemberSearch
+                    onInput={parseInput}
+                    actions={actions}
+                    canLnurlPay={canLnurlPay}
+                    canLnurlWithdraw={canLnurlWithdraw}
+                />
+            )}
             {confirmation}
         </Column>
     )
