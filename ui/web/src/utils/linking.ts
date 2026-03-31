@@ -1,3 +1,5 @@
+import { normalizeCommunityInviteCode } from '@fedi/common/utils/linking'
+
 import {
     chatRoute,
     chatRoomRoute,
@@ -20,9 +22,11 @@ export const getDeepLinkPath = (url: string): string => {
 
         switch (page) {
             case 'join': {
-                const invite = params.get('invite') || params.get('id')
-                if (!invite) return homeRoute
-                return onboardingJoinRoute(invite)
+                const inviteCode = params.get('invite') || params.get('id')
+                if (!inviteCode) return homeRoute
+                return onboardingJoinRoute(
+                    normalizeCommunityInviteCode(inviteCode),
+                )
             }
             case 'chat':
                 return chatRoute
