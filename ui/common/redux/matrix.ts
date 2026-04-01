@@ -2534,8 +2534,7 @@ export const selectMatrixRoomIsReadOnly = createSelector(
     selectMatrixRoomPowerLevels,
     selectMatrixRoomSelfPowerLevel,
     (roomPowerLevels, selfPowerLevel) => {
-        if (!roomPowerLevels) return false
-        if (!selfPowerLevel) return true
+        if (!roomPowerLevels || !selfPowerLevel) return false
         const requiredLevel = getRoomEventPowerLevel(roomPowerLevels, [
             'm.room.message',
             'unableToDecrypt',
@@ -2561,8 +2560,7 @@ export const selectMatrixRoomCanUploadMedia = createSelector(
     selectMatrixRoomSelfPowerLevel,
     (isPublic, roomPowerLevels, selfPowerLevel) => {
         if (!isPublic) return true
-        if (!roomPowerLevels) return false
-        if (!selfPowerLevel) return false
+        if (!roomPowerLevels || !selfPowerLevel) return false
 
         return isPowerLevelGreaterOrEqual(
             selfPowerLevel,
