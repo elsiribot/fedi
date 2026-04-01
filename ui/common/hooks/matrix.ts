@@ -12,6 +12,7 @@ import {
     joinMatrixRoom,
     observeMatrixRoom,
     paginateMatrixRoomTimeline,
+    refetchMatrixRoomMembers,
     rejectMatrixPaymentRequest,
     searchMatrixUsers,
     selectCanClaimPayment,
@@ -427,8 +428,17 @@ export function useObserveMatrixRoom(roomId: MatrixRoom['id']) {
 
         fedimint
             .matrixRoomListSetVisibleRooms({ roomIds: [roomId] })
+            .then(() => {
+                // Re-fetch members after subscribing to the room so the
+                // sliding-sync state store is populated. The initial
+                // observeRoomMembers call in observeRoom may run before the
+                // subscription takes effect, returning an incomplete member
+                // list that causes selectMatrixRoomIsReadOnly to incorrectly
+                // return true (disabling polls, message input, etc.).
+                dispatch(refetchMatrixRoomMembers({ fedimint, roomId }))
+            })
             .catch(() => null)
-    }, [fedimint, matrixStarted, room?.roomState, roomId])
+    }, [fedimint, matrixStarted, room?.roomState, roomId, dispatch])
 
     useEffect(() => {
         if (!matrixStarted || !latestEventId) return
