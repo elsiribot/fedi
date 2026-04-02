@@ -2,6 +2,7 @@ import { Theme, Tooltip, useTheme } from '@rneui/themed'
 import { useState } from 'react'
 import { ScaledSize, StyleSheet, useWindowDimensions, View } from 'react-native'
 
+import { PressableProps } from './Pressable'
 import { PressableIcon } from './PressableIcon'
 
 /**
@@ -11,9 +12,12 @@ import { PressableIcon } from './PressableIcon'
  */
 export default function HelpTooltip({
     children,
+    svgProps,
+    ...rest
 }: {
+    svgProps?: React.ComponentProps<typeof PressableIcon>['svgProps']
     children: React.ReactNode
-}) {
+} & PressableProps) {
     const [open, setOpen] = useState(false)
     const [tooltipWidth, setTooltipWidth] = useState(0)
     const [tooltipHeight, setTooltipHeight] = useState(0)
@@ -42,10 +46,8 @@ export default function HelpTooltip({
                         e.stopPropagation()
                         setOpen(true)
                     }}
-                    svgProps={{
-                        color: theme.colors.night,
-                        size: 20,
-                    }}
+                    svgProps={svgProps}
+                    {...rest}
                 />
             </Tooltip>
             <View

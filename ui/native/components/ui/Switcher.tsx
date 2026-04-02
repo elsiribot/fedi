@@ -16,7 +16,6 @@ interface Props<T extends string> {
     options: Option<T>[]
     selected: T
     onChange: (value: T) => void
-    disabledMessage?: string
 }
 
 export function Switcher<T extends string>({
@@ -55,7 +54,11 @@ export function Switcher<T extends string>({
                             {option.label}
                         </Text>
                         {option.disabledMessage && option.disabled && (
-                            <HelpTooltip>
+                            <HelpTooltip
+                                svgProps={{
+                                    color: theme.colors.grey,
+                                    size: 20,
+                                }}>
                                 {typeof option.disabledMessage === 'string' ? (
                                     <Text caption>
                                         {option.disabledMessage}
