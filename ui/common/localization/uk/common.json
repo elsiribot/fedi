@@ -1410,6 +1410,13 @@
             "available-balance-amount": "Доступний баланс: {{amount}}",
             "join-federation": "Приєднайтеся до федерації, щоб активувати свій гаманець",
             "network-notice": "Ця федерація використовує сатоші мережі {{network}}",
+            "setup-auto-select": "Автовибір",
+            "setup-manual": "Вручну",
+            "setup-or": "або",
+            "setup-title": "Налаштуйте свій гаманець",
+            "setup-tooltip-after-link": " — група, яка забезпечує безпеку ваших коштів.",
+            "setup-tooltip-before-link": "Вашим гаманцем керує ",
+            "setup-tooltip-link": "Сервіс Гаманця",
             "show-fiat-txn-amounts": "Показати суми транзакцій у фіаті",
             "show-fiat-txn-amounts-info": "Суми транзакцій будуть відображатися у вибраній фіатній валюті",
             "wallet-provider-guidance": "Це постачальник гаманців, який захищає ваш гаманець та зберігає ваші кошти в безпеці."

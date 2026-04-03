@@ -1411,6 +1411,13 @@
             "available-balance-amount": "Saldo disponible: {{amount}}",
             "join-federation": "Únete a una federación para activar tu billetera",
             "network-notice": "Esta federación utiliza {{network}} SATS",
+            "setup-auto-select": "Selección Automática",
+            "setup-manual": "Selección Manual",
+            "setup-or": "o",
+            "setup-title": "Configura tu billetera",
+            "setup-tooltip-after-link": ". — que mantiene tus fondos seguros.",
+            "setup-tooltip-before-link": "Tu billetera está gestionada por un ",
+            "setup-tooltip-link": "Servicio de Billetera",
             "show-fiat-txn-amounts": "Mostrar montos de transacciones en dinero fiat",
             "show-fiat-txn-amounts-info": "Los montos de las transacciones se mostrarán en la moneda fiat seleccionada",
             "wallet-provider-guidance": "Este es el proveedor de billetera, que protege y mantiene tu billetera y tus fondos seguros."

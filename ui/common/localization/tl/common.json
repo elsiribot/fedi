@@ -1411,6 +1411,12 @@
             "available-balance-amount": "Magagamit na balanse: {{amount}}",
             "join-federation": "Sumali sa isang federation para i-activate ang iyong wallet",
             "network-notice": "Ang pederasyon na ito ay gumagamit ng {{network}} SATS",
+            "setup-auto-select": "Auto-Piliin",
+            "setup-manual": "Manual",
+            "setup-or": "o",
+            "setup-title": "I-set up ang iyong wallet",
+            "setup-tooltip-after-link": " — isang grupong nag-iingat sa iyong pondo.",
+            "setup-tooltip-before-link": "Ang iyong wallet ay pinapatakbo ng isang ",
             "show-fiat-txn-amounts": "Ipakita ang mga halaga ng Fiat Transaction",
             "show-fiat-txn-amounts-info": "Ang mga halaga ng transaksyon ay ipapakita sa napiling fiat currency",
             "wallet-provider-guidance": "Ito ang tagapagbigay ng wallet na nagseseguro sa iyong wallet at nagpapanatiling ligtas ang iyong mga pondo."

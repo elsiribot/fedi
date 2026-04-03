@@ -1411,6 +1411,13 @@
             "available-balance-amount": "Saldo yang tersedia: {{amount}}",
             "join-federation": "Bergabunglah dengan federasi untuk mengaktifkan dompetmu",
             "network-notice": "Federasi ini menggunakan {{network}} SATS",
+            "setup-auto-select": "Pilih Otomatis",
+            "setup-manual": "Manual",
+            "setup-or": "atau",
+            "setup-title": "Siapkan dompet Anda",
+            "setup-tooltip-after-link": " — kelompok yang menjaga keamanan dana Anda.",
+            "setup-tooltip-before-link": "Dompet Anda dikelola oleh ",
+            "setup-tooltip-link": "Layanan Dompet",
             "show-fiat-txn-amounts": "Tampilkan Jumlah Transaksi Fiat",
             "show-fiat-txn-amounts-info": "Jumlah transaksi akan ditampilkan dalam mata uang fiat yang dipilih",
             "wallet-provider-guidance": "Ini adalah penyedia dompet yang mengamankan dompet Anda dan menjaga dana Anda tetap aman."

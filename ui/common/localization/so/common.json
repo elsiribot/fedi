@@ -1398,6 +1398,13 @@
             "available-balance-amount": "Hadhaaga la heli karo: {{amount}}",
             "join-federation": "Ku biir federaal si aad u dhaqaajiso boorsadaada",
             "network-notice": "Xiriirkani waxa uu isticmaalaa {{network}} SATS",
+            "setup-auto-select": "Doorasho toos ah",
+            "setup-manual": "Gacanta",
+            "setup-or": "ama",
+            "setup-title": "Dejiso jeebkaaga",
+            "setup-tooltip-after-link": " — koox ilaalisa lacagahaaga",
+            "setup-tooltip-before-link": "Jeebkaaga waxaa maamula ",
+            "setup-tooltip-link": "Adeegga Jeebka",
             "show-fiat-txn-amounts": "Muuji tirada wax kala iibsiga fiat",
             "show-fiat-txn-amounts-info": "Qadarka wax kala iibsiga waxa lagu soo bandhigi doonaa lacagta fiat ee la doortay",
             "wallet-provider-guidance": "Kani waa bixiyaha boorsada jeebka oo hubinaya boorsadaada oo ilaalinaya lacagtaada."

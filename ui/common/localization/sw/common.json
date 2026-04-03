@@ -1411,6 +1411,13 @@
             "available-balance-amount": "Salio linalopatikana: {{amount}}",
             "join-federation": "Jiunge na shirikisho ili kuwezesha pochi lako",
             "network-notice": "Shirikisho hili linatumia {{network}} SATS",
+            "setup-auto-select": "Chagua Kiotomatiki",
+            "setup-manual": "Mwongozo",
+            "setup-or": "au",
+            "setup-title": "Weka mipangilio ya pochi lako",
+            "setup-tooltip-after-link": ". — kikundi kinachohifadhi fedha zako salama.",
+            "setup-tooltip-before-link": "Pochi lako linaendeshwa na ",
+            "setup-tooltip-link": "Huduma ya Pochi",
             "show-fiat-txn-amounts": "Onyesha Kiasi cha Muamala wa Fiat",
             "show-fiat-txn-amounts-info": "Kiasi cha malipo kitaonyeshwa katika sarafu iliyochaguliwa ya fiat",
             "wallet-provider-guidance": "Huyu ndiye mtoa huduma wa pochi anayelinda pochi lako na kuweka fedha zako salama."

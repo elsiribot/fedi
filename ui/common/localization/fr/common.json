@@ -1410,6 +1410,13 @@
             "available-balance-amount": "Solde disponible : {{amount}}",
             "join-federation": "Rejoignez une fédération pour activer votre portefeuille",
             "network-notice": "Cette fédération utilise {{network}} SATS",
+            "setup-auto-select": "Sélection auto",
+            "setup-manual": "Manuel",
+            "setup-or": "ou",
+            "setup-title": "Configurez votre portefeuille",
+            "setup-tooltip-after-link": " — un groupe qui protège vos fonds.",
+            "setup-tooltip-before-link": "Votre portefeuille est géré par un ",
+            "setup-tooltip-link": "Service de Portefeuille",
             "show-fiat-txn-amounts": "Afficher les montants des transactions Fiat",
             "show-fiat-txn-amounts-info": "Les montants des transactions seront affichés dans la devise fiduciaire sélectionnée",
             "wallet-provider-guidance": "Il s'agit du fournisseur de portefeuille qui sécurise votre portefeuille et protège vos fonds."

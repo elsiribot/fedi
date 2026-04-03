@@ -1397,6 +1397,13 @@
             "available-balance-amount": "Amafaranga asigaye: {{amount}}",
             "join-federation": "Injira muri federasiyo kugirango ukoreshe ikotomoni yawe",
             "network-notice": "Iri shyirahamwe rikoresha {{network}} SATS",
+            "setup-auto-select": "Guhitamo mu buryo bwikora",
+            "setup-manual": "Guhitamo ubwawe",
+            "setup-or": "cyangwa",
+            "setup-title": "Tegura agasanduku kawe",
+            "setup-tooltip-after-link": " — itsinda ririnda umutekano w'amafaranga yawe.",
+            "setup-tooltip-before-link": "Agasanduku kawe kakoreshwa na ",
+            "setup-tooltip-link": "Serivisi y'Agasanduku",
             "show-fiat-txn-amounts": "Erekana amafaranga ya Fiat transaction",
             "show-fiat-txn-amounts-info": "Amafaranga yo gucuruza azerekanwa mumafaranga yatoranijwe",
             "wallet-provider-guidance": "Uyu ni we utanga serivisi zo kubika amafaranga yawe mu buryo butekanye kandi akarinda amafaranga yawe."

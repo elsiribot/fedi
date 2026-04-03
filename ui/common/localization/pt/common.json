@@ -1411,6 +1411,13 @@
             "available-balance-amount": "Saldo disponível: {{amount}}",
             "join-federation": "Junte-se a uma federação para ativar sua carteira",
             "network-notice": "Esta federação utiliza {{network}} SATS",
+            "setup-auto-select": "Seleção automática",
+            "setup-manual": "Manual",
+            "setup-or": "ou",
+            "setup-title": "Configure sua carteira",
+            "setup-tooltip-after-link": ". — um grupo que mantém seus fundos seguros",
+            "setup-tooltip-before-link": "Sua carteira é gerenciada por um ",
+            "setup-tooltip-link": "Serviço de carteira",
             "show-fiat-txn-amounts": "Mostrar montantes de transações Fiat",
             "show-fiat-txn-amounts-info": "Os montantes das transações serão apresentados na moeda fiduciária selecionada",
             "wallet-provider-guidance": "Este é o provedor da carteira que protege sua carteira e mantém seus fundos em segurança."
