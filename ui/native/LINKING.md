@@ -11,147 +11,201 @@ Onboarding must be completed first for deeplinks to trigger actions and behave a
 
 ---
 
+## User Flow Diagram
+
+The diagram below traces every path a user can take when tapping a Fedi deep link — from initial tap through app resolution, routing, and final destination.
+
+```mermaid
+flowchart TD
+    START([User taps a Fedi link]) --> FORMAT{Link format?}
+
+    FORMAT -->|"Universal Link<br/>(app.fedi.xyz/link?...)"| HAS_APP{App installed?}
+    FORMAT -->|"fedi:// protocol"| HAS_APP_2{App installed?}
+
+    HAS_APP_2 -->|No| DEAD["Link fails<br/>(OS cannot handle scheme)"]
+    HAS_APP_2 -->|Yes| ONBOARDED
+
+    %% ─── App NOT installed ───────────────────────
+    HAS_APP -->|No| LANDING["<b>Web Landing Page</b>"]
+    LANDING --> WEB_CHOICE{User choice}
+    WEB_CHOICE -->|Install the app| STORE[App Store / Play Store]
+    WEB_CHOICE -->|Continue in browser| WEBAPP(["<b>Web App</b><br/>(handles link in browser)"])
+
+    STORE --> OPENS[User installs and opens app]
+    OPENS --> FRESH_ONBOARD["<b>Onboarding</b> — create wallet"]
+    FRESH_ONBOARD --> DONE_HOME(["<b>Home Screen</b>"])
+
+    %% ─── App installed ──────────────────────────
+    HAS_APP -->|Yes| ONBOARDED
+
+    ONBOARDED{Onboarding<br/>complete?}
+    ONBOARDED -->|No| STASH[Link saved to storage]
+    STASH --> FINISH_OB[User completes onboarding]
+    FINISH_OB --> REPLAY[Saved link replayed]
+    REPLAY --> ROUTE
+
+    ONBOARDED -->|Yes| ROUTE
+
+    %% ─── Routing ─────────────────────────────────
+    ROUTE{"Screen specified<br/>in link?"}
+
+    ROUTE -->|"home / chat /<br/>wallet / mods"| END_TAB(["<b>Tab Screen</b>"])
+    ROUTE -->|room| END_ROOM(["<b>Chat Room</b>"])
+    ROUTE -->|user| END_DM(["<b>Direct Message</b>"])
+    ROUTE -->|browser| END_BROWSER(["<b>FediMod Browser</b>"])
+    ROUTE -->|share-logs| END_LOGS(["<b>Share Logs</b>"])
+    ROUTE -->|ecash| EC_SCREEN
+    ROUTE -->|join| J_SCREEN
+    ROUTE -->|join-then-ecash| JE_SCREEN
+    ROUTE -->|join-then-browse| JB_SCREEN
+
+    %% ─── Claim Ecash ────────────────────────────
+    subgraph ecash_flow ["Claim Ecash"]
+        EC_SCREEN["<b>Claim Ecash Screen</b>"]
+        EC_SCREEN --> EC_VALID{Token valid?}
+        EC_VALID -->|No| EC_ERROR["<b>Invalid Token Error</b>"]
+        EC_ERROR -->|Cancel| EC_HOME_1(["<b>Home</b>"])
+
+        EC_VALID -->|Yes| EC_MEMBER{Already in<br/>issuing federation?}
+        EC_MEMBER -->|Yes| EC_EXISTING["Shows amount<br/><i>Adding to existing wallet</i>"]
+        EC_MEMBER -->|No| EC_NEW["Shows amount<br/><i>Adding to new wallet</i><br/>+ Terms of Service"]
+
+        EC_EXISTING --> EC_ACT{User action}
+        EC_NEW --> EC_ACT
+        EC_ACT -->|Claim| EC_CLAIMED["Ecash received<br/>(auto-joins federation<br/>if not already a member)"]
+        EC_ACT -->|Maybe Later| EC_HOME_2(["<b>Home</b>"])
+        EC_CLAIMED --> EC_SUCCESS["<b>Ecash Claimed!</b>"]
+        EC_SUCCESS -->|Go to Wallet| EC_WALLET(["<b>Wallet</b>"])
+        EC_SUCCESS -->|Maybe Later| EC_HOME_3(["<b>Home</b>"])
+    end
+
+    %% ─── Join Federation ─────────────────────────
+    subgraph join_flow ["Join Federation"]
+        J_SCREEN["<b>Join Federation Screen</b>"]
+        J_SCREEN --> J_MEMBER{Already<br/>a member?}
+        J_MEMBER -->|Yes| J_TOAST["<i>Already joined</i> toast"]
+        J_TOAST -->|Tap back| J_PREV(["Previous screen"])
+
+        J_MEMBER -->|No| J_PREVIEW["<b>Federation / Community Preview</b><br/>name, logo, details"]
+        J_PREVIEW --> J_ACT{User action}
+        J_ACT -->|Confirm join| J_JOINED[Joined]
+        J_ACT -->|Reject| J_REJECT(["Previous screen"])
+
+        J_JOINED --> J_NAME{Display name<br/>already set?}
+        J_NAME -->|Yes| J_DEST(["<b>Wallet</b> (federation)<br/>or <b>Home</b> (community)"])
+        J_NAME -->|No| J_DISPLAY["<b>Enter Display Name</b>"]
+        J_DISPLAY --> J_DEST
+    end
+
+    %% ─── Join + Claim Ecash ──────────────────────
+    subgraph join_ecash_flow ["Join + Claim Ecash"]
+        JE_SCREEN["<b>Join Federation Screen</b><br/>(ecash token queued)"]
+        JE_SCREEN --> JE_MEMBER{Already<br/>a member?}
+
+        JE_MEMBER -->|"Yes — skip join"| JE_EC_SCREEN
+        JE_MEMBER -->|No| JE_PREVIEW["<b>Federation Preview</b>"]
+        JE_PREVIEW --> JE_ACT{User action}
+        JE_ACT -->|Confirm join| JE_JOINED[Joined]
+        JE_ACT -->|Reject| JE_BACK(["<b>Home</b>"])
+
+        JE_JOINED --> JE_EC_SCREEN
+        JE_EC_SCREEN["<b>Claim Ecash Screen</b><br/>(token pre-loaded)"]
+        JE_EC_SCREEN --> JE_CLAIM{User action}
+        JE_CLAIM -->|Claim| JE_OK["<b>Ecash Claimed!</b>"]
+        JE_CLAIM -->|Maybe Later| JE_HOME(["<b>Home</b>"])
+        JE_OK -->|Go to Wallet| JE_WALLET(["<b>Wallet</b>"])
+    end
+
+    %% ─── Join + Browse ───────────────────────────
+    subgraph join_browse_flow ["Join + Browse"]
+        JB_SCREEN["<b>Join Federation Screen</b><br/>(URL queued)"]
+        JB_SCREEN --> JB_MEMBER{Already<br/>a member?}
+
+        JB_MEMBER -->|"Yes — skip join"| JB_BROWSER
+        JB_MEMBER -->|No| JB_PREVIEW["<b>Federation Preview</b>"]
+        JB_PREVIEW --> JB_ACT{User action}
+        JB_ACT -->|Confirm join| JB_JOINED[Joined]
+        JB_ACT -->|Reject| JB_BACK(["<b>Home</b>"])
+
+        JB_JOINED --> JB_BROWSER
+        JB_BROWSER(["<b>FediMod Browser</b><br/>(URL pre-loaded)"])
+    end
+```
+
+---
+
 ## How It Works
 
-### Entry Point
+### Link Processing
 
-In `Router.tsx`, the `NavigationContainer` is given a linking configuration once onboarding is complete:
-
-```tsx
-linking={getLinking(onboardingCompleted, dispatch)}
-```
-
-When navigation is ready, any links that arrived before the navigator was mounted are flushed:
-
-```tsx
-onReady={() => {
-    flushPendingLinks(navigationRef)
-}}
-```
-
-`Linking.openURL` is also patched at module load time so that internal navigation calls made anywhere in the app go through the same routing logic rather than opening a browser.
-
-### Link Processing Pipeline
+All deep links pass through the same pipeline regardless of how they arrive (tap, cold start, notification, or in-app call):
 
 ```
 Incoming URL
      │
-     ├─ isDeepLink()?
-     │       │ Yes → normalizeDeepLink()  →  fedi://screen?params
-     │       │ No  → pass through as-is
-     │
+     ├─ isDeepLink()?  →  Yes → normalizeDeepLink()  →  fedi://screen?params
+     │                     No  → pass through as-is
      ▼
-getLinking().subscribe() / getInitialURL
+getLinking().subscribe()
      │
-     ├─ Onboarding incomplete? → dispatch(setRedirectTo(url))
-     │
+     ├─ Onboarding incomplete?  →  save to Redux, replay after onboarding
      ▼
-listener(fediUri)          ← React Navigation receives the URL
-     │
-     ▼
-getStateFromPath()         ← Custom override of React Navigation default
-     │
-     ▼
-getInternalLinkRoute()     ← Strips prefix, looks up screen in screenMap
-     │
-     ▼
-screenMap[screen](params)  ← Returns { screen, params } or { screen, parent, params }
-     │
-     ▼
-NavigationState            ← Passed back to React Navigation to perform the navigation
+getInternalLinkRoute()  →  look up screen in screenMap  →  NavigationState
 ```
+
+**How links arrive:**
+
+-   **Cold start** — `Linking.getInitialURL()` and `notifee.getInitialNotification()` capture the URL on launch. If the navigator isn't mounted yet, the link is queued in `pendingLinks` and flushed in `onReady`.
+-   **Foreground** — `Linking.addEventListener` fires with the URL.
+-   **Notification** — Notifee's `onForegroundEvent` extracts the `link` field from the notification data payload.
+-   **In-app** — `patchLinkingOpenURL` (called once at module load) intercepts all `Linking.openURL` calls so deep links route internally instead of opening a browser.
+
+### Deep Link → Internal Link Conversion
+
+`normalizeDeepLink()` converts a universal link to the internal format. The `screen` parameter becomes the path and all other parameters are preserved:
+
+```
+https://app.fedi.xyz/link?screen=room&roomId=abc123  →  fedi://room?roomId=abc123
+```
+
+Both `?` and `#` delimiters are supported (e.g. `link#screen=room&roomId=abc123`).
 
 ---
 
-## Flows
+## Key Files
 
-### 1. Cold Start (App Opens From a Link)
-
-The app is not running and the user taps a link.
-
-`subscribe()` calls `Linking.getInitialURL()` and `notifee.getInitialNotification()` on startup. If a URL is found, it is passed through `handleUrl`. If the navigation container is not yet mounted, the link is pushed to `pendingLinks` and processed once `onReady` fires via `flushPendingLinks`.
-
-### 2. Foreground (App Already Open)
-
-The user taps a link while the app is running.
-
-`Linking.addEventListener` fires with the URL. `handleUrl` normalises it if it is a deep link and passes the resulting `fedi://` URI to the React Navigation listener.
-
-### 3. Notification Press
-
-A push notification containing a `link` field in its data payload is pressed.
-
-Notifee's `onForegroundEvent` catches `EventType.PRESS`. Zendesk notifications are routed to `launchZendeskSupport`. All other notifications extract the `link` field and pass it through `handleUrl`.
-
-### 4. Deep Link → Internal Link Conversion
-
-A deep link arrives:
-
-```
-https://app.fedi.xyz/link?screen=room&roomId=abc123
-```
-
-`normalizeDeepLink()` converts this to:
-
-```
-fedi://room?roomId=abc123
-```
-
-The `screen` parameter is used as the path, and all remaining parameters are preserved as a query string. Hash-based params (`#screen=...`) are also supported.
-
-### 5. In-App Navigation via `Linking.openURL`
-
-`patchLinkingOpenURL` replaces the default `Linking.openURL` implementation at startup. When any part of the app calls `Linking.openURL` with a deep link URL, it is intercepted, normalised, and routed internally via `navigateToUri` rather than opening a browser. If the navigator is not yet ready, the link is queued in `pendingLinks`.
-
----
-
-## Function Reference
-
-### `Router.tsx`
-
-The entry point for deep linking. Passes `getLinking` to the `NavigationContainer`, which activates the linking configuration once onboarding is complete. On navigation ready, calls `flushPendingLinks` to process any links that arrived before the navigator mounted. `patchLinkingOpenURL` is also called at module load time to intercept `Linking.openURL` calls app-wide, and `useHandleDeferredLink` handles any links that were saved to Redux during onboarding.
-
-### `utils/linking.ts` (native)
-
-| Function                                    | Description                                                                                                                                                                                                                   |
-| ------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `getLinking(onboardingCompleted, dispatch)` | Returns the full `LinkingOptions` config for React Navigation, including `prefixes`, `config`, `getStateFromPath`, and `subscribe`.                                                                                           |
-| `getInternalLinkRoute(path, options)`       | Core routing function. Strips the `fedi://` prefix, looks up the screen in `screenMap`, and returns a React Navigation `NavigationState` object. Falls back to the default React Navigation path parser if no match is found. |
-| `screenMap`                                 | A map of screen path names (e.g. `"room"`, `"chat"`) to functions that return a `ScreenResult` — either a root screen or a tab screen with a `parent: 'TabsNavigator'` property.                                              |
-| `navigateToUri(navigationRef, uri)`         | Resolves a `fedi://` URI to a route and calls `navigationRef.reset()` to navigate.                                                                                                                                            |
-| `flushPendingLinks(navigationRef)`          | Drains the `pendingLinks` queue and navigates to each in order.                                                                                                                                                               |
-| `patchLinkingOpenURL(navigationRef)`        | Monkey-patches `Linking.openURL` to intercept deep links and route them internally.                                                                                                                                           |
-
-### `common/utils/linking.ts`
-
-| Function                  | Description                                                                                                                                                                              |
-| ------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `isDeepLink(url)`         | Returns `true` if the URL is a valid deep link — i.e. it matches a known Fedi hostname, has a `/link` pathname, and includes a `screen` parameter. Supports both `?` and `#` delimiters. |
-| `normalizeDeepLink(url)`  | Converts a deep link to a `{ fediUri, screen, params }` object. Extracts the `screen` param as the path and passes remaining params as the query string of the resulting `fedi://` URI.  |
-| `isFediDeeplinkType(url)` | Returns `true` if a URL is a FediMod-type link (Telegram, WhatsApp, or a known Fedi host). Used to determine whether a URL should be opened externally or handled in-app.                |
+| File | Role |
+| ---- | ---- |
+| `Router.tsx` | Wires `getLinking` into `NavigationContainer`, flushes pending links on ready, patches `Linking.openURL` |
+| `utils/linking.ts` (native) | `getLinking`, `getInternalLinkRoute`, `screenMap`, `navigateToUri`, `flushPendingLinks`, `patchLinkingOpenURL` |
+| `common/utils/linking.ts` | `isDeepLink`, `normalizeDeepLink`, `isFediDeeplinkType`, `stripFediPrefix`, `normalizeCommunityInviteCode` |
 
 ---
 
 ## Supported Routes
 
-| Screen            | Internal Link                             | Deep Link                                                           |
-| ----------------- | ----------------------------------------- | ------------------------------------------------------------------- |
-| Home tab          | `fedi://home`                             | `https://app.fedi.xyz/link?screen=home`                             |
-| Chat tab          | `fedi://chat`                             | `https://app.fedi.xyz/link?screen=chat`                             |
-| Mods tab          | `fedi://mods`                             | `https://app.fedi.xyz/link?screen=mods`                             |
-| Federations tab   | `fedi://federations`                      | `https://app.fedi.xyz/link?screen=federations`                      |
-| Chat room         | `fedi://room?roomId=<id>`                 | `https://app.fedi.xyz/link?screen=room&roomId=<id>`                 |
-| User conversation | `fedi://user?userId=<id>`                 | `https://app.fedi.xyz/link?screen=user&userId=<id>`                 |
-| Fedi Mod Browser  | `fedi://browser?url=<url>`                | `https://app.fedi.xyz/link?screen=browser&url=<url>`                |
-| Claim Ecash       | `fedi://ecash?id=<id>`                    | `https://app.fedi.xyz/link?screen=ecash&id=<id>`                    |
-| Join Federation   | `fedi://join?invite=<invite>`             | `https://app.fedi.xyz/link?screen=join&invite=<invite>`             |
-| Share Logs        | `fedi://share-logs?ticketNumber=<number>` | `https://app.fedi.xyz/link?screen=share-logs&ticketNumber=<number>` |
+Both `?` and `#` delimiters work in universal links. Community invite codes with a `fedi:` prefix are normalised automatically.
+
+| Screen | Internal Link | Deep Link |
+| ------ | ------------- | --------- |
+| Community tab | `fedi://home` | `https://app.fedi.xyz/link?screen=home` |
+| Chat tab | `fedi://chat` | `https://app.fedi.xyz/link?screen=chat` |
+| Mini Apps tab | `fedi://mods` | `https://app.fedi.xyz/link?screen=mods` |
+| Wallet tab | `fedi://wallet` | `https://app.fedi.xyz/link?screen=wallet` |
+| Federations tab (legacy) | `fedi://federations` | `https://app.fedi.xyz/link?screen=federations` |
+| Chat room | `fedi://room?roomId=<id>` | `https://app.fedi.xyz/link?screen=room&roomId=<id>` |
+| Direct message | `fedi://user?userId=<id>` | `https://app.fedi.xyz/link?screen=user&userId=<id>` |
+| Mini Apps browser | `fedi://browser?url=<url>` | `https://app.fedi.xyz/link?screen=browser&url=<url>` |
+| Claim Ecash | `fedi://ecash?id=<id>` | `https://app.fedi.xyz/link?screen=ecash&id=<id>` |
+| Join Federation | `fedi://join?invite=<invite>` | `https://app.fedi.xyz/link?screen=join&invite=<invite>` |
+| Join + Ecash | `fedi://join-then-ecash?invite=<invite>&ecash=<token>` | `https://app.fedi.xyz/link?screen=join-then-ecash&invite=<invite>&ecash=<token>` |
+| Join + Browse | `fedi://join-then-browse?invite=<invite>&url=<url>` | `https://app.fedi.xyz/link?screen=join-then-browse&invite=<invite>&url=<url>` |
+| Share Logs | `fedi://share-logs?ticketNumber=<number>` | `https://app.fedi.xyz/link?screen=share-logs&ticketNumber=<number>` |
 
 ---
 
 ## Notes
 
--   Links that arrive before onboarding is complete are saved to Redux via `setRedirectTo` and processed by `useHandleDeferredLink` once onboarding finishes.
+-   Links that arrive before onboarding is complete are saved to Redux via `setRedirectTo` and replayed after onboarding finishes.
 -   Links that arrive before the navigator is ready are held in the module-level `pendingLinks` array and flushed in `onReady`.
--   Both `?` query strings and `#` hash fragments are supported in deep links, for compatibility with different link-sharing contexts.
 -   `patchLinkingOpenURL` is called once at module load — before any component mounts — so the patch is in place for the entire app lifecycle.
