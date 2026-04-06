@@ -705,7 +705,7 @@ Contains code shared between the PWA and React Native apps.
 
 ### Deep Linking (Common)
 
-Deep linking is explained in detail in the [Deep Linking Guide](./LINKING.md).
+Deep linking is explained in detail in the [Deep Linking Guide](../docs/LINKING.md).
 
 ### Zendesk (Common)
 

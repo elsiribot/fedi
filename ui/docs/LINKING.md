@@ -184,7 +184,7 @@ Both `?` and `#` delimiters are supported (e.g. `link#screen=room&roomId=abc123`
 
 ## Supported Routes
 
-The canonical list of supported screens lives in the `screenMap` object in [`utils/linking.ts`](./utils/linking.ts). Each key is a screen name (e.g. `"room"`, `"join-then-ecash"`) and its function returns the navigation target and any parameter mappings.
+The canonical list of supported screens lives in the `screenMap` object in [`utils/linking.ts`](../native/utils/linking.ts). Each key is a screen name (e.g. `"room"`, `"join-then-ecash"`) and its function returns the navigation target and any parameter mappings.
 
 Deep links follow this format:
 
