@@ -154,6 +154,7 @@ export const SelectPublicChatsOverlay: React.FC<Props> = ({
                 {publicChats.map(chat => (
                     <Pressable
                         key={`community-chat-${chat.id}`}
+                        testID={`community-chat-${chat.id}`}
                         onPress={() => toggleSelectedChat(chat.id)}>
                         <Row align="center" gap="md">
                             <ChatAvatar size={AvatarSize.sm} room={chat} />
