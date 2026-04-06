@@ -42,12 +42,15 @@ use matrix_sdk::ruma::events::room::encryption::RoomEncryptionEventContent;
 use matrix_sdk::ruma::events::room::history_visibility::{
     HistoryVisibility, RoomHistoryVisibilityEventContent,
 };
+use matrix_sdk::ruma::events::room::join_rules::{JoinRule, RoomJoinRulesEventContent};
 use matrix_sdk::ruma::events::room::message::RoomMessageEventContentWithoutRelation;
 use matrix_sdk::ruma::events::room::power_levels::RoomPowerLevelsEventContent;
 use matrix_sdk::ruma::events::{
     AnyMessageLikeEventContent, AnySyncTimelineEvent, EmptyStateKey, InitialStateEvent,
 };
-use matrix_sdk::ruma::{EventId, OwnedMxcUri, OwnedRoomId, RoomId, UInt, UserId, assign};
+use matrix_sdk::ruma::{
+    EventId, OwnedMxcUri, OwnedRoomId, OwnedRoomOrAliasId, RoomId, UInt, UserId, assign,
+};
 use matrix_sdk::{Client, RoomMemberships, SessionChange};
 use matrix_sdk_ui::eyeball_im::VectorDiff;
 use matrix_sdk_ui::sync_service::{self, SyncService};
@@ -676,6 +679,11 @@ impl Matrix {
                     RoomHistoryVisibilityEventContent::new(HistoryVisibility::Invited),
                 )
                 .to_raw_any(),
+                InitialStateEvent::new(
+                    EmptyStateKey,
+                    RoomJoinRulesEventContent::new(JoinRule::Knock),
+                )
+                .to_raw_any(),
             ];
         }
         let room = self.client.create_room(request).await?;
@@ -719,6 +727,13 @@ impl Matrix {
         Ok(())
     }
 
+    /// Knock on a room to request permission to join.
+    pub async fn room_knock(&self, room_id: &RoomId, reason: Option<String>) -> Result<()> {
+        let room_id_or_alias = OwnedRoomOrAliasId::from(room_id.to_owned());
+        self.client.knock(room_id_or_alias, reason, vec![]).await?;
+        Ok(())
+    }
+
     pub async fn subscribe_room_info(
         &self,
         room_id: &RoomId,
@@ -753,6 +768,22 @@ impl Matrix {
         new: RoomPowerLevelsEventContent,
     ) -> Result<()> {
         self.room(room_id).await?.send_state_event(new).await?;
+        Ok(())
+    }
+
+    /// Set whether a room allows knocking (request-to-join).
+    /// When enabled, sets JoinRule::Knock; when disabled, sets
+    /// JoinRule::Invite.
+    pub async fn room_set_allow_knocking(&self, room_id: &RoomId, allow: bool) -> Result<()> {
+        let join_rule = if allow {
+            JoinRule::Knock
+        } else {
+            JoinRule::Invite
+        };
+        self.room(room_id)
+            .await?
+            .send_state_event(RoomJoinRulesEventContent::new(join_rule))
+            .await?;
         Ok(())
     }
 

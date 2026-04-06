@@ -1020,6 +1020,10 @@ export class FedimintBridge {
         return this.rpcTyped('matrixRoomLeave', args)
     }
 
+    async matrixRoomKnock(args: bindings.RpcPayload<'matrixRoomKnock'>) {
+        return this.rpcTyped('matrixRoomKnock', args)
+    }
+
     async matrixIgnoreUser(args: bindings.RpcPayload<'matrixIgnoreUser'>) {
         return this.rpcTyped('matrixIgnoreUser', args)
     }
@@ -1084,6 +1088,12 @@ export class FedimintBridge {
         args: bindings.RpcPayload<'matrixRoomSetPowerLevels'>,
     ) {
         return this.rpcTyped('matrixRoomSetPowerLevels', args)
+    }
+
+    async matrixRoomSetAllowKnocking(
+        args: bindings.RpcPayload<'matrixRoomSetAllowKnocking'>,
+    ) {
+        return this.rpcTyped('matrixRoomSetAllowKnocking', args)
     }
 
     async matrixUserDirectorySearch(
