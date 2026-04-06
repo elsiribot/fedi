@@ -184,28 +184,19 @@ Both `?` and `#` delimiters are supported (e.g. `link#screen=room&roomId=abc123`
 
 ## Supported Routes
 
-Both `?` and `#` delimiters work in universal links. Community invite codes with a `fedi:` prefix are normalised automatically.
+The canonical list of supported screens lives in the `screenMap` object in [`utils/linking.ts`](./utils/linking.ts). Each key is a screen name (e.g. `"room"`, `"join-then-ecash"`) and its function returns the navigation target and any parameter mappings.
 
-| Screen | Internal Link | Deep Link |
-| ------ | ------------- | --------- |
-| Community tab | `fedi://home` | `https://app.fedi.xyz/link?screen=home` |
-| Chat tab | `fedi://chat` | `https://app.fedi.xyz/link?screen=chat` |
-| Mini Apps tab | `fedi://mods` | `https://app.fedi.xyz/link?screen=mods` |
-| Wallet tab | `fedi://wallet` | `https://app.fedi.xyz/link?screen=wallet` |
-| Federations tab (legacy) | `fedi://federations` | `https://app.fedi.xyz/link?screen=federations` |
-| Chat room | `fedi://room?roomId=<id>` | `https://app.fedi.xyz/link?screen=room&roomId=<id>` |
-| Direct message | `fedi://user?userId=<id>` | `https://app.fedi.xyz/link?screen=user&userId=<id>` |
-| Mini Apps browser | `fedi://browser?url=<url>` | `https://app.fedi.xyz/link?screen=browser&url=<url>` |
-| Claim Ecash | `fedi://ecash?id=<id>` | `https://app.fedi.xyz/link?screen=ecash&id=<id>` |
-| Join Federation | `fedi://join?invite=<invite>` | `https://app.fedi.xyz/link?screen=join&invite=<invite>` |
-| Join + Ecash | `fedi://join-then-ecash?invite=<invite>&ecash=<token>` | `https://app.fedi.xyz/link?screen=join-then-ecash&invite=<invite>&ecash=<token>` |
-| Join + Browse | `fedi://join-then-browse?invite=<invite>&url=<url>` | `https://app.fedi.xyz/link?screen=join-then-browse&invite=<invite>&url=<url>` |
-| Share Logs | `fedi://share-logs?ticketNumber=<number>` | `https://app.fedi.xyz/link?screen=share-logs&ticketNumber=<number>` |
+Deep links follow this format:
+
+```
+https://app.fedi.xyz/link#screen=<screen>&param1=value1&param2=value2
+```
+
+Both `?` and `#` delimiters are supported. Community invite codes with a `fedi:` prefix are normalised automatically.
 
 ---
 
 ## Notes
 
--   Links that arrive before onboarding is complete are saved to Redux via `setRedirectTo` and replayed after onboarding finishes.
--   Links that arrive before the navigator is ready are held in the module-level `pendingLinks` array and flushed in `onReady`.
--   `patchLinkingOpenURL` is called once at module load — before any component mounts — so the patch is in place for the entire app lifecycle.
+-   Links that arrive before onboarding is complete are saved to Redux (`setRedirectTo`) and replayed after onboarding finishes.
+-   Links that arrive before the navigator is ready are queued and flushed once `onReady` fires.
