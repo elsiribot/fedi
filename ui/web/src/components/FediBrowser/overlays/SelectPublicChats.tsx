@@ -1,19 +1,25 @@
-import { useState } from 'react'
+import { useCallback, useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 
 import CheckboxChecked from '@fedi/common/assets/svgs/checkbox-checked.svg'
 import CheckboxUnchecked from '@fedi/common/assets/svgs/checkbox-unchecked.svg'
 import SearchNoresult from '@fedi/common/assets/svgs/search-no-result.svg'
+import SocialPeopleIcon from '@fedi/common/assets/svgs/social-people.svg'
+import SpeakerPhoneIcon from '@fedi/common/assets/svgs/speakerphone.svg'
+import { useCreateMatrixRoom } from '@fedi/common/hooks/matrix'
 import { selectMatrixRooms } from '@fedi/common/redux'
 import { InjectionMessageResponseMap } from '@fedi/injections/src/types'
 
 import { useAppSelector } from '../../../hooks'
-import { styled } from '../../../styles'
+import { styled, theme } from '../../../styles'
+import { Avatar } from '../../Avatar'
 import { Button } from '../../Button'
 import { ChatAvatar } from '../../Chat/ChatAvatar'
 import { Dialog } from '../../Dialog'
-import { Row } from '../../Flex'
+import { Column, Row } from '../../Flex'
 import { Icon } from '../../Icon'
+import { Input } from '../../Input'
+import { Switch } from '../../Switch'
 import { Text } from '../../Text'
 
 interface Props {
@@ -24,98 +30,222 @@ interface Props {
 }
 
 export const SelectPublicChats: React.FC<Props> = ({ open, onConfirm }) => {
-    const { t } = useTranslation()
-    const chats = useAppSelector(selectMatrixRooms)
-    const publicChats = chats.filter(c => c.isPublic)
     const [selectedChats, setSelectedChats] = useState<Array<string>>([])
+    const [isCreatingNewGroup, setIsCreatingNewGroup] = useState(false)
 
-    const toggleSelectedChat = (chatId: string) => {
-        if (selectedChats.includes(chatId)) {
-            setSelectedChats(selectedChats.filter(c => c !== chatId))
-        } else {
-            setSelectedChats([...selectedChats, chatId])
-        }
+    const onChatCreated = (roomId: string) => {
+        if (selectedChats.includes(roomId)) return
+        setSelectedChats([...selectedChats, roomId])
+        setIsCreatingNewGroup(false)
     }
 
+    const { t } = useTranslation()
+    const {
+        handleCreateGroup,
+        isCreatingGroup,
+        groupName,
+        setGroupName,
+        broadcastOnly,
+        setBroadcastOnly,
+        isPublic,
+        errorMessage,
+        reset: resetCreateMatrixRoom,
+    } = useCreateMatrixRoom(t, onChatCreated, { isPublic: true })
+
+    const chats = useAppSelector(selectMatrixRooms)
+
+    const publicChats = chats.filter(c => c.isPublic)
+
+    const toggleSelectedChat = useCallback(
+        (chatId: string) => {
+            if (selectedChats.includes(chatId)) {
+                setSelectedChats(selectedChats.filter(c => c !== chatId))
+            } else {
+                setSelectedChats(prev => [...prev, chatId])
+            }
+        },
+        [selectedChats],
+    )
+
+    const reset = () => {
+        setSelectedChats([])
+        setIsCreatingNewGroup(false)
+    }
+
+    const handleAccept = () => {
+        onConfirm(selectedChats)
+        reset()
+    }
+
+    const handleClose = () => {
+        onConfirm([])
+        reset()
+    }
+
+    const content = useMemo(() => {
+        if (isCreatingNewGroup) {
+            return (
+                <>
+                    <Avatar
+                        id={''}
+                        src=""
+                        name={groupName}
+                        icon={
+                            broadcastOnly ? SpeakerPhoneIcon : SocialPeopleIcon
+                        }
+                        size="md"
+                    />
+                    <Column gap="xs" fullWidth>
+                        <Input
+                            onChange={e => setGroupName(e.target.value)}
+                            value={groupName}
+                            maxLength={30}
+                            placeholder={`${t('feature.chat.group-name')}`}
+                        />
+                        {errorMessage && (
+                            <Text
+                                variant="small"
+                                css={{
+                                    color: theme.colors.red,
+                                    textAlign: 'left',
+                                }}>
+                                {errorMessage}
+                            </Text>
+                        )}
+                    </Column>
+                    <Row align="center" justify="between" fullWidth>
+                        <Text>{t('feature.chat.broadcast-only')}</Text>
+                        <Switch
+                            checked={broadcastOnly}
+                            onCheckedChange={setBroadcastOnly}
+                        />
+                    </Row>
+                    <Column gap="sm">
+                        <Row align="center" justify="between" fullWidth>
+                            <Text>{t('words.public')}</Text>
+                            <Switch checked={isPublic} disabled />
+                        </Row>
+                        <Text
+                            variant="small"
+                            css={{
+                                color: theme.colors.grey,
+                                textAlign: 'left',
+                            }}>
+                            {t('feature.chat.public-group-warning')}
+                        </Text>
+                    </Column>
+                </>
+            )
+        }
+
+        if (publicChats.length === 0) {
+            return (
+                <>
+                    <Icon icon={SearchNoresult} size="lg" />
+
+                    <Text variant="h2">
+                        {t('feature.chat.no-public-chats-yet')}
+                    </Text>
+
+                    <Text variant="caption">
+                        {t('feature.chat.create-or-join-public-chat')}
+                    </Text>
+                </>
+            )
+        }
+
+        return (
+            <>
+                {publicChats.map(chat => (
+                    <ChatRow
+                        key={chat.id}
+                        align="center"
+                        gap="md"
+                        fullWidth
+                        onClick={() => toggleSelectedChat(chat.id)}>
+                        <ChatAvatar room={chat} size="sm" />
+                        <Text
+                            weight="bold"
+                            variant="caption"
+                            css={{ flex: 1, textAlign: 'left' }}>
+                            {chat.name}
+                        </Text>
+                        {selectedChats.includes(chat.id) ? (
+                            <Icon icon={CheckboxChecked} size="sm" />
+                        ) : (
+                            <Icon icon={CheckboxUnchecked} size="sm" />
+                        )}
+                    </ChatRow>
+                ))}
+            </>
+        )
+    }, [
+        isCreatingNewGroup,
+        selectedChats,
+        broadcastOnly,
+        publicChats,
+        t,
+        groupName,
+        toggleSelectedChat,
+        errorMessage,
+        setBroadcastOnly,
+        setGroupName,
+        isPublic,
+    ])
+
     return (
-        <Dialog open={open} onOpenChange={() => {}} type="tray" hideCloseButton>
-            {publicChats.length > 0 ? (
-                <Container aria-label="select public chats dialog">
-                    <Header>
-                        <Text variant="body" weight="bold">
-                            {t('feature.chat.add-community-chat')}
-                        </Text>
-                        <Text variant="caption">
-                            {t('feature.chat.community-chat-description')}
-                        </Text>
-                    </Header>
+        <Dialog
+            open={open}
+            onOpenChange={handleClose}
+            type="tray"
+            hideCloseButton>
+            <Container aria-label="select public chats dialog empty">
+                <Header>
+                    <Text variant="body" weight="bold">
+                        {t('feature.chat.add-community-chat')}
+                    </Text>
+                </Header>
 
-                    <Body>
-                        {publicChats.map(chat => (
-                            <ChatRow
-                                key={chat.id}
-                                align="center"
-                                gap="md"
-                                fullWidth
-                                onClick={() => toggleSelectedChat(chat.id)}>
-                                <ChatAvatar room={chat} size="sm" />
-                                <Text
-                                    weight="bold"
-                                    variant="caption"
-                                    css={{ flex: 1, textAlign: 'left' }}>
-                                    {chat.name}
-                                </Text>
-                                {selectedChats.includes(chat.id) ? (
-                                    <Icon icon={CheckboxChecked} size="sm" />
-                                ) : (
-                                    <Icon icon={CheckboxUnchecked} size="sm" />
-                                )}
-                            </ChatRow>
-                        ))}
-                    </Body>
+                <Body>{content}</Body>
 
-                    <Footer>
-                        <ButtonWrapper>
-                            <Button
-                                width="full"
-                                onClick={() => onConfirm(selectedChats)}>
-                                {t('words.continue')}
-                            </Button>
-                        </ButtonWrapper>
-                    </Footer>
-                </Container>
-            ) : (
-                <Container aria-label="select public chats dialog empty">
-                    <Header>
-                        <Text variant="body" weight="bold">
-                            {t('feature.chat.add-community-chat')}
-                        </Text>
-                    </Header>
-
-                    <Body>
-                        <Icon icon={SearchNoresult} size="lg" />
-
-                        <Text variant="h2">
-                            {t('feature.chat.no-public-chats-yet')}
-                        </Text>
-
-                        <Text variant="caption">
-                            {t('feature.chat.create-or-join-public-chat')}
-                        </Text>
-                    </Body>
-
-                    <Footer>
+                <Footer>
+                    {isCreatingNewGroup ? (
                         <ButtonWrapper>
                             <Button
                                 width="full"
                                 variant="outline"
-                                onClick={() => onConfirm(selectedChats)}>
-                                {t('words.skip')}
+                                onClick={() => setIsCreatingNewGroup(false)}>
+                                {t('words.cancel')}
+                            </Button>
+                            <Button
+                                width="full"
+                                onClick={handleCreateGroup}
+                                disabled={
+                                    !groupName ||
+                                    isCreatingGroup ||
+                                    !!errorMessage
+                                }>
+                                {t('words.continue')}
                             </Button>
                         </ButtonWrapper>
-                    </Footer>
-                </Container>
-            )}
+                    ) : (
+                        <ButtonWrapper>
+                            <Button
+                                width="full"
+                                variant="outline"
+                                onClick={() => {
+                                    resetCreateMatrixRoom()
+                                    setIsCreatingNewGroup(true)
+                                }}>
+                                {t('feature.chat.new-group')}
+                            </Button>
+                            <Button onClick={handleAccept} width="full">
+                                {t('words.continue')}
+                            </Button>
+                        </ButtonWrapper>
+                    )}
+                </Footer>
+            </Container>
         </Dialog>
     )
 }
