@@ -82,6 +82,11 @@ export const SelectPublicChats: React.FC<Props> = ({ open, onConfirm }) => {
         reset()
     }
 
+    const handleNewGroup = useCallback(() => {
+        resetCreateMatrixRoom()
+        setIsCreatingNewGroup(true)
+    }, [resetCreateMatrixRoom])
+
     const content = useMemo(() => {
         if (isCreatingNewGroup) {
             return (
@@ -179,6 +184,7 @@ export const SelectPublicChats: React.FC<Props> = ({ open, onConfirm }) => {
                 ))}
             </>
         )
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [
         isCreatingNewGroup,
         selectedChats,
@@ -188,8 +194,6 @@ export const SelectPublicChats: React.FC<Props> = ({ open, onConfirm }) => {
         groupName,
         toggleSelectedChat,
         errorMessage,
-        setBroadcastOnly,
-        setGroupName,
         isPublic,
     ])
 
@@ -198,14 +202,9 @@ export const SelectPublicChats: React.FC<Props> = ({ open, onConfirm }) => {
             open={open}
             onOpenChange={handleClose}
             type="tray"
-            hideCloseButton>
+            title={t('feature.chat.add-community-chat')}
+            description={t('feature.chat.community-chat-description')}>
             <Container aria-label="select public chats dialog empty">
-                <Header>
-                    <Text variant="body" weight="bold">
-                        {t('feature.chat.add-community-chat')}
-                    </Text>
-                </Header>
-
                 <Body>{content}</Body>
 
                 <Footer>
@@ -225,7 +224,7 @@ export const SelectPublicChats: React.FC<Props> = ({ open, onConfirm }) => {
                                     isCreatingGroup ||
                                     !!errorMessage
                                 }>
-                                {t('words.continue')}
+                                {t('phrases.save-changes')}
                             </Button>
                         </ButtonWrapper>
                     ) : (
@@ -233,10 +232,7 @@ export const SelectPublicChats: React.FC<Props> = ({ open, onConfirm }) => {
                             <Button
                                 width="full"
                                 variant="outline"
-                                onClick={() => {
-                                    resetCreateMatrixRoom()
-                                    setIsCreatingNewGroup(true)
-                                }}>
+                                onClick={handleNewGroup}>
                                 {t('feature.chat.new-group')}
                             </Button>
                             <Button onClick={handleAccept} width="full">
@@ -257,14 +253,6 @@ const Container = styled('div', {
     maxHeight: 400,
     justifyContent: 'space-between',
     width: '100%',
-})
-
-const Header = styled('div', {
-    display: 'flex',
-    flexDirection: 'column',
-    gap: 10,
-    justifyContent: 'center',
-    textAlign: 'center',
 })
 
 const Body = styled('div', {
