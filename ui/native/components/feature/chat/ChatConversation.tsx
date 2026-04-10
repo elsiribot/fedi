@@ -58,7 +58,6 @@ type MessagesListProps = {
     multiUserChat?: boolean
     isPublic?: boolean
     newMessageBottomOffset: number
-    replyBarOffset?: number
     connectionRequestPending?: boolean
     listRefOverride?: ConversationListRefOverride
     scrollToMessageRequest?: ScrollToMessageRequest | null
@@ -76,7 +75,6 @@ const ChatConversation: React.FC<MessagesListProps> = ({
     id,
     isPublic = true,
     newMessageBottomOffset = 90,
-    replyBarOffset = 0,
     connectionRequestPending = false,
     listRefOverride,
     scrollToMessageRequest = null,
@@ -190,16 +188,6 @@ const ChatConversation: React.FC<MessagesListProps> = ({
     })
 
     const style = useMemo(() => styles(theme), [theme])
-    const contentContainerStyle =
-        replyBarOffset > 0
-            ? [
-                  style.contentContainer,
-                  {
-                      paddingTop:
-                          style.contentContainer.paddingTop + replyBarOffset,
-                  },
-              ]
-            : style.contentContainer
 
     useEffect(() => {
         Animated.timing(animatedNewMessageBottom, {
@@ -337,7 +325,7 @@ const ChatConversation: React.FC<MessagesListProps> = ({
                                         : theme.spacing.xl,
                             },
                         ]}
-                        contentContainerStyle={contentContainerStyle}
+                        contentContainerStyle={style.contentContainer}
                         ListEmptyComponent={
                             isAlone ? (
                                 <NoMembersNotice roomId={id} />
@@ -421,7 +409,7 @@ const styles = (theme: Theme) =>
             paddingHorizontal: theme.spacing.xl,
         },
         contentContainer: {
-            paddingTop: theme.spacing.md,
+            paddingTop: theme.spacing.xl + theme.spacing.md,
             flexGrow: 1,
         },
         newMessageButtonContainer: {

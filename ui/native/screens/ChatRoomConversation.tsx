@@ -67,7 +67,6 @@ const ChatRoomConversation: React.FC<Props> = ({
     )
     const toast = useToast()
     const { shouldShowHeader } = useMultispendDisplayUtils(t, roomId)
-    const [replyBarHeight, setReplyBarHeight] = useState(0)
     const [isConversationAtBottom, setIsConversationAtBottom] = useState(true)
     const [pinnedScrollRequest, setPinnedScrollRequest] =
         useState<PinnedScrollRequest | null>(null)
@@ -219,7 +218,6 @@ const ChatRoomConversation: React.FC<Props> = ({
                     id={roomId || ''}
                     isPublic={room?.isPublic ?? false}
                     newMessageBottomOffset={bottomOffset}
-                    replyBarOffset={replyBarHeight}
                     connectionRequestPending={connectionRequestPending}
                     scrollToMessageRequest={pinnedScrollRequest}
                     onScrollToMessageComplete={setFocusedPinnedEventId}

@@ -5,7 +5,7 @@ import { Animated, Easing, StyleSheet } from 'react-native'
 
 import { theme as fediTheme } from '@fedi/common/constants/theme'
 
-import SvgImage, { SvgImageSize } from '../../ui/SvgImage'
+import SvgImage from '../../ui/SvgImage'
 
 type Props = {
     isEncrypted: boolean
@@ -52,7 +52,7 @@ const ChatEncryptionIndicator: React.FC<Props> = ({
                 name={
                     isEncrypted ? 'LockSquareRounded' : 'LockSquareRoundedOff'
                 }
-                size={SvgImageSize.sm}
+                size={'sm'}
                 color={theme.colors.grey}
                 containerStyle={style.encryptionIndicatorIcon}
             />
