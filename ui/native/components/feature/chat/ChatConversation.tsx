@@ -63,6 +63,7 @@ type MessagesListProps = {
     listRefOverride?: ConversationListRefOverride
     scrollToMessageRequest?: ScrollToMessageRequest | null
     onScrollToMessageComplete?: (eventId: string) => void
+    onBottomStateChange?: (isAtBottom: boolean) => void
 }
 
 type ChatRoomConversationRouteProp = RouteProp<
@@ -80,6 +81,7 @@ const ChatConversation: React.FC<MessagesListProps> = ({
     listRefOverride,
     scrollToMessageRequest = null,
     onScrollToMessageComplete,
+    onBottomStateChange,
 }: MessagesListProps) => {
     const { t } = useTranslation()
     const { theme } = useTheme()
@@ -110,6 +112,8 @@ const ChatConversation: React.FC<MessagesListProps> = ({
     const [selectedUserId, setSelectedUserId] = useState<string | null>(null)
     const animatedNewMessageBottom = useRef(new Animated.Value(0)).current
     const isScrolledToBottomRef = useRef(true)
+    const lastBottomStateRef = useRef(true)
+    const isUserScrollActiveRef = useRef(false)
     const lastScrolledMessageIdRef = useRef<string | undefined>(undefined)
 
     const myId = matrixAuth?.userId
@@ -206,6 +210,16 @@ const ChatConversation: React.FC<MessagesListProps> = ({
         }).start()
     }, [animatedNewMessageBottom, hasNewMessage, newMessageBottomOffset])
 
+    const handleBottomStateChange = useCallback(
+        (isAtBottom: boolean) => {
+            if (lastBottomStateRef.current !== isAtBottom) {
+                lastBottomStateRef.current = isAtBottom
+                onBottomStateChange?.(isAtBottom)
+            }
+        },
+        [onBottomStateChange],
+    )
+
     const scrollToEnd = useCallback(() => {
         listRef.current?.scrollToOffset({ offset: 0, animated: true })
         setHasNewMessages(false)
@@ -232,11 +246,30 @@ const ChatConversation: React.FC<MessagesListProps> = ({
         (event: NativeSyntheticEvent<NativeScrollEvent>) => {
             const isAtBottom = event.nativeEvent.contentOffset.y <= 10
             isScrolledToBottomRef.current = isAtBottom
+            if (isUserScrollActiveRef.current) {
+                handleBottomStateChange(isAtBottom)
+            }
             if (isAtBottom) {
                 setHasNewMessages(false)
             }
         },
-        [],
+        [handleBottomStateChange],
+    )
+
+    // Tracks if the user is scrolling to avoid animating the
+    // encryption indicator on scroll events NOT triggered by the user.
+    // e.g. when a message gets sent
+    const handleScrollBegin = useCallback(() => {
+        isUserScrollActiveRef.current = true
+    }, [])
+
+    const handleScrollEnd = useCallback(
+        (event: NativeSyntheticEvent<NativeScrollEvent>) => {
+            const isAtBottom = event.nativeEvent.contentOffset.y <= 10
+            handleBottomStateChange(isAtBottom)
+            isUserScrollActiveRef.current = false
+        },
+        [handleBottomStateChange],
     )
 
     const handleReplyTap = useCallback(
@@ -330,6 +363,10 @@ const ChatConversation: React.FC<MessagesListProps> = ({
                             ) : undefined
                         }
                         onScroll={handleScroll}
+                        onScrollBeginDrag={handleScrollBegin}
+                        onMomentumScrollBegin={handleScrollBegin}
+                        onScrollEndDrag={handleScrollEnd}
+                        onMomentumScrollEnd={handleScrollEnd}
                         onScrollToIndexFailed={handleScrollToIndexFailed}
                         inverted={chatRows.length > 0}
                         onEndReachedThreshold={0.1}
