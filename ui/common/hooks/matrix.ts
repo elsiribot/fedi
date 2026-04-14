@@ -426,12 +426,15 @@ export function useObserveMatrixRoom(roomId: MatrixRoom['id']) {
         if (!matrixStarted) return
         if (room?.roomState !== 'joined') return
 
-        fedimint
-            .matrixRoomListSetVisibleRooms({ roomIds: [roomId] })
-            .then(() =>
-                dispatch(refetchMatrixRoomMembers({ fedimint, roomId })),
-            )
-            .catch(() => null)
+        // Subscribe to the room first, then re-fetch members once the
+        // sliding-sync state store is populated with full room data.
+        const subscribe = async () => {
+            await fedimint.matrixRoomListSetVisibleRooms({
+                roomIds: [roomId],
+            })
+            dispatch(refetchMatrixRoomMembers({ fedimint, roomId }))
+        }
+        subscribe().catch(() => null)
     }, [fedimint, matrixStarted, room?.roomState, roomId, dispatch])
 
     useEffect(() => {
