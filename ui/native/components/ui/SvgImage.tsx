@@ -5,7 +5,7 @@ import { SvgProps } from 'react-native-svg'
 
 import { theme as fediTheme } from '@fedi/common/constants/theme'
 
-import * as Svgs from '../../assets/images/svgs'
+import * as Svgs from '@fedi/common/assets/svgs'
 
 // Calculate the size. Use fontScale as a multiplier, but only at
 // half the intensity when increasing. E.g. if fontScale is 2, the multiplier
