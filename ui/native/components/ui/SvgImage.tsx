@@ -14,10 +14,14 @@ export const getIconSizeMultiplier = (fontScale: number) =>
     fontScale < 1 ? fontScale : 1 + Math.min((fontScale - 1) * 0.5, 1)
 
 export type SvgImageName = keyof typeof Svgs
+export type SvgImageSize = keyof Pick<
+    typeof fediTheme.sizes,
+    'xxs' | 'xs' | 'sm' | 'md' | 'lg' | 'xl'
+>
 
 export type SvgImageProps = {
     name: SvgImageName
-    size?: keyof typeof fediTheme.sizes | number
+    size?: SvgImageSize | number
     dimensions?: { width: number; height: number }
     containerStyle?: ViewStyle
     svgProps?: SvgProps
