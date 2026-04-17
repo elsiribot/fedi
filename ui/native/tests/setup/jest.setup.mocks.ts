@@ -74,14 +74,14 @@ jest.mock('react-native-mmkv', () => {
     }
 })
 
-// Mock native SVGs to return mock functions for every key
-jest.mock('@fedi/native/assets/images/svgs', () => {
-    const actual = jest.requireActual('@fedi/native/assets/images/svgs')
-    return Object.keys(actual).reduce((acc: any, key: string) => {
-        acc[key] = jest.fn()
-        return acc
-    }, {} as any)
-})
+// // Mock native SVGs to return mock functions for every key
+// jest.mock('@fedi/native/assets/images/svgs', () => {
+//     const actual = jest.requireActual('@fedi/native/assets/images/svgs')
+//     return Object.keys(actual).reduce((acc: any, key: string) => {
+//         acc[key] = jest.fn()
+//         return acc
+//     }, {} as any)
+// })
 
 jest.mock('@notifee/react-native', () => ({
     getInitialNotification: jest.fn().mockResolvedValue(undefined),
