@@ -3,6 +3,8 @@ import React from 'react'
 import { View, ViewStyle, useWindowDimensions } from 'react-native'
 import { SvgProps } from 'react-native-svg'
 
+import { theme as fediTheme } from '@fedi/common/constants/theme'
+
 import * as Svgs from '../../assets/images/svgs'
 
 // Calculate the size. Use fontScale as a multiplier, but only at
@@ -12,18 +14,10 @@ export const getIconSizeMultiplier = (fontScale: number) =>
     fontScale < 1 ? fontScale : 1 + Math.min((fontScale - 1) * 0.5, 1)
 
 export type SvgImageName = keyof typeof Svgs
-export enum SvgImageSize {
-    xxs = 'xxs',
-    xs = 'xs',
-    sm = 'sm',
-    md = 'md',
-    lg = 'lg',
-    xl = 'xl',
-}
 
 export type SvgImageProps = {
     name: SvgImageName
-    size?: SvgImageSize | number
+    size?: keyof typeof fediTheme.sizes | number
     dimensions?: { width: number; height: number }
     containerStyle?: ViewStyle
     svgProps?: SvgProps
@@ -33,7 +27,7 @@ export type SvgImageProps = {
 
 const SvgImage = ({
     name,
-    size = SvgImageSize.sm,
+    size = 'sm',
     dimensions,
     containerStyle,
     svgProps,
