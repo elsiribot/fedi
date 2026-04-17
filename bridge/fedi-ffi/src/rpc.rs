@@ -1030,25 +1030,38 @@ async fn spv2GuardianRemittanceAccount(
 }
 
 #[macro_rules_derive(federation_rpc_method!)]
-async fn spv2EnableGuardianRemittanceAccount(federation: Arc<FederationV2>) -> anyhow::Result<()> {
-    federation.spv2_enable_guardian_remittance_account().await
-}
-
-#[macro_rules_derive(federation_rpc_method!)]
 async fn spv2GuardianRemittanceDashboard(
     federation: Arc<FederationV2>,
-) -> anyhow::Result<RpcGuardianRemittanceDashboard> {
-    federation.spv2_guardian_remittance_dashboard().await
+    stream_id: RpcStreamId<RpcGuardianRemittanceDashboard>,
+) -> anyhow::Result<()> {
+    let stream = federation
+        .spv2_subscribe_guardian_remittance_dashboard()
+        .await?;
+    federation
+        .runtime
+        .stream_pool
+        .register_stream(stream_id, stream)
+        .await
 }
 
 #[macro_rules_derive(federation_rpc_method!)]
-async fn spv2WithdrawGuardianRemittanceAll(
+async fn spv2GuardianRemittanceBalance(
     federation: Arc<FederationV2>,
-) -> anyhow::Result<RpcOperationId> {
+    stream_id: RpcStreamId<RpcAmount>,
+) -> anyhow::Result<()> {
+    let stream = federation
+        .spv2_subscribe_guardian_remittance_balance()
+        .await?;
     federation
-        .spv2_withdraw_guardian_remittance_all()
+        .runtime
+        .stream_pool
+        .register_stream(stream_id, stream)
         .await
-        .map(Into::into)
+}
+
+#[macro_rules_derive(federation_rpc_method!)]
+async fn spv2WithdrawGuardianRemittanceAll(federation: Arc<FederationV2>) -> anyhow::Result<()> {
+    federation.spv2_withdraw_guardian_remittance_all().await
 }
 
 #[macro_rules_derive(federation_rpc_method!)]
@@ -2591,8 +2604,8 @@ rpc_methods!(RpcMethods {
     spv2Withdraw,
     spv2WithdrawAll,
     spv2GuardianRemittanceAccount,
-    spv2EnableGuardianRemittanceAccount,
     spv2GuardianRemittanceDashboard,
+    spv2GuardianRemittanceBalance,
     spv2WithdrawGuardianRemittanceAll,
     spv2AverageFeeRate,
     spv2AvailableLiquidity,

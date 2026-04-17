@@ -1,11 +1,15 @@
 use std::collections::BTreeMap;
 
-use anyhow::{Context, ensure};
+use anyhow::Context;
+use bitcoin::secp256k1::Keypair;
+use fedimint_core::Amount;
+use futures::{Stream, StreamExt};
 use rpc_types::{
-    RpcGuardianRemittanceAccountInfo, RpcGuardianRemittanceDashboard,
+    RpcAmount, RpcGuardianRemittanceAccountInfo, RpcGuardianRemittanceDashboard,
     RpcGuardianRemittanceDayBucket, RpcGuardianRemittanceModuleTotal,
 };
-use stability_pool_client::common::{AccountHistoryItemKind, AccountType};
+use stability_pool_client::common::AccountType;
+use stability_pool_client::db::{UserOperationHistoryItem, UserOperationHistoryItemKind};
 use stability_pool_client::{StabilityPoolHistoryService, StabilityPoolSyncService};
 use time::OffsetDateTime;
 use tracing::error;
@@ -68,117 +72,149 @@ impl GuardianRemittanceAccount {
         })
     }
 
-    pub async fn dashboard(
-        &self,
-        fed: &FederationV2,
-    ) -> anyhow::Result<RpcGuardianRemittanceDashboard> {
-        let balance_sats = self.current_balance_sats(fed).await?;
-        let raw_entries = self.raw_entries(fed).await?;
-        let day_buckets = aggregate_day_buckets(raw_entries)?;
-
-        Ok(RpcGuardianRemittanceDashboard {
-            current_balance_sats: balance_sats,
-            day_buckets,
-        })
+    pub async fn update_once(&self) -> anyhow::Result<()> {
+        self.sync_service.update_once().await
     }
 
-    async fn current_balance_sats(&self, _fed: &FederationV2) -> anyhow::Result<u64> {
-        let total_msats = self
-            .sync_service
-            .current_sync_response()
-            .map(|sync| {
-                sync.value.idle_balance.msats
-                    + sync.value.staged_balance.msats
-                    + sync.value.locked_balance.msats
-            })
-            .unwrap_or(0);
-        Ok(msats_to_sats(total_msats))
-    }
-
-    async fn raw_entries(
+    pub fn subscribe_dashboard(
         &self,
         fed: &FederationV2,
-    ) -> anyhow::Result<Vec<GuardianRemittanceEntry>> {
-        let history = self.history_service.get_full_account_history().await?;
+    ) -> anyhow::Result<impl Stream<Item = RpcGuardianRemittanceDashboard> + use<>> {
         let spv2 = fed.client.spv2()?;
         let guardian_key = spv2.our_keypair(AccountType::BtcDepositor);
-
-        history
-            .into_iter()
-            .filter_map(|item| {
-                let metadata = match item.kind {
-                    AccountHistoryItemKind::DepositToBtcBalance { metadata } => metadata.0,
-                    _ => return None,
-                };
-                Some((item.txid, item.amount, metadata))
-            })
-            .map(|(txid, amount, metadata)| {
-                let metadata = decrypt_guardian_remittance_metadata(&guardian_key, &metadata)
-                    .with_context(|| format!("failed to decrypt guardian remittance tx {txid}"))?;
-                ensure!(
-                    metadata.total_msats == amount.msats,
-                    "guardian remittance tx {txid} metadata amount mismatch"
-                );
-
-                let module_totals = metadata.breakdown.into_iter().fold(
-                    BTreeMap::<String, u64>::new(),
-                    |mut acc, part| {
-                        *acc.entry(part.module).or_default() += msats_to_sats(part.amount_msats);
-                        acc
-                    },
-                );
-
-                Ok(GuardianRemittanceEntry {
-                    remitted_at_unix: metadata.remitted_at_unix,
-                    total_sats: msats_to_sats(metadata.total_msats),
-                    module_totals,
-                })
-            })
-            .collect()
+        Ok(self
+            .history_service
+            .subscribe_to_user_operation_updates()
+            .map(move |history| dashboard_from_history(history, &guardian_key)))
     }
+
+    pub fn subscribe_balance(&self) -> impl Stream<Item = RpcAmount> + use<> {
+        self.sync_service.subscribe_to_updates().map(|sync| {
+            let total = sync
+                .map(|sync| {
+                    sync.value.idle_balance + sync.value.staged_balance + sync.value.locked_balance
+                })
+                .unwrap_or(Amount::ZERO);
+            RpcAmount(total)
+        })
+    }
+}
+
+fn dashboard_from_history(
+    history: Vec<UserOperationHistoryItem>,
+    guardian_key: &Keypair,
+) -> RpcGuardianRemittanceDashboard {
+    RpcGuardianRemittanceDashboard {
+        day_buckets: aggregate_day_buckets(raw_entries_from_history(history, guardian_key)),
+    }
+}
+
+fn raw_entries_from_history(
+    history: Vec<UserOperationHistoryItem>,
+    guardian_key: &Keypair,
+) -> Vec<GuardianRemittanceEntry> {
+    history
+        .into_iter()
+        .filter_map(|item| {
+            let metadata = match item.kind {
+                UserOperationHistoryItemKind::BtcBalanceDeposit { metadata } => metadata,
+                _ => return None,
+            };
+
+            let metadata = match decrypt_guardian_remittance_metadata(guardian_key, &metadata) {
+                Ok(metadata) => metadata,
+                Err(error) => {
+                    error!(
+                        %item.txid,
+                        %error,
+                        "failed to decrypt guardian remittance metadata"
+                    );
+                    return None;
+                }
+            };
+
+            let total_amount = Amount::from_msats(metadata.total_msats);
+            if total_amount != item.amount {
+                error!(
+                    %item.txid,
+                    metadata_total_msats = metadata.total_msats,
+                    amount_msats = item.amount.msats,
+                    "guardian remittance metadata amount mismatch"
+                );
+                return None;
+            }
+
+            let module_totals = metadata.breakdown.into_iter().fold(
+                BTreeMap::<String, Amount>::new(),
+                |mut acc, part| {
+                    *acc.entry(part.module).or_default() += Amount::from_msats(part.amount_msats);
+                    acc
+                },
+            );
+
+            Some(GuardianRemittanceEntry {
+                remitted_at_unix: metadata.remitted_at_unix,
+                total_amount,
+                module_totals,
+            })
+        })
+        .collect()
 }
 
 #[derive(Debug, Clone)]
 struct GuardianRemittanceEntry {
     remitted_at_unix: u64,
-    total_sats: u64,
-    module_totals: BTreeMap<String, u64>,
+    total_amount: Amount,
+    module_totals: BTreeMap<String, Amount>,
 }
 
 fn aggregate_day_buckets(
     entries: Vec<GuardianRemittanceEntry>,
-) -> anyhow::Result<Vec<RpcGuardianRemittanceDayBucket>> {
+) -> Vec<RpcGuardianRemittanceDayBucket> {
     let mut buckets = BTreeMap::<String, RpcGuardianRemittanceDayBucket>::new();
 
     for entry in entries {
-        let day_key = utc_day_key(entry.remitted_at_unix)?;
+        let day_key = match utc_day_key(entry.remitted_at_unix) {
+            Ok(day_key) => day_key,
+            Err(error) => {
+                error!(
+                    remitted_at_unix = entry.remitted_at_unix,
+                    %error,
+                    "guardian remittance timestamp invalid"
+                );
+                continue;
+            }
+        };
         let bucket =
             buckets
                 .entry(day_key.clone())
                 .or_insert_with(|| RpcGuardianRemittanceDayBucket {
                     day_key,
-                    total_sats_remitted: 0,
+                    total_amount_remitted: RpcAmount(Amount::ZERO),
                     remittance_count: 0,
                     module_totals: Vec::new(),
                 });
-        bucket.total_sats_remitted += entry.total_sats;
+        bucket.total_amount_remitted.0 += entry.total_amount;
         bucket.remittance_count += 1;
 
         let mut module_totals = bucket
             .module_totals
             .iter()
-            .map(|item| (item.module.clone(), item.total_sats))
+            .map(|item| (item.module.clone(), item.total_amount.0))
             .collect::<BTreeMap<_, _>>();
-        for (module, total_sats) in entry.module_totals {
-            *module_totals.entry(module).or_default() += total_sats;
+        for (module, total_amount) in entry.module_totals {
+            *module_totals.entry(module).or_default() += total_amount;
         }
         bucket.module_totals = module_totals
             .into_iter()
-            .map(|(module, total_sats)| RpcGuardianRemittanceModuleTotal { module, total_sats })
+            .map(|(module, total_amount)| RpcGuardianRemittanceModuleTotal {
+                module,
+                total_amount: RpcAmount(total_amount),
+            })
             .collect();
     }
 
-    Ok(buckets.into_values().rev().collect())
+    buckets.into_values().rev().collect()
 }
 
 fn utc_day_key(unix_seconds: u64) -> anyhow::Result<String> {
@@ -192,10 +228,6 @@ fn utc_day_key(unix_seconds: u64) -> anyhow::Result<String> {
         u8::from(date.month()),
         date.day()
     ))
-}
-
-fn msats_to_sats(msats: u64) -> u64 {
-    msats / 1000
 }
 
 #[cfg(test)]
@@ -266,40 +298,48 @@ mod tests {
         let buckets = aggregate_day_buckets(vec![
             GuardianRemittanceEntry {
                 remitted_at_unix: 1_700_086_400,
-                total_sats: 5,
-                module_totals: BTreeMap::from([("mint".to_string(), 2), ("wallet".to_string(), 3)]),
+                total_amount: Amount::from_sats(5),
+                module_totals: BTreeMap::from([
+                    ("mint".to_string(), Amount::from_sats(2)),
+                    ("wallet".to_string(), Amount::from_sats(3)),
+                ]),
             },
             GuardianRemittanceEntry {
                 remitted_at_unix: 1_700_080_000,
-                total_sats: 7,
-                module_totals: BTreeMap::from([("mint".to_string(), 7)]),
+                total_amount: Amount::from_sats(7),
+                module_totals: BTreeMap::from([("mint".to_string(), Amount::from_sats(7))]),
             },
             GuardianRemittanceEntry {
                 remitted_at_unix: 1_699_999_999,
-                total_sats: 11,
-                module_totals: BTreeMap::from([("lightning".to_string(), 11)]),
+                total_amount: Amount::from_sats(11),
+                module_totals: BTreeMap::from([("lightning".to_string(), Amount::from_sats(11))]),
             },
-        ])
-        .expect("aggregates");
+        ]);
 
         assert_eq!(buckets.len(), 2);
         assert_eq!(buckets[0].day_key, "2023-11-15");
-        assert_eq!(buckets[0].total_sats_remitted, 12);
+        assert_eq!(
+            buckets[0].total_amount_remitted,
+            RpcAmount(Amount::from_sats(12))
+        );
         assert_eq!(buckets[0].remittance_count, 2);
         assert_eq!(
             buckets[0].module_totals,
             vec![
                 RpcGuardianRemittanceModuleTotal {
                     module: "mint".to_string(),
-                    total_sats: 9,
+                    total_amount: RpcAmount(Amount::from_sats(9)),
                 },
                 RpcGuardianRemittanceModuleTotal {
                     module: "wallet".to_string(),
-                    total_sats: 3,
+                    total_amount: RpcAmount(Amount::from_sats(3)),
                 },
             ]
         );
         assert_eq!(buckets[1].day_key, "2023-11-14");
-        assert_eq!(buckets[1].total_sats_remitted, 11);
+        assert_eq!(
+            buckets[1].total_amount_remitted,
+            RpcAmount(Amount::from_sats(11))
+        );
     }
 }

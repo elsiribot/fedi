@@ -593,9 +593,7 @@ export function useFeeDisplayUtils(t: TFunction, federationId: string) {
 
     const makeLightningFeeContent = (feeDetails: RpcFeeDetails) => {
         const fediFee = sumFediFeeDetails(feeDetails)
-        // prettier-ignore
         const lightningSendTotalFeeMsats = sumFeeDetails(feeDetails)
-
         // Format fedi fee
         const {
             formattedPrimaryAmount: formattedFediFee,

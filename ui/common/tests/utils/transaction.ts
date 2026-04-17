@@ -155,6 +155,7 @@ export function makeTestTxnEntry<T extends TransactionListEntry['kind']>(
                 kind,
                 state: makeTestSPV2WithdrawalState('pendingWithdrawal'),
                 sweeper_initiated: false,
+                guardian_remittance: false,
                 ...baseFields,
                 ...overrides,
             }
