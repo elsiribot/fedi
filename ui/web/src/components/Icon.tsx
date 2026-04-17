@@ -2,11 +2,13 @@ import React from 'react'
 
 import { theme as fediTheme } from '@fedi/common/constants/theme'
 
-import { css } from '../styles'
-
+export type IconSize = keyof Pick<
+    typeof fediTheme.sizes,
+    'xxs' | 'xs' | 'sm' | 'md' | 'lg' | 'xl'
+>
 interface BaseProps {
     icon: React.FunctionComponent<React.SVGAttributes<SVGElement>>
-    size?: keyof typeof fediTheme.sizes | number
+    size?: IconSize | number
 }
 
 export type IconProps = BaseProps &
@@ -15,13 +17,10 @@ export type IconProps = BaseProps &
 export const Icon: React.FC<IconProps> = ({
     icon: SvgIcon,
     size = 'sm',
+    style,
     ...props
 }) => {
-    const className = svgCss({
-        size: typeof size !== 'number' ? size : undefined,
-    })
-
-    const style =
+    const dimensions =
         typeof size === 'number'
             ? { width: size, height: size }
             : {
@@ -29,9 +28,14 @@ export const Icon: React.FC<IconProps> = ({
                   height: fediTheme.sizes[size],
               }
 
-    return <SvgIcon className={className} style={style} {...props} />
+    return (
+        <SvgIcon
+            style={{
+                display: 'inline-block',
+                ...dimensions,
+                ...style,
+            }}
+            {...props}
+        />
+    )
 }
-
-const svgCss = css({
-    display: 'inline-block',
-})
