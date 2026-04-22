@@ -1109,16 +1109,19 @@ export class FedimintBridge {
         return this.rpcTyped('dumpDb', args)
     }
 
-    async getAccruedOutstandingFediFeesPerTXType(
-        args: bindings.RpcPayload<'getAccruedOutstandingFediFeesPerTXType'>,
+    async getAccruedOutstandingFediFeesPerTXTypeByStream(
+        args: bindings.RpcPayload<'getAccruedOutstandingFediFeesPerTXTypeByStream'>,
     ) {
-        return this.rpcTyped('getAccruedOutstandingFediFeesPerTXType', args)
+        return this.rpcTyped(
+            'getAccruedOutstandingFediFeesPerTXTypeByStream',
+            args,
+        )
     }
 
-    async getAccruedPendingFediFeesPerTXType(
-        args: bindings.RpcPayload<'getAccruedPendingFediFeesPerTXType'>,
+    async getAccruedPendingFediFeesPerTXTypeByStream(
+        args: bindings.RpcPayload<'getAccruedPendingFediFeesPerTXTypeByStream'>,
     ) {
-        return this.rpcTyped('getAccruedPendingFediFeesPerTXType', args)
+        return this.rpcTyped('getAccruedPendingFediFeesPerTXTypeByStream', args)
     }
 
     async matrixGetMediaPreview(

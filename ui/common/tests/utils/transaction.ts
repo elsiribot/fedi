@@ -59,7 +59,8 @@ export function makeTestTxnEntry<T extends TransactionListEntry['kind']>(
         createdAt: 0,
         id: TEST_TXID,
         amount: 0 as MSats,
-        fediFeeStatus: null,
+        fediAppFeeStatus: null,
+        fediGuardianFeeStatus: null,
         txnNotes: null,
         txDateFiatInfo: null,
         frontendMetadata: {

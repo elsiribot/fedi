@@ -142,7 +142,7 @@ impl StabilityPoolHistoryService {
         &self,
         range: Range<u64>,
     ) -> anyhow::Result<Vec<AccountHistoryItem>> {
-        let mut dbtx = self.client_ctx.module_db().begin_transaction().await;
+        let mut dbtx = self.client_ctx.module_db().begin_transaction_nc().await;
         Ok(dbtx
             .find_by_range(
                 AccountHistoryItemKey {
@@ -153,6 +153,18 @@ impl StabilityPoolHistoryService {
                     index: range.end,
                 },
             )
+            .await
+            .map(|(_key, value)| value)
+            .collect()
+            .await)
+    }
+
+    pub async fn get_full_account_history(&self) -> anyhow::Result<Vec<AccountHistoryItem>> {
+        let mut dbtx = self.client_ctx.module_db().begin_transaction_nc().await;
+        Ok(dbtx
+            .find_by_prefix(&AccountHistoryItemKeyPrefix {
+                account_id: self.account_id,
+            })
             .await
             .map(|(_key, value)| value)
             .collect()
@@ -282,6 +294,14 @@ async fn update_user_operation_history(
         current_user_op_history_item.as_ref().map(|c| &c.kind),
         sync_response.unlock_request.as_ref(),
     ) {
+        (AccountHistoryItemKind::DepositToBtcBalance { metadata }, None, _) => {
+            UserOperationHistoryItemKind::BtcBalanceDeposit {
+                metadata: metadata.0.clone(),
+            }
+        }
+        (AccountHistoryItemKind::DepositToBtcBalance { .. }, Some(_), _) => {
+            panic!("DepositToBtcBalance must create new user op history item")
+        }
         // Deposit-related account history items. We only care about the initial deposit and
         // locking. We don't care about deposits getting kicked out (due to low liquidity) and then
         // getting relocked -- for now.

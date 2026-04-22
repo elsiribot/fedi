@@ -42,10 +42,10 @@ describe('makeTxnFeeDetails', () => {
     it('should display the fedi fee for success/pendingSend transactions', () => {
         const txn = makeTestTxnEntry('lnPay', {
             // For the sake of this test, the fedi fee is 10 sats
-            fediFeeStatus: makeTestFediFeeStatus('success', 10_000),
+            fediAppFeeStatus: makeTestFediFeeStatus('success', 10_000),
         })
         const txnPendingFee = makeTestTxnEntry('lnPay', {
-            fediFeeStatus: makeTestFediFeeStatus('pendingSend', 10_000),
+            fediAppFeeStatus: makeTestFediFeeStatus('pendingSend', 10_000),
         })
 
         const detailsFeeSuccess = makeTxnFeeDetails(
@@ -97,22 +97,22 @@ describe('makeTxnFeeDetails', () => {
     it('should display the total fees for various transactions', () => {
         const lnTxn = makeTestTxnEntry('lnPay', {
             // For the sake of this test, the fedi fee is 10 sats
-            fediFeeStatus: makeTestFediFeeStatus('success', 10_000),
+            fediAppFeeStatus: makeTestFediFeeStatus('success', 10_000),
             // For the sake of this test, the lightning fee is 20 sats
             lightning_fees: 20_000 as MSats,
         })
         const onchainWithdrawTxn = makeTestTxnEntry('onchainWithdraw', {
-            fediFeeStatus: makeTestFediFeeStatus('success', 10_000),
+            fediAppFeeStatus: makeTestFediFeeStatus('success', 10_000),
             // For the sake of this test, the network fee is 30 sats
             onchain_fees: 30_000 as MSats,
         })
         const onchainDepositTxn = makeTestTxnEntry('onchainDeposit', {
-            fediFeeStatus: makeTestFediFeeStatus('success', 10_000),
+            fediAppFeeStatus: makeTestFediFeeStatus('success', 10_000),
             // For the sake of this test, the network fee is 30 sats
             peg_in_fees: 1_000_000 as MSats,
         })
         const oobTxn = makeTestTxnEntry('oobSend', {
-            fediFeeStatus: makeTestFediFeeStatus('success', 50_000),
+            fediAppFeeStatus: makeTestFediFeeStatus('success', 50_000),
         })
 
         expect(

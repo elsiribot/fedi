@@ -44,7 +44,7 @@ describe('makeStabilityTxnDetailItems', () => {
     it('should display the fedi fee for stability transactions', () => {
         const txn = makeTestTxnEntry('sPV2Deposit', {
             // For the sake of this test, the fedi fee is 10 sats
-            fediFeeStatus: makeTestFediFeeStatus('success', 10_000),
+            fediAppFeeStatus: makeTestFediFeeStatus('success', 10_000),
         })
 
         expect(
@@ -94,7 +94,7 @@ describe('makeStabilityTxnDetailItems', () => {
             state: makeTestSPDepositState('completeDeposit', {
                 fees_paid_so_far: 20_000 as MSats,
             }),
-            fediFeeStatus: makeTestFediFeeStatus('success', 10_000),
+            fediAppFeeStatus: makeTestFediFeeStatus('success', 10_000),
         })
 
         expect(
