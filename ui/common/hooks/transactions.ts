@@ -41,7 +41,7 @@ import {
     makeMultispendTransactionHistoryCSV,
 } from '../utils/csv'
 import { FedimintBridge } from '../utils/fedimint'
-import { sumFediFeeDetails, sumFeeDetails } from '../utils/fees'
+import { sumFeeDetails } from '../utils/fees'
 import {
     coerceMultispendTxn,
     isMultispendDepositEvent,
@@ -592,10 +592,7 @@ export function useFeeDisplayUtils(t: TFunction, federationId: string) {
     }
 
     const makeLightningFeeContent = (feeDetails: RpcFeeDetails) => {
-        const fediFee = sumFediFeeDetails(feeDetails)
-        // prettier-ignore
         const lightningSendTotalFeeMsats = sumFeeDetails(feeDetails)
-
         // Format fedi fee
         const {
             formattedPrimaryAmount: formattedFediFee,
@@ -644,7 +641,6 @@ export function useFeeDisplayUtils(t: TFunction, federationId: string) {
     }
 
     const makeOnchainFeeContent = (feeDetails: RpcFeeDetails) => {
-        const fediFee = sumFediFeeDetails(feeDetails)
         const onchainSendTotalFeeMsats = sumFeeDetails(feeDetails)
 
         // Format fedi fee

@@ -557,6 +557,7 @@ pub enum RpcTransactionKind {
     SPV2Withdrawal {
         state: RpcSPV2WithdrawalState,
         sweeper_initiated: bool,
+        guardian_remittance: bool,
     },
     SPV2TransferOut {
         state: RpcSPV2TransferOutState,
@@ -1049,8 +1050,6 @@ pub struct RpcGuardianRemittanceAccountInfo {
 #[serde(rename_all = "camelCase")]
 #[ts(export)]
 pub struct RpcGuardianRemittanceDashboard {
-    #[ts(type = "number")]
-    pub current_balance_sats: u64,
     pub day_buckets: Vec<RpcGuardianRemittanceDayBucket>,
 }
 
@@ -1059,8 +1058,7 @@ pub struct RpcGuardianRemittanceDashboard {
 #[ts(export)]
 pub struct RpcGuardianRemittanceDayBucket {
     pub day_key: String,
-    #[ts(type = "number")]
-    pub total_sats_remitted: u64,
+    pub total_amount_remitted: RpcAmount,
     #[ts(type = "number")]
     pub remittance_count: u32,
     pub module_totals: Vec<RpcGuardianRemittanceModuleTotal>,
@@ -1071,8 +1069,7 @@ pub struct RpcGuardianRemittanceDayBucket {
 #[ts(export)]
 pub struct RpcGuardianRemittanceModuleTotal {
     pub module: String,
-    #[ts(type = "number")]
-    pub total_sats: u64,
+    pub total_amount: RpcAmount,
 }
 
 #[derive(Debug, Deserialize, Serialize, TS)]

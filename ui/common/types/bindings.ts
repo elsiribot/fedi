@@ -578,6 +578,11 @@ export type RpcFileMessageContent = {
   source: RpcMediaSource;
 };
 
+export type RpcFormClientAction =
+  | { type: "guardianFeesOpenDashboard"; inviteCode: string }
+  | { type: "guardianFeesSyncRemittanceAccount"; inviteCode: string }
+  | { type: "unknown" };
+
 export type RpcFormMessageContent = {
   body: string;
   i18nKeyLabel: string | null;
@@ -591,6 +596,7 @@ export type RpcFormOption = {
   value: string;
   label: string | null;
   i18nKeyLabel: string | null;
+  clientAction?: RpcFormClientAction;
 };
 
 export type RpcFormResponse = {
@@ -616,20 +622,19 @@ export type RpcGenerateEcashResponse = {
 export type RpcGuardianRemittanceAccountInfo = { serializedAccount: string };
 
 export type RpcGuardianRemittanceDashboard = {
-  currentBalanceSats: number;
   dayBuckets: Array<RpcGuardianRemittanceDayBucket>;
 };
 
 export type RpcGuardianRemittanceDayBucket = {
   dayKey: string;
-  totalSatsRemitted: number;
+  totalAmountRemitted: RpcAmount;
   remittanceCount: number;
   moduleTotals: Array<RpcGuardianRemittanceModuleTotal>;
 };
 
 export type RpcGuardianRemittanceModuleTotal = {
   module: string;
-  totalSats: number;
+  totalAmount: RpcAmount;
 };
 
 export type RpcImageInfo = {
@@ -869,18 +874,9 @@ export type RpcMethods = {
     spv2GuardianRemittanceAccount,
     RpcGuardianRemittanceAccountInfo,
   ];
-  spv2EnableGuardianRemittanceAccount: [
-    spv2EnableGuardianRemittanceAccount,
-    null,
-  ];
-  spv2GuardianRemittanceDashboard: [
-    spv2GuardianRemittanceDashboard,
-    RpcGuardianRemittanceDashboard,
-  ];
-  spv2WithdrawGuardianRemittanceAll: [
-    spv2WithdrawGuardianRemittanceAll,
-    RpcOperationId,
-  ];
+  spv2GuardianRemittanceDashboard: [spv2GuardianRemittanceDashboard, null];
+  spv2GuardianRemittanceBalance: [spv2GuardianRemittanceBalance, null];
+  spv2WithdrawGuardianRemittanceAll: [spv2WithdrawGuardianRemittanceAll, null];
   spv2AverageFeeRate: [spv2AverageFeeRate, bigint];
   spv2AvailableLiquidity: [spv2AvailableLiquidity, RpcAmount];
   spv2OurPaymentAddress: [spv2OurPaymentAddress, string];
@@ -1490,6 +1486,7 @@ export type RpcTransaction = {
       kind: "sPV2Withdrawal";
       state: RpcSPV2WithdrawalState;
       sweeper_initiated: boolean;
+      guardian_remittance: boolean;
     }
   | { kind: "sPV2TransferOut"; state: RpcSPV2TransferOutState }
   | { kind: "sPV2TransferIn"; state: RpcSPV2TransferInState }
@@ -1530,6 +1527,7 @@ export type RpcTransactionKind =
       kind: "sPV2Withdrawal";
       state: RpcSPV2WithdrawalState;
       sweeper_initiated: boolean;
+      guardian_remittance: boolean;
     }
   | { kind: "sPV2TransferOut"; state: RpcSPV2TransferOutState }
   | { kind: "sPV2TransferIn"; state: RpcSPV2TransferInState };
@@ -1578,6 +1576,7 @@ export type RpcTransactionListEntry = {
       kind: "sPV2Withdrawal";
       state: RpcSPV2WithdrawalState;
       sweeper_initiated: boolean;
+      guardian_remittance: boolean;
     }
   | { kind: "sPV2TransferOut"; state: RpcSPV2TransferOutState }
   | { kind: "sPV2TransferIn"; state: RpcSPV2TransferInState }
@@ -2395,13 +2394,17 @@ export type spv2DepositToSeek = {
   frontendMeta: FrontendMetadata;
 };
 
-export type spv2EnableGuardianRemittanceAccount = {
-  federationId: RpcFederationId;
-};
-
 export type spv2GuardianRemittanceAccount = { federationId: RpcFederationId };
 
-export type spv2GuardianRemittanceDashboard = { federationId: RpcFederationId };
+export type spv2GuardianRemittanceBalance = {
+  federationId: RpcFederationId;
+  streamId: RpcStreamId<RpcAmount>;
+};
+
+export type spv2GuardianRemittanceDashboard = {
+  federationId: RpcFederationId;
+  streamId: RpcStreamId<RpcGuardianRemittanceDashboard>;
+};
 
 export type spv2NextCycleStartTime = { federationId: RpcFederationId };
 

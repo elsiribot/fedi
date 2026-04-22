@@ -2743,7 +2743,6 @@ async fn test_guardian_remittance_account_withdraw_all() -> anyhow::Result<()> {
     let withdraw_events_before = guardian_td
         .event_sink()
         .num_events_of_type("spv2Withdrawal".into());
-    spv2EnableGuardianRemittanceAccount(guardian_federation.clone()).await?;
     spv2WithdrawGuardianRemittanceAll(guardian_federation.clone()).await?;
     loop {
         if guardian_td

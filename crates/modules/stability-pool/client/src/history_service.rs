@@ -5,7 +5,7 @@ use anyhow::bail;
 use fedimint_api_client::api::DynModuleApi;
 use fedimint_client::OperationId;
 use fedimint_client::module::module::ClientContext;
-use fedimint_core::db::{DatabaseTransaction, IDatabaseTransactionOpsCoreTyped};
+use fedimint_core::db::{Database, DatabaseTransaction, IDatabaseTransactionOpsCoreTyped};
 use fedimint_core::util::backoff_util::{self};
 use fedimint_core::util::retry;
 use fedimint_core::{Amount, TransactionId};
@@ -20,8 +20,9 @@ use tracing::error;
 use crate::api::StabilityPoolApiExt;
 use crate::db::{
     self, AccountHistoryItemKey, AccountHistoryItemKeyPrefix, DepositSequenceTransactionLookupKey,
-    DepositSequenceTransactionLookupValue, RecordedTransferItemKey, UserOperationHistoryItem,
-    UserOperationHistoryItemKey, UserOperationHistoryItemKind, UserOperationIndexAccountPrefix,
+    DepositSequenceTransactionLookupValue, RecordedTransferItemKey,
+    UserOperationHistoryAccountPrefix, UserOperationHistoryItem, UserOperationHistoryItemKey,
+    UserOperationHistoryItemKind, UserOperationIndexAccountPrefix,
 };
 use crate::{StabilityPoolClientModule, StabilityPoolMeta, StabilityPoolSyncService};
 
@@ -160,20 +161,34 @@ impl StabilityPoolHistoryService {
     }
 
     pub async fn get_full_account_history(&self) -> anyhow::Result<Vec<AccountHistoryItem>> {
-        let mut dbtx = self.client_ctx.module_db().begin_transaction_nc().await;
-        Ok(dbtx
-            .find_by_prefix(&AccountHistoryItemKeyPrefix {
-                account_id: self.account_id,
-            })
-            .await
-            .map(|(_key, value)| value)
-            .collect()
-            .await)
+        Ok(
+            get_full_account_history_from_db(self.client_ctx.module_db().clone(), self.account_id)
+                .await,
+        )
     }
 
     /// Subscribe to history fetch updates to show a loading.
     pub fn subscribe_to_fetches(&self) -> impl Stream<Item = bool> + use<> {
         WatchStream::new(self.is_fetching.subscribe())
+    }
+
+    /// Subscribe to locally cached user operation history snapshots.
+    pub fn subscribe_to_user_operation_updates(
+        &self,
+    ) -> impl Stream<Item = Vec<UserOperationHistoryItem>> + use<> {
+        let db = self.client_ctx.module_db().clone();
+        let account_id = self.account_id;
+
+        self.subscribe_to_fetches().filter_map(move |is_fetching| {
+            let db = db.clone();
+            async move {
+                if is_fetching {
+                    return None;
+                }
+
+                Some(get_full_user_operation_history_from_db(db, account_id).await)
+            }
+        })
     }
 
     /// Returns the last `limit` user operations as tuples of (index, item). To
@@ -250,6 +265,30 @@ async fn get_account_history_count(
         .next()
         .await
         .map_or(0, |k| k.0.index + 1)
+}
+
+async fn get_full_account_history_from_db(
+    db: Database,
+    account_id: AccountId,
+) -> Vec<AccountHistoryItem> {
+    let mut dbtx = db.begin_transaction_nc().await;
+    dbtx.find_by_prefix(&AccountHistoryItemKeyPrefix { account_id })
+        .await
+        .map(|(_key, value)| value)
+        .collect()
+        .await
+}
+
+async fn get_full_user_operation_history_from_db(
+    db: Database,
+    account_id: AccountId,
+) -> Vec<UserOperationHistoryItem> {
+    let mut dbtx = db.begin_transaction_nc().await;
+    dbtx.find_by_prefix(&UserOperationHistoryAccountPrefix { account_id })
+        .await
+        .map(|(_key, value)| value)
+        .collect()
+        .await
 }
 
 // Given the [`AccountHistoryItem`] just received from the server, update the

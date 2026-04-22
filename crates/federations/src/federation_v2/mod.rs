@@ -946,15 +946,9 @@ impl FederationV2 {
         &self,
     ) -> anyhow::Result<&GuardianRemittanceAccount> {
         self.client.spv2()?;
-
-        if self.guardian_remittance_account.get().is_none() {
-            let account = GuardianRemittanceAccount::new(self).await?;
-            let _ = self.guardian_remittance_account.set(account);
-        }
-
         self.guardian_remittance_account
-            .get()
-            .context("guardian remittance account should be initialized")
+            .get_or_try_init(|| async { GuardianRemittanceAccount::new(self).await })
+            .await
     }
 
     fn guardian_remittance_account(&self) -> anyhow::Result<&GuardianRemittanceAccount> {
@@ -2041,10 +2035,23 @@ impl FederationV2 {
                         });
                     }
                 }
-                StabilityPoolMeta::Withdrawal { .. } => {
-                    self.spawn_cancellable("subscribe_spv2_withdraw", move |fed| async move {
-                        fed.subscribe_spv2_withdraw(operation_id).await
-                    });
+                StabilityPoolMeta::Withdrawal { extra_meta, .. } => {
+                    if matches!(
+                        serde_json::from_value::<SPv2WithdrawMetadata>(extra_meta).ok(),
+                        Some(SPv2WithdrawMetadata::GuardianRemittanceAccount)
+                    ) {
+                        self.spawn_cancellable(
+                            "subscribe_guardian_remittance_withdraw",
+                            move |fed| async move {
+                                fed.subscribe_guardian_remittance_withdraw(operation_id)
+                                    .await
+                            },
+                        );
+                    } else {
+                        self.spawn_cancellable("subscribe_spv2_withdraw", move |fed| async move {
+                            fed.subscribe_spv2_withdraw(operation_id).await
+                        });
+                    }
                 }
                 StabilityPoolMeta::Transfer {
                     extra_meta,
@@ -3433,8 +3440,12 @@ impl FederationV2 {
                 } => {
                     let typed_extra_meta =
                         serde_json::from_value::<SPv2WithdrawMetadata>(extra_meta).ok();
+                    let guardian_remittance = matches!(
+                        &typed_extra_meta,
+                        Some(SPv2WithdrawMetadata::GuardianRemittanceAccount)
+                    );
                     let sweeper_initiated =
-                        matches!(typed_extra_meta, Some(SPv2WithdrawMetadata::Sweeper));
+                        matches!(&typed_extra_meta, Some(SPv2WithdrawMetadata::Sweeper));
                     frontend_metadata =
                         if let Some(SPv2WithdrawMetadata::StableBalance { frontend_metadata }) =
                             typed_extra_meta
@@ -3461,10 +3472,15 @@ impl FederationV2 {
                                     error: e.to_string(),
                                 },
                                 sweeper_initiated,
+                                guardian_remittance,
                             }
                         }
                         _ => RpcTransactionKind::SPV2Withdrawal {
-                            state: if let Some(item) = self.spv2_user_op_history_item(txid).await {
+                            state: if let Some(item) = if guardian_remittance {
+                                self.spv2_guardian_remittance_op_history_item(txid).await
+                            } else {
+                                self.spv2_user_op_history_item(txid).await
+                            } {
                                 transaction_amount = RpcAmount(item.amount);
                                 match item.kind {
                                     UserOperationHistoryItemKind::PendingWithdrawal => {
@@ -3488,6 +3504,7 @@ impl FederationV2 {
                                 RpcSPV2WithdrawalState::DataNotInCache
                             },
                             sweeper_initiated,
+                            guardian_remittance,
                         },
                     }
                 }
@@ -4051,7 +4068,7 @@ impl FederationV2 {
         Ok(operation_id)
     }
 
-    pub async fn spv2_enable_guardian_remittance_account(&self) -> anyhow::Result<()> {
+    async fn enable_guardian_remittance_account(&self) -> anyhow::Result<()> {
         let federation_id = self.federation_id().to_string();
         self.runtime
             .app_state
@@ -4077,8 +4094,7 @@ impl FederationV2 {
         })
     }
 
-    pub async fn spv2_withdraw_guardian_remittance_all(&self) -> Result<OperationId> {
-        self.guardian_remittance_account()?;
+    pub async fn spv2_withdraw_guardian_remittance_all(&self) -> Result<()> {
         let spv2 = self.client.spv2()?;
         let (operation_id, _) = spv2
             .withdraw(
@@ -4087,20 +4103,24 @@ impl FederationV2 {
                 SPv2WithdrawMetadata::GuardianRemittanceAccount,
             )
             .await?;
-        self.spawn_cancellable(
-            "subscribe_guardian_remittance_withdraw",
-            move |fed| async move {
-                fed.subscribe_guardian_remittance_withdraw(operation_id)
-                    .await
-            },
-        );
-        Ok(operation_id)
+        self.subscribe_guardian_remittance_withdraw(operation_id)
+            .await;
+        Ok(())
     }
 
-    pub async fn spv2_guardian_remittance_dashboard(
+    pub async fn spv2_subscribe_guardian_remittance_dashboard(
         &self,
-    ) -> anyhow::Result<RpcGuardianRemittanceDashboard> {
-        self.guardian_remittance_account()?.dashboard(self).await
+    ) -> anyhow::Result<impl Stream<Item = RpcGuardianRemittanceDashboard> + use<>> {
+        self.enable_guardian_remittance_account().await?;
+        self.guardian_remittance_account()?
+            .subscribe_dashboard(self)
+    }
+
+    pub async fn spv2_subscribe_guardian_remittance_balance(
+        &self,
+    ) -> anyhow::Result<impl Stream<Item = RpcAmount> + use<>> {
+        self.enable_guardian_remittance_account().await?;
+        Ok(self.guardian_remittance_account()?.subscribe_balance())
     }
 
     async fn subscribe_spv2_withdraw(&self, operation_id: OperationId) {
@@ -4149,7 +4169,8 @@ impl FederationV2 {
         let Ok(spv2) = self.client.spv2() else {
             return;
         };
-        let Some(_) = self.guardian_remittance_account.get() else {
+        let Ok(account) = self.start_guardian_remittance_account().await else {
+            error!("failed to initialize guardian remittance account for withdrawal subscription");
             return;
         };
 
@@ -4159,6 +4180,16 @@ impl FederationV2 {
             while let Some(state) = updates.next().await {
                 self.update_operation_state(operation_id, state.clone())
                     .await;
+                match state {
+                    StabilityPoolWithdrawalOperationState::Success(_)
+                    | StabilityPoolWithdrawalOperationState::UnlockTxAccepted => {
+                        let res = account.update_once().await;
+                        if let Err(e) = res {
+                            error!(%e, "Error syncing guardian remittance account");
+                        }
+                    }
+                    _ => {}
+                }
                 self.runtime.event_sink.typed_event(&Event::spv2_withdrawal(
                     self.federation_id().to_string(),
                     operation_id,
@@ -4337,6 +4368,21 @@ impl FederationV2 {
     ) -> Option<UserOperationHistoryItem> {
         let spv2 = self.client.spv2().ok()?;
         let account_id = spv2.our_account(AccountType::Seeker).id();
+
+        spv2.db
+            .clone()
+            .begin_transaction_nc()
+            .await
+            .get_value(&UserOperationHistoryItemKey { account_id, txid })
+            .await
+    }
+
+    async fn spv2_guardian_remittance_op_history_item(
+        &self,
+        txid: TransactionId,
+    ) -> Option<UserOperationHistoryItem> {
+        let spv2 = self.client.spv2().ok()?;
+        let account_id = spv2.our_account(AccountType::BtcDepositor).id();
 
         spv2.db
             .clone()
