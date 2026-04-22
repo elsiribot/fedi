@@ -1,17 +1,26 @@
 import { useRouter } from 'next/router'
-import { useEffect, useState } from 'react'
+import { useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 
+import BitcoinCircleIcon from '@fedi/common/assets/svgs/bitcoin-circle.svg'
 import { useAmountFormatter } from '@fedi/common/hooks/amount'
 import { useGuardianFeesDashboard } from '@fedi/common/hooks/guardianFees'
 import { useToast } from '@fedi/common/hooks/toast'
-import type { MSats } from '@fedi/common/types'
-import type { RpcGuardianRemittanceModuleTotal } from '@fedi/common/types/bindings'
-import { formatGuardianFeeModuleLabel } from '@fedi/common/utils/guardianFees'
+import { isDev } from '@fedi/common/utils/environment'
+import {
+    GuardianFeeHistoryRow,
+    makeGuardianFeeDetailProps,
+    makeGuardianFeeHistoryRows,
+    makeGuardianFeeHistoryRowDisplay,
+} from '@fedi/common/utils/guardianFees'
 
 import { Button } from '../../components/Button'
 import { ContentBlock } from '../../components/ContentBlock'
+import { HistoryList } from '../../components/HistoryList'
+import { HistoryIcon } from '../../components/HistoryList/HistoryIcon'
+import { Icon } from '../../components/Icon'
 import * as Layout from '../../components/Layout'
+import { Switch } from '../../components/Switch'
 import { Text } from '../../components/Text'
 import { guardianFeesSuccessRoute } from '../../constants/routes'
 import { styled, theme } from '../../styles'
@@ -22,7 +31,8 @@ const GuardianFeesPage: React.FC = () => {
     const toast = useToast()
     const federationId =
         typeof router.query.id === 'string' ? router.query.id : ''
-    const [expandedBucketKeys, setExpandedBucketKeys] = useState<string[]>([])
+    const canUseDummyData = isDev()
+    const [useDummyData, setUseDummyData] = useState(false)
 
     const { makeFormattedAmountsFromMSats } = useAmountFormatter({
         federationId,
@@ -35,12 +45,13 @@ const GuardianFeesPage: React.FC = () => {
         withdrawAll,
     } = useGuardianFeesDashboard(
         router.isReady && federationId ? federationId : undefined,
+        { useDummyData },
     )
-    const firstBucketKey = dayBuckets[0]?.dayKey
 
-    useEffect(() => {
-        setExpandedBucketKeys(firstBucketKey ? [firstBucketKey] : [])
-    }, [federationId, firstBucketKey])
+    const historyRows = useMemo(
+        () => makeGuardianFeeHistoryRows(dayBuckets),
+        [dayBuckets],
+    )
 
     if (!router.isReady) return null
 
@@ -63,13 +74,6 @@ const GuardianFeesPage: React.FC = () => {
         'end',
         true,
     )
-    const toggleBucket = (dayKey: string) => {
-        setExpandedBucketKeys(keys =>
-            keys.includes(dayKey)
-                ? keys.filter(key => key !== dayKey)
-                : [...keys, dayKey],
-        )
-    }
 
     return (
         <ContentBlock>
@@ -83,6 +87,17 @@ const GuardianFeesPage: React.FC = () => {
                 <Layout.Content fullWidth>
                     <Content>
                         <BalancePanel>
+                            {canUseDummyData && (
+                                <DummyDataToggle>
+                                    <Text variant="caption">
+                                        Use dummy guardian fee data
+                                    </Text>
+                                    <Switch
+                                        checked={useDummyData}
+                                        onCheckedChange={setUseDummyData}
+                                    />
+                                </DummyDataToggle>
+                            )}
                             <Text variant="caption">
                                 {t('feature.guardian-fees.remittance-balance')}
                             </Text>
@@ -116,48 +131,32 @@ const GuardianFeesPage: React.FC = () => {
                                 <Text variant="h2">
                                     {t('feature.guardian-fees.fee-history')}
                                 </Text>
-                                {dayBuckets.map(bucket => {
-                                    const isExpanded =
-                                        expandedBucketKeys.includes(
-                                            bucket.dayKey,
-                                        )
+                                <HistoryList<GuardianFeeHistoryRow>
+                                    rows={historyRows}
+                                    makeIcon={() => <GuardianFeeIcon />}
+                                    makeRowProps={row => {
+                                        const rowDisplay =
+                                            makeGuardianFeeHistoryRowDisplay(
+                                                row,
+                                                t,
+                                                makeFormattedAmountsFromMSats,
+                                            )
 
-                                    return (
-                                        <Bucket key={bucket.dayKey}>
-                                            <BucketHeader
-                                                type="button"
-                                                onClick={() =>
-                                                    toggleBucket(bucket.dayKey)
-                                                }>
-                                                <BucketTitle>
-                                                    <Text weight="medium">
-                                                        {bucket.dayKey}
-                                                    </Text>
-                                                </BucketTitle>
-                                                <Text weight="medium">
-                                                    {
-                                                        makeFormattedAmountsFromMSats(
-                                                            bucket.totalAmountRemitted as MSats,
-                                                            'end',
-                                                        ).formattedSats
-                                                    }
-                                                </Text>
-                                            </BucketHeader>
-                                            {isExpanded &&
-                                                bucket.moduleTotals.map(
-                                                    module => (
-                                                        <ModuleTotalRow
-                                                            key={`${bucket.dayKey}-${module.module}`}
-                                                            moduleTotal={module}
-                                                            makeFormattedAmountsFromMSats={
-                                                                makeFormattedAmountsFromMSats
-                                                            }
-                                                        />
-                                                    ),
-                                                )}
-                                        </Bucket>
-                                    )
-                                })}
+                                        return {
+                                            status: rowDisplay.title,
+                                            notes: rowDisplay.subtitle,
+                                            amount: rowDisplay.amount,
+                                            timestamp: rowDisplay.timestamp,
+                                        }
+                                    }}
+                                    makeDetailProps={row =>
+                                        makeGuardianFeeDetailProps(
+                                            row,
+                                            t,
+                                            makeFormattedAmountsFromMSats,
+                                        )
+                                    }
+                                />
                             </History>
                         )}
                     </Content>
@@ -167,33 +166,11 @@ const GuardianFeesPage: React.FC = () => {
     )
 }
 
-const ModuleTotalRow = ({
-    moduleTotal,
-    makeFormattedAmountsFromMSats,
-}: {
-    moduleTotal: RpcGuardianRemittanceModuleTotal
-    makeFormattedAmountsFromMSats: ReturnType<
-        typeof useAmountFormatter
-    >['makeFormattedAmountsFromMSats']
-}) => {
-    const { t } = useTranslation()
-
-    return (
-        <ModuleRow>
-            <Text variant="caption">
-                {formatGuardianFeeModuleLabel(moduleTotal.module, t)}
-            </Text>
-            <Text variant="caption">
-                {
-                    makeFormattedAmountsFromMSats(
-                        moduleTotal.totalAmount as MSats,
-                        'end',
-                    ).formattedSats
-                }
-            </Text>
-        </ModuleRow>
-    )
-}
+const GuardianFeeIcon = () => (
+    <HistoryIcon color={theme.colors.orange}>
+        <Icon icon={BitcoinCircleIcon} size={38} />
+    </HistoryIcon>
+)
 
 const Content = styled('div', {
     display: 'flex',
@@ -218,48 +195,17 @@ const Actions = styled('div', {
     marginTop: 4,
 })
 
+const DummyDataToggle = styled('div', {
+    alignItems: 'center',
+    display: 'flex',
+    justifyContent: 'space-between',
+    gap: 12,
+})
+
 const History = styled('div', {
     display: 'flex',
     flexDirection: 'column',
     gap: 12,
-})
-
-const Bucket = styled('div', {
-    display: 'flex',
-    flexDirection: 'column',
-    gap: 12,
-    padding: 16,
-    border: `1px solid ${theme.colors.lightGrey}`,
-    borderRadius: 8,
-})
-
-const BucketHeader = styled('button', {
-    alignItems: 'center',
-    background: 'transparent',
-    border: 'none',
-    color: 'inherit',
-    cursor: 'pointer',
-    display: 'flex',
-    gap: 12,
-    justifyContent: 'space-between',
-    padding: 0,
-    textAlign: 'left',
-    width: '100%',
-})
-
-const BucketTitle = styled('div', {
-    alignItems: 'center',
-    display: 'flex',
-    gap: 8,
-})
-
-const ModuleRow = styled('div', {
-    alignItems: 'center',
-    borderTop: `1px solid ${theme.colors.lightGrey}`,
-    display: 'flex',
-    justifyContent: 'space-between',
-    gap: 12,
-    paddingTop: 8,
 })
 
 export default GuardianFeesPage

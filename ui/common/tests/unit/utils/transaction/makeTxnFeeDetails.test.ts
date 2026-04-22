@@ -92,6 +92,32 @@ describe('makeTxnFeeDetails', () => {
         })
     })
 
+    it('should display the guardian fee for success/pendingSend transactions', () => {
+        const txn = makeTestTxnEntry('lnPay', {
+            fediGuardianFeeStatus: makeTestFediFeeStatus('success', 10_000),
+        })
+        const txnPendingFee = makeTestTxnEntry('lnPay', {
+            fediGuardianFeeStatus: makeTestFediFeeStatus('pendingSend', 10_000),
+        })
+
+        const detailsFeeSuccess = makeTxnFeeDetails(
+            t,
+            txn,
+            makeFormattedAmountsFromMSats,
+        )
+        const detailsFeePending = makeTxnFeeDetails(
+            t,
+            txnPendingFee,
+            makeFormattedAmountsFromMSats,
+        )
+
+        expect(detailsFeeSuccess).toEqual(detailsFeePending)
+        expect(detailsFeeSuccess).toContainEqual({
+            label: t('phrases.guardian-fee'),
+            formattedAmount: '0.01 USD (10 SATS)',
+        })
+    })
+
     it('should display the lightning fee for lightning payment transactions', () => {
         const txn = makeTestTxnEntry('lnPay', {
             // For the sake of this test, the lightning fee is 20 sats

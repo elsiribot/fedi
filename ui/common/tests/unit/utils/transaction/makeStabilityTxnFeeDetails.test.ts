@@ -68,6 +68,19 @@ describe('makeStabilityTxnDetailItems', () => {
         })
     })
 
+    it('should display the guardian fee for stability transactions', () => {
+        const txn = makeTestTxnEntry('sPV2Deposit', {
+            fediGuardianFeeStatus: makeTestFediFeeStatus('success', 10_000),
+        })
+
+        expect(
+            makeStabilityTxnFeeDetails(t, txn, makeFormattedAmountsFromMSats),
+        ).toContainEqual({
+            label: t('phrases.guardian-fee'),
+            formattedAmount: '0.01 USD (10 SATS)',
+        })
+    })
+
     it('should display the fees paid (so far) for deposits', () => {
         const spDeposit = makeTestTxnEntry('spDeposit', {
             state: makeTestSPDepositState('completeDeposit', {

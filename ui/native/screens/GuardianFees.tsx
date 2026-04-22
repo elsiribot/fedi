@@ -1,23 +1,25 @@
 import type { NativeStackScreenProps } from '@react-navigation/native-stack'
-import { Button, Text, Theme, useTheme } from '@rneui/themed'
-import React, { useEffect, useState } from 'react'
+import { Button, Switch, Text, Theme, useTheme } from '@rneui/themed'
+import React, { useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import {
-    ActivityIndicator,
-    Pressable,
-    ScrollView,
-    StyleSheet,
-} from 'react-native'
+import { ActivityIndicator, StyleSheet } from 'react-native'
 
 import { useAmountFormatter } from '@fedi/common/hooks/amount'
 import { useGuardianFeesDashboard } from '@fedi/common/hooks/guardianFees'
 import { useToast } from '@fedi/common/hooks/toast'
-import type { MSats } from '@fedi/common/types'
-import type { RpcGuardianRemittanceModuleTotal } from '@fedi/common/types/bindings'
-import { formatGuardianFeeModuleLabel } from '@fedi/common/utils/guardianFees'
+import { isDev } from '@fedi/common/utils/environment'
+import {
+    GuardianFeeHistoryRow,
+    makeGuardianFeeDetailProps,
+    makeGuardianFeeHistoryRows,
+    makeGuardianFeeHistoryRowDisplay,
+} from '@fedi/common/utils/guardianFees'
 
+import { HistoryIcon } from '../components/feature/transaction-history/HistoryIcon'
+import { HistoryList } from '../components/feature/transaction-history/HistoryList'
 import { Column, Row } from '../components/ui/Flex'
 import { SafeAreaContainer } from '../components/ui/SafeArea'
+import SvgImage from '../components/ui/SvgImage'
 import type { RootStackParamList } from '../types/navigation'
 
 export type Props = NativeStackScreenProps<RootStackParamList, 'GuardianFees'>
@@ -28,7 +30,8 @@ const GuardianFees: React.FC<Props> = ({ route, navigation }: Props) => {
     const toast = useToast()
     const { theme } = useTheme()
     const style = styles(theme)
-    const [expandedBucketKeys, setExpandedBucketKeys] = useState<string[]>([])
+    const canUseDummyData = isDev()
+    const [useDummyData, setUseDummyData] = useState(false)
 
     const { makeFormattedAmountsFromMSats } = useAmountFormatter({
         federationId,
@@ -39,12 +42,12 @@ const GuardianFees: React.FC<Props> = ({ route, navigation }: Props) => {
         isBalanceLoading,
         isWithdrawing,
         withdrawAll,
-    } = useGuardianFeesDashboard(federationId)
-    const firstBucketKey = dayBuckets[0]?.dayKey
+    } = useGuardianFeesDashboard(federationId, { useDummyData })
 
-    useEffect(() => {
-        setExpandedBucketKeys(firstBucketKey ? [firstBucketKey] : [])
-    }, [federationId, firstBucketKey])
+    const historyRows = useMemo(
+        () => makeGuardianFeeHistoryRows(dayBuckets),
+        [dayBuckets],
+    )
 
     const isWithdrawDisabled =
         isBalanceLoading || currentBalance <= 0 || isWithdrawing
@@ -65,19 +68,24 @@ const GuardianFees: React.FC<Props> = ({ route, navigation }: Props) => {
         'end',
         true,
     )
-    const toggleBucket = (dayKey: string) => {
-        setExpandedBucketKeys(keys =>
-            keys.includes(dayKey)
-                ? keys.filter(key => key !== dayKey)
-                : [...keys, dayKey],
-        )
-    }
 
     return (
         <SafeAreaContainer edges="bottom">
-            <ScrollView contentContainerStyle={style.scrollContent}>
-                <Column gap="lg">
+            <Column grow>
+                <Column gap="lg" style={style.content}>
                     <Column gap="sm" style={style.balancePanel}>
+                        {canUseDummyData && (
+                            <Row
+                                justify="between"
+                                align="center"
+                                style={style.dummyDataToggle}>
+                                <Text caption>Use dummy guardian fee data</Text>
+                                <Switch
+                                    value={useDummyData}
+                                    onValueChange={setUseDummyData}
+                                />
+                            </Row>
+                        )}
                         <Text caption color={theme.colors.darkGrey}>
                             {t('feature.guardian-fees.remittance-balance')}
                         </Text>
@@ -105,96 +113,63 @@ const GuardianFees: React.FC<Props> = ({ route, navigation }: Props) => {
                     </Column>
 
                     {dayBuckets.length > 0 && (
-                        <Column gap="md">
-                            <Text h4>
-                                {t('feature.guardian-fees.fee-history')}
-                            </Text>
-                            {dayBuckets.map(bucket => {
-                                const isExpanded = expandedBucketKeys.includes(
-                                    bucket.dayKey,
-                                )
-
-                                return (
-                                    <Column
-                                        key={bucket.dayKey}
-                                        gap="md"
-                                        style={style.bucket}>
-                                        <Pressable
-                                            onPress={() =>
-                                                toggleBucket(bucket.dayKey)
-                                            }>
-                                            <Row
-                                                justify="between"
-                                                align="center">
-                                                <Row center gap="sm">
-                                                    <Text medium>
-                                                        {bucket.dayKey}
-                                                    </Text>
-                                                </Row>
-                                                <Text medium>
-                                                    {
-                                                        makeFormattedAmountsFromMSats(
-                                                            bucket.totalAmountRemitted as MSats,
-                                                            'end',
-                                                        ).formattedSats
-                                                    }
-                                                </Text>
-                                            </Row>
-                                        </Pressable>
-                                        {isExpanded &&
-                                            bucket.moduleTotals.map(module => (
-                                                <ModuleTotalRow
-                                                    key={`${bucket.dayKey}-${module.module}`}
-                                                    moduleTotal={module}
-                                                    makeFormattedAmountsFromMSats={
-                                                        makeFormattedAmountsFromMSats
-                                                    }
-                                                />
-                                            ))}
-                                    </Column>
-                                )
-                            })}
-                        </Column>
+                        <Text h4>{t('feature.guardian-fees.fee-history')}</Text>
                     )}
                 </Column>
-            </ScrollView>
+                {dayBuckets.length > 0 && (
+                    <HistoryList<GuardianFeeHistoryRow>
+                        rows={historyRows}
+                        makeIcon={() => <GuardianFeeIcon />}
+                        makeShowAskFedi={() => false}
+                        makeFeeItems={() => []}
+                        federationId={federationId}
+                        makeRowProps={row => {
+                            const rowDisplay = makeGuardianFeeHistoryRowDisplay(
+                                row,
+                                t,
+                                makeFormattedAmountsFromMSats,
+                            )
+
+                            return {
+                                status: rowDisplay.title,
+                                amount: rowDisplay.amount,
+                                timestamp: rowDisplay.timestamp,
+                                notes: undefined,
+                                type: rowDisplay.subtitle,
+                                amountState: rowDisplay.amountState,
+                            }
+                        }}
+                        makeDetailProps={row =>
+                            makeGuardianFeeDetailProps(
+                                row,
+                                t,
+                                makeFormattedAmountsFromMSats,
+                            )
+                        }
+                    />
+                )}
+            </Column>
         </SafeAreaContainer>
     )
 }
 
-const ModuleTotalRow = ({
-    moduleTotal,
-    makeFormattedAmountsFromMSats,
-}: {
-    moduleTotal: RpcGuardianRemittanceModuleTotal
-    makeFormattedAmountsFromMSats: ReturnType<
-        typeof useAmountFormatter
-    >['makeFormattedAmountsFromMSats']
-}) => {
-    const { t } = useTranslation()
+const GuardianFeeIcon = () => {
     const { theme } = useTheme()
-    const style = styles(theme)
 
     return (
-        <Row justify="between" align="center" style={style.moduleRow}>
-            <Text caption color={theme.colors.darkGrey}>
-                {formatGuardianFeeModuleLabel(moduleTotal.module, t)}
-            </Text>
-            <Text caption>
-                {
-                    makeFormattedAmountsFromMSats(
-                        moduleTotal.totalAmount as MSats,
-                        'end',
-                    ).formattedSats
-                }
-            </Text>
-        </Row>
+        <HistoryIcon>
+            <SvgImage
+                name="BitcoinCircle"
+                color={theme.colors.orange}
+                size={theme.sizes.historyIcon}
+            />
+        </HistoryIcon>
     )
 }
 
 const styles = (theme: Theme) =>
     StyleSheet.create({
-        scrollContent: {
+        content: {
             padding: theme.spacing.xl,
         },
         balancePanel: {
@@ -205,16 +180,8 @@ const styles = (theme: Theme) =>
         balanceAction: {
             marginTop: theme.spacing.sm,
         },
-        bucket: {
-            borderColor: theme.colors.extraLightGrey,
-            borderRadius: theme.borders.defaultRadius,
-            borderWidth: 1,
-            padding: theme.spacing.lg,
-        },
-        moduleRow: {
-            borderTopColor: theme.colors.extraLightGrey,
-            borderTopWidth: 1,
-            paddingTop: theme.spacing.sm,
+        dummyDataToggle: {
+            paddingBottom: theme.spacing.xs,
         },
     })
 
