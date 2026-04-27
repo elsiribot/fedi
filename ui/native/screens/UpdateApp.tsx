@@ -2,13 +2,7 @@ import { NativeStackScreenProps } from '@react-navigation/native-stack'
 import { Button, Text, Theme, useTheme } from '@rneui/themed'
 import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import {
-    ActivityIndicator,
-    Image,
-    Linking,
-    Platform,
-    StyleSheet,
-} from 'react-native'
+import { Image, Linking, Platform, StyleSheet } from 'react-native'
 import { ScrollView } from 'react-native-gesture-handler'
 import { EdgeInsets, useSafeAreaInsets } from 'react-native-safe-area-context'
 
@@ -109,7 +103,7 @@ export default function UpdateApp({ navigation }: Props) {
                     </Text>
                     <Text>{t('feature.updates.new-release-description')}</Text>
                 </Column>
-                {releaseNotesText ? (
+                {releaseNotesText && (
                     <Column style={style.releaseNotesContainer} gap="sm">
                         <Text caption bold>
                             {t('feature.updates.whats-new-in-version', {
@@ -118,8 +112,6 @@ export default function UpdateApp({ navigation }: Props) {
                         </Text>
                         <Text caption>{releaseNotesText}</Text>
                     </Column>
-                ) : (
-                    <ActivityIndicator />
                 )}
             </ScrollView>
             <Column gap="sm" style={style.buttons}>
