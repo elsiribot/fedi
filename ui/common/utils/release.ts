@@ -1,6 +1,7 @@
 import { z } from 'zod'
 
 import { GITHUB_RELEASES_API_URL } from '../constants/release'
+import { isDevOrExperimental } from './environment'
 import { makeLog } from './log'
 
 const log = makeLog('common/utils/release')
@@ -98,4 +99,48 @@ export async function tryFetchReleaseNotes(
     } finally {
         log.info('(Finish) [Fetching release notes from GitHub]')
     }
+}
+
+function parseReleaseTag(
+    releaseTag: string,
+): { major: number; minor: number; patch: number } | null {
+    if (!/[0-9]+\.[0-9]+\.[0-9]+/.test(releaseTag)) return null
+
+    const [major, minor, patch] = releaseTag.split('.').map(Number)
+
+    return { major, minor, patch }
+}
+
+/**
+ * Determines if a new release is available based on the current and new release tags
+ *
+ * For production builds, the major and minor version numbers indicate that a new release is available.
+ * For dev or experimental builds, all version numbers indicate that a new release is available.
+ */
+export function hasNewRelease(currentTag: string, newTag: string) {
+    const currentRelease = parseReleaseTag(currentTag)
+    const newRelease = parseReleaseTag(newTag)
+
+    if (!currentRelease || !newRelease) return false
+
+    if (newRelease.major > currentRelease.major) return true
+
+    if (
+        newRelease.major >= currentRelease.major &&
+        newRelease.minor > currentRelease.minor
+    )
+        return true
+
+    // For dev or experimental builds,
+    // Show the update screen for any new release tag
+    // To make it easier for QA to test
+    if (
+        isDevOrExperimental &&
+        newRelease.major >= currentRelease.major &&
+        newRelease.minor >= currentRelease.minor &&
+        newRelease.patch > currentRelease.patch
+    )
+        return true
+
+    return false
 }

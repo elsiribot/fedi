@@ -188,3 +188,77 @@ describe('tryFetchReleaseNotes', () => {
         expect(result).rejects.toThrow()
     })
 })
+
+describe('hasNewRelease', () => {
+    describe('production build', () => {
+        let hasNewRelease: (currentTag: string, newTag: string) => boolean
+
+        beforeEach(() => {
+            jest.resetModules()
+            jest.doMock('@fedi/common/utils/environment', () => ({
+                ...jest.requireActual('@fedi/common/utils/environment'),
+                isDevOrExperimental: false,
+            }))
+            hasNewRelease = jest.requireActual(
+                '@fedi/common/utils/release',
+            ).hasNewRelease
+        })
+
+        it('should return true if there is a new major release', () => {
+            expect(hasNewRelease('26.0.0', '27.0.0')).toBe(true)
+            expect(hasNewRelease('26.9.1', '27.0.2')).toBe(true)
+        })
+
+        it('should return true if there is a new minor release', () => {
+            expect(hasNewRelease('26.1.0', '26.2.0')).toBe(true)
+            expect(hasNewRelease('26.1.8', '26.8.1')).toBe(true)
+        })
+
+        it('should not return true if there is a new patch release', () => {
+            expect(hasNewRelease('26.1.0', '26.1.1')).toBe(false)
+            expect(hasNewRelease('26.1.0', '26.1.10')).toBe(false)
+        })
+
+        it('should return false if somehow the new release tag is older', () => {
+            expect(hasNewRelease('26.0.0', '25.9.1')).toBe(false)
+            expect(hasNewRelease('26.9.1', '26.0.0')).toBe(false)
+            expect(hasNewRelease('25.9.1', '25.9.0')).toBe(false)
+        })
+    })
+
+    describe('dev or experimental build', () => {
+        let hasNewRelease: (currentTag: string, newTag: string) => boolean
+
+        beforeEach(() => {
+            jest.resetModules()
+            jest.doMock('@fedi/common/utils/environment', () => ({
+                ...jest.requireActual('@fedi/common/utils/environment'),
+                isDevOrExperimental: true,
+            }))
+            hasNewRelease = jest.requireActual(
+                '@fedi/common/utils/release',
+            ).hasNewRelease
+        })
+
+        it('should return true if there is a new major release', () => {
+            expect(hasNewRelease('26.0.0', '27.0.0')).toBe(true)
+            expect(hasNewRelease('26.9.1', '27.0.2')).toBe(true)
+        })
+
+        it('should return true if there is a new minor release', () => {
+            expect(hasNewRelease('26.1.0', '26.2.0')).toBe(true)
+            expect(hasNewRelease('26.1.8', '26.8.1')).toBe(true)
+        })
+
+        it('should return true if there is a new patch release', () => {
+            expect(hasNewRelease('26.1.0', '26.1.3')).toBe(true)
+            expect(hasNewRelease('26.1.0', '26.1.10')).toBe(true)
+        })
+
+        it('should return false if somehow the new release tag is older', () => {
+            expect(hasNewRelease('26.0.0', '25.9.1')).toBe(false)
+            expect(hasNewRelease('26.9.1', '26.0.0')).toBe(false)
+            expect(hasNewRelease('25.9.1', '25.9.0')).toBe(false)
+        })
+    })
+})

@@ -27,7 +27,7 @@ import { HomeNavigationTab } from '../types/linking'
 import { I18nLanguage } from '../types/localization'
 import { FedimintBridge } from '../utils/fedimint'
 import { makeLog } from '../utils/log'
-import { tryFetchReleaseSchema } from '../utils/release'
+import { hasNewRelease, tryFetchReleaseSchema } from '../utils/release'
 import { loadFromStorage } from './storage'
 
 const log = makeLog('redux/environment')
@@ -257,7 +257,7 @@ export const refreshAppVersion = createAsyncThunk<
     { state: CommonState }
 >('environment/refreshAppVersion', async (_, { getState, dispatch }) => {
     const updateScreenFlag = selectFeatureFlag(getState(), 'update_screen')
-    const latestAwareReleaseTag = selectLatestAwareReleaseTag(getState())
+    const currentReleaseTag = selectLatestAwareReleaseTag(getState())
 
     if (!updateScreenFlag) return
 
@@ -267,10 +267,8 @@ export const refreshAppVersion = createAsyncThunk<
         dispatch(setLatestAwareReleaseTag(release.tag_name))
 
         if (
-            latestAwareReleaseTag !== release.tag_name &&
-            // If `latestAwareReleaseTag` is null, that means the user has just updated/installed the app
-            // and we shouldn't immediately prompt them to update.
-            latestAwareReleaseTag !== null
+            currentReleaseTag !== null &&
+            hasNewRelease(currentReleaseTag, release.tag_name)
         ) {
             dispatch(setShouldRequestAppUpdate(true))
         }
