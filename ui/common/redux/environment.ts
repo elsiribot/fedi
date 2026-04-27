@@ -256,7 +256,10 @@ export const refreshAppVersion = createAsyncThunk<
     void,
     { state: CommonState }
 >('environment/refreshAppVersion', async (_, { getState, dispatch }) => {
+    const updateScreenFlag = selectFeatureFlag(getState(), 'update_screen')
     const latestAwareReleaseTag = selectLatestAwareReleaseTag(getState())
+
+    if (!updateScreenFlag) return
 
     try {
         const release = await tryFetchReleaseSchema()
@@ -524,3 +527,5 @@ export const selectPaymentType = (s: CommonState) => s.environment.paymentType
 
 export const selectLatestAwareReleaseTag = (s: CommonState) =>
     s.environment.latestAwareReleaseTag
+export const selectShouldRequestAppUpdate = (s: CommonState) =>
+    s.environment.shouldRequestAppUpdate

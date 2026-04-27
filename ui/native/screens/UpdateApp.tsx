@@ -1,9 +1,27 @@
 import { NativeStackScreenProps } from '@react-navigation/native-stack'
 import { Button, Text, Theme, useTheme } from '@rneui/themed'
-import { Trans, useTranslation } from 'react-i18next'
-import { Image, Linking, StyleSheet } from 'react-native'
+import { useEffect, useState } from 'react'
+import { useTranslation } from 'react-i18next'
+import {
+    ActivityIndicator,
+    Image,
+    Linking,
+    Platform,
+    StyleSheet,
+} from 'react-native'
 import { ScrollView } from 'react-native-gesture-handler'
 import { EdgeInsets, useSafeAreaInsets } from 'react-native-safe-area-context'
+
+import {
+    ANDROID_APP_STORE_URL,
+    IOS_APP_STORE_URL,
+} from '@fedi/common/constants/release'
+import { selectLanguage, selectLatestAwareReleaseTag } from '@fedi/common/redux'
+import {
+    ReleaseNotesJson,
+    tryFetchReleaseNotes,
+    tryFetchReleaseSchema,
+} from '@fedi/common/utils/release'
 
 import { Images } from '../assets/images'
 import { Column } from '../components/ui/Flex'
@@ -11,6 +29,7 @@ import GradientView from '../components/ui/GradientView'
 import { PressableIcon } from '../components/ui/PressableIcon'
 import { SafeAreaContainer } from '../components/ui/SafeArea'
 import SvgImage from '../components/ui/SvgImage'
+import { useAppSelector } from '../state/hooks'
 import { reset } from '../state/navigation'
 import { RootStackParamList } from '../types/navigation'
 import { useIsFeatureUnlocked } from '../utils/hooks/security'
@@ -18,10 +37,24 @@ import { useIsFeatureUnlocked } from '../utils/hooks/security'
 export type Props = NativeStackScreenProps<RootStackParamList, 'UpdateApp'>
 
 export default function UpdateApp({ navigation }: Props) {
+    const [releaseNotesJson, setReleaseNotesJson] = useState<ReleaseNotesJson>()
+
     const { t } = useTranslation()
     const { theme } = useTheme()
     const insets = useSafeAreaInsets()
     const isAppUnlocked = useIsFeatureUnlocked('app')
+
+    const latestReleaseTag = useAppSelector(selectLatestAwareReleaseTag)
+    const language = useAppSelector(selectLanguage)
+
+    useEffect(() => {
+        tryFetchReleaseSchema()
+            .then(tryFetchReleaseNotes)
+            .then(setReleaseNotesJson)
+            .catch(() => {
+                /* no-op */
+            })
+    }, [])
 
     const handleClose = () => {
         if (navigation.canGoBack()) {
@@ -33,22 +66,18 @@ export default function UpdateApp({ navigation }: Props) {
         }
     }
 
-    const handleGoToReleaseNotes = () => {
-        // TODO: replace with real link
-        Linking.openURL('https://fedi.xyz')
-    }
-
     const handleUpdate = () => {
-        // TODO: replace with real link
-        Linking.openURL('https://fedi.xyz')
+        if (Platform.OS === 'android') {
+            Linking.openURL(ANDROID_APP_STORE_URL)
+        } else if (Platform.OS === 'ios') {
+            Linking.openURL(IOS_APP_STORE_URL)
+        }
     }
 
     const style = styles(theme, insets)
 
-    // TODO: populate with real data
-    const version = '26.4.2'
-    // TODO: populate with real data
-    const releaseNotesText = `Release notes wheeeeeee`
+    const releaseNotesText =
+        releaseNotesJson?.[language ?? 'en'] ?? releaseNotesJson?.en
 
     return (
         <SafeAreaContainer edges="bottom">
@@ -68,7 +97,9 @@ export default function UpdateApp({ navigation }: Props) {
             <GradientView style={style.banner} variant="sky-banner">
                 <SvgImage name="NorthStar" size={24} />
                 <Text caption>
-                    {t('feature.updates.version-is-available', { version })}
+                    {t('feature.updates.version-is-available', {
+                        version: latestReleaseTag,
+                    })}
                 </Text>
             </GradientView>
             <ScrollView contentContainerStyle={style.body} style={{ flex: 1 }}>
@@ -76,28 +107,20 @@ export default function UpdateApp({ navigation }: Props) {
                     <Text h2 medium>
                         {t('feature.updates.new-release-available')}
                     </Text>
-                    <Text>
-                        <Trans
-                            t={t}
-                            i18nKey="feature.updates.new-release-description"
-                            components={{
-                                link: (
-                                    <Text
-                                        style={style.link}
-                                        onPress={handleGoToReleaseNotes}
-                                    />
-                                ),
-                            }}
-                            values={{ version }}
-                        />
-                    </Text>
+                    <Text>{t('feature.updates.new-release-description')}</Text>
                 </Column>
-                <Column style={style.releaseNotesContainer} gap="sm">
-                    <Text caption bold>
-                        {t('feature.updates.whats-new-in-version', { version })}
-                    </Text>
-                    <Text caption>{releaseNotesText}</Text>
-                </Column>
+                {releaseNotesText ? (
+                    <Column style={style.releaseNotesContainer} gap="sm">
+                        <Text caption bold>
+                            {t('feature.updates.whats-new-in-version', {
+                                version: latestReleaseTag,
+                            })}
+                        </Text>
+                        <Text caption>{releaseNotesText}</Text>
+                    </Column>
+                ) : (
+                    <ActivityIndicator />
+                )}
             </ScrollView>
             <Column gap="sm" style={style.buttons}>
                 <Button
@@ -149,11 +172,6 @@ const styles = (theme: Theme, insets: EdgeInsets) =>
         body: {
             padding: theme.spacing.lg,
             gap: theme.spacing.lg,
-            flex: 1,
-        },
-        link: {
-            color: theme.colors.blue,
-            textDecorationLine: 'underline',
         },
         buttons: {
             padding: theme.spacing.lg,
