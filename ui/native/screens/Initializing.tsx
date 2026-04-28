@@ -54,6 +54,16 @@ const Initializing: React.FC<Props> = () => {
             return navigation.replace(...destination)
         }
 
+        const doesUpdatePlatformMatch =
+            updateScreenFlag?.platform === 'All' ||
+            (updateScreenFlag?.platform === 'IOS' && Platform.OS === 'ios') ||
+            (updateScreenFlag?.platform === 'Android' &&
+                Platform.OS === 'android')
+
+        if (doesUpdatePlatformMatch && shouldRequestAppUpdate) {
+            return navigation.replace('UpdateApp')
+        }
+
         const pendingUnlockDestination = consumePendingUnlockNavigationArgs()
         const destination: NavigationArgs = pendingUnlockDestination ?? [
             'TabsNavigator',
@@ -70,16 +80,6 @@ const Initializing: React.FC<Props> = () => {
             return navigation.dispatch(
                 navigationArgsToResetAction(pendingUnlockDestination),
             )
-        }
-
-        const doesUpdatePlatformMatch =
-            updateScreenFlag?.platform === 'All' ||
-            (updateScreenFlag?.platform === 'IOS' && Platform.OS === 'ios') ||
-            (updateScreenFlag?.platform === 'Android' &&
-                Platform.OS === 'android')
-
-        if (doesUpdatePlatformMatch && shouldRequestAppUpdate) {
-            return navigation.replace('UpdateApp')
         }
 
         navigation.replace(...destination)

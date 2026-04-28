@@ -252,6 +252,11 @@ export const MainNavigator = () => {
                         }}
                     />
                     <Stack.Screen
+                        name="UpdateApp"
+                        component={UpdateApp}
+                        options={{ headerShown: false }}
+                    />
+                    <Stack.Screen
                         name="JoinFederation"
                         component={JoinFederation}
                         options={() => ({
@@ -418,11 +423,6 @@ export const MainNavigator = () => {
                                     animation: 'fade',
                                     animationDuration: 300,
                                 })}
-                            />
-                            <Stack.Screen
-                                name="UpdateApp"
-                                component={UpdateApp}
-                                options={{ headerShown: false }}
                             />
                             <Stack.Screen
                                 name="FederationGreeting"
