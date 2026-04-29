@@ -5,12 +5,14 @@ import path from 'path'
 import AppiumManager from '../configs/appium/AppiumManager'
 import { AppiumTestBase } from '../configs/appium/AppiumTestBase'
 import { JoinLeaveFederation } from './common/JoinLeaveFederation.test'
+import { Settings } from './common/Settings.test'
 import { OnboardingTest } from './common/onboarding.test'
 
 type TestConstructor = new () => AppiumTestBase
 
 const availableTests: Record<string, TestConstructor> = {
     onboarding: OnboardingTest,
+    settings: Settings,
     joinLeaveFederations: JoinLeaveFederation,
 }
 type TestName = keyof typeof availableTests
