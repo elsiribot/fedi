@@ -62,6 +62,7 @@ const initialState = {
     lastUsedTab: HomeNavigationTab.Wallet,
     paymentType: 'bitcoin' as 'bitcoin' | 'stable-balance',
     latestAwareReleaseTag: null as string | null,
+    versionTag: null as string | null,
     shouldRequestAppUpdate: false,
 }
 
@@ -169,6 +170,9 @@ export const environmentSlice = createSlice({
         setLatestAwareReleaseTag(state, action: PayloadAction<string | null>) {
             state.latestAwareReleaseTag = action.payload
         },
+        setVersionTag(state, action: PayloadAction<string | null>) {
+            state.versionTag = action.payload
+        },
         setShouldRequestAppUpdate(state, action: PayloadAction<boolean>) {
             state.shouldRequestAppUpdate = action.payload
         },
@@ -248,6 +252,7 @@ export const {
     setPaymentType,
     setShouldRequestAppUpdate,
     setLatestAwareReleaseTag,
+    setVersionTag,
 } = environmentSlice.actions
 
 /*** Async thunk actions ***/

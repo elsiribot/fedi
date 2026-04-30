@@ -11,8 +11,10 @@ import {
     setEventListenersReady,
     CommonState,
     setupStore,
+    setVersionTag,
 } from '@fedi/common/redux'
 import { makeLog } from '@fedi/common/utils/log'
+import { version } from '../package.json'
 
 import {
     fedimint,
@@ -53,6 +55,7 @@ export function initializeNativeStore() {
 
     // Get the number format locale from the system and store it for later use.
     store.dispatch(setCurrencyLocale(getNumberFormatLocale()))
+    store.dispatch(setVersionTag(version))
 
     // Whenever the app is brought back into the foreground, refresh prices.
     const changeSubscription = RNAppState.addEventListener('change', state => {
