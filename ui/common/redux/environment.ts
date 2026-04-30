@@ -532,3 +532,7 @@ export const selectLatestAwareReleaseTag = (s: CommonState) =>
     s.environment.latestAwareReleaseTag
 export const selectShouldRequestAppUpdate = (s: CommonState) =>
     s.environment.shouldRequestAppUpdate
+export const selectShouldPresentAppUpdate = (s: CommonState) =>
+    !!s.environment.versionTag &&
+    !!s.environment.latestAwareReleaseTag &&
+    hasNewRelease(s.environment.versionTag, s.environment.latestAwareReleaseTag)
