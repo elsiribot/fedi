@@ -45,6 +45,7 @@ codegen-units = 1
 debug = "line-tables-only"
 opt-level = "z"
 strip = false
+panic = "abort"
 
 [workspace.metadata]
 authors = ["The Fedi Developers"]
