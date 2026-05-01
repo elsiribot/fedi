@@ -2,7 +2,7 @@ import Image from 'next/image'
 import React from 'react'
 import { useTranslation } from 'react-i18next'
 
-import ChatIllustration from '@fedi/common/assets/images/illustration-chat.png'
+import ChatIllustration from '@fedi/common/assets/images/illustration-chat.webp'
 
 import { styled } from '../../styles'
 import { Button } from '../Button'

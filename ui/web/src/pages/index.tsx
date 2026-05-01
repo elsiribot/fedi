@@ -2,7 +2,7 @@ import { useRouter } from 'next/router'
 import { useState } from 'react'
 import { Trans, useTranslation } from 'react-i18next'
 
-import welcomeBackground from '@fedi/common/assets/images/welcome-bg.png'
+import welcomeBackground from '@fedi/common/assets/images/welcome-bg.webp'
 import FediLogo from '@fedi/common/assets/svgs/fedi-logo-icon.svg'
 import { useToast } from '@fedi/common/hooks/toast'
 import { refreshOnboardingStatus } from '@fedi/common/redux'
