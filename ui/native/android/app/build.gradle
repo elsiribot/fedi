@@ -128,7 +128,7 @@ android {
     }
 
      compileOptions {
-        coreLibraryDesugaringEnabled true
+        coreLibraryDesugaringEnabled false
     }
 
     packagingOptions {
