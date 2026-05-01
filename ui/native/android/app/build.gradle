@@ -123,6 +123,8 @@ android {
         targetSdkVersion rootProject.ext.targetSdkVersion
         versionCode 240051929
         versionName "26.4.4"
+        // Only keep resources for supported languages to reduce APK size
+        resConfigs "en", "es", "fr", "pt", "ar", "am", "id", "my", "rn", "rw", "so", "sw", "tl", "uk"
     }
 
      compileOptions {
