@@ -269,9 +269,8 @@ dependencies {
     // For animated GIF support
     implementation 'com.facebook.fresco:animated-gif:3.6.0'
 
-    // For WebP support, including animated WebP
-    implementation 'com.facebook.fresco:animated-webp:3.6.0'
-    implementation 'com.facebook.fresco:webpsupport:3.6.0'
+    // WebP support removed - Android API 24+ has native WebP decoding
+    // Animated WebP not used in the app
 
     // coroutines for async rpc
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.4.1")
