@@ -794,6 +794,34 @@ pub struct RpcPublicRoomInfo {
     pub joined_member_count: u64,
 }
 
+#[derive(Clone, Debug, Serialize, Deserialize, ts_rs::TS)]
+#[serde(rename_all = "camelCase")]
+#[ts(export)]
+pub struct RpcRoomPreview {
+    pub id: String,
+    pub name: Option<String>,
+    pub avatar_url: Option<String>,
+    #[ts(type = "number")]
+    pub joined_member_count: u64,
+    pub join_rule: RpcRoomJoinRule,
+}
+
+// Mirrors matrix_sdk::ruma::room::JoinRuleSummary, projected onto a flat
+// string enum so the JS side can render based on the room's openness without
+// reaching into the SDK's enum shape.
+#[derive(Clone, Debug, Serialize, Deserialize, ts_rs::TS)]
+#[serde(rename_all = "camelCase")]
+#[ts(export)]
+pub enum RpcRoomJoinRule {
+    Public,
+    Knock,
+    Invite,
+    Restricted,
+    KnockRestricted,
+    Private,
+    Unknown,
+}
+
 #[derive(Clone, Debug, Serialize, Deserialize, TS)]
 #[serde(rename_all = "camelCase")]
 #[ts(export)]

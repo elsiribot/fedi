@@ -897,6 +897,32 @@ impl Matrix {
         })
     }
 
+    /// Resolve a room's name/avatar/join rule for any room the homeserver
+    /// can describe — including knockable private rooms the user has not
+    /// joined. Uses MSC3266 (`/rooms/{id}/summary`) under the hood, falling
+    /// back to the public directory and room-state endpoints.
+    pub async fn get_room_preview(&self, room_id: &RoomId) -> Result<RpcRoomPreview> {
+        use matrix_sdk::ruma::room::JoinRuleSummary;
+        let room_or_alias = OwnedRoomOrAliasId::from(room_id.to_owned());
+        let preview = self.client.get_room_preview(&room_or_alias, vec![]).await?;
+        let join_rule = match preview.join_rule {
+            Some(JoinRuleSummary::Public) => RpcRoomJoinRule::Public,
+            Some(JoinRuleSummary::Knock) => RpcRoomJoinRule::Knock,
+            Some(JoinRuleSummary::Invite) => RpcRoomJoinRule::Invite,
+            Some(JoinRuleSummary::Restricted(_)) => RpcRoomJoinRule::Restricted,
+            Some(JoinRuleSummary::KnockRestricted(_)) => RpcRoomJoinRule::KnockRestricted,
+            Some(JoinRuleSummary::Private) => RpcRoomJoinRule::Private,
+            Some(_) | None => RpcRoomJoinRule::Unknown,
+        };
+        Ok(RpcRoomPreview {
+            id: preview.room_id.to_string(),
+            name: preview.name,
+            avatar_url: preview.avatar_url.map(|url| url.to_string()),
+            joined_member_count: preview.num_joined_members,
+            join_rule,
+        })
+    }
+
     pub async fn get_public_rooms_filtered(
         &self,
         request: get_public_rooms_filtered::Request,

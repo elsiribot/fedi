@@ -953,6 +953,12 @@ export class FedimintBridge {
         return this.rpcTyped('matrixPublicRoomInfo', args)
     }
 
+    async matrixGetRoomPreview(
+        args: bindings.RpcPayload<'matrixGetRoomPreview'>,
+    ) {
+        return this.rpcTyped('matrixGetRoomPreview', args)
+    }
+
     async matrixRoomPreviewContent(
         args: bindings.RpcPayload<'matrixRoomPreviewContent'>,
     ) {

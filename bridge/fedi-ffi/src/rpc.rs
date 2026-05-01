@@ -48,8 +48,8 @@ use rpc_types::event::{Event, EventSink, PanicEvent, SocialRecoveryEvent, TypedE
 use rpc_types::matrix::{
     RpcBackPaginationStatus, RpcComposerDraft, RpcMatrixAccountSession, RpcMatrixInitializeStatus,
     RpcMatrixUploadResult, RpcMatrixUserDirectorySearchResponse, RpcPublicRoomInfo, RpcRoomId,
-    RpcRoomMember, RpcRoomNotificationMode, RpcSerializedRoomInfo, RpcSyncIndicator,
-    RpcTimelineEventItemId, RpcTimelineItem, RpcUserId,
+    RpcRoomMember, RpcRoomNotificationMode, RpcRoomPreview, RpcSerializedRoomInfo,
+    RpcSyncIndicator, RpcTimelineEventItemId, RpcTimelineItem, RpcUserId,
 };
 use rpc_types::nostril::{RpcNostrPubkey, RpcNostrSecret};
 use rpc_types::sp_transfer::{RpcAccountId, RpcSpTransferState, SpMatrixTransferId};
@@ -1865,6 +1865,15 @@ async fn matrixPublicRoomInfo(
 }
 
 #[macro_rules_derive(rpc_method!)]
+async fn matrixGetRoomPreview(
+    bg_matrix: &BgMatrix,
+    room_id: RpcRoomId,
+) -> anyhow::Result<RpcRoomPreview> {
+    let matrix = bg_matrix.wait().await;
+    matrix.get_room_preview(&room_id.into_typed()?).await
+}
+
+#[macro_rules_derive(rpc_method!)]
 async fn matrixSetDisplayName(bg_matrix: &BgMatrix, display_name: String) -> anyhow::Result<()> {
     let matrix = bg_matrix.wait().await;
     matrix.set_display_name(display_name).await
@@ -2727,6 +2736,7 @@ rpc_methods!(RpcMethods {
     matrixListIgnoredUsers,
     matrixRoomPreviewContent,
     matrixPublicRoomInfo,
+    matrixGetRoomPreview,
     matrixRoomMarkAsUnread,
     matrixEditMessage,
     matrixDeleteMessage,

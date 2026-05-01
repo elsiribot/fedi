@@ -976,6 +976,7 @@ export type RpcMethods = {
   matrixListIgnoredUsers: [matrixListIgnoredUsers, Array<RpcUserId>];
   matrixRoomPreviewContent: [matrixRoomPreviewContent, Array<RpcTimelineItem>];
   matrixPublicRoomInfo: [matrixPublicRoomInfo, RpcPublicRoomInfo];
+  matrixGetRoomPreview: [matrixGetRoomPreview, RpcRoomPreview];
   matrixRoomMarkAsUnread: [matrixRoomMarkAsUnread, null];
   matrixEditMessage: [matrixEditMessage, null];
   matrixDeleteMessage: [matrixDeleteMessage, null];
@@ -1208,6 +1209,15 @@ export type RpcReusedEcashProofs = JSONObject;
 
 export type RpcRoomId = string;
 
+export type RpcRoomJoinRule =
+  | "public"
+  | "knock"
+  | "invite"
+  | "restricted"
+  | "knockRestricted"
+  | "private"
+  | "unknown";
+
 export type RpcRoomMember = {
   userId: RpcUserId;
   displayName: string | null;
@@ -1226,6 +1236,14 @@ export type RpcRoomNotificationMode =
   | "mute";
 
 export type RpcRoomPowerLevelsEventContent = JSONObject;
+
+export type RpcRoomPreview = {
+  id: string;
+  name: string | null;
+  avatarUrl: string | null;
+  joinedMemberCount: number;
+  joinRule: RpcRoomJoinRule;
+};
 
 export type RpcSPDepositState =
   | { type: "pendingDeposit" }
@@ -2041,6 +2059,8 @@ export type matrixGetAccountSession = { cached: boolean };
 
 export type matrixGetMediaPreview = { url: string };
 
+export type matrixGetRoomPreview = { roomId: RpcRoomId };
+
 export type matrixIgnoreUser = { userId: RpcUserId };
 
 export type matrixInitializeStatus = {
@@ -2124,6 +2144,8 @@ export type matrixRoomPreviewContent = { roomId: RpcRoomId };
 
 export type matrixRoomSendReceipt = { roomId: RpcRoomId; eventId: string };
 
+export type matrixRoomSetAllowKnocking = { roomId: RpcRoomId; allow: boolean };
+
 export type matrixRoomSetName = { roomId: RpcRoomId; name: string };
 
 export type matrixRoomSetNotificationMode = {
@@ -2134,11 +2156,6 @@ export type matrixRoomSetNotificationMode = {
 export type matrixRoomSetPowerLevels = {
   roomId: RpcRoomId;
   new: RpcRoomPowerLevelsEventContent;
-};
-
-export type matrixRoomSetAllowKnocking = {
-  roomId: RpcRoomId;
-  allow: boolean;
 };
 
 export type matrixRoomSetTopic = { roomId: RpcRoomId; topic: string };
