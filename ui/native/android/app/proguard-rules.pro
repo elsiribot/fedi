@@ -8,7 +8,6 @@
 -dontwarn zendesk.**
 
 # Firebase
--keep class com.google.firebase.** { *; }
 -dontwarn com.google.firebase.**
 
 # Keep native methods
@@ -20,9 +19,9 @@
 -dontwarn okhttp3.**
 -dontwarn okio.**
 
-# Fresco
--keep class com.facebook.imagepipeline.** { *; }
--keep class com.facebook.fresco.** { *; }
+# Fresco - only keep classes that use JNI or reflection
+-keep class com.facebook.imagepipeline.nativecode.** { *; }
+-keep class com.facebook.imagepipeline.memory.NativeMemoryChunk { *; }
 
 # react-native-reanimated
 -keep class com.swmansion.reanimated.** { *; }
