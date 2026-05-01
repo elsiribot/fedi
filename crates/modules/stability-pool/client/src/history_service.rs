@@ -1,4 +1,5 @@
 use std::cmp::Ordering;
+use std::collections::HashSet;
 use std::ops::Range;
 
 use anyhow::bail;
@@ -109,6 +110,11 @@ impl StabilityPoolHistoryService {
                 .await?;
 
             let mut dbtx = self.client_ctx.module_db().begin_transaction().await;
+            // When a pending withdrawal completes, its history row already contains the
+            // full withdrawal amount from the earlier unlock request. Any remaining
+            // LockedToIdle fragments for the same TX in this fetch batch are durable
+            // realizations of that same amount, not additional user-facing amount.
+            let mut completed_from_pending_withdrawal_txids = HashSet::new();
             // Store each new item individually
             for (i, item) in new_history_items.into_iter().enumerate() {
                 let key = AccountHistoryItemKey {
@@ -122,6 +128,7 @@ impl StabilityPoolHistoryService {
                     self.account_id,
                     sync_response,
                     &item,
+                    &mut completed_from_pending_withdrawal_txids,
                 )
                 .await;
             }
@@ -299,6 +306,7 @@ async fn update_user_operation_history(
     account_id: AccountId,
     sync_response: &SyncResponse,
     acc_history_item: &AccountHistoryItem,
+    completed_from_pending_withdrawal_txids: &mut HashSet<TransactionId>,
 ) {
     let user_op_key = UserOperationHistoryItemKey {
         account_id,
@@ -315,17 +323,32 @@ async fn update_user_operation_history(
     )
     .unwrap_or_default();
 
-    let mut add_current_state_amounts = || {
-        new_amount += current_user_op_history_item
-            .as_ref()
-            .map_or(Amount::ZERO, |c| c.amount);
-        new_fiat_amount = FiatAmount(
-            new_fiat_amount.0
-                + current_user_op_history_item
-                    .as_ref()
-                    .map_or(FiatAmount(0), |c| c.fiat_amount)
-                    .0,
-        );
+    enum CurrentStateAmountUpdate {
+        Add,
+        Preserve,
+    }
+
+    let mut update_current_state_amounts = |update| match update {
+        CurrentStateAmountUpdate::Add => {
+            new_amount += current_user_op_history_item
+                .as_ref()
+                .map_or(Amount::ZERO, |c| c.amount);
+            new_fiat_amount = FiatAmount(
+                new_fiat_amount.0
+                    + current_user_op_history_item
+                        .as_ref()
+                        .map_or(FiatAmount(0), |c| c.fiat_amount)
+                        .0,
+            );
+        }
+        CurrentStateAmountUpdate::Preserve => {
+            new_amount = current_user_op_history_item
+                .as_ref()
+                .map_or(Amount::ZERO, |c| c.amount);
+            new_fiat_amount = current_user_op_history_item
+                .as_ref()
+                .map_or(Default::default(), |c| c.fiat_amount);
+        }
     };
 
     let new_user_op_state = match (
@@ -409,7 +432,7 @@ async fn update_user_operation_history(
             ),
             _,
         ) => {
-            add_current_state_amounts();
+            update_current_state_amounts(CurrentStateAmountUpdate::Add);
             state.to_owned()
         }
         (AccountHistoryItemKind::StagedToIdle, Some(_), _) => {
@@ -424,8 +447,8 @@ async fn update_user_operation_history(
         // - If starting state is Some(PendingWithdrawal), we were tracking the withdrawal in-flight
         //   and the OLD state already has the FULL withdrawal amounts (across both locked and
         //   staged).
-        // - If starting state is Some(CompletedWithdrawal), this is a follow-up LockedToIdle after
-        //   a previous StagedToIdle. Only in this case do we need to add amounts.
+        // - If starting state is Some(CompletedWithdrawal), this is a follow-up LockedToIdle. Add
+        //   amounts unless this sync batch already completed the same TX from PendingWithdrawal.
         (AccountHistoryItemKind::LockedToIdle, None, _) => {
             UserOperationHistoryItemKind::CompletedWithdrawal
         }
@@ -434,12 +457,8 @@ async fn update_user_operation_history(
             Some(UserOperationHistoryItemKind::PendingWithdrawal),
             _,
         ) => {
-            new_amount = current_user_op_history_item
-                .as_ref()
-                .map_or(Amount::ZERO, |c| c.amount);
-            new_fiat_amount = current_user_op_history_item
-                .as_ref()
-                .map_or(Default::default(), |c| c.fiat_amount);
+            update_current_state_amounts(CurrentStateAmountUpdate::Preserve);
+            completed_from_pending_withdrawal_txids.insert(acc_history_item.txid);
             UserOperationHistoryItemKind::CompletedWithdrawal
         }
         (
@@ -447,7 +466,18 @@ async fn update_user_operation_history(
             Some(UserOperationHistoryItemKind::CompletedWithdrawal),
             _,
         ) => {
-            add_current_state_amounts();
+            // CompletedWithdrawal is ambiguous here: it can mean either "we are
+            // accumulating durable fragments" or "we just completed from a
+            // PendingWithdrawal whose amount already included the locked portion."
+            // The per-batch set disambiguates the latter case. Once a TXID is in
+            // that set, follow-up LockedToIdle fragments in the same batch must
+            // preserve the already-computed withdrawal total rather than
+            // overwrite it with the current fragment amount.
+            if completed_from_pending_withdrawal_txids.contains(&acc_history_item.txid) {
+                update_current_state_amounts(CurrentStateAmountUpdate::Preserve);
+            } else {
+                update_current_state_amounts(CurrentStateAmountUpdate::Add);
+            }
             UserOperationHistoryItemKind::CompletedWithdrawal
         }
         (AccountHistoryItemKind::LockedToIdle, Some(_), _) => panic!(
@@ -463,7 +493,7 @@ async fn update_user_operation_history(
             None | Some(UserOperationHistoryItemKind::TransferIn { .. }),
             _,
         ) => {
-            add_current_state_amounts();
+            update_current_state_amounts(CurrentStateAmountUpdate::Add);
             ensure_transfer_in_recorded(client_ctx, dbtx, account_id, acc_history_item.txid).await;
             UserOperationHistoryItemKind::TransferIn {
                 from: *from,
@@ -488,7 +518,7 @@ async fn update_user_operation_history(
             None | Some(UserOperationHistoryItemKind::TransferOut { .. }),
             _,
         ) => {
-            add_current_state_amounts();
+            update_current_state_amounts(CurrentStateAmountUpdate::Add);
             UserOperationHistoryItemKind::TransferOut {
                 to: *to,
                 meta: meta.to_vec(),
