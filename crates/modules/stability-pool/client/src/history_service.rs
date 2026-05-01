@@ -1,5 +1,5 @@
 use std::cmp::Ordering;
-use std::collections::HashSet;
+use std::collections::{HashMap, HashSet};
 use std::ops::Range;
 
 use anyhow::bail;
@@ -20,10 +20,10 @@ use tracing::error;
 
 use crate::api::StabilityPoolApiExt;
 use crate::db::{
-    self, AccountHistoryItemKey, AccountHistoryItemKeyPrefix, DepositSequenceTransactionLookupKey,
-    DepositSequenceTransactionLookupValue, RecordedTransferItemKey,
-    UserOperationHistoryAccountPrefix, UserOperationHistoryItem, UserOperationHistoryItemKey,
-    UserOperationHistoryItemKind, UserOperationIndexAccountPrefix,
+    self, AccountHistoryItemKey, AccountHistoryItemKeyPrefix, CompletedWithdrawalHistoryRepairKey,
+    DepositSequenceTransactionLookupKey, DepositSequenceTransactionLookupValue,
+    RecordedTransferItemKey, UserOperationHistoryAccountPrefix, UserOperationHistoryItem,
+    UserOperationHistoryItemKey, UserOperationHistoryItemKind, UserOperationIndexAccountPrefix,
 };
 use crate::{StabilityPoolClientModule, StabilityPoolMeta, StabilityPoolSyncService};
 
@@ -58,6 +58,9 @@ impl StabilityPoolHistoryService {
     ///
     /// Caller should run this method in a task.
     pub async fn update_continuously(&self, sync_service: &StabilityPoolSyncService) {
+        repair_completed_withdrawal_history_once(self.client_ctx.module_db(), self.account_id)
+            .await;
+
         let mut updates = sync_service.subscribe_to_updates();
 
         // Keep updating based on sync updates
@@ -296,6 +299,72 @@ async fn get_full_user_operation_history_from_db(
         .map(|(_key, value)| value)
         .collect()
         .await
+}
+
+#[derive(Clone, Copy, Default)]
+struct WithdrawalHistoryTotals {
+    amount: Amount,
+    fiat_amount: FiatAmount,
+}
+
+async fn repair_completed_withdrawal_history_once(db: &Database, account_id: AccountId) {
+    let mut dbtx = db.begin_transaction().await;
+    let repair_key = CompletedWithdrawalHistoryRepairKey { account_id };
+    if dbtx.get_value(&repair_key).await.is_some() {
+        return;
+    }
+
+    // Account-history items are the durable per-fragment source of truth. A
+    // completed withdrawal's user-op amount should equal the sum of its
+    // `StagedToIdle` and `LockedToIdle` fragments, not the transient unlock
+    // request that may have been used while the withdrawal was pending.
+    let mut totals_by_txid = HashMap::<TransactionId, WithdrawalHistoryTotals>::new();
+    let mut account_history = dbtx
+        .find_by_prefix(&AccountHistoryItemKeyPrefix { account_id })
+        .await;
+
+    while let Some((_key, item)) = account_history.next().await {
+        if !matches!(
+            item.kind,
+            AccountHistoryItemKind::StagedToIdle | AccountHistoryItemKind::LockedToIdle
+        ) {
+            continue;
+        }
+
+        let totals = totals_by_txid.entry(item.txid).or_default();
+        totals.amount += item.amount;
+        totals.fiat_amount = FiatAmount(
+            totals.fiat_amount.0
+                + FiatAmount::from_btc_amount_roundtrip_safe(item.amount, item.cycle.start_price)
+                    .unwrap_or_default()
+                    .0,
+        );
+    }
+    drop(account_history);
+
+    for (txid, totals) in totals_by_txid {
+        let user_op_key = UserOperationHistoryItemKey { account_id, txid };
+        let Some(mut item) = dbtx.get_value(&user_op_key).await else {
+            continue;
+        };
+
+        // Only shrink already-completed withdrawals that are larger than the
+        // recomputed fragment total. This targets the old double-counting bug
+        // without rewriting pending withdrawals or unrelated history rows.
+        if matches!(item.kind, UserOperationHistoryItemKind::CompletedWithdrawal)
+            && item.amount > totals.amount
+        {
+            item.amount = totals.amount;
+            item.fiat_amount = totals.fiat_amount;
+            db::insert_user_operation_history_item(&mut dbtx.to_ref_nc(), &user_op_key, &item)
+                .await;
+        }
+    }
+
+    // Store the marker in the same transaction as any repairs so the scan is
+    // retried if this update fails before commit.
+    dbtx.insert_entry(&repair_key, &()).await;
+    dbtx.commit_tx().await;
 }
 
 // Given the [`AccountHistoryItem`] just received from the server, update the
