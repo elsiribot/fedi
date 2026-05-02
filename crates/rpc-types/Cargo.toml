@@ -27,8 +27,6 @@ ts-rs = { workspace = true }
 url = "2.3.1"
 matrix-sdk-ui = { workspace = true, default-features = false }
 matrix-sdk = { workspace = true, default-features = false, features = [
-  "js",
-  "indexeddb",
   "e2e-encryption",
 ] }
 nostr-sdk = { workspace = true }
@@ -40,6 +38,10 @@ strum_macros = { workspace = true }
 
 [target.'cfg(target_family = "wasm")'.dependencies]
 ring = { workspace = true, features = ["wasm32_unknown_unknown_js"] }
+matrix-sdk = { workspace = true, default-features = false, features = [
+  "js",
+  "indexeddb",
+] }
 
 [build-dependencies]
 fedimint-build = { workspace = true }

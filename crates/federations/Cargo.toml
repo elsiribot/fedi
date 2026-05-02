@@ -50,8 +50,6 @@ url = "2.3.1"
 reqwest = { workspace = true }
 matrix-sdk-ui = { workspace = true, default-features = false }
 matrix-sdk = { workspace = true, default-features = false, features = [
-  "js",
-  "indexeddb",
   "e2e-encryption",
 ] }
 imbl = { workspace = true, features = ["serde"] }
@@ -63,6 +61,10 @@ time = { version = "0.3", default-features = false, features = ["std"] }
 
 [target.'cfg(target_family = "wasm")'.dependencies]
 ring = { version = "0.17.14", features = ["wasm32_unknown_unknown_js"] }
+matrix-sdk = { workspace = true, default-features = false, features = [
+  "js",
+  "indexeddb",
+] }
 
 [target.'cfg(not(target_family = "wasm"))'.dependencies]
 matrix-sdk = { workspace = true, default-features = false, features = [

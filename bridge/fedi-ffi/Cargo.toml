@@ -54,11 +54,8 @@ async-trait = { workspace = true }
 tokio = { workspace = true, features = ["time", "macros"] }
 zstd = "0.13"
 matrix-sdk = { workspace = true, default-features = false, features = [
-  "js",
-  "indexeddb",
   "e2e-encryption",
 ] }
-tempfile = "3.17.1"
 federations = { workspace = true }
 matrix = { workspace = true }
 runtime = { workspace = true }
@@ -75,6 +72,10 @@ strum = { workspace = true }
 
 [target.'cfg(target_family = "wasm")'.dependencies]
 ring = { version = "0.17.14", features = ["wasm32_unknown_unknown_js"] }
+matrix-sdk = { workspace = true, default-features = false, features = [
+  "js",
+  "indexeddb",
+] }
 
 [target.'cfg(not(target_family = "wasm"))'.dependencies]
 fedimint-rocksdb = { workspace = true }

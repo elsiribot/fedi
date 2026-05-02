@@ -35,8 +35,6 @@ async-trait = { workspace = true }
 tokio = { workspace = true, features = ["time", "macros"] }
 reqwest = { workspace = true }
 matrix-sdk = { workspace = true, default-features = false, features = [
-  "js",
-  "indexeddb",
   "e2e-encryption",
 ] }
 imbl = { workspace = true, features = ["serde"] }
@@ -44,3 +42,9 @@ serde_with = { workspace = true }
 eyeball-im = { version = "0.8", features = ["serde"] }
 eyeball = "0.8.7"
 either = "1.15.0"
+
+[target.'cfg(target_family = "wasm")'.dependencies]
+matrix-sdk = { workspace = true, default-features = false, features = [
+  "js",
+  "indexeddb",
+] }

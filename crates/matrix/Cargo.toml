@@ -20,8 +20,6 @@ tokio = { workspace = true, features = ["time", "macros"] }
 tokio-stream = { version = "0.1.17", features = ["sync"] }
 matrix-sdk-ui = { workspace = true, default-features = false }
 matrix-sdk = { workspace = true, default-features = false, features = [
-  "js",
-  "indexeddb",
   "e2e-encryption",
 ] }
 serde = { workspace = true }
@@ -30,6 +28,10 @@ imbl = { workspace = true, features = ["serde"] }
 
 [target.'cfg(target_family = "wasm")'.dependencies]
 ring = { version = "0.17.14", features = ["wasm32_unknown_unknown_js"] }
+matrix-sdk = { workspace = true, default-features = false, features = [
+  "js",
+  "indexeddb",
+] }
 
 [target.'cfg(not(target_family = "wasm"))'.dependencies]
 matrix-sdk = { workspace = true, default-features = false, features = [
