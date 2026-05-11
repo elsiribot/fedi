@@ -1,5 +1,5 @@
 import { useIsFocused, useNavigation } from '@react-navigation/native'
-import { Theme, useTheme } from '@rneui/themed'
+import { Image, Theme, useTheme } from '@rneui/themed'
 import React, { useCallback, useState } from 'react'
 import {
     Dimensions,
@@ -21,6 +21,7 @@ import {
 import { ChatType, MatrixRoom } from '@fedi/common/types'
 import { areChatListRoomsEqual } from '@fedi/common/utils/matrix'
 
+import { Images } from '../../../assets/images'
 import { useAppDispatch, useAppSelector } from '../../../state/hooks'
 import { NavigationHook } from '../../../types/navigation'
 import { ChatRoomActionsOverlay } from './ChatRoomActionsOverlay'
@@ -96,6 +97,16 @@ const ChatsList: React.FC = () => {
         [updateVisibleRoomIds],
     )
 
+    if (rooms.length === 0) {
+        return (
+            <Image
+                resizeMode="contain"
+                source={Images.IllustrationChat}
+                style={styles(theme).emptyImage}
+            />
+        )
+    }
+
     return (
         <>
             <FlatList
@@ -135,6 +146,11 @@ const styles = (theme: Theme) =>
         content: {
             paddingBottom: theme.spacing.sm,
             paddingHorizontal: theme.spacing.sm,
+        },
+        emptyImage: {
+            width: 200,
+            height: 200,
+            marginBottom: theme.spacing.xxl,
         },
     })
 
