@@ -1,12 +1,11 @@
 import type { BottomTabScreenProps } from '@react-navigation/bottom-tabs'
 import { Text, useTheme } from '@rneui/themed'
-import React, { Profiler } from 'react'
+import React from 'react'
 import { useTranslation } from 'react-i18next'
 import { ActivityIndicator } from 'react-native'
 
 import { ErrorBoundary } from '@fedi/common/components/ErrorBoundary'
 import { selectMatrixStatus } from '@fedi/common/redux'
-import { makeLog } from '@fedi/common/utils/log'
 
 import ChatsList from '../components/feature/chat/ChatsList'
 import { Column } from '../components/ui/Flex'
@@ -19,8 +18,6 @@ export type Props = BottomTabScreenProps<
     TabsNavigatorParamList & RootStackParamList,
     'Chat'
 >
-
-const log = makeLog('screens/ChatScreen')
 
 const ChatScreen: React.FC<Props> = () => {
     const { t } = useTranslation()
@@ -62,10 +59,4 @@ const ChatScreen: React.FC<Props> = () => {
     )
 }
 
-export default (props: Props) => (
-    <Profiler
-        id="ChatScreen"
-        onRender={(component, type) => log.debug('[CH]', { component, type })}>
-        <ChatScreen {...props} />
-    </Profiler>
-)
+export default ChatScreen
