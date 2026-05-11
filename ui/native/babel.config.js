@@ -15,12 +15,7 @@ module.exports = function (api) {
             },
         ],
         // React Native Reanimated plugin
-        [
-            'react-native-reanimated/plugin',
-            {
-                globals: ['__scanCodes'],
-            },
-        ],
+        ['react-native-reanimated/plugin', { globals: ['__scanCodes'] }],
         // Handle module resolution for specific libraries
         [
             'module-resolver',
@@ -48,8 +43,5 @@ module.exports = function (api) {
         )
     }
 
-    return {
-        presets,
-        plugins,
-    }
+    return { presets, plugins }
 }
