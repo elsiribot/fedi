@@ -17,14 +17,12 @@ import {
     previewAllDefaultChats,
     refetchMatrixRoomList,
     selectMatrixChatsList,
-    selectMatrixStatus,
 } from '@fedi/common/redux'
-import { ChatType, MatrixRoom, MatrixSyncStatus } from '@fedi/common/types'
+import { ChatType, MatrixRoom } from '@fedi/common/types'
 import { areChatListRoomsEqual } from '@fedi/common/utils/matrix'
 
 import { useAppDispatch, useAppSelector } from '../../../state/hooks'
 import { NavigationHook } from '../../../types/navigation'
-import HoloLoader from '../../ui/HoloLoader'
 import { ChatRoomActionsOverlay } from './ChatRoomActionsOverlay'
 import ChatRoomTile from './ChatRoomTile'
 
@@ -38,7 +36,6 @@ const ChatsList: React.FC = () => {
     const fedimint = useFedimint()
 
     const rooms = useAppSelector(selectMatrixChatsList, areChatListRoomsEqual)
-    const syncStatus = useAppSelector(selectMatrixStatus)
     const [isRefetching, setIsRefetching] = useState(false)
     const [selectedRoomId, setSelectedRoomId] = useState<string | null>(null)
     const isFocused = useIsFocused()
@@ -98,10 +95,6 @@ const ChatsList: React.FC = () => {
         },
         [updateVisibleRoomIds],
     )
-
-    if (syncStatus === MatrixSyncStatus.initialSync) {
-        return <HoloLoader size={30} />
-    }
 
     return (
         <>
