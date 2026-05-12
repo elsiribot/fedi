@@ -1,8 +1,9 @@
-import { basename, extname } from 'path'
+/* eslint-disable @typescript-eslint/no-require-imports */
+const path = require('path')
 
-const stripExt = f => basename(f, extname(f))
+const stripExt = f => path.basename(f, path.extname(f))
 
-export default function autoTestId({ types: t }) {
+module.exports = function autoTestId({ types: t }) {
     // Build-time analog of isDev() from ui/common/utils/environment.ts.
     // Runtime isDev() = (__DEV__ === true) || (NODE_ENV === 'development').
     // At build time __DEV__ doesn't exist yet and this Metro version doesn't
