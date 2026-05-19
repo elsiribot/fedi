@@ -4,6 +4,7 @@ import { Trans, useTranslation } from 'react-i18next'
 import { ActivityIndicator, StyleSheet } from 'react-native'
 import { RejectionError } from 'webln'
 
+import { useBalance } from '@fedi/common/hooks/amount'
 import { useFedimint } from '@fedi/common/hooks/fedimint'
 import { useOmniPaymentState } from '@fedi/common/hooks/pay'
 import { useToast } from '@fedi/common/hooks/toast'
@@ -19,14 +20,12 @@ import {
     setSuggestedPaymentFederation,
 } from '@fedi/common/redux'
 import amountUtils from '@fedi/common/utils/AmountUtils'
-import { formatErrorMessage } from '@fedi/common/utils/format'
 import { lnurlPay } from '@fedi/common/utils/lnurl'
 import { makeLog } from '@fedi/common/utils/log'
 
 import { useAppDispatch, useAppSelector } from '../../../state/hooks'
 import { MSats, ParserDataType } from '../../../types'
 import AmountInput from '../../ui/AmountInput'
-import AmountInputDisplay from '../../ui/AmountInputDisplay'
 import CustomOverlay from '../../ui/CustomOverlay'
 import { Column } from '../../ui/Flex'
 import LineBreak from '../../ui/LineBreak'
@@ -57,7 +56,6 @@ export const SendPaymentOverlay: React.FC<Props> = ({ onReject, onAccept }) => {
     const [submitAttempts, setSubmitAttempts] = useState(0)
     const [amountInputKey, setAmountInputKey] = useState(0)
     const [isLoading, setIsLoading] = useState(false)
-    const [error, setError] = useState<string | null>(null)
     const [showFeeBreakdown, setShowFeeBreakdown] = useState<boolean>(false)
     const onRejectRef = useUpdatingRef(onReject)
     const onAcceptRef = useUpdatingRef(onAccept)
@@ -73,7 +71,9 @@ export const SendPaymentOverlay: React.FC<Props> = ({ onReject, onAccept }) => {
         feeDetails,
         handleOmniInput,
         isLoading: isOmniPaymentLoading,
+        error,
     } = useOmniPaymentState(paymentFederation?.id, t)
+    const { satsBalance } = useBalance(t, paymentFederation?.id ?? '')
 
     const { formattedTotalFee, feeItemsBreakdown } = useMemo(() => {
         return feeDetails
@@ -91,7 +91,6 @@ export const SendPaymentOverlay: React.FC<Props> = ({ onReject, onAccept }) => {
 
             resetOmniPaymentState()
             setAmountInputKey(key => key + 1)
-            setError(null)
         }
     }, [isShowing, resetOmniPaymentState, dispatch])
 
@@ -103,12 +102,6 @@ export const SendPaymentOverlay: React.FC<Props> = ({ onReject, onAccept }) => {
             data: invoice,
         })
     }, [handleOmniInput, invoice])
-
-    useEffect(() => {
-        if (maximumAmount === 0) {
-            setError(t('errors.please-select-balance-federation'))
-        }
-    }, [maximumAmount, t])
 
     const handleAccept = async () => {
         setSubmitAttempts(attempts => attempts + 1)
@@ -165,8 +158,7 @@ export const SendPaymentOverlay: React.FC<Props> = ({ onReject, onAccept }) => {
             }
         } catch (err) {
             log.error('Failed to pay invoice', invoice, err)
-
-            setError(formatErrorMessage(t, err, 'errors.unknown-error'))
+            toast.error(t, err, 'errors.unknown-error')
         }
         setIsLoading(false)
     }
@@ -202,25 +194,21 @@ export const SendPaymentOverlay: React.FC<Props> = ({ onReject, onAccept }) => {
                             <ActivityIndicator />
                         ) : (
                             <>
-                                {exactAmount ? (
-                                    <AmountInputDisplay amount={inputAmount} />
-                                ) : lnurlPayment ? (
-                                    // only show amount input for LNURL-pay, amount-less bolt11 invoices are not supported yet
-                                    <AmountInput
-                                        key={amountInputKey}
-                                        amount={inputAmount}
-                                        isSubmitting={isLoading}
-                                        submitAttempts={submitAttempts}
-                                        minimumAmount={minimumAmount}
-                                        maximumAmount={maximumAmount}
-                                        verb={t('words.send')}
-                                        onChangeAmount={amt => {
-                                            setSubmitAttempts(0)
-                                            setInputAmount(amt)
-                                        }}
-                                        error={error}
-                                    />
-                                ) : null}
+                                <AmountInput
+                                    key={amountInputKey}
+                                    amount={exactAmount ?? inputAmount}
+                                    isSubmitting={isLoading}
+                                    submitAttempts={submitAttempts}
+                                    minimumAmount={minimumAmount}
+                                    maximumAmount={maximumAmount}
+                                    readOnly={!!exactAmount}
+                                    verb={t('words.send')}
+                                    onChangeAmount={amt => {
+                                        setSubmitAttempts(0)
+                                        setInputAmount(amt)
+                                    }}
+                                    error={error}
+                                />
                                 {formattedTotalFee !== '' && (
                                     <Column fullWidth>
                                         <SendPreviewDetails
