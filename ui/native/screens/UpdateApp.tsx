@@ -30,7 +30,8 @@ import { useIsFeatureUnlocked } from '../utils/hooks/security'
 
 export type Props = NativeStackScreenProps<RootStackParamList, 'UpdateApp'>
 
-export default function UpdateApp({ navigation }: Props) {
+export default function UpdateApp({ navigation, route }: Props) {
+    const { routeParams } = route.params
     const [releaseNotesJson, setReleaseNotesJson] = useState<ReleaseNotesJson>()
 
     const { t } = useTranslation()
@@ -53,10 +54,11 @@ export default function UpdateApp({ navigation }: Props) {
     const handleClose = () => {
         if (navigation.canGoBack()) {
             navigation.goBack()
-        } else if(isAppUnlocked) {
-            navigation.dispatch(reset('TabsNavigator'))
+        } else if (isAppUnlocked) {
+            if (routeParams) navigation.replace(...routeParams)
+            else navigation.dispatch(reset('TabsNavigator'))
         } else {
-            navigation.dispatch(reset('LockScreen'))
+            navigation.dispatch(reset('LockScreen', { routeParams }))
         }
     }
 

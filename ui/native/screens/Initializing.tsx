@@ -60,14 +60,16 @@ const Initializing: React.FC<Props> = () => {
             (updateScreenFlag?.platform === 'Android' &&
                 Platform.OS === 'android')
 
-        if (doesUpdatePlatformMatch && shouldRequestAppUpdate) {
-            return navigation.replace('UpdateApp')
-        }
-
         const pendingUnlockDestination = consumePendingUnlockNavigationArgs()
         const destination: NavigationArgs = pendingUnlockDestination ?? [
             'TabsNavigator',
         ]
+
+        if (doesUpdatePlatformMatch && shouldRequestAppUpdate) {
+            return navigation.replace('UpdateApp', {
+                routeParams: destination,
+            })
+        }
 
         // If PIN-protected, navigate to the Lock Screen
         if (!isAppUnlocked) {
