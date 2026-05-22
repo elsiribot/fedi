@@ -1,6 +1,6 @@
 import { Text, Theme, useTheme } from '@rneui/themed'
 import React, { PropsWithChildren, Ref, useState } from 'react'
-import { Pressable, StyleSheet, TextInput, View } from 'react-native'
+import { Platform, Pressable, StyleSheet, TextInput, View } from 'react-native'
 
 import { BIP39_WORD_LIST } from '@fedi/common/constants/bip39'
 
@@ -21,6 +21,8 @@ export const SeedWordInput = React.forwardRef<TextInput, SeedWordInputProps>(
         const [isFocused, setIsFocused] = useState(false)
         const valid = isValidSeedWord(word)
         const style = styles(theme)
+        const testID = `SeedWordInput${number}`
+        const isAndroid = Platform.OS === 'android'
 
         return (
             <Pressable
@@ -32,12 +34,13 @@ export const SeedWordInput = React.forwardRef<TextInput, SeedWordInputProps>(
                 }}>
                 <Text style={style.wordNumber}>{`${number}`}</Text>
                 <View
-                    testID={`SeedWordInput${number}`}
+                    testID={isAndroid ? undefined : testID}
                     style={[
                         style.inputUnderline,
                         isFocused && style.inputUnderlineFocused,
                     ]}>
                     <TextInput
+                        testID={isAndroid ? testID : undefined}
                         ref={inputRef as Ref<PropsWithChildren<TextInput>>}
                         value={word}
                         onChangeText={onInputUpdated}
