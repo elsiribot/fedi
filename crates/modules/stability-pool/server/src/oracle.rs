@@ -185,6 +185,10 @@ impl Oracle for AggregateOracle {
         .enumerate()
         .filter_map(|(i, oracle_result)| match oracle_result {
             Ok(json_value) => match self.sources[i].extract_price_from_json_value(json_value) {
+                Ok(FiatAmount(0)) => {
+                    warn!("oracle source returned zero price");
+                    None
+                }
                 Ok(price) => Some(price),
                 Err(e) => {
                     warn!("oracle source extract price from json value error: {e}");
@@ -199,9 +203,9 @@ impl Oracle for AggregateOracle {
         .sorted()
         .collect_vec();
 
-        // Succeed as long as at least one source worked
+        // Succeed as long as at least one source worked and returned a non-zero price.
         if source_prices.is_empty() {
-            bail!("None of the oracle sources worked");
+            bail!("None of the oracle sources returned a non-zero price");
         }
 
         info!("finished successfully fetching prices from sources");
