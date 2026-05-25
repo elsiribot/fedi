@@ -1719,23 +1719,25 @@ impl FederationV2 {
             frontend_metadata: Some(frontend_meta),
         };
         let ln = self.client.ln()?;
-        let OutgoingLightningPayment { payment_type, .. } = match ln
+        let pay_result = ln
             .pay_bolt11_invoice(gateway.clone(), invoice.to_owned(), extra_meta.clone())
-            .await
+            .await;
+        let selected_gateway_id = gateway.as_ref().map(|g| g.gateway_id);
+        let OutgoingLightningPayment { payment_type, .. } = match (pay_result, selected_gateway_id)
         {
-            Ok(v) => v,
-            Err(error) if gateway.is_some() && is_gateway_availability_error(&error) => {
-                let failed_gateway_id = gateway.as_ref().map(|g| g.gateway_id);
+            (Ok(v), _) => v,
+            (Err(error), Some(failed_gateway_id)) if is_gateway_availability_error(&error) => {
                 warn!(
                     ?error,
                     failed_gateway_id = ?failed_gateway_id,
                     "selected lightning gateway unavailable, refreshing gateway cache and retrying"
                 );
                 let retry_gateway = self
-                    .refresh_cache_and_select_gateway_excluding(failed_gateway_id)
+                    .refresh_cache_and_select_gateway_excluding(Some(failed_gateway_id))
                     .await?
                     .ok_or_else(|| anyhow!(ErrorCode::NoLnGatewayAvailable))?;
                 est_total_spend = ensure_spendable(retry_gateway.fees)?;
+                let retry_gateway_id = retry_gateway.gateway_id;
 
                 match ln
                     .pay_bolt11_invoice(Some(retry_gateway), invoice.to_owned(), extra_meta.clone())
@@ -1743,12 +1745,18 @@ impl FederationV2 {
                 {
                     Ok(v) => v,
                     Err(error) if is_gateway_availability_error(&error) => {
+                        warn!(
+                            ?error,
+                            failed_gateway_id = ?failed_gateway_id,
+                            retry_gateway_id = ?retry_gateway_id,
+                            "retry lightning gateway unavailable"
+                        );
                         bail!(ErrorCode::NoLnGatewayAvailable);
                     }
                     Err(error) => handle_pay_bolt11_invoice_error(error)?,
                 }
             }
-            Err(error) => handle_pay_bolt11_invoice_error(error)?,
+            (Err(error), _) => handle_pay_bolt11_invoice_error(error)?,
         };
         // already paid
         if self
@@ -5704,6 +5712,18 @@ mod tests {
     #[test]
     fn test_ignores_non_gateway_availability_payment_errors() {
         let error = anyhow!(PayBolt11InvoiceError::NoLnGatewayAvailable);
+
+        assert!(!is_gateway_availability_error(&error));
+    }
+
+    #[test]
+    fn test_ignores_federation_peer_server_errors_as_gateway_availability_errors() {
+        let error = anyhow!(fedimint_api_client::api::FederationError::new_one_peer(
+            0_u16.into(),
+            "fetch_consensus_block_count",
+            (),
+            ServerError::Connection(anyhow!("guardian offline")),
+        ));
 
         assert!(!is_gateway_availability_error(&error));
     }
