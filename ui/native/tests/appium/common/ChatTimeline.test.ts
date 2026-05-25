@@ -41,7 +41,7 @@ export class ChatTimeline extends AppiumTestBase {
         )
         if (!messagePreview)
             throw new Error(
-                `Failed - Message preview for "${group.name}" not found. Expected: "${group.message}`,
+                `Failed - Message preview for "${group.name}" not found. Expected: "${group.message}"`,
             )
         console.log(
             `Verified group "${group.name}" with title and message preview`,
