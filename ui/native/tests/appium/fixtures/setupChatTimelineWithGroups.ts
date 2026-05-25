@@ -17,7 +17,7 @@ export const TEST_GROUPS = [
     {
         name: 'E2E Public Group',
         message: 'This is a public group message',
-        isPublic: false,
+        isPublic: true,
         broadcastOnly: false,
     },
     {
