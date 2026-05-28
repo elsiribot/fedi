@@ -5,6 +5,7 @@ import { useTranslation } from 'react-i18next'
 
 import holoWallet from '@fedi/common/assets/images/holo-wallet.png'
 import { HIDDEN_AMOUNT_MASK } from '@fedi/common/constants/currency'
+import { WALLET_SERVICE_URL } from '@fedi/common/constants/linking'
 import { theme } from '@fedi/common/constants/theme'
 import { useBalance } from '@fedi/common/hooks/amount'
 import { useAutoSelectFederations } from '@fedi/common/hooks/federation'
@@ -40,8 +41,6 @@ import {
 } from '../constants/routes'
 import { useAppDispatch, useAppSelector } from '../hooks'
 import { styled } from '../styles'
-
-const WALLET_SERVICE_URL = 'https://www.fedi.xyz/create-a-wallet-service'
 
 function WalletPage() {
     const { t } = useTranslation()
