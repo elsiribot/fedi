@@ -1,5 +1,5 @@
 import { TFunction } from 'i18next'
-import { useCallback, useContext, useEffect, useState } from 'react'
+import { useCallback, useContext, useEffect, useRef, useState } from 'react'
 
 import { FedimintContext } from '../components/FedimintProvider'
 import {
@@ -88,6 +88,11 @@ export function useTransactionHistory(
     const stabilityPoolTxns = useCommonSelector(s =>
         selectStabilityTransactionHistory(s, federationId),
     )
+    const stabilityPoolTxnsLengthRef = useRef(stabilityPoolTxns.length)
+
+    useEffect(() => {
+        stabilityPoolTxnsLengthRef.current = stabilityPoolTxns.length
+    }, [stabilityPoolTxns.length])
 
     const fetchTransactions = useCallback(
         async (args?: FetchTransactionsArgs) => {
@@ -106,7 +111,9 @@ export function useTransactionHistory(
     const fetchStabilityTransactions = useCallback(
         async (args?: FetchTransactionsArgs) => {
             const hasExistingStableRows =
-                !args?.more && !args?.refresh && stabilityPoolTxns.length > 0
+                !args?.more &&
+                !args?.refresh &&
+                stabilityPoolTxnsLengthRef.current > 0
 
             let page = await fetchTransactions(args)
             let pagesFetched = 1
@@ -126,7 +133,7 @@ export function useTransactionHistory(
 
             return page
         },
-        [fetchTransactions, stabilityPoolTxns.length],
+        [fetchTransactions],
     )
 
     return {
