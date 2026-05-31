@@ -4,9 +4,11 @@ import {
     GestureResponderEvent,
     Pressable,
     StyleSheet,
+    View,
 } from 'react-native'
 
 import { Row } from '../../ui/Flex'
+import NotificationDot from '../../ui/NotificationDot'
 import SvgImage, { SvgImageName } from '../../ui/SvgImage'
 
 export type SettingsItemProps = {
@@ -17,6 +19,7 @@ export type SettingsItemProps = {
     actionIcon?: SvgImageName
     isLoading?: boolean
     adornment?: React.ReactNode
+    showNotificationDot?: boolean
     onPress: (event: GestureResponderEvent) => void
     color?: string
 }
@@ -30,6 +33,7 @@ const SettingsItem = ({
     isLoading = false,
     onPress,
     adornment = null,
+    showNotificationDot = false,
     color,
 }: SettingsItemProps) => {
     const { theme } = useTheme()
@@ -50,12 +54,17 @@ const SettingsItem = ({
             onPress={disabled ? undefined : onPress}>
             <>
                 <Row grow align="center" gap="sm" basis={false}>
-                    <SvgImage
-                        color={color || theme.colors.primary}
-                        dimensions={{ width: 24, height: 24 }}
-                        name={icon}
-                        size={theme.sizes.md}
-                    />
+                    <View>
+                        <SvgImage
+                            color={color || theme.colors.primary}
+                            dimensions={{ width: 24, height: 24 }}
+                            name={icon}
+                            size={theme.sizes.md}
+                        />
+                        {showNotificationDot && (
+                            <NotificationDot style={style.iconDot} />
+                        )}
+                    </View>
                     <Text
                         color={color || theme.colors.primary}
                         style={style.text}
@@ -97,6 +106,16 @@ const styles = (theme: Theme) =>
             flex: 1,
             flexWrap: 'wrap',
             flexShrink: 1,
+        },
+        iconDot: {
+            position: 'absolute',
+            top: -3,
+            right: -3,
+            width: 12,
+            height: 12,
+            borderRadius: 6,
+            borderWidth: 2,
+            borderColor: theme.colors.white,
         },
     })
 
