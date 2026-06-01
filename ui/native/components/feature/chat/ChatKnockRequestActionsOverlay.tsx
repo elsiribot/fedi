@@ -53,6 +53,7 @@ export const ChatKnockRequestActionsOverlay: React.FC<Props> = ({
                 body: (
                     <Column fullWidth>
                         <ChatAction
+                            testID="KnockRequestAccept"
                             leftIcon={<SvgImage name="Check" />}
                             label={t('feature.chat.accept-knock')}
                             onPress={() => onAccept(member.id)}
@@ -60,6 +61,7 @@ export const ChatKnockRequestActionsOverlay: React.FC<Props> = ({
                             disabled={isProcessing}
                         />
                         <ChatAction
+                            testID="KnockRequestDecline"
                             leftIcon={
                                 <SvgImage
                                     name="Close"

@@ -14,9 +14,14 @@ import ChatAvatar from './ChatAvatar'
 type Props = {
     member: MatrixRoomMember
     onPress: (userId: string) => void
+    testID?: string
 }
 
-const ChatPendingRequestTile: React.FC<Props> = ({ member, onPress }) => {
+const ChatPendingRequestTile: React.FC<Props> = ({
+    member,
+    onPress,
+    testID,
+}) => {
     const { theme } = useTheme()
     const { t } = useTranslation()
     const style = styles(theme)
@@ -24,6 +29,7 @@ const ChatPendingRequestTile: React.FC<Props> = ({ member, onPress }) => {
 
     return (
         <Pressable
+            testID={testID}
             containerStyle={style.container}
             onPress={() => onPress(member.id)}>
             <Row align="center" gap="md" fullWidth>

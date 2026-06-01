@@ -157,6 +157,7 @@ const ChatRoomMembers: React.FC<ChatRoomMembersProps> = ({
         <ChatPendingRequestTile
             member={item}
             onPress={setSelectedPendingUserId}
+            testID="KnockRequestTile"
         />
     )
 
@@ -191,12 +192,15 @@ const ChatRoomMembers: React.FC<ChatRoomMembersProps> = ({
             {tab === 'pending' ? (
                 pendingMembers.length === 0 ? (
                     <Column center grow gap="md">
-                        <Text style={style.emptyText}>
+                        <Text
+                            testID="NoKnockRequestsEmpty"
+                            style={style.emptyText}>
                             {t('feature.chat.no-knock-requests')}
                         </Text>
                     </Column>
                 ) : (
                     <FlatList
+                        testID="KnockRequestsList"
                         data={pendingMembers}
                         renderItem={renderPending}
                         keyExtractor={(item: MatrixRoomMember) => `${item.id}`}

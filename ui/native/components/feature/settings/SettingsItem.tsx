@@ -22,6 +22,7 @@ export type SettingsItemProps = {
     showNotificationDot?: boolean
     onPress: (event: GestureResponderEvent) => void
     color?: string
+    testID?: string
 }
 
 const SettingsItem = ({
@@ -35,11 +36,13 @@ const SettingsItem = ({
     adornment = null,
     showNotificationDot = false,
     color,
+    testID,
 }: SettingsItemProps) => {
     const { theme } = useTheme()
     const style = styles(theme)
     return (
         <Pressable
+            testID={testID}
             style={({ pressed }) => [
                 style.container,
                 // dont react to presses if disabled

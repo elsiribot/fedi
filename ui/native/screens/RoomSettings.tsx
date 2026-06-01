@@ -253,6 +253,7 @@ const RoomSettings: React.FC<Props> = ({ navigation, route }: Props) => {
                         'words.members',
                     )}`,
                     onPress: handleViewMembers,
+                    testID: 'RoomMembersButton',
                     showNotificationDot: shouldShowPendingIndicator,
                 })
             }
