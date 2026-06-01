@@ -19,6 +19,7 @@ import { Column } from '../Flex'
 import { HoloLoader } from '../HoloLoader'
 import * as Layout from '../Layout'
 import { Text } from '../Text'
+import { KnockPendingView } from './KnockPendingView'
 
 type Props = {
     roomId: string
@@ -32,16 +33,29 @@ export const ChatConfirmJoinPublicRoom = ({ roomId }: Props) => {
     const dispatch = useAppDispatch()
     const fedimint = useFedimint()
 
-    const { joinPublicGroup } = useMatrixChatInvites(t)
+    const { joinPublicGroup, knockGroup } = useMatrixChatInvites(t)
 
     const room = useAppSelector(s => selectMatrixRoom(s, roomId))
     const groupPreview = useAppSelector(s => selectGroupPreview(s, roomId))
 
     const [isJoiningGroup, setIsJoiningGroup] = useState(false)
     const [isLoading, setIsLoading] = useState(false)
+    // Knock was issued but sync hasn't reflected it yet. Local flag swaps in
+    // KnockPendingView so a fast second tap can't fire a duplicate knock.
+    const [hasKnockedLocally, setHasKnockedLocally] = useState(false)
 
+    const isAlreadyKnocked = room?.roomState === 'knocked' || hasKnockedLocally
+    const isPublic = groupPreview?.info?.isPublic ?? false
+    // Some homeservers won't return preview metadata even for knockable rooms,
+    // so default to true and let the knock response reveal invite-only rooms.
+    const allowKnocking = groupPreview?.info?.allowKnocking ?? true
+    const canJoin = isPublic || allowKnocking
+    const roomName = groupPreview?.info?.name || room?.name || null
+
+    // Existing members/invitees go straight to the conversation; only knocked
+    // rooms stay here to show the pending view.
     useEffect(() => {
-        if (room) replace(chatRoomRoute(roomId))
+        if (room && room.roomState !== 'knocked') replace(chatRoomRoute(roomId))
     }, [room, roomId, replace])
 
     useEffect(() => {
@@ -72,17 +86,33 @@ export const ChatConfirmJoinPublicRoom = ({ roomId }: Props) => {
         }
     }, [room, roomId, groupPreview, dispatch, fedimint, replace])
 
-    const handleJoinGroup = async (id: string) => {
+    const handleJoinGroup = async () => {
+        if (!canJoin || hasKnockedLocally) return
         setIsJoiningGroup(true)
 
         try {
-            await joinPublicGroup(id)
-            replace(chatRoomRoute(id))
+            if (isPublic) {
+                await joinPublicGroup(roomId)
+                replace(chatRoomRoute(roomId))
+            } else {
+                await knockGroup(roomId)
+                setHasKnockedLocally(true)
+            }
         } catch {
-            // joinPublicGroup will throw if the room is already joined
+            // joinPublicGroup throws if the room is already joined; knockGroup
+            // surfaces its own error toast.
         } finally {
             setIsJoiningGroup(false)
         }
+    }
+
+    if (isAlreadyKnocked) {
+        return (
+            <KnockPendingView
+                roomName={roomName}
+                onGoBack={() => replace(chatRoute)}
+            />
+        )
     }
 
     if (isLoading || !groupPreview || room) {
@@ -101,23 +131,34 @@ export const ChatConfirmJoinPublicRoom = ({ roomId }: Props) => {
                     <Column center grow fullWidth gap="sm">
                         <ChatAvatar size="md" room={groupPreview.info} />
                         <Text variant="h2" weight="medium" center>
-                            {t('feature.onboarding.welcome-to-federation', {
-                                federation: groupPreview.info.name,
-                            })}
+                            {isPublic
+                                ? t(
+                                      'feature.onboarding.welcome-to-federation',
+                                      { federation: groupPreview.info.name },
+                                  )
+                                : roomName || t('feature.chat.join-a-group')}
                         </Text>
                         <Text center>
-                            {t('feature.chat.public-group-notice')}
+                            {isPublic
+                                ? t('feature.chat.public-group-notice')
+                                : canJoin
+                                  ? t('feature.chat.private-group-notice')
+                                  : t('feature.chat.invite-only-group-notice')}
                         </Text>
                     </Column>
-                    <Column fullWidth>
-                        <Button
-                            width="full"
-                            onClick={() => handleJoinGroup(roomId)}
-                            loading={isJoiningGroup}
-                            disabled={isJoiningGroup}>
-                            {t('words.continue')}
-                        </Button>
-                    </Column>
+                    {canJoin && (
+                        <Column fullWidth>
+                            <Button
+                                width="full"
+                                onClick={handleJoinGroup}
+                                loading={isJoiningGroup}
+                                disabled={isJoiningGroup}>
+                                {isPublic
+                                    ? t('words.continue')
+                                    : t('feature.chat.request-to-join')}
+                            </Button>
+                        </Column>
+                    )}
                 </Column>
             </Layout.Content>
         </Layout.Root>

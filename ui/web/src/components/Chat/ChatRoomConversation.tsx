@@ -32,6 +32,7 @@ import { ChatPaymentDialog } from './ChatPaymentDialog'
 import { ChatPreviewConversation } from './ChatPreviewConversation'
 import { ChatRoomSearch } from './ChatRoomSearch'
 import { ChatRoomSettingsDialog } from './ChatRoomSettingsDialog'
+import { KnockPendingView } from './KnockPendingView'
 
 const log = makeLog('ChatRoomConversation')
 
@@ -177,6 +178,15 @@ export const ChatRoomConversation: React.FC<Props> = ({ roomId }) => {
             <LoadingContainer>
                 <HoloLoader size="md" />
             </LoadingContainer>
+        )
+    }
+
+    if (room.roomState === 'knocked') {
+        return (
+            <KnockPendingView
+                roomName={room.name}
+                onGoBack={() => push(chatRoute)}
+            />
         )
     }
 
