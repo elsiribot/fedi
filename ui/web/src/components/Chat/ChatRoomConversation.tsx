@@ -10,6 +10,7 @@ import {
     selectMatrixRoom,
     sendMatrixMessage,
     selectShouldShowJoinOnChatPreview,
+    selectShouldShowPendingJoinsIndicator,
 } from '@fedi/common/redux'
 import { ChatType } from '@fedi/common/types'
 import { RpcMediaUploadParams } from '@fedi/common/types/bindings'
@@ -27,6 +28,7 @@ import { Button } from '../Button'
 import { Column, Row } from '../Flex'
 import { HoloLoader } from '../HoloLoader'
 import { Icon } from '../Icon'
+import { NotificationDot } from '../NotificationDot'
 import { ChatConversation } from './ChatConversation'
 import { ChatPaymentDialog } from './ChatPaymentDialog'
 import { ChatPreviewConversation } from './ChatPreviewConversation'
@@ -54,6 +56,9 @@ export const ChatRoomConversation: React.FC<Props> = ({ roomId }) => {
     const groupPreview = useAppSelector(s => selectGroupPreview(s, roomId))
     const shouldShowJoinButton = useAppSelector(s =>
         selectShouldShowJoinOnChatPreview(s, roomId),
+    )
+    const showPendingDot = useAppSelector(s =>
+        selectShouldShowPendingJoinsIndicator(s, roomId),
     )
 
     const [isPaymentOpen, setIsPaymentOpen] = useState(false)
@@ -202,11 +207,13 @@ export const ChatRoomConversation: React.FC<Props> = ({ roomId }) => {
                     <Row gap="sm" align="center">
                         <Icon icon="Search" size={26} onClick={handleSearch} />
                         {directUserId ? undefined : (
-                            <Icon
-                                icon="Cog"
-                                size={26}
-                                onClick={() => setIsSettingsOpen(true)}
-                            />
+                            <NotificationDot visible={showPendingDot} size={10}>
+                                <Icon
+                                    icon="Cog"
+                                    size={26}
+                                    onClick={() => setIsSettingsOpen(true)}
+                                />
+                            </NotificationDot>
                         )}
                     </Row>
                 }
