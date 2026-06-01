@@ -39,7 +39,9 @@ export const ChatConfirmJoinPublicRoom = ({ roomId }: Props) => {
     const groupPreview = useAppSelector(s => selectGroupPreview(s, roomId))
 
     const [isJoiningGroup, setIsJoiningGroup] = useState(false)
-    const [isLoading, setIsLoading] = useState(false)
+    // True once the preview fetch settles, success or failure. We still render
+    // the request-to-join screen on failure rather than stranding the user.
+    const [previewSettled, setPreviewSettled] = useState(false)
     // Knock was issued but sync hasn't reflected it yet. Local flag swaps in
     // KnockPendingView so a fast second tap can't fire a duplicate knock.
     const [hasKnockedLocally, setHasKnockedLocally] = useState(false)
@@ -66,25 +68,23 @@ export const ChatConfirmJoinPublicRoom = ({ roomId }: Props) => {
             getMatrixRoomPreview({ fedimint, roomId }),
         )
 
-        setIsLoading(true)
         previewRequest
             .unwrap()
             .catch(() => {
-                if (isCancelled) return
-
-                log.info('Failed to fetch room preview')
-                replace(chatRoute)
+                // Some homeservers don't expose a summary for knockable rooms.
+                // Fall through to the request-to-join screen instead of bailing.
+                log.info('Room preview unavailable; offering request to join')
             })
             .finally(() => {
                 if (isCancelled) return
-                setIsLoading(false)
+                setPreviewSettled(true)
             })
 
         return () => {
             isCancelled = true
             previewRequest.abort()
         }
-    }, [room, roomId, groupPreview, dispatch, fedimint, replace])
+    }, [room, roomId, groupPreview, dispatch, fedimint])
 
     const handleJoinGroup = async () => {
         if (!canJoin || hasKnockedLocally) return
@@ -115,7 +115,9 @@ export const ChatConfirmJoinPublicRoom = ({ roomId }: Props) => {
         )
     }
 
-    if (isLoading || !groupPreview || room) {
+    const isRedirectingMember = !!room && room.roomState !== 'knocked'
+    const isPreviewPending = !room && !groupPreview && !previewSettled
+    if (isRedirectingMember || isPreviewPending) {
         return (
             <Column center grow>
                 <HoloLoader size="md" />
@@ -129,9 +131,11 @@ export const ChatConfirmJoinPublicRoom = ({ roomId }: Props) => {
             <Layout.Content>
                 <Column grow center>
                     <Column center grow fullWidth gap="sm">
-                        <ChatAvatar size="md" room={groupPreview.info} />
+                        {groupPreview && (
+                            <ChatAvatar size="md" room={groupPreview.info} />
+                        )}
                         <Text variant="h2" weight="medium" center>
-                            {isPublic
+                            {isPublic && groupPreview
                                 ? t(
                                       'feature.onboarding.welcome-to-federation',
                                       { federation: groupPreview.info.name },

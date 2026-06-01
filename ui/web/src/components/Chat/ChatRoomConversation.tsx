@@ -78,8 +78,10 @@ export const ChatRoomConversation: React.FC<Props> = ({ roomId }) => {
         previewRequest.unwrap().catch(err => {
             if (isCancelled) return
 
+            // A knockable room often has no fetchable preview, so route to the
+            // join screen (which offers request-to-join) rather than bailing.
             log.warn('Failed to fetch room preview', err)
-            replace(chatRoute)
+            replace(chatConfirmJoinPublicRoomRoute(roomId))
         })
 
         return () => {

@@ -6,7 +6,7 @@ import { setupStore } from '@fedi/common/redux'
 import { createMockGroupPreview } from '@fedi/common/tests/mock-data/matrix'
 import { createMockFedimintBridge } from '@fedi/common/tests/utils/fedimint'
 import { ChatConfirmJoinPublicRoom } from '@fedi/web/src/components/Chat/ChatConfirmJoinPublicRoom'
-import { chatRoute, chatRoomRoute } from '@fedi/web/src/constants/routes'
+import { chatRoomRoute } from '@fedi/web/src/constants/routes'
 import i18n from '@fedi/web/src/localization/i18n'
 
 import { mockUseRouter } from '../../../../jest.setup'
@@ -16,6 +16,7 @@ jest.mock('@fedi/common/hooks/matrix')
 
 const TEST_ROOM_ID = '!default-room:test.server'
 const mockJoinPublicGroup = jest.fn()
+const mockKnockGroup = jest.fn()
 
 const defaultGroupPreview = createMockGroupPreview({
     id: TEST_ROOM_ID,
@@ -68,8 +69,10 @@ describe('/components/Chat/ChatConfirmJoinPublicRoom', () => {
         mockUseRouter.replace.mockClear()
         ;(useMatrixChatInvites as jest.Mock).mockReturnValue({
             joinPublicGroup: mockJoinPublicGroup,
+            knockGroup: mockKnockGroup,
         })
         mockJoinPublicGroup.mockResolvedValue(undefined)
+        mockKnockGroup.mockResolvedValue(undefined)
     })
 
     it('should render the public group confirmation when a group preview exists', () => {
@@ -108,7 +111,7 @@ describe('/components/Chat/ChatConfirmJoinPublicRoom', () => {
         )
     })
 
-    it('should navigate back to chat when the room preview fails to load', async () => {
+    it('should offer request-to-join when the room preview is unavailable', async () => {
         const getRoomPreview = jest
             .fn()
             .mockRejectedValue(new Error('Preview unavailable'))
@@ -121,8 +124,11 @@ describe('/components/Chat/ChatConfirmJoinPublicRoom', () => {
         )
 
         await waitFor(() => {
-            expect(mockUseRouter.replace).toHaveBeenCalledWith(chatRoute)
+            expect(
+                screen.getByText(i18n.t('feature.chat.request-to-join')),
+            ).toBeInTheDocument()
         })
+        expect(mockUseRouter.replace).not.toHaveBeenCalled()
     })
 
     it('should not navigate when an old room preview request fails after cleanup', async () => {
