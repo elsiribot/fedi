@@ -37,6 +37,7 @@ export const JoinFederation: React.FC = () => {
         typeof query.id === 'string' ? query.id : hashParams.id || ''
     const afterJoinEcash = hashParams.afterJoinEcash
     const afterJoinUrl = hashParams.afterJoinUrl
+    const afterJoinFederation = hashParams.afterJoinFederation
 
     const {
         isJoining,
@@ -68,9 +69,27 @@ export const JoinFederation: React.FC = () => {
                 return
             }
 
+            if (afterJoinFederation) {
+                // Keyed by Onboarding so this re-navigation remounts with a
+                // fresh preview for the second join.
+                push(
+                    `${onboardingRoute}/join?id=${encodeURIComponent(
+                        afterJoinFederation,
+                    )}`,
+                )
+                return
+            }
+
             push(nextRoute)
         },
-        [afterJoinEcash, afterJoinUrl, dispatch, federationPreview, push],
+        [
+            afterJoinEcash,
+            afterJoinUrl,
+            afterJoinFederation,
+            dispatch,
+            federationPreview,
+            push,
+        ],
     )
 
     // If they came here with invite code in query string then paste the code for them
