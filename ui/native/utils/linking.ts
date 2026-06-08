@@ -186,7 +186,7 @@ export const screenMap = {
             screen: 'JoinFederation',
             params: {
                 invite: normalizeCommunityInviteCode(community),
-                afterJoinFederation: normalizeCommunityInviteCode(federation),
+                afterJoinFederation: federation,
             },
         }
     },

@@ -97,9 +97,7 @@ export const getDeepLinkPath = (url: string): string => {
                 if (!community || !federation) return homeRoute
                 return `${onboardingRoute}/join#id=${encodeURIComponent(
                     normalizeCommunityInviteCode(community),
-                )}&afterJoinFederation=${encodeURIComponent(
-                    normalizeCommunityInviteCode(federation),
-                )}`
+                )}&afterJoinFederation=${encodeURIComponent(federation)}`
             }
             default:
                 return '/'
