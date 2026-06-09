@@ -26,6 +26,17 @@ import FederationPreview from './FederationPreview'
 const log = makeLog('JoinFederation')
 
 export const JoinFederation: React.FC = () => {
+    const { query } = useRouter()
+    // Remount on a chained join (?id=) so the second join gets a fresh preview
+    // and a reset redirect state, not the first join's stale ones.
+    return (
+        <JoinFederationScreen
+            key={typeof query.id === 'string' ? query.id : 'join'}
+        />
+    )
+}
+
+const JoinFederationScreen: React.FC = () => {
     const { t } = useTranslation()
     const dispatch = useAppDispatch()
     const { push, query } = useRouter()
@@ -70,8 +81,8 @@ export const JoinFederation: React.FC = () => {
             }
 
             if (afterJoinFederation) {
-                // Keyed by Onboarding so this re-navigation remounts with a
-                // fresh preview for the second join.
+                // The ?id= change flips the remount key above, so the second
+                // join mounts fresh with its own preview.
                 push(
                     `${onboardingRoute}/join?id=${encodeURIComponent(
                         afterJoinFederation,

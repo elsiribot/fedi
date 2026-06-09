@@ -1,4 +1,3 @@
-import { useRouter } from 'next/router'
 import React from 'react'
 
 import { CompleteSocialRecovery } from './CompleteSocialRecovery'
@@ -16,15 +15,9 @@ interface Props {
 }
 
 export const Onboarding: React.FC<Props> = ({ step }) => {
-    const { query } = useRouter()
     let content
     if (step === 'join') {
-        // Key by invite so a chained join (?id=) remounts with a fresh preview.
-        content = (
-            <JoinFederation
-                key={typeof query.id === 'string' ? query.id : 'join'}
-            />
-        )
+        content = <JoinFederation />
     } else if (step === 'recover') {
         content = <WalletRecovery />
     } else if (step === 'recover/personal') {
