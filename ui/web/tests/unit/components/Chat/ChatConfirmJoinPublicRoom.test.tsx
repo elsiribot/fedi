@@ -2,8 +2,15 @@ import '@testing-library/jest-dom'
 import { fireEvent, screen, waitFor } from '@testing-library/react'
 
 import { useMatrixChatInvites } from '@fedi/common/hooks/matrix'
-import { setupStore } from '@fedi/common/redux'
-import { createMockGroupPreview } from '@fedi/common/tests/mock-data/matrix'
+import {
+    addMatrixRoomInfo,
+    handleMatrixRoomListStreamUpdates,
+    setupStore,
+} from '@fedi/common/redux'
+import {
+    createMockGroupPreview,
+    MOCK_MATRIX_ROOM,
+} from '@fedi/common/tests/mock-data/matrix'
 import { createMockFedimintBridge } from '@fedi/common/tests/utils/fedimint'
 import { ChatConfirmJoinPublicRoom } from '@fedi/web/src/components/Chat/ChatConfirmJoinPublicRoom'
 import { chatRoomRoute } from '@fedi/web/src/constants/routes'
@@ -129,6 +136,55 @@ describe('/components/Chat/ChatConfirmJoinPublicRoom', () => {
             ).toBeInTheDocument()
         })
         expect(mockUseRouter.replace).not.toHaveBeenCalled()
+    })
+
+    it('should offer request-to-join again after the user was declined', async () => {
+        // Decline kicks the knocker, leaving the room behind with state
+        // 'left'; the screen must not bounce them into the conversation.
+        const store = setupStore()
+        store.dispatch(
+            addMatrixRoomInfo({
+                ...MOCK_MATRIX_ROOM,
+                id: TEST_ROOM_ID,
+                name: 'Declined Room',
+                roomState: 'left',
+            }),
+        )
+        store.dispatch(
+            handleMatrixRoomListStreamUpdates([
+                {
+                    Append: {
+                        values: [
+                            { status: 'ready' as const, id: TEST_ROOM_ID },
+                        ],
+                    },
+                },
+            ]),
+        )
+        const getRoomPreview = jest
+            .fn()
+            .mockRejectedValue(new Error('Preview unavailable'))
+
+        renderWithProviders(
+            <ChatConfirmJoinPublicRoom roomId={TEST_ROOM_ID} />,
+            {
+                store,
+                fedimint: createFedimintWithRoomPreview(getRoomPreview),
+            },
+        )
+
+        const requestToJoin = await screen.findByText(
+            i18n.t('feature.chat.request-to-join'),
+        )
+        expect(mockUseRouter.replace).not.toHaveBeenCalled()
+
+        fireEvent.click(requestToJoin)
+        await waitFor(() => {
+            expect(mockKnockGroup).toHaveBeenCalledWith(TEST_ROOM_ID)
+        })
+        expect(
+            screen.getByText(i18n.t('feature.chat.request-to-join-pending')),
+        ).toBeInTheDocument()
     })
 
     it('should not navigate when an old room preview request fails after cleanup', async () => {

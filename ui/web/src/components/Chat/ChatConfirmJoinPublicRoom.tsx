@@ -54,14 +54,20 @@ export const ChatConfirmJoinPublicRoom = ({ roomId }: Props) => {
     const canJoin = isPublic || allowKnocking
     const roomName = groupPreview?.info?.name || room?.name || null
 
-    // Existing members/invitees go straight to the conversation; only knocked
-    // rooms stay here to show the pending view.
+    // Existing members/invitees go straight to the conversation. Knocked rooms
+    // stay to show the pending view, and left/banned rooms stay so a declined
+    // user can request to join again (matching native's RoomLink).
+    const isMemberOrInvitee =
+        room?.roomState === 'joined' || room?.roomState === 'invited'
     useEffect(() => {
-        if (room && room.roomState !== 'knocked') replace(chatRoomRoute(roomId))
-    }, [room, roomId, replace])
+        if (isMemberOrInvitee) replace(chatRoomRoute(roomId))
+    }, [isMemberOrInvitee, roomId, replace])
 
     useEffect(() => {
-        if (room || groupPreview) return
+        // Left/banned rooms still need the preview so a public room offers
+        // rejoin rather than defaulting to the private knock branch.
+        if (isMemberOrInvitee || room?.roomState === 'knocked' || groupPreview)
+            return
 
         let isCancelled = false
         const previewRequest = dispatch(
@@ -84,7 +90,14 @@ export const ChatConfirmJoinPublicRoom = ({ roomId }: Props) => {
             isCancelled = true
             previewRequest.abort()
         }
-    }, [room, roomId, groupPreview, dispatch, fedimint])
+    }, [
+        isMemberOrInvitee,
+        room?.roomState,
+        roomId,
+        groupPreview,
+        dispatch,
+        fedimint,
+    ])
 
     const handleJoinGroup = async () => {
         if (!canJoin || hasKnockedLocally) return
@@ -115,9 +128,8 @@ export const ChatConfirmJoinPublicRoom = ({ roomId }: Props) => {
         )
     }
 
-    const isRedirectingMember = !!room && room.roomState !== 'knocked'
     const isPreviewPending = !room && !groupPreview && !previewSettled
-    if (isRedirectingMember || isPreviewPending) {
+    if (isMemberOrInvitee || isPreviewPending) {
         return (
             <Column center grow>
                 <HoloLoader size="md" />
