@@ -139,6 +139,25 @@ export class ChatPage extends BasePage {
         ).toBeEditable({ timeout: SYNC_TIMEOUT })
     }
 
+    // Joins a community from its invite code; joining selects it, so its
+    // chats render as tiles on the home screen.
+    async joinCommunity(code: string) {
+        await this.goto(`/onboarding/join?id=${encodeURIComponent(code)}`)
+        const joinSpace = this.page.getByRole('button', {
+            name: 'Join Space',
+            exact: true,
+        })
+        await expect(joinSpace).toBeVisible({ timeout: 60_000 })
+        await joinSpace.click()
+        await this.waitForUrl('**/home', 60_000)
+    }
+
+    // A community chat tile on the home screen. Its accessible name includes
+    // the room name plus whatever the join-state slot renders.
+    homeChatTile(name: string) {
+        return this.page.getByRole('link', { name })
+    }
+
     private closeDialog() {
         return this.page.getByTestId('dialog-close-button').click()
     }
