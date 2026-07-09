@@ -23,7 +23,7 @@ first.
 ### Nix is not optional
 
 The development environment is defined by `flake.nix` and built on
-[flakebox](https://github.com/rustshop/flakebox). It pins everything: the Rust toolchain and its
+[flakebox](https://github.com/dpc/flakebox). It pins everything: the Rust toolchain and its
 Android/iOS/WASM targets, Node and Yarn, the JDK, the Android SDK, `bitcoind`, `lnd`, Core
 Lightning, `electrs`, a Matrix homeserver, a nostr relay, `mprocs`, and more.
 
@@ -252,10 +252,16 @@ good predictor.
 | Workflow | Trigger | Does |
 | --- | --- | --- |
 | `nix.yml` | Every PR; pushes to `master` | Lint, clippy, `testCiAll`, and all platform builds |
-| `test-ui.yml` | PRs touching `ui/**` | eslint, prettier, unit and integration tests |
+| `test-ui.yml` | Every PR | eslint, prettier, unit and integration tests |
 | `e2e-tests.yml` | Cron, three times daily; manual | Android, iOS and web end-to-end suites |
 | `vercel-preview.yml` | PRs | Deploys a PWA preview |
 | `relay-commits.yml` | Hourly | Mirrors commits to the public repository |
+
+Both `nix.yml` and `test-ui.yml` trigger on every pull request. Each then runs a `precheck` job that
+decides whether the diff touched the code it cares about (`HAS_NON_UI_CHANGES` and `HAS_UI_CHANGES`
+respectively), and the real jobs are conditional on that. So a docs-only PR still starts both
+workflows; almost every job inside them skips. Change the `precheck` job, not the trigger, if you
+need to adjust what runs.
 
 Release and deploy workflows (`release-*.yml`, `deploy-to-testflight*.yml`,
 `deploy-to-gp-internal-testing*.yml`, `vercel-prod.yml`) are manual or scheduled and gated to
@@ -263,10 +269,16 @@ release branches.
 
 ## Releases and app flavors
 
-The app ships in three Android/iOS flavors, defined in `ui/native/android/app/build.gradle`:
-**production**, **nightly** (built daily) and **nova**. Each has its own `just` recipes, for example
-`just build-nightly-apk` and `just deploy-to-testflight-nova`. (`bravo` and `dev`, which you will
-see in the code, are runtime environment labels rather than build flavors.)
+`ui/native/android/app/build.gradle` defines four Android product flavors on the `env` dimension.
+Three of them ship — **production**, **nightly** (built daily) and **nova** — and each has its own
+`just` recipes, for example `just build-nightly-apk` and `just deploy-to-testflight-nova`. Only
+these three have iOS counterparts.
+
+The fourth, **dev**, never ships. It exists so you can install several isolated builds side by side:
+`./gradlew assembleDevDebug -PdevId=07` gives you application ID `com.fedi.dev07` with its own app
+data and its own launcher name. Firebase processing is disabled for it.
+
+(`bravo`, which you will see in the code, is a runtime environment label, not a build flavor.)
 
 `ui/native/package.json` is the source of truth for the app version. `just bump-version-native-ui`
 runs `scripts/ui/bump-version-native.sh`, which bumps that version, syncs the Android `versionCode`

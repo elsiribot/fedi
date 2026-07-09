@@ -21,16 +21,18 @@ For repository-wide setup, conventions and CI, see the [root README](../README.m
 
 ## The FFI boundary
 
-The whole Rust/TypeScript surface is two string-in, string-out functions plus a callback, declared
-in `fedi-ffi/src/fedi.udl`:
+The whole Rust/TypeScript surface is three functions plus a callback, declared in
+`fedi-ffi/src/fedi.udl`:
 
 ```
-string fedimint_initialize(EventSink event_sink, string init_opts_json);
-string fedimint_rpc(string method, string payload);
+[Async] string fedimint_initialize(EventSink event_sink, string init_opts_json);
+[Async] string fedimint_rpc(string method, string payload);
+        sequence<string> fedimint_get_supported_events();
 ```
 
 The UI sends a method name and a JSON payload and gets JSON back. Asynchronous notifications travel
-the other way, through `EventSink.event(event_type, body)`.
+the other way, through `EventSink.event(event_type, body)`. `fedimint_get_supported_events` returns
+the event types the bridge can emit — use it rather than hardcoding that list on the UI side.
 
 Keeping the boundary this narrow is deliberate: `fedi-wasm` reuses `fedi-ffi`'s RPC glue, so both
 platforms exercise the same code path.

@@ -28,9 +28,10 @@ The stack is split into a **Rust core** that owns all wallet, protocol and chat 
                        Fedimint (fedibtc/fedimint fork)
 ```
 
-The Rust/TypeScript boundary is deliberately tiny: two string-in, string-out entry points
-(`fedimint_initialize` and `fedimint_rpc`, declared in `bridge/fedi-ffi/src/fedi.udl`) plus an
-`EventSink` callback for pushing async events back up to the UI. Request, response and event types
+The Rust/TypeScript boundary is deliberately tiny. All of it is declared in
+`bridge/fedi-ffi/src/fedi.udl`: two string-in, string-out entry points (`fedimint_initialize` and
+`fedimint_rpc`), `fedimint_get_supported_events` to enumerate the event types, and an `EventSink`
+callback for pushing async events back up to the UI. Request, response and event types
 are defined once in `crates/rpc-types` and exported to TypeScript with `ts-rs`, so the two sides
 cannot drift apart.
 
