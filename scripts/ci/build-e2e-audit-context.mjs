@@ -217,14 +217,10 @@ async function findMergedPullRequests(since) {
 async function findOpenE2ECoverageIssues() {
     if (!token) return []
 
-    const query = encodeURIComponent(
-        `repo:${repo} is:issue is:open label:"e2e testing"`,
-    )
     try {
-        const data = await github(
-            `/search/issues?q=${query}&sort=updated&order=desc&per_page=100`,
+        const items = await searchAllIssues(
+            `repo:${repo} is:issue is:open label:"e2e testing"`,
         )
-        const items = data?.items || []
 
         return Promise.all(items.map(summarizeOpenE2ECoverageIssue))
     } catch (error) {
@@ -235,6 +231,23 @@ async function findOpenE2ECoverageIssues() {
             },
         ]
     }
+}
+
+// Search results cap at 100 per page; a corpus past that would silently
+// truncate the dedupe context and let the audit file duplicates, so walk
+// the pages until a short one.
+async function searchAllIssues(query, maxPages = 5) {
+    const items = []
+    for (let page = 1; page <= maxPages; page++) {
+        const data = await github(
+            `/search/issues?q=${encodeURIComponent(query)}&sort=updated&order=desc&per_page=100&page=${page}`,
+        )
+        const pageItems = data?.items || []
+        items.push(...pageItems)
+        if (pageItems.length < 100) return items
+    }
+    console.warn(`search truncated at ${items.length} results: ${query}`)
+    return items
 }
 
 async function summarizeOpenE2ECoverageIssue(item) {
@@ -308,7 +321,8 @@ function extractCoverageGapKeys(text, explicitText = text) {
         },
         {
             key: 'chat',
-            pattern: /\b(chat|message|group|room|knock|matrix)\b/i,
+            pattern:
+                /\b(chat|message|knock|group chat|chat room|matrix room)\b/i,
         },
         {
             key: 'recovery',
