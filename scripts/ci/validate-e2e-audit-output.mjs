@@ -8,12 +8,15 @@ const patchDir = getArg('--patch-dir') || '/tmp/gh-aw'
 // The prompt's testID-only rule for product files is not enforceable via the
 // safe-outputs allowed_files globs (they accept any change under screens/
 // components), so the patch itself is checked here.
-const unconditionalPatchPaths = [/^ui\/native\/tests\/appium\//, /^scripts\/ui\/run-e2e\.sh$/]
+const appiumTestPatchPath = /^ui\/native\/tests\/appium\//
+const unconditionalPatchPaths = [
+    appiumTestPatchPath,
+    /^scripts\/ui\/run-e2e\.sh$/,
+]
 const testIdOnlyPatchPaths = [/^ui\/native\/screens\//, /^ui\/native\/components\//]
 
-// String-building methods a testID interpolation may call. A testID only ever
-// needs to compute a string, so any other call could run arbitrary code at
-// render and is rejected. Extend this only with methods that return a string.
+// String-returning methods a testID interpolation may call. A testID only ever
+// needs to compute a string, so any other call is rejected.
 const pureStringMethods = new Set([
     'concat',
     'replace',
@@ -27,12 +30,8 @@ const pureStringMethods = new Set([
     'padStart',
     'padEnd',
     'repeat',
-    'toString',
     'toUpperCase',
     'toLowerCase',
-    'split',
-    'join',
-    'at',
     'charAt',
     'normalize',
 ])
@@ -275,14 +274,28 @@ function validatePatchScope(index, type) {
         return
     }
 
+    let touchesAppiumTestTree = false
+
     for (const file of patchFiles) {
         const perFile = parsePatchByFile(fs.readFileSync(file, 'utf8'))
         for (const [path, { added, removed }] of perFile) {
+            if (appiumTestPatchPath.test(path) && added.length > 0) {
+                touchesAppiumTestTree = true
+            }
+
             if (unconditionalPatchPaths.some(p => p.test(path))) continue
 
             if (!testIdOnlyPatchPaths.some(p => p.test(path))) {
                 errors.push(
                     `item ${index} (${type}) patch touches ${path}, outside the appium test tree and the testID-eligible product paths`,
+                )
+                continue
+            }
+
+            const removedSelector = removed.find(line => findTestIdAttrs(line).length)
+            if (removedSelector !== undefined) {
+                errors.push(
+                    `item ${index} (${type}) patch removes or changes an existing testID in ${path}; product files may only gain new testID attributes`,
                 )
                 continue
             }
@@ -295,9 +308,8 @@ function validatePatchScope(index, type) {
                 continue
             }
 
-            // Drop the lines a stripped testID empties out (a testID on its own
-            // line carries no product change), then require the rest to match
-            // line for line.
+            // A testID added on its own line strips to an empty residual and
+            // carries no product change, so those are dropped before comparing.
             const addedResidual = residualLines(added)
             const removedResidual = residualLines(removed)
             if (!sameLines(addedResidual, removedResidual)) {
@@ -306,6 +318,12 @@ function validatePatchScope(index, type) {
                 )
             }
         }
+    }
+
+    if (!touchesAppiumTestTree) {
+        errors.push(
+            `item ${index} (${type}) patch does not touch ui/native/tests/appium/**; a coverage pull request must add or register an Appium test, not only selectors`,
+        )
     }
 }
 
