@@ -11,6 +11,32 @@ const patchDir = getArg('--patch-dir') || '/tmp/gh-aw'
 const unconditionalPatchPaths = [/^ui\/native\/tests\/appium\//, /^scripts\/ui\/run-e2e\.sh$/]
 const testIdOnlyPatchPaths = [/^ui\/native\/screens\//, /^ui\/native\/components\//]
 
+// String-building methods a testID interpolation may call. A testID only ever
+// needs to compute a string, so any other call could run arbitrary code at
+// render and is rejected. Extend this only with methods that return a string.
+const pureStringMethods = new Set([
+    'concat',
+    'replace',
+    'replaceAll',
+    'slice',
+    'substring',
+    'substr',
+    'trim',
+    'trimStart',
+    'trimEnd',
+    'padStart',
+    'padEnd',
+    'repeat',
+    'toString',
+    'toUpperCase',
+    'toLowerCase',
+    'split',
+    'join',
+    'at',
+    'charAt',
+    'normalize',
+])
+
 const requiredEvidenceFields = [
     'audit_context_id',
     'review_scope',
@@ -222,12 +248,13 @@ function validatePullRequestEvidence(index, type, text) {
     validatePatchScope(index, type)
 }
 
-// Enforce the testID-only rule on the actual patch: test-tree files change
-// freely, and for product files under screens/components the added lines
-// with their testID attributes stripped must equal the removed lines exactly,
-// so nothing but testID attributes can change. Containment checks are not
-// enough here: an insertion that preserves the original as a subsequence
-// would smuggle arbitrary code past them.
+// For product files under screens/components the change must be nothing but
+// testID attributes, enforced two ways. A testID value an added line
+// introduces must be static (see testIdValuesAreStatic), so it cannot smuggle
+// a call that runs at render. And the added and removed lines are compared per
+// line after their testIDs are stripped, not as one concatenated blob. A blob
+// comparison ignores line boundaries, so an ASI statement-split or an added
+// import line would slip through. Test-tree files change freely.
 function validatePatchScope(index, type) {
     if (!fs.existsSync(patchDir)) {
         errors.push(
@@ -260,12 +287,20 @@ function validatePatchScope(index, type) {
                 continue
             }
 
-            const addedResidual = added
-                .map(stripTestIdAttributes)
-                .map(compactLine)
-                .join('')
-            const removedResidual = removed.map(compactLine).join('')
-            if (addedResidual !== removedResidual) {
+            const nonStatic = added.find(line => !testIdValuesAreStatic(line))
+            if (nonStatic !== undefined) {
+                errors.push(
+                    `item ${index} (${type}) patch adds a non-static testID value in ${path}; a testID must be a string literal or a side-effect-free interpolation, not a call to a non-string-building function`,
+                )
+                continue
+            }
+
+            // Drop the lines a stripped testID empties out (a testID on its own
+            // line carries no product change), then require the rest to match
+            // line for line.
+            const addedResidual = residualLines(added)
+            const removedResidual = residualLines(removed)
+            if (!sameLines(addedResidual, removedResidual)) {
                 errors.push(
                     `item ${index} (${type}) patch changes more than testID attributes in ${path}`,
                 )
@@ -274,27 +309,121 @@ function validatePatchScope(index, type) {
     }
 }
 
+function residualLines(lines) {
+    return lines
+        .map(stripTestIdAttributes)
+        .map(compactLine)
+        .filter(Boolean)
+}
+
+function sameLines(a, b) {
+    return a.length === b.length && a.every((line, i) => line === b[i])
+}
+
 function stripTestIdAttributes(line) {
-    return line.replace(/\btestID\s*=\s*("[^"]*"|\{[^}]*\})/g, '')
+    let out = ''
+    let cursor = 0
+    for (const attr of findTestIdAttrs(line)) {
+        out += line.slice(cursor, attr.start)
+        cursor = attr.end
+    }
+    return out + line.slice(cursor)
+}
+
+function testIdValuesAreStatic(line) {
+    return findTestIdAttrs(line).every(
+        attr => attr.body === undefined || braceBodyIsStatic(attr.body),
+    )
+}
+
+// Locate every `testID=<value>` on a line, matching the value with balanced
+// braces so a nested `${...}` interpolation is captured whole rather than cut
+// off at the first inner brace. `body` is the text inside the braces for the
+// `testID={...}` form, or undefined for the `testID="..."` string form.
+function findTestIdAttrs(line) {
+    const attrs = []
+    const re = /\btestID\s*=\s*/g
+    let match
+    while ((match = re.exec(line))) {
+        const valueStart = match.index + match[0].length
+        const opener = line[valueStart]
+        if (opener === '"' || opener === "'") {
+            const close = line.indexOf(opener, valueStart + 1)
+            if (close === -1) break
+            attrs.push({ start: match.index, end: close + 1, body: undefined })
+            re.lastIndex = close + 1
+        } else if (opener === '{') {
+            let depth = 0
+            let i = valueStart
+            for (; i < line.length; i++) {
+                if (line[i] === '{') depth++
+                else if (line[i] === '}' && --depth === 0) break
+            }
+            if (depth !== 0) break
+            attrs.push({
+                start: match.index,
+                end: i + 1,
+                body: line.slice(valueStart + 1, i),
+            })
+            re.lastIndex = i + 1
+        }
+    }
+    return attrs
+}
+
+// A testID interpolation is static when it only reads values and builds
+// strings: no statements, arrows, or assignments, and every call is a method
+// call on the pure-string allowlist. This admits the dotted-path, template, and
+// `.concat(...).replaceAll(...)` forms product code uses, and rejects a bare or
+// unknown call such as `sendSeed()` or `(exfil(), 'row')`.
+function braceBodyIsStatic(body) {
+    if (/[;=]/.test(body)) return false
+    let paren = body.indexOf('(')
+    while (paren !== -1) {
+        let end = paren - 1
+        while (end >= 0 && /\s/.test(body[end])) end--
+        let start = end
+        while (start >= 0 && /[\w$]/.test(body[start])) start--
+        const method = body.slice(start + 1, end + 1)
+        let dot = start
+        while (dot >= 0 && /\s/.test(body[dot])) dot--
+        if (body[dot] !== '.' || !pureStringMethods.has(method)) return false
+        paren = body.indexOf('(', paren + 1)
+    }
+    return true
 }
 
 function parsePatchByFile(patchText) {
     const perFile = new Map()
     let current
+    let inHunk = false
     for (const raw of patchText.split('\n')) {
-        // File deletions have no "+++ b/" line, so "--- a/" opens the entry
-        // that collects their removed lines.
-        const target = raw.match(/^\+\+\+ b\/(.+)$/) || raw.match(/^--- a\/(.+)$/)
-        if (target) {
-            const path = target[1]
+        // Match the file headers first so a content line that happens to start
+        // with "+++"/"---" (an added/removed line whose own text begins with
+        // "++"/"--") is never mistaken for one. File deletions have no
+        // "+++ b/" line, so "--- a/" opens the entry that collects them.
+        const header = raw.match(/^\+\+\+ b\/(.+)$/) || raw.match(/^--- a\/(.+)$/)
+        if (header) {
+            const path = header[1]
             if (!perFile.has(path)) perFile.set(path, { added: [], removed: [] })
             current = perFile.get(path)
+            inHunk = false
             continue
         }
-        if (!current) continue
-        if (raw.startsWith('+') && !raw.startsWith('+++')) {
+        if (raw.startsWith('diff --git ')) {
+            inHunk = false
+            continue
+        }
+        if (raw.startsWith('@@')) {
+            inHunk = true
+            continue
+        }
+        // Only classify lines inside a hunk body, where the first character is
+        // the diff marker and the rest is the source line.
+        if (!current || !inHunk) continue
+        if (raw[0] === '+') {
             current.added.push(raw.slice(1))
-        } else if (raw.startsWith('-') && !raw.startsWith('---')) {
+        } else if (raw[0] === '-') {
             current.removed.push(raw.slice(1))
         }
     }
