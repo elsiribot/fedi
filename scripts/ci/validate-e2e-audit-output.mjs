@@ -1,7 +1,8 @@
 #!/usr/bin/env node
 import fs from 'node:fs'
 
-const agentOutputPath = getArg('--agent-output') || '/tmp/gh-aw/agent_output.json'
+const agentOutputPath =
+    getArg('--agent-output') || '/tmp/gh-aw/agent_output.json'
 const contextPath = getArg('--context') || '/tmp/gh-aw/e2e-audit-context.json'
 const patchDir = getArg('--patch-dir') || '/tmp/gh-aw'
 
@@ -13,28 +14,10 @@ const unconditionalPatchPaths = [
     appiumTestPatchPath,
     /^scripts\/ui\/run-e2e\.sh$/,
 ]
-const testIdOnlyPatchPaths = [/^ui\/native\/screens\//, /^ui\/native\/components\//]
-
-// String-returning methods a testID interpolation may call. A testID only ever
-// needs to compute a string, so any other call is rejected.
-const pureStringMethods = new Set([
-    'concat',
-    'replace',
-    'replaceAll',
-    'slice',
-    'substring',
-    'substr',
-    'trim',
-    'trimStart',
-    'trimEnd',
-    'padStart',
-    'padEnd',
-    'repeat',
-    'toUpperCase',
-    'toLowerCase',
-    'charAt',
-    'normalize',
-])
+const testIdOnlyPatchPaths = [
+    /^ui\/native\/screens\//,
+    /^ui\/native\/components\//,
+]
 
 const requiredEvidenceFields = [
     'audit_context_id',
@@ -60,6 +43,11 @@ const invalidNoopPatterns = [
 ]
 
 const optionalMarkdownFieldMarker = '[\\s*_`]*'
+
+if (process.argv.includes('--self-test')) {
+    runSelfTests()
+    process.exit(0)
+}
 
 const context = readJson(contextPath, 'audit context')
 const output = readJson(agentOutputPath, 'agent output')
@@ -109,7 +97,9 @@ for (const [index, item] of output.items.entries()) {
         continue
     }
 
-    errors.push(`item ${index} has unsupported safe output type: ${type || '<empty>'}`)
+    errors.push(
+        `item ${index} has unsupported safe output type: ${type || '<empty>'}`,
+    )
 }
 
 if (errors.length > 0) {
@@ -204,7 +194,8 @@ function validateAuditedOutput(index, type, text, item) {
 // Device execution is impossible on this runner, so honest bodies name the
 // static checks, say they passed, and say device validation is still pending.
 function validatePullRequestEvidence(index, type, text) {
-    const passWords = '(?:pass(?:ed|es)?|clean|succeeded|green|(?:no|0|zero) errors)'
+    const passWords =
+        '(?:pass(?:ed|es)?|clean|succeeded|green|(?:no|0|zero) errors)'
     const statesPass = tool =>
         new RegExp(
             `${tool}[^,;\\n]{0,120}?\\b${passWords}\\b|\\b${passWords}\\b[^,;\\n]{0,120}?${tool}`,
@@ -223,11 +214,7 @@ function validatePullRequestEvidence(index, type, text) {
         )
     }
 
-    if (
-        /\b(tsc|typecheck|type-check|eslint|lint|prettier)\b[^;\n]{0,80}\b(fail(?:ed|ing|s)?|error(?:ed|s)? out)\b/i.test(
-            text,
-        )
-    ) {
+    if (reportsStaticCheckFailure(text)) {
         errors.push(
             `item ${index} (${type}) reports a failed static check; a failed implementation must fall back to create_issue instead of a pull request`,
         )
@@ -245,6 +232,15 @@ function validatePullRequestEvidence(index, type, text) {
     }
 
     validatePatchScope(index, type)
+}
+
+function reportsStaticCheckFailure(text) {
+    const staticTool = '\\b(?:tsc|typecheck|type-check|eslint|lint|prettier)\\b'
+    const failure = '\\b(?:fail(?:ed|ing|s)?|error(?:ed|s)? out)\\b'
+    return new RegExp(
+        `${staticTool}[^;\\n]{0,80}${failure}|${failure}[^;\\n]{0,80}${staticTool}`,
+        'i',
+    ).test(text)
 }
 
 // For product files under screens/components the change must be nothing but
@@ -277,8 +273,23 @@ function validatePatchScope(index, type) {
     let touchesAppiumTestTree = false
 
     for (const file of patchFiles) {
-        const perFile = parsePatchByFile(fs.readFileSync(file, 'utf8'))
-        for (const [path, { added, removed }] of perFile) {
+        const sections = parsePatchSections(fs.readFileSync(file, 'utf8'))
+        for (const section of sections) {
+            const { path, added, removed, hunks, unsupportedReason } = section
+            if (!path) {
+                errors.push(
+                    `item ${index} (${type}) patch contains a file section whose path cannot be parsed safely`,
+                )
+                continue
+            }
+
+            if (unsupportedReason || hunks.length === 0) {
+                errors.push(
+                    `item ${index} (${type}) patch uses an unsupported non-text or metadata-only change in ${path}${unsupportedReason ? `: ${unsupportedReason}` : ''}`,
+                )
+                continue
+            }
+
             if (appiumTestPatchPath.test(path) && added.length > 0) {
                 touchesAppiumTestTree = true
             }
@@ -292,7 +303,9 @@ function validatePatchScope(index, type) {
                 continue
             }
 
-            const removedSelector = removed.find(line => findTestIdAttrs(line).length)
+            const removedSelector = removed.find(
+                line => findTestIdAttrs(line).length,
+            )
             if (removedSelector !== undefined) {
                 errors.push(
                     `item ${index} (${type}) patch removes or changes an existing testID in ${path}; product files may only gain new testID attributes`,
@@ -308,11 +321,7 @@ function validatePatchScope(index, type) {
                 continue
             }
 
-            // A testID added on its own line strips to an empty residual and
-            // carries no product change, so those are dropped before comparing.
-            const addedResidual = residualLines(added)
-            const removedResidual = residualLines(removed)
-            if (!sameLines(addedResidual, removedResidual)) {
+            if (!hunks.every(hunkOnlyAddsTestIds)) {
                 errors.push(
                     `item ${index} (${type}) patch changes more than testID attributes in ${path}`,
                 )
@@ -327,15 +336,21 @@ function validatePatchScope(index, type) {
     }
 }
 
-function residualLines(lines) {
-    return lines
-        .map(stripTestIdAttributes)
-        .map(compactLine)
-        .filter(Boolean)
-}
-
-function sameLines(a, b) {
-    return a.length === b.length && a.every((line, i) => line === b[i])
+function hunkOnlyAddsTestIds(hunk) {
+    const oldLines = hunk.lines
+        .filter(line => line.kind !== 'added')
+        .map(line => line.text)
+    const newLines = hunk.lines
+        .filter(line => line.kind !== 'removed')
+        .flatMap(line => {
+            if (line.kind !== 'added') return [line.text]
+            const residual = stripTestIdAttributes(line.text)
+            return residual.trim().length > 0 ? [residual] : []
+        })
+    return (
+        oldLines.length === newLines.length &&
+        oldLines.every((line, index) => line === newLines[index])
+    )
 }
 
 function stripTestIdAttributes(line) {
@@ -344,6 +359,14 @@ function stripTestIdAttributes(line) {
     for (const attr of findTestIdAttrs(line)) {
         out += line.slice(cursor, attr.start)
         cursor = attr.end
+        if (/\s/.test(out.at(-1) || '') && /\s/.test(line[cursor] || '')) {
+            cursor++
+        } else if (
+            /\s/.test(out.at(-1) || '') &&
+            /[>/]/.test(line[cursor] || '')
+        ) {
+            out = out.slice(0, -1)
+        }
     }
     return out + line.slice(cursor)
 }
@@ -389,67 +412,185 @@ function findTestIdAttrs(line) {
     return attrs
 }
 
-// A testID interpolation is static when it only reads values and builds
-// strings: no statements, arrows, or assignments, and every call is a method
-// call on the pure-string allowlist. This admits the dotted-path, template, and
-// `.concat(...).replaceAll(...)` forms product code uses, and rejects a bare or
-// unknown call such as `sendSeed()` or `(exfil(), 'row')`.
 function braceBodyIsStatic(body) {
-    if (/[;=]/.test(body)) return false
-    let paren = body.indexOf('(')
-    while (paren !== -1) {
-        let end = paren - 1
-        while (end >= 0 && /\s/.test(body[end])) end--
-        let start = end
-        while (start >= 0 && /[\w$]/.test(body[start])) start--
-        const method = body.slice(start + 1, end + 1)
-        let dot = start
-        while (dot >= 0 && /\s/.test(body[dot])) dot--
-        if (body[dot] !== '.' || !pureStringMethods.has(method)) return false
-        paren = body.indexOf('(', paren + 1)
-    }
-    return true
+    const value = body.trim()
+    const identifier = '[A-Za-z_$][\\w$]*'
+    const dottedPath = `${identifier}(?:\\s*\\.\\s*${identifier})*`
+    if (new RegExp(`^${dottedPath}$`).test(value)) return true
+    if (templateOnlyReadsDottedPaths(value, dottedPath)) return true
+
+    const stringLiteral = `(?:'(?:\\\\.|[^'\\\\])*'|"(?:\\\\.|[^"\\\\])*")`
+    const literalArgs = `(?:${stringLiteral})(?:\\s*,\\s*${stringLiteral})*`
+    return new RegExp(
+        `^${dottedPath}(?:\\s*\\.\\s*(?:concat|replaceAll)\\(\\s*(?:${literalArgs})?\\s*\\))+$`,
+    ).test(value)
 }
 
-function parsePatchByFile(patchText) {
-    const perFile = new Map()
+function templateOnlyReadsDottedPaths(value, dottedPath) {
+    if (!value.startsWith('`') || !value.endsWith('`')) return false
+    const interpolation = /\$\{([^{}]+)}/g
+    let cursor = 1
+    let match
+    while ((match = interpolation.exec(value))) {
+        const literal = value.slice(cursor, match.index)
+        if (/[^\\]`/.test(literal)) return false
+        if (!new RegExp(`^\\s*${dottedPath}\\s*$`).test(match[1])) return false
+        cursor = match.index + match[0].length
+    }
+    const remainder = value.slice(cursor, -1)
+    return !remainder.includes('${') && !/[^\\]`/.test(remainder)
+}
+
+function parsePatchSections(patchText) {
+    const sections = []
     let current
-    let inHunk = false
+    let currentHunk
+
+    const finishSection = () => {
+        if (!current) return
+        current.path =
+            current.newPath !== '/dev/null' ? current.newPath : current.oldPath
+        current.added = current.hunks.flatMap(hunk =>
+            hunk.lines
+                .filter(line => line.kind === 'added')
+                .map(line => line.text),
+        )
+        current.removed = current.hunks.flatMap(hunk =>
+            hunk.lines
+                .filter(line => line.kind === 'removed')
+                .map(line => line.text),
+        )
+        sections.push(current)
+    }
+
     for (const raw of patchText.split('\n')) {
-        // Match the file headers first so a content line that happens to start
-        // with "+++"/"---" (an added/removed line whose own text begins with
-        // "++"/"--") is never mistaken for one. File deletions have no
-        // "+++ b/" line, so "--- a/" opens the entry that collects them.
-        const header = raw.match(/^\+\+\+ b\/(.+)$/) || raw.match(/^--- a\/(.+)$/)
-        if (header) {
-            const path = header[1]
-            if (!perFile.has(path)) perFile.set(path, { added: [], removed: [] })
-            current = perFile.get(path)
-            inHunk = false
-            continue
-        }
+        const diffHeader = raw.match(/^diff --git a\/(\S+) b\/(\S+)$/)
         if (raw.startsWith('diff --git ')) {
-            inHunk = false
+            finishSection()
+            current = {
+                oldPath: diffHeader?.[1],
+                newPath: diffHeader?.[2],
+                hunks: [],
+                unsupportedReason: diffHeader
+                    ? undefined
+                    : 'quoted or whitespace-containing path',
+            }
+            currentHunk = undefined
             continue
         }
+        if (!current) continue
+
         if (raw.startsWith('@@')) {
-            inHunk = true
+            currentHunk = { lines: [] }
+            current.hunks.push(currentHunk)
             continue
         }
-        // Only classify lines inside a hunk body, where the first character is
-        // the diff marker and the rest is the source line.
-        if (!current || !inHunk) continue
-        if (raw[0] === '+') {
-            current.added.push(raw.slice(1))
-        } else if (raw[0] === '-') {
-            current.removed.push(raw.slice(1))
+        if (currentHunk) {
+            if (raw[0] === '+') {
+                currentHunk.lines.push({ kind: 'added', text: raw.slice(1) })
+            } else if (raw[0] === '-') {
+                currentHunk.lines.push({ kind: 'removed', text: raw.slice(1) })
+            } else if (raw[0] === ' ') {
+                currentHunk.lines.push({ kind: 'context', text: raw.slice(1) })
+            }
+            continue
+        }
+
+        const oldHeader = raw.match(/^--- (?:a\/)?(.+)$/)
+        const newHeader = raw.match(/^\+\+\+ (?:b\/)?(.+)$/)
+        if (oldHeader) {
+            current.oldPath = oldHeader[1]
+            currentHunk = undefined
+            continue
+        }
+        if (newHeader) {
+            current.newPath = newHeader[1]
+            currentHunk = undefined
+            continue
+        }
+        if (
+            /^(?:GIT binary patch|Binary files |rename (?:from|to) |copy (?:from|to) |old mode |new mode )/.test(
+                raw,
+            )
+        ) {
+            current.unsupportedReason = raw
+            continue
         }
     }
-    return perFile
+    finishSection()
+    return sections
 }
 
-function compactLine(line) {
-    return line.replace(/\s+/g, '')
+function runSelfTests() {
+    const accepted = [
+        '<View testID="Static" />',
+        '<View testID={`Row-${item.id}`} />',
+        "<View testID={item.name.concat('Row').replaceAll(' ', '')} />",
+    ]
+    const rejected = [
+        '<View testID={`${counter++}`} />',
+        "<View testID={'x'.replaceAll('x', callback)} />",
+        '<View testID={sendSeed()} />',
+    ]
+    for (const line of accepted) {
+        if (!testIdValuesAreStatic(line))
+            throw new Error(`rejected safe testID: ${line}`)
+    }
+    for (const line of rejected) {
+        if (testIdValuesAreStatic(line))
+            throw new Error(`accepted unsafe testID: ${line}`)
+    }
+
+    const relocation =
+        parsePatchSections(`diff --git a/ui/native/screens/Foo.tsx b/ui/native/screens/Foo.tsx
+--- a/ui/native/screens/Foo.tsx
++++ b/ui/native/screens/Foo.tsx
+@@ -1,2 +1 @@
+-dangerousCall()
+ keep()
+@@ -10 +9,2 @@
+ other()
++dangerousCall()`)[0]
+    if (relocation.hunks.every(hunkOnlyAddsTestIds)) {
+        throw new Error('accepted product-code line relocation')
+    }
+
+    const whitespaceChange =
+        parsePatchSections(`diff --git a/ui/native/screens/Foo.tsx b/ui/native/screens/Foo.tsx
+--- a/ui/native/screens/Foo.tsx
++++ b/ui/native/screens/Foo.tsx
+@@ -1 +1 @@
+-const label = 'pay now'
++const label = 'paynow'`)[0]
+    if (whitespaceChange.hunks.every(hunkOnlyAddsTestIds)) {
+        throw new Error('accepted whitespace-only product behavior change')
+    }
+
+    const selector =
+        parsePatchSections(`diff --git a/ui/native/screens/Foo.tsx b/ui/native/screens/Foo.tsx
+--- a/ui/native/screens/Foo.tsx
++++ b/ui/native/screens/Foo.tsx
+@@ -1 +1 @@
+-<View />
++<View testID="Foo" />`)[0]
+    if (!selector.hunks.every(hunkOnlyAddsTestIds)) {
+        throw new Error('rejected testID-only product change')
+    }
+
+    const headerPrefix =
+        parsePatchSections(`diff --git a/ui/native/screens/Foo.tsx b/ui/native/screens/Foo.tsx
+--- a/ui/native/screens/Foo.tsx
++++ b/ui/native/screens/Foo.tsx
+@@ -1 +1,2 @@
+ keep()
++++injected()`)[0]
+    if (headerPrefix.added[0] !== '++injected()') {
+        throw new Error('misparsed content line as a patch header')
+    }
+    if (!reportsStaticCheckFailure('failed eslint, then eslint passed')) {
+        throw new Error('accepted failed check stated before its tool name')
+    }
+    console.log('E2E audit validator self-tests passed')
 }
 
 function validateBlockedOutput(index, type, text) {

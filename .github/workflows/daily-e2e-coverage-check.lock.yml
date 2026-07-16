@@ -1028,7 +1028,9 @@ jobs:
             await main();
       - name: Validate E2E audit output evidence
         if: always()
-        run: node scripts/ci/validate-e2e-audit-output.mjs --agent-output /tmp/gh-aw/agent_output.json --context /tmp/gh-aw/e2e-audit-context.json --patch-dir /tmp/gh-aw
+        run: |
+          node scripts/ci/validate-e2e-audit-output.mjs --self-test
+          node scripts/ci/validate-e2e-audit-output.mjs --agent-output /tmp/gh-aw/agent_output.json --context /tmp/gh-aw/e2e-audit-context.json --patch-dir /tmp/gh-aw
       - name: Parse agent logs for step summary
         if: always()
         uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9.0.0
