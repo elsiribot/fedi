@@ -250,8 +250,6 @@ Then remove every gap with a fix in flight (open coverage PR, or a generated PR 
 
 Write the test suite and its registry entry following the Test Implementation Conventions, adding `testID` props only where they are the sole blocker. Keep the diff minimal.
 
-Commit your changes on the checked-out HEAD with `git add` and `git commit`. Do not create or switch git branches: the workflow publishes from the checked-out branch, and a new local branch breaks its patch generation because the shallow checkout has no remote refs for a merge-base.
-
 ### 5. Validate
 
 Run the Validation steps. Only proceed to a pull request when typecheck, lint, and the registration check all pass.
