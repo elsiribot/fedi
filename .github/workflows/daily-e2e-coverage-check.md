@@ -256,6 +256,8 @@ Run the Validation steps. Only proceed to a pull request when typecheck, lint, a
 
 ### 6. Report
 
+Before writing the commit message, pull request title, and body, read `commit/SKILL.md` and `write-pr/SKILL.md` from the `fedibtc/skills` repository with the github `get_file_contents` tool and follow their conventions. Where they conflict with the required formats in this workflow, this workflow wins. If that repository is not readable, continue without it.
+
 For a `create_pull_request` body, include:
 
 - what user-facing flow the new test covers and how it drives it
