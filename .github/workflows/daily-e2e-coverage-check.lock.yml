@@ -340,6 +340,7 @@ jobs:
         # poutine:ignore untrusted_checkout_exec
         run: bash "${RUNNER_TEMP}/gh-aw/actions/validate_prompt_placeholders.sh"
       - name: Explain this job in the step summary
+        continue-on-error: true
         run: |
           {
             echo "## The daily e2e coverage audit"
@@ -1188,6 +1189,7 @@ jobs:
           GH_AW_INFO_AWF_VERSION: "v0.27.2"
           GH_AW_INFO_ENGINE_ID: "codex"
       - name: Explain the run outcome in the step summary
+        continue-on-error: true
         env:
           AGENT_RESULT: ${{ needs.agent.result }}
           DETECTION_CONCLUSION: ${{ needs.detection.outputs.detection_conclusion }}
@@ -1484,6 +1486,7 @@ jobs:
           ls -la /tmp/gh-aw/threat-detection/ 2>/dev/null || true
       - name: Explain this job in the step summary
         if: always() && steps.detection_guard.outputs.run_detection == 'true'
+        continue-on-error: true
         run: |
           {
             echo "## What this job is"
@@ -1699,6 +1702,7 @@ jobs:
             }
       - name: Append threat detection verdict to step summary
         if: always() && steps.detection_guard.outputs.run_detection == 'true'
+        continue-on-error: true
         env:
           DETECTION_CONCLUSION: ${{ steps.detection_conclusion.outputs.conclusion }}
           DETECTION_REASON: ${{ steps.detection_conclusion.outputs.reason }}
