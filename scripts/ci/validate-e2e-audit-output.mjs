@@ -49,8 +49,11 @@ if (process.argv.includes('--self-test')) {
     process.exit(0)
 }
 
+let loadedOutput
+
 const context = readJson(contextPath, 'audit context')
 const output = readJson(agentOutputPath, 'agent output')
+loadedOutput = output
 
 if (!Array.isArray(output.items)) {
     fail('agent output is missing an items array')
@@ -118,6 +121,10 @@ if (blockedTypes.length > 0) {
 
 console.log(
     `validated ${output.items.length} E2E audit safe output item(s) for ${context.audit_context_id}`,
+)
+
+writeOutcomeSummary(
+    '✅ Validation passed. Anything to post is published by the safe_outputs job, and the conclusion job summary links the result.',
 )
 
 function validateAuditedOutput(index, type, text, item) {
@@ -832,6 +839,57 @@ function getArg(name) {
 }
 
 function fail(message) {
+    writeOutcomeSummary(
+        `❌ The run is red because this outcome failed validation; nothing was posted:\n\n${message
+            .split('\n')
+            .map(line => `- ${excerpt(line, 300)}`)
+            .join('\n')}`,
+    )
     console.error(`E2E audit output validation failed:\n${message}`)
     process.exit(1)
+}
+
+// The matching "The daily e2e coverage audit" intro at the top of this job's
+// summary is written by build-e2e-audit-context.mjs before the agent runs;
+// together they bracket the harness diagnostics with plain language.
+function writeOutcomeSummary(verdict) {
+    const summaryPath = process.env.GITHUB_STEP_SUMMARY
+    if (!summaryPath) return
+    fs.appendFileSync(
+        summaryPath,
+        `## What this run did\n\n${describeAgentOutcome()}\n\n${verdict}\n`,
+    )
+}
+
+function describeAgentOutcome() {
+    const items = loadedOutput?.items
+    if (!Array.isArray(items) || items.length === 0) {
+        return 'The agent finished without producing a final output.'
+    }
+    return items.map(describeOutcomeItem).join('\n\n')
+}
+
+function describeOutcomeItem(item) {
+    const type = normalizeType(item.type || item.kind || item.name || '')
+    if (type === 'create_pull_request') {
+        return `The agent implemented a missing e2e test and proposed a draft PR: "${excerpt(item.title, 120)}".`
+    }
+    if (type === 'create_issue') {
+        return `The agent found an untracked coverage gap and drafted an issue for it: "${excerpt(item.title, 120)}".`
+    }
+    if (type === 'noop') {
+        const reason =
+            getFieldValueUntilNextField(collectText(item), 'coverage_gaps') ||
+            item.message
+        return `The agent decided nothing needs posting: ${excerpt(reason, 300)}`
+    }
+    return `The agent stopped early with ${type || 'an unrecognized output'}: ${excerpt(collectText(item), 300)}`
+}
+
+function excerpt(value, max) {
+    const text = String(value ?? '')
+        .replace(/`/g, "'")
+        .replace(/\s+/g, ' ')
+        .trim()
+    return text.length > max ? `${text.slice(0, max)}…` : text
 }
