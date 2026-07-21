@@ -343,17 +343,143 @@ jobs:
             nix_tag=${{ env.fedi_fedimintd_container_tag }} && hub_tag="fedibtc/fedi-fedimintd:${LAST_COMMIT_SHA}" && docker tag "$nix_tag" "$hub_tag" && docker push "$hub_tag"
             nix_tag=${{ env.fedi_fedimint_cli_container_tag }} && hub_tag="fedibtc/fedi-fedimint-cli:${LAST_COMMIT_SHA}" && docker tag "$nix_tag" "$hub_tag" && docker push "$hub_tag"
 
+        # Per-arch alias of the tags above. The `containers-manifest` job joins
+        # these with the `-arm64` ones into multi-arch manifest lists.
+        - name: Publish per-arch tags
+          if: github.ref == 'refs/heads/master'
+          run: |
+            nix_tag=${{ env.fedi_fedimintd_container_tag }} && hub_tag="fedibtc/fedi-fedimintd:${LAST_COMMIT_SHA}-amd64" && docker tag "$nix_tag" "$hub_tag" && docker push "$hub_tag"
+            nix_tag=${{ env.fedi_fedimint_cli_container_tag }} && hub_tag="fedibtc/fedi-fedimint-cli:${LAST_COMMIT_SHA}-amd64" && docker tag "$nix_tag" "$hub_tag" && docker push "$hub_tag"
+
         - name: Publish master tag
           if: github.ref == 'refs/heads/master'
           run: |
             nix_tag=${{ env.fedi_fedimintd_container_tag }} && hub_tag="fedibtc/fedi-fedimintd:master" && docker tag "$nix_tag" "$hub_tag" && docker push "$hub_tag"
             nix_tag=${{ env.fedi_fedimint_cli_container_tag }} && hub_tag="fedibtc/fedi-fedimint-cli:master" && docker tag "$nix_tag" "$hub_tag" && docker push "$hub_tag"
+            nix_tag=${{ env.fedi_fedimintd_container_tag }} && hub_tag="fedibtc/fedi-fedimintd:master-amd64" && docker tag "$nix_tag" "$hub_tag" && docker push "$hub_tag"
+            nix_tag=${{ env.fedi_fedimint_cli_container_tag }} && hub_tag="fedibtc/fedi-fedimint-cli:master-amd64" && docker tag "$nix_tag" "$hub_tag" && docker push "$hub_tag"
 
         - name: Publish tagged release
           if: github.ref_type == 'tag'
           run: |
             nix_tag=${{ env.fedi_fedimintd_container_tag }} && hub_tag="fedibtc/fedi-fedimintd:${GITHUB_REF_NAME}" && docker tag "$nix_tag" "$hub_tag" && docker push "$hub_tag"
             nix_tag=${{ env.fedi_fedimint_cli_container_tag }} && hub_tag="fedibtc/fedi-fedimint-cli:${GITHUB_REF_NAME}" && docker tag "$nix_tag" "$hub_tag" && docker push "$hub_tag"
+            nix_tag=${{ env.fedi_fedimintd_container_tag }} && hub_tag="fedibtc/fedi-fedimintd:${GITHUB_REF_NAME}-amd64" && docker tag "$nix_tag" "$hub_tag" && docker push "$hub_tag"
+            nix_tag=${{ env.fedi_fedimint_cli_container_tag }} && hub_tag="fedibtc/fedi-fedimint-cli:${GITHUB_REF_NAME}-amd64" && docker tag "$nix_tag" "$hub_tag" && docker push "$hub_tag"
+
+    # arm64 (Graviton) leg of the container build.
+    #
+    # Runs on a GitHub-hosted arm64 larger runner rather than a self-hosted box:
+    # the container job burns ~1.2k runner-minutes/month, a ~3% duty cycle, so
+    # pay-per-minute is cheaper than owning a machine (see PR description).
+    #
+    # Scoped to master/tag pushes plus manual dispatch on purpose: only those
+    # publish images, and it keeps this to ~34 builds/month instead of ~216.
+    #
+    # This job must never enter the dev shell: `android-nixpkgs` has no
+    # `aarch64-linux` attribute, so `nix develop` / `nix flake check` die on arm.
+    # Building the container derivations directly is unaffected.
+    containers-arm64:
+      name: "Containers (arm64)"
+      needs: precheck
+      if: >
+          needs.precheck.outputs.IS_PUSH_TO_MASTER == '1' ||
+          needs.precheck.outputs.IS_PUSH_TO_TAG == '1' ||
+          github.event_name == 'workflow_dispatch'
+      runs-on: linux-arm64-8core
+      # arm64 cachix starts empty, so the first builds compile the native tree
+      # (rocksdb, jemalloc, aws-lc) from source. Lower this toward the x86 job's
+      # 30 once the cache is warm and we have measured a steady-state build.
+      timeout-minutes: 180
+      steps:
+        - name: Checkout Code
+          uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
+        - name: Prepare
+          uses: ./.github/actions/prepare
+        - uses: cachix/install-nix-action@08dcb3a5e62fa31e2da3d490afc4176ef55ecd72 # v30
+          with:
+            nix_path: nixpkgs=channel:nixos-23.11
+            extra_nix_config: |
+              connect-timeout = 15
+              stalled-download-timeout = 15
+        - uses: cachix/cachix-action@ad2ddac53f961de1989924296a1f236fcfbaa4fc # v15
+          with:
+            name: fedibtc
+            authToken: '${{ secrets.CACHIX_AUTH_TOKEN }}'
+          continue-on-error: true
+
+        - name: Build fedi-fedimintd container
+          run: |
+            nix build -L .#container.fedi-fedimintd
+            echo "fedi_fedimintd_container_tag=$(docker load < result | awk '{ print $3 }')" >> $GITHUB_ENV
+
+        - name: Build fedi-fedimint-cli container
+          run: |
+            nix build -L .#container.fedi-fedimint-cli
+            echo "fedi_fedimint_cli_container_tag=$(docker load < result | awk '{ print $3 }')" >> $GITHUB_ENV
+
+        - name: Login to Docker Hub
+          if: github.event_name == 'push'
+          uses: docker/login-action@c94ce9fb468520275223c153574b00df6fe4bcc9 # v3.7.0
+          with:
+            username: dawidfedi
+            password: ${{ secrets.DOCKER_HUB_DAWIDFEDI_ACCESS_TOKEN }}
+
+        # workflow_dispatch builds nothing to publish — it exists so the arm64
+        # leg can be exercised (and timed) without touching Docker Hub.
+        - name: Publish
+          if: github.event_name == 'push' && github.ref == 'refs/heads/master'
+          run: |
+            nix_tag=${{ env.fedi_fedimintd_container_tag }} && hub_tag="fedibtc/fedi-fedimintd:${LAST_COMMIT_SHA}-arm64" && docker tag "$nix_tag" "$hub_tag" && docker push "$hub_tag"
+            nix_tag=${{ env.fedi_fedimint_cli_container_tag }} && hub_tag="fedibtc/fedi-fedimint-cli:${LAST_COMMIT_SHA}-arm64" && docker tag "$nix_tag" "$hub_tag" && docker push "$hub_tag"
+            nix_tag=${{ env.fedi_fedimintd_container_tag }} && hub_tag="fedibtc/fedi-fedimintd:master-arm64" && docker tag "$nix_tag" "$hub_tag" && docker push "$hub_tag"
+            nix_tag=${{ env.fedi_fedimint_cli_container_tag }} && hub_tag="fedibtc/fedi-fedimint-cli:master-arm64" && docker tag "$nix_tag" "$hub_tag" && docker push "$hub_tag"
+
+        - name: Publish tagged release
+          if: github.event_name == 'push' && github.ref_type == 'tag'
+          run: |
+            nix_tag=${{ env.fedi_fedimintd_container_tag }} && hub_tag="fedibtc/fedi-fedimintd:${GITHUB_REF_NAME}-arm64" && docker tag "$nix_tag" "$hub_tag" && docker push "$hub_tag"
+            nix_tag=${{ env.fedi_fedimint_cli_container_tag }} && hub_tag="fedibtc/fedi-fedimint-cli:${GITHUB_REF_NAME}-arm64" && docker tag "$nix_tag" "$hub_tag" && docker push "$hub_tag"
+
+    # Joins the per-arch tags into multi-arch manifest lists, so that
+    # `fedibtc/fedi-fedimintd:master` resolves to amd64 or arm64 by platform.
+    #
+    # Fail-safe by construction: if the arm64 leg fails this job is skipped, and
+    # the plain tags still point at the amd64 images the x86 job already pushed.
+    containers-manifest:
+      name: "Containers (multi-arch manifest)"
+      needs: [containers, containers-arm64]
+      if: >
+          github.event_name == 'push' &&
+          (github.ref == 'refs/heads/master' || github.ref_type == 'tag')
+      runs-on: [self-hosted, linux]
+      timeout-minutes: 10
+      env:
+        DOCKER_CLI_EXPERIMENTAL: enabled
+      steps:
+        - name: Login to Docker Hub
+          uses: docker/login-action@c94ce9fb468520275223c153574b00df6fe4bcc9 # v3.7.0
+          with:
+            username: dawidfedi
+            password: ${{ secrets.DOCKER_HUB_DAWIDFEDI_ACCESS_TOKEN }}
+
+        - name: Create and push manifest lists
+          run: |
+            set -euo pipefail
+            if [ "${{ github.ref_type }}" == 'tag' ]; then
+              tags=("${GITHUB_REF_NAME}")
+            else
+              tags=("${GITHUB_SHA}" "master")
+            fi
+            for image in fedi-fedimintd fedi-fedimint-cli; do
+              for tag in "${tags[@]}"; do
+                list="fedibtc/${image}:${tag}"
+                docker manifest rm "$list" || true
+                docker manifest create "$list" --amend "${list}-amd64" --amend "${list}-arm64"
+                docker manifest push "$list"
+                docker manifest inspect "$list" | grep -q arm64
+              done
+            done
 
     check-nixos-up-to-date:
       name: "Check NixOS/nixpkgs on ${{ matrix.arch }}"
