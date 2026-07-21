@@ -6,12 +6,13 @@ REPO_ROOT=$(git rev-parse --show-toplevel)
 
 echo "=== E2E Test Runner ==="
 export RUN_TESTS=1
-available_tests=("onboarding" "settings" "JoinLeaveFederation" "chat" "communityChatJoin" "payments" "backupRestore" "pinProtection")
+available_tests=("onboarding" "settings" "settingsProfile" "JoinLeaveFederation" "chat" "communityChatJoin" "payments" "backupRestore" "pinProtection")
 
 while true; do
   echo -e "\nSelect tests to run:"
   echo "o - onboarding"
   echo "s - settings"
+  echo "r - settingsProfile"
   echo "j - JoinLeaveFederation"
   echo "c - chat"
   echo "g - communityChatJoin"
@@ -33,6 +34,11 @@ while true; do
     s)
       TESTS_TO_RUN="settings"
       echo "Selected test: settings"
+      break
+      ;;
+    r)
+      TESTS_TO_RUN="settingsProfile"
+      echo "Selected test: settingsProfile"
       break
       ;;
     j)
