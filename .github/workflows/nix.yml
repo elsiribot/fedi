@@ -474,6 +474,10 @@ jobs:
             for image in fedi-fedimintd fedi-fedimint-cli; do
               for tag in "${tags[@]}"; do
                 list="fedibtc/${image}:${tag}"
+                # Clears stale local scratch state in ~/.docker/manifests on this
+                # persistent self-hosted runner. `docker manifest rm` deletes from
+                # local storage only — the registry tag is untouched until `push`
+                # below, so a failure here leaves the amd64 image in place.
                 docker manifest rm "$list" || true
                 docker manifest create "$list" --amend "${list}-amd64" --amend "${list}-arm64"
                 docker manifest push "$list"
