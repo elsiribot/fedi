@@ -1490,6 +1490,10 @@ impl FederationV2 {
         self.wallet_ops.generate_address(self, frontend_meta).await
     }
 
+    pub async fn supports_safe_deposit(&self) -> Result<bool> {
+        self.wallet_ops.supports_safe_deposit(self).await
+    }
+
     /// Generate lightning invoice
     pub async fn generate_invoice(
         &self,
@@ -4747,6 +4751,9 @@ impl FederationPrefetchedInfo {
         //     .await?;
 
         let decoders = ModuleDecoderRegistry::default().with_fallback();
+        // Fedi still relies on federation backups for device recovery, so we
+        // intentionally keep using this API until we migrate off of it.
+        #[allow(deprecated)]
         let ((client_config, _api), backup) = tokio::try_join!(
             fedimint_api_client::download_from_invite_code(&connectors, &invite_code),
             Client::download_backup_from_federation_static(

@@ -1,8 +1,24 @@
 #!/usr/bin/env node
 import fs from 'node:fs'
 
-const agentOutputPath = getArg('--agent-output') || '/tmp/gh-aw/agent_output.json'
+const agentOutputPath =
+    getArg('--agent-output') || '/tmp/gh-aw/agent_output.json'
 const contextPath = getArg('--context') || '/tmp/gh-aw/e2e-audit-context.json'
+const patchDir = getArg('--patch-dir') || '/tmp/gh-aw'
+const agentLogPath = getArg('--agent-log') || '/tmp/gh-aw/agent-stdio.log'
+
+// The prompt's testID-only rule for product files is not enforceable via the
+// safe-outputs allowed_files globs (they accept any change under screens/
+// components), so the patch itself is checked here.
+const appiumTestPatchPath = /^ui\/native\/tests\/appium\//
+const unconditionalPatchPaths = [
+    appiumTestPatchPath,
+    /^scripts\/ui\/run-e2e\.sh$/,
+]
+const testIdOnlyPatchPaths = [
+    /^ui\/native\/screens\//,
+    /^ui\/native\/components\//,
+]
 
 const requiredEvidenceFields = [
     'audit_context_id',
@@ -29,8 +45,16 @@ const invalidNoopPatterns = [
 
 const optionalMarkdownFieldMarker = '[\\s*_`]*'
 
+if (process.argv.includes('--self-test')) {
+    runSelfTests()
+    process.exit(0)
+}
+
+let loadedOutput
+
 const context = readJson(contextPath, 'audit context')
 const output = readJson(agentOutputPath, 'agent output')
+loadedOutput = output
 
 if (!Array.isArray(output.items)) {
     fail('agent output is missing an items array')
@@ -45,12 +69,26 @@ if (Array.isArray(output.errors) && output.errors.length > 0) {
 }
 
 const errors = []
+const blockedTypes = []
+
+const itemTypes = output.items.map(item =>
+    normalizeType(item.type || item.kind || item.name || ''),
+)
+if (output.items.length !== 1) {
+    errors.push(
+        `agent output must contain exactly one final safe output item, found ${output.items.length}: ${itemTypes.join(', ')}`,
+    )
+}
 
 for (const [index, item] of output.items.entries()) {
-    const type = normalizeType(item.type || item.kind || item.name || '')
+    const type = itemTypes[index]
     const text = collectText(item)
 
-    if (type === 'noop' || type === 'create_issue') {
+    if (
+        type === 'noop' ||
+        type === 'create_issue' ||
+        type === 'create_pull_request'
+    ) {
         validateAuditedOutput(index, type, text, item)
         continue
     }
@@ -61,36 +99,59 @@ for (const [index, item] of output.items.entries()) {
         type === 'report_incomplete'
     ) {
         validateBlockedOutput(index, type, text)
+        blockedTypes.push(type)
         continue
     }
 
-    errors.push(`item ${index} has unsupported safe output type: ${type || '<empty>'}`)
+    errors.push(
+        `item ${index} has unsupported safe output type: ${type || '<empty>'}`,
+    )
 }
 
 if (errors.length > 0) {
     fail(errors.join('\n'))
 }
 
+// A blocked output is well-formed but means the audit never finished; exit
+// non-zero so the run shows red instead of masquerading as a green no-op.
+if (blockedTypes.length > 0) {
+    fail(
+        `audit did not complete: agent ended with ${blockedTypes.join(', ')}; see the safe output details for the blocker`,
+    )
+}
+
 console.log(
     `validated ${output.items.length} E2E audit safe output item(s) for ${context.audit_context_id}`,
 )
 
+writeOutcomeSummary(
+    '✅ Validation passed. Anything to post is published by the safe_outputs job, and the conclusion job summary links the result.',
+)
+
 function validateAuditedOutput(index, type, text, item) {
-    if (!text.includes(context.audit_context_id)) {
+    const carriesAuditReport = type === 'noop' || type === 'create_issue'
+
+    if (carriesAuditReport && !text.includes(context.audit_context_id)) {
         errors.push(
             `item ${index} (${type}) is missing audit_context_id ${context.audit_context_id}`,
         )
     }
 
-    if (!fieldHasValue(text, 'review_scope', /^full-codebase\b/i)) {
+    if (
+        carriesAuditReport &&
+        !fieldHasValue(text, 'review_scope', /^full-codebase\b/i)
+    ) {
         errors.push(
             `item ${index} (${type}) must state review_scope=full-codebase`,
         )
     }
 
-    if (type === 'create_issue' && hasIssueLabels(item)) {
+    if (
+        (type === 'create_issue' || type === 'create_pull_request') &&
+        hasIssueLabels(item)
+    ) {
         errors.push(
-            `item ${index} (${type}) must not set GitHub issue labels; include audit evidence fields in the body and let the workflow apply configured labels automatically`,
+            `item ${index} (${type}) must not set GitHub labels; the workflow applies configured labels automatically`,
         )
     }
 
@@ -100,13 +161,24 @@ function validateAuditedOutput(index, type, text, item) {
         )
     }
 
-    const missingFields = requiredEvidenceFields.filter(
-        field => !text.toLowerCase().includes(field),
-    )
-    if (missingFields.length > 0) {
+    if (
+        type === 'create_pull_request' &&
+        /^\s*\[e2e coverage\]/i.test(String(item.title || ''))
+    ) {
         errors.push(
-            `item ${index} (${type}) is missing evidence fields: ${missingFields.join(', ')}`,
+            `item ${index} (${type}) must not include the [e2e coverage] title prefix; the workflow applies it automatically`,
         )
+    }
+
+    if (carriesAuditReport) {
+        const missingFields = requiredEvidenceFields.filter(
+            field => !text.toLowerCase().includes(field),
+        )
+        if (missingFields.length > 0) {
+            errors.push(
+                `item ${index} (${type}) is missing evidence fields: ${missingFields.join(', ')}`,
+            )
+        }
     }
 
     for (const pattern of invalidNoopPatterns) {
@@ -123,7 +195,7 @@ function validateAuditedOutput(index, type, text, item) {
         )
     }
 
-    if (!fieldHasValue(text, 'coverage_gap_keys', /\S/)) {
+    if (carriesAuditReport && !fieldHasValue(text, 'coverage_gap_keys', /\S/)) {
         errors.push(
             `item ${index} (${type}) must include non-empty coverage_gap_keys`,
         )
@@ -137,6 +209,496 @@ function validateAuditedOutput(index, type, text, item) {
             `item ${index} (${type}) must list concrete coverage_gap_keys for new gaps`,
         )
     }
+
+    if (type === 'create_pull_request') {
+        validatePullRequestEvidence(index, type, text)
+    }
+}
+
+// A coverage PR must state what was actually validated and that it passed.
+// Device execution is impossible on this runner, so honest bodies name the
+// static checks, say they passed, and say device validation is still pending.
+function validatePullRequestEvidence(index, type, text) {
+    if (!/#\d+/.test(text)) {
+        errors.push(
+            `item ${index} (${type}) must reference the tracking issue with ref #<number>`,
+        )
+    }
+
+    const leakedFields = requiredEvidenceFields.filter(field =>
+        text.toLowerCase().includes(field),
+    )
+    if (leakedFields.length > 0) {
+        errors.push(
+            `item ${index} (${type}) must not carry audit evidence fields (${leakedFields.join(', ')}); the audit report lives in the tracking issue`,
+        )
+    }
+
+    const passWords =
+        '(?:pass(?:ed|es)?|clean|succeeded|green|(?:no|0|zero) errors)'
+    const statesPass = tool =>
+        new RegExp(
+            `${tool}[^;\\n]{0,200}?\\b${passWords}\\b|\\b${passWords}\\b[^;\\n]{0,200}?${tool}`,
+            'i',
+        ).test(text)
+
+    if (!statesPass('\\b(tsc|typecheck|type-check|type check)\\b')) {
+        errors.push(
+            `item ${index} (${type}) must state that the scoped appium typecheck (tsc) ran and passed`,
+        )
+    }
+
+    if (!statesPass('\\b(eslint|lint)\\b')) {
+        errors.push(
+            `item ${index} (${type}) must state that eslint ran on the changed files and passed`,
+        )
+    }
+
+    if (reportsStaticCheckFailure(text)) {
+        errors.push(
+            `item ${index} (${type}) reports a failed static check; a failed implementation must fall back to create_issue instead of a pull request`,
+        )
+    }
+
+    if (
+        !/device/i.test(text) ||
+        !/\b(pending|not (yet )?(run|executed)|was not run|did not run|unable to run|impossible)\b/i.test(
+            text,
+        )
+    ) {
+        errors.push(
+            `item ${index} (${type}) must state that device validation is pending and was not run in this environment`,
+        )
+    }
+
+    validatePatchScope(index, type)
+}
+
+function reportsStaticCheckFailure(text) {
+    const staticTool = '\\b(?:tsc|typecheck|type-check|eslint|lint|prettier)\\b'
+    const failure = '\\b(?:fail(?:ed|ing|s)?|error(?:ed|s)? out)\\b'
+    return new RegExp(
+        `${staticTool}[^;\\n]{0,80}${failure}|${failure}[^;\\n]{0,80}${staticTool}`,
+        'i',
+    ).test(text)
+}
+
+// For product files under screens/components the change must be nothing but
+// testID attributes, enforced two ways. A testID value an added line
+// introduces must be static (see testIdValuesAreStatic), so it cannot smuggle
+// a call that runs at render. And the added and removed lines are compared per
+// line after their testIDs are stripped, not as one concatenated blob. A blob
+// comparison ignores line boundaries, so an ASI statement-split or an added
+// import line would slip through. Test-tree files change freely.
+function validatePatchScope(index, type) {
+    if (!fs.existsSync(patchDir)) {
+        errors.push(
+            `item ${index} (${type}) has no patch directory at ${patchDir}; a pull request output requires committed changes`,
+        )
+        return
+    }
+
+    const patchFiles = fs
+        .readdirSync(patchDir)
+        .filter(name => /^aw[-.].*\.patch$|^aw\.patch$/.test(name))
+        .map(name => `${patchDir}/${name}`)
+
+    if (patchFiles.length === 0) {
+        errors.push(
+            `item ${index} (${type}) has no patch file under ${patchDir}; a pull request output requires committed changes`,
+        )
+        return
+    }
+
+    let touchesAppiumTestTree = false
+
+    for (const file of patchFiles) {
+        const sections = parsePatchSections(fs.readFileSync(file, 'utf8'))
+        for (const section of sections) {
+            const { path, added, removed, hunks, unsupportedReason } = section
+            if (!path) {
+                errors.push(
+                    `item ${index} (${type}) patch contains a file section whose path cannot be parsed safely`,
+                )
+                continue
+            }
+
+            if (unsupportedReason || hunks.length === 0) {
+                errors.push(
+                    `item ${index} (${type}) patch uses an unsupported non-text or metadata-only change in ${path}${unsupportedReason ? `: ${unsupportedReason}` : ''}`,
+                )
+                continue
+            }
+
+            if (appiumTestPatchPath.test(path) && added.length > 0) {
+                touchesAppiumTestTree = true
+            }
+
+            if (unconditionalPatchPaths.some(p => p.test(path))) continue
+
+            if (!testIdOnlyPatchPaths.some(p => p.test(path))) {
+                errors.push(
+                    `item ${index} (${type}) patch touches ${path}, outside the appium test tree and the testID-eligible product paths`,
+                )
+                continue
+            }
+
+            const removedSelector = removed.find(
+                line => findTestIdAttrs(line).length,
+            )
+            if (removedSelector !== undefined) {
+                errors.push(
+                    `item ${index} (${type}) patch removes or changes an existing testID in ${path}; product files may only gain new testID attributes`,
+                )
+                continue
+            }
+
+            const nonStatic = added.find(line => !testIdValuesAreStatic(line))
+            if (nonStatic !== undefined) {
+                errors.push(
+                    `item ${index} (${type}) patch adds a non-static testID value in ${path}; a testID must be a string literal or a side-effect-free interpolation, not a call to a non-string-building function`,
+                )
+                continue
+            }
+
+            if (!hunks.every(hunkOnlyAddsTestIds)) {
+                errors.push(
+                    `item ${index} (${type}) patch changes more than testID attributes in ${path}`,
+                )
+            }
+        }
+    }
+
+    if (!touchesAppiumTestTree) {
+        errors.push(
+            `item ${index} (${type}) patch does not touch ui/native/tests/appium/**; a coverage pull request must add or register an Appium test, not only selectors`,
+        )
+    }
+}
+
+function hunkOnlyAddsTestIds(hunk) {
+    const oldLines = hunk.lines
+        .filter(line => line.kind !== 'added')
+        .map(line => line.text)
+    const newLines = hunk.lines
+        .filter(line => line.kind !== 'removed')
+        .flatMap(line => {
+            if (line.kind !== 'added') return [line.text]
+            const residual = stripTestIdAttributes(line.text)
+            return residual.trim().length > 0 ? [residual] : []
+        })
+    return (
+        (oldLines.length === newLines.length &&
+            oldLines.every((line, index) => line === newLines[index])) ||
+        reflowedTestIdOnly(oldLines, newLines)
+    )
+}
+
+// A formatter reflows an element across lines when the added testID makes it
+// long, so the sides can differ line-by-line while staying token-identical.
+// Whitespace inside string literals stays significant (copy changes must not
+// normalize away); outside literals it collapses, and vanishes next to
+// punctuation where JS/JSX ignores it.
+function reflowedTestIdOnly(oldLines, newLines) {
+    return (
+        normalizeReflow(oldLines.join(' ')) ===
+        normalizeReflow(newLines.join(' '))
+    )
+}
+
+function normalizeReflow(text) {
+    let out = ''
+    let quote = null
+    for (let i = 0; i < text.length; i++) {
+        const ch = text[i]
+        if (quote) {
+            out += ch
+            if (ch === quote && text[i - 1] !== '\\') quote = null
+            continue
+        }
+        if (ch === '"' || ch === "'" || ch === '`') {
+            quote = ch
+            out += ch
+            continue
+        }
+        if (/\s/.test(ch)) {
+            if (!/\s/.test(out.at(-1) || '')) out += ' '
+            continue
+        }
+        out += ch
+    }
+    return out
+        .replace(/\s+(?=[<>{}()=,;/])/g, '')
+        .replace(/(?<=[<>{}()=,;/])\s+/g, '')
+        .trim()
+}
+
+function stripTestIdAttributes(line) {
+    let out = ''
+    let cursor = 0
+    for (const attr of findTestIdAttrs(line)) {
+        out += line.slice(cursor, attr.start)
+        cursor = attr.end
+        if (/\s/.test(out.at(-1) || '') && /\s/.test(line[cursor] || '')) {
+            cursor++
+        } else if (
+            /\s/.test(out.at(-1) || '') &&
+            /[>/]/.test(line[cursor] || '')
+        ) {
+            out = out.slice(0, -1)
+        }
+    }
+    return out + line.slice(cursor)
+}
+
+function testIdValuesAreStatic(line) {
+    return findTestIdAttrs(line).every(
+        attr => attr.body === undefined || braceBodyIsStatic(attr.body),
+    )
+}
+
+// Locate every `testID=<value>` on a line, matching the value with balanced
+// braces so a nested `${...}` interpolation is captured whole rather than cut
+// off at the first inner brace. `body` is the text inside the braces for the
+// `testID={...}` form, or undefined for the `testID="..."` string form.
+function findTestIdAttrs(line) {
+    const attrs = []
+    const re = /\btestID\s*=\s*/g
+    let match
+    while ((match = re.exec(line))) {
+        const valueStart = match.index + match[0].length
+        const opener = line[valueStart]
+        if (opener === '"' || opener === "'") {
+            const close = line.indexOf(opener, valueStart + 1)
+            if (close === -1) break
+            attrs.push({ start: match.index, end: close + 1, body: undefined })
+            re.lastIndex = close + 1
+        } else if (opener === '{') {
+            let depth = 0
+            let i = valueStart
+            for (; i < line.length; i++) {
+                if (line[i] === '{') depth++
+                else if (line[i] === '}' && --depth === 0) break
+            }
+            if (depth !== 0) break
+            attrs.push({
+                start: match.index,
+                end: i + 1,
+                body: line.slice(valueStart + 1, i),
+            })
+            re.lastIndex = i + 1
+        }
+    }
+    return attrs
+}
+
+function braceBodyIsStatic(body) {
+    const value = body.trim()
+    const identifier = '[A-Za-z_$][\\w$]*'
+    const dottedPath = `${identifier}(?:\\s*\\.\\s*${identifier})*`
+    if (new RegExp(`^${dottedPath}$`).test(value)) return true
+    if (templateOnlyReadsDottedPaths(value, dottedPath)) return true
+
+    const stringLiteral = `(?:'(?:\\\\.|[^'\\\\])*'|"(?:\\\\.|[^"\\\\])*")`
+    const literalArgs = `(?:${stringLiteral})(?:\\s*,\\s*${stringLiteral})*`
+    return new RegExp(
+        `^${dottedPath}(?:\\s*\\.\\s*(?:concat|replaceAll)\\(\\s*(?:${literalArgs})?\\s*\\))+$`,
+    ).test(value)
+}
+
+function templateOnlyReadsDottedPaths(value, dottedPath) {
+    if (!value.startsWith('`') || !value.endsWith('`')) return false
+    const interpolation = /\$\{([^{}]+)}/g
+    let cursor = 1
+    let match
+    while ((match = interpolation.exec(value))) {
+        const literal = value.slice(cursor, match.index)
+        if (/[^\\]`/.test(literal)) return false
+        if (!new RegExp(`^\\s*${dottedPath}\\s*$`).test(match[1])) return false
+        cursor = match.index + match[0].length
+    }
+    const remainder = value.slice(cursor, -1)
+    return !remainder.includes('${') && !/[^\\]`/.test(remainder)
+}
+
+function parsePatchSections(patchText) {
+    const sections = []
+    let current
+    let currentHunk
+
+    const finishSection = () => {
+        if (!current) return
+        current.path =
+            current.newPath !== '/dev/null' ? current.newPath : current.oldPath
+        current.added = current.hunks.flatMap(hunk =>
+            hunk.lines
+                .filter(line => line.kind === 'added')
+                .map(line => line.text),
+        )
+        current.removed = current.hunks.flatMap(hunk =>
+            hunk.lines
+                .filter(line => line.kind === 'removed')
+                .map(line => line.text),
+        )
+        sections.push(current)
+    }
+
+    for (const raw of patchText.split('\n')) {
+        const diffHeader = raw.match(/^diff --git a\/(\S+) b\/(\S+)$/)
+        if (raw.startsWith('diff --git ')) {
+            finishSection()
+            current = {
+                oldPath: diffHeader?.[1],
+                newPath: diffHeader?.[2],
+                hunks: [],
+                unsupportedReason: diffHeader
+                    ? undefined
+                    : 'quoted or whitespace-containing path',
+            }
+            currentHunk = undefined
+            continue
+        }
+        if (!current) continue
+
+        if (raw.startsWith('@@')) {
+            currentHunk = { lines: [] }
+            current.hunks.push(currentHunk)
+            continue
+        }
+        if (currentHunk) {
+            if (raw[0] === '+') {
+                currentHunk.lines.push({ kind: 'added', text: raw.slice(1) })
+            } else if (raw[0] === '-') {
+                currentHunk.lines.push({ kind: 'removed', text: raw.slice(1) })
+            } else if (raw[0] === ' ') {
+                currentHunk.lines.push({ kind: 'context', text: raw.slice(1) })
+            }
+            continue
+        }
+
+        const oldHeader = raw.match(/^--- (?:a\/)?(.+)$/)
+        const newHeader = raw.match(/^\+\+\+ (?:b\/)?(.+)$/)
+        if (oldHeader) {
+            current.oldPath = oldHeader[1]
+            currentHunk = undefined
+            continue
+        }
+        if (newHeader) {
+            current.newPath = newHeader[1]
+            currentHunk = undefined
+            continue
+        }
+        if (
+            /^(?:GIT binary patch|Binary files |rename (?:from|to) |copy (?:from|to) |old mode |new mode )/.test(
+                raw,
+            )
+        ) {
+            current.unsupportedReason = raw
+            continue
+        }
+    }
+    finishSection()
+    return sections
+}
+
+function runSelfTests() {
+    const accepted = [
+        '<View testID="Static" />',
+        '<View testID={`Row-${item.id}`} />',
+        "<View testID={item.name.concat('Row').replaceAll(' ', '')} />",
+    ]
+    const rejected = [
+        '<View testID={`${counter++}`} />',
+        "<View testID={'x'.replaceAll('x', callback)} />",
+        '<View testID={sendSeed()} />',
+    ]
+    for (const line of accepted) {
+        if (!testIdValuesAreStatic(line))
+            throw new Error(`rejected safe testID: ${line}`)
+    }
+    for (const line of rejected) {
+        if (testIdValuesAreStatic(line))
+            throw new Error(`accepted unsafe testID: ${line}`)
+    }
+
+    const relocation =
+        parsePatchSections(`diff --git a/ui/native/screens/Foo.tsx b/ui/native/screens/Foo.tsx
+--- a/ui/native/screens/Foo.tsx
++++ b/ui/native/screens/Foo.tsx
+@@ -1,2 +1 @@
+-dangerousCall()
+ keep()
+@@ -10 +9,2 @@
+ other()
++dangerousCall()`)[0]
+    if (relocation.hunks.every(hunkOnlyAddsTestIds)) {
+        throw new Error('accepted product-code line relocation')
+    }
+
+    const whitespaceChange =
+        parsePatchSections(`diff --git a/ui/native/screens/Foo.tsx b/ui/native/screens/Foo.tsx
+--- a/ui/native/screens/Foo.tsx
++++ b/ui/native/screens/Foo.tsx
+@@ -1 +1 @@
+-const label = 'pay now'
++const label = 'paynow'`)[0]
+    if (whitespaceChange.hunks.every(hunkOnlyAddsTestIds)) {
+        throw new Error('accepted whitespace-only product behavior change')
+    }
+
+    const selector =
+        parsePatchSections(`diff --git a/ui/native/screens/Foo.tsx b/ui/native/screens/Foo.tsx
+--- a/ui/native/screens/Foo.tsx
++++ b/ui/native/screens/Foo.tsx
+@@ -1 +1 @@
+-<View />
++<View testID="Foo" />`)[0]
+    if (!selector.hunks.every(hunkOnlyAddsTestIds)) {
+        throw new Error('rejected testID-only product change')
+    }
+
+    const reflowed =
+        parsePatchSections(`diff --git a/ui/native/screens/Foo.tsx b/ui/native/screens/Foo.tsx
+--- a/ui/native/screens/Foo.tsx
++++ b/ui/native/screens/Foo.tsx
+@@ -1 +1,4 @@
+-<Pressable style={style.container} onPress={handlePress}>
++<Pressable
++    style={style.container}
++    onPress={handlePress}
++    testID="NotesInputButton">`)[0]
+    if (!reflowed.hunks.every(hunkOnlyAddsTestIds)) {
+        throw new Error('rejected reflowed testID-only product change')
+    }
+
+    const reflowedCopyChange =
+        parsePatchSections(`diff --git a/ui/native/screens/Foo.tsx b/ui/native/screens/Foo.tsx
+--- a/ui/native/screens/Foo.tsx
++++ b/ui/native/screens/Foo.tsx
+@@ -1 +1,4 @@
+-<Button title={'pay now'} onPress={handlePress}>
++<Button
++    title={'paynow'}
++    onPress={handlePress}
++    testID="PayButton">`)[0]
+    if (reflowedCopyChange.hunks.every(hunkOnlyAddsTestIds)) {
+        throw new Error('accepted copy change hidden in a testID reflow')
+    }
+
+    const headerPrefix =
+        parsePatchSections(`diff --git a/ui/native/screens/Foo.tsx b/ui/native/screens/Foo.tsx
+--- a/ui/native/screens/Foo.tsx
++++ b/ui/native/screens/Foo.tsx
+@@ -1 +1,2 @@
+ keep()
++++injected()`)[0]
+    if (headerPrefix.added[0] !== '++injected()') {
+        throw new Error('misparsed content line as a patch header')
+    }
+    if (!reportsStaticCheckFailure('failed eslint, then eslint passed')) {
+        throw new Error('accepted failed check stated before its tool name')
+    }
+    console.log('E2E audit validator self-tests passed')
 }
 
 function validateBlockedOutput(index, type, text) {
@@ -168,7 +730,10 @@ function collectText(value) {
 }
 
 function noopStatesNoConcreteGaps(text) {
-    const value = getFieldValue(text, 'coverage_gaps')
+    // The multi-sentence extraction matters: a valid noop often opens with
+    // "no untracked gap remains" and cites the tracking numbers a sentence
+    // later, which a first-period cutoff would drop.
+    const value = getFieldValueUntilNextField(text, 'coverage_gaps')
         ?.toLowerCase()
         .replace(/^[\s[\]`_*]+|[\s[\]`_*]+$/g, '')
     if (!value) return false
@@ -177,7 +742,7 @@ function noopStatesNoConcreteGaps(text) {
         /^(none|none concrete|no concrete gaps?|no meaningful gaps?|no gaps?|no concrete coverage gaps?)(\b|$)/i.test(
             value,
         ) ||
-        /^no new (concrete )?gaps?(\b|$)/i.test(
+        /^no (new |untracked |remaining )*(concrete |implementable |meaningful )*(coverage )?gaps?(\b|$)/i.test(
             value,
         )
     ) {
@@ -210,6 +775,22 @@ function getFieldValue(text, field) {
     const match = compact.match(
         new RegExp(
             `\\b${escapeRegExp(field)}\\b${optionalMarkdownFieldMarker}\\s*[:=\\-]\\s*${optionalMarkdownFieldMarker}([^.;]+)`,
+            'i',
+        ),
+    )
+    return match?.[1]?.trim()
+}
+
+function getFieldValueUntilNextField(text, field) {
+    const otherFields = requiredEvidenceFields
+        .concat('review_date')
+        .filter(name => name !== field)
+        .map(escapeRegExp)
+        .join('|')
+    const compact = text.replace(/\s+/g, ' ')
+    const match = compact.match(
+        new RegExp(
+            `\\b${escapeRegExp(field)}\\b${optionalMarkdownFieldMarker}\\s*[:=\\-]\\s*${optionalMarkdownFieldMarker}(.+?)(?=\\s*\\b(?:${otherFields})\\b\\s*[:=]|$)`,
             'i',
         ),
     )
@@ -259,6 +840,85 @@ function getArg(name) {
 }
 
 function fail(message) {
+    writeOutcomeSummary(
+        `❌ The run is red because this outcome failed validation; nothing was posted:\n\n${message
+            .split('\n')
+            .map(line => `- ${excerpt(line, 300)}`)
+            .join('\n')}`,
+    )
     console.error(`E2E audit output validation failed:\n${message}`)
     process.exit(1)
+}
+
+// The matching "The daily e2e coverage audit" intro at the top of this job's
+// summary is written by build-e2e-audit-context.mjs before the agent runs;
+// together they bracket the harness diagnostics with plain language.
+function writeOutcomeSummary(verdict) {
+    const summaryPath = process.env.GITHUB_STEP_SUMMARY
+    if (!summaryPath) return
+    fs.appendFileSync(
+        summaryPath,
+        `## What this run did\n\n${describeAgentOutcome()}\n\n${verdict}\n`,
+    )
+}
+
+function describeAgentOutcome() {
+    const items = loadedOutput?.items
+    if (!Array.isArray(items) || items.length === 0) {
+        return `The agent died before finishing the audit and produced no final output. ${describeAgentDeath()}`
+    }
+    return items.map(describeOutcomeItem).join('\n\n')
+}
+
+// gh-aw's job outputs carry no upstream-429 signal (its rate-limit flag covers
+// only the gh-aw credit budget), so the cause is recovered from the agent's
+// transcript, the same way gh-aw's failure-issue handler does it.
+function describeAgentDeath() {
+    let log
+    try {
+        log = fs.readFileSync(agentLogPath, 'utf8')
+    } catch {
+        return 'No agent transcript was found to explain why.'
+    }
+    const failures = [
+        ...log.matchAll(
+            /"type":"turn\.failed","error":\{"message":"((?:[^"\\]|\\.)*)"/g,
+        ),
+    ]
+    const lastFailure = failures.at(-1)?.[1]
+    if (
+        (lastFailure && /429|too many requests|rate.?limit/i.test(lastFailure)) ||
+        log.includes('isRateLimitError=true')
+    ) {
+        return `**Why: the AI provider rate-limited the workflow** (${excerpt(lastFailure || 'HTTP 429 Too Many Requests', 200)}). This is an upstream quota issue, not a problem with the audit or the app code. It clears on its own, so re-run the workflow later or wait for the next scheduled run.`
+    }
+    if (lastFailure) {
+        return `**Why:** the model API reported: ${excerpt(lastFailure, 300)}`
+    }
+    return 'The transcript shows no model-API failure. See the "Execute Codex CLI" step log.'
+}
+
+function describeOutcomeItem(item) {
+    const type = normalizeType(item.type || item.kind || item.name || '')
+    if (type === 'create_pull_request') {
+        return `The agent implemented a missing e2e test and proposed a draft PR: "${excerpt(item.title, 120)}".`
+    }
+    if (type === 'create_issue') {
+        return `The agent found an untracked coverage gap and drafted an issue for it: "${excerpt(item.title, 120)}".`
+    }
+    if (type === 'noop') {
+        const reason =
+            getFieldValueUntilNextField(collectText(item), 'coverage_gaps') ||
+            item.message
+        return `The agent decided nothing needs posting: ${excerpt(reason, 300)}`
+    }
+    return `The agent stopped early with ${type || 'an unrecognized output'}: ${excerpt(collectText(item), 300)}`
+}
+
+function excerpt(value, max) {
+    const text = String(value ?? '')
+        .replace(/`/g, "'")
+        .replace(/\s+/g, ' ')
+        .trim()
+    return text.length > max ? `${text.slice(0, max)}…` : text
 }

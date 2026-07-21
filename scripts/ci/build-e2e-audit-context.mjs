@@ -32,7 +32,8 @@ const previousRun = await findPreviousSuccessfulRun()
 const comparison = await buildComparison(previousRun)
 const inventory = buildAppiumInventory()
 const nativeSurfaceInventory = buildNativeSurfaceInventory()
-const openE2EAuditIssues = await findOpenE2EAuditIssues()
+const openE2ECoverageIssues = await findOpenE2ECoverageIssues()
+const openE2ECoveragePrs = await findOpenE2ECoveragePrs()
 const auditContext = {
     schema: 'e2e_audit_context_v1',
     audit_context_id: `e2e_audit_context_v1:${runId || 'local'}:${currentSha.slice(0, 12)}`,
@@ -53,7 +54,8 @@ const auditContext = {
     changed_files: comparison.changed_files,
     changed_commits: comparison.changed_commits,
     merged_pull_requests: comparison.merged_pull_requests,
-    open_e2e_audit_issues: openE2EAuditIssues,
+    open_e2e_coverage_issues: openE2ECoverageIssues,
+    open_e2e_coverage_prs: openE2ECoveragePrs,
     appium_inventory: inventory,
     native_surface_inventory: nativeSurfaceInventory,
 }
@@ -68,9 +70,41 @@ console.log(`Wrote ${markdownPath}`)
 console.log(`audit_context_id=${auditContext.audit_context_id}`)
 console.log(`review_scope=${auditContext.review_scope.mode}`)
 console.log(`changed_files=${auditContext.changed_files.length}`)
-console.log(`open_e2e_audit_issues=${auditContext.open_e2e_audit_issues.length}`)
+console.log(
+    `open_e2e_coverage_issues=${auditContext.open_e2e_coverage_issues.length}`,
+)
+console.log(`open_e2e_coverage_prs=${auditContext.open_e2e_coverage_prs.length}`)
 console.log(`appium_tests=${auditContext.appium_inventory.test_files.length}`)
 console.log(`native_surface_groups=${auditContext.native_surface_inventory.length}`)
+
+appendStepSummary(renderStepSummaryIntro(auditContext))
+
+// This intro is the first block of the agent job's step summary: a plain
+// description for readers with no gh-aw context, ahead of the harness
+// diagnostics the bundled gh-aw steps append after the agent runs. The
+// validator appends the matching "What this run did" outcome section.
+function renderStepSummaryIntro(context) {
+    const inventory = context.appium_inventory
+    const surfaceFiles = context.native_surface_inventory.reduce(
+        (total, group) => total + group.file_count,
+        0,
+    )
+    return `## The daily e2e coverage audit
+
+Once a day this workflow has an AI agent compare the native app's user-facing flows against the Appium e2e test suite and act on the most valuable coverage gap: open a draft PR implementing the missing test, file an \`[e2e audit]\` issue for a gap nobody tracks yet, or record that there is nothing new to do.
+
+This \`agent\` job is the audit itself. The outcome is under **What this run did** below; everything else on this page is diagnostics from the agent harness (tool calls, network firewall, token usage).
+
+**Checked this run:** ${inventory.test_files.length} Appium test suites against ${surfaceFiles} native source files in ${context.native_surface_inventory.length} surface groups, with ${context.open_e2e_coverage_issues.length} open e2e issues and ${context.open_e2e_coverage_prs.length} open e2e PRs counting as already-tracked gaps.
+
+`
+}
+
+function appendStepSummary(markdown) {
+    const summaryPath = process.env.GITHUB_STEP_SUMMARY
+    if (!summaryPath) return
+    fs.appendFileSync(summaryPath, markdown)
+}
 
 function getArg(name) {
     const index = process.argv.indexOf(name)
@@ -209,21 +243,18 @@ async function findMergedPullRequests(since) {
     }
 }
 
-async function findOpenE2EAuditIssues() {
+// The dedupe corpus is every open issue carrying the "e2e testing" label,
+// not just prior auto-generated "[e2e audit]" reports: hand-written coverage
+// issues track the same gaps, and dedupe that can't see them files duplicates.
+async function findOpenE2ECoverageIssues() {
     if (!token) return []
 
-    const query = encodeURIComponent(
-        `repo:${repo} is:issue is:open "[e2e audit]" in:title`,
-    )
     try {
-        const data = await github(
-            `/search/issues?q=${query}&sort=updated&order=desc&per_page=20`,
-        )
-        const items = (data?.items || []).filter(item =>
-            /^\[e2e audit\]/i.test(item.title || ''),
+        const items = await searchAllIssues(
+            `repo:${repo} is:issue is:open label:"e2e testing"`,
         )
 
-        return Promise.all(items.map(summarizeOpenE2EAuditIssue))
+        return Promise.all(items.map(summarizeOpenE2ECoverageIssue))
     } catch (error) {
         return [
             {
@@ -234,7 +265,57 @@ async function findOpenE2EAuditIssues() {
     }
 }
 
-async function summarizeOpenE2EAuditIssue(item) {
+// Search results cap at 100 per page; a corpus past that would silently
+// truncate the dedupe context and let the audit file duplicates, so walk
+// the pages until a short one.
+async function searchAllIssues(query, maxPages = 5) {
+    const items = []
+    for (let page = 1; page <= maxPages; page++) {
+        const data = await github(
+            `/search/issues?q=${encodeURIComponent(query)}&sort=updated&order=desc&per_page=100&page=${page}`,
+        )
+        const pageItems = data?.items || []
+        items.push(...pageItems)
+        if (pageItems.length < 100) return items
+    }
+    console.warn(`search truncated at ${items.length} results: ${query}`)
+    return items
+}
+
+// An open [e2e coverage] PR means the gap fix is already in flight; dedupe
+// must see it or the workflow re-attempts the same gap every run until merge.
+async function findOpenE2ECoveragePrs() {
+    if (!token) return []
+
+    const queries = [
+        `repo:${repo} is:pr is:open label:"e2e testing"`,
+        `repo:${repo} is:pr is:open "[e2e coverage]" in:title`,
+    ]
+    try {
+        const itemsByNumber = new Map()
+        for (const query of queries) {
+            for (const item of await searchAllIssues(query)) {
+                if (!itemsByNumber.has(item.number)) {
+                    itemsByNumber.set(item.number, item)
+                }
+            }
+        }
+
+        // PRs are issues to the REST API, so the issue summarizer works as-is.
+        return Promise.all(
+            [...itemsByNumber.values()].map(summarizeOpenE2ECoverageIssue),
+        )
+    } catch (error) {
+        return [
+            {
+                lookup_error:
+                    error instanceof Error ? error.message : String(error),
+            },
+        ]
+    }
+}
+
+async function summarizeOpenE2ECoverageIssue(item) {
     let issue = item
     let detailLookupError
     try {
@@ -256,8 +337,10 @@ async function summarizeOpenE2EAuditIssue(item) {
         created_at: item.created_at || issue.created_at || '',
         updated_at: item.updated_at || issue.updated_at || '',
         labels: (issue.labels || item.labels || []).map(label => label.name),
+        // Pattern-match on the body too: hand-written issues have no explicit
+        // coverage_gap_keys field, and their titles alone often miss the flow.
         coverage_gap_keys: extractCoverageGapKeys(
-            `${title}\n${coverageGapsSummary}`,
+            `${title}\n${coverageGapsSummary}\n${body}`,
             body,
         ),
         coverage_gaps_summary: coverageGapsSummary,
@@ -296,6 +379,36 @@ function extractCoverageGapKeys(text, explicitText = text) {
             key: 'tab_navigation',
             pattern:
                 /\b(tab navigation|tab-shell|tabsnavigator|bottom-tab|bottom tab|app shell|navigation regression|tabs? switching)\b/i,
+        },
+        {
+            key: 'multispend',
+            pattern: /\bmultispend\b/i,
+        },
+        {
+            key: 'chat',
+            pattern:
+                /\b(chat|message|knock|group chat|chat room|matrix room)\b/i,
+        },
+        {
+            key: 'recovery',
+            pattern:
+                /\b(recovery|recover|seed words?|restore|device transfer|backup)\b/i,
+        },
+        {
+            key: 'social_backup',
+            pattern: /\b(social backup|social recovery|guardian)\b/i,
+        },
+        {
+            key: 'onboarding',
+            pattern: /\bonboard/i,
+        },
+        {
+            key: 'settings',
+            pattern: /\bsettings\b/i,
+        },
+        {
+            key: 'fedimod_browser',
+            pattern: /\b(mini apps?|fedimods?|mods? browser|in-app browser)\b/i,
         },
     ]
 
@@ -539,7 +652,18 @@ function renderMarkdown(context) {
     const changedFiles = context.changed_files.slice(0, 150)
     const changedCommits = context.changed_commits.slice(0, 50)
     const mergedPrs = context.merged_pull_requests.slice(0, 30)
-    const openE2EAuditIssues = context.open_e2e_audit_issues.slice(0, 20)
+    const openE2ECoverageIssues = context.open_e2e_coverage_issues.slice(0, 100)
+    const openE2ECoveragePrs = (context.open_e2e_coverage_prs || []).slice(
+        0,
+        100,
+    )
+    const trackedGapKeys = [
+        ...new Set(
+            [...openE2ECoverageIssues, ...openE2ECoveragePrs].flatMap(
+                item => item.coverage_gap_keys || [],
+            ),
+        ),
+    ].sort()
     return `# Deterministic E2E Audit Context
 
 audit_context_id: ${context.audit_context_id}
@@ -572,11 +696,19 @@ ${renderList(changedCommits.map(commit => `${commit.sha.slice(0, 12)} ${commit.m
 
 ${renderList(mergedPrs.map(pr => (pr.lookup_error ? `lookup_error: ${pr.lookup_error}` : `#${pr.number} ${pr.title} ${pr.url}`)))}
 
-## Existing Open E2E Audit Issues
+## Open E2E Coverage Issues
 
-Use these open issues as the primary dedupe context before creating a new e2e audit issue. If a candidate gap maps to one of these issue numbers, summaries, or coverage_gap_keys, treat it as already tracked and emit noop unless you find a genuinely new untracked gap.
+Every open issue labeled "e2e testing", auto-generated and hand-written alike. These issues gate re-filing only: never create a new issue for a gap any of them already tracks, and cite the issue number instead. They do not gate implementation; treat them as the work queue and prefer implementing a gap one of them tracks. tracked_coverage_gap_keys aggregates the open issues here and the open PRs in the next section.
 
-${renderList(openE2EAuditIssues.map(renderOpenE2EAuditIssue))}
+tracked_coverage_gap_keys=${trackedGapKeys.join(',') || 'none'}
+
+${renderList(openE2ECoverageIssues.map(renderOpenE2ECoverageIssue))}
+
+## Open E2E Coverage PRs
+
+Every open pull request labeled "e2e testing" or title-prefixed "[e2e coverage]". A gap with an open PR here already has a fix in flight: treat it as tracked, do not implement or re-report it, and cite the PR number instead.
+
+${renderList(openE2ECoveragePrs.map(renderOpenE2ECoverageIssue))}
 
 ## Appium Tests Inspected
 
@@ -631,7 +763,7 @@ function renderList(items) {
     return items.map(item => `- ${item}`).join('\n')
 }
 
-function renderOpenE2EAuditIssue(issue) {
+function renderOpenE2ECoverageIssue(issue) {
     if (issue.lookup_error) return `lookup_error: ${issue.lookup_error}`
 
     const keys = issue.coverage_gap_keys?.length

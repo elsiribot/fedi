@@ -1,4 +1,5 @@
 import Link from 'next/link'
+import { useRouter } from 'next/router'
 import { MouseEvent } from 'react'
 import { useTranslation } from 'react-i18next'
 
@@ -6,10 +7,17 @@ import {
     useJoinDefaultChat,
     useMatrixRoomPreview,
 } from '@fedi/common/hooks/matrix'
+import {
+    selectChatTileName,
+    selectIsUnpreviewablePrivateGroup,
+} from '@fedi/common/redux'
 import { MatrixRoom } from '@fedi/common/types'
-import stringUtils from '@fedi/common/utils/StringUtils'
 
-import { chatRoomRoute } from '../../constants/routes'
+import {
+    chatConfirmJoinPublicRoomRoute,
+    chatRoomRoute,
+} from '../../constants/routes'
+import { useAppSelector } from '../../hooks'
 import { styled, theme } from '../../styles'
 import { Button } from '../Button'
 import { Icon } from '../Icon'
@@ -17,14 +25,21 @@ import { Text } from '../Text'
 
 export function DefaultRoomPreview({ room }: { room: MatrixRoom }) {
     const { t } = useTranslation()
+    const router = useRouter()
     const { text, isPublicBroadcast } = useMatrixRoomPreview({
         roomId: room.id,
         t,
     })
-    const { joinState, canJoin, isJoining, handleJoin } = useJoinDefaultChat(
-        room.id,
-        t,
+    const { joinState, canJoin } = useJoinDefaultChat(room.id, t)
+    const name = useAppSelector(s => selectChatTileName(s, room.id))
+    const isUnpreviewablePrivateGroup = useAppSelector(s =>
+        selectIsUnpreviewablePrivateGroup(s, room.id),
     )
+    const title =
+        name ||
+        (isUnpreviewablePrivateGroup
+            ? t('feature.chat.private-group')
+            : t('feature.chat.new-group'))
 
     return (
         <DefaultRoomContainer href={chatRoomRoute(room.id)}>
@@ -32,20 +47,20 @@ export function DefaultRoomPreview({ room }: { room: MatrixRoom }) {
                 <Icon icon={isPublicBroadcast ? 'SpeakerPhone' : 'Chat'} />
             </IconContainer>
             <DefaultRoomText>
-                <Text variant="body" weight="bold">
-                    {stringUtils.truncateString(room.name, 25)}
+                <Text variant="body" weight="bold" ellipsize>
+                    {title}
                 </Text>
                 {text && <Text variant="small">{text}</Text>}
             </DefaultRoomText>
             {joinState === 'join' && canJoin ? (
                 <Button
                     size="sm"
-                    loading={isJoining}
                     onClick={(e: MouseEvent) => {
-                        // Block the tile link's navigation; joining happens
-                        // in place.
+                        // Open the room preview to confirm the join or knock,
+                        // the same screen scanning the invite opens, instead of
+                        // joining in place. Block the tile link's navigation.
                         e.preventDefault()
-                        handleJoin()
+                        router.push(chatConfirmJoinPublicRoomRoute(room.id))
                     }}>
                     {t('words.join')}
                 </Button>
@@ -80,6 +95,9 @@ const DefaultRoomText = styled('div', {
     display: 'flex',
     flexDirection: 'column',
     flex: 1,
+    // Let the column shrink below its content so the title's ellipsis
+    // engages instead of pushing the join button out of the tile.
+    minWidth: 0,
     textAlign: 'left',
 })
 

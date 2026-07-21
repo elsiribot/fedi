@@ -42,6 +42,32 @@ let
       "misc"
     ];
   };
+
+  # nixpkgs 26.05's sqlcipher package builds a shared object even under
+  # pkgsStatic, which cannot be linked by the fully static musl toolchain.
+  sqlcipherStatic = pkgs.pkgsStatic.sqlcipher.overrideAttrs (old: {
+    configureFlags = (old.configureFlags or [ ]) ++ [
+      "--disable-shared"
+      "--enable-static"
+    ];
+    buildFlags = [ "lib" ];
+    installTargets = [
+      "install-lib"
+      "install-headers"
+      "install-pc"
+    ];
+    postInstall = ''
+      mkdir $out/include/sqlcipher
+      mv $out/include/sqlite3.h $out/include/sqlcipher/sqlite3.h
+      mv $out/include/sqlite3ext.h $out/include/sqlcipher/sqlite3ext.h
+      mv $out/lib/lib{sqlite3,sqlcipher}.a
+      mv $out/lib/pkgconfig/{sqlite3,sqlcipher}.pc
+      substituteInPlace $out/lib/pkgconfig/sqlcipher.pc \
+        --replace-fail "-lsqlite3" "-lsqlcipher" \
+        --replace-fail "-lz" "-lz -lcrypto" \
+        --replace-fail "includedir}" "includedir}/sqlcipher"
+    '';
+  });
 in
 (flakeboxLib.craneMultiBuild { inherit toolchains profiles; }) (
   craneLib':
@@ -85,7 +111,11 @@ in
         # librocksdb-sys 0.17+ no longer reliably propagates C++ stdlib
         # linkage from RocksDB, which leaves final binaries with undefined
         # std::* symbols during Nix builds.
-        "CARGO_TARGET_${build_arch_upper}_RUSTFLAGS" = "-C link-arg=-lstdc++";
+        # Appended to the toolchain's own flags (wild linker etc.) instead of a plain
+        # assignment, because this env attr overrides flakebox's toolchain env.
+        "CARGO_TARGET_${build_arch_upper}_RUSTFLAGS" = "${
+          toolchains.default.commonArgs."CARGO_TARGET_${build_arch_upper}_RUSTFLAGS" or ""
+        } -C link-arg=-lstdc++";
 
         # does not produce static lib in most versions
         "SNAPPY_${build_arch_underscores}_STATIC" = "true";
@@ -95,7 +125,7 @@ in
         "SQLITE3_${build_arch_underscores}_STATIC" = "true";
         "SQLITE3_${build_arch_underscores}_LIB_DIR" = "${pkgs.pkgsStatic.sqlite.out}/lib/";
 
-        "SQLCIPHER_${build_arch_underscores}_LIB_DIR" = "${pkgs.pkgsStatic.sqlcipher}/lib/";
+        "SQLCIPHER_${build_arch_underscores}_LIB_DIR" = "${sqlcipherStatic}/lib/";
         "SQLCIPHER_${build_arch_underscores}_STATIC" = "true";
       }
       // pkgs.lib.optionalAttrs pkgs.stdenv.isDarwin {
@@ -134,7 +164,6 @@ in
           }
           ++ lib.optionals pkgs.stdenv.isDarwin [
             pkgs.libiconv
-            pkgs.darwin.apple_sdk.frameworks.SystemConfiguration
           ];
 
         nativeBuildInputs =
@@ -241,8 +270,71 @@ in
       args:
       replaceGitHash {
         name = args.pname;
-        package = craneLib.buildPackageGroup args;
+        package = (craneLib.buildPackageGroup args).overrideAttrs (old: {
+          # Older Crane emits a null mainProgram for package groups; nixpkgs
+          # 26.05 rejects null values in the structured derivation environment.
+          meta = removeAttrs (old.meta or { }) [ "mainProgram" ];
+        });
       };
+
+    # Workspace libraries in `cargo tree --target wasm32-unknown-unknown
+    # --package fedi-wasm --edges normal,build`. Promoting its workspace
+    # dependencies to roots does not enable extra features because none has a
+    # non-empty default feature.
+    wasmClippyPackages = [
+      "api-types"
+      "bridge"
+      "bug-report"
+      "communities"
+      "device-registration"
+      "env"
+      "federations"
+      "fedi-ffi"
+      "fedi-social-client"
+      "fedi-social-common"
+      "fedi-wasm"
+      "matrix"
+      "multispend"
+      "nostril"
+      "rpc-types"
+      "runtime"
+      "sp-transfer"
+      "stability-pool-client"
+      "stability-pool-client-old"
+      "stability-pool-common"
+      "stability-pool-common-old"
+    ];
+    wasmClippyArgs =
+      lib.concatMapStringsSep " " (package: "--package ${package}") wasmClippyPackages
+      + " --lib --no-deps";
+    wasmClippyPreBuild = ''
+      comm -12 \
+        <(cargo metadata --locked --no-deps --format-version 1 | jq -r '.packages[].name' | sort) \
+        <(cargo tree --locked --target wasm32-unknown-unknown --package fedi-wasm \
+          --edges normal,build --prefix none | sed 's/ v[0-9].*//' | sort -u) \
+        > actual-wasm-clippy-packages
+      printf '%s\n' ${lib.escapeShellArgs wasmClippyPackages} \
+        | sort > expected-wasm-clippy-packages
+      if ! diff -u expected-wasm-clippy-packages actual-wasm-clippy-packages; then
+        echo "Update wasmClippyPackages to match the fedi-wasm WASM dependency closure." >&2
+        exit 1
+      fi
+
+      nonempty_defaults=$(
+        cargo metadata --locked --no-deps --format-version 1 \
+          | jq -r --argjson packages '${builtins.toJSON wasmClippyPackages}' \
+             '.packages[]
+             | select(.name as $name | $packages | index($name))
+             | select(.name != "fedi-wasm")
+             | select((.features.default // []) | length > 0)
+             | .name'
+      )
+      if [[ -n "$nonempty_defaults" ]]; then
+        echo "Promoted WASM Clippy roots must not enable extra default features:" >&2
+        echo "$nonempty_defaults" >&2
+        exit 1
+      fi
+    '';
   in
   rec {
     workspaceDeps = craneLib.buildWorkspaceDepsOnly {
@@ -287,6 +379,20 @@ in
     workspaceWasmBuild = craneLib.buildWorkspace {
       cargoArtifacts = workspaceWasmDeps;
       buildPhaseCargoCommand = "cargoWithProfile build --locked --lib --package fedi-wasm";
+    };
+
+    workspaceWasmClippyDeps = craneLib.buildDepsOnly {
+      pname = "fedi-wasm-clippy-deps";
+      nativeBuildInputs = commonArgs.nativeBuildInputs ++ [ pkgs.jq ];
+      preBuild = wasmClippyPreBuild;
+      buildPhaseCargoCommand = "cargoWithProfile clippy --locked ${wasmClippyArgs}";
+    };
+
+    workspaceWasmClippy = craneLib.cargoClippy {
+      cargoArtifacts = workspaceWasmClippyDeps;
+      # Keep the single-threaded WASM Arc exception local to this check.
+      cargoClippyExtraArgs = "${wasmClippyArgs} -- --deny warnings --allow deprecated --allow clippy::arc_with_non_send_sync";
+      doInstallCargoArtifacts = false;
     };
 
     fedi-wasm-pack = craneLib.mkCargoDerivation {

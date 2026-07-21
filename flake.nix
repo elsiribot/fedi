@@ -4,7 +4,7 @@
     # Pineed due to fastelan issues
     # See https://github.com/fedibtc/fedi/pull/6903
     # url = "github:NixOS/nixpkgs/nixos-24.11";
-    nixpkgs.url = "github:NixOS/nixpkgs/nixos-25.05";
+    nixpkgs.url = "github:NixOS/nixpkgs/nixos-26.05";
 
     nixpkgs-unstable.url = "github:NixOS/nixpkgs/nixos-unstable";
     flake-utils.url = "github:numtide/flake-utils";
@@ -17,9 +17,14 @@
       inputs.nixpkgs.follows = "nixpkgs";
     };
     flakebox = {
-      url = "github:dpc/flakebox?rev=f96cbeafded56bc6f5c27fbd96e4fcc78b8a8861";
+      url = "github:rustshop/flakebox?rev=6189be5fc6df1e687d284d882662f08afede259f";
       inputs.nixpkgs.follows = "nixpkgs";
       inputs.fenix.follows = "fenix";
+    };
+
+    wild = {
+      url = "github:davidlattimore/wild/0.9.0";
+      inputs.nixpkgs.follows = "nixpkgs-unstable";
     };
 
     fs-dir-cache = {
@@ -58,6 +63,7 @@
       cargo-deluxe,
       android-nixpkgs,
       flakebox,
+      wild,
       andy,
       llm-agents,
       ...
@@ -85,9 +91,20 @@
         pkgs = import nixpkgs {
           inherit system;
           overlays = [
+            flakebox.overlays.default
             fedimint-pkgs.overlays.all
 
             (final: prev: {
+              # wild 0.9.0 (nixpkgs 26.05 only carries 0.8.0), used by flakebox's
+              # linker module for host builds. Same setup as upstream fedimint.
+              inherit
+                (import nixpkgs-unstable {
+                  inherit system;
+                  overlays = [ (import wild) ];
+                })
+                wild
+                wild-unwrapped
+                ;
               rocksdb_7_10 = nixpkgs.legacyPackages.${system}.rocksdb_7_10;
               fs-dir-cache = fs-dir-cache.packages.${system}.default;
               cargo-deluxe = cargo-deluxe.packages.${system}.default;
@@ -101,7 +118,7 @@
               binaryen = pkgs-unstable.binaryen;
               wasm-bindgen-cli = pkgs-unstable.wasm-bindgen-cli_0_2_114;
               snappy = prev.snappy.overrideAttrs (
-                f: p: rec {
+                _finalAttrs: previousAttrs: rec {
                   version = "1.2.1";
                   src = prev.fetchFromGitHub {
                     owner = "google";
@@ -109,6 +126,10 @@
                     rev = version;
                     hash = "sha256-IzKzrMDjh+Weor+OrKdX62cAKYTdDXgldxCgNE2/8vk=";
                   };
+                  # nixpkgs 26.05 carries patches for Snappy 1.2.2 that do not
+                  # apply to the 1.2.1 source pinned here.
+                  patches = [ ];
+                  cmakeFlags = (previousAttrs.cmakeFlags or [ ]) ++ [ "-DCMAKE_POLICY_VERSION_MINIMUM=3.5" ];
                 }
               );
             })
@@ -154,6 +175,7 @@
 
             dontUnpack = true;
             dontStrip = !pkgs.stdenv.isDarwin;
+            inherit (package) version;
 
             installPhase = ''
               cp -a ${package} $out
@@ -204,10 +226,25 @@
           ]
         );
 
-        flakeboxLib = flakebox.lib.${system} {
+        flakeboxLib = flakebox.lib.mkLib pkgs {
           # customizations will go here in the future
           config = {
+            linker.wild.enable = true;
             toolchain.channel = "stable";
+            rust.rustfmt.content = ''
+              group_imports = "StdExternalCrate"
+              wrap_comments = true
+              format_code_in_doc_comments = true
+              imports_granularity = "Module"
+              edition = "2024"
+              style_edition = "2024"
+            '';
+            # treefmt still invokes the formatter by its historical binary name.
+            env.shellPackages = [
+              (pkgs.writeShellScriptBin "nixfmt-rfc-style" ''
+                exec ${pkgs.nixfmt}/bin/nixfmt "$@"
+              '')
+            ];
 
             # we have our own weird CI workflows
             github.ci.enable = false;
@@ -216,13 +253,15 @@
             ];
             typos.pre-commit.enable = false;
             git.pre-commit.trailing_newline = false;
-            rootDir.".agents/skills/agent-browser".source = pkgs.agent-browser.src + /skills/agent-browser;
+            # Keep the checked-in skill project-owned; Flakebox should not refresh it
+            # as a side effect of unrelated toolchain updates.
+            rootDir.".agents/skills/agent-browser".source = ./.agents/skills/agent-browser;
             # we must not use --workspace anywhere
             just.rules.clippy.content = lib.mkForce ''
               # run `cargo clippy` on everything
               clippy *ARGS="--locked --all-targets":
                 cargo clippy {{ARGS}}
-                cargo clippy --package fedi-wasm --target wasm32-unknown-unknown {{ARGS}}
+                cargo clippy --package fedi-wasm --target wasm32-unknown-unknown {{ARGS}} -- --deny warnings --allow deprecated --allow clippy::arc_with_non_send_sync
 
               # run `cargo clippy --fix` on everything
               clippy-fix *ARGS="--locked --all-targets":
@@ -240,43 +279,28 @@
             '';
           };
         };
+        toolchainArgs = {
+          extraRustFlags = "--cfg=curve25519_dalek_backend=\"serial\" -Csymbol-mangling-version=v0";
 
-        toolchainArgs =
-          let
-            llvmPackages = pkgs.llvmPackages_11;
-          in
-          {
-            extraRustFlags = "--cfg=curve25519_dalek_backend=\"serial\" -Csymbol-mangling-version=v0";
+          components = [
+            "rustc"
+            "cargo"
+            "clippy"
+            "rust-analyzer"
+            "rust-src"
+          ];
 
-            components = [
-              "rustc"
-              "cargo"
-              "clippy"
-              "rust-analyzer"
-              "rust-src"
+          args = {
+            nativeBuildInputs = [
+              pkgs.wasm-bindgen-cli
+              pkgs.geckodriver
+              pkgs.wasm-pack
+            ]
+            ++ lib.optionals (!pkgs.stdenv.isDarwin) [
+              pkgs.firefox
             ];
-
-            args = {
-              nativeBuildInputs = [
-                pkgs.wasm-bindgen-cli
-                pkgs.geckodriver
-                pkgs.wasm-pack
-              ]
-              ++ lib.optionals (!pkgs.stdenv.isDarwin) [
-                pkgs.firefox
-              ];
-            };
-          }
-          // lib.optionalAttrs stdenv.isDarwin {
-            # TODO: we seem to be hitting some miscompilation(?) with
-            # the new (as of nixos-24.11 default: clang 18), which causes
-            # fedimint-cli segfault randomly, but only in Nix sandbox.
-            # Supper weird.
-            stdenv = pkgs.clang16Stdenv;
-            clang = pkgs.llvmPackages_16.clang;
-            libclang = pkgs.llvmPackages_16.libclang.lib;
-            clang-unwrapped = pkgs.llvmPackages_16.clang-unwrapped;
           };
+        };
 
         stdTargets = flakeboxLib.mkStdTargets {
           inherit androidSdk;
@@ -382,14 +406,20 @@
                 pkgs.gnused
                 pkgs.yarn
                 pkgs.nodejs_22
-                pkgs.nodePackages.prettier # for ts-bindgen
                 pkgs.jdk17
-                pkgs.nodePackages.typescript-language-server
-                pkgs.nodePackages.ts-node
+                pkgs.typescript-language-server
                 # tools for managing native app deployments
                 # fastlane 2.232.2 via nixpkgs-unstable
                 pkgs-unstable.fastlane
-                pkgs.ruby
+                # Every ruby tool in the .#xcode shell (fastlane here, plus
+                # cocoapods and bundler in the xcode override) must come from
+                # one nixpkgs. The shell exports a single GEM_PATH and each
+                # ruby bin wrapper prepends it ahead of its own gems, so two
+                # builds of the same ruby version cross-load each other's
+                # native extensions (nkf.bundle, bigdecimal.bundle) and hit
+                # "linked to incompatible libruby", crashing the tool. keep
+                # them all on nixpkgs-unstable to share fastlane's ruby build.
+                pkgs-unstable.ruby
                 pkgs.rsync
                 pkgs.perl
                 pkgs.pkg-config
@@ -400,7 +430,16 @@
                 pkgs.esplora-electrs
                 pkgs.clightning
                 pkgs.lnd
-                (pkgs-unstable.matrix-synapse.override { extras = [ ]; })
+                # Patched to fix a missed-wakeup race in the notifier that stalls
+                # sliding-sync long-polls. See nix/patches for details.
+                (pkgs-unstable.matrix-synapse.override {
+                  matrix-synapse-unwrapped = pkgs-unstable.matrix-synapse-unwrapped.overridePythonAttrs (old: {
+                    patches = (old.patches or [ ]) ++ [
+                      ./nix/patches/matrix-synapse-notifier-lost-wakeup.patch
+                    ];
+                  });
+                  extras = [ ];
+                })
                 pkgs.nostr-rs-relay
                 pkgs.sccache
                 pkgs.ripgrep
@@ -420,7 +459,6 @@
                 pkgs.darwin.text_cmds
                 pkgs.darwin.shell_cmds
                 pkgs.darwin.system_cmds
-                pkgs.darwin.ditto
                 pkgs.darwin.ps
               ];
 
@@ -433,7 +471,14 @@
               export ESLINT_USE_FLAT_CONFIG=false
 
               export REPO_ROOT="$(git rev-parse --show-toplevel)"
+              source "$REPO_ROOT/scripts/fd-limit.sh"
+              ensure_fd_limit 10000 dev-shell
+
               export CARGO_BUILD_TARGET_DIR="''${CARGO_BUILD_TARGET_DIR:-''${REPO_ROOT}/target-nix}"
+              # ts-rs writes generated TS bindings here (see scripts/bridge/ts-bindgen.sh); default
+              # it to the build target dir so a bare `cargo test` doesn't leak them into the source
+              # tree.
+              export TS_RS_EXPORT_DIR="''${TS_RS_EXPORT_DIR:-''${CARGO_BUILD_TARGET_DIR}/bindings/}"
               export UPSTREAM_FEDIMINTD_NIX_PKG=${fedimint-pkgs.packages.${system}.fedimintd}
               export FEDIMINT_LOAD_TEST_TOOL_NIX_PKG=${fedimint-pkgs.packages.${system}.fedimint-load-test-tool}
 
@@ -547,8 +592,11 @@
             ++ prev.buildInputs;
             nativeBuildInputs =
               lib.optionals stdenv.isDarwin [
-                pkgs.bundler
-                pkgs.cocoapods
+                # unstable, to share fastlane's ruby build (see the ruby note
+                # in crossDevShell). mixing a stable-nixpkgs ruby tool here
+                # reintroduces the "linked to incompatible libruby" crash.
+                pkgs-unstable.bundler
+                pkgs-unstable.cocoapods
                 pkgs.unzip
                 (pkgs.hiPrio xcode-wrapper)
                 pkgs.fs-dir-cache
