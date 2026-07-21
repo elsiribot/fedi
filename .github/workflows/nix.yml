@@ -18,8 +18,13 @@ on:
 
 # https://stackoverflow.com/questions/66335225/how-to-cancel-previous-runs-in-the-pr-when-you-push-new-commitsupdate-the-curre
 concurrency:
-  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
-  cancel-in-progress: true
+  # Cancel superseded PR runs, but never interrupt a publishing run: a push to
+  # master or a tag updates several Docker Hub tags across three jobs, and being
+  # cancelled part-way would leave tags at inconsistent revisions. Pushes are
+  # serialized per ref instead. `github.event_name` is in the group so a manual
+  # dispatch cannot cancel a push that is mid-publication.
+  group: ${{ github.workflow }}-${{ github.event_name }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 permissions:
   contents: read
@@ -293,7 +298,8 @@ jobs:
           needs.precheck.outputs.HAS_NON_UI_CHANGES == '1' ||
           needs.precheck.outputs.IS_PUSH_TO_MASTER == '1' ||
           needs.precheck.outputs.IS_PUSH_TO_TAG == '1'
-      runs-on: [self-hosted, linux]
+      # Pinned to x64: this job is the producer of the `-amd64` images.
+      runs-on: [self-hosted, linux, x64]
       timeout-minutes: 30
       steps:
         - name: Checkout Code
@@ -336,36 +342,24 @@ jobs:
             echo "fedi_fedimint_cli_container_tag=$(docker load < result | awk '{ print $3 }')" >> $GITHUB_ENV
 
 
+        # This job publishes ONLY the `-amd64` inputs. `containers-manifest` is
+        # the sole writer of the canonical (unsuffixed) tags, so those are never
+        # momentarily single-platform and an arm64 failure can't leave them so.
+        #
+        # Every Docker-mutating step requires a real `push` event: a
+        # `workflow_dispatch` on a tag also sets `IS_PUSH_TO_TAG`, and without
+        # this gate it would republish a release tag while the arm64 leg and the
+        # manifest job (both push-only) sat out — downgrading a published
+        # multi-arch release to amd64-only.
         - name: Login to Docker Hub
-          if: github.ref == 'refs/heads/master' || github.ref_type == 'tag'
+          if: github.event_name == 'push' && (github.ref == 'refs/heads/master' || github.ref_type == 'tag')
           uses: docker/login-action@c94ce9fb468520275223c153574b00df6fe4bcc9 # v3.7.0
           with:
             username: dawidfedi
             password: ${{ secrets.DOCKER_HUB_DAWIDFEDI_ACCESS_TOKEN }}
 
-        - name: Publish
-          if: github.ref == 'refs/heads/master'
-          run: |
-            nix_tag=${{ env.fedi_fedimintd_container_tag }} && hub_tag="fedibtc/fedi-fedimintd:${LAST_COMMIT_SHA}" && docker tag "$nix_tag" "$hub_tag" && docker push "$hub_tag"
-            nix_tag=${{ env.fedi_fedimint_cli_container_tag }} && hub_tag="fedibtc/fedi-fedimint-cli:${LAST_COMMIT_SHA}" && docker tag "$nix_tag" "$hub_tag" && docker push "$hub_tag"
-
-        - name: Publish master tag
-          if: github.ref == 'refs/heads/master'
-          run: |
-            nix_tag=${{ env.fedi_fedimintd_container_tag }} && hub_tag="fedibtc/fedi-fedimintd:master" && docker tag "$nix_tag" "$hub_tag" && docker push "$hub_tag"
-            nix_tag=${{ env.fedi_fedimint_cli_container_tag }} && hub_tag="fedibtc/fedi-fedimint-cli:master" && docker tag "$nix_tag" "$hub_tag" && docker push "$hub_tag"
-
-        - name: Publish tagged release
-          if: github.ref_type == 'tag'
-          run: |
-            nix_tag=${{ env.fedi_fedimintd_container_tag }} && hub_tag="fedibtc/fedi-fedimintd:${GITHUB_REF_NAME}" && docker tag "$nix_tag" "$hub_tag" && docker push "$hub_tag"
-            nix_tag=${{ env.fedi_fedimint_cli_container_tag }} && hub_tag="fedibtc/fedi-fedimint-cli:${GITHUB_REF_NAME}" && docker tag "$nix_tag" "$hub_tag" && docker push "$hub_tag"
-
-        # amd64-suffixed aliases of the tags above. `containers-arm64` pushes the
-        # matching `-arm64` tags, and `containers-manifest` joins each pair into
-        # a multi-arch manifest list published under the plain tag.
         - name: Publish amd64 tags
-          if: github.ref == 'refs/heads/master'
+          if: github.event_name == 'push' && github.ref == 'refs/heads/master'
           run: |
             nix_tag=${{ env.fedi_fedimintd_container_tag }} && hub_tag="fedibtc/fedi-fedimintd:${LAST_COMMIT_SHA}-amd64" && docker tag "$nix_tag" "$hub_tag" && docker push "$hub_tag"
             nix_tag=${{ env.fedi_fedimint_cli_container_tag }} && hub_tag="fedibtc/fedi-fedimint-cli:${LAST_COMMIT_SHA}-amd64" && docker tag "$nix_tag" "$hub_tag" && docker push "$hub_tag"
@@ -373,7 +367,7 @@ jobs:
             nix_tag=${{ env.fedi_fedimint_cli_container_tag }} && hub_tag="fedibtc/fedi-fedimint-cli:master-amd64" && docker tag "$nix_tag" "$hub_tag" && docker push "$hub_tag"
 
         - name: Publish amd64 tags (tagged release)
-          if: github.ref_type == 'tag'
+          if: github.event_name == 'push' && github.ref_type == 'tag'
           run: |
             nix_tag=${{ env.fedi_fedimintd_container_tag }} && hub_tag="fedibtc/fedi-fedimintd:${GITHUB_REF_NAME}-amd64" && docker tag "$nix_tag" "$hub_tag" && docker push "$hub_tag"
             nix_tag=${{ env.fedi_fedimint_cli_container_tag }} && hub_tag="fedibtc/fedi-fedimint-cli:${GITHUB_REF_NAME}-amd64" && docker tag "$nix_tag" "$hub_tag" && docker push "$hub_tag"
@@ -486,13 +480,27 @@ jobs:
               for tag in "${tags[@]}"; do
                 list="fedibtc/${image}:${tag}"
                 # Clears stale local scratch state in ~/.docker/manifests on this
-                # persistent self-hosted runner. `docker manifest rm` deletes from
-                # local storage only — the registry tag is untouched until `push`
-                # below, so a failure here leaves the amd64 image in place.
+                # persistent self-hosted runner, so `create --amend` can't splice
+                # in entries from an earlier run. `docker manifest rm` deletes
+                # from local storage only — it never touches the registry.
                 docker manifest rm "$list" || true
                 docker manifest create "$list" --amend "${list}-amd64" --amend "${list}-arm64"
                 docker manifest push "$list"
-                docker manifest inspect "$list" | grep -q arm64
+
+                # Verify what the registry serves, not the local scratch copy:
+                # drop the local list first so `inspect` has to fetch it back.
+                docker manifest rm "$list" || true
+                served="$(docker manifest inspect "$list")"
+                amd64="$(printf '%s' "$served" | grep -c '"architecture": *"amd64"' || true)"
+                arm64="$(printf '%s' "$served" | grep -c '"architecture": *"arm64"' || true)"
+                entries="$(printf '%s' "$served" | grep -c '"platform"' || true)"
+                if [ "$amd64" != 1 ] || [ "$arm64" != 1 ] || [ "$entries" != 2 ]; then
+                  echo "ERROR: $list must serve exactly one linux/amd64 and one linux/arm64"
+                  echo "       (amd64=$amd64 arm64=$arm64 entries=$entries)"
+                  printf '%s\n' "$served"
+                  exit 1
+                fi
+                echo "OK: $list serves linux/amd64 + linux/arm64"
               done
             done
 
