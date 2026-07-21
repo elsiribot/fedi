@@ -287,7 +287,7 @@ jobs:
 
 
     containers:
-      name: "Containers"
+      name: "Containers (amd64)"
       needs: precheck
       if: >
           needs.precheck.outputs.HAS_NON_UI_CHANGES == '1' ||
@@ -349,27 +349,32 @@ jobs:
             nix_tag=${{ env.fedi_fedimintd_container_tag }} && hub_tag="fedibtc/fedi-fedimintd:${LAST_COMMIT_SHA}" && docker tag "$nix_tag" "$hub_tag" && docker push "$hub_tag"
             nix_tag=${{ env.fedi_fedimint_cli_container_tag }} && hub_tag="fedibtc/fedi-fedimint-cli:${LAST_COMMIT_SHA}" && docker tag "$nix_tag" "$hub_tag" && docker push "$hub_tag"
 
-        # Per-arch alias of the tags above. The `containers-manifest` job joins
-        # these with the `-arm64` ones into multi-arch manifest lists.
-        - name: Publish per-arch tags
-          if: github.ref == 'refs/heads/master'
-          run: |
-            nix_tag=${{ env.fedi_fedimintd_container_tag }} && hub_tag="fedibtc/fedi-fedimintd:${LAST_COMMIT_SHA}-amd64" && docker tag "$nix_tag" "$hub_tag" && docker push "$hub_tag"
-            nix_tag=${{ env.fedi_fedimint_cli_container_tag }} && hub_tag="fedibtc/fedi-fedimint-cli:${LAST_COMMIT_SHA}-amd64" && docker tag "$nix_tag" "$hub_tag" && docker push "$hub_tag"
-
         - name: Publish master tag
           if: github.ref == 'refs/heads/master'
           run: |
             nix_tag=${{ env.fedi_fedimintd_container_tag }} && hub_tag="fedibtc/fedi-fedimintd:master" && docker tag "$nix_tag" "$hub_tag" && docker push "$hub_tag"
             nix_tag=${{ env.fedi_fedimint_cli_container_tag }} && hub_tag="fedibtc/fedi-fedimint-cli:master" && docker tag "$nix_tag" "$hub_tag" && docker push "$hub_tag"
-            nix_tag=${{ env.fedi_fedimintd_container_tag }} && hub_tag="fedibtc/fedi-fedimintd:master-amd64" && docker tag "$nix_tag" "$hub_tag" && docker push "$hub_tag"
-            nix_tag=${{ env.fedi_fedimint_cli_container_tag }} && hub_tag="fedibtc/fedi-fedimint-cli:master-amd64" && docker tag "$nix_tag" "$hub_tag" && docker push "$hub_tag"
 
         - name: Publish tagged release
           if: github.ref_type == 'tag'
           run: |
             nix_tag=${{ env.fedi_fedimintd_container_tag }} && hub_tag="fedibtc/fedi-fedimintd:${GITHUB_REF_NAME}" && docker tag "$nix_tag" "$hub_tag" && docker push "$hub_tag"
             nix_tag=${{ env.fedi_fedimint_cli_container_tag }} && hub_tag="fedibtc/fedi-fedimint-cli:${GITHUB_REF_NAME}" && docker tag "$nix_tag" "$hub_tag" && docker push "$hub_tag"
+
+        # amd64-suffixed aliases of the tags above. `containers-arm64` pushes the
+        # matching `-arm64` tags, and `containers-manifest` joins each pair into
+        # a multi-arch manifest list published under the plain tag.
+        - name: Publish amd64 tags
+          if: github.ref == 'refs/heads/master'
+          run: |
+            nix_tag=${{ env.fedi_fedimintd_container_tag }} && hub_tag="fedibtc/fedi-fedimintd:${LAST_COMMIT_SHA}-amd64" && docker tag "$nix_tag" "$hub_tag" && docker push "$hub_tag"
+            nix_tag=${{ env.fedi_fedimint_cli_container_tag }} && hub_tag="fedibtc/fedi-fedimint-cli:${LAST_COMMIT_SHA}-amd64" && docker tag "$nix_tag" "$hub_tag" && docker push "$hub_tag"
+            nix_tag=${{ env.fedi_fedimintd_container_tag }} && hub_tag="fedibtc/fedi-fedimintd:master-amd64" && docker tag "$nix_tag" "$hub_tag" && docker push "$hub_tag"
+            nix_tag=${{ env.fedi_fedimint_cli_container_tag }} && hub_tag="fedibtc/fedi-fedimint-cli:master-amd64" && docker tag "$nix_tag" "$hub_tag" && docker push "$hub_tag"
+
+        - name: Publish amd64 tags (tagged release)
+          if: github.ref_type == 'tag'
+          run: |
             nix_tag=${{ env.fedi_fedimintd_container_tag }} && hub_tag="fedibtc/fedi-fedimintd:${GITHUB_REF_NAME}-amd64" && docker tag "$nix_tag" "$hub_tag" && docker push "$hub_tag"
             nix_tag=${{ env.fedi_fedimint_cli_container_tag }} && hub_tag="fedibtc/fedi-fedimint-cli:${GITHUB_REF_NAME}-amd64" && docker tag "$nix_tag" "$hub_tag" && docker push "$hub_tag"
 
@@ -433,7 +438,7 @@ jobs:
 
         # workflow_dispatch builds nothing to publish — it exists so the arm64
         # leg can be exercised (and timed) without touching Docker Hub.
-        - name: Publish
+        - name: Publish arm64 tags
           if: github.event_name == 'push' && github.ref == 'refs/heads/master'
           run: |
             nix_tag=${{ env.fedi_fedimintd_container_tag }} && hub_tag="fedibtc/fedi-fedimintd:${LAST_COMMIT_SHA}-arm64" && docker tag "$nix_tag" "$hub_tag" && docker push "$hub_tag"
@@ -441,7 +446,7 @@ jobs:
             nix_tag=${{ env.fedi_fedimintd_container_tag }} && hub_tag="fedibtc/fedi-fedimintd:master-arm64" && docker tag "$nix_tag" "$hub_tag" && docker push "$hub_tag"
             nix_tag=${{ env.fedi_fedimint_cli_container_tag }} && hub_tag="fedibtc/fedi-fedimint-cli:master-arm64" && docker tag "$nix_tag" "$hub_tag" && docker push "$hub_tag"
 
-        - name: Publish tagged release
+        - name: Publish arm64 tags (tagged release)
           if: github.event_name == 'push' && github.ref_type == 'tag'
           run: |
             nix_tag=${{ env.fedi_fedimintd_container_tag }} && hub_tag="fedibtc/fedi-fedimintd:${GITHUB_REF_NAME}-arm64" && docker tag "$nix_tag" "$hub_tag" && docker push "$hub_tag"
