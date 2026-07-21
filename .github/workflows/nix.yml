@@ -449,8 +449,11 @@ jobs:
     # Joins the per-arch tags into multi-arch manifest lists, so that
     # `fedibtc/fedi-fedimintd:master` resolves to amd64 or arm64 by platform.
     #
-    # Fail-safe by construction: if the arm64 leg fails this job is skipped, and
-    # the plain tags still point at the amd64 images the x86 job already pushed.
+    # Sole writer of the canonical (unsuffixed) tags, so they are never
+    # single-platform. If either arch leg fails, this job is skipped and no
+    # canonical tag is written: the new `<sha>`/release tag is simply absent,
+    # and `master` keeps pointing at the previous (still multi-arch) revision.
+    # The run goes red instead of publishing a single-arch canonical tag.
     containers-manifest:
       name: "Containers (multi-arch manifest)"
       needs: [containers, containers-arm64]
@@ -471,6 +474,18 @@ jobs:
         - name: Create and push manifest lists
           run: |
             set -euo pipefail
+            # The NixOS github-runner service exposes only bash, coreutils,
+            # git, tar, gzip, nix, gawk, docker, cachix, gnupg and curl on
+            # PATH — no `jq`, and no `grep` either — so take `jq` from a pinned
+            # nixpkgs (the rev `flake.lock` used when this was written; any
+            # nixpkgs would do). Called once up front, before anything is
+            # published, so an unusable verifier fails the job early.
+            jq() {
+              nix --extra-experimental-features 'nix-command flakes' \
+                run 'github:NixOS/nixpkgs/569d578509928497eddc3fdbf94a799027050be4#jq' -- "$@"
+            }
+            jq --version
+
             if [ "${{ github.ref_type }}" == 'tag' ]; then
               tags=("${GITHUB_REF_NAME}")
             else
@@ -487,20 +502,24 @@ jobs:
                 docker manifest create "$list" --amend "${list}-amd64" --amend "${list}-arm64"
                 docker manifest push "$list"
 
-                # Verify what the registry serves, not the local scratch copy:
-                # drop the local list first so `inspect` has to fetch it back.
-                docker manifest rm "$list" || true
+                # Verify what the registry serves, not the local scratch copy.
+                # `docker manifest inspect` returns the local list when one
+                # exists (cli/command/manifest/inspect.go tries the local store
+                # first, registry second), so the copy `create` just wrote has
+                # to go. Deliberately not `|| true`: a failed removal would turn
+                # the check below into a self-test of local state.
+                docker manifest rm "$list"
                 served="$(docker manifest inspect "$list")"
-                amd64="$(printf '%s' "$served" | grep -c '"architecture": *"amd64"' || true)"
-                arm64="$(printf '%s' "$served" | grep -c '"architecture": *"arm64"' || true)"
-                entries="$(printf '%s' "$served" | grep -c '"platform"' || true)"
-                if [ "$amd64" != 1 ] || [ "$arm64" != 1 ] || [ "$entries" != 2 ]; then
-                  echo "ERROR: $list must serve exactly one linux/amd64 and one linux/arm64"
-                  echo "       (amd64=$amd64 arm64=$arm64 entries=$entries)"
+                # Exact set equality on the (os, architecture) tuples, parsed
+                # structurally rather than grepped out of the JSON text.
+                platforms="$(printf '%s' "$served" |
+                  jq -r '[.manifests[].platform | "\(.os)/\(.architecture)"] | sort | join(" ")')"
+                if [ "$platforms" != "linux/amd64 linux/arm64" ]; then
+                  echo "ERROR: $list must serve exactly 'linux/amd64 linux/arm64', got '$platforms'"
                   printf '%s\n' "$served"
                   exit 1
                 fi
-                echo "OK: $list serves linux/amd64 + linux/arm64"
+                echo "OK: $list serves $platforms"
               done
             done
 
