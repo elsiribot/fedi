@@ -118,7 +118,14 @@ export class Payments extends AppiumTestBase {
 
         await alice.clickElementByKey('SendConfirmButton')
         await alice.waitForText('You sent', 0, true, 120000)
-        await alice.waitForText(`${ONCHAIN_SEND_SATS} SATS`, 0, true, 5000)
+        // The success screen groups thousands (accounting.formatNumber), so
+        // 1000 renders as "1,000 SATS".
+        await alice.waitForText(
+            `${ONCHAIN_SEND_SATS.toLocaleString('en-US')} SATS`,
+            0,
+            true,
+            5000,
+        )
         await dismissSendSuccess(alice)
 
         const afterOnchain = await readWalletSats(alice)
