@@ -9,8 +9,8 @@ export class Settings extends AppiumTestBase {
     static produces = ['onboarded'] as const
 
     private async changeDisplayName(displayName: string): Promise<void> {
-        await this.scrollToText('Edit profile')
-        await this.clickOnText('Edit profile', 0, true)
+        await this.scrollToElement('Edit profile')
+        await this.clickElementByKey('Edit profile')
         await this.waitForElementDisplayed('DisplayNameInput')
         await this.typeIntoElementByKey('DisplayNameInput', displayName)
         await this.dismissKeyboard()
