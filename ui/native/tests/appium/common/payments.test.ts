@@ -134,7 +134,7 @@ async function fetchDevfedText(pathAndQuery: string): Promise<string> {
 // port into the emulators with adb reverse so the app can dial the invite's
 // addresses unmodified. iOS simulators share the host loopback and need
 // nothing.
-async function reverseDevfedPortsIntoDevices(): Promise<void> {
+export async function reverseDevfedPortsIntoDevices(): Promise<void> {
     if (currentPlatform !== Platform.ANDROID) return
     const body = await fetchDevfedText('/ports')
     const ports: number[] = JSON.parse(body).ports
@@ -155,14 +155,14 @@ async function reverseDevfedPortsIntoDevices(): Promise<void> {
     }
 }
 
-async function getDevfedInvite(): Promise<string> {
+export async function getDevfedInvite(): Promise<string> {
     const body = await fetchDevfedText('/invite_code')
     const invite = JSON.parse(body).invite_code
     if (!invite) throw new Error(`invite_code response had no invite: ${body}`)
     return invite
 }
 
-async function generateDevfedEcash(msats: number): Promise<string> {
+export async function generateDevfedEcash(msats: number): Promise<string> {
     const body = await fetchDevfedText(`/generate_ecash/${msats}`)
     const ecash = JSON.parse(body).ecash
     if (!ecash) throw new Error(`generate_ecash response had no ecash: ${body}`)
@@ -173,7 +173,7 @@ async function generateDevfedEcash(msats: number): Promise<string> {
 // switcher overlay instead of navigating, so only tap it when the wallet
 // action buttons aren't already on screen. Clear the backup reminder first: it
 // hides Receive, which would otherwise read here as "not on the wallet yet".
-async function goToWallet(t: AppiumTestBase): Promise<void> {
+export async function goToWallet(t: AppiumTestBase): Promise<void> {
     await dismissBackupReminderIfPresent(t, 1000)
     if (await t.isTextPresent('Receive', true, 3000)) return
     await t.clickElementByKey('WalletTabButton')
@@ -182,7 +182,7 @@ async function goToWallet(t: AppiumTestBase): Promise<void> {
 
 // The sats balance is a value, not a label, so it carries a testID. Caller
 // must already be on the wallet screen.
-async function readWalletSats(t: AppiumTestBase): Promise<number> {
+export async function readWalletSats(t: AppiumTestBase): Promise<number> {
     const raw = await t.getTextByKey('WalletBalanceSats')
     const sats = parseInt(raw.replace(/[^0-9]/g, ''), 10)
     if (Number.isNaN(sats)) {
@@ -261,7 +261,10 @@ async function assertEcashFeeDetailsVisible(t: AppiumTestBase): Promise<void> {
     await t.clickElementByKey('fee-breakdown-close')
 }
 
-async function redeemEcash(t: AppiumTestBase, token: string): Promise<void> {
+export async function redeemEcash(
+    t: AppiumTestBase,
+    token: string,
+): Promise<void> {
     await t.clickElementByKey('ScanTabButton')
     await acceptCameraPermissionIfPresent(t)
     await t.setClipboard(token)
@@ -272,7 +275,7 @@ async function redeemEcash(t: AppiumTestBase, token: string): Promise<void> {
     await t.clickElementByKey('claim-ecash-button')
 }
 
-async function dismissReceiveSuccess(t: AppiumTestBase): Promise<void> {
+export async function dismissReceiveSuccess(t: AppiumTestBase): Promise<void> {
     await t.clickOnText('Done', 0, true)
     // Receiving past the reminder threshold raises the backup reminder overlay
     // once we land back on the wallet, so clear it before asserting Receive.
@@ -294,7 +297,7 @@ async function dismissBackupReminderIfPresent(
 // Receive. A one-shot dismiss races that delay and misses it, so poll: re-check
 // Receive and dismiss the overlay whenever it shows, until Receive wins. "Not
 // now" sets dismissedThisSession, so once dismissed it stays gone for the run.
-async function waitForWalletReceive(
+export async function waitForWalletReceive(
     t: AppiumTestBase,
     timeout = 30000,
 ): Promise<void> {
@@ -307,7 +310,7 @@ async function waitForWalletReceive(
     await t.waitForText('Receive', 0, true, 5000)
 }
 
-async function dismissSendSuccess(t: AppiumTestBase): Promise<void> {
+export async function dismissSendSuccess(t: AppiumTestBase): Promise<void> {
     await t.clickOnText('Done', 0, true)
     // The first successful send can raise a rate-federation overlay that
     // intercepts navigation; close it if present so we land on the wallet.
@@ -319,7 +322,7 @@ async function dismissSendSuccess(t: AppiumTestBase): Promise<void> {
 
 // The amount keypad defaults to fiat (amountInputType is unset on a fresh
 // install), so flip to sats before typing a sats amount.
-async function ensureSatsMode(t: AppiumTestBase): Promise<void> {
+export async function ensureSatsMode(t: AppiumTestBase): Promise<void> {
     await t.waitForElementDisplayed('AmountInputLabel')
     const isSats = async () =>
         (await t.getTextByKey('AmountInputLabel'))
@@ -337,7 +340,10 @@ async function ensureSatsMode(t: AppiumTestBase): Promise<void> {
     throw new Error('could not switch amount input to SATS mode')
 }
 
-async function enterAmount(t: AppiumTestBase, sats: number): Promise<void> {
+export async function enterAmount(
+    t: AppiumTestBase,
+    sats: number,
+): Promise<void> {
     for (const digit of String(sats)) {
         await t.clickElementByKey(`NumpadButton-${digit}`)
     }
