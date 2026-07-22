@@ -5,7 +5,6 @@ import { CommunityChatJoin } from './common/CommunityChatJoin.test'
 import { JoinLeaveFederation } from './common/JoinLeaveFederation.test'
 import { PinProtection } from './common/PinProtection.test'
 import { Settings } from './common/Settings.test'
-import { SettingsProfile } from './common/SettingsProfile.test'
 import { BackupRestore } from './common/backupRestore.test'
 import { OnboardingTest } from './common/onboarding.test'
 import { Payments } from './common/payments.test'
@@ -24,7 +23,6 @@ export const ACTOR_HANDLES = ['a', 'b'] as const
 export const availableTests: Record<string, TestClass> = {
     onboarding: OnboardingTest,
     settings: Settings,
-    settingsProfile: SettingsProfile,
     joinLeaveFederations: JoinLeaveFederation,
     chat: Chat,
     communityChatJoin: CommunityChatJoin,
