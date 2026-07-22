@@ -5,7 +5,6 @@ import { CommunityChatJoin } from './common/CommunityChatJoin.test'
 import { JoinLeaveFederation } from './common/JoinLeaveFederation.test'
 import { PinProtection } from './common/PinProtection.test'
 import { Settings } from './common/Settings.test'
-import { WalletSwitching } from './common/WalletSwitching.test'
 import { BackupRestore } from './common/backupRestore.test'
 import { OnboardingTest } from './common/onboarding.test'
 import { Payments } from './common/payments.test'
@@ -30,7 +29,6 @@ export const availableTests: Record<string, TestClass> = {
     payments: Payments,
     backupRestore: BackupRestore,
     pinProtection: PinProtection,
-    walletSwitching: WalletSwitching,
 }
 
 export type TestName = keyof typeof availableTests
