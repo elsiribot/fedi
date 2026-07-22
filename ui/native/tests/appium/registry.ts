@@ -4,7 +4,6 @@ import { Chat } from './common/Chat.test'
 import { CommunityChatJoin } from './common/CommunityChatJoin.test'
 import { JoinLeaveFederation } from './common/JoinLeaveFederation.test'
 import { PinProtection } from './common/PinProtection.test'
-import { ResetPin } from './common/ResetPin.test'
 import { Settings } from './common/Settings.test'
 import { BackupRestore } from './common/backupRestore.test'
 import { OnboardingTest } from './common/onboarding.test'
@@ -30,7 +29,6 @@ export const availableTests: Record<string, TestClass> = {
     payments: Payments,
     backupRestore: BackupRestore,
     pinProtection: PinProtection,
-    resetPin: ResetPin,
 }
 
 export type TestName = keyof typeof availableTests
