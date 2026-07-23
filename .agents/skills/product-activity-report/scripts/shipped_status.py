@@ -90,9 +90,8 @@ def deployed_refs(repo, repo_path):
         for track, tag in newest_tag_per_track(repo_path).items():
             refs.setdefault(track, (tag, "newest tag, NOT confirmed deployed"))
 
-    # A track whose ref is missing locally must be reported, not dropped. Losing
-    # it silently makes a platform vanish from the report, which reads as "no
-    # such platform" rather than "I could not check".
+    # Dropping an unusable track silently reads as "no such platform" rather
+    # than "could not check", so say so and let the caller decide.
     usable, missing = {}, []
     for track, (ref, how) in refs.items():
         (usable.setdefault(track, (ref, how)) if have_ref(repo_path, ref)
@@ -122,12 +121,10 @@ _title_owners = {}
 
 
 def title_is_unique(repo, title):
-    """Does this title identify exactly one PR?
+    """A title identifies work only when one PR owns it.
 
-    A squashed backport lists what it carried by title, which is the only handle
-    on cherry-picked work. That handle is sound when one PR owns the title and
-    worthless when several do, and several is common here: a PR and the revert
-    that undid it usually share one.
+    A squashed backport lists what it carried by title, the only handle on
+    cherry-picked work, and a change and its revert usually share one.
     """
     if title in _title_owners:
         return _title_owners[title]
