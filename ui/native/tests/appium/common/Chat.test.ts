@@ -62,6 +62,7 @@ export class Chat extends AppiumTestBase {
         // prop the Android assertion guards. PUBLIC_GROUP is safe to dirty
         // here: later knock phases never reopen it.
         if (currentPlatform === Platform.ANDROID) {
+            await assertKeyboardStaysOpenAfterSend(alice, PUBLIC_GROUP)
             await assertLongPressOpensActionsWithKeyboardUp(alice, PUBLIC_GROUP)
         }
 
@@ -185,6 +186,31 @@ async function assertLongPressOpensActionsWithKeyboardUp(
     // Tapping reply closes the overlay; pop back to the chat list.
     await t.clickElementByKey('SelectedMessageOverlayReply')
     await t.clickElementByKey('HeaderBackButton')
+}
+
+async function assertKeyboardStaysOpenAfterSend(
+    t: AppiumTestBase,
+    group: Group,
+): Promise<void> {
+    const message = 'Keyboard persistence message'
+    await openRoomByName(t, group.name)
+    await t.clickElementByKey('MessageInput-TextInput')
+    await t.typeIntoElementByKey('MessageInput-TextInput', message)
+    await t.waitForElementDisplayed('MessageInput-SendButton')
+    if (!(await isKeyboardShown(t))) {
+        throw new Error('Keyboard was not shown before sending a message')
+    }
+    await t.clickElementByKey('MessageInput-SendButton')
+    await t.waitForText(message, 0, false, MATRIX_TIMEOUT)
+    await new Promise(r => setTimeout(r, 1000))
+    if (!(await isKeyboardShown(t))) {
+        throw new Error('Keyboard was dismissed after sending a message')
+    }
+    await t.clickElementByKey('HeaderBackButton')
+}
+
+async function isKeyboardShown(t: AppiumTestBase): Promise<boolean> {
+    return Boolean(await t.driver.executeScript('mobile: isKeyboardShown', []))
 }
 
 async function openRoomByName(t: AppiumTestBase, name: string): Promise<void> {
