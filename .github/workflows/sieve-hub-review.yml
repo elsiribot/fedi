@@ -67,8 +67,10 @@ jobs:
               env:
                   SIEVE_REV: ${{ steps.sieve-release.outputs.rev }}
                   SIEVE_TOKEN: ${{ secrets.SIEVE_TOKEN }}
-                  # Without this the job falls back to a mechanical recap.
+                  # Either credential runs the agent; with neither the job
+                  # falls back to a mechanical recap.
                   ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+                  CLAUDE_CODE_OAUTH_TOKEN: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
                   GH_TOKEN: ${{ steps.app-token.outputs.token || secrets.SIEVE_HUB_TOKEN }}
                   # Avoid anonymous GitHub API rate limits during the Nix fetch.
                   NIX_CONFIG: access-tokens = github.com=${{ github.token }}
