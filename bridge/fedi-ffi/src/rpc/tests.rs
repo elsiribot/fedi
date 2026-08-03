@@ -1022,6 +1022,21 @@ async fn test_ecash_duplicate_receive_rejected(_dev_fed: DevFed) -> anyhow::Resu
         fees_after_receive,
         "duplicate receive must not accrue another receive fee"
     );
+
+    // Concurrent duplicates: both calls can pass any client-side fast path, so
+    // the atomic operation-id check in fedimint's transaction submission must
+    // let exactly one win.
+    let ecash = cli_generate_ecash(Amount::from_msats(200_000)).await?;
+    let (first, second) = tokio::join!(
+        receiveEcash(receiver.clone(), ecash.clone(), FrontendMetadata::default()),
+        receiveEcash(receiver.clone(), ecash, FrontendMetadata::default()),
+    );
+    assert_eq!(
+        usize::from(first.is_ok()) + usize::from(second.is_ok()),
+        1,
+        "exactly one concurrent duplicate receive must succeed, got {first:?} and {second:?}"
+    );
+    wait_for_ecash_reissue(receiver).await?;
     Ok(())
 }
 
