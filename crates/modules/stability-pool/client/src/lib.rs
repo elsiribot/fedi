@@ -756,8 +756,9 @@ impl StabilityPoolClientModule {
     /// This method only composes transaction submission into `dbtx`; it does
     /// not own the caller's retry protocol. The caller must durably persist the
     /// operation ID and request before the first call. After an ambiguous
-    /// result, it must inspect the global operation log and validate any
-    /// existing entry before attempting another submission with that ID.
+    /// result, it must inspect the global operation log before attempting
+    /// another submission with that ID. Under this contract, any existing
+    /// entry is the durable receipt for the original request.
     ///
     /// Operation IDs must be globally unique, and callers must serialize
     /// submission attempts that use the same ID. `dbtx` must be scoped to this
