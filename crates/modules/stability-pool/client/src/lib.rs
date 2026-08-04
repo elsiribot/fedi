@@ -750,36 +750,41 @@ impl StabilityPoolClientModule {
         Ok(operation_id)
     }
 
-    /// Submits a provider deposit under a caller-supplied operation ID inside
-    /// the caller's database transaction.
+    /// Submits a provider deposit under a caller-supplied operation ID.
     ///
-    /// This method only composes transaction submission into `dbtx`; it does
-    /// not own the caller's retry protocol. The caller must durably persist the
-    /// operation ID and request before the first call. After an ambiguous
-    /// result, it must inspect the global operation log before attempting
+    /// This method owns the client database transaction and commit, but not the
+    /// caller's retry protocol. The caller must durably persist the operation
+    /// ID and request before the first call. After any error or process
+    /// restart, it must inspect the global operation log before attempting
     /// another submission with that ID. Under this contract, any existing
     /// entry is the durable receipt for the original request.
     ///
     /// Operation IDs must be globally unique, and callers must serialize
-    /// submission attempts that use the same ID. `dbtx` must be scoped to this
-    /// stability-pool module, and the caller owns its commit or rollback.
-    pub async fn deposit_to_provide_dbtx(
+    /// submission attempts that use the same ID.
+    ///
+    /// # Errors
+    ///
+    /// Returns an error when transaction preparation, submission, or commit
+    /// fails. Callers must treat every error as potentially ambiguous and probe
+    /// the global operation log before retrying.
+    pub async fn deposit_to_provide_with_operation_id(
         &self,
-        dbtx: &mut DatabaseTransaction<'_>,
         operation_id: OperationId,
         amount: Amount,
         min_fee_rate: FeeRate,
         extra_meta: impl Serialize + Clone + MaybeSend + MaybeSync + 'static,
     ) -> anyhow::Result<OutPointRange> {
-        let extra_meta = serde_json::to_value(extra_meta)?;
-        submit_tx_with_output_dbtx(
+        let mut dbtx = self.db.begin_transaction().await;
+        let out_point_range = submit_tx_with_output_dbtx(
             self,
-            dbtx,
+            &mut dbtx.to_ref_nc(),
             operation_id,
             self.deposit_to_provide_output(amount, min_fee_rate),
             extra_meta,
         )
-        .await
+        .await?;
+        dbtx.commit_tx_result().await?;
+        Ok(out_point_range)
     }
 
     fn deposit_to_provide_output(
