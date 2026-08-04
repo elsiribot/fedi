@@ -743,19 +743,58 @@ impl StabilityPoolClientModule {
     ) -> anyhow::Result<OperationId> {
         let (operation_id, _) = submit_tx_with_output(
             self,
-            StabilityPoolOutput::V0(StabilityPoolOutputV0::DepositToProvide(
-                DepositToProvideOutput {
-                    account_id: self.our_account(AccountType::Provider).id(),
-                    provide_request: ProvideRequest {
-                        amount,
-                        min_fee_rate,
-                    },
-                },
-            )),
+            self.deposit_to_provide_output(amount, min_fee_rate),
             extra_meta,
         )
         .await?;
         Ok(operation_id)
+    }
+
+    /// Submits a provider deposit under a caller-supplied operation ID inside
+    /// the caller's database transaction.
+    ///
+    /// This method only composes transaction submission into `dbtx`; it does
+    /// not own the caller's retry protocol. The caller must durably persist the
+    /// operation ID and request before the first call. After an ambiguous
+    /// result, it must inspect the global operation log and validate any
+    /// existing entry before attempting another submission with that ID.
+    ///
+    /// Operation IDs must be globally unique, and callers must serialize
+    /// submission attempts that use the same ID. `dbtx` must be scoped to this
+    /// stability-pool module, and the caller owns its commit or rollback.
+    pub async fn deposit_to_provide_dbtx(
+        &self,
+        dbtx: &mut DatabaseTransaction<'_>,
+        operation_id: OperationId,
+        amount: Amount,
+        min_fee_rate: FeeRate,
+        extra_meta: impl Serialize + Clone + MaybeSend + MaybeSync + 'static,
+    ) -> anyhow::Result<OutPointRange> {
+        let extra_meta = serde_json::to_value(extra_meta)?;
+        submit_tx_with_output_dbtx(
+            self,
+            dbtx,
+            operation_id,
+            self.deposit_to_provide_output(amount, min_fee_rate),
+            extra_meta,
+        )
+        .await
+    }
+
+    fn deposit_to_provide_output(
+        &self,
+        amount: Amount,
+        min_fee_rate: FeeRate,
+    ) -> StabilityPoolOutput {
+        StabilityPoolOutput::V0(StabilityPoolOutputV0::DepositToProvide(
+            DepositToProvideOutput {
+                account_id: self.our_account(AccountType::Provider).id(),
+                provide_request: ProvideRequest {
+                    amount,
+                    min_fee_rate,
+                },
+            },
+        ))
     }
 
     pub async fn subscribe_deposit_operation(
