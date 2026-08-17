@@ -121,7 +121,7 @@ use spv2_sweeper_service::SPv2SweeperService;
 use stability_pool_client::api::StabilityPoolApiExt as _;
 use stability_pool_client::common::{
     Account, AccountId, AccountType, FiatAmount, FiatOrAll, SignedTransferRequest, SyncResponse,
-    TransferRequest, TransferRequestId,
+    TransferAmount, TransferRequest, TransferRequestId,
 };
 use stability_pool_client::db::{
     CachedSyncResponseKey, CachedSyncResponseValue, SeekLifetimeFeeKey, UserOperationHistoryItem,
@@ -3885,7 +3885,7 @@ impl FederationV2 {
         let request = TransferRequest::new(
             nonce,
             spv2.our_account(AccountType::Seeker),
-            amount,
+            TransferAmount::Fiat(amount),
             to_account,
             transfer_meta.encode(),
             u64::MAX,
@@ -3934,14 +3934,30 @@ impl FederationV2 {
                                     .await;
                             }
                             Ok(SPv2TransferMetadata::MultispendWithdrawal { room, request_id }) => {
-                                self.multispend_services
-                                    .add_withdrawal_notification(
-                                        room,
-                                        request_id,
-                                        signed_request.details().amount(),
-                                        txid,
-                                    )
-                                    .await;
+                                // The completion event this notification turns
+                                // into carries a fiat amount over the wire, so
+                                // it cannot describe a btc-denominated
+                                // withdrawal. Refuse to relabel msats as fiat.
+                                match signed_request.details().denominated_amount() {
+                                    TransferAmount::Fiat(fiat_amount) => {
+                                        self.multispend_services
+                                            .add_withdrawal_notification(
+                                                room,
+                                                request_id,
+                                                fiat_amount,
+                                                txid,
+                                            )
+                                            .await;
+                                    }
+                                    TransferAmount::Btc(amount) => {
+                                        error!(
+                                            %txid,
+                                            %amount,
+                                            "no completion notification for a btc-denominated \
+                                             multispend withdrawal: the event format is fiat-only"
+                                        );
+                                    }
+                                }
                             }
                             Ok(SPv2TransferMetadata::MatrixSpTransfer { transfer_id }) => {
                                 self.spt_notifications
@@ -4961,17 +4977,29 @@ impl FederationV2 {
         Ok(())
     }
 
-    pub fn multispend_create_transfer_request(
+    /// Build the transfer request underlying a multispend withdrawal: from the
+    /// group's multisig account to our own account of the same type. The
+    /// `amount` is denominated in the group's native unit: fiat units for
+    /// (stabilized) seeker groups, msats for btc-balance groups.
+    pub async fn multispend_create_transfer_request(
         &self,
-        amount: FiatAmount,
+        amount: u64,
         group_account: Account,
     ) -> anyhow::Result<TransferRequest> {
         let spv2 = self.client.spv2()?;
+        let acc_type = group_account.acc_type();
+        let amount = match acc_type {
+            AccountType::BtcDepositor => {
+                spv2.ensure_btc_transfer_supported().await?;
+                TransferAmount::Btc(Amount::from_msats(amount))
+            }
+            AccountType::Seeker | AccountType::Provider => TransferAmount::Fiat(FiatAmount(amount)),
+        };
         let transfer_request = TransferRequest::new(
             rand::thread_rng().r#gen(),
             group_account,
-            FiatAmount(amount.0),
-            spv2.our_account(AccountType::Seeker).id(),
+            amount,
+            spv2.our_account(acc_type).id(),
             vec![],
             u64::MAX,
             None,

@@ -2398,8 +2398,9 @@ async fn matrixSendMultispendWithdrawalRequest(
     let fed = bridge
         .federations
         .get_federation(&finalized_group.federation_id.0)?;
-    let transfer_request =
-        fed.multispend_create_transfer_request(FiatAmount(amount.0), finalized_group.spv2_account)?;
+    let transfer_request = fed
+        .multispend_create_transfer_request(amount.0, finalized_group.spv2_account)
+        .await?;
     multispend_matrix
         .send_multispend_withdraw_request(&room_id.into_typed()?, transfer_request, description)
         .await?;
