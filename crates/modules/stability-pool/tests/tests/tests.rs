@@ -15,8 +15,9 @@ use fedimint_core::secp256k1::schnorr;
 use fedimint_core::task::sleep_in_test;
 use stability_pool_common::{
     Account, AccountHistoryItem, AccountHistoryItemKind, AccountId, AccountType, ActiveDeposits,
-    BTC_BALANCE_DEPOSIT_CONSENSUS_VERSION, BtcBalanceDepositMetadata, FeeRate, FiatAmount,
-    FiatOrAll, Provide, Seek, SignedTransferRequest, SyncResponse, TransferRequest,
+    BTC_BALANCE_DEPOSIT_CONSENSUS_VERSION, BTC_TRANSFER_CONSENSUS_VERSION,
+    BtcBalanceDepositMetadata, FeeRate, FiatAmount, FiatOrAll, Provide, Seek,
+    SignedTransferRequest, SyncResponse, TransferRequest,
 };
 use tracing::info;
 
@@ -90,6 +91,47 @@ async fn flaky_starter_test() -> anyhow::Result<()> {
     transfer_tests(seeker, seeker2, provider).await?;
 
     btc_balance_deposit_upgrade_test(&btc_depositor).await?;
+
+    // Create another btc depositor as the recipient of a btc-denominated
+    // transfer (the multispend withdrawal primitive)
+    let btc_depositor2 = ForkedClient::new("btc-depositor-2").await?;
+    btc_depositor2.join_federation(fed.invite_code()?).await?;
+    btc_transfer_test(&btc_depositor, &btc_depositor2).await?;
+
+    Ok(())
+}
+
+async fn btc_transfer_test(sender: &ForkedClient, recipient: &ForkedClient) -> anyhow::Result<()> {
+    // In an all-upgraded federation, voting should activate the version that
+    // interprets btc-balance transfers as msats.
+    sender
+        .wait_for_module_consensus_version(BTC_TRANSFER_CONSENSUS_VERSION)
+        .await?;
+
+    let transfer_amount = Amount::from_msats(53_000);
+    let sender_initial = sender
+        .get_sp_account_info(AccountType::BtcDepositor)
+        .await?;
+    let recipient_account = recipient.get_account(AccountType::BtcDepositor).await?;
+
+    let signed_request = sender
+        .simple_transfer(recipient_account.id(), transfer_amount.msats)
+        .await?;
+    recipient.transfer(signed_request).await?;
+
+    // Balances must move by the exact msat amount: btc-denominated transfers
+    // must not round through the fiat price.
+    let sender_info = sender
+        .get_sp_account_info(AccountType::BtcDepositor)
+        .await?;
+    let recipient_info = recipient
+        .get_sp_account_info(AccountType::BtcDepositor)
+        .await?;
+    assert_eq!(
+        sender_info.sync_response.staged_balance,
+        sender_initial.sync_response.staged_balance - transfer_amount
+    );
+    assert_eq!(recipient_info.sync_response.staged_balance, transfer_amount);
 
     Ok(())
 }
@@ -779,10 +821,7 @@ async fn transfer_tests(
 
     // Transfer 800_000 (8 cents) from seeker1 to seeker2
     let signed_request = seeker1
-        .simple_transfer(
-            seeker2.get_account(AccountType::Seeker).await?.id(),
-            FiatAmount(8),
-        )
+        .simple_transfer(seeker2.get_account(AccountType::Seeker).await?.id(), 8)
         .await?;
     seeker2.transfer(signed_request).await?;
 
@@ -889,9 +928,22 @@ impl ForkedClient {
     }
 
     async fn get_account(&self, account_type: AccountType) -> anyhow::Result<Account> {
-        let pubkey_json = cmd!(self, "module", "multi_sig_stability_pool", "pubkey",)
-            .out_json()
-            .await?;
+        // The btc-depositor account uses a separate derivation path, so the
+        // account type must be passed to the pubkey command.
+        let account_type_str = match account_type {
+            AccountType::Seeker => "seeker",
+            AccountType::Provider => "provider",
+            AccountType::BtcDepositor => "btc-depositor",
+        };
+        let pubkey_json = cmd!(
+            self,
+            "module",
+            "multi_sig_stability_pool",
+            "pubkey",
+            account_type_str
+        )
+        .out_json()
+        .await?;
         let pubkey = serde_json::from_value(pubkey_json)?;
 
         Ok(Account::single(pubkey, account_type))
@@ -1022,10 +1074,12 @@ impl ForkedClient {
         Ok(serde_json::from_value(signature_json)?)
     }
 
+    /// `amount` is denominated in fiat units for seeker/provider accounts and
+    /// in msats for btc-balance accounts.
     async fn simple_transfer(
         &self,
         to_account: AccountId,
-        amount: FiatAmount,
+        amount: u64,
     ) -> anyhow::Result<SignedTransferRequest> {
         let signed_request_json = cmd!(
             self,
@@ -1033,7 +1087,7 @@ impl ForkedClient {
             "multi_sig_stability_pool",
             "simple-transfer",
             to_account,
-            amount.0.to_string(),
+            amount.to_string(),
         )
         .out_json()
         .await?;
@@ -1100,7 +1154,7 @@ impl ForkedClient {
         expected_version: ModuleConsensusVersion,
     ) -> anyhow::Result<()> {
         for _ in 0..30 {
-            if self.module_consensus_version().await? == expected_version {
+            if self.module_consensus_version().await? >= expected_version {
                 return Ok(());
             }
             sleep_in_test(
