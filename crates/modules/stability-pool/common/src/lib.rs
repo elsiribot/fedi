@@ -26,7 +26,7 @@ use config::StabilityPoolClientConfig;
 
 pub const KIND: ModuleKind = ModuleKind::from_static_str("multi_sig_stability_pool");
 /// Highest stability-pool module consensus version this binary understands.
-pub const CONSENSUS_VERSION: ModuleConsensusVersion = ModuleConsensusVersion::new(2, 1);
+pub const CONSENSUS_VERSION: ModuleConsensusVersion = ModuleConsensusVersion::new(2, 2);
 /// Federations that have not activated any upgrade yet are treated as 2.0.
 pub const INITIAL_MODULE_CONSENSUS_VERSION: ModuleConsensusVersion =
     ModuleConsensusVersion::new(2, 0);
@@ -34,6 +34,11 @@ pub const INITIAL_MODULE_CONSENSUS_VERSION: ModuleConsensusVersion =
 /// module consensus version.
 pub const BTC_BALANCE_DEPOSIT_CONSENSUS_VERSION: ModuleConsensusVersion =
     ModuleConsensusVersion::new(2, 1);
+/// Transfers out of btc-balance accounts are interpreted as msats (instead of
+/// the legacy fiat interpretation) once the federation activates this module
+/// consensus version.
+pub const BTC_TRANSFER_CONSENSUS_VERSION: ModuleConsensusVersion =
+    ModuleConsensusVersion::new(2, 2);
 
 pub const MSATS_PER_BTC: u128 = 100_000_000_000;
 
@@ -534,6 +539,27 @@ pub struct ProvideRequest {
     pub min_fee_rate: FeeRate,
 }
 
+/// A transfer amount in the native denomination of the accounts involved:
+/// fiat units for seeker and provider accounts (which participate in the
+/// fiat-stabilization cycle), msats for btc-balance accounts (which hold plain
+/// bitcoin). The denomination is fully determined by the account type of the
+/// transfer's "from" account, which is committed to by the signatures over the
+/// [`TransferRequest`].
+#[derive(Copy, Clone, Debug, Hash, Eq, PartialEq)]
+pub enum TransferAmount {
+    Fiat(FiatAmount),
+    Btc(Amount),
+}
+
+impl Display for TransferAmount {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            TransferAmount::Fiat(fiat) => write!(f, "{} fiat amount", fiat.0),
+            TransferAmount::Btc(amount) => write!(f, "{amount}"),
+        }
+    }
+}
+
 #[derive(Clone, Debug, Hash, Eq, PartialEq, Deserialize, Serialize, Encodable, Decodable)]
 pub struct TransferRequest {
     /// Having a nonce as part of the TransferRequest allows for having multiple
@@ -545,6 +571,11 @@ pub struct TransferRequest {
     /// reasonable.
     nonce: u64,
     from: Account,
+    /// Raw transfer amount in the denomination of the "from" account: fiat
+    /// units for seeker/provider accounts, msats for btc-balance accounts
+    /// (once [`BTC_TRANSFER_CONSENSUS_VERSION`] is active). The `FiatAmount`
+    /// wrapper is kept for wire-format compatibility; use
+    /// [`TransferRequest::denominated_amount`] for the typed view.
     transfer_amount: FiatAmount,
     to: AccountId,
 
@@ -571,7 +602,7 @@ impl TransferRequest {
     pub fn new(
         nonce: u64,
         from: Account,
-        transfer_amount: FiatAmount,
+        transfer_amount: TransferAmount,
         to: AccountId,
         meta: Vec<u8>,
         valid_until_cycle: u64,
@@ -585,6 +616,13 @@ impl TransferRequest {
 
         // Ensure from != to
         ensure!(from.id() != to, "From and to cannot be the same");
+
+        // Ensure the amount denomination matches the account type
+        let transfer_amount = match (from.acc_type, transfer_amount) {
+            (AccountType::Seeker | AccountType::Provider, TransferAmount::Fiat(fiat)) => fiat,
+            (AccountType::BtcDepositor, TransferAmount::Btc(amount)) => FiatAmount(amount.msats),
+            _ => bail!("Transfer amount denomination must match the from account type"),
+        };
 
         // Transfer amount must be non-zero
         ensure!(transfer_amount.0 != 0, "Transfer amount must not be 0");
@@ -616,8 +654,24 @@ impl TransferRequest {
         &self.from
     }
 
+    /// Raw wire-format amount. For btc-balance accounts the contained value is
+    /// msats, not fiat; prefer [`Self::denominated_amount`].
     pub fn amount(&self) -> FiatAmount {
         self.transfer_amount
+    }
+
+    /// The transfer amount in the denomination implied by the "from" account's
+    /// type. Note that servers only honor the msat denomination for
+    /// btc-balance accounts once [`BTC_TRANSFER_CONSENSUS_VERSION`] is active.
+    pub fn denominated_amount(&self) -> TransferAmount {
+        match self.from.acc_type {
+            AccountType::Seeker | AccountType::Provider => {
+                TransferAmount::Fiat(self.transfer_amount)
+            }
+            AccountType::BtcDepositor => {
+                TransferAmount::Btc(Amount::from_msats(self.transfer_amount.0))
+            }
+        }
     }
 
     pub fn to(&self) -> &AccountId {
@@ -964,12 +1018,11 @@ impl Display for StabilityPoolOutputV0 {
             ),
             StabilityPoolOutputV0::Transfer(transfer_output) => write!(
                 f,
-                "Transfer {} fiat amount from account {} to account {}",
+                "Transfer {} from account {} to account {}",
                 transfer_output
                     .signed_request
                     .transfer_request
-                    .transfer_amount
-                    .0,
+                    .denominated_amount(),
                 transfer_output.signed_request.transfer_request.from.id(),
                 transfer_output.signed_request.transfer_request.to,
             ),
@@ -994,12 +1047,11 @@ impl Display for StabilityPoolOutputV1 {
             ),
             StabilityPoolOutputV1::Transfer(transfer_output) => write!(
                 f,
-                "Transfer {} fiat amount from account {} to account {}",
+                "Transfer {} from account {} to account {}",
                 transfer_output
                     .signed_request
                     .transfer_request
-                    .transfer_amount
-                    .0,
+                    .denominated_amount(),
                 transfer_output.signed_request.transfer_request.from.id(),
                 transfer_output.signed_request.transfer_request.to,
             ),
@@ -1268,12 +1320,18 @@ pub enum AccountHistoryItemKind {
 
 #[cfg(test)]
 mod tests {
+    use std::str::FromStr as _;
+
     use fedimint_core::Amount;
     use fedimint_core::encoding::{Decodable, Encodable};
     use proptest::collection::vec;
     use proptest::prelude::*;
+    use secp256k1::PublicKey;
 
-    use super::{BTC_BALANCE_DEPOSIT_CONSENSUS_VERSION, FiatAmount, StabilityPoolConsensusItem};
+    use super::{
+        Account, AccountType, BTC_BALANCE_DEPOSIT_CONSENSUS_VERSION, FiatAmount,
+        StabilityPoolConsensusItem, TransferAmount, TransferRequest,
+    };
 
     fn price_strategy() -> impl Strategy<Value = FiatAmount> {
         (20_000_u64 * 100..200_000_u64 * 100).prop_map(FiatAmount)
@@ -1375,6 +1433,80 @@ mod tests {
             prop_assert!(parts_sum_fiat <= total_fiat.0 + 1);
             prop_assert!(total_fiat.0 <= parts_sum_fiat + underflow_bound);
         }
+    }
+
+    #[test]
+    fn transfer_request_denomination_follows_account_type() {
+        let key1 = PublicKey::from_str(
+            "0279be667ef9dcbbac55a06295ce870b07029bfcdb2dce28d959f2815b16f81798",
+        )
+        .expect("valid pubkey");
+        let key2 = PublicKey::from_str(
+            "02c6047f9441ed7d6d3045406e95c07cd85c778e4b8cef3ca7abac09b95c709ee5",
+        )
+        .expect("valid pubkey");
+
+        let seeker_from = Account::single(key1, AccountType::Seeker);
+        let seeker_to = Account::single(key2, AccountType::Seeker).id();
+        let btc_from = Account::single(key1, AccountType::BtcDepositor);
+        let btc_to = Account::single(key2, AccountType::BtcDepositor).id();
+
+        let fiat_request = TransferRequest::new(
+            0,
+            seeker_from.clone(),
+            TransferAmount::Fiat(FiatAmount(5)),
+            seeker_to,
+            vec![],
+            u64::MAX,
+            None,
+        )
+        .expect("fiat transfer between seekers is valid");
+        assert_eq!(
+            fiat_request.denominated_amount(),
+            TransferAmount::Fiat(FiatAmount(5))
+        );
+
+        let btc_request = TransferRequest::new(
+            0,
+            btc_from.clone(),
+            TransferAmount::Btc(Amount::from_msats(53_000)),
+            btc_to,
+            vec![],
+            u64::MAX,
+            None,
+        )
+        .expect("btc transfer between btc depositors is valid");
+        assert_eq!(
+            btc_request.denominated_amount(),
+            TransferAmount::Btc(Amount::from_msats(53_000))
+        );
+
+        assert!(
+            TransferRequest::new(
+                0,
+                seeker_from,
+                TransferAmount::Btc(Amount::from_msats(1)),
+                seeker_to,
+                vec![],
+                u64::MAX,
+                None,
+            )
+            .is_err(),
+            "btc amount must be rejected for a seeker sender"
+        );
+        assert!(
+            TransferRequest::new(
+                0,
+                btc_from,
+                TransferAmount::Fiat(FiatAmount(1)),
+                btc_to,
+                vec![],
+                u64::MAX,
+                None,
+            )
+            .is_err(),
+            "fiat amount must be rejected for a btc-depositor sender"
+        );
     }
 
     #[test]

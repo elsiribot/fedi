@@ -15,11 +15,11 @@ use common::config::{
     StabilityPoolConfigConsensus, StabilityPoolConfigPrivate,
 };
 use common::{
-    BTC_BALANCE_DEPOSIT_CONSENSUS_VERSION, CONSENSUS_VERSION, INITIAL_MODULE_CONSENSUS_VERSION,
-    Provide, Seek, StabilityPoolCommonGen, StabilityPoolConsensusItem, StabilityPoolInput,
-    StabilityPoolInputError, StabilityPoolModuleTypes, StabilityPoolOutput,
-    StabilityPoolOutputError, StabilityPoolOutputOutcome, StabilityPoolOutputOutcomeV0,
-    UnlockRequest,
+    BTC_BALANCE_DEPOSIT_CONSENSUS_VERSION, BTC_TRANSFER_CONSENSUS_VERSION, CONSENSUS_VERSION,
+    INITIAL_MODULE_CONSENSUS_VERSION, Provide, Seek, StabilityPoolCommonGen,
+    StabilityPoolConsensusItem, StabilityPoolInput, StabilityPoolInputError,
+    StabilityPoolModuleTypes, StabilityPoolOutput, StabilityPoolOutputError,
+    StabilityPoolOutputOutcome, StabilityPoolOutputOutcomeV0, UnlockRequest,
 };
 use db::{
     ConsensusVersionVoteKey, ConsensusVersionVotePrefix, ConsensusVersionVotingActivationKey,
@@ -60,8 +60,8 @@ use stability_pool_common::{
     AccountHistoryItem, AccountHistoryItemKind, AccountId, AccountType, CycleInfo, Deposit,
     DepositToBtcBalanceOutput, DepositToProvideOutput, DepositToSeekOutput, FeeRate, FiatAmount,
     FiatOrAll, SignedTransferRequest, StabilityPoolInputV0, StabilityPoolOutputV0,
-    StabilityPoolOutputV1, TransferOutput, TransferRequestId, UnlockForWithdrawalInput,
-    WithdrawalInput,
+    StabilityPoolOutputV1, TransferAmount, TransferOutput, TransferRequestId,
+    UnlockForWithdrawalInput, WithdrawalInput,
 };
 use tokio::sync::{Mutex, RwLock, watch};
 use tracing::{info, warn};
@@ -718,7 +718,15 @@ impl ServerModule for StabilityPool {
             }
             StabilityPoolOutput::V0(StabilityPoolOutputV0::Transfer(transfer))
             | StabilityPoolOutput::V1(StabilityPoolOutputV1::Transfer(transfer)) => {
-                process_transfer_output(self.cfg.clone(), dbtx, outpoint.txid, transfer).await
+                let active_consensus_version = self.consensus_module_consensus_version(dbtx).await;
+                process_transfer_output(
+                    self.cfg.clone(),
+                    dbtx,
+                    outpoint.txid,
+                    transfer,
+                    active_consensus_version,
+                )
+                .await
             }
             StabilityPoolOutput::Default { variant, .. } => {
                 Err(StabilityPoolOutputError::UnknownOutputVariant(format!(
@@ -1159,6 +1167,7 @@ async fn process_transfer_output_inner<M, K>(
     txid: TransactionId,
     signed_request: &SignedTransferRequest,
     cycle_info: CycleInfo,
+    total_to_transfer: Amount,
     locked_deposits_map: &mut BTreeMap<AccountId, Vec<Deposit<M>>>,
     from_staged_deposits_key: K,
     to_staged_deposits_key: K,
@@ -1181,7 +1190,6 @@ where
     .await
     .map_err(|e| StabilityPoolOutputError::InvalidTransferRequest(e.to_string()))?;
 
-    // Calculate the total btc amount to transfer
     let mut from_staged_deposits = dbtx
         .get_value(&from_staged_deposits_key)
         .await
@@ -1196,11 +1204,6 @@ where
         .iter()
         .map(|d| d.amount)
         .sum::<Amount>();
-    let total_to_transfer = signed_request
-        .details()
-        .amount()
-        .to_btc_amount(cycle_info.start_price)
-        .map_err(|e| StabilityPoolOutputError::InvalidTransferRequest(e.to_string()))?;
 
     if total_to_transfer > from_staged_deposits_sum + from_locked_deposits_sum {
         return Err(StabilityPoolOutputError::InvalidTransferRequest(
@@ -1332,6 +1335,7 @@ async fn process_transfer_output(
     dbtx: &mut DatabaseTransaction<'_>,
     txid: TransactionId,
     output: &TransferOutput,
+    active_consensus_version: ModuleConsensusVersion,
 ) -> Result<TransactionItemAmounts, StabilityPoolOutputError> {
     let TransferOutput { signed_request } = output;
     // Ensure account types match
@@ -1359,6 +1363,25 @@ async fn process_transfer_output(
         ));
     }
 
+    // Calculate the total btc amount to transfer. Transfers out of btc-balance
+    // accounts are denominated directly in msats once 2.2 is active. Before
+    // activation we must keep the legacy fiat interpretation for them, since
+    // that is what non-upgraded peers apply; diverging here would fork
+    // consensus while a federation runs mixed binaries.
+    let total_to_transfer = match signed_request.details().denominated_amount() {
+        TransferAmount::Btc(amount)
+            if active_consensus_version >= BTC_TRANSFER_CONSENSUS_VERSION =>
+        {
+            amount
+        }
+        TransferAmount::Btc(Amount { msats }) => FiatAmount(msats)
+            .to_btc_amount(cycle_info.start_price)
+            .map_err(|e| StabilityPoolOutputError::InvalidTransferRequest(e.to_string()))?,
+        TransferAmount::Fiat(fiat_amount) => fiat_amount
+            .to_btc_amount(cycle_info.start_price)
+            .map_err(|e| StabilityPoolOutputError::InvalidTransferRequest(e.to_string()))?,
+    };
+
     // Handle provider and seeker separately
     match signed_request.details().from().acc_type() {
         AccountType::Seeker | AccountType::BtcDepositor => {
@@ -1367,6 +1390,7 @@ async fn process_transfer_output(
                 txid,
                 signed_request,
                 cycle_info,
+                total_to_transfer,
                 &mut current_cycle.locked_seeks,
                 StagedSeeksKey(signed_request.details().from().id()),
                 StagedSeeksKey(*signed_request.details().to()),
@@ -1384,6 +1408,7 @@ async fn process_transfer_output(
                     txid,
                     signed_request,
                     cycle_info,
+                    total_to_transfer,
                     &mut current_cycle.locked_provides,
                     StagedProvidesKey(signed_request.details().from().id()),
                     StagedProvidesKey(*signed_request.details().to()),

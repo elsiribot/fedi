@@ -42,11 +42,11 @@ use serde::{Deserialize, Serialize};
 pub use stability_pool_common as common;
 use stability_pool_common::{
     Account, AccountId, AccountType, ActiveDeposits, BTC_BALANCE_DEPOSIT_CONSENSUS_VERSION,
-    BtcBalanceDepositMetadata, DepositToBtcBalanceOutput, DepositToProvideOutput,
-    DepositToSeekOutput, FeeRate, FiatAmount, FiatOrAll, KIND, SignedTransferRequest,
-    StabilityPoolInputV0, StabilityPoolOutputV0, StabilityPoolOutputV1, TransferOutput,
-    TransferRequest, TransferRequestId, UnlockForWithdrawalInput, UnlockRequestStatus,
-    WithdrawalInput,
+    BTC_TRANSFER_CONSENSUS_VERSION, BtcBalanceDepositMetadata, DepositToBtcBalanceOutput,
+    DepositToProvideOutput, DepositToSeekOutput, FeeRate, FiatAmount, FiatOrAll, KIND,
+    SignedTransferRequest, StabilityPoolInputV0, StabilityPoolOutputV0, StabilityPoolOutputV1,
+    TransferAmount, TransferOutput, TransferRequest, TransferRequestId, UnlockForWithdrawalInput,
+    UnlockRequestStatus, WithdrawalInput,
 };
 use tracing::info;
 
@@ -171,7 +171,10 @@ impl ClientModule for StabilityPoolClientModule {
         );
 
         match command {
-            CliCommand::Pubkey => Ok(serde_json::to_value(self.client_key_pair.public_key())?),
+            CliCommand::Pubkey { account_type } => Ok(serde_json::to_value(
+                self.our_keypair(account_type.map_or(AccountType::Seeker, Into::into))
+                    .public_key(),
+            )?),
 
             CliCommand::AccountInfo { account_type } => {
                 let sync_service = StabilityPoolSyncService::new(
@@ -327,9 +330,17 @@ impl ClientModule for StabilityPoolClientModule {
             }
 
             CliCommand::SimpleTransfer { to_account, amount } => {
+                // The sender account must have the same type as the recipient,
+                // which also determines the amount's denomination.
+                let amount = match to_account.acc_type() {
+                    AccountType::Seeker | AccountType::Provider => {
+                        TransferAmount::Fiat(FiatAmount(amount))
+                    }
+                    AccountType::BtcDepositor => TransferAmount::Btc(Amount::from_msats(amount)),
+                };
                 let request = TransferRequest::new(
                     rand::thread_rng().r#gen(),
-                    self.our_account(AccountType::Seeker),
+                    self.our_account(to_account.acc_type()),
                     amount,
                     to_account,
                     vec![],
@@ -895,6 +906,21 @@ impl StabilityPoolClientModule {
         signed_request: SignedTransferRequest,
         extra_meta: impl Serialize + Clone + MaybeSend + MaybeSync + 'static,
     ) -> anyhow::Result<OperationId> {
+        // Both sides of a transfer share the same account type, so this is our
+        // account involved in the transfer, either as sender or receiver.
+        let acc_type = signed_request.details().from().acc_type();
+
+        // A btc-balance sender means the signed amount is denominated in msats,
+        // which servers only honor once BTC_TRANSFER_CONSENSUS_VERSION is
+        // active. Submitting before then would move a fiat-priced amount
+        // instead, so gate here rather than at the call sites: this is the only
+        // path that submits a transfer, and the signers of a request are not
+        // necessarily the peer that built it.
+        if acc_type == AccountType::BtcDepositor {
+            self.ensure_btc_transfer_supported().await?;
+        }
+
+        let our_account_id = self.our_account(acc_type).id();
         let transfer_output = TransferOutput { signed_request };
 
         let (operation_id, txid) = submit_tx_with_output(
@@ -904,13 +930,11 @@ impl StabilityPoolClientModule {
         )
         .await?;
 
-        // Record this transfer locally since we are the one initiating it. We assume
-        // that our seeker-type account is the one involved in this transfer, either as
-        // sender or receiver.
+        // Record this transfer locally since we are the one initiating it.
         let mut dbtx = self.db.begin_transaction().await;
         dbtx.insert_entry(
             &RecordedTransferItemKey {
-                account_id: self.our_account(AccountType::Seeker).id(),
+                account_id: our_account_id,
                 txid,
             },
             &operation_id,
@@ -918,6 +942,16 @@ impl StabilityPoolClientModule {
         .await;
         dbtx.commit_tx().await;
         Ok(operation_id)
+    }
+
+    /// Ensures the federation has activated the module consensus version that
+    /// interprets transfers out of btc-balance accounts as msats.
+    pub async fn ensure_btc_transfer_supported(&self) -> anyhow::Result<()> {
+        ensure!(
+            self.module_api.module_consensus_version().await? >= BTC_TRANSFER_CONSENSUS_VERSION,
+            "Stability pool module consensus version doesn't support btc-denominated transfers"
+        );
+        Ok(())
     }
 
     pub async fn subscribe_transfer_operation(
@@ -1506,8 +1540,13 @@ fn parse_json_value<T: DeserializeOwned>(s: &str) -> Result<T, serde_json::Error
 
 #[derive(Parser, Debug, Serialize)]
 pub enum CliCommand {
-    /// Get the public key of this client
-    Pubkey,
+    /// Get the public key of this client's account of the given type
+    /// (default: seeker). Note that the btc-depositor account uses a separate
+    /// derivation path from the seeker/provider account.
+    Pubkey {
+        #[arg(value_enum)]
+        account_type: Option<AccountTypeArg>,
+    },
     /// Get account info for seeker or provider account
     AccountInfo {
         #[arg(value_enum)]
@@ -1561,12 +1600,9 @@ pub enum CliCommand {
         request: TransferRequest,
     },
     /// Convenience CLI command to get a signed transfer request for sending
-    /// amount to given account
-    SimpleTransfer {
-        to_account: AccountId,
-        #[arg(value_parser = parse_json_value::<FiatAmount>)]
-        amount: FiatAmount,
-    },
+    /// amount to given account. The amount is denominated in fiat units for
+    /// seeker/provider accounts and in msats for btc-balance accounts.
+    SimpleTransfer { to_account: AccountId, amount: u64 },
     /// Submit a signed transfer request
     Transfer {
         #[arg(value_parser = parse_json_value::<SignedTransferRequest>)]
