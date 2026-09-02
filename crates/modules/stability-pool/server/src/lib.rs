@@ -1,5 +1,6 @@
 pub mod api;
 pub mod db;
+pub mod envs;
 pub mod oracle;
 use std::cmp::Ordering;
 use std::collections::{BTreeMap, VecDeque};
@@ -48,7 +49,7 @@ use fedimint_core::task::{MaybeSend, MaybeSync, TaskGroup, sleep};
 use fedimint_core::{Amount, InPoint, NumPeersExt, OutPoint, PeerId, TransactionId};
 use fedimint_server_core::config::PeerHandleOps;
 use fedimint_server_core::{
-    ConfigGenModuleArgs, ServerModule, ServerModuleInit, ServerModuleInitArgs,
+    ConfigGenModuleArgs, EnvVarDoc, ServerModule, ServerModuleInit, ServerModuleInitArgs,
 };
 use futures::future::join_all;
 use futures::{StreamExt, stream};
@@ -97,6 +98,11 @@ impl ModuleInit for StabilityPoolInit {
 impl ServerModuleInit for StabilityPoolInit {
     type Module = StabilityPool;
 
+    /// Stability pool v2 takes no per-instance config-gen params — its
+    /// knobs (`oracle_config`, `cycle_duration`, ...) are fields on
+    /// [`StabilityPoolInit`] itself, set by the binary constructing it.
+    type Params = ();
+
     fn versions(&self, _core: CoreConsensusVersion) -> &[ModuleConsensusVersion] {
         &[CONSENSUS_VERSION]
     }
@@ -123,6 +129,7 @@ impl ServerModuleInit for StabilityPoolInit {
         &self,
         peers: &[PeerId],
         _args: &ConfigGenModuleArgs,
+        _params: &Self::Params,
     ) -> BTreeMap<PeerId, ServerModuleConfig> {
         let mint_cfg: BTreeMap<_, StabilityPoolConfig> = peers
             .iter()
@@ -154,6 +161,7 @@ impl ServerModuleInit for StabilityPoolInit {
         &self,
         peers: &(dyn PeerHandleOps + Send + Sync),
         _args: &ConfigGenModuleArgs,
+        _params: &Self::Params,
     ) -> anyhow::Result<ServerModuleConfig> {
         let server = StabilityPoolConfig {
             private: StabilityPoolConfigPrivate,
@@ -170,6 +178,30 @@ impl ServerModuleInit for StabilityPoolInit {
         };
 
         Ok(server.to_erased())
+    }
+
+    /// Opt-in, matching the experimint house style for modules that carry
+    /// consensus-relevant topology: available in the setup UI regardless, but
+    /// only pre-ticked when the operator sets the env var.
+    fn is_enabled_by_default(&self) -> bool {
+        fedimint_core::envs::is_env_var_set(envs::FM_ENABLE_MODULE_SPV2_ENV)
+    }
+
+    fn get_documented_env_vars(&self) -> Vec<EnvVarDoc> {
+        vec![
+            EnvVarDoc {
+                name: envs::FM_ENABLE_MODULE_SPV2_ENV,
+                description: "pre-tick the stability pool v2 module in the setup UI",
+            },
+            EnvVarDoc {
+                name: envs::FM_SPV2_TEST_PARAMS_ENV,
+                description: "use test parameters: mock price oracle and a 15s cycle",
+            },
+            EnvVarDoc {
+                name: envs::FM_SPV2_CYCLE_DURATION_SECS_ENV,
+                description: "stability pool cycle duration in seconds (default 600)",
+            },
+        ]
     }
 
     fn validate_config(
