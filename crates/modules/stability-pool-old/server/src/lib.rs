@@ -33,8 +33,8 @@ use fedimint_core::core::ModuleInstanceId;
 use fedimint_core::db::{DatabaseTransaction, DatabaseVersion, IDatabaseTransactionOpsCoreTyped};
 use fedimint_core::module::audit::Audit;
 use fedimint_core::module::{
-    Amounts, ApiEndpoint, CoreConsensusVersion, InputMeta, ModuleConsensusVersion, ModuleInit,
-    SupportedModuleApiVersions, TransactionItemAmounts,
+    Amounts, ApiEndpoint, CoreConsensusVersion, InputAuth, InputMeta, ModuleConsensusVersion,
+    ModuleInit, SupportedModuleApiVersions, TransactionItemAmounts,
 };
 use fedimint_core::{Amount, InPoint, NumPeersExt, OutPoint, PeerId, TransactionId};
 use fedimint_server_core::config::PeerHandleOps;
@@ -592,7 +592,7 @@ impl ServerModule for StabilityPool {
                 amounts: Amounts::new_bitcoin(amount),
                 fees: Amounts::new_bitcoin(fee),
             },
-            pub_key: account,
+            auth: InputAuth::Key(account),
         });
     }
 

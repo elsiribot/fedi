@@ -42,7 +42,7 @@ use fedimint_core::envs::is_running_in_test_env;
 use fedimint_core::module::audit::Audit;
 use fedimint_core::module::{
     Amounts, ApiEndpoint, ApiRequestErased, CORE_CONSENSUS_VERSION, CoreConsensusVersion,
-    InputMeta, ModuleConsensusVersion, ModuleInit, SupportedModuleApiVersions,
+    InputAuth, InputMeta, ModuleConsensusVersion, ModuleInit, SupportedModuleApiVersions,
     TransactionItemAmounts,
 };
 use fedimint_core::task::{MaybeSend, MaybeSync, TaskGroup, sleep};
@@ -965,10 +965,12 @@ where
             amounts: Amounts::ZERO,
             fees: Amounts::ZERO,
         },
-        pub_key: *input
-            .account
-            .as_single()
-            .ok_or(StabilityPoolInputError::MultiSigNotAllowed)?,
+        auth: InputAuth::Key(
+            *input
+                .account
+                .as_single()
+                .ok_or(StabilityPoolInputError::MultiSigNotAllowed)?,
+        ),
     })
 }
 
@@ -1042,10 +1044,12 @@ async fn process_withdrawal_input(
             amounts: Amounts::new_bitcoin(input.amount),
             fees: Amounts::ZERO,
         },
-        pub_key: *input
-            .account
-            .as_single()
-            .ok_or(StabilityPoolInputError::MultiSigNotAllowed)?,
+        auth: InputAuth::Key(
+            *input
+                .account
+                .as_single()
+                .ok_or(StabilityPoolInputError::MultiSigNotAllowed)?,
+        ),
     })
 }
 

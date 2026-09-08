@@ -22,8 +22,8 @@ use fedimint_client::module::sm::{
     ClientSMDatabaseTransaction, Context, DynState, ModuleNotifier, State, StateTransition,
 };
 use fedimint_client::transaction::{
-    ClientInput, ClientInputBundle, ClientInputSM, ClientOutput, ClientOutputBundle,
-    ClientOutputSM, TransactionBuilder,
+    ClientInput, ClientInputAuth, ClientInputBundle, ClientInputSM, ClientOutput,
+    ClientOutputBundle, ClientOutputSM, TransactionBuilder,
 };
 use fedimint_client::{ClientModule, DynGlobalClientContext, sm_enum_variant_translation};
 use fedimint_core::core::{IntoDynInstance, ModuleInstanceId, ModuleKind, OperationId};
@@ -701,7 +701,7 @@ impl StabilityPoolClientModule {
                     self.client_key_pair.public_key(),
                     unlocked_amount,
                 ),
-                keys: vec![self.client_key_pair],
+                auth: ClientInputAuth::Key(self.client_key_pair),
             };
             let sm = ClientInputSM {
                 state_machines: Arc::new(move |out_point_range| {
@@ -1094,7 +1094,7 @@ async fn claim_idle_balance_input(
             context.module.client_key_pair.public_key(),
             idle_balance,
         ),
-        keys: vec![context.module.client_key_pair],
+        auth: ClientInputAuth::Key(context.module.client_key_pair),
     };
     let state_machines = ClientInputSM {
         state_machines: Arc::new(move |_| Vec::<StabilityPoolStateMachines>::new()),

@@ -20,8 +20,8 @@ use fedimint_client::module::sm::{
     ClientSMDatabaseTransaction, Context, DynState, ModuleNotifier, State, StateTransition,
 };
 use fedimint_client::transaction::{
-    ClientInput, ClientInputBundle, ClientInputSM, ClientOutput, ClientOutputBundle,
-    ClientOutputSM, TransactionBuilder,
+    ClientInput, ClientInputAuth, ClientInputBundle, ClientInputSM, ClientOutput,
+    ClientOutputBundle, ClientOutputSM, TransactionBuilder,
 };
 use fedimint_client::{ClientModule, DynGlobalClientContext, sm_enum_variant_translation};
 use fedimint_core::core::{IntoDynInstance, ModuleInstanceId, ModuleKind, OperationId};
@@ -1002,7 +1002,7 @@ impl StabilityPoolClientModule {
                     amount: unlock_amount,
                 },
             )),
-            keys: vec![signing_key],
+            auth: ClientInputAuth::Key(signing_key),
         };
         let sm = ClientInputSM {
             state_machines: Arc::new(move |out_point_range| {
@@ -1128,7 +1128,7 @@ impl StabilityPoolClientModule {
                 account: account.clone(),
                 amount,
             })),
-            keys: vec![self.our_keypair(acc_type)],
+            auth: ClientInputAuth::Key(self.our_keypair(acc_type)),
         };
         let sm = ClientInputSM {
             state_machines: Arc::new(move |_| Vec::<StabilityPoolStateMachine>::new()),
@@ -1472,7 +1472,7 @@ async fn claim_idle_balance_input(
             account: old_state.account.clone(),
             amount: idle_balance,
         })),
-        keys: vec![signing_key],
+        auth: ClientInputAuth::Key(signing_key),
     };
     let state_machines = ClientInputSM {
         state_machines: Arc::new(move |_| Vec::<StabilityPoolStateMachine>::new()),
